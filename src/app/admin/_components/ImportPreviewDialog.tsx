@@ -147,7 +147,7 @@ export function ImportPreviewDialog({
         </div>
 
         {/* Content */}
-        <div className="flex-grow scrollbar-thin overflow-y-auto p-6">
+        <div className="grow scrollbar-thin overflow-y-auto p-6">
           {/* Summary */}
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">

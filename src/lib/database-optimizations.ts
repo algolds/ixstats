@@ -7,11 +7,7 @@ import { db } from "~/server/db";
 
 // Import from query-monitor for local use and re-export for backward compatibility
 // The QueryPerformanceMonitor is in a separate file to avoid circular dependencies
-import {
-  QueryPerformanceMonitor,
-  queryMonitor,
-  type QueryMetrics,
-} from "./query-monitor";
+import { QueryPerformanceMonitor, queryMonitor, type QueryMetrics } from "./query-monitor";
 export { QueryPerformanceMonitor, queryMonitor, type QueryMetrics };
 
 export interface OptimizedQueryOptions {

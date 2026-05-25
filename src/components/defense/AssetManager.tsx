@@ -229,7 +229,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                       <div className="bg-card/90 relative flex items-start justify-between p-3 backdrop-blur-sm">
                         {/* Equipment image thumbnail */}
                         {asset.imageUrl ? (
-                          <div className="group/img relative mr-4 h-28 w-28 flex-shrink-0 overflow-hidden rounded-lg border-2 border-orange-400 shadow-md transition-all hover:border-orange-500 hover:shadow-lg dark:border-orange-700">
+                          <div className="group/img relative mr-4 h-28 w-28 shrink-0 overflow-hidden rounded-lg border-2 border-orange-400 shadow-md transition-all hover:border-orange-500 hover:shadow-lg dark:border-orange-700">
                             <img
                               src={asset.imageUrl}
                               alt={asset.name}
@@ -249,7 +249,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                             </div>
                           </div>
                         ) : (
-                          <div className="bg-muted mr-4 flex h-28 w-28 flex-shrink-0 items-center justify-center rounded-lg border-2 border-dashed">
+                          <div className="bg-muted mr-4 flex h-28 w-28 shrink-0 items-center justify-center rounded-lg border-2 border-dashed">
                             <div className="flex flex-col items-center gap-1 text-center">
                               <Image className="text-muted-foreground h-8 w-8" />
                               <span className="text-muted-foreground text-xs">No image</span>

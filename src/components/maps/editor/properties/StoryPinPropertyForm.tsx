@@ -2,8 +2,22 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import {
-  Download, ChevronDown, Loader2, Bold, Italic, Heading2, Heading3,
-  Link2, List, ImageIcon, Eye, EyeOff, X, Plus, Sparkles, Search,
+  Download,
+  ChevronDown,
+  Loader2,
+  Bold,
+  Italic,
+  Heading2,
+  Heading3,
+  Link2,
+  List,
+  ImageIcon,
+  Eye,
+  EyeOff,
+  X,
+  Plus,
+  Sparkles,
+  Search,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";
@@ -13,9 +27,20 @@ import { api } from "~/trpc/react";
 import type { StoryPinFormData } from "~/hooks/useMapEditor";
 
 const STORY_PIN_CATEGORIES = [
-  "battle", "founding", "treaty", "cultural", "religious", "trade",
-  "naval", "settlement", "government", "biography", "linguistic", "upheaval",
-  "natural", "exploration",
+  "battle",
+  "founding",
+  "treaty",
+  "cultural",
+  "religious",
+  "trade",
+  "naval",
+  "settlement",
+  "government",
+  "biography",
+  "linguistic",
+  "upheaval",
+  "natural",
+  "exploration",
 ];
 
 const IMPORTANCE_LEVELS = [
@@ -47,7 +72,7 @@ function WikiSectionImporter({
 
   const { data: sections, isLoading: loadingSections } = api.wiki.getSections.useQuery(
     { title: wikiTitle, wiki: "ixwiki" },
-    { enabled: showSections, staleTime: 5 * 60_000 },
+    { enabled: showSections, staleTime: 5 * 60_000 }
   );
 
   const utils = api.useUtils();
@@ -80,13 +105,15 @@ function WikiSectionImporter({
       >
         <Download className="h-3 w-3" />
         Import Section
-        <ChevronDown className={`h-3 w-3 transition-transform ${showSections ? "" : "-rotate-90"}`} />
+        <ChevronDown
+          className={`h-3 w-3 transition-transform ${showSections ? "" : "-rotate-90"}`}
+        />
       </button>
 
       {showSections && (
-        <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-background p-1">
+        <div className="border-border bg-background max-h-40 overflow-y-auto rounded-lg border p-1">
           {loadingSections ? (
-            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 px-2 py-2 text-xs">
               <Loader2 className="h-3 w-3 animate-spin" />
               Loading sections...
             </div>
@@ -97,7 +124,7 @@ function WikiSectionImporter({
                 type="button"
                 onClick={() => handleSelectSection(section.title)}
                 disabled={loadingSection !== null}
-                className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                className="text-foreground hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                 style={{ paddingLeft: `${(section.level - 1) * 12 + 8}px` }}
               >
                 {loadingSection === section.title ? (
@@ -107,7 +134,7 @@ function WikiSectionImporter({
               </button>
             ))
           ) : (
-            <div className="px-2 py-2 text-xs text-muted-foreground">No sections found</div>
+            <div className="text-muted-foreground px-2 py-2 text-xs">No sections found</div>
           )}
         </div>
       )}
@@ -130,13 +157,13 @@ function WikiSearchInput({
 
   const { data: results } = api.wiki.searchPages.useQuery(
     { query, limit: 6 },
-    { enabled: query.length >= 3 && showDropdown, staleTime: 60_000 },
+    { enabled: query.length >= 3 && showDropdown, staleTime: 60_000 }
   );
 
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
         <input
           ref={inputRef}
           type="text"
@@ -153,7 +180,7 @@ function WikiSearchInput({
         />
       </div>
       {showDropdown && results && results.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg">
+        <div className="border-border bg-card absolute z-20 mt-1 w-full rounded-lg border shadow-lg">
           {results.map((r: { title: string }, i: number) => (
             <button
               key={i}
@@ -164,7 +191,7 @@ function WikiSearchInput({
                 onChange(r.title);
                 setShowDropdown(false);
               }}
-              className="w-full px-3 py-1.5 text-left text-xs text-foreground hover:bg-accent transition-colors first:rounded-t-lg last:rounded-b-lg"
+              className="text-foreground hover:bg-accent w-full px-3 py-1.5 text-left text-xs transition-colors first:rounded-t-lg last:rounded-b-lg"
             >
               {r.title}
             </button>
@@ -179,26 +206,61 @@ function WikiSearchInput({
 
 function MarkdownToolbar({ onInsert }: { onInsert: (before: string, after?: string) => void }) {
   return (
-    <div className="flex flex-wrap gap-0.5 rounded-t-lg border border-b-0 border-border bg-muted/30 px-1.5 py-1">
-      <button type="button" onClick={() => onInsert("**", "**")} className="rounded p-1 hover:bg-accent" title="Bold">
+    <div className="border-border bg-muted/30 flex flex-wrap gap-0.5 rounded-t-lg border border-b-0 px-1.5 py-1">
+      <button
+        type="button"
+        onClick={() => onInsert("**", "**")}
+        className="hover:bg-accent rounded p-1"
+        title="Bold"
+      >
         <Bold className="h-3.5 w-3.5" />
       </button>
-      <button type="button" onClick={() => onInsert("*", "*")} className="rounded p-1 hover:bg-accent" title="Italic">
+      <button
+        type="button"
+        onClick={() => onInsert("*", "*")}
+        className="hover:bg-accent rounded p-1"
+        title="Italic"
+      >
         <Italic className="h-3.5 w-3.5" />
       </button>
-      <button type="button" onClick={() => onInsert("\n## ")} className="rounded p-1 hover:bg-accent" title="Heading 2">
+      <button
+        type="button"
+        onClick={() => onInsert("\n## ")}
+        className="hover:bg-accent rounded p-1"
+        title="Heading 2"
+      >
         <Heading2 className="h-3.5 w-3.5" />
       </button>
-      <button type="button" onClick={() => onInsert("\n### ")} className="rounded p-1 hover:bg-accent" title="Heading 3">
+      <button
+        type="button"
+        onClick={() => onInsert("\n### ")}
+        className="hover:bg-accent rounded p-1"
+        title="Heading 3"
+      >
         <Heading3 className="h-3.5 w-3.5" />
       </button>
-      <button type="button" onClick={() => onInsert("[", "](url)")} className="rounded p-1 hover:bg-accent" title="Link">
+      <button
+        type="button"
+        onClick={() => onInsert("[", "](url)")}
+        className="hover:bg-accent rounded p-1"
+        title="Link"
+      >
         <Link2 className="h-3.5 w-3.5" />
       </button>
-      <button type="button" onClick={() => onInsert("\n- ")} className="rounded p-1 hover:bg-accent" title="List">
+      <button
+        type="button"
+        onClick={() => onInsert("\n- ")}
+        className="hover:bg-accent rounded p-1"
+        title="List"
+      >
         <List className="h-3.5 w-3.5" />
       </button>
-      <button type="button" onClick={() => onInsert("![alt](", ")")} className="rounded p-1 hover:bg-accent" title="Image">
+      <button
+        type="button"
+        onClick={() => onInsert("![alt](", ")")}
+        className="hover:bg-accent rounded p-1"
+        title="Image"
+      >
         <ImageIcon className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -230,13 +292,16 @@ function ImageManager({
 
   return (
     <div className="space-y-2">
-      <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+      <label className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
         Images ({photos.length}/10)
       </label>
       {photos.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {photos.map((url, i) => (
-            <div key={i} className="group relative h-14 w-14 overflow-hidden rounded-md border border-border">
+            <div
+              key={i}
+              className="group border-border relative h-14 w-14 overflow-hidden rounded-md border"
+            >
               <img src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
               <button
                 type="button"
@@ -263,7 +328,7 @@ function ImageManager({
             type="button"
             onClick={addUrl}
             disabled={!newUrl.trim()}
-            className="flex-shrink-0 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+            className="bg-primary text-primary-foreground shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium disabled:opacity-50"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -293,7 +358,7 @@ function StorylineSelector({
 
   const { data: storylines } = api.geo.getStorylinesByCountry.useQuery(
     { countryId },
-    { staleTime: 60_000, enabled: !!countryId },
+    { staleTime: 60_000, enabled: !!countryId }
   );
 
   const utils = api.useUtils();
@@ -308,7 +373,7 @@ function StorylineSelector({
 
   return (
     <div className="space-y-1.5">
-      <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+      <label className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
         Storyline
       </label>
       <select
@@ -350,14 +415,17 @@ function StorylineSelector({
               }
             }}
             disabled={!newTitle.trim() || createStoryline.isPending}
-            className="flex-shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-50"
           >
             {createStoryline.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Create"}
           </button>
           <button
             type="button"
-            onClick={() => { setShowCreate(false); setNewTitle(""); }}
-            className="flex-shrink-0 rounded-lg bg-muted px-2 py-1.5 text-xs"
+            onClick={() => {
+              setShowCreate(false);
+              setNewTitle("");
+            }}
+            className="bg-muted shrink-0 rounded-lg px-2 py-1.5 text-xs"
           >
             <X className="h-3 w-3" />
           </button>
@@ -443,22 +511,26 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
   const photos = form.photos ?? [];
 
   // Insert markdown syntax at cursor position
-  const insertMarkdown = useCallback((before: string, after?: string) => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const text = form.content;
-    const selected = text.substring(start, end);
-    const newText = text.substring(0, start) + before + selected + (after ?? "") + text.substring(end);
-    onChange({ ...form, content: newText });
-    // Restore cursor
-    requestAnimationFrame(() => {
-      ta.focus();
-      const newPos = start + before.length + selected.length + (after?.length ?? 0);
-      ta.setSelectionRange(newPos, newPos);
-    });
-  }, [form, onChange]);
+  const insertMarkdown = useCallback(
+    (before: string, after?: string) => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const text = form.content;
+      const selected = text.substring(start, end);
+      const newText =
+        text.substring(0, start) + before + selected + (after ?? "") + text.substring(end);
+      onChange({ ...form, content: newText });
+      // Restore cursor
+      requestAnimationFrame(() => {
+        ta.focus();
+        const newPos = start + before.length + selected.length + (after?.length ?? 0);
+        ta.setSelectionRange(newPos, newPos);
+      });
+    },
+    [form, onChange]
+  );
 
   return (
     <div className="space-y-3">
@@ -516,9 +588,7 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
           type="text"
           placeholder="Era Label"
           value={form.eraLabel ?? ""}
-          onChange={(e) =>
-            onChange({ ...form, eraLabel: e.target.value || undefined })
-          }
+          onChange={(e) => onChange({ ...form, eraLabel: e.target.value || undefined })}
           className={inputClasses}
         />
       </div>
@@ -526,7 +596,7 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
       {/* Content format toggle + editor */}
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+          <label className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
             Content
           </label>
           <div className="flex items-center gap-1.5">
@@ -540,7 +610,9 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
             </button>
             <button
               type="button"
-              onClick={() => onChange({ ...form, contentFormat: isMarkdown ? "plain" : "markdown" })}
+              onClick={() =>
+                onChange({ ...form, contentFormat: isMarkdown ? "plain" : "markdown" })
+              }
               className={`${btnSmall} ${isMarkdown ? "bg-purple-500/10 text-purple-600" : "bg-muted text-muted-foreground hover:text-foreground"}`}
             >
               {isMarkdown ? "Markdown" : "Plain Text"}
@@ -549,12 +621,16 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
         </div>
 
         {showPreview ? (
-          <div className="min-h-[100px] rounded-lg border border-border bg-background p-3 prose prose-sm max-w-none dark:prose-invert">
+          <div className="border-border bg-background prose prose-sm dark:prose-invert min-h-[100px] max-w-none rounded-lg border p-3">
             {isMarkdown ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{form.content || "*No content yet*"}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {form.content || "*No content yet*"}
+              </ReactMarkdown>
             ) : (
               form.content.split("\n\n").map((para, i) => (
-                <p key={i} className="text-sm">{para}</p>
+                <p key={i} className="text-sm">
+                  {para}
+                </p>
               ))
             )}
           </div>
@@ -572,14 +648,14 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
             />
           </div>
         )}
-        <div className="text-right text-[10px] text-muted-foreground">
+        <div className="text-muted-foreground text-right text-[10px]">
           {form.content.length}/15000
         </div>
       </div>
 
       {/* Wiki integration */}
       <div className="space-y-1.5">
-        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+        <label className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
           Wiki Page Link
         </label>
         <WikiSearchInput
@@ -610,11 +686,13 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
       {/* Image management */}
       <ImageManager
         photos={photos}
-        onChange={(newPhotos) => onChange({
-          ...form,
-          photos: newPhotos,
-          thumbnailUrl: newPhotos.length > 0 ? newPhotos[0] : form.thumbnailUrl,
-        })}
+        onChange={(newPhotos) =>
+          onChange({
+            ...form,
+            photos: newPhotos,
+            thumbnailUrl: newPhotos.length > 0 ? newPhotos[0] : form.thumbnailUrl,
+          })
+        }
       />
 
       {/* Storyline */}

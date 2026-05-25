@@ -7,7 +7,12 @@
  */
 
 import { ELEVATION_ZONES, type ElevationZoneConfig } from "./elevation-config";
-import { CLIMATE_TYPES, CLIMATE_NAMES, CLIMATE_COLORS, type IxWorldClimate } from "./procedural-archive/climate-system";
+import {
+  CLIMATE_TYPES,
+  CLIMATE_NAMES,
+  CLIMATE_COLORS,
+  type IxWorldClimate,
+} from "./procedural-archive/climate-system";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [
@@ -27,12 +32,7 @@ export const MAP_LAYER_TYPES = [
 export type MapLayerType = (typeof MAP_LAYER_TYPES)[number];
 
 /** Countries whose labels are demoted (only shown at high zoom) */
-export const DEMOTED_COUNTRY_NAMES = [
-  "Ugarit",
-  "Orenstia",
-  "Trade Island 5",
-] as const;
-
+export const DEMOTED_COUNTRY_NAMES = ["Ugarit", "Orenstia", "Trade Island 5"] as const;
 
 /** Layer rendering configuration */
 export interface LayerConfig {
@@ -157,7 +157,11 @@ export const MAP_DEFAULTS = {
 export type ProjectionMode = "dynamic" | "globe" | "mercator";
 
 export const PROJECTION_MODES: { mode: ProjectionMode; label: string; title: string }[] = [
-  { mode: "dynamic", label: "Auto", title: "Dynamic projection (globe at low zoom, flat at high zoom)" },
+  {
+    mode: "dynamic",
+    label: "Auto",
+    title: "Dynamic projection (globe at low zoom, flat at high zoom)",
+  },
   { mode: "globe", label: "Globe", title: "Lock to globe projection" },
   { mode: "mercator", label: "Flat", title: "Lock to flat (Mercator) projection" },
 ];
@@ -221,9 +225,7 @@ export function getCountryColor(featureId: string): string {
     hash = featureId.charCodeAt(i) + ((hash << 5) - hash);
     hash = hash & hash;
   }
-  return DEFAULT_COUNTRY_COLORS[
-    Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length
-  ];
+  return DEFAULT_COUNTRY_COLORS[Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length];
 }
 
 // ──────────────────────────────────────────────
@@ -282,13 +284,9 @@ function hexToRgb(hex: string): [number, number, number] {
   if (!hex || typeof hex !== "string") return [0, 0, 0];
   const h = hex.replace("#", "");
   if (h.length !== 6 && h.length !== 3) return [0, 0, 0];
-  
+
   if (h.length === 3) {
-    return [
-      parseInt(h[0] + h[0], 16),
-      parseInt(h[1] + h[1], 16),
-      parseInt(h[2] + h[2], 16),
-    ];
+    return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
   }
 
   return [
@@ -322,7 +320,7 @@ export function blendColors(color1: string, color2: string, ratio: number): stri
   const [r1, g1, b1] = hexToRgb(color1);
   const [r2, g2, b2] = hexToRgb(color2);
   const safeRatio = isNaN(ratio) ? 0 : Math.max(0, Math.min(1, ratio));
-  
+
   return rgbToHex(
     r1 + (r2 - r1) * safeRatio,
     g1 + (g2 - g1) * safeRatio,
@@ -366,9 +364,7 @@ export function getElevationLegend(): ElevationLegendEntry[] {
     label: z.zoneName,
     color: z.color.slice(0, 7), // Strip alpha for CSS
     elevationRange:
-      z.elevationMax >= 9999
-        ? `${z.elevationMin}m+`
-        : `${z.elevationMin}-${z.elevationMax}m`,
+      z.elevationMax >= 9999 ? `${z.elevationMin}m+` : `${z.elevationMin}-${z.elevationMax}m`,
   }));
 }
 
@@ -417,153 +413,213 @@ export const WATER_BODY_LABELS: WaterBodyLabel[] = [
   {
     name: "Levantine Ocean",
     coordinates: [115, 32],
-    type: "ocean", rank: "major",
+    type: "ocean",
+    rank: "major",
     bounds: [70, 5, 165, 60],
-    areaMKm2: 82.4, avgDepthM: 3680, maxDepthM: 10200,
+    areaMKm2: 82.4,
+    avgDepthM: 3680,
+    maxDepthM: 10200,
     borders: ["Daxia", "Oyashima", "Metzetta", "Rusana"],
   },
   {
     name: "Ocean of Cathay",
     coordinates: [175, -30],
-    type: "ocean", rank: "major",
+    type: "ocean",
+    rank: "major",
     bounds: [140, -65, -140, 5],
-    areaMKm2: 96.5, avgDepthM: 4050, maxDepthM: 11000,
+    areaMKm2: 96.5,
+    avgDepthM: 4050,
+    maxDepthM: 11000,
     borders: ["Oyashima", "Tapakdore"],
   },
   {
     name: "Odoneru Ocean",
     coordinates: [-15, 20],
-    type: "ocean", rank: "major",
+    type: "ocean",
+    rank: "major",
     bounds: [-60, -30, 30, 55],
-    areaMKm2: 68.8, avgDepthM: 3350, maxDepthM: 8600,
+    areaMKm2: 68.8,
+    avgDepthM: 3350,
+    maxDepthM: 8600,
     borders: ["Cartadania", "Caphiria", "Urcea", "Pelaxia", "Burgundie"],
   },
   {
     name: "Absurian Ocean",
     coordinates: [30, -62],
-    type: "ocean", rank: "major",
+    type: "ocean",
+    rank: "major",
     bounds: [-30, -80, 90, -45],
-    areaMKm2: 35.2, avgDepthM: 3700, maxDepthM: 7200,
+    areaMKm2: 35.2,
+    avgDepthM: 3700,
+    maxDepthM: 7200,
   },
 
   // ── Seas ──
   {
     name: "Kilikas Sea",
     coordinates: [25, 58],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [10, 52, 40, 64],
-    areaMKm2: 1.8, avgDepthM: 180, maxDepthM: 460,
+    areaMKm2: 1.8,
+    avgDepthM: 180,
+    maxDepthM: 460,
     borders: ["Urcea", "Burgundie"],
   },
   {
     name: "Sea of Nordska",
     coordinates: [98, 52],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [78, 44, 118, 60],
-    areaMKm2: 3.2, avgDepthM: 280, maxDepthM: 1100,
+    areaMKm2: 3.2,
+    avgDepthM: 280,
+    maxDepthM: 1100,
     borders: ["Daxia", "Rusana"],
   },
   {
     name: "Sea of Capean",
     coordinates: [160, 42],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [145, 35, 175, 50],
-    areaMKm2: 2.1, avgDepthM: 350, maxDepthM: 1800,
+    areaMKm2: 2.1,
+    avgDepthM: 350,
+    maxDepthM: 1800,
   },
   {
     name: "Sea of Canete",
     coordinates: [55, -9],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [40, -18, 70, 0],
-    areaMKm2: 2.8, avgDepthM: 420, maxDepthM: 2200,
+    areaMKm2: 2.8,
+    avgDepthM: 420,
+    maxDepthM: 2200,
     borders: ["Caphiria", "Cartadania"],
   },
   {
     name: "Sea of Istroya",
     coordinates: [85, -5],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [70, -15, 100, 5],
-    areaMKm2: 2.4, avgDepthM: 380, maxDepthM: 1900,
+    areaMKm2: 2.4,
+    avgDepthM: 380,
+    maxDepthM: 1900,
     borders: ["Metzetta"],
   },
   {
     name: "Tainean Sea",
     coordinates: [-10, -12],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [-25, -20, 5, -4],
-    areaMKm2: 1.6, avgDepthM: 320, maxDepthM: 1400,
+    areaMKm2: 1.6,
+    avgDepthM: 320,
+    maxDepthM: 1400,
     borders: ["Cartadania", "Pelaxia"],
   },
   {
     name: "Kindreds Sea",
     coordinates: [-8, -28],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [-22, -36, 6, -20],
-    areaMKm2: 1.9, avgDepthM: 290, maxDepthM: 1200,
+    areaMKm2: 1.9,
+    avgDepthM: 290,
+    maxDepthM: 1200,
     borders: ["Cartadania"],
   },
   {
     name: "Founders Sea",
     coordinates: [80, -40],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [60, -50, 100, -30],
-    areaMKm2: 3.5, avgDepthM: 450, maxDepthM: 2800,
+    areaMKm2: 3.5,
+    avgDepthM: 450,
+    maxDepthM: 2800,
   },
   {
     name: "Pukhtun Sea",
     coordinates: [145, -25],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [130, -35, 160, -15],
-    areaMKm2: 2.6, avgDepthM: 360, maxDepthM: 1600,
+    areaMKm2: 2.6,
+    avgDepthM: 360,
+    maxDepthM: 1600,
   },
   {
     name: "Great Expanse",
     coordinates: [168, -5],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [155, -15, 180, 5],
-    areaMKm2: 4.1, avgDepthM: 480, maxDepthM: 3200,
+    areaMKm2: 4.1,
+    avgDepthM: 480,
+    maxDepthM: 3200,
   },
   {
     name: "Sea of St. John",
     coordinates: [-140, 15],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [-160, 5, -120, 25],
-    areaMKm2: 3.0, avgDepthM: 400, maxDepthM: 2500,
+    areaMKm2: 3.0,
+    avgDepthM: 400,
+    maxDepthM: 2500,
   },
   {
     name: "Albion Sea",
     coordinates: [-58, 55],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [-75, 45, -40, 65],
-    areaMKm2: 2.3, avgDepthM: 250, maxDepthM: 900,
+    areaMKm2: 2.3,
+    avgDepthM: 250,
+    maxDepthM: 900,
   },
   {
     name: "Sea of Orixtal",
     coordinates: [-110, -18],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [-130, -28, -90, -8],
-    areaMKm2: 3.4, avgDepthM: 380, maxDepthM: 2100,
+    areaMKm2: 3.4,
+    avgDepthM: 380,
+    maxDepthM: 2100,
   },
   {
     name: "Polynesian Sea",
     coordinates: [-55, -30],
-    type: "sea", rank: "medium",
+    type: "sea",
+    rank: "medium",
     bounds: [-70, -40, -40, -20],
-    areaMKm2: 2.0, avgDepthM: 300, maxDepthM: 1300,
+    areaMKm2: 2.0,
+    avgDepthM: 300,
+    maxDepthM: 1300,
   },
   {
     name: "Okatian Sea",
     coordinates: [-70, -45],
-    type: "sea", rank: "minor",
+    type: "sea",
+    rank: "minor",
     bounds: [-85, -52, -55, -38],
-    areaMKm2: 1.2, avgDepthM: 220, maxDepthM: 800,
+    areaMKm2: 1.2,
+    avgDepthM: 220,
+    maxDepthM: 800,
   },
   {
     name: "Barbary Straits",
     coordinates: [115, 2],
-    type: "strait", rank: "minor",
+    type: "strait",
+    rank: "minor",
     bounds: [108, -3, 122, 7],
-    areaMKm2: 0.4, avgDepthM: 80, maxDepthM: 280,
+    areaMKm2: 0.4,
+    avgDepthM: 80,
+    maxDepthM: 280,
   },
 ];
 
@@ -628,7 +684,16 @@ export interface WorldMapConfig {
   climateSystem: string;
   oceanColor: string;
   countryColors: string[];
-  waterBodyLabels: Array<{ name: string; lng: number; lat: number; type: string; areaMKm2: number; avgDepthM: number; maxDepthM: number; borders?: string[] }>;
+  waterBodyLabels: Array<{
+    name: string;
+    lng: number;
+    lat: number;
+    type: string;
+    areaMKm2: number;
+    avgDepthM: number;
+    maxDepthM: number;
+    borders?: string[];
+  }>;
   layerConfigs: Record<MapLayerType, LayerConfig>;
   sovereigntyTypes: typeof SOVEREIGNTY_TYPE_MAP;
   elevationZones: readonly ElevationZoneConfig[];
@@ -709,7 +774,11 @@ export function loadWorldConfigFromDB(dbConfig: {
     layerTypes: (dbConfig.layerTypes as MapLayerType[]) ?? IXWORLD_DEFAULTS.layerTypes,
     climateSystem: dbConfig.climateSystem ?? IXWORLD_DEFAULTS.climateSystem,
     countryColors: (dbConfig.countryColors as string[]) ?? IXWORLD_DEFAULTS.countryColors,
-    waterBodyLabels: (dbConfig.waterBodyLabels as WorldMapConfig["waterBodyLabels"]) ?? IXWORLD_DEFAULTS.waterBodyLabels,
-    elevationZones: (dbConfig.elevationZones as readonly ElevationZoneConfig[]) ?? IXWORLD_DEFAULTS.elevationZones,
+    waterBodyLabels:
+      (dbConfig.waterBodyLabels as WorldMapConfig["waterBodyLabels"]) ??
+      IXWORLD_DEFAULTS.waterBodyLabels,
+    elevationZones:
+      (dbConfig.elevationZones as readonly ElevationZoneConfig[]) ??
+      IXWORLD_DEFAULTS.elevationZones,
   };
 }

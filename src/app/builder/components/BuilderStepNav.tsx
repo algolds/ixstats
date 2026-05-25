@@ -85,7 +85,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
               {index > 0 && (
                 <div
                   className={cn(
-                    "hidden h-px w-3 flex-shrink-0 transition-colors duration-300 sm:block lg:w-5",
+                    "hidden h-px w-3 shrink-0 transition-colors duration-300 sm:block lg:w-5",
                     completed || isStepCompleted(HEADER_NAV_STEPS[index - 1]!)
                       ? "bg-emerald-500/50"
                       : "bg-border/40"
@@ -128,15 +128,15 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                 <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
                   {/* Step number / completion indicator */}
                   {completed && !active ? (
-                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
                       <Check className="h-3 w-3" />
                     </span>
                   ) : !accessible ? (
-                    <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+                    <Lock className="h-3.5 w-3.5 shrink-0" />
                   ) : (
                     <span
                       className={cn(
-                        "flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
                         active ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
                       )}
                     >
@@ -148,7 +148,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                   <Icon
                     size={14}
                     className={cn(
-                      "flex-shrink-0 transition-transform duration-150",
+                      "shrink-0 transition-transform duration-150",
                       !active && accessible && "group-hover:scale-110"
                     )}
                   />

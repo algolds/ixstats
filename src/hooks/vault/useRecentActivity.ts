@@ -20,13 +20,14 @@ export function useRecentActivity() {
     offset: 0,
   });
 
-  const activities: RecentActivity[] = data?.transactions.map((tx) => ({
-    id: tx.id,
-    type: tx.type,
-    amount: tx.amount,
-    source: tx.source,
-    createdAt: tx.createdAt,
-  })) ?? [];
+  const activities: RecentActivity[] =
+    data?.transactions.map((tx) => ({
+      id: tx.id,
+      type: tx.type,
+      amount: tx.amount,
+      source: tx.source,
+      createdAt: tx.createdAt,
+    })) ?? [];
 
   return {
     activities,

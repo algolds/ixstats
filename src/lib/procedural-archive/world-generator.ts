@@ -43,14 +43,14 @@ import { generateTradeRoutes } from "./trade-routes";
 
 export interface WorldGenParams {
   seed: number;
-  continentCount: number;      // 1-8, default 4
+  continentCount: number; // 1-8, default 4
   countryCountRange: [number, number]; // default [20, 60]
-  oceanPercentage: number;     // 0.4-0.8, default 0.65
-  terrainRoughness: number;    // 0-1, default 0.5
-  hasIcecaps: boolean;         // default true
-  hasRivers: boolean;          // default true
-  hasLakes: boolean;           // default true
-  gridResolution: number;      // 256-1024, default 512
+  oceanPercentage: number; // 0.4-0.8, default 0.65
+  terrainRoughness: number; // 0-1, default 0.5
+  hasIcecaps: boolean; // default true
+  hasRivers: boolean; // default true
+  hasLakes: boolean; // default true
+  gridResolution: number; // 256-1024, default 512
   /** 0.0 = fully random (legacy), 1.0 = tightly match profile */
   similarity?: number;
   /** Which world profile to target. Default: "IxWorld" */
@@ -105,7 +105,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
   hasRivers: true,
   hasLakes: true,
   gridResolution: 512, // Quality default — matches IxWorld fidelity
-  similarity: 0.5,     // Moderate profile matching for realistic output
+  similarity: 0.5, // Moderate profile matching for realistic output
   profileName: "IxWorld",
   erosionIntensity: 0.8, // Aggressive erosion for natural terrain
   climateDetail: "full",
@@ -121,7 +121,7 @@ export const PRESETS: Record<string, Partial<WorldGenParams>> = {
     hasIcecaps: true,
     hasRivers: true,
     hasLakes: true,
-    gridResolution: 512,  // Higher res for more altitude/terrain detail
+    gridResolution: 512, // Higher res for more altitude/terrain detail
     similarity: 0.8,
     profileName: "IxWorld",
   },
@@ -204,9 +204,7 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
 function generateWorldTectonic(params: WorldGenParams, startTime: number): GeneratedWorld {
   const similarity = params.similarity ?? 0;
   const profile: WorldProfile | undefined =
-    similarity > 0 && params.profileName
-      ? resolveProfile(params.profileName)
-      : undefined;
+    similarity > 0 && params.profileName ? resolveProfile(params.profileName) : undefined;
 
   const width = params.gridResolution;
   const height = Math.round(params.gridResolution * 0.6);
@@ -254,15 +252,8 @@ function generateWorldTectonic(params: WorldGenParams, startTime: number): Gener
   };
   const landResult = extractLandPolygons(heightmapResult);
   const simplifyTolerance =
-    params.gridResolution <= 256
-      ? 0.3
-      : params.gridResolution <= 512
-        ? 0.2
-        : 0.1;
-  const landPolygons = simplifyPolygons(
-    landResult.landPolygons,
-    simplifyTolerance
-  );
+    params.gridResolution <= 256 ? 0.3 : params.gridResolution <= 512 ? 0.2 : 0.1;
+  const landPolygons = simplifyPolygons(landResult.landPolygons, simplifyTolerance);
 
   // ── Step 5: Generate countries (with Markov naming if enabled) ──
   let namingSystem: WorldNamingSystem | undefined;
@@ -352,7 +343,8 @@ function generateWorldTectonic(params: WorldGenParams, startTime: number): Gener
       1200
     );
 
-    const riverColor = LAYER_CONFIGS.rivers.strokeColor ?? LAYER_CONFIGS.rivers.fillColor as string;
+    const riverColor =
+      LAYER_CONFIGS.rivers.strokeColor ?? (LAYER_CONFIGS.rivers.fillColor as string);
     const meanderNoise = createNoise(params.seed + 410);
     riverFeatures = {
       type: "FeatureCollection",
@@ -452,10 +444,7 @@ function generateWorldTectonic(params: WorldGenParams, startTime: number): Gener
   });
 
   // ── Step 15: Assemble + Validate ──
-  const capFeatures = (
-    fc: FeatureCollection,
-    max: number
-  ): FeatureCollection => {
+  const capFeatures = (fc: FeatureCollection, max: number): FeatureCollection => {
     if (fc.features.length <= max) return fc;
     return { type: "FeatureCollection", features: fc.features.slice(0, max) };
   };
@@ -475,22 +464,15 @@ function generateWorldTectonic(params: WorldGenParams, startTime: number): Gener
     layers.icecaps = icecapFeatures;
   }
 
-  const validation = validateGeneratedWorld(
-    countryResult.countries,
-    profile ?? null
-  );
+  const validation = validateGeneratedWorld(countryResult.countries, profile ?? null);
 
   const generationTimeMs = performance.now() - startTime;
 
   const areas = countryResult.countries.map((c) => c.areaKm2);
   const areaGini = computeGini(areas);
-  const landlockedCount = countryResult.countries.filter(
-    (c) => c.coastalPerimeter === 0
-  ).length;
+  const landlockedCount = countryResult.countries.filter((c) => c.coastalPerimeter === 0).length;
   const landlockedRatio =
-    countryResult.countries.length > 0
-      ? landlockedCount / countryResult.countries.length
-      : 0;
+    countryResult.countries.length > 0 ? landlockedCount / countryResult.countries.length : 0;
 
   return {
     seed: params.seed,
@@ -524,9 +506,7 @@ function generateWorldTectonic(params: WorldGenParams, startTime: number): Gener
 function generateWorldLegacy(params: WorldGenParams, startTime: number): GeneratedWorld {
   const similarity = params.similarity ?? 0;
   const profile: WorldProfile | undefined =
-    similarity > 0 && params.profileName
-      ? resolveProfile(params.profileName)
-      : undefined;
+    similarity > 0 && params.profileName ? resolveProfile(params.profileName) : undefined;
 
   // Step 1: Generate landmasses
   const landmassParams: LandmassParams = {
@@ -543,15 +523,8 @@ function generateWorldLegacy(params: WorldGenParams, startTime: number): Generat
   const heightmapResult = generateHeightmap(landmassParams);
   const landResult = extractLandPolygons(heightmapResult);
   const simplifyTolerance =
-    params.gridResolution <= 256
-      ? 0.3
-      : params.gridResolution <= 512
-        ? 0.2
-        : 0.1;
-  const landPolygons = simplifyPolygons(
-    landResult.landPolygons,
-    simplifyTolerance
-  );
+    params.gridResolution <= 256 ? 0.3 : params.gridResolution <= 512 ? 0.2 : 0.1;
+  const landPolygons = simplifyPolygons(landResult.landPolygons, simplifyTolerance);
 
   // Step 2: Generate countries (with Markov naming if enabled)
   let legacyNaming: WorldNamingSystem | undefined;
@@ -598,10 +571,7 @@ function generateWorldLegacy(params: WorldGenParams, startTime: number): Generat
     hasLakes: params.hasLakes,
   });
 
-  const capFeatures = (
-    fc: FeatureCollection,
-    max: number
-  ): FeatureCollection => {
+  const capFeatures = (fc: FeatureCollection, max: number): FeatureCollection => {
     if (fc.features.length <= max) return fc;
     return { type: "FeatureCollection", features: fc.features.slice(0, max) };
   };
@@ -618,22 +588,15 @@ function generateWorldLegacy(params: WorldGenParams, startTime: number): Generat
     layers.icecaps = terrainResult.icecapFeatures;
   }
 
-  const validation = validateGeneratedWorld(
-    countryResult.countries,
-    profile ?? null
-  );
+  const validation = validateGeneratedWorld(countryResult.countries, profile ?? null);
 
   const generationTimeMs = performance.now() - startTime;
 
   const areas = countryResult.countries.map((c) => c.areaKm2);
   const areaGini = computeGini(areas);
-  const landlockedCount = countryResult.countries.filter(
-    (c) => c.coastalPerimeter === 0
-  ).length;
+  const landlockedCount = countryResult.countries.filter((c) => c.coastalPerimeter === 0).length;
   const landlockedRatio =
-    countryResult.countries.length > 0
-      ? landlockedCount / countryResult.countries.length
-      : 0;
+    countryResult.countries.length > 0 ? landlockedCount / countryResult.countries.length : 0;
 
   return {
     seed: params.seed,
@@ -665,8 +628,24 @@ function generateWorldLegacy(params: WorldGenParams, startTime: number): Generat
 function generateRiverName(seed: number): string {
   let s = seed | 0;
   if (s === 0) s = 1;
-  const rng = () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (s >>> 0) / 0xffffffff; };
-  const prefixes = ["Great", "Blue", "White", "Green", "Red", "Silver", "Golden", "Dark", "Clear", "Long"];
+  const rng = () => {
+    s ^= s << 13;
+    s ^= s >> 17;
+    s ^= s << 5;
+    return (s >>> 0) / 0xffffffff;
+  };
+  const prefixes = [
+    "Great",
+    "Blue",
+    "White",
+    "Green",
+    "Red",
+    "Silver",
+    "Golden",
+    "Dark",
+    "Clear",
+    "Long",
+  ];
   const roots = ["water", "stream", "flow", "run", "brook", "bourne", "wye", "avon", "don", "ouse"];
   return `${prefixes[Math.floor(rng() * prefixes.length)]} ${roots[Math.floor(rng() * roots.length)]}`;
 }

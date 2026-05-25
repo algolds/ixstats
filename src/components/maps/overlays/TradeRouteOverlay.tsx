@@ -21,7 +21,12 @@ interface TradeRouteOverlayProps {
   maxVolume?: number;
 }
 
-export function TradeRouteOverlay({ map, data, visible, maxVolume = 1e12 }: TradeRouteOverlayProps) {
+export function TradeRouteOverlay({
+  map,
+  data,
+  visible,
+  maxVolume = 1e12,
+}: TradeRouteOverlayProps) {
   const addedRef = useRef(false);
 
   useEffect(() => {
@@ -42,11 +47,17 @@ export function TradeRouteOverlay({ map, data, visible, maxVolume = 1e12 }: Trad
         paint: {
           "line-color": ["get", "balanceColor"],
           "line-width": [
-            "interpolate", ["linear"], ["get", "volume"],
-            0, 1,
-            maxVolume * 0.1, 2,
-            maxVolume * 0.5, 4,
-            maxVolume, 6,
+            "interpolate",
+            ["linear"],
+            ["get", "volume"],
+            0,
+            1,
+            maxVolume * 0.1,
+            2,
+            maxVolume * 0.5,
+            4,
+            maxVolume,
+            6,
           ],
           "line-opacity": 0.6,
         },
@@ -67,7 +78,9 @@ export function TradeRouteOverlay({ map, data, visible, maxVolume = 1e12 }: Trad
       try {
         if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
         if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
-      } catch { /* map may be destroyed */ }
+      } catch {
+        /* map may be destroyed */
+      }
       addedRef.current = false;
     };
   }, [map]);

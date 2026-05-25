@@ -5,7 +5,12 @@
  */
 
 import { CardRarity } from "~/lib/card-enums";
-import type { CardInstance, FormattedStats, RarityConfig, CardDisplaySize } from "~/types/cards-display";
+import type {
+  CardInstance,
+  FormattedStats,
+  RarityConfig,
+  CardDisplaySize,
+} from "~/types/cards-display";
 
 /**
  * Rarity constants (matching database string values)
@@ -19,7 +24,7 @@ export const CARD_RARITIES = {
   LEGENDARY: "LEGENDARY",
 } as const;
 
-export type CardRarityType = typeof CARD_RARITIES[keyof typeof CARD_RARITIES];
+export type CardRarityType = (typeof CARD_RARITIES)[keyof typeof CARD_RARITIES];
 
 /**
  * Rarity color mappings with Tailwind classes
@@ -114,15 +119,18 @@ export function getRarityVisualHierarchy(rarity: string): {
   backgroundTexture: string;
   badgeStyle: string;
 } {
-  const configs: Record<string, {
-    primaryColor: string;
-    secondaryColor: string;
-    tertiaryColor?: string;
-    borderGradient: string;
-    glowAnimation: string;
-    backgroundTexture: string;
-    badgeStyle: string;
-  }> = {
+  const configs: Record<
+    string,
+    {
+      primaryColor: string;
+      secondaryColor: string;
+      tertiaryColor?: string;
+      borderGradient: string;
+      glowAnimation: string;
+      backgroundTexture: string;
+      badgeStyle: string;
+    }
+  > = {
     [CARD_RARITIES.COMMON]: {
       primaryColor: "#94a3b8", // slate-400
       secondaryColor: "#64748b", // slate-500
@@ -136,7 +144,8 @@ export function getRarityVisualHierarchy(rarity: string): {
       secondaryColor: "#10b981", // emerald-500
       borderGradient: "linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%)",
       glowAnimation: "pulse-subtle 3s ease-in-out infinite",
-      backgroundTexture: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(16, 185, 129, 0.05) 10px, rgba(16, 185, 129, 0.05) 20px)",
+      backgroundTexture:
+        "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(16, 185, 129, 0.05) 10px, rgba(16, 185, 129, 0.05) 20px)",
       badgeStyle: "bg-emerald-500/30 border-emerald-400/50",
     },
     [CARD_RARITIES.RARE]: {
@@ -145,35 +154,43 @@ export function getRarityVisualHierarchy(rarity: string): {
       tertiaryColor: "#0891b2", // cyan-600
       borderGradient: "linear-gradient(135deg, #67e8f9 0%, #22d3ee 33%, #06b6d4 66%, #0891b2 100%)",
       glowAnimation: "pulse-medium 2.5s ease-in-out infinite",
-      backgroundTexture: "radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%)",
+      backgroundTexture:
+        "radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%)",
       badgeStyle: "bg-cyan-500/40 border-cyan-400/60",
     },
     [CARD_RARITIES.ULTRA_RARE]: {
       primaryColor: "#a78bfa", // violet-400
       secondaryColor: "#8b5cf6", // violet-500
       tertiaryColor: "#7c3aed", // violet-600
-      borderGradient: "linear-gradient(135deg, #c4b5fd 0%, #a78bfa 25%, #8b5cf6 50%, #7c3aed 75%, #6d28d9 100%)",
+      borderGradient:
+        "linear-gradient(135deg, #c4b5fd 0%, #a78bfa 25%, #8b5cf6 50%, #7c3aed 75%, #6d28d9 100%)",
       glowAnimation: "pulse-intense 2s ease-in-out infinite",
-      backgroundTexture: "conic-gradient(from 45deg at 50% 50%, rgba(167, 139, 250, 0.1), rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.1))",
+      backgroundTexture:
+        "conic-gradient(from 45deg at 50% 50%, rgba(167, 139, 250, 0.1), rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.1))",
       badgeStyle: "bg-violet-500/50 border-violet-400/70",
     },
     [CARD_RARITIES.EPIC]: {
       primaryColor: "#fb923c", // orange-400
       secondaryColor: "#f97316", // orange-500
       tertiaryColor: "#ef4444", // red-500
-      borderGradient: "linear-gradient(135deg, #fdba74 0%, #fb923c 20%, #f97316 40%, #ea580c 60%, #ef4444 80%, #dc2626 100%)",
+      borderGradient:
+        "linear-gradient(135deg, #fdba74 0%, #fb923c 20%, #f97316 40%, #ea580c 60%, #ef4444 80%, #dc2626 100%)",
       glowAnimation: "pulse-epic 1.5s ease-in-out infinite",
-      backgroundTexture: "radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.15) 0%, rgba(239, 68, 68, 0.1) 50%, transparent 100%)",
+      backgroundTexture:
+        "radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.15) 0%, rgba(239, 68, 68, 0.1) 50%, transparent 100%)",
       badgeStyle: "bg-gradient-to-r from-orange-500/60 to-red-500/60 border-orange-400/80",
     },
     [CARD_RARITIES.LEGENDARY]: {
       primaryColor: "#fcd34d", // yellow-300
       secondaryColor: "#f59e0b", // amber-500
       tertiaryColor: "#a855f7", // purple-500
-      borderGradient: "linear-gradient(135deg, #fef3c7 0%, #fcd34d 15%, #fbbf24 30%, #f59e0b 45%, #f97316 60%, #ef4444 75%, #a855f7 90%, #fcd34d 100%)",
+      borderGradient:
+        "linear-gradient(135deg, #fef3c7 0%, #fcd34d 15%, #fbbf24 30%, #f59e0b 45%, #f97316 60%, #ef4444 75%, #a855f7 90%, #fcd34d 100%)",
       glowAnimation: "pulse-legendary 1s ease-in-out infinite",
-      backgroundTexture: "conic-gradient(from 0deg at 50% 50%, rgba(252, 211, 77, 0.2), rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2), rgba(168, 85, 247, 0.2), rgba(252, 211, 77, 0.2))",
-      badgeStyle: "bg-gradient-to-r from-yellow-400/70 via-orange-400/70 to-purple-500/70 border-yellow-300/90",
+      backgroundTexture:
+        "conic-gradient(from 0deg at 50% 50%, rgba(252, 211, 77, 0.2), rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2), rgba(168, 85, 247, 0.2), rgba(252, 211, 77, 0.2))",
+      badgeStyle:
+        "bg-gradient-to-r from-yellow-400/70 via-orange-400/70 to-purple-500/70 border-yellow-300/90",
     },
   };
 
@@ -187,7 +204,7 @@ export function getRarityVisualHierarchy(rarity: string): {
  * @returns Formatted stats object with labels and colors
  */
 export function formatCardStats(card: CardInstance): FormattedStats {
-  let stats = card.stats as Record<string, number> || {};
+  let stats = (card.stats as Record<string, number>) || {};
 
   // For old lore cards: stats were stored in metadata.stats, not the stats column
   if (Object.keys(stats).length === 0 && card.metadata) {
@@ -312,12 +329,14 @@ export function getShimmerEffect(rarity: CardRarity, animated: boolean = true): 
   if (!animated) return "";
 
   // Only shimmer for rare+ cards
-  const shouldShimmer = ([
-    "RARE" as CardRarity,
-    "ULTRA_RARE" as CardRarity,
-    "EPIC" as CardRarity,
-    "LEGENDARY" as CardRarity,
-  ] as CardRarity[]).includes(rarity);
+  const shouldShimmer = (
+    [
+      "RARE" as CardRarity,
+      "ULTRA_RARE" as CardRarity,
+      "EPIC" as CardRarity,
+      "LEGENDARY" as CardRarity,
+    ] as CardRarity[]
+  ).includes(rarity);
 
   if (!shouldShimmer) return "";
 
@@ -356,7 +375,9 @@ export function getRarityPercentage(rarity: CardRarity): number {
  * @param owners - Array of card ownerships
  * @returns Formatted owner count
  */
-export function getOwnerCount(owners?: Array<{ userId: string; quantity: number; acquiredDate: Date; acquiredMethod: string }>): string {
+export function getOwnerCount(
+  owners?: Array<{ userId: string; quantity: number; acquiredDate: Date; acquiredMethod: string }>
+): string {
   if (!owners || owners.length === 0) return "No owners";
 
   // Each CardOwnership record represents one unique card instance

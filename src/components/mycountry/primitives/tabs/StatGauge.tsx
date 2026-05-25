@@ -130,7 +130,7 @@ export function StatGauge({
   // Determine status color based on thresholds
   const getStatusColor = () => {
     if (!thresholds) return colors.progress;
-    
+
     if (thresholds.high && safeValue >= thresholds.high) return "bg-green-500";
     if (thresholds.medium && safeValue >= thresholds.medium) return "bg-yellow-500";
     if (thresholds.low && safeValue >= thresholds.low) return "bg-orange-500";
@@ -140,24 +140,30 @@ export function StatGauge({
   // Trend icon
   const TrendIcon = () => {
     if (!trend) return null;
-    
+
     const icons = {
       up: TrendingUp,
       down: TrendingDown,
       stable: Minus,
     };
-    
+
     const TIcon = icons[trend.direction];
     const isPositive = trend.isGood !== undefined ? trend.isGood : trend.direction === "up";
-    
+
     return (
-      <div className={cn(
-        "flex items-center gap-1 text-xs",
-        isPositive ? "text-green-500" : "text-red-500"
-      )}>
+      <div
+        className={cn(
+          "flex items-center gap-1 text-xs",
+          isPositive ? "text-green-500" : "text-red-500"
+        )}
+      >
         <TIcon className="h-3 w-3" />
         {trend.value !== undefined && (
-          <span>{trend.value > 0 ? "+" : ""}{trend.value.toFixed(1)}{unit}</span>
+          <span>
+            {trend.value > 0 ? "+" : ""}
+            {trend.value.toFixed(1)}
+            {unit}
+          </span>
         )}
       </div>
     );
@@ -173,20 +179,20 @@ export function StatGauge({
         className
       )}
     >
-      <div className="flex items-start justify-between mb-2">
+      <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
           {Icon && (
-            <div className={cn("p-1.5 rounded-lg bg-gradient-to-br", colors.gradient)}>
+            <div className={cn("rounded-lg bg-gradient-to-br p-1.5", colors.gradient)}>
               <Icon className={cn(sizes.icon, "text-white")} />
             </div>
           )}
           <div>
             <div className="flex items-center gap-1">
-              <span className={cn(sizes.label, "font-medium text-muted-foreground")}>{label}</span>
+              <span className={cn(sizes.label, "text-muted-foreground font-medium")}>{label}</span>
               {description && (
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground" />
+                    <Info className="text-muted-foreground h-3 w-3" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">{description}</p>
@@ -206,14 +212,18 @@ export function StatGauge({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {value.toFixed(1)}{unit}
+            {value.toFixed(1)}
+            {unit}
           </motion.span>
         ) : (
-          <span>{value.toFixed(1)}{unit}</span>
+          <span>
+            {value.toFixed(1)}
+            {unit}
+          </span>
         )}
       </div>
 
-      <div className={cn("mt-2 bg-muted rounded-full overflow-hidden", sizes.progress)}>
+      <div className={cn("bg-muted mt-2 overflow-hidden rounded-full", sizes.progress)}>
         <motion.div
           className={cn("h-full rounded-full", getStatusColor())}
           initial={animate ? { width: 0 } : undefined}
@@ -223,8 +233,9 @@ export function StatGauge({
       </div>
 
       {safeMax !== 100 && (
-        <p className="text-xs text-muted-foreground mt-1">
-          of {safeMax.toLocaleString()}{unit !== "%" ? ` ${unit}` : ""}
+        <p className="text-muted-foreground mt-1 text-xs">
+          of {safeMax.toLocaleString()}
+          {unit !== "%" ? ` ${unit}` : ""}
         </p>
       )}
     </div>
@@ -296,7 +307,7 @@ export function DistributionBar({
   className = "",
 }: DistributionBarProps) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
-  
+
   const heightClass = {
     sm: "h-4",
     md: "h-6",
@@ -320,7 +331,7 @@ export function DistributionBar({
 
   return (
     <div className={className}>
-      <div className={cn("flex rounded-full overflow-hidden", heightClass[height])}>
+      <div className={cn("flex overflow-hidden rounded-full", heightClass[height])}>
         {segments.map((segment, index) => {
           const safeValue = segment.value ?? 0;
           const percentage = (safeValue / safeTotal) * 100;
@@ -329,7 +340,7 @@ export function DistributionBar({
               <TooltipTrigger asChild>
                 <motion.div
                   className={cn(
-                    "flex items-center justify-center cursor-help",
+                    "flex cursor-help items-center justify-center",
                     colorClasses[segment.color] || "bg-gray-500"
                   )}
                   initial={animate ? { width: 0 } : undefined}
@@ -341,15 +352,13 @@ export function DistributionBar({
                   }}
                 >
                   {showValues && percentage >= 10 && (
-                    <span className="text-xs font-medium text-white">
-                      {percentage.toFixed(0)}%
-                    </span>
+                    <span className="text-xs font-medium text-white">{percentage.toFixed(0)}%</span>
                   )}
                 </motion.div>
               </TooltipTrigger>
               <TooltipContent>
                 <p className="font-medium">{segment.label}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {percentage.toFixed(1)}% ({safeValue.toLocaleString()})
                 </p>
               </TooltipContent>
@@ -359,16 +368,13 @@ export function DistributionBar({
       </div>
 
       {showLabels && (
-        <div className="flex flex-wrap gap-3 mt-2">
+        <div className="mt-2 flex flex-wrap gap-3">
           {segments.map((segment) => (
             <div key={segment.label} className="flex items-center gap-1.5">
               <div
-                className={cn(
-                  "w-3 h-3 rounded-full",
-                  colorClasses[segment.color] || "bg-gray-500"
-                )}
+                className={cn("h-3 w-3 rounded-full", colorClasses[segment.color] || "bg-gray-500")}
               />
-              <span className="text-xs text-muted-foreground">{segment.label}</span>
+              <span className="text-muted-foreground text-xs">{segment.label}</span>
             </div>
           ))}
         </div>

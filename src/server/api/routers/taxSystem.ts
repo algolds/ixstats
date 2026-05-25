@@ -757,10 +757,16 @@ export const taxSystemRouter = createTRPCRouter({
             ...(data.baseRate !== undefined && { baseRate: data.baseRate }),
             ...(data.progressiveTax !== undefined && { progressiveTax: data.progressiveTax }),
             ...(data.flatTaxRate !== undefined && { flatTaxRate: data.flatTaxRate }),
-            ...(data.alternativeMinTax !== undefined && { alternativeMinTax: data.alternativeMinTax }),
-            ...(data.alternativeMinRate !== undefined && { alternativeMinRate: data.alternativeMinRate }),
+            ...(data.alternativeMinTax !== undefined && {
+              alternativeMinTax: data.alternativeMinTax,
+            }),
+            ...(data.alternativeMinRate !== undefined && {
+              alternativeMinRate: data.alternativeMinRate,
+            }),
             ...(data.complianceRate !== undefined && { complianceRate: data.complianceRate }),
-            ...(data.collectionEfficiency !== undefined && { collectionEfficiency: data.collectionEfficiency }),
+            ...(data.collectionEfficiency !== undefined && {
+              collectionEfficiency: data.collectionEfficiency,
+            }),
           },
           include: {
             taxCategories: {

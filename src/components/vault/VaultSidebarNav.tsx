@@ -75,10 +75,7 @@ export function getSectionFromPathname(rawPathname: string): VaultSection {
     return "cards";
 
   // Acquire section: /vault/acquire, /vault/packs
-  if (
-    pathname.startsWith("/vault/acquire") ||
-    pathname.startsWith("/vault/packs")
-  )
+  if (pathname.startsWith("/vault/acquire") || pathname.startsWith("/vault/packs"))
     return "acquire";
 
   // Trade & Sell section: /vault/create, /vault/trading, /vault/market
@@ -90,8 +87,7 @@ export function getSectionFromPathname(rawPathname: string): VaultSection {
     return "create";
 
   // Import section: /vault/import
-  if (pathname.startsWith("/vault/import"))
-    return "import";
+  if (pathname.startsWith("/vault/import")) return "import";
 
   return "dashboard";
 }
@@ -101,15 +97,22 @@ export function getSubTabFromPathname(rawPathname: string): string | null {
   const pathname = stripBasePath(rawPathname);
   // Cards section sub-tabs
   if (pathname.startsWith("/vault/collections")) return "collections";
-  if (pathname.startsWith("/vault/gallery") || pathname.startsWith("/vault/lore-gallery") || pathname.startsWith("/vault/ns-library")) return "gallery";
-  if (pathname.startsWith("/vault/inventory") || pathname.startsWith("/vault/cards")) return "inventory";
+  if (
+    pathname.startsWith("/vault/gallery") ||
+    pathname.startsWith("/vault/lore-gallery") ||
+    pathname.startsWith("/vault/ns-library")
+  )
+    return "gallery";
+  if (pathname.startsWith("/vault/inventory") || pathname.startsWith("/vault/cards"))
+    return "inventory";
 
   // Acquire section sub-tabs
   if (pathname.startsWith("/vault/packs") || pathname.startsWith("/vault/acquire")) return "packs";
 
   // Trade & Sell section sub-tabs
   if (pathname.startsWith("/vault/market")) return "market";
-  if (pathname.startsWith("/vault/trading") || pathname.startsWith("/vault/create")) return "trading";
+  if (pathname.startsWith("/vault/trading") || pathname.startsWith("/vault/create"))
+    return "trading";
 
   // Import section sub-tabs
   if (pathname.startsWith("/vault/import")) return "import-deck";
@@ -124,7 +127,11 @@ interface VaultSidebarNavProps {
   variant?: "desktop" | "mobile";
 }
 
-export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop" }: VaultSidebarNavProps) {
+export function VaultSidebarNav({
+  activeSection,
+  onNavigate,
+  variant = "desktop",
+}: VaultSidebarNavProps) {
   const pathname = usePathname();
   const activeId = activeSection ?? getSectionFromPathname(pathname);
   const isControlled = !!onNavigate;
@@ -132,7 +139,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border p-1.5 backdrop-blur-md">
+      <nav className="glass-hierarchy-child border-border overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {VAULT_NAV_ITEMS.map((item) => {
             const isActive = item.id === activeId;
@@ -141,17 +148,27 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
               "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             );
 
             return isControlled ? (
-              <button key={item.id} onClick={() => onNavigate(item.id)} className={cls} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={cls}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </button>
             ) : (
-              <Link key={item.id} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+              <Link
+                key={item.id}
+                href={item.href}
+                className={cls}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </Link>
             );
@@ -163,7 +180,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
 
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
-    <nav className="glass-hierarchy-parent flex flex-col gap-1.5 rounded-xl border border-border p-1.5 shadow-sm">
+    <nav className="glass-hierarchy-parent border-border flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm">
       {VAULT_NAV_ITEMS.map((item) => {
         const isActive = item.id === activeId;
         const Icon = item.icon;
@@ -174,17 +191,20 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
               "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Icon className={cn("h-[18px] w-[18px] transition-transform duration-150", !isActive && "group-hover/tip:scale-110")} />
+            <Icon
+              className={cn(
+                "h-[18px] w-[18px] transition-transform duration-150",
+                !isActive && "group-hover/tip:scale-110"
+              )}
+            />
 
             {/* Tooltip — appears to the right */}
-            <span
-              className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900"
-            >
+            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
               {item.title}
-              <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
+              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
             </span>
           </div>
         );
@@ -193,7 +213,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg"
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
             aria-label={item.title}
             aria-current={isActive ? "page" : undefined}
           >
@@ -203,7 +223,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
           <Link
             key={item.id}
             href={item.href}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg"
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
             aria-label={item.title}
             aria-current={isActive ? "page" : undefined}
           >

@@ -237,16 +237,10 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   percentageSmall: () => String(randomBetween(3, 12)),
   percentageMedium: () => String(randomBetween(12, 30)),
   percentageLarge: () => String(randomBetween(30, 55)),
-  amountSmall: (s) =>
-    formatCurrency(s.currentTotalGdp * (randomBetween(1, 5) / 1000)),
-  amountMedium: (s) =>
-    formatCurrency(s.currentTotalGdp * (randomBetween(5, 20) / 1000)),
-  amountLarge: (s) =>
-    formatCurrency(s.currentTotalGdp * (randomBetween(20, 80) / 1000)),
-  workerCount: (s) =>
-    formatPopulation(
-      s.currentPopulation * (randomBetween(1, 5) / 100)
-    ),
+  amountSmall: (s) => formatCurrency(s.currentTotalGdp * (randomBetween(1, 5) / 1000)),
+  amountMedium: (s) => formatCurrency(s.currentTotalGdp * (randomBetween(5, 20) / 1000)),
+  amountLarge: (s) => formatCurrency(s.currentTotalGdp * (randomBetween(20, 80) / 1000)),
+  workerCount: (s) => formatPopulation(s.currentPopulation * (randomBetween(1, 5) / 100)),
   neighborName: () => "a neighboring state",
   oppositionParty: () =>
     randomFrom([
@@ -335,30 +329,29 @@ export class NationalIssuesEngine {
     if (!country) return null;
 
     // Run aggregate counts in parallel
-    const [embassyCount, policyCount, pendingIssueCount, crisisCount] =
-      await Promise.all([
-        (db as any).embassy.count({
-          where: {
-            hostCountryId: countryId,
-            status: "active",
-          },
-        }),
-        (db as any).policy.count({
-          where: { countryId, status: "active" },
-        }),
-        (db as any).nationalIssue.count({
-          where: {
-            countryId,
-            status: { in: ["pending", "viewed"] },
-          },
-        }),
-        (db as any).crisisEvent.count({
-          where: {
-            affectedCountries: { contains: countryId },
-            responseStatus: { not: "resolved" },
-          },
-        }),
-      ]);
+    const [embassyCount, policyCount, pendingIssueCount, crisisCount] = await Promise.all([
+      (db as any).embassy.count({
+        where: {
+          hostCountryId: countryId,
+          status: "active",
+        },
+      }),
+      (db as any).policy.count({
+        where: { countryId, status: "active" },
+      }),
+      (db as any).nationalIssue.count({
+        where: {
+          countryId,
+          status: { in: ["pending", "viewed"] },
+        },
+      }),
+      (db as any).crisisEvent.count({
+        where: {
+          affectedCountries: { contains: countryId },
+          responseStatus: { not: "resolved" },
+        },
+      }),
+    ]);
 
     const currentIxTime = IxTime.getCurrentIxTime();
     const ixDate = new Date(currentIxTime);
@@ -392,12 +385,10 @@ export class NationalIssuesEngine {
       infrastructureRating: country.infrastructureRating ?? 50,
       politicalStability: country.governmentStructure?.politicalStability ?? 50,
       democracyIndex: country.governmentStructure?.democracyIndex ?? 50,
-      governmentEffectiveness:
-        country.governmentStructure?.governmentEffectiveness ?? 50,
+      governmentEffectiveness: country.governmentStructure?.governmentEffectiveness ?? 50,
       ruleOfLaw: country.governmentStructure?.ruleOfLaw ?? 50,
       corruptionIndex: country.governmentStructure?.corruptionIndex ?? 50,
-      politicalPolarization:
-        country.governmentStructure?.politicalPolarization ?? 40,
+      politicalPolarization: country.governmentStructure?.politicalPolarization ?? 40,
       stabilityScore: country.stabilityMetrics?.stabilityScore ?? 75,
       crimeRate: country.stabilityMetrics?.crimeRate ?? 5,
       protestFrequency: country.stabilityMetrics?.protestFrequency ?? 5,
@@ -421,10 +412,7 @@ export class NationalIssuesEngine {
    * Evaluate a trigger condition tree against a country snapshot.
    * Safe evaluation - no eval(), no injection risk.
    */
-  static evaluateCondition(
-    condition: TriggerCondition,
-    snapshot: CountrySnapshot
-  ): boolean {
+  static evaluateCondition(condition: TriggerCondition, snapshot: CountrySnapshot): boolean {
     if ("and" in condition) {
       return condition.and.every((c) => this.evaluateCondition(c, snapshot));
     }
@@ -457,8 +445,7 @@ export class NationalIssuesEngine {
         return fieldValue !== condition.value;
       case "in":
         return (
-          Array.isArray(condition.value) &&
-          condition.value.includes(fieldValue as string | number)
+          Array.isArray(condition.value) && condition.value.includes(fieldValue as string | number)
         );
       case "between":
         return (
@@ -478,11 +465,7 @@ export class NationalIssuesEngine {
     field: string
   ): number | string | boolean | null {
     if (field in snapshot) {
-      return (snapshot as Record<string, any>)[field] as
-        | number
-        | string
-        | boolean
-        | null;
+      return (snapshot as Record<string, any>)[field] as number | string | boolean | null;
     }
     return null;
   }
@@ -562,9 +545,7 @@ export class NationalIssuesEngine {
       });
 
       // Get NPC personality for modifier calculations
-      const personalityAssignment = await (
-        db as any
-      ).nPCPersonalityAssignment.findUnique({
+      const personalityAssignment = await (db as any).nPCPersonalityAssignment.findUnique({
         where: { countryId },
         include: { personality: true },
       });
@@ -575,11 +556,9 @@ export class NationalIssuesEngine {
       for (const template of templates) {
         // Check cooldown
         const ixTimeDayMs = 24 * 60 * 60 * 1000;
-        const cooldownIxTime =
-          snapshot.currentIxTime - template.cooldownDays * ixTimeDayMs;
+        const cooldownIxTime = snapshot.currentIxTime - template.cooldownDays * ixTimeDayMs;
         const recentFromTemplate = recentIssues.filter(
-          (i: any) =>
-            i.templateId === template.id && i.createdIxTime > cooldownIxTime
+          (i: any) => i.templateId === template.id && i.createdIxTime > cooldownIxTime
         );
         if (recentFromTemplate.length > 0) {
           result.issuesSkippedCooldown++;
@@ -589,8 +568,7 @@ export class NationalIssuesEngine {
         // Check max active per country
         const activeFromTemplate = recentIssues.filter(
           (i: any) =>
-            i.templateId === template.id &&
-            (i.status === "pending" || i.status === "viewed")
+            i.templateId === template.id && (i.status === "pending" || i.status === "viewed")
         );
         if (activeFromTemplate.length >= template.maxActivePerCountry) {
           result.issuesSkippedMaxActive++;
@@ -600,13 +578,9 @@ export class NationalIssuesEngine {
         // Evaluate trigger conditions
         let triggerCondition: TriggerCondition;
         try {
-          triggerCondition = JSON.parse(
-            template.triggerConditions
-          ) as TriggerCondition;
+          triggerCondition = JSON.parse(template.triggerConditions) as TriggerCondition;
         } catch {
-          result.errors.push(
-            `Invalid trigger JSON for template ${template.slug}`
-          );
+          result.errors.push(`Invalid trigger JSON for template ${template.slug}`);
           continue;
         }
 
@@ -621,13 +595,10 @@ export class NationalIssuesEngine {
         // Apply NPC personality modifiers
         if (personalityAssignment?.personality && template.personalityModifiers) {
           try {
-            const modifiers = JSON.parse(
-              template.personalityModifiers
-            ) as Record<string, number>;
+            const modifiers = JSON.parse(template.personalityModifiers) as Record<string, number>;
             const traits = personalityAssignment.personality;
             for (const [trait, multiplier] of Object.entries(modifiers)) {
-              const traitValue =
-                (traits[trait as keyof typeof traits] as number) ?? 50;
+              const traitValue = (traits[trait as keyof typeof traits] as number) ?? 50;
               const normalizedTrait = traitValue / 100;
               probability *= 1 + (multiplier - 1) * normalizedTrait;
             }
@@ -665,11 +636,7 @@ export class NationalIssuesEngine {
             issueVars
           );
           const renderedLongDescription = candidate.template.longDescription
-            ? this.substituteVariables(
-                candidate.template.longDescription,
-                snapshot,
-                issueVars
-              )
+            ? this.substituteVariables(candidate.template.longDescription, snapshot, issueVars)
             : null;
 
           // Render response options
@@ -688,16 +655,8 @@ export class NationalIssuesEngine {
           const renderedOptions = responseOptions.map((opt) => ({
             ...opt,
             label: this.substituteVariables(opt.label, snapshot, issueVars),
-            description: this.substituteVariables(
-              opt.description,
-              snapshot,
-              issueVars
-            ),
-            outcomeText: this.substituteVariables(
-              opt.outcomeText,
-              snapshot,
-              issueVars
-            ),
+            description: this.substituteVariables(opt.description, snapshot, issueVars),
+            outcomeText: this.substituteVariables(opt.outcomeText, snapshot, issueVars),
           }));
 
           // Calculate deadline
@@ -705,14 +664,11 @@ export class NationalIssuesEngine {
           if (candidate.template.deadlineDaysBase != null) {
             const ixTimeDayMs = 24 * 60 * 60 * 1000;
             deadlineIxTime =
-              snapshot.currentIxTime +
-              candidate.template.deadlineDaysBase * ixTimeDayMs;
+              snapshot.currentIxTime + candidate.template.deadlineDaysBase * ixTimeDayMs;
           }
 
           // Find auto-resolve option
-          const autoResolveOption = renderedOptions.find(
-            (o) => o.isAutoResolveDefault
-          );
+          const autoResolveOption = renderedOptions.find((o) => o.isAutoResolveDefault);
 
           // Create the issue instance
           await (db as any).nationalIssue.create({
@@ -767,10 +723,7 @@ export class NationalIssuesEngine {
             issuesSkippedMaxActive: result.issuesSkippedMaxActive,
             executionTimeMs: result.executionTimeMs,
             ixTimeAtEvaluation: snapshot.currentIxTime,
-            errors:
-              result.errors.length > 0
-                ? JSON.stringify(result.errors)
-                : null,
+            errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null,
           },
         })
         .catch(() => {
@@ -788,10 +741,7 @@ export class NationalIssuesEngine {
    * Check if an evaluation is needed (debounced by 5 IxTime minutes).
    * Returns true if the last evaluation was more than 5 IxTime minutes ago.
    */
-  static async shouldEvaluate(
-    countryId: string,
-    db: PrismaClient
-  ): Promise<boolean> {
+  static async shouldEvaluate(countryId: string, db: PrismaClient): Promise<boolean> {
     const lastLog = await (db as any).issueGenerationLog.findFirst({
       where: { countryId },
       orderBy: { createdAt: "desc" },
@@ -848,9 +798,7 @@ export class NationalIssuesEngine {
         }
         resolved++;
       } catch (err) {
-        errors.push(
-          `Failed to auto-resolve ${issue.id}: ${(err as Error).message}`
-        );
+        errors.push(`Failed to auto-resolve ${issue.id}: ${(err as Error).message}`);
       }
     }
 
@@ -876,19 +824,14 @@ export class NationalIssuesEngine {
     if (!snapshot) return null;
 
     const renderedTitle = this.substituteVariables(template.title, snapshot);
-    const renderedDescription = this.substituteVariables(
-      template.description,
-      snapshot
-    );
+    const renderedDescription = this.substituteVariables(template.description, snapshot);
     const renderedLongDescription = template.longDescription
       ? this.substituteVariables(template.longDescription, snapshot)
       : null;
 
     let responseOptions: ResponseOptionTemplate[];
     try {
-      responseOptions = JSON.parse(
-        template.responseOptions
-      ) as ResponseOptionTemplate[];
+      responseOptions = JSON.parse(template.responseOptions) as ResponseOptionTemplate[];
     } catch {
       return null;
     }
@@ -903,13 +846,10 @@ export class NationalIssuesEngine {
     let deadlineIxTime: number | null = null;
     if (template.deadlineDaysBase != null) {
       const ixTimeDayMs = 24 * 60 * 60 * 1000;
-      deadlineIxTime =
-        snapshot.currentIxTime + template.deadlineDaysBase * ixTimeDayMs;
+      deadlineIxTime = snapshot.currentIxTime + template.deadlineDaysBase * ixTimeDayMs;
     }
 
-    const autoResolveOption = renderedOptions.find(
-      (o) => o.isAutoResolveDefault
-    );
+    const autoResolveOption = renderedOptions.find((o) => o.isAutoResolveDefault);
 
     const issue = await (db as any).nationalIssue.create({
       data: {

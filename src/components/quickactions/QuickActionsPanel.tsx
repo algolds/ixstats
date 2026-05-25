@@ -195,7 +195,7 @@ export function QuickActionsPanel({
                             <span className="font-medium">{rec.suitabilityScore}%</span>
                           </div>
                         </div>
-                        <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                        <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
                       </div>
                     </motion.div>
                   ))}
@@ -310,7 +310,7 @@ export function QuickActionsPanel({
                             </p>
                           )}
                         </div>
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
                       </div>
                     </div>
                   ))}
@@ -356,7 +356,7 @@ export function QuickActionsPanel({
                         />
                         <span className="truncate text-sm">{activity.title}</span>
                       </div>
-                      <span className="text-muted-foreground flex-shrink-0 text-xs">
+                      <span className="text-muted-foreground shrink-0 text-xs">
                         {format(new Date(activity.scheduledDate), "MMM d")}
                       </span>
                     </div>

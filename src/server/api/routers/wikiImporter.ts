@@ -69,7 +69,8 @@ async function fetchFromWikiSource(pageName: string, source: WikiSource) {
       headers: { "User-Agent": "IxStats-Builder", Accept: "application/json" },
     }
   );
-  if (!response.ok) throw new Error(`HTTP ${response.status} from ${WIKI_SOURCE_NAMES[source].name}`);
+  if (!response.ok)
+    throw new Error(`HTTP ${response.status} from ${WIKI_SOURCE_NAMES[source].name}`);
   const data = await response.json();
   const pages = data.query?.pages;
   if (!pages || Object.keys(pages).length === 0) return null;
@@ -120,7 +121,7 @@ async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource)
 
   const errors = results
     .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-    .map((r) => r.reason instanceof Error ? r.reason.message : String(r.reason));
+    .map((r) => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
 
   throw new Error(
     `Page "${pageName}" not found in any wiki source. Tried: ${sources.map((s) => WIKI_SOURCE_NAMES[s].name).join(", ")}${errors.length > 0 ? `. Errors: ${errors.join("; ")}` : ""}`
@@ -151,7 +152,9 @@ export const wikiImporterRouter = createTRPCRouter({
           ).length,
         };
       } catch (e) {
-        throw new Error(`Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`);
+        throw new Error(
+          `Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`
+        );
       }
     }),
 
@@ -238,14 +241,18 @@ export const wikiImporterRouter = createTRPCRouter({
             action: "updated",
           };
         } catch (err) {
-          console.error(`[wikiImporter] importCountry update failed for user ${userId}, country ${input.countryId}:`, err);
-          throw new Error(`Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`);
+          console.error(
+            `[wikiImporter] importCountry update failed for user ${userId}, country ${input.countryId}:`,
+            err
+          );
+          throw new Error(
+            `Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`
+          );
         }
       } else if (input.createNew) {
         // Import helper functions
-        const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } = await import(
-          "~/types/ixstats"
-        );
+        const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } =
+          await import("~/types/ixstats");
 
         // Calculate derived values from wiki data
         const population =
@@ -268,316 +275,325 @@ export const wikiImporterRouter = createTRPCRouter({
         // Check for slug collision before attempting create
         const existingSlug = await ctx.db.country.findUnique({ where: { slug } });
         if (existingSlug) {
-          throw new Error(`A country with slug "${slug}" already exists. Use the update flow instead.`);
+          throw new Error(
+            `A country with slug "${slug}" already exists. Use the update flow instead.`
+          );
         }
 
         // Use transaction to create country and all related records atomically
         try {
-        const result = await ctx.db.$transaction(async (tx) => {
-          // Create the country with ALL fields (same as builder)
-          const country = await tx.country.create({
-            data: {
-              name: mappedData.name || "Unknown",
-              slug: slug,
-              continent: mappedData.continent || "Unknown",
-              region: mappedData.region || "Unknown",
-              governmentType: mappedData.nationalIdentity?.governmentType || "Republic",
-              religion: mappedData.religion || "Secular",
-              leader: mappedData.leader || "Unknown",
-              flag: mappedData.flag || undefined,
-              coatOfArms: mappedData.coatOfArms || undefined,
-              landArea: mappedData.landArea || 100000,
-              areaSqMi: mappedData.areaSqMi || 38610,
-
-              // Baseline values (from wiki or defaults)
-              baselinePopulation: population,
-              baselineGdpPerCapita: gdpPerCapita,
-              baselineDate: new Date(),
-
-              // Current values (same as baseline at creation)
-              currentPopulation: population,
-              currentGdpPerCapita: gdpPerCapita,
-              currentTotalGdp: totalGdp,
-
-              // Growth rates (defaults - can be customized in builder later)
-              maxGdpGrowthRate: 0.05,
-              adjustedGdpGrowth: 0.03,
-              populationGrowthRate: 0.01,
-              actualGdpGrowth: 0.03,
-              localGrowthFactor: 1.0,
-
-              // Tiers
-              economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
-              populationTier: getPopulationTierFromPopulation(population),
-
-              // Core Economic Indicators (defaults)
-              nominalGDP: nominalGDP,
-              realGDPGrowthRate: 3.0,
-              inflationRate: 2.0,
-              currencyExchangeRate: 1.0,
-
-              // Labor & Employment (defaults)
-              laborForceParticipationRate: 65,
-              employmentRate: 95,
-              unemploymentRate: 5,
-              totalWorkforce: Math.round(population * 0.65),
-              averageWorkweekHours: 40,
-              minimumWage: Math.round(gdpPerCapita * 0.02),
-              averageAnnualIncome: Math.round(gdpPerCapita * 0.8),
-
-              // Fiscal System (defaults)
-              taxRevenueGDPPercent: 20,
-              governmentRevenueTotal: nominalGDP * 0.2,
-              taxRevenuePerCapita: (nominalGDP * 0.2) / population,
-              governmentBudgetGDPPercent: 22,
-              budgetDeficitSurplus: 0,
-              internalDebtGDPPercent: 45,
-              externalDebtGDPPercent: 25,
-              totalDebtGDPRatio: 70,
-              debtPerCapita: (nominalGDP * 0.7) / population,
-              interestRates: 3.5,
-              debtServiceCosts: nominalGDP * 0.7 * 0.035,
-
-              // Income & Wealth (defaults)
-              povertyRate: 15,
-              incomeInequalityGini: 0.38,
-              socialMobilityIndex: 60,
-
-              // Government Spending (defaults)
-              totalGovernmentSpending: nominalGDP * 0.22,
-              spendingGDPPercent: 22,
-              spendingPerCapita: (nominalGDP * 0.22) / population,
-
-              // Demographics (defaults)
-              lifeExpectancy: 78.5,
-              urbanPopulationPercent: 65,
-              ruralPopulationPercent: 35,
-              literacyRate: 95,
-
-              // Calculate density if we have land area
-              populationDensity: mappedData.landArea
-                ? population / mappedData.landArea
-                : mappedData.populationDensity,
-              gdpDensity: mappedData.landArea ? totalGdp / mappedData.landArea : undefined,
-
-              lastCalculated: new Date(),
-            },
-          });
-
-          // Create National Identity record with wiki data
-          if (mappedData.nationalIdentity && Object.keys(mappedData.nationalIdentity).length > 0) {
-            await tx.nationalIdentity.create({
+          const result = await ctx.db.$transaction(async (tx) => {
+            // Create the country with ALL fields (same as builder)
+            const country = await tx.country.create({
               data: {
-                countryId: country.id,
-                countryName: mappedData.nationalIdentity.countryName || mappedData.name,
-                officialName: mappedData.nationalIdentity.officialName,
-                governmentType: mappedData.nationalIdentity.governmentType,
-                motto: mappedData.nationalIdentity.motto,
-                mottoNative: mappedData.nationalIdentity.mottoNative,
-                capitalCity: mappedData.nationalIdentity.capitalCity,
-                largestCity: mappedData.nationalIdentity.largestCity,
-                demonym: mappedData.nationalIdentity.demonym,
-                currency: mappedData.nationalIdentity.currency,
-                currencySymbol: mappedData.nationalIdentity.currencySymbol,
-                officialLanguages: mappedData.nationalIdentity.officialLanguages,
-                nationalLanguage: mappedData.nationalIdentity.nationalLanguage,
-                nationalAnthem: mappedData.nationalIdentity.nationalAnthem,
-                nationalDay: mappedData.nationalIdentity.nationalDay,
-                callingCode: mappedData.nationalIdentity.callingCode,
-                internetTLD: mappedData.nationalIdentity.internetTLD,
-                drivingSide: mappedData.nationalIdentity.drivingSide,
-                timeZone: mappedData.nationalIdentity.timeZone,
-                isoCode: mappedData.nationalIdentity.isoCode,
-                coordinatesLatitude: mappedData.nationalIdentity.coordinatesLatitude,
-                coordinatesLongitude: mappedData.nationalIdentity.coordinatesLongitude,
+                name: mappedData.name || "Unknown",
+                slug: slug,
+                continent: mappedData.continent || "Unknown",
+                region: mappedData.region || "Unknown",
+                governmentType: mappedData.nationalIdentity?.governmentType || "Republic",
+                religion: mappedData.religion || "Secular",
+                leader: mappedData.leader || "Unknown",
+                flag: mappedData.flag || undefined,
+                coatOfArms: mappedData.coatOfArms || undefined,
+                landArea: mappedData.landArea || 100000,
+                areaSqMi: mappedData.areaSqMi || 38610,
+
+                // Baseline values (from wiki or defaults)
+                baselinePopulation: population,
+                baselineGdpPerCapita: gdpPerCapita,
+                baselineDate: new Date(),
+
+                // Current values (same as baseline at creation)
+                currentPopulation: population,
+                currentGdpPerCapita: gdpPerCapita,
+                currentTotalGdp: totalGdp,
+
+                // Growth rates (defaults - can be customized in builder later)
+                maxGdpGrowthRate: 0.05,
+                adjustedGdpGrowth: 0.03,
+                populationGrowthRate: 0.01,
+                actualGdpGrowth: 0.03,
+                localGrowthFactor: 1.0,
+
+                // Tiers
+                economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
+                populationTier: getPopulationTierFromPopulation(population),
+
+                // Core Economic Indicators (defaults)
+                nominalGDP: nominalGDP,
+                realGDPGrowthRate: 3.0,
+                inflationRate: 2.0,
+                currencyExchangeRate: 1.0,
+
+                // Labor & Employment (defaults)
+                laborForceParticipationRate: 65,
+                employmentRate: 95,
+                unemploymentRate: 5,
+                totalWorkforce: Math.round(population * 0.65),
+                averageWorkweekHours: 40,
+                minimumWage: Math.round(gdpPerCapita * 0.02),
+                averageAnnualIncome: Math.round(gdpPerCapita * 0.8),
+
+                // Fiscal System (defaults)
+                taxRevenueGDPPercent: 20,
+                governmentRevenueTotal: nominalGDP * 0.2,
+                taxRevenuePerCapita: (nominalGDP * 0.2) / population,
+                governmentBudgetGDPPercent: 22,
+                budgetDeficitSurplus: 0,
+                internalDebtGDPPercent: 45,
+                externalDebtGDPPercent: 25,
+                totalDebtGDPRatio: 70,
+                debtPerCapita: (nominalGDP * 0.7) / population,
+                interestRates: 3.5,
+                debtServiceCosts: nominalGDP * 0.7 * 0.035,
+
+                // Income & Wealth (defaults)
+                povertyRate: 15,
+                incomeInequalityGini: 0.38,
+                socialMobilityIndex: 60,
+
+                // Government Spending (defaults)
+                totalGovernmentSpending: nominalGDP * 0.22,
+                spendingGDPPercent: 22,
+                spendingPerCapita: (nominalGDP * 0.22) / population,
+
+                // Demographics (defaults)
+                lifeExpectancy: 78.5,
+                urbanPopulationPercent: 65,
+                ruralPopulationPercent: 35,
+                literacyRate: 95,
+
+                // Calculate density if we have land area
+                populationDensity: mappedData.landArea
+                  ? population / mappedData.landArea
+                  : mappedData.populationDensity,
+                gdpDensity: mappedData.landArea ? totalGdp / mappedData.landArea : undefined,
+
+                lastCalculated: new Date(),
               },
             });
-          } else {
-            // Create minimal national identity
-            await tx.nationalIdentity.create({
+
+            // Create National Identity record with wiki data
+            if (
+              mappedData.nationalIdentity &&
+              Object.keys(mappedData.nationalIdentity).length > 0
+            ) {
+              await tx.nationalIdentity.create({
+                data: {
+                  countryId: country.id,
+                  countryName: mappedData.nationalIdentity.countryName || mappedData.name,
+                  officialName: mappedData.nationalIdentity.officialName,
+                  governmentType: mappedData.nationalIdentity.governmentType,
+                  motto: mappedData.nationalIdentity.motto,
+                  mottoNative: mappedData.nationalIdentity.mottoNative,
+                  capitalCity: mappedData.nationalIdentity.capitalCity,
+                  largestCity: mappedData.nationalIdentity.largestCity,
+                  demonym: mappedData.nationalIdentity.demonym,
+                  currency: mappedData.nationalIdentity.currency,
+                  currencySymbol: mappedData.nationalIdentity.currencySymbol,
+                  officialLanguages: mappedData.nationalIdentity.officialLanguages,
+                  nationalLanguage: mappedData.nationalIdentity.nationalLanguage,
+                  nationalAnthem: mappedData.nationalIdentity.nationalAnthem,
+                  nationalDay: mappedData.nationalIdentity.nationalDay,
+                  callingCode: mappedData.nationalIdentity.callingCode,
+                  internetTLD: mappedData.nationalIdentity.internetTLD,
+                  drivingSide: mappedData.nationalIdentity.drivingSide,
+                  timeZone: mappedData.nationalIdentity.timeZone,
+                  isoCode: mappedData.nationalIdentity.isoCode,
+                  coordinatesLatitude: mappedData.nationalIdentity.coordinatesLatitude,
+                  coordinatesLongitude: mappedData.nationalIdentity.coordinatesLongitude,
+                },
+              });
+            } else {
+              // Create minimal national identity
+              await tx.nationalIdentity.create({
+                data: {
+                  countryId: country.id,
+                  countryName: mappedData.name,
+                },
+              });
+            }
+
+            // Create Demographics record (defaults)
+            await tx.demographics.create({
               data: {
                 countryId: country.id,
-                countryName: mappedData.name,
+                ageDistribution: JSON.stringify([
+                  { group: "0-15", percent: 20, color: "#4299E1" },
+                  { group: "16-64", percent: 65, color: "#48BB78" },
+                  { group: "65+", percent: 15, color: "#F56565" },
+                ]),
+                // Removed lifeExpectancy - not in schema
+                // Removed urbanRatio - not in schema
+                // Removed ruralRatio - not in schema
+                educationLevels: JSON.stringify([
+                  { level: "No Formal Education", percent: 5, color: "#F56565" },
+                  { level: "Primary Education", percent: 15, color: "#ECC94B" },
+                  { level: "Secondary Education", percent: 55, color: "#48BB78" },
+                  { level: "Higher Education", percent: 25, color: "#4299E1" },
+                ]),
+                // Removed literacyRate - not in schema
+                populationGrowthProjection: 0.5,
               },
             });
-          }
 
-          // Create Demographics record (defaults)
-          await tx.demographics.create({
-            data: {
-              countryId: country.id,
-              ageDistribution: JSON.stringify([
-                { group: "0-15", percent: 20, color: "#4299E1" },
-                { group: "16-64", percent: 65, color: "#48BB78" },
-                { group: "65+", percent: 15, color: "#F56565" },
-              ]),
-              // Removed lifeExpectancy - not in schema
-              // Removed urbanRatio - not in schema
-              // Removed ruralRatio - not in schema
-              educationLevels: JSON.stringify([
-                { level: "No Formal Education", percent: 5, color: "#F56565" },
-                { level: "Primary Education", percent: 15, color: "#ECC94B" },
-                { level: "Secondary Education", percent: 55, color: "#48BB78" },
-                { level: "Higher Education", percent: 25, color: "#4299E1" },
-              ]),
-              // Removed literacyRate - not in schema
-              populationGrowthProjection: 0.5,
-            },
+            // Create Fiscal System record (defaults)
+            await tx.fiscalSystem.create({
+              data: {
+                countryId: country.id,
+                personalIncomeTaxRates: "22", // Changed from incomeTaxRate
+                corporateTaxRates: "25", // Changed from corporateTaxRate
+                salesTaxRate: 10,
+                // Removed progressiveTaxation - not in schema
+                // Removed balancedBudgetRule - not in schema
+                // Removed debtCeiling - not in schema
+                // Removed antiAvoidance - not in schema
+              },
+            });
+
+            // Create Labor Market record (defaults)
+            await tx.laborMarket.create({
+              data: {
+                countryId: country.id,
+                // Removed totalWorkforce - moved to Country model
+                // Removed laborForceParticipationRate - moved to Country model
+                // Removed employmentRate - moved to Country model
+                // Removed unemploymentRate - moved to Country model
+                // Removed averageWorkweekHours - moved to Country model
+                // Removed minimumWage - moved to Country model
+                // Removed averageAnnualIncome - moved to Country model
+                // Removed laborProtections - not in schema
+                employmentBySector: JSON.stringify([
+                  { sector: "Agriculture", percent: 5 },
+                  { sector: "Industry", percent: 30 },
+                  { sector: "Services", percent: 65 },
+                ]),
+                youthUnemploymentRate: 8,
+                femaleParticipationRate: 60,
+              },
+            });
+
+            // Create Income Distribution record (defaults)
+            await tx.incomeDistribution.create({
+              data: {
+                countryId: country.id,
+                // Removed giniCoefficient - not in schema
+                // Removed povertyRate - not in schema
+                // Removed socialMobilityIndex - not in schema
+                economicClasses: JSON.stringify([
+                  {
+                    name: "Upper Class",
+                    populationPercent: 5,
+                    wealthPercent: 40,
+                    averageIncome: gdpPerCapita * 5,
+                    color: "#4C51BF",
+                  },
+                  {
+                    name: "Upper Middle Class",
+                    populationPercent: 15,
+                    wealthPercent: 30,
+                    averageIncome: gdpPerCapita * 2,
+                    color: "#4299E1",
+                  },
+                  {
+                    name: "Middle Class",
+                    populationPercent: 30,
+                    wealthPercent: 20,
+                    averageIncome: gdpPerCapita,
+                    color: "#48BB78",
+                  },
+                  {
+                    name: "Lower Middle Class",
+                    populationPercent: 30,
+                    wealthPercent: 8,
+                    averageIncome: gdpPerCapita * 0.5,
+                    color: "#ECC94B",
+                  },
+                  {
+                    name: "Lower Class",
+                    populationPercent: 20,
+                    wealthPercent: 2,
+                    averageIncome: gdpPerCapita * 0.2,
+                    color: "#F56565",
+                  },
+                ]),
+                top10PercentWealth: 40,
+                bottom50PercentWealth: 10,
+                middleClassPercent: 30,
+              },
+            });
+
+            // Create Government Budget record (defaults)
+            const totalSpending = nominalGDP * 0.22;
+            await tx.governmentBudget.create({
+              data: {
+                countryId: country.id,
+                // Removed totalBudget - not in schema
+                // Removed individual spending fields - not in schema
+                spendingCategories: JSON.stringify([
+                  { category: "Defense", amount: totalSpending * 0.15 },
+                  { category: "Education", amount: totalSpending * 0.18 },
+                  { category: "Healthcare", amount: totalSpending * 0.22 },
+                  { category: "Infrastructure", amount: totalSpending * 0.12 },
+                  { category: "Social Security", amount: totalSpending * 0.2 },
+                  { category: "Other", amount: totalSpending * 0.13 },
+                ]),
+                spendingEfficiency: 0.85,
+                publicInvestmentRate: 0.12,
+                socialSpendingPercent: 0.2,
+                // Removed performanceBasedBudgeting - not in schema
+                // Removed greenInvestmentPriority - not in schema
+                // Removed digitalGovernmentInitiative - not in schema
+              },
+            });
+
+            // Create initial historical data point
+            await tx.historicalDataPoint.create({
+              data: {
+                countryId: country.id,
+                ixTimeTimestamp: new Date(),
+                population: population,
+                gdpPerCapita: gdpPerCapita,
+                totalGdp: totalGdp,
+                populationGrowthRate: 0.5,
+                gdpGrowthRate: 3.0,
+                landArea: mappedData.landArea || 100000,
+                populationDensity: mappedData.landArea
+                  ? population / mappedData.landArea
+                  : mappedData.populationDensity,
+                gdpDensity: mappedData.landArea ? totalGdp / mappedData.landArea : undefined,
+              },
+            });
+
+            // Link user to country
+            await tx.user.update({
+              where: { clerkUserId: userId },
+              data: { countryId: country.id },
+            });
+
+            return country;
           });
 
-          // Create Fiscal System record (defaults)
-          await tx.fiscalSystem.create({
-            data: {
-              countryId: country.id,
-              personalIncomeTaxRates: "22", // Changed from incomeTaxRate
-              corporateTaxRates: "25", // Changed from corporateTaxRate
-              salesTaxRate: 10,
-              // Removed progressiveTaxation - not in schema
-              // Removed balancedBudgetRule - not in schema
-              // Removed debtCeiling - not in schema
-              // Removed antiAvoidance - not in schema
-            },
-          });
-
-          // Create Labor Market record (defaults)
-          await tx.laborMarket.create({
-            data: {
-              countryId: country.id,
-              // Removed totalWorkforce - moved to Country model
-              // Removed laborForceParticipationRate - moved to Country model
-              // Removed employmentRate - moved to Country model
-              // Removed unemploymentRate - moved to Country model
-              // Removed averageWorkweekHours - moved to Country model
-              // Removed minimumWage - moved to Country model
-              // Removed averageAnnualIncome - moved to Country model
-              // Removed laborProtections - not in schema
-              employmentBySector: JSON.stringify([
-                { sector: "Agriculture", percent: 5 },
-                { sector: "Industry", percent: 30 },
-                { sector: "Services", percent: 65 },
-              ]),
-              youthUnemploymentRate: 8,
-              femaleParticipationRate: 60,
-            },
-          });
-
-          // Create Income Distribution record (defaults)
-          await tx.incomeDistribution.create({
-            data: {
-              countryId: country.id,
-              // Removed giniCoefficient - not in schema
-              // Removed povertyRate - not in schema
-              // Removed socialMobilityIndex - not in schema
-              economicClasses: JSON.stringify([
-                {
-                  name: "Upper Class",
-                  populationPercent: 5,
-                  wealthPercent: 40,
-                  averageIncome: gdpPerCapita * 5,
-                  color: "#4C51BF",
-                },
-                {
-                  name: "Upper Middle Class",
-                  populationPercent: 15,
-                  wealthPercent: 30,
-                  averageIncome: gdpPerCapita * 2,
-                  color: "#4299E1",
-                },
-                {
-                  name: "Middle Class",
-                  populationPercent: 30,
-                  wealthPercent: 20,
-                  averageIncome: gdpPerCapita,
-                  color: "#48BB78",
-                },
-                {
-                  name: "Lower Middle Class",
-                  populationPercent: 30,
-                  wealthPercent: 8,
-                  averageIncome: gdpPerCapita * 0.5,
-                  color: "#ECC94B",
-                },
-                {
-                  name: "Lower Class",
-                  populationPercent: 20,
-                  wealthPercent: 2,
-                  averageIncome: gdpPerCapita * 0.2,
-                  color: "#F56565",
-                },
-              ]),
-              top10PercentWealth: 40,
-              bottom50PercentWealth: 10,
-              middleClassPercent: 30,
-            },
-          });
-
-          // Create Government Budget record (defaults)
-          const totalSpending = nominalGDP * 0.22;
-          await tx.governmentBudget.create({
-            data: {
-              countryId: country.id,
-              // Removed totalBudget - not in schema
-              // Removed individual spending fields - not in schema
-              spendingCategories: JSON.stringify([
-                { category: "Defense", amount: totalSpending * 0.15 },
-                { category: "Education", amount: totalSpending * 0.18 },
-                { category: "Healthcare", amount: totalSpending * 0.22 },
-                { category: "Infrastructure", amount: totalSpending * 0.12 },
-                { category: "Social Security", amount: totalSpending * 0.2 },
-                { category: "Other", amount: totalSpending * 0.13 },
-              ]),
-              spendingEfficiency: 0.85,
-              publicInvestmentRate: 0.12,
-              socialSpendingPercent: 0.2,
-              // Removed performanceBasedBudgeting - not in schema
-              // Removed greenInvestmentPriority - not in schema
-              // Removed digitalGovernmentInitiative - not in schema
-            },
-          });
-
-          // Create initial historical data point
-          await tx.historicalDataPoint.create({
-            data: {
-              countryId: country.id,
-              ixTimeTimestamp: new Date(),
-              population: population,
-              gdpPerCapita: gdpPerCapita,
-              totalGdp: totalGdp,
-              populationGrowthRate: 0.5,
-              gdpGrowthRate: 3.0,
-              landArea: mappedData.landArea || 100000,
-              populationDensity: mappedData.landArea
-                ? population / mappedData.landArea
-                : mappedData.populationDensity,
-              gdpDensity: mappedData.landArea ? totalGdp / mappedData.landArea : undefined,
-            },
-          });
-
-          // Link user to country
-          await tx.user.update({
-            where: { clerkUserId: userId },
-            data: { countryId: country.id },
-          });
-
-          return country;
-        });
-
-        console.log(
-          `[wikiImporter] Country created successfully: ${result.name} (ID: ${result.id})`
-        );
-        return {
-          success: true,
-          countryId: result.id,
-          countryName: result.name,
-          action: "created",
-          message: `Successfully imported ${result.name} from wiki with complete database structure`,
-        };
+          console.log(
+            `[wikiImporter] Country created successfully: ${result.name} (ID: ${result.id})`
+          );
+          return {
+            success: true,
+            countryId: result.id,
+            countryName: result.name,
+            action: "created",
+            message: `Successfully imported ${result.name} from wiki with complete database structure`,
+          };
         } catch (err) {
           console.error(`[wikiImporter] importCountry create failed for user ${userId}:`, err);
           if (err instanceof Error && err.message.includes("Unique constraint")) {
-            throw new Error(`A country with slug "${slug}" already exists. Use the update flow instead.`);
+            throw new Error(
+              `A country with slug "${slug}" already exists. Use the update flow instead.`
+            );
           }
-          throw new Error(`Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`);
+          throw new Error(
+            `Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`
+          );
         }
       }
 
@@ -688,7 +704,10 @@ export const wikiImporterRouter = createTRPCRouter({
       const article = await getArticleWikitext(input.pageName, bridgeSource);
       if (!article) {
         // Fallback: try fetchFromWikiSource for althist
-        const fallback = await fetchFromWikiSource(input.pageName, input.site === "althistory" ? "althist" : input.site as WikiSource);
+        const fallback = await fetchFromWikiSource(
+          input.pageName,
+          input.site === "althistory" ? "althist" : (input.site as WikiSource)
+        );
         if (!fallback) {
           return { success: false, error: `Page "${input.pageName}" not found on ${input.site}` };
         }
@@ -702,7 +721,9 @@ export const wikiImporterRouter = createTRPCRouter({
         try {
           const parsedInfobox = parseInfoboxTemplate(fallback.wikitext);
           infoboxMapped = mapInfoboxToIxStats(parsedInfobox);
-        } catch (e) { console.warn("[deepImport] infobox parsing failed:", e); }
+        } catch (e) {
+          console.warn("[deepImport] infobox parsing failed:", e);
+        }
 
         // IxWorld matching
         let ixworldMatch = null;
@@ -713,7 +734,9 @@ export const wikiImporterRouter = createTRPCRouter({
             ctx.db,
             analyzed.borders?.value
           );
-        } catch (e) { console.warn("[deepImport] IxWorld matching failed:", e); }
+        } catch (e) {
+          console.warn("[deepImport] IxWorld matching failed:", e);
+        }
 
         return {
           success: true,
@@ -745,7 +768,9 @@ export const wikiImporterRouter = createTRPCRouter({
       try {
         const parsedInfobox = parseInfoboxTemplate(article.wikitext);
         infoboxMapped = mapInfoboxToIxStats(parsedInfobox);
-      } catch (e) { console.warn("[deepImport] infobox parsing failed:", e); }
+      } catch (e) {
+        console.warn("[deepImport] infobox parsing failed:", e);
+      }
 
       // 5. IxWorld geographic matching
       let ixworldMatch = null;
@@ -756,7 +781,9 @@ export const wikiImporterRouter = createTRPCRouter({
           ctx.db,
           analyzed.borders?.value
         );
-      } catch (e) { console.warn("[deepImport] IxWorld matching failed:", e); }
+      } catch (e) {
+        console.warn("[deepImport] IxWorld matching failed:", e);
+      }
 
       return {
         success: true,
@@ -773,7 +800,10 @@ export const wikiImporterRouter = createTRPCRouter({
         analyzed,
         infoboxMapped,
         ixworldMatch,
-        sourceUrl: getWikiUrl(input.site === "althistory" ? "althist" : input.site as WikiSource, input.pageName),
+        sourceUrl: getWikiUrl(
+          input.site === "althistory" ? "althist" : (input.site as WikiSource),
+          input.pageName
+        ),
       };
     }),
 

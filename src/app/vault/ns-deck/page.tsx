@@ -47,7 +47,7 @@ export default function NSImportPage() {
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     1
                   </div>
                   <div>
@@ -59,7 +59,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     2
                   </div>
                   <div>
@@ -72,7 +72,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     3
                   </div>
                   <div>
@@ -84,7 +84,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     4
                   </div>
                   <div>
@@ -100,7 +100,7 @@ export default function NSImportPage() {
             <div className="glass-child rounded-lg border border-blue-400/20 bg-blue-500/10 p-4">
               <div className="flex items-start gap-3">
                 <svg
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-400"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-blue-400"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >

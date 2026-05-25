@@ -32,9 +32,7 @@ export function MyCountrySidebarLayout({
     <div className="space-y-0">
       {/* Hero Section */}
       {heroSection && (
-        <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">
-          {heroSection}
-        </div>
+        <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">{heroSection}</div>
       )}
 
       <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4">
@@ -44,7 +42,7 @@ export function MyCountrySidebarLayout({
         {/* Main Layout — icon rail + content */}
         <div className="flex gap-3 sm:gap-4">
           {/* Desktop: Fixed sidebar column — icon rail (or expanded with labels when sidebarExtra is present) */}
-          <div className={`relative z-30 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
+          <div className={`relative z-30 hidden shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
             <div className="sticky top-6 space-y-3">
               <MyCountrySidebarNav
                 activeSection={activeSection}
@@ -68,9 +66,7 @@ export function MyCountrySidebarLayout({
               />
             </div>
 
-            <div className="space-y-3 sm:space-y-4">
-              {children}
-            </div>
+            <div className="space-y-3 sm:space-y-4">{children}</div>
           </div>
         </div>
       </div>

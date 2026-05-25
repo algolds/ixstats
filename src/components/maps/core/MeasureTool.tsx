@@ -32,12 +32,11 @@ import { distanceKm as haversineKm } from "~/lib/geo-math";
 const DEG2RAD = Math.PI / 180;
 
 /** Spherical midpoint — correct even across the antimeridian */
-function sphericalMidpoint(
-  a: [number, number],
-  b: [number, number]
-): [number, number] {
-  const lat1 = a[1] * DEG2RAD, lng1 = a[0] * DEG2RAD;
-  const lat2 = b[1] * DEG2RAD, lng2 = b[0] * DEG2RAD;
+function sphericalMidpoint(a: [number, number], b: [number, number]): [number, number] {
+  const lat1 = a[1] * DEG2RAD,
+    lng1 = a[0] * DEG2RAD;
+  const lat2 = b[1] * DEG2RAD,
+    lng2 = b[0] * DEG2RAD;
   const dLng = lng2 - lng1;
   const bx = Math.cos(lat2) * Math.cos(dLng);
   const by = Math.cos(lat2) * Math.sin(dLng);
@@ -67,8 +66,10 @@ function interpolateGreatCircle(
 ): [number, number][] {
   if (numSegments <= 1) return [a, b];
 
-  const lat1 = a[1] * DEG2RAD, lng1 = a[0] * DEG2RAD;
-  const lat2 = b[1] * DEG2RAD, lng2 = b[0] * DEG2RAD;
+  const lat1 = a[1] * DEG2RAD,
+    lng1 = a[0] * DEG2RAD;
+  const lat2 = b[1] * DEG2RAD,
+    lng2 = b[0] * DEG2RAD;
 
   // 3D unit vectors
   const ax = Math.cos(lat1) * Math.cos(lng1);
@@ -108,9 +109,7 @@ type LineGeometry =
   | { type: "MultiLineString"; coordinates: [number, number][][] };
 
 /** Build a LineString/MultiLineString that splits at the antimeridian */
-function buildMeasureLineGeometry(
-  points: [number, number][]
-): LineGeometry {
+function buildMeasureLineGeometry(points: [number, number][]): LineGeometry {
   if (points.length < 2) {
     return { type: "LineString", coordinates: points };
   }
@@ -150,14 +149,16 @@ function buildMeasureLineGeometry(
 
 function formatDistance(km: number): string {
   const mi = km * 0.621371;
-  if (km < 1)
-    return `${Math.round(km * 1000)} m (${Math.round(mi * 5280)} ft)`;
+  if (km < 1) return `${Math.round(km * 1000)} m (${Math.round(mi * 5280)} ft)`;
   return `${km.toFixed(1)} km (${mi.toFixed(1)} mi)`;
 }
 
 // ─── Component ───────────────────────────────────────────────────
 
-export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function MeasureTool({ mapRef, onActiveChange, headless = false }, ref) {
+export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function MeasureTool(
+  { mapRef, onActiveChange, headless = false },
+  ref
+) {
   const [active, setActive] = useState(false);
   const [points, setPoints] = useState<[number, number][]>([]);
   const [totalDistance, setTotalDistance] = useState(0);
@@ -295,7 +296,15 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
           source: SOURCE_ID,
           filter: ["==", ["get", "kind"], "point"],
           paint: {
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 10, 6, 7] as unknown as number,
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0,
+              10,
+              6,
+              7,
+            ] as unknown as number,
             "circle-color": "#3b82f6",
             "circle-stroke-color": "#ffffff",
             "circle-stroke-width": 2,
@@ -490,9 +499,7 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
         <button
           onClick={handleToggle}
           className={`flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium shadow-md transition-colors sm:min-h-0 sm:min-w-0 ${
-            active
-              ? "bg-blue-500 text-white"
-              : "bg-card text-foreground hover:bg-accent"
+            active ? "bg-blue-500 text-white" : "bg-card text-foreground hover:bg-accent"
           }`}
           title="Measure distance (M)"
         >
@@ -503,16 +510,12 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
 
       {/* Distance readout (fixed to map, below toolbar) */}
       {active && points.length >= 2 && (
-        <div className="fixed left-6 top-36 z-30 flex items-center gap-2 rounded-lg bg-card px-3 py-2 text-sm shadow-lg ring-1 ring-border sm:absolute sm:left-3 sm:top-14">
-          <span className="font-semibold text-foreground">
-            {formatDistance(totalDistance)}
-          </span>
-          <span className="text-muted-foreground">
-            ({points.length} pts)
-          </span>
+        <div className="bg-card ring-border fixed top-36 left-6 z-30 flex items-center gap-2 rounded-lg px-3 py-2 text-sm shadow-lg ring-1 sm:absolute sm:top-14 sm:left-3">
+          <span className="text-foreground font-semibold">{formatDistance(totalDistance)}</span>
+          <span className="text-muted-foreground">({points.length} pts)</span>
           <button
             onClick={clearPoints}
-            className="ml-1 rounded p-0.5 text-muted-foreground hover:text-red-500"
+            className="text-muted-foreground ml-1 rounded p-0.5 hover:text-red-500"
             title="Clear measurement (Esc)"
           >
             <Trash2 className="h-3.5 w-3.5" />

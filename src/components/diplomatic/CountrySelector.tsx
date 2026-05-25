@@ -101,7 +101,7 @@ export function CountrySelector({
           </div>
 
           {/* Flag */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <UnifiedCountryFlag
               countryName={country.name}
               size="md"

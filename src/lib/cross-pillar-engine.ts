@@ -14,9 +14,9 @@
 export interface PolicyData {
   id: string;
   name: string;
-  policyType: string;      // economic, social, diplomatic, infrastructure, governance
+  policyType: string; // economic, social, diplomatic, infrastructure, governance
   category?: string | null;
-  status: string;           // draft, active, suspended, expired, repealed
+  status: string; // draft, active, suspended, expired, repealed
   priority?: string | null; // critical, high, medium, low
 }
 
@@ -24,15 +24,15 @@ export interface RelationData {
   id: string;
   targetCountryId: string;
   targetCountryName?: string;
-  strength: number;       // 0-100
+  strength: number; // 0-100
   relationType?: string;
 }
 
 export interface PartyData {
   id: string;
   name: string;
-  ideology: string;        // far_left, left, center_left, center, center_right, right, far_right
-  baseSupport: number;     // 0-100
+  ideology: string; // far_left, left, center_left, center, center_right, right, far_right
+  baseSupport: number; // 0-100
   color?: string;
 }
 
@@ -56,14 +56,14 @@ export interface ElectionResult {
 
 export interface ForeignPolicyData {
   id: string;
-  actionType: string;   // embargo, sanction, free_trade, military_alliance, blockade
+  actionType: string; // embargo, sanction, free_trade, military_alliance, blockade
   targetCountryId: string;
   status: string;
 }
 
 export interface CrisisData {
   id: string;
-  severity: string;      // critical, high, medium, low
+  severity: string; // critical, high, medium, low
   crisisType: string;
   status: string;
 }
@@ -73,7 +73,7 @@ export interface CrisisData {
 export interface DiplomaticEffect {
   relationId: string;
   targetCountryName?: string;
-  strengthDelta: number;  // positive = improve, negative = strain
+  strengthDelta: number; // positive = improve, negative = strain
   reason: string;
   source: "policy" | "election" | "foreign_policy";
 }
@@ -81,7 +81,7 @@ export interface DiplomaticEffect {
 export interface PartyEffect {
   partyId: string;
   partyName: string;
-  supportDelta: number;   // positive = boost, negative = reduce
+  supportDelta: number; // positive = boost, negative = reduce
   stance: "support" | "oppose" | "neutral";
   reason: string;
   source: "policy" | "diplomacy" | "crisis";
@@ -91,7 +91,7 @@ export interface PolicyEffect {
   policyId: string;
   policyName: string;
   effectivenessModifier: number; // percentage modifier
-  passageProbability?: number;   // 0-100
+  passageProbability?: number; // 0-100
   reason: string;
   source: "legislature" | "diplomacy" | "alliance";
 }
@@ -125,11 +125,11 @@ const IDEOLOGY_SPECTRUM: Record<string, number> = {
 
 /** Policy type maps to ideology preference: negative = left favors, positive = right favors */
 const POLICY_IDEOLOGY_ALIGNMENT: Record<string, number> = {
-  economic: 1,          // right tends to favor free-market economic policies
-  social: -1,           // left tends to favor social spending policies
-  diplomatic: 0,        // neutral ideologically
-  infrastructure: 0,    // neutral
-  governance: -0.5,     // slight left lean (regulation/oversight)
+  economic: 1, // right tends to favor free-market economic policies
+  social: -1, // left tends to favor social spending policies
+  diplomatic: 0, // neutral ideologically
+  infrastructure: 0, // neutral
+  governance: -0.5, // slight left lean (regulation/oversight)
 };
 
 // ── Executive → Diplomacy ────────────────────────────────────────────
@@ -141,7 +141,7 @@ const POLICY_IDEOLOGY_ALIGNMENT: Record<string, number> = {
  */
 export function computePolicyDiplomaticImpact(
   policies: PolicyData[],
-  relations: RelationData[],
+  relations: RelationData[]
 ): DiplomaticEffect[] {
   const activePolicies = policies.filter((p) => p.status === "active");
   if (activePolicies.length === 0 || relations.length === 0) return [];
@@ -202,7 +202,7 @@ export function computePolicyDiplomaticImpact(
  */
 export function computePolicyPartyReactions(
   policies: PolicyData[],
-  parties: PartyData[],
+  parties: PartyData[]
 ): PartyEffect[] {
   const activePolicies = policies.filter((p) => p.status === "active");
   if (activePolicies.length === 0 || parties.length === 0) return [];
@@ -260,7 +260,7 @@ export function computePolicyPartyReactions(
 export function computeDiplomaticPolicyPressure(
   relations: RelationData[],
   foreignPolicies: ForeignPolicyData[],
-  policies: PolicyData[],
+  policies: PolicyData[]
 ): PolicyEffect[] {
   if (policies.length === 0) return [];
 
@@ -272,12 +272,18 @@ export function computeDiplomaticPolicyPressure(
   const allyBonus = Math.min(10, strongAllies * 2); // +2% per strong ally, max +10%
 
   // Active trade agreements boost economics
-  const tradeDeals = foreignPolicies.filter((fp) => fp.actionType === "free_trade" && fp.status === "active").length;
+  const tradeDeals = foreignPolicies.filter(
+    (fp) => fp.actionType === "free_trade" && fp.status === "active"
+  ).length;
   const tradeBonus = Math.min(8, tradeDeals * 3); // +3% per trade deal, max +8%
 
   // Embargoes/sanctions reduce overall effectiveness
-  const negativePolicies = foreignPolicies.filter((fp) =>
-    (fp.actionType === "embargo" || fp.actionType === "sanction" || fp.actionType === "blockade") && fp.status === "active"
+  const negativePolicies = foreignPolicies.filter(
+    (fp) =>
+      (fp.actionType === "embargo" ||
+        fp.actionType === "sanction" ||
+        fp.actionType === "blockade") &&
+      fp.status === "active"
   ).length;
   const negativePenalty = Math.min(15, negativePolicies * 5); // -5% per negative policy, max -15%
 
@@ -319,7 +325,7 @@ export function computeDiplomaticPolicyPressure(
 export function computeLegislativeGovernance(
   legislature: LegislatureData | null,
   seatSummary: SeatSummary[],
-  policies: PolicyData[],
+  policies: PolicyData[]
 ): PolicyEffect[] {
   if (!legislature || seatSummary.length === 0 || policies.length === 0) return [];
 
@@ -388,7 +394,7 @@ export function computeLegislativeGovernance(
  */
 export function computeElectionDiplomaticShift(
   electionResult: ElectionResult | null,
-  relations: RelationData[],
+  relations: RelationData[]
 ): DiplomaticEffect[] {
   if (!electionResult || relations.length === 0) return [];
 
@@ -444,7 +450,7 @@ export function computeElectionDiplomaticShift(
  */
 export function computeDiplomaticDomesticPressure(
   crises: CrisisData[],
-  parties: PartyData[],
+  parties: PartyData[]
 ): PartyEffect[] {
   if (crises.length === 0 || parties.length === 0) return [];
 
@@ -457,7 +463,9 @@ export function computeDiplomaticDomesticPressure(
     const reasons: string[] = [];
 
     // Crises boost hawkish (right-wing) party support
-    const criticalCrises = activeCrises.filter((c) => c.severity === "critical" || c.severity === "high").length;
+    const criticalCrises = activeCrises.filter(
+      (c) => c.severity === "critical" || c.severity === "high"
+    ).length;
     if (criticalCrises > 0) {
       if (ideologyScore >= 2) {
         // Hawkish parties gain
@@ -471,7 +479,9 @@ export function computeDiplomaticDomesticPressure(
     }
 
     // Ongoing lower-severity crises cause general unease
-    const mildCrises = activeCrises.filter((c) => c.severity === "medium" || c.severity === "low").length;
+    const mildCrises = activeCrises.filter(
+      (c) => c.severity === "medium" || c.severity === "low"
+    ).length;
     if (mildCrises > 0 && ideologyScore === 0) {
       // Centrist parties gain during mild uncertainty
       supportDelta += Math.min(2, mildCrises);
@@ -500,7 +510,7 @@ export function computeDiplomaticDomesticPressure(
  */
 export function computeForeignPolicyEffects(
   foreignPolicies: ForeignPolicyData[],
-  relations: RelationData[],
+  relations: RelationData[]
 ): DiplomaticEffect[] {
   const activeFP = foreignPolicies.filter((fp) => fp.status === "active");
   if (activeFP.length === 0) return [];
@@ -580,7 +590,12 @@ function aggregatePartyEffects(effects: PartyEffect[]): PartyEffect[] {
       existing.supportDelta += effect.supportDelta;
       existing.reason = `${existing.reason}; ${effect.reason}`;
       // Update stance based on aggregate direction
-      existing.stance = existing.supportDelta > 0.5 ? "support" : existing.supportDelta < -0.5 ? "oppose" : "neutral";
+      existing.stance =
+        existing.supportDelta > 0.5
+          ? "support"
+          : existing.supportDelta < -0.5
+            ? "oppose"
+            : "neutral";
     } else {
       grouped.set(effect.partyId, { ...effect });
     }

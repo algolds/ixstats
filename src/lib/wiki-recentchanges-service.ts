@@ -70,9 +70,7 @@ export async function getWikiRecentChanges(limit = 25): Promise<WikiRecentChange
     const raw: WikiRecentChange[] = data?.query?.recentchanges ?? [];
 
     // Keep all non-minor edits + minor edits with >= 1000 bytes changed
-    const changes = raw.filter(
-      (rc) => !rc.minor || Math.abs(rc.newlen - rc.oldlen) >= 1000,
-    );
+    const changes = raw.filter((rc) => !rc.minor || Math.abs(rc.newlen - rc.oldlen) >= 1000);
 
     cached = { data: changes, fetchedAt: Date.now() };
     return changes.slice(0, limit);
@@ -118,6 +116,6 @@ export async function getWikiTrendingPages(limit = 10): Promise<WikiTrendingPage
   }
 
   // Sort by edit count * editors (collaborative activity ranks higher)
-  pages.sort((a, b) => (b.editCount * b.uniqueEditors) - (a.editCount * a.uniqueEditors));
+  pages.sort((a, b) => b.editCount * b.uniqueEditors - a.editCount * a.uniqueEditors);
   return pages.slice(0, limit);
 }

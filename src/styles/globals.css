@@ -86,15 +86,6 @@
   animation: shimmer 2s linear infinite;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 /* ==========================================
    VAULT THEME - Complete Color System v2.0
    ========================================== */
@@ -510,16 +501,6 @@
   }
 }
 
-/* Shimmer animation for text */
-@keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
 :root {
   --color-1: oklch(66.2% 0.225 25.9);
   --color-2: oklch(60.4% 0.26 302);
@@ -527,14 +508,6 @@
   --color-4: oklch(80.2% 0.134 225);
   --color-5: oklch(90.7% 0.231 133);
   --animate-rainbow: rainbow 2s infinite linear;
-}
-
-.dark {
-  --color-1: oklch(66.2% 0.225 25.9);
-  --color-2: oklch(60.4% 0.26 302);
-  --color-3: oklch(69.6% 0.165 251);
-  --color-4: oklch(80.2% 0.134 225);
-  --color-5: oklch(90.7% 0.231 133);
 }
 
 @theme inline {
@@ -557,44 +530,6 @@
     }
   }
   --animate-shiny-text: shiny-text 8s infinite;
-  @keyframes shiny-text {
-    0%,
-    90%,
-    100% {
-      background-position: calc(-100% - var(--shiny-width)) 0;
-    }
-    30%,
-    60% {
-      background-position: calc(100% + var(--shiny-width)) 0;
-    }
-  }
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(calc(-100% - var(--gap)));
-    }
-  }
-  @keyframes marquee-vertical {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(calc(-100% - var(--gap)));
-    }
-  }
-  @keyframes shiny-text {
-    0%,
-    90%,
-    100% {
-      background-position: calc(-100% - var(--shiny-width)) 0;
-    }
-    30%,
-    60% {
-      background-position: calc(100% + var(--shiny-width)) 0;
-    }
-  }
   --animate-shine: shine var(--duration) infinite linear;
   @keyframes shine {
     0% {
@@ -606,12 +541,6 @@
     to {
       background-position: 0% 0%;
     }
-  }
-}
-
-@layer base {
-  body {
-    @apply bg-background text-foreground;
   }
 }
 

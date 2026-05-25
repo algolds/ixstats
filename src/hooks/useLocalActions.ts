@@ -57,9 +57,7 @@ function generateId(): string {
 }
 
 export function useLocalActions(countryId: string): UseLocalActionsReturn {
-  const [actions, setActions] = useState<LocalAction[]>(() =>
-    loadActions(countryId),
-  );
+  const [actions, setActions] = useState<LocalAction[]>(() => loadActions(countryId));
 
   // Re-load if countryId changes
   useEffect(() => {
@@ -83,7 +81,7 @@ export function useLocalActions(countryId: string): UseLocalActionsReturn {
       });
       return id;
     },
-    [countryId],
+    [countryId]
   );
 
   const getActions = useCallback(
@@ -91,7 +89,7 @@ export function useLocalActions(countryId: string): UseLocalActionsReturn {
       if (!type) return actions;
       return actions.filter((a) => a.type === type);
     },
-    [actions],
+    [actions]
   );
 
   const removeAction = useCallback(
@@ -102,7 +100,7 @@ export function useLocalActions(countryId: string): UseLocalActionsReturn {
         return next;
       });
     },
-    [countryId],
+    [countryId]
   );
 
   const clearActions = useCallback(
@@ -113,7 +111,7 @@ export function useLocalActions(countryId: string): UseLocalActionsReturn {
         return next;
       });
     },
-    [countryId],
+    [countryId]
   );
 
   return { actions, saveAction, getActions, removeAction, clearActions };

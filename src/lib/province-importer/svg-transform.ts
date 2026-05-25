@@ -172,11 +172,7 @@ export function getAccumulatedTransform(el: Element, stopAt: Element): SvgMatrix
     }
 
     // Handle viewBox on inner <svg> elements
-    if (
-      current.localName === "svg" &&
-      current !== stopAt &&
-      current.getAttribute("viewBox")
-    ) {
+    if (current.localName === "svg" && current !== stopAt && current.getAttribute("viewBox")) {
       const vbTransform = viewBoxTransform(current);
       if (vbTransform) {
         result = multiplyMatrices(vbTransform, result);
@@ -225,11 +221,7 @@ function viewBoxTransform(svgEl: Element): SvgMatrix | null {
 // ──────────────────────────────────────────────
 
 /** Apply an SVG matrix to a single point. */
-export function applyMatrixToPoint(
-  x: number,
-  y: number,
-  m: SvgMatrix
-): [number, number] {
+export function applyMatrixToPoint(x: number, y: number, m: SvgMatrix): [number, number] {
   return [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f];
 }
 
@@ -240,7 +232,5 @@ export function applyMatrixToRings(
 ): [number, number][][] {
   if (isIdentity(m)) return rings;
 
-  return rings.map((ring) =>
-    ring.map(([x, y]) => applyMatrixToPoint(x, y, m))
-  );
+  return rings.map((ring) => ring.map(([x, y]) => applyMatrixToPoint(x, y, m)));
 }

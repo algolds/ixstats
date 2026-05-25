@@ -89,8 +89,10 @@ export function detectProvinceLayer(svgRoot: Element): {
     // while marker/locator shapes have very few (~10). This is a strong
     // signal to distinguish actual boundaries from decorative elements.
     const avgVertices = shapeCount > 0 ? countTotalVertices(g) / shapeCount : 0;
-    if (avgVertices >= 50) score += 30;       // complex shapes — very likely boundaries
-    else if (avgVertices >= 20) score += 15;  // moderately complex
+    if (avgVertices >= 50)
+      score += 30; // complex shapes — very likely boundaries
+    else if (avgVertices >= 20)
+      score += 15; // moderately complex
     else if (avgVertices < 15 && shapeCount >= 3) score -= 20; // simple shapes — likely markers/icons
 
     // Check if children have diverse fill colors (province layers usually do)
@@ -116,7 +118,9 @@ export function detectProvinceLayer(svgRoot: Element): {
   candidates.sort((a, b) => b.score - a.score);
 
   if (candidates.length > 0) {
-    log.push(`Layer candidates: ${candidates.map((c) => `${c.name}(score=${c.score}, shapes=${c.shapeCount})`).join(", ")}`);
+    log.push(
+      `Layer candidates: ${candidates.map((c) => `${c.name}(score=${c.score}, shapes=${c.shapeCount})`).join(", ")}`
+    );
   }
 
   let best = candidates[0];
@@ -124,25 +128,31 @@ export function detectProvinceLayer(svgRoot: Element): {
   // If the best candidate has very few shapes (<5) but there's a candidate
   // with many more shapes, prefer the one with more shapes (likely the real province layer)
   if (best && best.shapeCount < 5) {
-    const betterByShapes = candidates.find(c => c.shapeCount >= 10 && c.score >= 20);
+    const betterByShapes = candidates.find((c) => c.shapeCount >= 10 && c.score >= 20);
     if (betterByShapes) {
-      log.push(`Overriding "${best.name}" (${best.shapeCount} shapes) with "${betterByShapes.name}" (${betterByShapes.shapeCount} shapes)`);
+      log.push(
+        `Overriding "${best.name}" (${best.shapeCount} shapes) with "${betterByShapes.name}" (${betterByShapes.shapeCount} shapes)`
+      );
       best = betterByShapes;
     }
   }
 
   if (best && best.score >= 20) {
-    log.push(`Selected province layer: "${best.name}" (score=${best.score}, shapes=${best.shapeCount})`);
+    log.push(
+      `Selected province layer: "${best.name}" (score=${best.score}, shapes=${best.shapeCount})`
+    );
     return { layer: best.element, confidence: Math.min(best.score / 100, 1.0), log };
   }
 
   // Last resort: find the group with the most filled shapes (>= 5)
   const byShapeCount = candidates
-    .filter(c => c.shapeCount >= 5)
+    .filter((c) => c.shapeCount >= 5)
     .sort((a, b) => b.shapeCount - a.shapeCount);
   if (byShapeCount.length > 0) {
     const fallback = byShapeCount[0]!;
-    log.push(`Fallback to highest-shape-count layer: "${fallback.name}" (${fallback.shapeCount} shapes)`);
+    log.push(
+      `Fallback to highest-shape-count layer: "${fallback.name}" (${fallback.shapeCount} shapes)`
+    );
     return { layer: fallback.element, confidence: 0.3, log };
   }
 
@@ -156,22 +166,41 @@ export function detectProvinceLayer(svgRoot: Element): {
 
 /** Well-known topographic/elevation color palettes (earth tones, green-to-brown gradients). */
 const TOPO_COLORS = new Set([
-  "#a8c995", "#c3d3a1", "#dcdcac", "#f7e6b8", "#dac497",
-  "#bea276", "#9c7b50", "#8b7142", "#6b5b3a", "#4a3b2a",
-  "#e8e4c9", "#d4c79f", "#c4b07a", "#b49a5e",
+  "#a8c995",
+  "#c3d3a1",
+  "#dcdcac",
+  "#f7e6b8",
+  "#dac497",
+  "#bea276",
+  "#9c7b50",
+  "#8b7142",
+  "#6b5b3a",
+  "#4a3b2a",
+  "#e8e4c9",
+  "#d4c79f",
+  "#c4b07a",
+  "#b49a5e",
 ]);
 
 /** Water/ocean colors. */
 const WATER_COLORS = new Set([
-  "#dfeff9", "#c6ecff", "#aad4f5", "#89c0e8", "#6bb0d9",
-  "#246a9b", "#246a9c", "#1a5276", "#0099ff", "#0066cc",
+  "#dfeff9",
+  "#c6ecff",
+  "#aad4f5",
+  "#89c0e8",
+  "#6bb0d9",
+  "#246a9b",
+  "#246a9c",
+  "#1a5276",
+  "#0099ff",
+  "#0066cc",
 ]);
 
 /** Common province fill colors (neutral, pastel, or distinctive). */
 const PROVINCE_FILL_PATTERNS = [
-  /^#f[0-9a-f]{5}$/i,   // Light pastels (f-prefix)
-  /^#e[0-9a-f]{5}$/i,   // Light greys/pastels
-  /^#d[0-9a-f]{5}$/i,   // Mid-light
+  /^#f[0-9a-f]{5}$/i, // Light pastels (f-prefix)
+  /^#e[0-9a-f]{5}$/i, // Light greys/pastels
+  /^#d[0-9a-f]{5}$/i, // Mid-light
 ];
 
 /**
@@ -181,7 +210,7 @@ const PROVINCE_FILL_PATTERNS = [
 export function filterProvinceShapes(
   shapes: Element[],
   svgRoot: Element,
-  log: string[] = [],
+  log: string[] = []
 ): Element[] {
   if (shapes.length === 0) return [];
 
@@ -227,7 +256,9 @@ export function filterProvinceShapes(
     }
   }
 
-  log.push(`Shape analysis: ${shapes.length} shapes, ${fillCounts.size} fill colors, ${strokeCounts.size} stroke colors`);
+  log.push(
+    `Shape analysis: ${shapes.length} shapes, ${fillCounts.size} fill colors, ${strokeCounts.size} stroke colors`
+  );
 
   // Identify the dominant fill colors (province fills tend to be 1-3 dominant colors)
   const sortedFills = [...fillCounts.entries()].sort((a, b) => b[1] - a[1]);
@@ -240,7 +271,12 @@ export function filterProvinceShapes(
   for (const [color, count] of sortedFills) {
     const isTopoColor = TOPO_COLORS.has(color) || isEarthTone(color);
     const isWaterColor = WATER_COLORS.has(color) || isBlueish(color);
-    const isBlackOrWhite = color === "#000000" || color === "#ffffff" || color === "#fff" || color === "black" || color === "white";
+    const isBlackOrWhite =
+      color === "#000000" ||
+      color === "#ffffff" ||
+      color === "#fff" ||
+      color === "black" ||
+      color === "white";
 
     if (isTopoColor) {
       topoFills.add(color);
@@ -257,14 +293,15 @@ export function filterProvinceShapes(
   const hasFewProvinceColors = provinceFills.size <= 5;
 
   if (hasManyTopoColors && provinceFills.size > 0) {
-    log.push(`Topo map detected: ${topoFills.size} topo fills, ${provinceFills.size} province fills. Filtering to province colors.`);
+    log.push(
+      `Topo map detected: ${topoFills.size} topo fills, ${provinceFills.size} province fills. Filtering to province colors.`
+    );
   }
 
   // If no clear province colors but we have topo colors,
   // check for shapes with uniform stroke (black border) — those are province outlines on topo
-  const dominantStroke = strokeCounts.size > 0
-    ? [...strokeCounts.entries()].sort((a, b) => b[1] - a[1])[0]![0]
-    : null;
+  const dominantStroke =
+    strokeCounts.size > 0 ? [...strokeCounts.entries()].sort((a, b) => b[1] - a[1])[0]![0] : null;
 
   // Filter shapes
   const result: Element[] = [];
@@ -279,7 +316,14 @@ export function filterProvinceShapes(
     if (hasManyTopoColors && topoFills.has(s.fill)) continue;
 
     // Exclude black/white fills (borders, masks)
-    if (s.fill === "#000000" || s.fill === "#ffffff" || s.fill === "#fff" || s.fill === "black" || s.fill === "white") continue;
+    if (
+      s.fill === "#000000" ||
+      s.fill === "#ffffff" ||
+      s.fill === "#fff" ||
+      s.fill === "black" ||
+      s.fill === "white"
+    )
+      continue;
 
     result.push(s.el);
   }
@@ -290,7 +334,9 @@ export function filterProvinceShapes(
   if (waterFills.size > 0) {
     log.push(`Excluded water colors: ${[...waterFills].join(", ")}`);
   }
-  log.push(`Province filter: ${shapes.length} → ${result.length} shapes (excluded ${topoFills.size} topo colors, ${waterFills.size} water colors)`);
+  log.push(
+    `Province filter: ${shapes.length} → ${result.length} shapes (excluded ${topoFills.size} topo colors, ${waterFills.size} water colors)`
+  );
 
   return result;
 }
@@ -303,7 +349,7 @@ function isEarthTone(hex: string): boolean {
   const g = parseInt(norm.slice(3, 5), 16);
   const b = parseInt(norm.slice(5, 7), 16);
   // Earth tones: r > g > b, warm/muted colors
-  return r > 100 && g > 80 && b < g && (r - b) > 40 && g < 220;
+  return r > 100 && g > 80 && b < g && r - b > 40 && g < 220;
 }
 
 /** Check if a hex color is blueish (water). */
@@ -345,7 +391,9 @@ export function normalizeColor(color: string): string {
 
   // Handle 3-char hex → 6-char hex
   if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
-    const r = trimmed[1]!, g = trimmed[2]!, b = trimmed[3]!;
+    const r = trimmed[1]!,
+      g = trimmed[2]!,
+      b = trimmed[3]!;
     return `#${r}${r}${g}${g}${b}${b}`;
   }
 
@@ -364,7 +412,9 @@ export function normalizeColor(color: string): string {
  */
 export function collectShapeElements(container: Element, svgRoot?: Element): Element[] {
   const shapes: Element[] = [];
-  const hiddenClasses = extractHiddenCssClasses(svgRoot ?? container.ownerDocument?.documentElement ?? container);
+  const hiddenClasses = extractHiddenCssClasses(
+    svgRoot ?? container.ownerDocument?.documentElement ?? container
+  );
   collectShapesRecursive(container, shapes, hiddenClasses);
   return shapes;
 }
@@ -408,7 +458,8 @@ export function isDecorativeElement(el: Element): boolean {
 
   // Invisible: fill="none" AND stroke="none"
   const fillNone = fill === "none" || style.includes("fill:none") || style.includes("fill: none");
-  const strokeNone = stroke === "none" || style.includes("stroke:none") || style.includes("stroke: none");
+  const strokeNone =
+    stroke === "none" || style.includes("stroke:none") || style.includes("stroke: none");
   if (fillNone && strokeNone) return true;
 
   // Lines are always decorative (borders, not regions)
@@ -445,7 +496,8 @@ export function isDecorativeElement(el: Element): boolean {
       if (vb) {
         const parts = vb.split(/[\s,]+/).map(Number);
         if (parts.length >= 4) {
-          const vbW = parts[2]!, vbH = parts[3]!;
+          const vbW = parts[2]!,
+            vbH = parts[3]!;
           if (w >= vbW * 0.9 && h >= vbH * 0.9) return true; // Background rect
         }
       }
@@ -472,7 +524,10 @@ export function isDecorativeElement(el: Element): boolean {
               const pts = el.getAttribute("points") ?? "";
               const nums = pts.match(/[-+]?\d*\.?\d+/g);
               if (nums && nums.length >= 4) {
-                let pMinX = Infinity, pMinY = Infinity, pMaxX = -Infinity, pMaxY = -Infinity;
+                let pMinX = Infinity,
+                  pMinY = Infinity,
+                  pMaxX = -Infinity,
+                  pMaxY = -Infinity;
                 for (let k = 0; k < nums.length - 1; k += 2) {
                   const px = parseFloat(nums[k]!);
                   const py = parseFloat(nums[k + 1]!);

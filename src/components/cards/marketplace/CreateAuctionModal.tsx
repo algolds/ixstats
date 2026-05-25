@@ -264,7 +264,7 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="text-xs text-gray-300 sm:text-sm">
                   Featured Listing (+25 IxC) - Highlighted in marketplace

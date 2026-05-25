@@ -884,7 +884,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
                                 key={i}
                                 className="text-muted-foreground flex items-start gap-2 text-xs"
                               >
-                                <CheckCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500" />
+                                <CheckCircle className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
                                 {detail}
                               </div>
                             ))}

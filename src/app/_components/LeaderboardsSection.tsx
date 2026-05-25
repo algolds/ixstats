@@ -206,7 +206,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
               <CountryFlag
                 countryName={country.name}
                 flagUrl={flagUrls[country.name] || null}
-                className="h-8 w-10 flex-shrink-0"
+                className="h-8 w-10 shrink-0"
               />
 
               <div className="min-w-0 flex-1">

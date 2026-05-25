@@ -12,7 +12,11 @@ interface ProjectionToggleProps {
 const ICONS: Record<ProjectionMode, React.ReactNode> = {
   dynamic: (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+      />
     </svg>
   ),
   globe: (
@@ -31,14 +35,14 @@ const ICONS: Record<ProjectionMode, React.ReactNode> = {
 
 export function ProjectionToggle({ projectionMode, onProjectionChange }: ProjectionToggleProps) {
   return (
-    <div className="absolute right-[10px] top-[120px] z-10 flex flex-col overflow-hidden rounded-md bg-card shadow-md ring-1 ring-border">
+    <div className="bg-card ring-border absolute top-[120px] right-[10px] z-10 flex flex-col overflow-hidden rounded-md shadow-md ring-1">
       {PROJECTION_MODES.map(({ mode, title }) => {
         const isActive = projectionMode === mode;
         return (
           <button
             key={mode}
             onClick={() => onProjectionChange(mode)}
-            className={`flex h-[29px] w-[29px] items-center justify-center border-b border-border last:border-b-0 transition-colors ${
+            className={`border-border flex h-[29px] w-[29px] items-center justify-center border-b transition-colors last:border-b-0 ${
               isActive
                 ? "bg-blue-500 text-white"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"

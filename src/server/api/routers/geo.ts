@@ -31,10 +31,7 @@ import {
   preparePoliticalFeatures,
   featureIdToDisplayName,
 } from "~/lib/map-utils";
-import {
-  compressFeatureCollection,
-  type CompressOptions,
-} from "~/lib/geojson-compress";
+import { compressFeatureCollection, type CompressOptions } from "~/lib/geojson-compress";
 import {
   MAP_LAYER_TYPES,
   DEFAULT_COUNTRY_COLORS,
@@ -75,10 +72,9 @@ import { detectConflicts, type FeatureData } from "~/lib/map-conflict-detector";
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z
   .tuple([z.number(), z.number()])
-  .refine(
-    ([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90,
-    { message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)" }
-  );
+  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
+    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
+  });
 
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
@@ -118,19 +114,16 @@ const CLIMATE_COLOR_MAP: Record<string, string> = {
 // In-memory cache for assembled FeatureCollections
 // ──────────────────────────────────────────────
 
-const layerCache = new Map<
-  string,
-  { data: FeatureCollection; timestamp: number }
->();
+const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
 /** Per-layer cache TTL — static layers imported from SVGs rarely change */
 const CACHE_TTLS: Record<string, number> = {
-  political: 15 * 60 * 1000,          // 15 min (editable)
-  background: 24 * 60 * 60 * 1000,    // 24 hours (static)
-  altitudes: 24 * 60 * 60 * 1000,     // 24 hours (static)
-  climate: 24 * 60 * 60 * 1000,       // 24 hours (static)
-  rivers: 24 * 60 * 60 * 1000,        // 24 hours (static)
-  lakes: 24 * 60 * 60 * 1000,         // 24 hours (static)
-  icecaps: 24 * 60 * 60 * 1000,       // 24 hours (static)
+  political: 15 * 60 * 1000, // 15 min (editable)
+  background: 24 * 60 * 60 * 1000, // 24 hours (static)
+  altitudes: 24 * 60 * 60 * 1000, // 24 hours (static)
+  climate: 24 * 60 * 60 * 1000, // 24 hours (static)
+  rivers: 24 * 60 * 60 * 1000, // 24 hours (static)
+  lakes: 24 * 60 * 60 * 1000, // 24 hours (static)
+  icecaps: 24 * 60 * 60 * 1000, // 24 hours (static)
 };
 const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
 
@@ -138,13 +131,13 @@ const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
  * Decorative layers use precision 3 (~111m) and higher tolerance to cut payload.
  * Political borders keep precision 4 (~11m) for crisp rendering. */
 const LAYER_COMPRESSION: Record<string, CompressOptions> = {
-  altitudes:  { simplifyTolerance: 0.05,  coordinatePrecision: 3 },  // decorative — aggressive
-  rivers:     { simplifyTolerance: 0.035, coordinatePrecision: 3 },  // decorative — aggressive
-  climate:    { simplifyTolerance: 0.05,  coordinatePrecision: 3 },  // decorative — aggressive
-  political:  { simplifyTolerance: 0.008, coordinatePrecision: 4 },  // borders — keep crisp
-  lakes:      { simplifyTolerance: 0.02,  coordinatePrecision: 3 },  // decorative
-  icecaps:    { simplifyTolerance: 0,     coordinatePrecision: 3 },  // no simplification — preserves polar vertices
-  background: { simplifyTolerance: 0,     coordinatePrecision: 3 },
+  altitudes: { simplifyTolerance: 0.05, coordinatePrecision: 3 }, // decorative — aggressive
+  rivers: { simplifyTolerance: 0.035, coordinatePrecision: 3 }, // decorative — aggressive
+  climate: { simplifyTolerance: 0.05, coordinatePrecision: 3 }, // decorative — aggressive
+  political: { simplifyTolerance: 0.008, coordinatePrecision: 4 }, // borders — keep crisp
+  lakes: { simplifyTolerance: 0.02, coordinatePrecision: 3 }, // decorative
+  icecaps: { simplifyTolerance: 0, coordinatePrecision: 3 }, // no simplification — preserves polar vertices
+  background: { simplifyTolerance: 0, coordinatePrecision: 3 },
 };
 
 /**
@@ -157,26 +150,28 @@ type ZoomBucket = 0 | 1 | 2;
 
 function getZoomBucket(zoom?: number): ZoomBucket {
   if (zoom === undefined || zoom === null) return 1; // default = mid
-  if (zoom < 4) return 0;    // globe view
-  if (zoom < 7) return 1;    // mid zoom
-  return 2;                  // detail zoom
+  if (zoom < 4) return 0; // globe view
+  if (zoom < 7) return 1; // mid zoom
+  return 2; // detail zoom
 }
 
 const LOD_OVERRIDES: Record<ZoomBucket, Record<string, Partial<CompressOptions>>> = {
-  0: { // Globe view — very aggressive (user can't see detail anyway)
-    altitudes:  { simplifyTolerance: 0.12, coordinatePrecision: 2 },
-    rivers:     { simplifyTolerance: 0.10, coordinatePrecision: 2 },
-    climate:    { simplifyTolerance: 0.12, coordinatePrecision: 2 },
-    political:  { simplifyTolerance: 0.025 },
-    lakes:      { simplifyTolerance: 0.06, coordinatePrecision: 2 },
+  0: {
+    // Globe view — very aggressive (user can't see detail anyway)
+    altitudes: { simplifyTolerance: 0.12, coordinatePrecision: 2 },
+    rivers: { simplifyTolerance: 0.1, coordinatePrecision: 2 },
+    climate: { simplifyTolerance: 0.12, coordinatePrecision: 2 },
+    political: { simplifyTolerance: 0.025 },
+    lakes: { simplifyTolerance: 0.06, coordinatePrecision: 2 },
   },
   1: {}, // Mid zoom — use defaults
-  2: { // Detail view — minimal simplification for crisp borders
-    political:  { simplifyTolerance: 0.002, coordinatePrecision: 4 },
-    altitudes:  { simplifyTolerance: 0.01,  coordinatePrecision: 4 },
-    rivers:     { simplifyTolerance: 0.008, coordinatePrecision: 4 },
-    climate:    { simplifyTolerance: 0.01,  coordinatePrecision: 4 },
-    lakes:      { simplifyTolerance: 0.005, coordinatePrecision: 4 },
+  2: {
+    // Detail view — minimal simplification for crisp borders
+    political: { simplifyTolerance: 0.002, coordinatePrecision: 4 },
+    altitudes: { simplifyTolerance: 0.01, coordinatePrecision: 4 },
+    rivers: { simplifyTolerance: 0.008, coordinatePrecision: 4 },
+    climate: { simplifyTolerance: 0.01, coordinatePrecision: 4 },
+    lakes: { simplifyTolerance: 0.005, coordinatePrecision: 4 },
   },
 };
 
@@ -211,7 +206,16 @@ function setCache(key: string, data: FeatureCollection): void {
 
 export async function warmGeoCache(db: any): Promise<void> {
   const start = Date.now();
-  const layers = ["background", "altitudes", "political", "rivers", "icecaps", "climate", "lakes", "country_labels"];
+  const layers = [
+    "background",
+    "altitudes",
+    "political",
+    "rivers",
+    "icecaps",
+    "climate",
+    "lakes",
+    "country_labels",
+  ];
   let warmed = 0;
 
   console.log(`[GeoCache] Warming cache for ${layers.length} layers...`);
@@ -227,7 +231,9 @@ export async function warmGeoCache(db: any): Promise<void> {
           warmed++;
           const bytes = JSON.stringify(result).length;
           totalBytes += bytes;
-          console.log(`[GeoCache]     ${layerType}: ${(bytes / 1024 / 1024).toFixed(2)}MB, ${result.features.length} features`);
+          console.log(
+            `[GeoCache]     ${layerType}: ${(bytes / 1024 / 1024).toFixed(2)}MB, ${result.features.length} features`
+          );
         }
       } catch (err) {
         console.warn(`[GeoCache] Failed to warm ${layerType} (z${zoomBucket}):`, err);
@@ -235,7 +241,9 @@ export async function warmGeoCache(db: any): Promise<void> {
     }
   }
 
-  console.log(`[GeoCache] Warmed ${warmed} layer-zoom combinations in ${Date.now() - start}ms — total ${(totalBytes / 1024 / 1024).toFixed(2)}MB`);
+  console.log(
+    `[GeoCache] Warmed ${warmed} layer-zoom combinations in ${Date.now() - start}ms — total ${(totalBytes / 1024 / 1024).toFixed(2)}MB`
+  );
 }
 
 // ──────────────────────────────────────────────
@@ -279,8 +287,10 @@ function computeVisualCenter(geometry: any): [number, number] {
     if (rings[i].length > largestRing.length) largestRing = rings[i];
   }
 
-  let minLng = Infinity, maxLng = -Infinity;
-  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity,
+    maxLng = -Infinity;
+  let minLat = Infinity,
+    maxLat = -Infinity;
   for (const [lng, lat] of largestRing) {
     if (lng < minLng) minLng = lng;
     if (lng > maxLng) maxLng = lng;
@@ -290,7 +300,8 @@ function computeVisualCenter(geometry: any): [number, number] {
 
   // Handle antimeridian wrap: if bbox width > 300deg, it likely wraps
   if (maxLng - minLng > 300) {
-    minLng = Infinity; maxLng = -Infinity;
+    minLng = Infinity;
+    maxLng = -Infinity;
     for (const [lng] of largestRing) {
       const norm = lng < 0 ? lng + 360 : lng;
       if (norm < minLng) minLng = norm;
@@ -310,9 +321,7 @@ function computeVisualCenter(geometry: any): [number, number] {
 
 const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
 
-async function loadGeoJSONFromFile(
-  layerType: string
-): Promise<FeatureCollection> {
+async function loadGeoJSONFromFile(layerType: string): Promise<FeatureCollection> {
   const filePath = join(GEOJSON_DIR, `${layerType}.geojson`);
   const raw = await readFile(filePath, "utf-8");
   const parsed = JSON.parse(raw) as FeatureCollection;
@@ -344,16 +353,24 @@ async function loadLayerFromDB(
     if (!politicalFC) return null;
 
     // Build deduplicated point source: one centroid per unique country name
-    const seen = new Map<string, {
-      lng: number; lat: number; area: number; name: string;
-      continent?: string; region?: string; ringSize: number;
-      importance: number;
-    }>();
+    const seen = new Map<
+      string,
+      {
+        lng: number;
+        lat: number;
+        area: number;
+        name: string;
+        continent?: string;
+        region?: string;
+        ringSize: number;
+        importance: number;
+      }
+    >();
 
     // Get top countries set (could be injected but we'll use a local fetch if needed)
     // For now we'll just use the DEMOTED list and area-based importance
     const demotedSet = new Set(DEMOTED_COUNTRY_NAMES);
-    
+
     for (const feat of politicalFC.features) {
       const p = feat.properties;
       if (!p?._displayName || p._sovereignId) continue;
@@ -372,7 +389,11 @@ async function loadLayerFromDB(
 
       if (!existing || ringSize > existing.ringSize) {
         seen.set(name, {
-          lng, lat, area, name, ringSize,
+          lng,
+          lat,
+          area,
+          name,
+          ringSize,
           continent: p._continent as string | undefined,
           region: p._region as string | undefined,
           importance: demotedSet.has(name) ? -1 : 0,
@@ -382,7 +403,7 @@ async function loadLayerFromDB(
 
     // Sort by area to find top countries for base importance
     const sortedByArea = Array.from(seen.values()).sort((a, b) => b.area - a.area);
-    const topNames = new Set(sortedByArea.slice(0, 30).map(c => c.name));
+    const topNames = new Set(sortedByArea.slice(0, 30).map((c) => c.name));
 
     const features: Feature[] = sortedByArea.map((c, i) => {
       let importance = 0;
@@ -399,7 +420,7 @@ async function loadLayerFromDB(
           _continent: c.continent,
           _region: c.region,
           _importance: importance,
-          _distFade: 1
+          _distFade: 1,
         },
       };
     });
@@ -421,7 +442,9 @@ async function loadLayerFromDB(
       areaSqKm: true,
       centroid: true,
       // Join to Country for continent/region (used for geography tag highlighting)
-      ...(layerType === "political" ? { country: { select: { continent: true, region: true } } } : {}),
+      ...(layerType === "political"
+        ? { country: { select: { continent: true, region: true } } }
+        : {}),
     },
   });
 
@@ -450,7 +473,9 @@ async function loadLayerFromDB(
           sovereignName: r.sovereign.name,
           relationType: r.relationshipType,
           autonomyLevel: r.autonomyLevel,
-          relationLabel: SOVEREIGNTY_TYPE_MAP[r.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]?.short ?? r.relationshipType,
+          relationLabel:
+            SOVEREIGNTY_TYPE_MAP[r.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]?.short ??
+            r.relationshipType,
         });
         sovereignSet.add(r.sovereignId);
       }
@@ -504,7 +529,11 @@ async function loadLayerFromDB(
       if (Array.isArray(rawCentroid) && rawCentroid.length >= 2) {
         centroidLng = rawCentroid[0];
         centroidLat = rawCentroid[1];
-      } else if (rawCentroid && "coordinates" in rawCentroid && Array.isArray(rawCentroid.coordinates)) {
+      } else if (
+        rawCentroid &&
+        "coordinates" in rawCentroid &&
+        Array.isArray(rawCentroid.coordinates)
+      ) {
         centroidLng = rawCentroid.coordinates[0];
         centroidLat = rawCentroid.coordinates[1];
       }
@@ -513,7 +542,10 @@ async function loadLayerFromDB(
       const extraProps: Record<string, unknown> = {};
 
       if (layerType === "political") {
-        fillColor = getColorForFeature(layer.featureId, layer.properties as Record<string, unknown>);
+        fillColor = getColorForFeature(
+          layer.featureId,
+          layer.properties as Record<string, unknown>
+        );
 
         // Sovereignty enrichment
         if (layer.countryId) {
@@ -541,9 +573,8 @@ async function loadLayerFromDB(
 
       // For non-political layers, skip raw SVG properties (fill, ixmap-subgroup, etc.)
       // — _fillColor already contains the computed color
-      const baseProps = layerType === "political"
-        ? { ...(layer.properties as Record<string, unknown>) }
-        : {};
+      const baseProps =
+        layerType === "political" ? { ...(layer.properties as Record<string, unknown>) } : {};
 
       // Decorative layers (altitudes, rivers, climate, etc.) only need _id + _fillColor.
       // Political layer carries full metadata for info panels and click handling.
@@ -558,7 +589,9 @@ async function loadLayerFromDB(
             _areaSqKm: layer.areaSqKm,
             _centroidLng: centroidLng,
             _centroidLat: centroidLat,
-            ...((layer as any).country?.continent ? { _continent: (layer as any).country.continent } : {}),
+            ...((layer as any).country?.continent
+              ? { _continent: (layer as any).country.continent }
+              : {}),
             ...((layer as any).country?.region ? { _region: (layer as any).country.region } : {}),
             ...extraProps,
           }
@@ -595,10 +628,7 @@ async function loadLayerFromDB(
   return split;
 }
 
-function getColorForFeature(
-  featureId: string,
-  properties: Record<string, unknown>
-): string {
+function getColorForFeature(featureId: string, properties: Record<string, unknown>): string {
   const fill = properties?.fill as string | undefined;
   if (fill && fill !== "#ffffff") return fill;
 
@@ -607,9 +637,7 @@ function getColorForFeature(
     hash = featureId.charCodeAt(i) + ((hash << 5) - hash);
     hash = hash & hash;
   }
-  return DEFAULT_COUNTRY_COLORS[
-    Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length
-  ];
+  return DEFAULT_COUNTRY_COLORS[Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length];
 }
 
 // ──────────────────────────────────────────────
@@ -625,11 +653,7 @@ export const geoRouter = createTRPCRouter({
     .input(
       z
         .object({
-          layers: z
-            .array(
-              z.enum(MAP_LAYER_TYPES as unknown as [string, ...string[]])
-            )
-            .optional(),
+          layers: z.array(z.enum(MAP_LAYER_TYPES as unknown as [string, ...string[]])).optional(),
           /** Current map zoom level for LOD-based geometry simplification */
           zoom: z.number().min(0).max(20).optional(),
         })
@@ -676,9 +700,7 @@ export const geoRouter = createTRPCRouter({
     .input(
       z
         .object({
-          layers: z
-            .array(z.enum(MAP_LAYER_TYPES as unknown as [string, ...string[]]))
-            .optional(),
+          layers: z.array(z.enum(MAP_LAYER_TYPES as unknown as [string, ...string[]])).optional(),
           zoom: z.number().min(0).max(20).optional(),
         })
         .optional()
@@ -722,24 +744,41 @@ export const geoRouter = createTRPCRouter({
             ctx.db.city.findMany({
               where: { status: "approved" },
               select: {
-                id: true, name: true, coordinates: true, population: true,
-                type: true, isNationalCapital: true, wikiPageTitle: true,
-                countryId: true, country: { select: { name: true, slug: true } },
+                id: true,
+                name: true,
+                coordinates: true,
+                population: true,
+                type: true,
+                isNationalCapital: true,
+                wikiPageTitle: true,
+                countryId: true,
+                country: { select: { name: true, slug: true } },
               },
             }),
             ctx.db.pointOfInterest.findMany({
               where: { status: "approved" },
               select: {
-                id: true, name: true, coordinates: true, category: true,
-                icon: true, description: true, wikiPageTitle: true,
-                countryId: true, country: { select: { name: true, slug: true } },
+                id: true,
+                name: true,
+                coordinates: true,
+                category: true,
+                icon: true,
+                description: true,
+                wikiPageTitle: true,
+                countryId: true,
+                country: { select: { name: true, slug: true } },
               },
             }),
             ctx.db.subdivision.findMany({
               where: { status: "approved" },
               select: {
-                id: true, name: true, type: true, level: true,
-                areaSqKm: true, geometry: true, countryId: true,
+                id: true,
+                name: true,
+                type: true,
+                level: true,
+                areaSqKm: true,
+                geometry: true,
+                countryId: true,
                 country: { select: { name: true, slug: true } },
               },
             }),
@@ -751,8 +790,12 @@ export const geoRouter = createTRPCRouter({
         ctx.db.city.findMany({
           where: { isNationalCapital: true, status: "approved" },
           select: {
-            id: true, name: true, coordinates: true, population: true,
-            wikiPageTitle: true, countryId: true,
+            id: true,
+            name: true,
+            coordinates: true,
+            population: true,
+            wikiPageTitle: true,
+            countryId: true,
             country: { select: { name: true, slug: true } },
           },
         }),
@@ -768,10 +811,15 @@ export const geoRouter = createTRPCRouter({
               type: "Feature" as const,
               geometry: { type: "Point" as const, coordinates: c.coordinates as [number, number] },
               properties: {
-                id: c.id, name: c.name, cityType: c.type,
-                isCapital: c.isNationalCapital, population: c.population,
-                countryId: c.countryId, countryName: c.country.name,
-                countrySlug: c.country.slug, wikiPageTitle: c.wikiPageTitle,
+                id: c.id,
+                name: c.name,
+                cityType: c.type,
+                isCapital: c.isNationalCapital,
+                population: c.population,
+                countryId: c.countryId,
+                countryName: c.country.name,
+                countrySlug: c.country.slug,
+                wikiPageTitle: c.wikiPageTitle,
               },
             })),
         },
@@ -783,10 +831,15 @@ export const geoRouter = createTRPCRouter({
               type: "Feature" as const,
               geometry: { type: "Point" as const, coordinates: p.coordinates as [number, number] },
               properties: {
-                id: p.id, name: p.name, category: p.category,
-                icon: p.icon, description: p.description,
-                wikiPageTitle: p.wikiPageTitle, countryId: p.countryId,
-                countryName: p.country.name, countrySlug: p.country.slug,
+                id: p.id,
+                name: p.name,
+                category: p.category,
+                icon: p.icon,
+                description: p.description,
+                wikiPageTitle: p.wikiPageTitle,
+                countryId: p.countryId,
+                countryName: p.country.name,
+                countrySlug: p.country.slug,
               },
             })),
         },
@@ -798,9 +851,14 @@ export const geoRouter = createTRPCRouter({
               type: "Feature" as const,
               geometry: s.geometry as import("geojson").Geometry,
               properties: {
-                id: s.id, name: s.name, subdivisionType: s.type,
-                level: s.level, areaSqKm: s.areaSqKm, countryId: s.countryId,
-                countryName: s.country.name, countrySlug: s.country.slug,
+                id: s.id,
+                name: s.name,
+                subdivisionType: s.type,
+                level: s.level,
+                areaSqKm: s.areaSqKm,
+                countryId: s.countryId,
+                countryName: s.country.name,
+                countrySlug: s.country.slug,
               },
             })),
         },
@@ -815,9 +873,13 @@ export const geoRouter = createTRPCRouter({
             type: "Feature" as const,
             geometry: { type: "Point" as const, coordinates: c.coordinates as [number, number] },
             properties: {
-              id: c.id, name: c.name, countryId: c.countryId,
-              countryName: c.country.name, countrySlug: c.country.slug,
-              population: c.population, wikiPageTitle: c.wikiPageTitle,
+              id: c.id,
+              name: c.name,
+              countryId: c.countryId,
+              countryName: c.country.name,
+              countrySlug: c.country.slug,
+              population: c.population,
+              wikiPageTitle: c.wikiPageTitle,
             },
           })),
       };
@@ -896,7 +958,10 @@ export const geoRouter = createTRPCRouter({
         });
       }
 
-      const rawC = mapLayer.centroid as [number, number] | { coordinates?: [number, number] } | null;
+      const rawC = mapLayer.centroid as
+        | [number, number]
+        | { coordinates?: [number, number] }
+        | null;
       let parsedCentroid: { lng: number; lat: number } | null = null;
       if (Array.isArray(rawC) && rawC.length >= 2) {
         parsedCentroid = { lng: rawC[0], lat: rawC[1] };
@@ -910,9 +975,7 @@ export const geoRouter = createTRPCRouter({
         displayName: mapLayer.displayName || featureIdToDisplayName(mapLayer.featureId),
         geometry: mapLayer.geometry,
         centroid: parsedCentroid,
-        bbox: bbox
-          ? { minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] }
-          : null,
+        bbox: bbox ? { minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] } : null,
         areaSqKm: mapLayer.areaSqKm,
         country: mapLayer.country,
       };
@@ -955,8 +1018,7 @@ export const geoRouter = createTRPCRouter({
           const r = results[0];
           return {
             featureId: r.featureId,
-            displayName:
-              r.displayName || featureIdToDisplayName(r.featureId),
+            displayName: r.displayName || featureIdToDisplayName(r.featureId),
             countryId: r.countryId,
             fillColor: getColorForFeature(r.featureId, r.properties as Record<string, unknown>),
           };
@@ -1052,7 +1114,7 @@ export const geoRouter = createTRPCRouter({
         // Derive climate name from fill color if metadata not yet enriched
         const climFill = (climProps.fill as string) ?? null;
         const derivedClimate = climFill
-          ? CLIMATE_COLOR_MAP[climFill.toLowerCase()] ?? null
+          ? (CLIMATE_COLOR_MAP[climFill.toLowerCase()] ?? null)
           : null;
 
         return {
@@ -1061,9 +1123,12 @@ export const geoRouter = createTRPCRouter({
             ? {
                 zoneId: (altProps.zoneId as string) ?? derivedZone?.zoneId ?? null,
                 zoneName: (altProps.zoneName as string) ?? derivedZone?.zoneName ?? null,
-                elevationMin: (altProps.elevationMin as number) ?? derivedZone?.elevationMin ?? null,
-                elevationMax: (altProps.elevationMax as number) ?? derivedZone?.elevationMax ?? null,
-                elevationLabel: (altProps.elevationLabel as string) ??
+                elevationMin:
+                  (altProps.elevationMin as number) ?? derivedZone?.elevationMin ?? null,
+                elevationMax:
+                  (altProps.elevationMax as number) ?? derivedZone?.elevationMax ?? null,
+                elevationLabel:
+                  (altProps.elevationLabel as string) ??
                   (derivedZone ? `${derivedZone.elevationMin}-${derivedZone.elevationMax}m` : null),
                 color: altFill ?? derivedZone?.color ?? null,
               }
@@ -1078,12 +1143,14 @@ export const geoRouter = createTRPCRouter({
           country: political
             ? {
                 featureId: political.featureId,
-                displayName:
-                  political.displayName ||
-                  featureIdToDisplayName(political.featureId),
+                displayName: political.displayName || featureIdToDisplayName(political.featureId),
                 countryId: political.countryId,
                 ...(countryInfo
-                  ? { name: countryInfo.name, slug: countryInfo.slug, flag: normalizeFlagUrl(countryInfo.flag) }
+                  ? {
+                      name: countryInfo.name,
+                      slug: countryInfo.slug,
+                      flag: normalizeFlagUrl(countryInfo.flag),
+                    }
                   : {}),
               }
             : null,
@@ -1118,29 +1185,37 @@ export const geoRouter = createTRPCRouter({
       orderBy: { displayName: "asc" },
     });
 
-    return layers.map((l: {
-      featureId: string;
-      displayName: string | null;
-      properties: Record<string, unknown>;
-      countryId: string | null;
-      areaSqKm: number | null;
-      centroid: unknown;
-    }) => {
-      const raw = l.centroid as [number, number] | { coordinates?: [number, number] } | null;
-      let cLng = 0, cLat = 0;
-      if (Array.isArray(raw) && raw.length >= 2) { cLng = raw[0]; cLat = raw[1]; }
-      else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) { cLng = raw.coordinates[0]; cLat = raw.coordinates[1]; }
-      return {
-        featureId: l.featureId,
-        displayName: l.displayName || featureIdToDisplayName(l.featureId),
-        fillColor: getColorForFeature(l.featureId, l.properties as Record<string, unknown>),
-        countryId: l.countryId,
-        areaSqKm: l.areaSqKm,
-        centroidLng: cLng,
-        centroidLat: cLat,
-        isClaimed: !!l.countryId,
-      };
-    });
+    return layers.map(
+      (l: {
+        featureId: string;
+        displayName: string | null;
+        properties: Record<string, unknown>;
+        countryId: string | null;
+        areaSqKm: number | null;
+        centroid: unknown;
+      }) => {
+        const raw = l.centroid as [number, number] | { coordinates?: [number, number] } | null;
+        let cLng = 0,
+          cLat = 0;
+        if (Array.isArray(raw) && raw.length >= 2) {
+          cLng = raw[0];
+          cLat = raw[1];
+        } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
+          cLng = raw.coordinates[0];
+          cLat = raw.coordinates[1];
+        }
+        return {
+          featureId: l.featureId,
+          displayName: l.displayName || featureIdToDisplayName(l.featureId),
+          fillColor: getColorForFeature(l.featureId, l.properties as Record<string, unknown>),
+          countryId: l.countryId,
+          areaSqKm: l.areaSqKm,
+          centroidLng: cLng,
+          centroidLat: cLat,
+          isClaimed: !!l.countryId,
+        };
+      }
+    );
   }),
 
   /**
@@ -1154,10 +1229,7 @@ export const geoRouter = createTRPCRouter({
     });
 
     const countMap = new Map(
-      counts.map((c: { layerType: string; _count: { id: number } }) => [
-        c.layerType,
-        c._count.id,
-      ])
+      counts.map((c: { layerType: string; _count: { id: number } }) => [c.layerType, c._count.id])
     );
 
     return MAP_LAYER_TYPES.map((type) => ({
@@ -1174,9 +1246,7 @@ export const geoRouter = createTRPCRouter({
     .input(
       z.object({
         query: z.string().min(1).max(100),
-        types: z
-          .array(z.enum(["political", "city", "poi", "subdivision"]))
-          .optional(),
+        types: z.array(z.enum(["political", "city", "poi", "subdivision"])).optional(),
         limit: z.number().int().min(1).max(50).optional(),
       })
     )
@@ -1216,9 +1286,15 @@ export const geoRouter = createTRPCRouter({
 
         for (const f of features) {
           const raw = f.centroid as [number, number] | { coordinates?: [number, number] } | null;
-          let cLng = 0, cLat = 0;
-          if (Array.isArray(raw) && raw.length >= 2) { cLng = raw[0]; cLat = raw[1]; }
-          else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) { cLng = raw.coordinates[0]; cLat = raw.coordinates[1]; }
+          let cLng = 0,
+            cLat = 0;
+          if (Array.isArray(raw) && raw.length >= 2) {
+            cLng = raw[0];
+            cLat = raw[1];
+          } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
+            cLng = raw.coordinates[0];
+            cLat = raw.coordinates[1];
+          }
           results.push({
             type: "country",
             id: f.featureId,
@@ -1384,27 +1460,26 @@ export const geoRouter = createTRPCRouter({
    * Get map statistics (admin dashboard).
    */
   getMapStats: cachedPublicProcedure.query(async ({ ctx }) => {
-    const [totalFeatures, politicalFeatures, linkedFeatures, unlinkedFeatures] =
-      await Promise.all([
-        ctx.db.mapLayer.count({ where: { isActive: true } }),
-        ctx.db.mapLayer.count({
-          where: { layerType: "political", isActive: true },
-        }),
-        ctx.db.mapLayer.count({
-          where: {
-            layerType: "political",
-            isActive: true,
-            countryId: { not: null },
-          },
-        }),
-        ctx.db.mapLayer.count({
-          where: {
-            layerType: "political",
-            isActive: true,
-            countryId: null,
-          },
-        }),
-      ]);
+    const [totalFeatures, politicalFeatures, linkedFeatures, unlinkedFeatures] = await Promise.all([
+      ctx.db.mapLayer.count({ where: { isActive: true } }),
+      ctx.db.mapLayer.count({
+        where: { layerType: "political", isActive: true },
+      }),
+      ctx.db.mapLayer.count({
+        where: {
+          layerType: "political",
+          isActive: true,
+          countryId: { not: null },
+        },
+      }),
+      ctx.db.mapLayer.count({
+        where: {
+          layerType: "political",
+          isActive: true,
+          countryId: null,
+        },
+      }),
+    ]);
 
     const [totalCountries, countriesWithGeometry] = await Promise.all([
       ctx.db.country.count(),
@@ -1419,9 +1494,7 @@ export const geoRouter = createTRPCRouter({
       totalCountries,
       countriesWithGeometry,
       linkageRate:
-        politicalFeatures > 0
-          ? Math.round((linkedFeatures / politicalFeatures) * 100)
-          : 0,
+        politicalFeatures > 0 ? Math.round((linkedFeatures / politicalFeatures) * 100) : 0,
     };
   }),
 
@@ -1478,7 +1551,12 @@ export const geoRouter = createTRPCRouter({
 
       // Invalidate caches
       layerCache.delete("political");
-      await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage", "geo.getCountryLinkage"]);
+      await invalidateCache([
+        "geo.listCountries",
+        "geo.getWorldMap",
+        "geo.validateLinkage",
+        "geo.getCountryLinkage",
+      ]);
       broadcastMapUpdate("linkage", input.countryId);
 
       return {
@@ -1516,12 +1594,23 @@ export const geoRouter = createTRPCRouter({
       if (previousCountryId) {
         await ctx.db.country.update({
           where: { id: previousCountryId },
-          data: { geometry: null, centroid: null, boundingBox: null, landArea: null, areaSqMi: null },
+          data: {
+            geometry: null,
+            centroid: null,
+            boundingBox: null,
+            landArea: null,
+            areaSqMi: null,
+          },
         });
       }
 
       layerCache.delete("political");
-      await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage", "geo.getCountryLinkage"]);
+      await invalidateCache([
+        "geo.listCountries",
+        "geo.getWorldMap",
+        "geo.validateLinkage",
+        "geo.getCountryLinkage",
+      ]);
       broadcastMapUpdate("linkage", previousCountryId ?? undefined);
 
       return { featureId: input.featureId, previousCountryId };
@@ -1534,131 +1623,158 @@ export const geoRouter = createTRPCRouter({
    *   2. If no match, auto-create a new Country record
    * Also auto-detects wiki articles and sets wikiPageTitle.
    */
-  autoLinkAllCountries: adminProcedure
-    .mutation(async ({ ctx }) => {
-      const unlinked = await ctx.db.mapLayer.findMany({
-        where: { layerType: "political", countryId: null, isActive: true },
-        select: { id: true, featureId: true, displayName: true, geometry: true, areaSqKm: true, centroid: true, boundingBox: true },
-      });
+  autoLinkAllCountries: adminProcedure.mutation(async ({ ctx }) => {
+    const unlinked = await ctx.db.mapLayer.findMany({
+      where: { layerType: "political", countryId: null, isActive: true },
+      select: {
+        id: true,
+        featureId: true,
+        displayName: true,
+        geometry: true,
+        areaSqKm: true,
+        centroid: true,
+        boundingBox: true,
+      },
+    });
 
-      if (unlinked.length === 0) return { linked: 0, created: 0, failed: [] as string[] };
+    if (unlinked.length === 0) return { linked: 0, created: 0, failed: [] as string[] };
 
-      // Get all existing countries for name matching
-      const existingCountries = await ctx.db.country.findMany({
-        where: { isDemo: false },
-        select: { id: true, name: true },
-      });
-      const countryByName = new Map(existingCountries.map((c) => [c.name.toLowerCase(), c]));
+    // Get all existing countries for name matching
+    const existingCountries = await ctx.db.country.findMany({
+      where: { isDemo: false },
+      select: { id: true, name: true },
+    });
+    const countryByName = new Map(existingCountries.map((c) => [c.name.toLowerCase(), c]));
 
-      // Track which countries are already linked
-      const alreadyLinked = new Set(
-        (await ctx.db.mapLayer.findMany({
+    // Track which countries are already linked
+    const alreadyLinked = new Set(
+      (
+        await ctx.db.mapLayer.findMany({
           where: { layerType: "political", countryId: { not: null }, isActive: true },
           select: { countryId: true },
-        })).map((ml) => ml.countryId)
-      );
+        })
+      ).map((ml) => ml.countryId)
+    );
 
-      let linked = 0;
-      let created = 0;
-      const failed: string[] = [];
+    let linked = 0;
+    let created = 0;
+    const failed: string[] = [];
 
-      // Load WikiBridge for auto-detecting wiki articles
-      let wikiBridge: typeof import("~/lib/wiki-bridge") | null = null;
+    // Load WikiBridge for auto-detecting wiki articles
+    let wikiBridge: typeof import("~/lib/wiki-bridge") | null = null;
+    try {
+      wikiBridge = await import("~/lib/wiki-bridge");
+    } catch {
+      /* wiki bridge unavailable */
+    }
+
+    for (const feature of unlinked) {
+      const name = feature.displayName || feature.featureId;
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
       try {
-        wikiBridge = await import("~/lib/wiki-bridge");
-      } catch { /* wiki bridge unavailable */ }
+        // Try to match existing country by name
+        const existing = countryByName.get(name.toLowerCase());
 
-      for (const feature of unlinked) {
-        const name = feature.displayName || feature.featureId;
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-        try {
-          // Try to match existing country by name
-          const existing = countryByName.get(name.toLowerCase());
-
-          if (existing && !alreadyLinked.has(existing.id)) {
-            // Link to existing country
-            await ctx.db.mapLayer.update({
-              where: { id: feature.id },
-              data: { countryId: existing.id },
-            });
-            await ctx.db.country.update({
-              where: { id: existing.id },
-              data: {
-                geometry: feature.geometry as object,
-                centroid: feature.centroid as object | undefined,
-                boundingBox: feature.boundingBox as object | undefined,
-                landArea: feature.areaSqKm ?? undefined,
-                areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
-              },
-            });
-            alreadyLinked.add(existing.id);
-            linked++;
-          } else {
-            // Auto-detect wiki article
-            let wikiPageTitle: string | null = null;
-            if (wikiBridge) {
-              const wikiResults = await wikiBridge.searchPages(name, 1, "ixwiki");
-              if (wikiResults.length > 0 && wikiResults[0]!.title.toLowerCase() === name.toLowerCase()) {
-                wikiPageTitle = wikiResults[0]!.title;
-              }
+        if (existing && !alreadyLinked.has(existing.id)) {
+          // Link to existing country
+          await ctx.db.mapLayer.update({
+            where: { id: feature.id },
+            data: { countryId: existing.id },
+          });
+          await ctx.db.country.update({
+            where: { id: existing.id },
+            data: {
+              geometry: feature.geometry as object,
+              centroid: feature.centroid as object | undefined,
+              boundingBox: feature.boundingBox as object | undefined,
+              landArea: feature.areaSqKm ?? undefined,
+              areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+            },
+          });
+          alreadyLinked.add(existing.id);
+          linked++;
+        } else {
+          // Auto-detect wiki article
+          let wikiPageTitle: string | null = null;
+          if (wikiBridge) {
+            const wikiResults = await wikiBridge.searchPages(name, 1, "ixwiki");
+            if (
+              wikiResults.length > 0 &&
+              wikiResults[0]!.title.toLowerCase() === name.toLowerCase()
+            ) {
+              wikiPageTitle = wikiResults[0]!.title;
             }
-
-            // Create new country
-            const newCountry = await ctx.db.country.create({
-              data: {
-                name,
-                slug,
-                geometry: feature.geometry as object,
-                centroid: feature.centroid as object | undefined,
-                boundingBox: feature.boundingBox as object | undefined,
-                landArea: feature.areaSqKm ?? undefined,
-                areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
-                economicTier: "developing",
-                isDemo: false,
-                wikiPageTitle,
-                wikiSource: wikiPageTitle ? "ixwiki" : undefined,
-              },
-            });
-
-            // Link map feature to new country
-            await ctx.db.mapLayer.update({
-              where: { id: feature.id },
-              data: { countryId: newCountry.id },
-            });
-            alreadyLinked.add(newCountry.id);
-            created++;
           }
-        } catch (err) {
-          failed.push(`${name}: ${err instanceof Error ? err.message : "Unknown error"}`);
+
+          // Create new country
+          const newCountry = await ctx.db.country.create({
+            data: {
+              name,
+              slug,
+              geometry: feature.geometry as object,
+              centroid: feature.centroid as object | undefined,
+              boundingBox: feature.boundingBox as object | undefined,
+              landArea: feature.areaSqKm ?? undefined,
+              areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+              economicTier: "developing",
+              isDemo: false,
+              wikiPageTitle,
+              wikiSource: wikiPageTitle ? "ixwiki" : undefined,
+            },
+          });
+
+          // Link map feature to new country
+          await ctx.db.mapLayer.update({
+            where: { id: feature.id },
+            data: { countryId: newCountry.id },
+          });
+          alreadyLinked.add(newCountry.id);
+          created++;
         }
+      } catch (err) {
+        failed.push(`${name}: ${err instanceof Error ? err.message : "Unknown error"}`);
       }
+    }
 
-      layerCache.delete("political");
-      await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage"]);
+    layerCache.delete("political");
+    await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage"]);
 
-      return { linked, created, failed, total: unlinked.length };
-    }),
+    return { linked, created, failed, total: unlinked.length };
+  }),
 
   /**
    * Admin: Get system health — linkage completeness and data integrity.
    */
-  getSystemHealth: cachedPublicProcedure
-    .query(async ({ ctx }) => {
-      const [totalFeatures, linkedFeatures, totalCountries, countriesWithGeo, countriesWithWiki] = await Promise.all([
+  getSystemHealth: cachedPublicProcedure.query(async ({ ctx }) => {
+    const [totalFeatures, linkedFeatures, totalCountries, countriesWithGeo, countriesWithWiki] =
+      await Promise.all([
         ctx.db.mapLayer.count({ where: { layerType: "political", isActive: true } }),
-        ctx.db.mapLayer.count({ where: { layerType: "political", isActive: true, countryId: { not: null } } }),
+        ctx.db.mapLayer.count({
+          where: { layerType: "political", isActive: true, countryId: { not: null } },
+        }),
         ctx.db.country.count({ where: { isDemo: false } }),
         ctx.db.country.count({ where: { isDemo: false, geometry: { not: null } } }),
         ctx.db.country.count({ where: { isDemo: false, wikiPageTitle: { not: null } } }),
       ]);
 
-      return {
-        mapFeatures: { total: totalFeatures, linked: linkedFeatures, unlinked: totalFeatures - linkedFeatures },
-        countries: { total: totalCountries, withGeometry: countriesWithGeo, withWiki: countriesWithWiki },
-        linkageHealth: totalFeatures > 0 ? Math.round((linkedFeatures / totalFeatures) * 100) : 0,
-      };
-    }),
+    return {
+      mapFeatures: {
+        total: totalFeatures,
+        linked: linkedFeatures,
+        unlinked: totalFeatures - linkedFeatures,
+      },
+      countries: {
+        total: totalCountries,
+        withGeometry: countriesWithGeo,
+        withWiki: countriesWithWiki,
+      },
+      linkageHealth: totalFeatures > 0 ? Math.round((linkedFeatures / totalFeatures) * 100) : 0,
+    };
+  }),
 
   /**
    * Admin: Get the edit queue (pending map edit requests).
@@ -1692,38 +1808,40 @@ export const geoRouter = createTRPCRouter({
       ]);
 
       return {
-        edits: edits.map((e: {
-          id: string;
-          countryId: string;
-          userId: string;
-          editType: string;
-          targetId: string | null;
-          operation: string;
-          proposedData: unknown;
-          currentData: unknown;
-          status: string;
-          reviewedBy: string | null;
-          reviewedAt: Date | null;
-          reviewNote: string | null;
-          createdAt: Date;
-          country: { id: string; name: string; flagUrl: string | null };
-        }) => ({
-          id: e.id,
-          countryId: e.countryId,
-          countryName: e.country.name,
-          countryFlag: e.country.flagUrl,
-          userId: e.userId,
-          editType: e.editType,
-          targetId: e.targetId,
-          operation: e.operation,
-          proposedData: e.proposedData,
-          currentData: e.currentData,
-          status: e.status,
-          reviewedBy: e.reviewedBy,
-          reviewedAt: e.reviewedAt,
-          reviewNote: e.reviewNote,
-          createdAt: e.createdAt,
-        })),
+        edits: edits.map(
+          (e: {
+            id: string;
+            countryId: string;
+            userId: string;
+            editType: string;
+            targetId: string | null;
+            operation: string;
+            proposedData: unknown;
+            currentData: unknown;
+            status: string;
+            reviewedBy: string | null;
+            reviewedAt: Date | null;
+            reviewNote: string | null;
+            createdAt: Date;
+            country: { id: string; name: string; flagUrl: string | null };
+          }) => ({
+            id: e.id,
+            countryId: e.countryId,
+            countryName: e.country.name,
+            countryFlag: e.country.flagUrl,
+            userId: e.userId,
+            editType: e.editType,
+            targetId: e.targetId,
+            operation: e.operation,
+            proposedData: e.proposedData,
+            currentData: e.currentData,
+            status: e.status,
+            reviewedBy: e.reviewedBy,
+            reviewedAt: e.reviewedAt,
+            reviewNote: e.reviewNote,
+            createdAt: e.createdAt,
+          })
+        ),
         total,
         hasMore: offset + limit < total,
       };
@@ -2003,10 +2121,22 @@ export const geoRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const feature = await ctx.db.mapLayer.findFirst({
         where: { layerType: "political", featureId: input.featureId, isActive: true },
-        select: { id: true, featureId: true, displayName: true, geometry: true, centroid: true, boundingBox: true, areaSqKm: true, countryId: true },
+        select: {
+          id: true,
+          featureId: true,
+          displayName: true,
+          geometry: true,
+          centroid: true,
+          boundingBox: true,
+          areaSqKm: true,
+          countryId: true,
+        },
       });
       if (!feature) {
-        throw new TRPCError({ code: "NOT_FOUND", message: `Feature not found: ${input.featureId}` });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
       }
 
       // Find neighboring features by bounding box overlap
@@ -2014,19 +2144,29 @@ export const geoRouter = createTRPCRouter({
       let neighbors: Array<{ featureId: string; displayName: string | null }> = [];
       if (bbox && bbox.length === 4) {
         const pad = 1; // 1° padding for neighbor search
-        neighbors = await ctx.db.mapLayer.findMany({
-          where: {
-            layerType: "political",
-            featureId: { not: input.featureId },
-            isActive: true,
-          },
-          select: { featureId: true, displayName: true, boundingBox: true },
-        }).then(layers => layers.filter(l => {
-          const nb = l.boundingBox as number[] | null;
-          if (!nb || nb.length !== 4) return false;
-          return nb[0]! < bbox[2]! + pad && nb[2]! > bbox[0]! - pad &&
-                 nb[1]! < bbox[3]! + pad && nb[3]! > bbox[1]! - pad;
-        }).map(l => ({ featureId: l.featureId, displayName: l.displayName })));
+        neighbors = await ctx.db.mapLayer
+          .findMany({
+            where: {
+              layerType: "political",
+              featureId: { not: input.featureId },
+              isActive: true,
+            },
+            select: { featureId: true, displayName: true, boundingBox: true },
+          })
+          .then((layers) =>
+            layers
+              .filter((l) => {
+                const nb = l.boundingBox as number[] | null;
+                if (!nb || nb.length !== 4) return false;
+                return (
+                  nb[0]! < bbox[2]! + pad &&
+                  nb[2]! > bbox[0]! - pad &&
+                  nb[1]! < bbox[3]! + pad &&
+                  nb[3]! > bbox[1]! - pad
+                );
+              })
+              .map((l) => ({ featureId: l.featureId, displayName: l.displayName }))
+          );
       }
 
       // Create or resume session
@@ -2060,10 +2200,12 @@ export const geoRouter = createTRPCRouter({
 
   /** Save border edit draft (auto-save editor state). */
   saveBorderEditDraft: adminProcedure
-    .input(z.object({
-      sessionId: z.string(),
-      sessionData: z.record(z.string(), z.unknown()),
-    }))
+    .input(
+      z.object({
+        sessionId: z.string(),
+        sessionData: z.record(z.string(), z.unknown()),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       await ctx.db.mapEditorSession.update({
         where: { id: input.sessionId },
@@ -2078,26 +2220,34 @@ export const geoRouter = createTRPCRouter({
 
   /** Submit a border edit for review (or apply directly for admins). */
   submitBorderEdit: adminProcedure
-    .input(z.object({
-      featureId: z.string(),
-      editSubtype: z.enum(["vertex_edit", "redraw", "split", "merge"]),
-      proposedGeometry: z.record(z.string(), z.unknown()), // GeoJSON geometry
-      affectedFeatures: z.array(z.string()).optional(),
-      applyDirectly: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        featureId: z.string(),
+        editSubtype: z.enum(["vertex_edit", "redraw", "split", "merge"]),
+        proposedGeometry: z.record(z.string(), z.unknown()), // GeoJSON geometry
+        affectedFeatures: z.array(z.string()).optional(),
+        applyDirectly: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const feature = await ctx.db.mapLayer.findFirst({
         where: { layerType: "political", featureId: input.featureId, isActive: true },
         select: { id: true, geometry: true, countryId: true, displayName: true },
       });
       if (!feature) {
-        throw new TRPCError({ code: "NOT_FOUND", message: `Feature not found: ${input.featureId}` });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
       }
 
       if (input.applyDirectly) {
         // Admin direct apply — update geometry immediately
-        const { calculateArea, calculateCentroid, calculateBBox } = await import("~/lib/border-editor");
-        const geom = input.proposedGeometry as import("geojson").Polygon | import("geojson").MultiPolygon;
+        const { calculateArea, calculateCentroid, calculateBBox } =
+          await import("~/lib/border-editor");
+        const geom = input.proposedGeometry as
+          | import("geojson").Polygon
+          | import("geojson").MultiPolygon;
         const centroid = calculateCentroid(geom);
         const bbox = calculateBBox(geom);
         const area = calculateArea(geom);
@@ -2144,26 +2294,37 @@ export const geoRouter = createTRPCRouter({
 
   /** Split a country into two new features. */
   splitCountry: adminProcedure
-    .input(z.object({
-      featureId: z.string(),
-      splitLine: z.array(z.tuple([z.number(), z.number()])),
-      nameA: z.string(),
-      nameB: z.string(),
-    }))
+    .input(
+      z.object({
+        featureId: z.string(),
+        splitLine: z.array(z.tuple([z.number(), z.number()])),
+        nameA: z.string(),
+        nameB: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const feature = await ctx.db.mapLayer.findFirst({
         where: { layerType: "political", featureId: input.featureId, isActive: true },
       });
       if (!feature) {
-        throw new TRPCError({ code: "NOT_FOUND", message: `Feature not found: ${input.featureId}` });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
       }
 
-      const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } = await import("~/lib/border-editor");
-      const geometry = feature.geometry as import("geojson").Polygon | import("geojson").MultiPolygon;
+      const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
+        await import("~/lib/border-editor");
+      const geometry = feature.geometry as
+        | import("geojson").Polygon
+        | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
 
       if (!result) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Split line does not properly intersect the feature" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Split line does not properly intersect the feature",
+        });
       }
 
       const [geomA, geomB] = result;
@@ -2219,10 +2380,12 @@ export const geoRouter = createTRPCRouter({
 
   /** Merge two or more countries into one. */
   mergeCountries: adminProcedure
-    .input(z.object({
-      featureIds: z.array(z.string()).min(2),
-      newName: z.string(),
-    }))
+    .input(
+      z.object({
+        featureIds: z.array(z.string()).min(2),
+        newName: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const features = await ctx.db.mapLayer.findMany({
         where: { layerType: "political", featureId: { in: input.featureIds }, isActive: true },
@@ -2231,10 +2394,14 @@ export const geoRouter = createTRPCRouter({
       if (features.length !== input.featureIds.length) {
         const found = new Set(features.map((f) => f.featureId));
         const missing = input.featureIds.filter((id) => !found.has(id));
-        throw new TRPCError({ code: "NOT_FOUND", message: `Features not found: ${missing.join(", ")}` });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Features not found: ${missing.join(", ")}`,
+        });
       }
 
-      const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } = await import("~/lib/border-editor");
+      const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } =
+        await import("~/lib/border-editor");
 
       // Merge all geometries
       type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;
@@ -2299,16 +2466,22 @@ export const geoRouter = createTRPCRouter({
         select: { featureId: true, displayName: true, geometry: true, boundingBox: true },
       });
 
-      return neighbors.filter(l => {
-        const nb = l.boundingBox as number[] | null;
-        if (!nb || nb.length !== 4) return false;
-        return nb[0]! < bbox[2]! + pad && nb[2]! > bbox[0]! - pad &&
-               nb[1]! < bbox[3]! + pad && nb[3]! > bbox[1]! - pad;
-      }).map(l => ({
-        featureId: l.featureId,
-        displayName: l.displayName,
-        geometry: l.geometry,
-      }));
+      return neighbors
+        .filter((l) => {
+          const nb = l.boundingBox as number[] | null;
+          if (!nb || nb.length !== 4) return false;
+          return (
+            nb[0]! < bbox[2]! + pad &&
+            nb[2]! > bbox[0]! - pad &&
+            nb[1]! < bbox[3]! + pad &&
+            nb[3]! > bbox[1]! - pad
+          );
+        })
+        .map((l) => ({
+          featureId: l.featureId,
+          displayName: l.displayName,
+          geometry: l.geometry,
+        }));
     }),
 
   /**
@@ -2329,9 +2502,7 @@ export const geoRouter = createTRPCRouter({
       }
 
       try {
-        const result = await ctx.db.$queryRawUnsafe<
-          Array<{ area_sqkm: number }>
-        >(
+        const result = await ctx.db.$queryRawUnsafe<Array<{ area_sqkm: number }>>(
           `SELECT ST_Area(geom_postgis::geography) / 1000000.0 as area_sqkm
            FROM map_layers WHERE id = $1 AND geom_postgis IS NOT NULL`,
           mapLayer.id
@@ -2439,8 +2610,20 @@ export const geoRouter = createTRPCRouter({
       }
 
       // Validate containment + collision + name uniqueness
-      await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "City");
-      await checkPointCollision(ctx.db, "city", input.countryId, input.coordinates[0], input.coordinates[1]);
+      await validatePointContainment(
+        ctx.db,
+        input.countryId,
+        input.coordinates[0],
+        input.coordinates[1],
+        "City"
+      );
+      await checkPointCollision(
+        ctx.db,
+        "city",
+        input.countryId,
+        input.coordinates[0],
+        input.coordinates[1]
+      );
       await checkNameUniqueness(ctx.db, input.countryId, input.name, "city");
 
       // If marking as capital, clear any existing capital for this country
@@ -2510,8 +2693,21 @@ export const geoRouter = createTRPCRouter({
 
       // If coordinates changed, validate containment + collision
       if (input.coordinates) {
-        await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "City");
-        await checkPointCollision(ctx.db, "city", input.countryId, input.coordinates[0], input.coordinates[1], input.cityId);
+        await validatePointContainment(
+          ctx.db,
+          input.countryId,
+          input.coordinates[0],
+          input.coordinates[1],
+          "City"
+        );
+        await checkPointCollision(
+          ctx.db,
+          "city",
+          input.countryId,
+          input.coordinates[0],
+          input.coordinates[1],
+          input.cityId
+        );
       }
       if (input.name) {
         await checkNameUniqueness(ctx.db, input.countryId, input.name, "city", input.cityId);
@@ -2524,8 +2720,12 @@ export const geoRouter = createTRPCRouter({
           ...(input.cityType && { type: input.cityType }),
           ...(input.coordinates && { coordinates: input.coordinates }),
           ...(input.population !== undefined && { population: input.population }),
-          ...(input.isNationalCapital !== undefined && { isNationalCapital: input.isNationalCapital }),
-          ...(input.isSubdivisionCapital !== undefined && { isSubdivisionCapital: input.isSubdivisionCapital }),
+          ...(input.isNationalCapital !== undefined && {
+            isNationalCapital: input.isNationalCapital,
+          }),
+          ...(input.isSubdivisionCapital !== undefined && {
+            isSubdivisionCapital: input.isSubdivisionCapital,
+          }),
           ...(input.wikiPageTitle !== undefined && { wikiPageTitle: input.wikiPageTitle }),
         },
       });
@@ -2660,7 +2860,13 @@ export const geoRouter = createTRPCRouter({
         await validatePolygonContainment(ctx.db, input.countryId, input.geometry, "Subdivision");
       }
       if (input.name) {
-        await checkNameUniqueness(ctx.db, input.countryId, input.name, "subdivision", input.subdivisionId);
+        await checkNameUniqueness(
+          ctx.db,
+          input.countryId,
+          input.name,
+          "subdivision",
+          input.subdivisionId
+        );
       }
 
       const updated = await ctx.db.subdivision.update({
@@ -2736,7 +2942,8 @@ export const geoRouter = createTRPCRouter({
         return { updated: 0, total: 0, verticesBefore: 0, verticesAfter: 0, reduction: 0 };
       }
 
-      const { simplifyProvinceBatch, countVertices } = await import("~/lib/province-importer/topo-simplify");
+      const { simplifyProvinceBatch, countVertices } =
+        await import("~/lib/province-importer/topo-simplify");
 
       // Build Feature array from all subdivisions with valid geometry
       const validSubs = subdivisions.filter((s) => s.geometry);
@@ -2779,7 +2986,10 @@ export const geoRouter = createTRPCRouter({
         total: subdivisions.length,
         verticesBefore,
         verticesAfter: result.totalVerticesAfter,
-        reduction: verticesBefore > 0 ? Math.round((1 - result.totalVerticesAfter / verticesBefore) * 100) : 0,
+        reduction:
+          verticesBefore > 0
+            ? Math.round((1 - result.totalVerticesAfter / verticesBefore) * 100)
+            : 0,
       };
     }),
 
@@ -2793,8 +3003,13 @@ export const geoRouter = createTRPCRouter({
       const subdivisions = await ctx.db.subdivision.findMany({
         where: { countryId: input.countryId, status: "approved" },
         select: {
-          id: true, name: true, type: true, population: true,
-          areaSqKm: true, geometry: true, color: true,
+          id: true,
+          name: true,
+          type: true,
+          population: true,
+          areaSqKm: true,
+          geometry: true,
+          color: true,
         },
       });
 
@@ -2821,10 +3036,7 @@ export const geoRouter = createTRPCRouter({
       ]);
 
       // Simple bbox containment check (no PostGIS needed)
-      function pointInBbox(
-        pt: unknown,
-        bbox: [number, number, number, number],
-      ): boolean {
+      function pointInBbox(pt: unknown, bbox: [number, number, number, number]): boolean {
         if (!Array.isArray(pt) || pt.length < 2) return false;
         const [lng, lat] = pt as [number, number];
         return lng >= bbox[0] && lng <= bbox[2] && lat >= bbox[1] && lat <= bbox[3];
@@ -2834,7 +3046,10 @@ export const geoRouter = createTRPCRouter({
         if (!geo || !geo.coordinates) return null;
         const coords = geo.type === "Polygon" ? geo.coordinates[0] : geo.coordinates?.[0]?.[0];
         if (!Array.isArray(coords) || coords.length === 0) return null;
-        let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+        let minLng = Infinity,
+          maxLng = -Infinity,
+          minLat = Infinity,
+          maxLat = -Infinity;
         for (const c of coords) {
           if (c[0] < minLng) minLng = c[0];
           if (c[0] > maxLng) maxLng = c[0];
@@ -2848,7 +3063,10 @@ export const geoRouter = createTRPCRouter({
         const bbox = geoBbox(sub.geometry);
 
         // Count features within this subdivision's bbox
-        let cityCount = 0, poiCount = 0, resourceCount = 0, wikiLinked = 0;
+        let cityCount = 0,
+          poiCount = 0,
+          resourceCount = 0,
+          wikiLinked = 0;
         const resourceTypes = new Set<string>();
 
         if (bbox) {
@@ -2880,8 +3098,11 @@ export const geoRouter = createTRPCRouter({
         const cityScore = Math.min(cityCount * 1.5, 3); // up to 3 pts for 2+ cities
         const resourceScore = Math.min(resourceCount * 0.5, 2); // up to 2 pts for 4+ resources
         const infraScore = Math.min(routeCount * 0.3, 1); // up to 1 pt for routes
-        const wikiScore = totalFeatures > 0 ? (wikiLinked / totalFeatures) : 0; // up to 1 pt
-        const developmentScore = Math.min(10, Math.round((popScore + cityScore + resourceScore + infraScore + wikiScore) * 10) / 10);
+        const wikiScore = totalFeatures > 0 ? wikiLinked / totalFeatures : 0; // up to 1 pt
+        const developmentScore = Math.min(
+          10,
+          Math.round((popScore + cityScore + resourceScore + infraScore + wikiScore) * 10) / 10
+        );
 
         return {
           id: sub.id,
@@ -2924,8 +3145,20 @@ export const geoRouter = createTRPCRouter({
       }
 
       // Validate containment + collision + name uniqueness
-      await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Point of interest");
-      await checkPointCollision(ctx.db, "pointOfInterest", input.countryId, input.coordinates[0], input.coordinates[1]);
+      await validatePointContainment(
+        ctx.db,
+        input.countryId,
+        input.coordinates[0],
+        input.coordinates[1],
+        "Point of interest"
+      );
+      await checkPointCollision(
+        ctx.db,
+        "pointOfInterest",
+        input.countryId,
+        input.coordinates[0],
+        input.coordinates[1]
+      );
       await checkNameUniqueness(ctx.db, input.countryId, input.name, "poi");
 
       const poi = await ctx.db.pointOfInterest.create({
@@ -3002,8 +3235,21 @@ export const geoRouter = createTRPCRouter({
       }
 
       if (input.coordinates) {
-        await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Point of interest");
-        await checkPointCollision(ctx.db, "pointOfInterest", input.countryId, input.coordinates[0], input.coordinates[1], input.poiId);
+        await validatePointContainment(
+          ctx.db,
+          input.countryId,
+          input.coordinates[0],
+          input.coordinates[1],
+          "Point of interest"
+        );
+        await checkPointCollision(
+          ctx.db,
+          "pointOfInterest",
+          input.countryId,
+          input.coordinates[0],
+          input.coordinates[1],
+          input.poiId
+        );
       }
       if (input.name) {
         await checkNameUniqueness(ctx.db, input.countryId, input.name, "poi", input.poiId);
@@ -3066,7 +3312,22 @@ export const geoRouter = createTRPCRouter({
         title: z.string().min(1).max(200),
         content: z.string().min(1).max(15000),
         contentFormat: z.enum(["plain", "markdown"]).default("plain"),
-        category: z.enum(["battle", "founding", "treaty", "cultural", "religious", "natural", "trade", "exploration", "naval", "settlement", "government", "biography", "linguistic", "upheaval"]),
+        category: z.enum([
+          "battle",
+          "founding",
+          "treaty",
+          "cultural",
+          "religious",
+          "natural",
+          "trade",
+          "exploration",
+          "naval",
+          "settlement",
+          "government",
+          "biography",
+          "linguistic",
+          "upheaval",
+        ]),
         importance: z.number().int().min(0).max(2).default(0),
         coordinates: coordinatesSchema,
         ixTimeYear: z.number().int().optional(),
@@ -3084,7 +3345,13 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Story pin");
+      await validatePointContainment(
+        ctx.db,
+        input.countryId,
+        input.coordinates[0],
+        input.coordinates[1],
+        "Story pin"
+      );
       await checkNameUniqueness(ctx.db, input.countryId, input.title, "storyPin");
 
       const pin = await ctx.db.storyPin.create({
@@ -3113,9 +3380,22 @@ export const geoRouter = createTRPCRouter({
 
       // Auto-generate ThinkPages news for major/legendary story pins
       if (input.importance >= 1) {
-        import("~/lib/diplomatic-news-generator").then(({ generateStoryPinNews }) => {
-          generateStoryPinNews(ctx.db, input.countryId, pin.title, input.category, input.importance, input.ixTimeYear).catch((err: unknown) => { console.error("[Geo] Background op failed:", (err as Error).message); });
-        }).catch((err: unknown) => { console.error("[Geo] Background op failed:", (err as Error).message); });
+        import("~/lib/diplomatic-news-generator")
+          .then(({ generateStoryPinNews }) => {
+            generateStoryPinNews(
+              ctx.db,
+              input.countryId,
+              pin.title,
+              input.category,
+              input.importance,
+              input.ixTimeYear
+            ).catch((err: unknown) => {
+              console.error("[Geo] Background op failed:", (err as Error).message);
+            });
+          })
+          .catch((err: unknown) => {
+            console.error("[Geo] Background op failed:", (err as Error).message);
+          });
       }
 
       return { id: pin.id, title: pin.title, status: "approved" as const };
@@ -3129,7 +3409,24 @@ export const geoRouter = createTRPCRouter({
         title: z.string().min(1).max(200).optional(),
         content: z.string().min(1).max(15000).optional(),
         contentFormat: z.enum(["plain", "markdown"]).optional(),
-        category: z.enum(["battle", "founding", "treaty", "cultural", "religious", "natural", "trade", "exploration", "naval", "settlement", "government", "biography", "linguistic", "upheaval"]).optional(),
+        category: z
+          .enum([
+            "battle",
+            "founding",
+            "treaty",
+            "cultural",
+            "religious",
+            "natural",
+            "trade",
+            "exploration",
+            "naval",
+            "settlement",
+            "government",
+            "biography",
+            "linguistic",
+            "upheaval",
+          ])
+          .optional(),
         importance: z.number().int().min(0).max(2).optional(),
         coordinates: coordinatesSchema.optional(),
         ixTimeYear: z.number().int().nullable().optional(),
@@ -3147,11 +3444,19 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      const pin = await ctx.db.storyPin.findFirst({ where: { id: input.pinId, countryId: input.countryId } });
+      const pin = await ctx.db.storyPin.findFirst({
+        where: { id: input.pinId, countryId: input.countryId },
+      });
       if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
 
       if (input.coordinates) {
-        await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Story pin");
+        await validatePointContainment(
+          ctx.db,
+          input.countryId,
+          input.coordinates[0],
+          input.coordinates[1],
+          "Story pin"
+        );
       }
       if (input.title) {
         await checkNameUniqueness(ctx.db, input.countryId, input.title, "storyPin", input.pinId);
@@ -3188,7 +3493,9 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      const pin = await ctx.db.storyPin.findFirst({ where: { id: input.pinId, countryId: input.countryId } });
+      const pin = await ctx.db.storyPin.findFirst({
+        where: { id: input.pinId, countryId: input.countryId },
+      });
       if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
       await ctx.db.storyPin.delete({ where: { id: input.pinId } });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
@@ -3218,9 +3525,19 @@ export const geoRouter = createTRPCRouter({
           country: { select: { id: true, name: true, slug: true } },
           storyline: {
             select: {
-              id: true, title: true, color: true, description: true,
+              id: true,
+              title: true,
+              color: true,
+              description: true,
               pins: {
-                select: { id: true, title: true, ixTimeYear: true, eraLabel: true, category: true, coordinates: true },
+                select: {
+                  id: true,
+                  title: true,
+                  ixTimeYear: true,
+                  eraLabel: true,
+                  category: true,
+                  coordinates: true,
+                },
                 where: { status: "approved" },
                 orderBy: [{ storylineOrder: "asc" }, { ixTimeYear: "asc" }],
               },
@@ -3247,13 +3564,20 @@ export const geoRouter = createTRPCRouter({
           countryId: pin.countryId,
           status: "approved",
           id: { not: pin.id },
-          ...(pin.ixTimeYear != null ? {
-            ixTimeYear: { gte: pin.ixTimeYear - 50, lte: pin.ixTimeYear + 50 },
-          } : {}),
+          ...(pin.ixTimeYear != null
+            ? {
+                ixTimeYear: { gte: pin.ixTimeYear - 50, lte: pin.ixTimeYear + 50 },
+              }
+            : {}),
         },
         select: {
-          id: true, title: true, category: true, ixTimeYear: true,
-          eraLabel: true, coordinates: true, thumbnailUrl: true,
+          id: true,
+          title: true,
+          category: true,
+          ixTimeYear: true,
+          eraLabel: true,
+          coordinates: true,
+          thumbnailUrl: true,
         },
         take: 10,
         orderBy: { ixTimeYear: "asc" },
@@ -3273,12 +3597,14 @@ export const geoRouter = createTRPCRouter({
 
   getAllStoryPins: cachedPublicProcedure
     .input(
-      z.object({
-        category: z.string().optional(),
-        minYear: z.number().int().optional(),
-        maxYear: z.number().int().optional(),
-        storylineId: z.string().optional(),
-      }).optional()
+      z
+        .object({
+          category: z.string().optional(),
+          minYear: z.number().int().optional(),
+          maxYear: z.number().int().optional(),
+          storylineId: z.string().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = { status: "approved" };
@@ -3286,8 +3612,10 @@ export const geoRouter = createTRPCRouter({
       if (input?.storylineId) where.storylineId = input.storylineId;
       if (input?.minYear !== undefined || input?.maxYear !== undefined) {
         where.ixTimeYear = {};
-        if (input?.minYear !== undefined) (where.ixTimeYear as Record<string, unknown>).gte = input.minYear;
-        if (input?.maxYear !== undefined) (where.ixTimeYear as Record<string, unknown>).lte = input.maxYear;
+        if (input?.minYear !== undefined)
+          (where.ixTimeYear as Record<string, unknown>).gte = input.minYear;
+        if (input?.maxYear !== undefined)
+          (where.ixTimeYear as Record<string, unknown>).lte = input.maxYear;
       }
       const pins = await ctx.db.storyPin.findMany({
         where,
@@ -3302,12 +3630,18 @@ export const geoRouter = createTRPCRouter({
             type: "Feature" as const,
             geometry: { type: "Point" as const, coordinates: p.coordinates as [number, number] },
             properties: {
-              id: p.id, title: p.title, category: p.category,
-              importance: p.importance, storylineId: p.storylineId,
-              ixTimeYear: p.ixTimeYear, eraLabel: p.eraLabel,
-              wikiPageTitle: p.wikiPageTitle, icon: p.icon,
+              id: p.id,
+              title: p.title,
+              category: p.category,
+              importance: p.importance,
+              storylineId: p.storylineId,
+              ixTimeYear: p.ixTimeYear,
+              eraLabel: p.eraLabel,
+              wikiPageTitle: p.wikiPageTitle,
+              icon: p.icon,
               thumbnailUrl: p.thumbnailUrl,
-              countryId: p.countryId, countryName: p.country.name,
+              countryId: p.countryId,
+              countryName: p.country.name,
               countrySlug: p.country.slug,
             },
           })),
@@ -3324,7 +3658,10 @@ export const geoRouter = createTRPCRouter({
         countryId: z.string(),
         title: z.string().min(1).max(200),
         description: z.string().max(2000).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -3349,7 +3686,10 @@ export const geoRouter = createTRPCRouter({
         storylineId: z.string(),
         title: z.string().min(1).max(200).optional(),
         description: z.string().max(2000).nullable().optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -3357,7 +3697,9 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      const sl = await ctx.db.storyline.findFirst({ where: { id: input.storylineId, countryId: input.countryId } });
+      const sl = await ctx.db.storyline.findFirst({
+        where: { id: input.storylineId, countryId: input.countryId },
+      });
       if (!sl) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
       return ctx.db.storyline.update({
         where: { id: input.storylineId },
@@ -3376,7 +3718,9 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      const sl = await ctx.db.storyline.findFirst({ where: { id: input.storylineId, countryId: input.countryId } });
+      const sl = await ctx.db.storyline.findFirst({
+        where: { id: input.storylineId, countryId: input.countryId },
+      });
       if (!sl) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
       // Unlink pins before deleting
       await ctx.db.storyPin.updateMany({
@@ -3407,8 +3751,14 @@ export const geoRouter = createTRPCRouter({
             where: { status: "approved" },
             orderBy: [{ storylineOrder: "asc" }, { ixTimeYear: "asc" }],
             select: {
-              id: true, title: true, category: true, ixTimeYear: true,
-              eraLabel: true, coordinates: true, importance: true, thumbnailUrl: true,
+              id: true,
+              title: true,
+              category: true,
+              ixTimeYear: true,
+              eraLabel: true,
+              coordinates: true,
+              importance: true,
+              thumbnailUrl: true,
             },
           },
           country: { select: { name: true, slug: true } },
@@ -3427,10 +3777,24 @@ export const geoRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         text: z.string().min(1).max(100),
-        labelType: z.enum(["mountain_range", "strait", "bay", "peninsula", "plateau", "valley", "desert", "sea", "region", "historical"]),
+        labelType: z.enum([
+          "mountain_range",
+          "strait",
+          "bay",
+          "peninsula",
+          "plateau",
+          "valley",
+          "desert",
+          "sea",
+          "region",
+          "historical",
+        ]),
         coordinates: coordinatesSchema,
         fontSize: z.number().min(8).max(48).default(14),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#374151"),
+        color: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .default("#374151"),
         rotation: z.number().min(-180).max(180).default(0),
         letterSpacing: z.number().min(0).max(1).default(0),
         fontWeight: z.enum(["normal", "bold"]).default("normal"),
@@ -3445,7 +3809,13 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Map label");
+      await validatePointContainment(
+        ctx.db,
+        input.countryId,
+        input.coordinates[0],
+        input.coordinates[1],
+        "Map label"
+      );
 
       const label = await ctx.db.mapLabel.create({
         data: {
@@ -3477,10 +3847,26 @@ export const geoRouter = createTRPCRouter({
         countryId: z.string(),
         labelId: z.string(),
         text: z.string().min(1).max(100).optional(),
-        labelType: z.enum(["mountain_range", "strait", "bay", "peninsula", "plateau", "valley", "desert", "sea", "region", "historical"]).optional(),
+        labelType: z
+          .enum([
+            "mountain_range",
+            "strait",
+            "bay",
+            "peninsula",
+            "plateau",
+            "valley",
+            "desert",
+            "sea",
+            "region",
+            "historical",
+          ])
+          .optional(),
         coordinates: coordinatesSchema.optional(),
         fontSize: z.number().min(8).max(48).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .optional(),
         rotation: z.number().min(-180).max(180).optional(),
         letterSpacing: z.number().min(0).max(1).optional(),
         fontWeight: z.enum(["normal", "bold"]).optional(),
@@ -3495,11 +3881,19 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      const label = await ctx.db.mapLabel.findFirst({ where: { id: input.labelId, countryId: input.countryId } });
+      const label = await ctx.db.mapLabel.findFirst({
+        where: { id: input.labelId, countryId: input.countryId },
+      });
       if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
 
       if (input.coordinates) {
-        await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Map label");
+        await validatePointContainment(
+          ctx.db,
+          input.countryId,
+          input.coordinates[0],
+          input.coordinates[1],
+          "Map label"
+        );
       }
 
       const { countryId: _, labelId: __, ...updateData } = input;
@@ -3519,7 +3913,9 @@ export const geoRouter = createTRPCRouter({
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
-      const label = await ctx.db.mapLabel.findFirst({ where: { id: input.labelId, countryId: input.countryId } });
+      const label = await ctx.db.mapLabel.findFirst({
+        where: { id: input.labelId, countryId: input.countryId },
+      });
       if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
@@ -3549,12 +3945,20 @@ export const geoRouter = createTRPCRouter({
           type: "Feature" as const,
           geometry: { type: "Point" as const, coordinates: l.coordinates as [number, number] },
           properties: {
-            id: l.id, text: l.text, labelType: l.labelType,
-            fontSize: l.fontSize, color: l.color, rotation: l.rotation,
-            letterSpacing: l.letterSpacing, fontWeight: l.fontWeight,
-            opacity: l.opacity, minZoom: l.minZoom, maxZoom: l.maxZoom,
+            id: l.id,
+            text: l.text,
+            labelType: l.labelType,
+            fontSize: l.fontSize,
+            color: l.color,
+            rotation: l.rotation,
+            letterSpacing: l.letterSpacing,
+            fontWeight: l.fontWeight,
+            opacity: l.opacity,
+            minZoom: l.minZoom,
+            maxZoom: l.maxZoom,
             wikiPageTitle: l.wikiPageTitle,
-            countryId: l.countryId, countryName: l.country.name,
+            countryId: l.countryId,
+            countryName: l.country.name,
           },
         })),
     };
@@ -3573,7 +3977,10 @@ export const geoRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const country = ctx.country;
       if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only view your own edit history" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only view your own edit history",
+        });
       }
 
       const edits = await ctx.db.mapEditRequest.findMany({
@@ -3582,25 +3989,27 @@ export const geoRouter = createTRPCRouter({
         take: input.limit,
       });
 
-      return edits.map((e: {
-        id: string;
-        editType: string;
-        operation: string;
-        status: string;
-        createdAt: Date;
-        reviewedAt: Date | null;
-        reviewNote: string | null;
-        proposedData: unknown;
-      }) => ({
-        id: e.id,
-        editType: e.editType,
-        operation: e.operation,
-        status: e.status,
-        createdAt: e.createdAt,
-        reviewedAt: e.reviewedAt,
-        reviewNote: e.reviewNote,
-        summary: (e.proposedData as Record<string, unknown>)?.name ?? "Unknown",
-      }));
+      return edits.map(
+        (e: {
+          id: string;
+          editType: string;
+          operation: string;
+          status: string;
+          createdAt: Date;
+          reviewedAt: Date | null;
+          reviewNote: string | null;
+          proposedData: unknown;
+        }) => ({
+          id: e.id,
+          editType: e.editType,
+          operation: e.operation,
+          status: e.status,
+          createdAt: e.createdAt,
+          reviewedAt: e.reviewedAt,
+          reviewNote: e.reviewNote,
+          summary: (e.proposedData as Record<string, unknown>)?.name ?? "Unknown",
+        })
+      );
     }),
 
   // ──────────────────────────────────────────────
@@ -3747,7 +4156,11 @@ export const geoRouter = createTRPCRouter({
       // Invalidate political layer cache so map reflects the change
       layerCache.delete("political");
       // Invalidate server-side tRPC cache so queries return fresh data
-      await invalidateCache(["geo.getSovereigntyRelations", "geo.getCountrySovereignty", "geo.getWorldMap"]);
+      await invalidateCache([
+        "geo.getSovereigntyRelations",
+        "geo.getCountrySovereignty",
+        "geo.getWorldMap",
+      ]);
       broadcastMapUpdate("sovereignty");
 
       return relation;
@@ -3784,7 +4197,11 @@ export const geoRouter = createTRPCRouter({
       });
 
       layerCache.delete("political");
-      await invalidateCache(["geo.getSovereigntyRelations", "geo.getCountrySovereignty", "geo.getWorldMap"]);
+      await invalidateCache([
+        "geo.getSovereigntyRelations",
+        "geo.getCountrySovereignty",
+        "geo.getWorldMap",
+      ]);
       broadcastMapUpdate("sovereignty");
       return updated;
     }),
@@ -3795,7 +4212,11 @@ export const geoRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await ctx.db.countrySovereignty.delete({ where: { id: input.id } });
       layerCache.delete("political");
-      await invalidateCache(["geo.getSovereigntyRelations", "geo.getCountrySovereignty", "geo.getWorldMap"]);
+      await invalidateCache([
+        "geo.getSovereigntyRelations",
+        "geo.getCountrySovereignty",
+        "geo.getWorldMap",
+      ]);
       broadcastMapUpdate("sovereignty");
       return { success: true };
     }),
@@ -3842,7 +4263,12 @@ export const geoRouter = createTRPCRouter({
     const countryById = new Map(countries.map((c) => [c.id, c]));
 
     const issues: Array<{
-      type: "no_map_link" | "orphan_geometry" | "missing_geometry_sync" | "missing_area_sync" | "stale_map_link";
+      type:
+        | "no_map_link"
+        | "orphan_geometry"
+        | "missing_geometry_sync"
+        | "missing_area_sync"
+        | "stale_map_link";
       countryId: string;
       countryName: string;
       featureId?: string;
@@ -3962,7 +4388,13 @@ export const geoRouter = createTRPCRouter({
         // Re-sync geometry + area from MapLayer → Country for all linked countries
         const linkedLayers = await ctx.db.mapLayer.findMany({
           where: { layerType: "political", countryId: { not: null }, isActive: true },
-          select: { countryId: true, geometry: true, centroid: true, boundingBox: true, areaSqKm: true },
+          select: {
+            countryId: true,
+            geometry: true,
+            centroid: true,
+            boundingBox: true,
+            areaSqKm: true,
+          },
         });
 
         for (const ml of linkedLayers) {
@@ -3985,22 +4417,34 @@ export const geoRouter = createTRPCRouter({
         // Try to match unlinked countries to unlinked features by name
         const unlinkedLayers = await ctx.db.mapLayer.findMany({
           where: { layerType: "political", countryId: null, isActive: true },
-          select: { id: true, featureId: true, displayName: true, geometry: true, centroid: true, boundingBox: true, areaSqKm: true },
+          select: {
+            id: true,
+            featureId: true,
+            displayName: true,
+            geometry: true,
+            centroid: true,
+            boundingBox: true,
+            areaSqKm: true,
+          },
         });
         const unlinkedCountries = await ctx.db.country.findMany({
           where: {
             isDemo: false,
-            id: { notIn: (await ctx.db.mapLayer.findMany({
-              where: { layerType: "political", countryId: { not: null } },
-              select: { countryId: true },
-            })).map((m) => m.countryId!).filter(Boolean) },
+            id: {
+              notIn: (
+                await ctx.db.mapLayer.findMany({
+                  where: { layerType: "political", countryId: { not: null } },
+                  select: { countryId: true },
+                })
+              )
+                .map((m) => m.countryId!)
+                .filter(Boolean),
+            },
           },
           select: { id: true, name: true },
         });
 
-        const countryNameMap = new Map(
-          unlinkedCountries.map((c) => [c.name.toLowerCase(), c])
-        );
+        const countryNameMap = new Map(unlinkedCountries.map((c) => [c.name.toLowerCase(), c]));
 
         for (const layer of unlinkedLayers) {
           const name = (layer.displayName || featureIdToDisplayName(layer.featureId)).toLowerCase();
@@ -4050,7 +4494,12 @@ export const geoRouter = createTRPCRouter({
       }
 
       layerCache.delete("political");
-      await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage", "geo.getCountryGeometry"]);
+      await invalidateCache([
+        "geo.listCountries",
+        "geo.getWorldMap",
+        "geo.validateLinkage",
+        "geo.getCountryGeometry",
+      ]);
 
       return { repaired };
     }),
@@ -4282,7 +4731,15 @@ export const geoRouter = createTRPCRouter({
         };
       }
 
-      return { found: false, hasInfobox: false, pageTitle: title, pageUrl: null, wikiSource: null, fields: [], coordinates: null };
+      return {
+        found: false,
+        hasInfobox: false,
+        pageTitle: title,
+        pageUrl: null,
+        wikiSource: null,
+        fields: [],
+        coordinates: null,
+      };
     }),
 
   /**
@@ -4290,7 +4747,9 @@ export const geoRouter = createTRPCRouter({
    * type-ahead suggestions when linking a map feature to a wiki article.
    */
   searchWikiPages: cachedPublicProcedure
-    .input(z.object({ query: z.string().min(1).max(100), limit: z.number().min(1).max(20).default(10) }))
+    .input(
+      z.object({ query: z.string().min(1).max(100), limit: z.number().min(1).max(20).default(10) })
+    )
     .query(async ({ input }) => {
       const { searchPages } = await import("~/lib/wiki-bridge");
 
@@ -4338,18 +4797,38 @@ export const geoRouter = createTRPCRouter({
 
       // Get all known place names from the database
       const [countries, cities, pois, subdivisions] = await Promise.all([
-        ctx.db.country.findMany({ select: { id: true, name: true }, where: { geometry: { not: null } } }),
-        ctx.db.city.findMany({ select: { id: true, name: true, countryId: true }, where: { status: "approved" } }),
-        ctx.db.pointOfInterest.findMany({ select: { id: true, name: true, countryId: true }, where: { status: "approved" } }),
-        ctx.db.subdivision.findMany({ select: { id: true, name: true, countryId: true }, where: { status: "approved" } }),
+        ctx.db.country.findMany({
+          select: { id: true, name: true },
+          where: { geometry: { not: null } },
+        }),
+        ctx.db.city.findMany({
+          select: { id: true, name: true, countryId: true },
+          where: { status: "approved" },
+        }),
+        ctx.db.pointOfInterest.findMany({
+          select: { id: true, name: true, countryId: true },
+          where: { status: "approved" },
+        }),
+        ctx.db.subdivision.findMany({
+          select: { id: true, name: true, countryId: true },
+          where: { status: "approved" },
+        }),
       ]);
 
       // Build a name → feature lookup (case-insensitive, min 3 chars to avoid noise)
       const knownPlaces = new Map<string, { id: string; type: string; name: string }>();
-      for (const c of countries) if (c.name.length >= 3) knownPlaces.set(c.name.toLowerCase(), { id: c.id, type: "country", name: c.name });
-      for (const c of cities) if (c.name.length >= 3) knownPlaces.set(c.name.toLowerCase(), { id: c.id, type: "city", name: c.name });
-      for (const p of pois) if (p.name.length >= 3) knownPlaces.set(p.name.toLowerCase(), { id: p.id, type: "poi", name: p.name });
-      for (const s of subdivisions) if (s.name.length >= 3) knownPlaces.set(s.name.toLowerCase(), { id: s.id, type: "subdivision", name: s.name });
+      for (const c of countries)
+        if (c.name.length >= 3)
+          knownPlaces.set(c.name.toLowerCase(), { id: c.id, type: "country", name: c.name });
+      for (const c of cities)
+        if (c.name.length >= 3)
+          knownPlaces.set(c.name.toLowerCase(), { id: c.id, type: "city", name: c.name });
+      for (const p of pois)
+        if (p.name.length >= 3)
+          knownPlaces.set(p.name.toLowerCase(), { id: p.id, type: "poi", name: p.name });
+      for (const s of subdivisions)
+        if (s.name.length >= 3)
+          knownPlaces.set(s.name.toLowerCase(), { id: s.id, type: "subdivision", name: s.name });
 
       // Scan plaintext for known place names
       const matches: Array<{ name: string; type: string; id: string; linked: boolean }> = [];
@@ -4366,10 +4845,16 @@ export const geoRouter = createTRPCRouter({
           // Check if this feature already has a wikiPageTitle linking to it
           let linked = false;
           if (place.type === "city") {
-            const city = await ctx.db.city.findUnique({ where: { id: place.id }, select: { wikiPageTitle: true } });
+            const city = await ctx.db.city.findUnique({
+              where: { id: place.id },
+              select: { wikiPageTitle: true },
+            });
             linked = !!city?.wikiPageTitle;
           } else if (place.type === "poi") {
-            const poi = await ctx.db.pointOfInterest.findUnique({ where: { id: place.id }, select: { wikiPageTitle: true } });
+            const poi = await ctx.db.pointOfInterest.findUnique({
+              where: { id: place.id },
+              select: { wikiPageTitle: true },
+            });
             linked = !!poi?.wikiPageTitle;
           } else if (place.type === "country") {
             linked = true; // Countries are always "linked" by nature
@@ -4401,7 +4886,13 @@ export const geoRouter = createTRPCRouter({
       const [cities, pois, subdivisions] = await Promise.all([
         ctx.db.city.findMany({
           where: { countryId: input.countryId, status: "approved" },
-          select: { id: true, name: true, coordinates: true, population: true, wikiPageTitle: true },
+          select: {
+            id: true,
+            name: true,
+            coordinates: true,
+            population: true,
+            wikiPageTitle: true,
+          },
         }),
         ctx.db.pointOfInterest.findMany({
           where: { countryId: input.countryId, status: "approved" },
@@ -4418,7 +4909,9 @@ export const geoRouter = createTRPCRouter({
           id: c.id,
           name: c.name,
           type: "city" as const,
-          coordinates: (Array.isArray(c.coordinates) ? c.coordinates : null) as [number, number] | null,
+          coordinates: (Array.isArray(c.coordinates) ? c.coordinates : null) as
+            | [number, number]
+            | null,
           wikiPageTitle: c.wikiPageTitle,
           population: c.population,
         })),
@@ -4426,7 +4919,9 @@ export const geoRouter = createTRPCRouter({
           id: p.id,
           name: p.name,
           type: "poi" as const,
-          coordinates: (Array.isArray(p.coordinates) ? p.coordinates : null) as [number, number] | null,
+          coordinates: (Array.isArray(p.coordinates) ? p.coordinates : null) as
+            | [number, number]
+            | null,
           wikiPageTitle: p.wikiPageTitle,
         })),
         ...subdivisions.map((s) => ({
@@ -4453,7 +4948,13 @@ export const geoRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const mapLayer = await ctx.db.mapLayer.findFirst({
         where: { layerType: "political", countryId: input.countryId, isActive: true },
-        select: { featureId: true, displayName: true, areaSqKm: true, centroid: true, boundingBox: true },
+        select: {
+          featureId: true,
+          displayName: true,
+          areaSqKm: true,
+          centroid: true,
+          boundingBox: true,
+        },
       });
 
       return {
@@ -4473,7 +4974,13 @@ export const geoRouter = createTRPCRouter({
     .input(
       z.object({
         layerType: z.enum([
-          "political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background",
+          "political",
+          "climate",
+          "altitudes",
+          "rivers",
+          "lakes",
+          "icecaps",
+          "background",
         ]),
         svgContent: z.string().min(100, "SVG content is too short"),
         fileName: z.string(),
@@ -4529,9 +5036,17 @@ export const geoRouter = createTRPCRouter({
         where: { id: input.uploadId },
       });
       if (!upload) throw new TRPCError({ code: "NOT_FOUND", message: "Upload not found" });
-      if (!upload.svgContent) throw new TRPCError({ code: "BAD_REQUEST", message: "No SVG content stored" });
-      if (upload.status !== "pending" && upload.status !== "processed" && upload.status !== "failed") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: `Upload cannot be reprocessed (status: ${upload.status})` });
+      if (!upload.svgContent)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No SVG content stored" });
+      if (
+        upload.status !== "pending" &&
+        upload.status !== "processed" &&
+        upload.status !== "failed"
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Upload cannot be reprocessed (status: ${upload.status})`,
+        });
       }
 
       // Mark as processing
@@ -4547,11 +5062,18 @@ export const geoRouter = createTRPCRouter({
 
         // Try to load reference GeoJSON for coordinate calibration
         let referenceGeoJson: import("geojson").FeatureCollection | undefined;
-        const refPath = join(process.cwd(), "scripts", "geojson_fixed", `${upload.layerType}.geojson`);
+        const refPath = join(
+          process.cwd(),
+          "scripts",
+          "geojson_fixed",
+          `${upload.layerType}.geojson`
+        );
         if (existsSync(refPath)) {
           try {
             referenceGeoJson = JSON.parse(readFileSync(refPath, "utf8"));
-          } catch { /* ignore parse errors */ }
+          } catch {
+            /* ignore parse errors */
+          }
         }
 
         const result = parseSvgToGeoJson(upload.svgContent, upload.layerType, {
@@ -4559,7 +5081,10 @@ export const geoRouter = createTRPCRouter({
         });
 
         // For political layer, match features to countries
-        let countryMatches: Record<string, { countryId: string; countryName: string; matchType: string }> = {};
+        let countryMatches: Record<
+          string,
+          { countryId: string; countryName: string; matchType: string }
+        > = {};
         if (upload.layerType === "political") {
           const countries = await ctx.db.country.findMany({
             select: { id: true, name: true, slug: true },
@@ -4626,7 +5151,10 @@ export const geoRouter = createTRPCRouter({
             errorMessage,
           },
         });
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Processing failed: ${errorMessage}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Processing failed: ${errorMessage}`,
+        });
       }
     }),
 
@@ -4682,7 +5210,10 @@ export const geoRouter = createTRPCRouter({
 
       // Guard: refuse to commit empty feature sets (would wipe the entire layer)
       if (geojson.features.length === 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot commit an SVG with 0 features — this would wipe the layer" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot commit an SVG with 0 features — this would wipe the layer",
+        });
       }
 
       // 3-layer country mapping: existing DB linkages → auto-match NEW features → manual overrides
@@ -4744,19 +5275,25 @@ export const geoRouter = createTRPCRouter({
 
       // Pre-compute all record data outside the transaction
       const records = geojson.features.map((feature) => {
-        const featureId = String(feature.id ?? feature.properties?.id ?? `unknown_${Math.random()}`);
+        const featureId = String(
+          feature.id ?? feature.properties?.id ?? `unknown_${Math.random()}`
+        );
         const displayName = String(feature.properties?.name ?? featureIdToDisplayName(featureId));
         const countryId = countryMap.get(featureId) ?? null;
         const coords = extractAllPositions(feature.geometry);
-        const centroid = coords.length > 0
-          ? [
-              coords.reduce((s, c) => s + c[0]!, 0) / coords.length,
-              coords.reduce((s, c) => s + c[1]!, 0) / coords.length,
-            ]
-          : null;
+        const centroid =
+          coords.length > 0
+            ? [
+                coords.reduce((s, c) => s + c[0]!, 0) / coords.length,
+                coords.reduce((s, c) => s + c[1]!, 0) / coords.length,
+              ]
+            : null;
         let bbox: number[] | null = null;
         if (coords.length > 0) {
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
           for (const c of coords) {
             if (c[0]! < minX) minX = c[0]!;
             if (c[1]! < minY) minY = c[1]!;
@@ -4765,7 +5302,15 @@ export const geoRouter = createTRPCRouter({
           }
           bbox = [minX, minY, maxX, maxY];
         }
-        return { featureId, displayName, countryId, geometry: feature.geometry, properties: (feature.properties ?? {}) as Record<string, unknown>, centroid, bbox };
+        return {
+          featureId,
+          displayName,
+          countryId,
+          geometry: feature.geometry,
+          properties: (feature.properties ?? {}) as Record<string, unknown>,
+          centroid,
+          bbox,
+        };
       });
 
       // Deduplicate by featureId (last occurrence wins) to avoid unique constraint violations
@@ -4775,7 +5320,9 @@ export const geoRouter = createTRPCRouter({
       }
       const dedupedRecords = [...seenIds.values()].sort((a, b) => a - b).map((i) => records[i]!);
       if (dedupedRecords.length < records.length) {
-        console.warn(`[commitSvgUpload] Deduplicated ${records.length - dedupedRecords.length} duplicate featureIds`);
+        console.warn(
+          `[commitSvgUpload] Deduplicated ${records.length - dedupedRecords.length} duplicate featureIds`
+        );
       }
 
       // Altitude enrichment: auto-enrich altitude features with zone metadata
@@ -4799,49 +5346,52 @@ export const geoRouter = createTRPCRouter({
       }
 
       // Fast transaction: bulk delete + bulk create (2 queries instead of 233 upserts)
-      await ctx.db.$transaction(async (tx) => {
-        // Remove all existing records for this layer
-        await tx.mapLayer.deleteMany({
-          where: { layerType: upload.layerType },
-        });
+      await ctx.db.$transaction(
+        async (tx) => {
+          // Remove all existing records for this layer
+          await tx.mapLayer.deleteMany({
+            where: { layerType: upload.layerType },
+          });
 
-        // Bulk create all new records
-        await tx.mapLayer.createMany({
-          data: dedupedRecords.map((r) => ({
-            layerType: upload.layerType,
-            featureId: r.featureId,
-            geometry: r.geometry as unknown as Record<string, unknown>,
-            properties: (r.properties ?? {}) as Record<string, unknown>,
-            countryId: r.countryId,
-            displayName: r.displayName,
-            centroid: r.centroid as unknown as Record<string, unknown>,
-            boundingBox: r.bbox as unknown as Record<string, unknown>,
-            isActive: true,
-            sourceUploadId: upload.id,
-          })),
-        });
+          // Bulk create all new records
+          await tx.mapLayer.createMany({
+            data: dedupedRecords.map((r) => ({
+              layerType: upload.layerType,
+              featureId: r.featureId,
+              geometry: r.geometry as unknown as Record<string, unknown>,
+              properties: (r.properties ?? {}) as Record<string, unknown>,
+              countryId: r.countryId,
+              displayName: r.displayName,
+              centroid: r.centroid as unknown as Record<string, unknown>,
+              boundingBox: r.bbox as unknown as Record<string, unknown>,
+              isActive: true,
+              sourceUploadId: upload.id,
+            })),
+          });
 
-        // Mark this upload as active, deactivate others
-        await tx.svgUpload.updateMany({
-          where: { layerType: upload.layerType, isActive: true },
-          data: { isActive: false },
-        });
-        // Store country linkages in svgMetadata for rollback recovery
-        const countryLinkages = dedupedRecords
-          .filter((r) => r.countryId)
-          .map((r) => ({ featureId: r.featureId, countryId: r.countryId! }));
-        await tx.svgUpload.update({
-          where: { id: upload.id },
-          data: {
-            isActive: true,
-            status: "committed",
-            svgMetadata: {
-              ...((upload.svgMetadata as Record<string, unknown>) ?? {}),
-              countryLinkages,
+          // Mark this upload as active, deactivate others
+          await tx.svgUpload.updateMany({
+            where: { layerType: upload.layerType, isActive: true },
+            data: { isActive: false },
+          });
+          // Store country linkages in svgMetadata for rollback recovery
+          const countryLinkages = dedupedRecords
+            .filter((r) => r.countryId)
+            .map((r) => ({ featureId: r.featureId, countryId: r.countryId! }));
+          await tx.svgUpload.update({
+            where: { id: upload.id },
+            data: {
+              isActive: true,
+              status: "committed",
+              svgMetadata: {
+                ...((upload.svgMetadata as Record<string, unknown>) ?? {}),
+                countryLinkages,
+              },
             },
-          },
-        });
-      }, { timeout: 30000 });
+          });
+        },
+        { timeout: 30000 }
+      );
 
       // Update Country records outside the transaction (best-effort, non-blocking)
       if (upload.layerType === "political") {
@@ -4857,7 +5407,10 @@ export const geoRouter = createTRPCRouter({
               },
             });
           } catch (e) {
-            console.warn(`[commitSvgUpload] Failed to update country ${r.countryId}:`, e instanceof Error ? e.message : e);
+            console.warn(
+              `[commitSvgUpload] Failed to update country ${r.countryId}:`,
+              e instanceof Error ? e.message : e
+            );
           }
         }
       }
@@ -4876,7 +5429,13 @@ export const geoRouter = createTRPCRouter({
 
       // Clear cache for this layer
       layerCache.delete(upload.layerType);
-      await invalidateCache(["geo.getWorldMap", "geo.getLayerGeoJSON", "geo.getMapStats", "geo.getAllMapFeatures", "geo.listCountries"]);
+      await invalidateCache([
+        "geo.getWorldMap",
+        "geo.getLayerGeoJSON",
+        "geo.getMapStats",
+        "geo.getAllMapFeatures",
+        "geo.listCountries",
+      ]);
       broadcastMapUpdate("bulk", upload.countryId ?? undefined);
 
       return {
@@ -4898,7 +5457,10 @@ export const geoRouter = createTRPCRouter({
       });
       if (!targetUpload) throw new TRPCError({ code: "NOT_FOUND" });
       if (!targetUpload.geojsonData) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Target upload has no GeoJSON data to restore" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Target upload has no GeoJSON data to restore",
+        });
       }
 
       const geojson = targetUpload.geojsonData as unknown as FeatureCollection;
@@ -4917,76 +5479,91 @@ export const geoRouter = createTRPCRouter({
       const linkageMap = new Map(existingLinks.map((l) => [l.featureId, l.countryId!]));
 
       // Also check if linkages were stored in svgMetadata at commit time
-      const metaLinkages = (targetUpload.svgMetadata as Record<string, unknown>)?.countryLinkages as
-        Array<{ featureId: string; countryId: string }> | undefined;
+      const metaLinkages = (targetUpload.svgMetadata as Record<string, unknown>)
+        ?.countryLinkages as Array<{ featureId: string; countryId: string }> | undefined;
       if (metaLinkages) {
         for (const l of metaLinkages) linkageMap.set(l.featureId, l.countryId);
       }
 
-      await ctx.db.$transaction(async (tx) => {
-        await tx.mapLayer.deleteMany({
-          where: { layerType: targetUpload.layerType },
-        });
-
-        // Rebuild full records with centroid, bbox, displayName, and preserved linkages
-        const rollbackRecords = geojson.features.map((feature) => {
-          const featureId = String(feature.id ?? feature.properties?.id ?? "unknown");
-          const displayName = String(feature.properties?.name ?? featureIdToDisplayName(featureId));
-          const countryId = linkageMap.get(featureId) ?? null;
-          const coords = extractAllPositions(feature.geometry);
-          const centroid = coords.length > 0
-            ? [
-                coords.reduce((s, c) => s + c[0]!, 0) / coords.length,
-                coords.reduce((s, c) => s + c[1]!, 0) / coords.length,
-              ]
-            : null;
-          let bbox: number[] | null = null;
-          if (coords.length > 0) {
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            for (const c of coords) {
-              if (c[0]! < minX) minX = c[0]!;
-              if (c[1]! < minY) minY = c[1]!;
-              if (c[0]! > maxX) maxX = c[0]!;
-              if (c[1]! > maxY) maxY = c[1]!;
-            }
-            bbox = [minX, minY, maxX, maxY];
-          }
-          return {
-            layerType: targetUpload.layerType,
-            featureId,
-            displayName,
-            countryId,
-            geometry: feature.geometry as unknown as Record<string, unknown>,
-            properties: (feature.properties ?? {}) as Record<string, unknown>,
-            centroid: centroid as unknown as Record<string, unknown>,
-            boundingBox: bbox as unknown as Record<string, unknown>,
-            isActive: true,
-            sourceUploadId: targetUpload.id,
-          };
-        });
-        await tx.mapLayer.createMany({ data: rollbackRecords });
-
-        // Update upload statuses
-        await tx.svgUpload.updateMany({
-          where: { layerType: targetUpload.layerType, isActive: true },
-          data: { isActive: false },
-        });
-        await tx.svgUpload.update({
-          where: { id: targetUpload.id },
-          data: { isActive: true, status: "processed" },
-        });
-
-        // Mark the previously active upload as rolled back
-        if (currentActiveUpload) {
-          await tx.svgUpload.update({
-            where: { id: currentActiveUpload.id },
-            data: { status: "rolled_back" },
+      await ctx.db.$transaction(
+        async (tx) => {
+          await tx.mapLayer.deleteMany({
+            where: { layerType: targetUpload.layerType },
           });
-        }
-      }, { timeout: 30000 });
+
+          // Rebuild full records with centroid, bbox, displayName, and preserved linkages
+          const rollbackRecords = geojson.features.map((feature) => {
+            const featureId = String(feature.id ?? feature.properties?.id ?? "unknown");
+            const displayName = String(
+              feature.properties?.name ?? featureIdToDisplayName(featureId)
+            );
+            const countryId = linkageMap.get(featureId) ?? null;
+            const coords = extractAllPositions(feature.geometry);
+            const centroid =
+              coords.length > 0
+                ? [
+                    coords.reduce((s, c) => s + c[0]!, 0) / coords.length,
+                    coords.reduce((s, c) => s + c[1]!, 0) / coords.length,
+                  ]
+                : null;
+            let bbox: number[] | null = null;
+            if (coords.length > 0) {
+              let minX = Infinity,
+                minY = Infinity,
+                maxX = -Infinity,
+                maxY = -Infinity;
+              for (const c of coords) {
+                if (c[0]! < minX) minX = c[0]!;
+                if (c[1]! < minY) minY = c[1]!;
+                if (c[0]! > maxX) maxX = c[0]!;
+                if (c[1]! > maxY) maxY = c[1]!;
+              }
+              bbox = [minX, minY, maxX, maxY];
+            }
+            return {
+              layerType: targetUpload.layerType,
+              featureId,
+              displayName,
+              countryId,
+              geometry: feature.geometry as unknown as Record<string, unknown>,
+              properties: (feature.properties ?? {}) as Record<string, unknown>,
+              centroid: centroid as unknown as Record<string, unknown>,
+              boundingBox: bbox as unknown as Record<string, unknown>,
+              isActive: true,
+              sourceUploadId: targetUpload.id,
+            };
+          });
+          await tx.mapLayer.createMany({ data: rollbackRecords });
+
+          // Update upload statuses
+          await tx.svgUpload.updateMany({
+            where: { layerType: targetUpload.layerType, isActive: true },
+            data: { isActive: false },
+          });
+          await tx.svgUpload.update({
+            where: { id: targetUpload.id },
+            data: { isActive: true, status: "processed" },
+          });
+
+          // Mark the previously active upload as rolled back
+          if (currentActiveUpload) {
+            await tx.svgUpload.update({
+              where: { id: currentActiveUpload.id },
+              data: { status: "rolled_back" },
+            });
+          }
+        },
+        { timeout: 30000 }
+      );
 
       layerCache.delete(targetUpload.layerType);
-      await invalidateCache(["geo.getWorldMap", "geo.getLayerGeoJSON", "geo.getMapStats", "geo.getAllMapFeatures", "geo.listCountries"]);
+      await invalidateCache([
+        "geo.getWorldMap",
+        "geo.getLayerGeoJSON",
+        "geo.getMapStats",
+        "geo.getAllMapFeatures",
+        "geo.listCountries",
+      ]);
       broadcastMapUpdate("bulk");
 
       return { success: true, restoredUploadId: targetUpload.id };
@@ -5205,7 +5782,12 @@ export const geoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      let layers: Record<string, { features: Array<{ id?: string; geometry: unknown; properties?: Record<string, unknown> }> }>;
+      let layers: Record<
+        string,
+        {
+          features: Array<{ id?: string; geometry: unknown; properties?: Record<string, unknown> }>;
+        }
+      >;
       let templateName = "direct import";
 
       if (input.templateId) {
@@ -5260,7 +5842,10 @@ export const geoRouter = createTRPCRouter({
           const props = (f.properties || {}) as Record<string, unknown>;
           return {
             layerType,
-            featureId: (props.featureId as string) || (f.id as string) || `imported-${Math.random().toString(36).slice(2, 10)}`,
+            featureId:
+              (props.featureId as string) ||
+              (f.id as string) ||
+              `imported-${Math.random().toString(36).slice(2, 10)}`,
             geometry: f.geometry as Record<string, unknown>,
             properties: props,
             displayName: (props.displayName as string) || null,
@@ -5290,9 +5875,11 @@ export const geoRouter = createTRPCRouter({
   /** List saved world templates (metadata only) */
   listWorldTemplates: adminProcedure
     .input(
-      z.object({
-        includePublic: z.boolean().optional().default(true),
-      }).optional()
+      z
+        .object({
+          includePublic: z.boolean().optional().default(true),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const where = input?.includePublic
@@ -5340,7 +5927,9 @@ export const geoRouter = createTRPCRouter({
       z.object({
         seed: z.number().int(),
         continentCount: z.number().int().min(1).max(8).default(4),
-        countryCountRange: z.tuple([z.number().int().min(1), z.number().int().max(200)]).default([20, 60]),
+        countryCountRange: z
+          .tuple([z.number().int().min(1), z.number().int().max(200)])
+          .default([20, 60]),
         oceanPercentage: z.number().min(0.2).max(0.95).default(0.65),
         terrainRoughness: z.number().min(0).max(1).default(0.5),
         hasIcecaps: z.boolean().default(true),
@@ -5412,7 +6001,16 @@ export const geoRouter = createTRPCRouter({
       });
       if (!world) throw new TRPCError({ code: "NOT_FOUND" });
 
-      const layers = world.generatedData as Record<string, { features?: Array<{ id?: string; geometry: unknown; properties?: Record<string, unknown> }> }>;
+      const layers = world.generatedData as Record<
+        string,
+        {
+          features?: Array<{
+            id?: string;
+            geometry: unknown;
+            properties?: Record<string, unknown>;
+          }>;
+        }
+      >;
       if (!layers) throw new TRPCError({ code: "BAD_REQUEST", message: "No generated data" });
 
       // Deactivate all existing features
@@ -5431,7 +6029,10 @@ export const geoRouter = createTRPCRouter({
           const props = (f.properties || {}) as Record<string, unknown>;
           return {
             layerType,
-            featureId: (props.featureId as string) || (f.id as string) || `proc-${Math.random().toString(36).slice(2, 10)}`,
+            featureId:
+              (props.featureId as string) ||
+              (f.id as string) ||
+              `proc-${Math.random().toString(36).slice(2, 10)}`,
             geometry: f.geometry as Record<string, unknown>,
             properties: props,
             displayName: (props.displayName as string) || null,
@@ -5506,7 +6107,10 @@ export const geoRouter = createTRPCRouter({
         where: { id: world.id },
         data: {
           generatedData: existingLayers,
-          metadata: { ...(world.metadata as Record<string, unknown>), lastRegenerated: input.layerType },
+          metadata: {
+            ...(world.metadata as Record<string, unknown>),
+            lastRegenerated: input.layerType,
+          },
         },
       });
 
@@ -5517,23 +6121,22 @@ export const geoRouter = createTRPCRouter({
     }),
 
   /** List procedural world generation history */
-  listProceduralWorlds: adminProcedure
-    .query(async ({ ctx }) => {
-      return ctx.db.proceduralWorld.findMany({
-        where: { createdBy: ctx.auth!.userId },
-        select: {
-          id: true,
-          seed: true,
-          parameters: true,
-          status: true,
-          metadata: true,
-          templateId: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-      });
-    }),
+  listProceduralWorlds: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db.proceduralWorld.findMany({
+      where: { createdBy: ctx.auth!.userId },
+      select: {
+        id: true,
+        seed: true,
+        parameters: true,
+        status: true,
+        metadata: true,
+        templateId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  }),
 
   // ──────────────────────────────────────────────
   // Map Pipeline Endpoints
@@ -5558,7 +6161,9 @@ export const geoRouter = createTRPCRouter({
       const result = await runMapPipeline({
         source: input.source,
         svgContent: input.svgContent,
-        worldGenParams: input.worldGenParams as import("~/lib/worldgen/types").WorldGenParams | undefined,
+        worldGenParams: input.worldGenParams as
+          | import("~/lib/worldgen/types").WorldGenParams
+          | undefined,
         targetLayers: input.targetLayers,
       });
 
@@ -5678,16 +6283,22 @@ export const geoRouter = createTRPCRouter({
       });
 
       // Filter to those referencing this feature
-      return vertices.filter((v) => {
-        const refs = v.featureRefs as Array<{ featureId: string }>;
-        return Array.isArray(refs) && refs.some((r) => r.featureId === input.featureId);
-      }).map((v) => ({
-        id: v.id,
-        lng: v.lng,
-        lat: v.lat,
-        featureRefs: v.featureRefs as Array<{ featureId: string; ringIndex: number; vertexIndex: number }>,
-        snapTarget: v.snapTarget,
-      }));
+      return vertices
+        .filter((v) => {
+          const refs = v.featureRefs as Array<{ featureId: string }>;
+          return Array.isArray(refs) && refs.some((r) => r.featureId === input.featureId);
+        })
+        .map((v) => ({
+          id: v.id,
+          lng: v.lng,
+          lat: v.lat,
+          featureRefs: v.featureRefs as Array<{
+            featureId: string;
+            ringIndex: number;
+            vertexIndex: number;
+          }>,
+          snapTarget: v.snapTarget,
+        }));
     }),
 
   // ──────────────────────────────────────────────
@@ -5709,7 +6320,10 @@ export const geoRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const country = ctx.country;
       if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only import provinces for your own country" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only import provinces for your own country",
+        });
       }
 
       // Get content from upload record or direct input
@@ -5772,7 +6386,10 @@ export const geoRouter = createTRPCRouter({
       }
 
       if (!svgContent) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "SVG or PNG content required (provide uploadId or svgContent)" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "SVG or PNG content required (provide uploadId or svgContent)",
+        });
       }
 
       // Preprocess SVG (strip non-visual elements, remove fragments, normalize)
@@ -5813,7 +6430,10 @@ export const geoRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const country = ctx.country;
       if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only validate provinces for your own country" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only validate provinces for your own country",
+        });
       }
 
       const validationResults: Array<{
@@ -5832,7 +6452,9 @@ export const geoRouter = createTRPCRouter({
           const geoJson = JSON.stringify(province.geometry);
 
           // Check geometry validity
-          const validResult = await ctx.db.$queryRawUnsafe<Array<{ is_valid: boolean; reason: string | null }>>(
+          const validResult = await ctx.db.$queryRawUnsafe<
+            Array<{ is_valid: boolean; reason: string | null }>
+          >(
             `SELECT ST_IsValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) as is_valid,
                     ST_IsValidReason(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) as reason`,
             geoJson
@@ -5856,7 +6478,9 @@ export const geoRouter = createTRPCRouter({
             issues.push("Province extends beyond country borders");
           }
         } catch (err) {
-          issues.push(`PostGIS validation failed: ${err instanceof Error ? err.message : "unknown error"}`);
+          issues.push(
+            `PostGIS validation failed: ${err instanceof Error ? err.message : "unknown error"}`
+          );
         }
 
         validationResults.push({
@@ -5878,7 +6502,10 @@ export const geoRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const country = ctx.country;
       if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only delete regions for your own country" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only delete regions for your own country",
+        });
       }
       const result = await ctx.db.subdivision.deleteMany({
         where: { countryId: input.countryId },
@@ -5911,7 +6538,10 @@ export const geoRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const country = ctx.country;
       if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only import provinces for your own country" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only import provinces for your own country",
+        });
       }
 
       const userId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system";
@@ -5988,13 +6618,24 @@ export const geoRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const country = ctx.country;
       if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only preview your own country" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only preview your own country",
+        });
       }
 
       const [subdivisions, mapLayer] = await Promise.all([
         ctx.db.subdivision.findMany({
           where: { countryId: input.countryId, status: "approved" },
-          select: { id: true, name: true, type: true, level: true, geometry: true, capital: true, population: true },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            level: true,
+            geometry: true,
+            capital: true,
+            population: true,
+          },
         }),
         ctx.db.mapLayer.findFirst({
           where: { countryId: input.countryId, layerType: "political" },
@@ -6092,8 +6733,7 @@ export const geoRouter = createTRPCRouter({
       ]);
 
       // 3. Compute area (use stored value or estimate from geometry)
-      const areaKm2 = country.landArea
-        ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
+      const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
 
       // 4. Build climate distribution
       // Strategy: match climate features by checking if they overlap the country's bbox
@@ -6125,7 +6765,13 @@ export const geoRouter = createTRPCRouter({
         // and the country's relative size. This will be replaced with PostGIS
         // ST_Intersection once the endpoint is validated.
         // We estimate overlap fraction from bbox coverage
-        const overlapFraction = estimateBboxOverlap(clGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat);
+        const overlapFraction = estimateBboxOverlap(
+          clGeo,
+          countryMinLng,
+          countryMinLat,
+          countryMaxLng,
+          countryMaxLat
+        );
         if (overlapFraction <= 0) continue;
 
         const overlapArea = clArea * overlapFraction;
@@ -6148,9 +6794,8 @@ export const geoRouter = createTRPCRouter({
       // Normalize climate percentages
       const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
       for (const z of climateDistribution) {
-        z.percentArea = totalClimateArea > 0
-          ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10
-          : 0;
+        z.percentArea =
+          totalClimateArea > 0 ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10 : 0;
       }
       // Sort by area descending
       climateDistribution.sort((a, b) => b.areaSqKm - a.areaSqKm);
@@ -6167,7 +6812,13 @@ export const geoRouter = createTRPCRouter({
         const alArea = al.areaSqKm ?? 0;
         if (alArea <= 0) continue;
 
-        const overlapFraction = estimateBboxOverlap(alGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat);
+        const overlapFraction = estimateBboxOverlap(
+          alGeo,
+          countryMinLng,
+          countryMinLat,
+          countryMaxLng,
+          countryMaxLat
+        );
         if (overlapFraction <= 0) continue;
 
         const overlapArea = alArea * overlapFraction;
@@ -6199,9 +6850,8 @@ export const geoRouter = createTRPCRouter({
       // Normalize elevation percentages
       const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
       for (const z of elevationProfile) {
-        z.percentArea = totalElevArea > 0
-          ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10
-          : 0;
+        z.percentArea =
+          totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
       }
       elevationProfile.sort((a, b) => a.minElev - b.minElev);
 
@@ -6209,7 +6859,7 @@ export const geoRouter = createTRPCRouter({
       const riverCount = riverLayers.length;
       const totalRiverLengthKm = riverLayers.reduce((s, r) => {
         const p = r.properties as Record<string, unknown> | null;
-        return s + ((p?.["lengthKm"] as number) ?? (r.areaSqKm ?? 0));
+        return s + ((p?.["lengthKm"] as number) ?? r.areaSqKm ?? 0);
       }, 0);
       const lakeCount = lakeLayers.length;
       const totalLakeAreaSqKm = lakeLayers.reduce((s, l) => s + (l.areaSqKm ?? 0), 0);
@@ -6224,13 +6874,19 @@ export const geoRouter = createTRPCRouter({
         shared_border_km: number;
       }
 
-      let neighborCountries: Array<{ id: string; name: string; slug: string | null; sharedBorderKm: number }> = [];
+      let neighborCountries: Array<{
+        id: string;
+        name: string;
+        slug: string | null;
+        sharedBorderKm: number;
+      }> = [];
       let perimeterKm = 0;
       let coastlineKm = 0;
 
       try {
         // Query 1: Find all neighboring countries and their shared border lengths
-        const neighborRows = await ctx.db.$queryRawUnsafe<PostGISNeighborRow[]>(`
+        const neighborRows = await ctx.db.$queryRawUnsafe<PostGISNeighborRow[]>(
+          `
           WITH country AS (
             SELECT id, name,
               ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
@@ -6257,7 +6913,9 @@ export const geoRouter = createTRPCRouter({
             c.geom
           )
           ORDER BY c2.id, shared_border_km DESC
-        `, input.countryId);
+        `,
+          input.countryId
+        );
 
         neighborCountries = neighborRows
           .filter((r) => Number(r.shared_border_km) > 0)
@@ -6270,13 +6928,16 @@ export const geoRouter = createTRPCRouter({
           .sort((a, b) => b.sharedBorderKm - a.sharedBorderKm);
 
         // Query 2: Get country perimeter for coastline calculation
-        const perimResult = await ctx.db.$queryRawUnsafe<Array<{ perimeter_km: number }>>(`
+        const perimResult = await ctx.db.$queryRawUnsafe<Array<{ perimeter_km: number }>>(
+          `
           SELECT ST_Perimeter(
             ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326))::geography
           ) / 1000 as perimeter_km
           FROM "Country"
           WHERE id = $1
-        `, input.countryId);
+        `,
+          input.countryId
+        );
 
         perimeterKm = Math.round(Number(perimResult[0]?.perimeter_km ?? 0));
         const totalSharedBorderKm = neighborCountries.reduce((s, n) => s + n.sharedBorderKm, 0);
@@ -6286,7 +6947,12 @@ export const geoRouter = createTRPCRouter({
         const latMid = (countryMinLat + countryMaxLat) / 2;
         const degToKm = 111.32;
         const cosLat = Math.cos((latMid * Math.PI) / 180);
-        perimeterKm = Math.round(2 * ((countryMaxLat - countryMinLat) * degToKm + (countryMaxLng - countryMinLng) * degToKm * cosLat) * 1.3);
+        perimeterKm = Math.round(
+          2 *
+            ((countryMaxLat - countryMinLat) * degToKm +
+              (countryMaxLng - countryMinLng) * degToKm * cosLat) *
+            1.3
+        );
         coastlineKm = country.coastlineKm ?? perimeterKm;
       }
 
@@ -6409,15 +7075,22 @@ export const geoRouter = createTRPCRouter({
           }
 
           const coastlineKm = profileResult.coastlineKm ?? 0;
-          const areaKm2 = profileResult.landArea
-            ?? (profileResult.areaSqMi ? profileResult.areaSqMi / 0.386102 : 0);
+          const areaKm2 =
+            profileResult.landArea ??
+            (profileResult.areaSqMi ? profileResult.areaSqMi / 0.386102 : 0);
           const bbox = profileResult.boundingBox as [number, number, number, number] | null;
 
           // Get climate/altitude layers for this country's bbox
           const [climateLayers, altitudeLayers] = await Promise.all([
             ctx.db.mapLayer.findMany({
               where: { layerType: "climate", isActive: true },
-              select: { featureId: true, geometry: true, properties: true, areaSqKm: true, displayName: true },
+              select: {
+                featureId: true,
+                geometry: true,
+                properties: true,
+                areaSqKm: true,
+                displayName: true,
+              },
             }),
             ctx.db.mapLayer.findMany({
               where: { layerType: "altitudes", isActive: true },
@@ -6442,7 +7115,13 @@ export const geoRouter = createTRPCRouter({
             const climateName = resolveClimateFromColor(clFill);
             if (!climateName) continue;
 
-            const overlapFraction = estimateBboxOverlap(clGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat);
+            const overlapFraction = estimateBboxOverlap(
+              clGeo,
+              countryMinLng,
+              countryMinLat,
+              countryMaxLng,
+              countryMaxLat
+            );
             if (overlapFraction <= 0) continue;
 
             climateDistribution.push({
@@ -6454,7 +7133,10 @@ export const geoRouter = createTRPCRouter({
           }
           const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
           for (const z of climateDistribution) {
-            z.percentArea = totalClimateArea > 0 ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10 : 0;
+            z.percentArea =
+              totalClimateArea > 0
+                ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10
+                : 0;
           }
 
           // Build elevation profile
@@ -6465,11 +7147,19 @@ export const geoRouter = createTRPCRouter({
             const alGeo = al.geometry as import("geojson").Geometry | null;
             if (!alGeo || !al.areaSqKm || al.areaSqKm <= 0) continue;
 
-            const overlapFraction = estimateBboxOverlap(alGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat);
+            const overlapFraction = estimateBboxOverlap(
+              alGeo,
+              countryMinLng,
+              countryMinLat,
+              countryMaxLng,
+              countryMaxLat
+            );
             if (overlapFraction <= 0) continue;
 
             const fill = (props["fill"] as string) ?? "";
-            const zoneMatch = ELEVATION_ZONES.find((ez) => ez.color.toLowerCase() === fill.toLowerCase());
+            const zoneMatch = ELEVATION_ZONES.find(
+              (ez) => ez.color.toLowerCase() === fill.toLowerCase()
+            );
             if (!zoneMatch) continue;
 
             const existing = elevationProfile.find((e) => e.zone === zoneMatch.zoneId);
@@ -6477,20 +7167,29 @@ export const geoRouter = createTRPCRouter({
               existing.areaSqKm += al.areaSqKm * overlapFraction;
             } else {
               elevationProfile.push({
-                zone: zoneMatch.zoneId, name: zoneMatch.zoneName,
-                percentArea: 0, areaSqKm: al.areaSqKm * overlapFraction,
-                minElev: zoneMatch.elevationMin, maxElev: zoneMatch.elevationMax,
+                zone: zoneMatch.zoneId,
+                name: zoneMatch.zoneName,
+                percentArea: 0,
+                areaSqKm: al.areaSqKm * overlapFraction,
+                minElev: zoneMatch.elevationMin,
+                maxElev: zoneMatch.elevationMax,
               });
             }
           }
           const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
           for (const z of elevationProfile) {
-            z.percentArea = totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
+            z.percentArea =
+              totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
           }
 
           const profile = buildGeoProfile({
-            climateDistribution, elevationProfile, coastlineKm,
-            neighborCount: 0, totalRiverLengthKm: 0, totalLakeAreaSqKm: 0, areaKm2,
+            climateDistribution,
+            elevationProfile,
+            coastlineKm,
+            neighborCount: 0,
+            totalRiverLengthKm: 0,
+            totalLakeAreaSqKm: 0,
+            areaKm2,
           });
           const econ = computeEconomicGeoModifiers(profile);
 
@@ -6499,25 +7198,41 @@ export const geoRouter = createTRPCRouter({
             where: { countryId: country.id },
             create: {
               countryId: country.id,
-              climateDistribution: climateDistribution as unknown as import("@prisma/client").Prisma.JsonValue,
-              elevationProfile: elevationProfile as unknown as import("@prisma/client").Prisma.JsonValue,
+              climateDistribution:
+                climateDistribution as unknown as import("@prisma/client").Prisma.JsonValue,
+              elevationProfile:
+                elevationProfile as unknown as import("@prisma/client").Prisma.JsonValue,
               arableLandPercent: profile.arableLandPercent,
-              coastlineKm, isLandlocked: profile.isLandlocked, isIsland: profile.isIsland,
-              riverKm: 0, lakeAreaSqKm: 0, neighborCount: profile.neighborCount,
-              dominantClimate: profile.dominantClimate, dominantElevation: profile.dominantElevation,
-              meanElevation: profile.meanElevation, terrainRoughness: profile.terrainRoughness,
-              gdpModifier: econ.gdpModifier, tradeModifier: econ.tradeModifier,
+              coastlineKm,
+              isLandlocked: profile.isLandlocked,
+              isIsland: profile.isIsland,
+              riverKm: 0,
+              lakeAreaSqKm: 0,
+              neighborCount: profile.neighborCount,
+              dominantClimate: profile.dominantClimate,
+              dominantElevation: profile.dominantElevation,
+              meanElevation: profile.meanElevation,
+              terrainRoughness: profile.terrainRoughness,
+              gdpModifier: econ.gdpModifier,
+              tradeModifier: econ.tradeModifier,
               infraCostModifier: econ.infraCostModifier,
               lastCalculatedAt: new Date(),
             },
             update: {
-              climateDistribution: climateDistribution as unknown as import("@prisma/client").Prisma.JsonValue,
-              elevationProfile: elevationProfile as unknown as import("@prisma/client").Prisma.JsonValue,
+              climateDistribution:
+                climateDistribution as unknown as import("@prisma/client").Prisma.JsonValue,
+              elevationProfile:
+                elevationProfile as unknown as import("@prisma/client").Prisma.JsonValue,
               arableLandPercent: profile.arableLandPercent,
-              coastlineKm, isLandlocked: profile.isLandlocked, isIsland: profile.isIsland,
-              dominantClimate: profile.dominantClimate, dominantElevation: profile.dominantElevation,
-              meanElevation: profile.meanElevation, terrainRoughness: profile.terrainRoughness,
-              gdpModifier: econ.gdpModifier, tradeModifier: econ.tradeModifier,
+              coastlineKm,
+              isLandlocked: profile.isLandlocked,
+              isIsland: profile.isIsland,
+              dominantClimate: profile.dominantClimate,
+              dominantElevation: profile.dominantElevation,
+              meanElevation: profile.meanElevation,
+              terrainRoughness: profile.terrainRoughness,
+              gdpModifier: econ.gdpModifier,
+              tradeModifier: econ.tradeModifier,
               infraCostModifier: econ.infraCostModifier,
               lastCalculatedAt: new Date(),
             },
@@ -6541,10 +7256,12 @@ export const geoRouter = createTRPCRouter({
    * for data-driven fill coloring on the map.
    */
   getRegionalChoropleth: cachedPublicProcedure
-    .input(z.object({
-      metric: z.enum(["gdpPerCapita", "population", "vitality", "health", "tradeBalance"]),
-      groupBy: z.enum(["country", "region", "continent"]).default("country"),
-    }))
+    .input(
+      z.object({
+        metric: z.enum(["gdpPerCapita", "population", "vitality", "health", "tradeBalance"]),
+        groupBy: z.enum(["country", "region", "continent"]).default("country"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
         where: { geometry: { not: null } },
@@ -6566,18 +7283,23 @@ export const geoRouter = createTRPCRouter({
         },
       });
 
-      const getMetricValue = (c: typeof countries[number]): number => {
+      const getMetricValue = (c: (typeof countries)[number]): number => {
         switch (input.metric) {
-          case "gdpPerCapita": return c.currentGdpPerCapita ?? 0;
+          case "gdpPerCapita":
+            return c.currentGdpPerCapita ?? 0;
           case "population": {
             // Population density (per km²) is more useful than raw population
             const area = c.landArea ?? 1;
             return area > 0 ? (c.currentPopulation ?? 0) / area : 0;
           }
-          case "vitality": return c.economicVitality ?? 0;
-          case "health": return c.overallNationalHealth ?? 0;
-          case "tradeBalance": return c.tradeBalance ?? 0;
-          default: return 0;
+          case "vitality":
+            return c.economicVitality ?? 0;
+          case "health":
+            return c.overallNationalHealth ?? 0;
+          case "tradeBalance":
+            return c.tradeBalance ?? 0;
+          default:
+            return 0;
         }
       };
 
@@ -6607,14 +7329,21 @@ export const geoRouter = createTRPCRouter({
               region: c.region,
             },
           })),
-          metadata: { metric: input.metric, groupBy: input.groupBy, minVal: 0, maxVal: 1, count: countries.length },
+          metadata: {
+            metric: input.metric,
+            groupBy: input.groupBy,
+            minVal: 0,
+            maxVal: 1,
+            count: countries.length,
+          },
         };
       }
 
       // Region/continent aggregation
       const groups = new Map<string, { values: number[]; countryIds: string[]; names: string[] }>();
       for (const c of countries) {
-        const key = input.groupBy === "region" ? (c.region ?? "Unknown") : (c.continent ?? "Unknown");
+        const key =
+          input.groupBy === "region" ? (c.region ?? "Unknown") : (c.continent ?? "Unknown");
         if (!groups.has(key)) groups.set(key, { values: [], countryIds: [], names: [] });
         const g = groups.get(key)!;
         g.values.push(getMetricValue(c));
@@ -6626,22 +7355,27 @@ export const geoRouter = createTRPCRouter({
       const groupAgg = new Map<string, number>();
       for (const [key, g] of groups) {
         const avg = g.values.reduce((s, v) => s + v, 0) / g.values.length;
-        groupAgg.set(key, input.metric === "population"
-          ? g.values.reduce((s, v) => s + v, 0)
-          : avg);
+        groupAgg.set(
+          key,
+          input.metric === "population" ? g.values.reduce((s, v) => s + v, 0) : avg
+        );
       }
 
       // Rank groups by percentile (0–1)
       const sortedGroups = Array.from(groupAgg.entries()).sort((a, b) => a[1] - b[1]);
       const groupRank = new Map<string, number>();
       for (let i = 0; i < sortedGroups.length; i++) {
-        groupRank.set(sortedGroups[i]![0], sortedGroups.length > 1 ? i / (sortedGroups.length - 1) : 0.5);
+        groupRank.set(
+          sortedGroups[i]![0],
+          sortedGroups.length > 1 ? i / (sortedGroups.length - 1) : 0.5
+        );
       }
 
       return {
         type: "FeatureCollection" as const,
         features: countries.map((c) => {
-          const key = input.groupBy === "region" ? (c.region ?? "Unknown") : (c.continent ?? "Unknown");
+          const key =
+            input.groupBy === "region" ? (c.region ?? "Unknown") : (c.continent ?? "Unknown");
           return {
             type: "Feature" as const,
             geometry: c.geometry as import("geojson").Geometry,
@@ -6657,7 +7391,13 @@ export const geoRouter = createTRPCRouter({
             },
           };
         }),
-        metadata: { metric: input.metric, groupBy: input.groupBy, minVal: 0, maxVal: 1, count: groups.size },
+        metadata: {
+          metric: input.metric,
+          groupBy: input.groupBy,
+          minVal: 0,
+          maxVal: 1,
+          count: groups.size,
+        },
       };
     }),
 
@@ -6666,9 +7406,15 @@ export const geoRouter = createTRPCRouter({
    * FeatureCollection for heatmap coloring, plus active crisis events.
    */
   getCrisisRiskMap: cachedPublicProcedure
-    .input(z.object({
-      riskType: z.enum(["hurricane", "earthquake", "drought", "flood", "wildfire", "pandemic", "famine"]).optional(),
-    }).optional())
+    .input(
+      z
+        .object({
+          riskType: z
+            .enum(["hurricane", "earthquake", "drought", "flood", "wildfire", "pandemic", "famine"])
+            .optional(),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input }) => {
       // Get pre-computed geo profiles with crisis risk data
       const profiles = await ctx.db.countryGeoProfile.findMany({
@@ -6784,10 +7530,14 @@ export const geoRouter = createTRPCRouter({
    * connecting country centroids, styled by volume and balance.
    */
   getTradeRouteGeoJSON: cachedPublicProcedure
-    .input(z.object({
-      minVolume: z.number().optional(),
-      limit: z.number().min(1).max(200).default(50),
-    }).optional())
+    .input(
+      z
+        .object({
+          minVolume: z.number().optional(),
+          limit: z.number().min(1).max(200).default(50),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input }) => {
       const trades = await ctx.db.bilateralTrade.findMany({
         where: input?.minVolume ? { tradeVolume: { gte: input.minVolume } } : undefined,
@@ -6811,7 +7561,7 @@ export const geoRouter = createTRPCRouter({
         const c2 = t.country2.centroid as { coordinates: [number, number] } | null;
         if (!c1 || !c2) continue;
 
-        const balance = (t.tradeBalance1 ?? 0);
+        const balance = t.tradeBalance1 ?? 0;
         features.push({
           type: "Feature" as const,
           geometry: {
@@ -6899,9 +7649,12 @@ export const geoRouter = createTRPCRouter({
       if (!c1 || !c2) continue;
 
       const relType = (r.relationship ?? "neutral").toLowerCase();
-      const color = relType.includes("friend") || relType.includes("ally") ? "#22c55e"
-        : relType.includes("hostil") || relType.includes("rival") ? "#ef4444"
-        : "#f59e0b";
+      const color =
+        relType.includes("friend") || relType.includes("ally")
+          ? "#22c55e"
+          : relType.includes("hostil") || relType.includes("rival")
+            ? "#ef4444"
+            : "#f59e0b";
 
       relationFeatures.push({
         type: "Feature" as const,
@@ -6967,13 +7720,19 @@ export const geoRouter = createTRPCRouter({
  */
 function estimateBboxOverlap(
   geometry: import("geojson").Geometry,
-  minLng: number, minLat: number, maxLng: number, maxLat: number
+  minLng: number,
+  minLat: number,
+  maxLng: number,
+  maxLat: number
 ): number {
   // Extract coordinates to compute feature bbox
   const coords = extractCoords(geometry);
   if (coords.length === 0) return 0;
 
-  let fMinLng = Infinity, fMinLat = Infinity, fMaxLng = -Infinity, fMaxLat = -Infinity;
+  let fMinLng = Infinity,
+    fMinLat = Infinity,
+    fMaxLng = -Infinity,
+    fMaxLat = -Infinity;
   for (const [lng, lat] of coords) {
     if (lng < fMinLng) fMinLng = lng;
     if (lng > fMaxLng) fMaxLng = lng;

@@ -85,23 +85,23 @@ export const SectionHero = React.memo(function SectionHero({
           {/* Icon + country name + subtitle + status badges */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className={`rounded-full bg-gradient-to-r ${gradient} p-2 flex-shrink-0`}>
+              <div className={`rounded-full bg-gradient-to-r ${gradient} shrink-0 p-2`}>
                 <Icon size={24} className="text-white" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold">{countryName}</h1>
+                <h1 className="text-xl font-bold sm:text-2xl">{countryName}</h1>
                 <p className="text-muted-foreground text-xs sm:text-sm">{sectionSubtitle}</p>
               </div>
             </div>
 
             {/* Status badges (desktop only) */}
             {statusBadges && statusBadges.length > 0 && (
-              <div className="hidden sm:flex items-center gap-1.5">
+              <div className="hidden items-center gap-1.5 sm:flex">
                 {statusBadges.map((badge, i) => (
                   <Badge
                     key={i}
                     variant="outline"
-                    className={`text-[0.65rem] px-1.5 py-0 ${badge.colorClass}`}
+                    className={`px-1.5 py-0 text-[0.65rem] ${badge.colorClass}`}
                   >
                     <badge.icon className="mr-1 h-2.5 w-2.5" />
                     {badge.count}

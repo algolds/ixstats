@@ -23,7 +23,14 @@ import {
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import type { Polygon, MultiPolygon, Position, Feature, FeatureCollection, Geometry } from "geojson";
+import type {
+  Polygon,
+  MultiPolygon,
+  Position,
+  Feature,
+  FeatureCollection,
+  Geometry,
+} from "geojson";
 import type { GeoJSONSource } from "maplibre-gl";
 
 // Helper to get a typed GeoJSON source from the map
@@ -55,17 +62,9 @@ import {
   sanitizeRegionShape,
 } from "~/lib/border-editor";
 import type { VertexRef } from "~/lib/border-editor";
-import {
-  findNearestBorderRing,
-  snapGeometryToBorder,
-} from "~/lib/province-importer/alignment";
+import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/province-importer/alignment";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
-import {
-  MAP_DEFAULTS,
-  OCEAN_COLOR,
-  LAYER_CONFIGS,
-  MAP_SYMBOL_FONTS,
-} from "~/lib/map-config";
+import { MAP_DEFAULTS, OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS } from "~/lib/map-config";
 import { getMapGlyphsUrl } from "~/lib/base-path";
 
 type MapLibreMap = import("maplibre-gl").Map;
@@ -121,27 +120,24 @@ const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
 const SNAP_GUIDE_POINT_LAYER = "editor-snap-guide-point";
 
 /** Show/hide a snap guide line between drag origin and snap target */
-function updateSnapGuide(
-  map: MapLibreMap,
-  from: Position | null,
-  to: Position | null,
-) {
+function updateSnapGuide(map: MapLibreMap, from: Position | null, to: Position | null) {
   const fc: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
-    features: from && to
-      ? [
-          {
-            type: "Feature",
-            geometry: { type: "LineString", coordinates: [from, to] },
-            properties: {},
-          },
-          {
-            type: "Feature",
-            geometry: { type: "Point", coordinates: to },
-            properties: {},
-          },
-        ]
-      : [],
+    features:
+      from && to
+        ? [
+            {
+              type: "Feature",
+              geometry: { type: "LineString", coordinates: [from, to] },
+              properties: {},
+            },
+            {
+              type: "Feature",
+              geometry: { type: "Point", coordinates: to },
+              properties: {},
+            },
+          ]
+        : [],
   };
 
   const source = map.getSource(SNAP_GUIDE_SOURCE);
@@ -176,8 +172,8 @@ function updateSnapGuide(
   }
 }
 
-const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
-  function EditorMap(
+const EditorMap = memo(
+  forwardRef<EditorMapRef, EditorMapProps>(function EditorMap(
     {
       countryGeometry,
       countryCentroid,
@@ -244,11 +240,13 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       // Polygon fill + stroke
       const polyFc = {
         type: "FeatureCollection" as const,
-        features: [{
-          type: "Feature" as const,
-          geometry: geo,
-          properties: {},
-        }],
+        features: [
+          {
+            type: "Feature" as const,
+            geometry: geo,
+            properties: {},
+          },
+        ],
       };
       getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
 
@@ -315,7 +313,12 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       // Reset subdivision filters
       const map = mapRef.current;
       if (map) {
-        for (const lid of ["editor-subdivisions-fill", "editor-subdivisions-stroke", "editor-subdivisions-labels", "editor-subdivisions-hover"]) {
+        for (const lid of [
+          "editor-subdivisions-fill",
+          "editor-subdivisions-stroke",
+          "editor-subdivisions-labels",
+          "editor-subdivisions-hover",
+        ]) {
           if (map.getLayer(lid)) map.setFilter(lid, null);
         }
       }
@@ -340,11 +343,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       // Step 3: Snap to neighboring region borders to fill gaps
       const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
       for (const feat of featuresRef.current) {
-        if (
-          feat.type === "subdivision" &&
-          feat.id !== state.featureId &&
-          feat.geometry
-        ) {
+        if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
           neighborGeometries.push({
             id: feat.id,
             geometry: feat.geometry as Polygon | MultiPolygon,
@@ -362,12 +361,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         borderEdges.push([nearestRing[i]!, nearestRing[i + 1]!]);
       }
 
-      const snapped = snapGeometryToBorder(
-        geo,
-        borderEdges,
-        nearestRing,
-        2.0
-      );
+      const snapped = snapGeometryToBorder(geo, borderEdges, nearestRing, 2.0);
       state.currentGeometry = snapped as Polygon | MultiPolygon;
       updateVertexEditVis();
 
@@ -391,7 +385,10 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
         for (const feat of featuresRef.current) {
           if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-            neighborGeometries.push({ id: feat.id, geometry: feat.geometry as Polygon | MultiPolygon });
+            neighborGeometries.push({
+              id: feat.id,
+              geometry: feat.geometry as Polygon | MultiPolygon,
+            });
           }
         }
         if (neighborGeometries.length > 0) {
@@ -410,7 +407,12 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       clearVertexEditVis();
       const map = mapRef.current;
       if (map) {
-        for (const lid of ["editor-subdivisions-fill", "editor-subdivisions-stroke", "editor-subdivisions-labels", "editor-subdivisions-hover"]) {
+        for (const lid of [
+          "editor-subdivisions-fill",
+          "editor-subdivisions-stroke",
+          "editor-subdivisions-labels",
+          "editor-subdivisions-hover",
+        ]) {
           if (map.getLayer(lid)) map.setFilter(lid, null);
         }
       }
@@ -423,7 +425,9 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
 
       async function initMap() {
         const mod = await import("maplibre-gl");
-        const maplibregl = ("Map" in mod ? mod : (mod as Record<string, unknown>).default) as typeof mod;
+        const maplibregl = (
+          "Map" in mod ? mod : (mod as Record<string, unknown>).default
+        ) as typeof mod;
 
         if (cancelled || !containerRef.current) return;
 
@@ -536,10 +540,15 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
                 source: sourceId,
                 paint: {
                   "line-color": config.strokeColor ?? "#7cb5d2",
-                  "line-width": ["interpolate", ["linear"], ["zoom"],
-                  0, config.strokeWidth ?? 1,
-                  6, (config.strokeWidth ?? 1) * 3,
-                ] as [string, ...unknown[]],
+                  "line-width": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    0,
+                    config.strokeWidth ?? 1,
+                    6,
+                    (config.strokeWidth ?? 1) * 3,
+                  ] as [string, ...unknown[]],
                   "line-opacity": layer.visible ? 0.7 : 0,
                 },
                 layout: { "line-cap": "round", "line-join": "round" },
@@ -586,7 +595,11 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             }
           } else if (config.type === "fill") {
             if (map.getLayer(fillLayerId)) {
-              map.setPaintProperty(fillLayerId, "fill-opacity", layer.visible ? config.fillOpacity : 0);
+              map.setPaintProperty(
+                fillLayerId,
+                "fill-opacity",
+                layer.visible ? config.fillOpacity : 0
+              );
             }
             if (map.getLayer(strokeLayerId)) {
               map.setPaintProperty(strokeLayerId, "line-opacity", layer.visible ? 0.8 : 0);
@@ -650,10 +663,17 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         if (!map.getSource(maskSourceId)) {
           // Create world polygon with country cut out as a hole
           const geo = countryGeometry as Polygon | MultiPolygon;
-          const worldOuter: Position[] = [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]];
-          const holes: Position[][] = geo.type === "Polygon"
-            ? [geo.coordinates[0] as Position[]]
-            : (geo.coordinates as Position[][][]).map(poly => poly[0] as Position[]);
+          const worldOuter: Position[] = [
+            [-180, -90],
+            [180, -90],
+            [180, 90],
+            [-180, 90],
+            [-180, -90],
+          ];
+          const holes: Position[][] =
+            geo.type === "Polygon"
+              ? [geo.coordinates[0] as Position[]]
+              : (geo.coordinates as Position[][][]).map((poly) => poly[0] as Position[]);
 
           map.addSource(maskSourceId, {
             type: "geojson",
@@ -690,9 +710,14 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       if (onZoomChange) {
         const reportZoom = () => onZoomChange(map.getZoom());
         map.on("zoomend", reportZoom);
-        return () => { map.off("zoomend", updateBucket); map.off("zoomend", reportZoom); };
+        return () => {
+          map.off("zoomend", updateBucket);
+          map.off("zoomend", reportZoom);
+        };
       }
-      return () => { map.off("zoomend", updateBucket); };
+      return () => {
+        map.off("zoomend", updateBucket);
+      };
     }, [isLoaded, onZoomChange]);
 
     // Coordinate grid overlay — focused on country bbox, rebuilds on zoom bucket change
@@ -724,14 +749,26 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       for (let lng = minLng; lng <= maxLng; lng += spacing) {
         lines.push({
           type: "Feature",
-          geometry: { type: "LineString", coordinates: [[lng, minLat], [lng, maxLat]] },
+          geometry: {
+            type: "LineString",
+            coordinates: [
+              [lng, minLat],
+              [lng, maxLat],
+            ],
+          },
           properties: { label: `${Math.abs(lng)}°${lng >= 0 ? "E" : "W"}` },
         });
       }
       for (let lat = minLat; lat <= maxLat; lat += spacing) {
         lines.push({
           type: "Feature",
-          geometry: { type: "LineString", coordinates: [[minLng, lat], [maxLng, lat]] },
+          geometry: {
+            type: "LineString",
+            coordinates: [
+              [minLng, lat],
+              [maxLng, lat],
+            ],
+          },
           properties: { label: `${Math.abs(lat)}°${lat >= 0 ? "N" : "S"}` },
         });
       }
@@ -835,7 +872,11 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           id: "editor-points-city",
           type: "circle",
           source: "editor-points",
-          filter: ["all", ["==", ["get", "featureType"], "city"], ["!=", ["get", "isCapital"], true]],
+          filter: [
+            "all",
+            ["==", ["get", "featureType"], "city"],
+            ["!=", ["get", "isCapital"], true],
+          ],
           paint: {
             "circle-radius": 5,
             "circle-color": "#3b82f6",
@@ -1004,14 +1045,13 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
 
       const pointGeoJson: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
-        features:
-          routeWaypoints
-            ? routeWaypoints.map((wp) => ({
-                type: "Feature" as const,
-                geometry: { type: "Point" as const, coordinates: wp },
-                properties: {},
-              }))
-            : [],
+        features: routeWaypoints
+          ? routeWaypoints.map((wp) => ({
+              type: "Feature" as const,
+              geometry: { type: "Point" as const, coordinates: wp },
+              properties: {},
+            }))
+          : [],
       };
 
       if (map.getSource("editor-route-line")) {
@@ -1197,7 +1237,13 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
 
         const currentMode = modeRef.current;
 
-        if (currentMode === "add-city" || currentMode === "add-poi" || currentMode === "add-story-pin" || currentMode === "add-label" || currentMode === "add-route") {
+        if (
+          currentMode === "add-city" ||
+          currentMode === "add-poi" ||
+          currentMode === "add-story-pin" ||
+          currentMode === "add-label" ||
+          currentMode === "add-route"
+        ) {
           onMapClick(e.lngLat.lng, e.lngLat.lat);
         } else if (currentMode === "add-subdivision") {
           drawVerticesRef.current.push([e.lngLat.lng, e.lngLat.lat]);
@@ -1328,7 +1374,8 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       ];
 
       const onMouseMove = (e: any) => {
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current) return;
+        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
+          return;
 
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
@@ -1346,7 +1393,8 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       };
 
       const onMouseLeave = () => {
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current) return;
+        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
+          return;
         map.getCanvas().style.cursor = "";
         if (map.getLayer("editor-subdivisions-hover")) {
           map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
@@ -1354,7 +1402,8 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       };
 
       const onClickFeature = (e: any) => {
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current) return;
+        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
+          return;
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
           const hitId = hits[0]!.properties?.id as string | undefined;
@@ -1446,7 +1495,12 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         updateVertexEditVis();
 
         // Hide the editing feature from the normal layer
-        for (const lid of ["editor-subdivisions-fill", "editor-subdivisions-stroke", "editor-subdivisions-labels", "editor-subdivisions-hover"]) {
+        for (const lid of [
+          "editor-subdivisions-fill",
+          "editor-subdivisions-stroke",
+          "editor-subdivisions-labels",
+          "editor-subdivisions-hover",
+        ]) {
           if (map.getLayer(lid)) map.setFilter(lid, ["!=", ["get", "id"], selectedFeature.id]);
         }
       } else if (vertexEditRef.current) {
@@ -1566,10 +1620,11 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         const vi = f.properties!.vertexIndex as number;
         const coord = getFeatureCoords(f.geometry) as Position;
 
-        const result = removeVertex(
-          vertexEditRef.current.currentGeometry,
-          { ringIndex: ri, vertexIndex: vi, coord }
-        );
+        const result = removeVertex(vertexEditRef.current.currentGeometry, {
+          ringIndex: ri,
+          vertexIndex: vi,
+          coord,
+        });
         if (result) {
           vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
           hoveredVertexRef.current = null;
@@ -1631,10 +1686,11 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         const vi = f.properties!.vertexIndex as number;
         const coord = getFeatureCoords(f.geometry) as Position;
 
-        const result = removeVertex(
-          vertexEditRef.current.currentGeometry,
-          { ringIndex: ri, vertexIndex: vi, coord }
-        );
+        const result = removeVertex(vertexEditRef.current.currentGeometry, {
+          ringIndex: ri,
+          vertexIndex: vi,
+          coord,
+        });
         if (result) {
           vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
           hoveredVertexRef.current = null;
@@ -1679,10 +1735,11 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             if (!vertexEditRef.current) return;
             draggingRef.current = null;
             map.dragPan.enable();
-            const result = removeVertex(
-              vertexEditRef.current.currentGeometry,
-              { ringIndex: ri, vertexIndex: vi, coord }
-            );
+            const result = removeVertex(vertexEditRef.current.currentGeometry, {
+              ringIndex: ri,
+              vertexIndex: vi,
+              coord,
+            });
             if (result) {
               vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
               hoveredVertexRef.current = null;
@@ -1803,27 +1860,35 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         />
         {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+          <div className="bg-muted absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/20 border-t-emerald-500" />
-              <p className="text-sm text-muted-foreground">Loading map editor...</p>
+              <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
+              <p className="text-muted-foreground text-sm">Loading map editor...</p>
             </div>
           </div>
         )}
 
         {/* Vertex editing controls */}
         {isVertexEditing && (
-          <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-card/95 p-1 shadow-lg ring-1 ring-border backdrop-blur-sm">
-            <span className="hidden px-2 text-[11px] text-muted-foreground sm:inline">
+          <div className="bg-card/95 ring-border absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full p-1 shadow-lg ring-1 backdrop-blur-sm">
+            <span className="text-muted-foreground hidden px-2 text-[11px] sm:inline">
               Drag vertices · Midpoints to add · Right-click to remove
             </span>
-            <div className="hidden h-4 w-px bg-border sm:block" />
+            <div className="bg-border hidden h-4 w-px sm:block" />
             <button
               onClick={handleSimplifyAndSave}
               className="flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
               title="Simplify vertices, snap to country border, and save"
             >
-              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="h-3 w-3"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M4 20L8 4" />
                 <path d="M20 20L16 4" />
                 <path d="M6 12h12" />
@@ -1845,7 +1910,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             </button>
             <button
               onClick={cancelVertexEdit}
-              className="rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-xs font-medium"
             >
               Cancel
             </button>
@@ -1853,20 +1918,22 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         )}
 
         {/* Mode hint pill */}
-        {!isVertexEditing && mode !== "view" && mode !== "import-provinces" && mode !== "edit-subdivision" && (
-          <div className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-card/95 px-3 py-1 text-[11px] text-muted-foreground shadow-md ring-1 ring-border backdrop-blur-sm">
-            {mode === "add-city" && "Click map to place city"}
-            {mode === "add-subdivision" && (
-              drawVerticesRef.current.length >= 3
-                ? "Double-click to finish polygon"
-                : "Click to add polygon vertices"
-            )}
-            {mode === "add-poi" && "Click map to place POI"}
-          </div>
-        )}
+        {!isVertexEditing &&
+          mode !== "view" &&
+          mode !== "import-provinces" &&
+          mode !== "edit-subdivision" && (
+            <div className="bg-card/95 text-muted-foreground ring-border absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[11px] shadow-md ring-1 backdrop-blur-sm">
+              {mode === "add-city" && "Click map to place city"}
+              {mode === "add-subdivision" &&
+                (drawVerticesRef.current.length >= 3
+                  ? "Double-click to finish polygon"
+                  : "Click to add polygon vertices")}
+              {mode === "add-poi" && "Click map to place POI"}
+            </div>
+          )}
       </div>
     );
-  }
-));
+  })
+);
 
 export default EditorMap;

@@ -73,8 +73,16 @@ const AGENDA_CATEGORIES = [
 ];
 
 const COMMON_TAGS = [
-  "urgent", "budget", "policy", "review", "appointment",
-  "quarterly", "annual", "strategic", "operational", "reform",
+  "urgent",
+  "budget",
+  "policy",
+  "review",
+  "appointment",
+  "quarterly",
+  "annual",
+  "strategic",
+  "operational",
+  "reform",
 ];
 
 function CollapsibleSection({
@@ -93,25 +101,25 @@ function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-lg border border-border/50">
+    <div className="border-border/50 rounded-lg border">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 rounded-lg transition-colors"
+        className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg p-3 text-sm font-medium transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-muted-foreground" />
+          <Icon className="text-muted-foreground h-4 w-4" />
           <span>{title}</span>
           {badge && (
-            <Badge variant="secondary" className="text-[0.65rem] px-1.5 py-0">
+            <Badge variant="secondary" className="px-1.5 py-0 text-[0.65rem]">
               {badge}
             </Badge>
           )}
         </div>
         {isOpen ? (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <ChevronRight className="text-muted-foreground h-4 w-4" />
         )}
       </button>
       {isOpen && <div className="px-3 pb-3">{children}</div>}
@@ -191,14 +199,17 @@ export function MeetingScheduler({
       return;
     }
 
-    setAgendaItems([...agendaItems, {
-      title: newAgendaTitle,
-      description: newAgendaDesc,
-      duration: newAgendaDuration,
-      category: newAgendaCategory,
-      tags: newAgendaTags,
-      presenter: newAgendaPresenter,
-    }]);
+    setAgendaItems([
+      ...agendaItems,
+      {
+        title: newAgendaTitle,
+        description: newAgendaDesc,
+        duration: newAgendaDuration,
+        category: newAgendaCategory,
+        tags: newAgendaTags,
+        presenter: newAgendaPresenter,
+      },
+    ]);
 
     resetAgendaForm();
   };
@@ -264,23 +275,23 @@ export function MeetingScheduler({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg flex flex-col p-0">
+      <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-amber-500" />
             Schedule Meeting
           </SheetTitle>
-          <SheetDescription>
-            Create a meeting with agenda items and attendees.
-          </SheetDescription>
+          <SheetDescription>Create a meeting with agenda items and attendees.</SheetDescription>
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
             {/* Basic Info — always visible */}
             <div className="space-y-3">
               <div>
-                <Label htmlFor="title" className="text-xs">Title *</Label>
+                <Label htmlFor="title" className="text-xs">
+                  Title *
+                </Label>
                 <Input
                   id="title"
                   value={title}
@@ -291,7 +302,9 @@ export function MeetingScheduler({
               </div>
 
               <div>
-                <Label htmlFor="description" className="text-xs">Description</Label>
+                <Label htmlFor="description" className="text-xs">
+                  Description
+                </Label>
                 <Textarea
                   id="description"
                   value={description}
@@ -311,7 +324,9 @@ export function MeetingScheduler({
                   showRealWorldTime={false}
                 />
                 <div>
-                  <Label htmlFor="duration" className="text-xs">Duration (min)</Label>
+                  <Label htmlFor="duration" className="text-xs">
+                    Duration (min)
+                  </Label>
                   <Input
                     id="duration"
                     type="number"
@@ -338,12 +353,12 @@ export function MeetingScheduler({
               {officialsLoading ? (
                 <div className="text-muted-foreground text-sm">Loading officials...</div>
               ) : officials && officials.length > 0 ? (
-                <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                <div className="grid max-h-36 grid-cols-2 gap-1.5 overflow-y-auto">
                   {officials.map((official) => (
                     <div
                       key={official.id}
                       onClick={() => toggleOfficial(official.id)}
-                      className={`cursor-pointer rounded-md border p-2 transition-all text-xs ${
+                      className={`cursor-pointer rounded-md border p-2 text-xs transition-all ${
                         selectedOfficials.includes(official.id)
                           ? "border-amber-400/50 bg-amber-50 dark:bg-amber-950/30"
                           : "hover:bg-muted border-border/40"
@@ -355,14 +370,14 @@ export function MeetingScheduler({
                           <p className="text-muted-foreground truncate">{official.title}</p>
                         </div>
                         {selectedOfficials.includes(official.id) && (
-                          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-amber-600" />
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground text-xs flex items-center gap-1.5">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                   <AlertCircle className="h-3.5 w-3.5" />
                   No officials found. Add officials in Government Management.
                 </div>
@@ -373,31 +388,43 @@ export function MeetingScheduler({
             <CollapsibleSection
               title="Agenda"
               icon={FileText}
-              badge={agendaItems.length > 0 ? `${agendaItems.length} items · ${totalAgendaDuration} min` : undefined}
+              badge={
+                agendaItems.length > 0
+                  ? `${agendaItems.length} items · ${totalAgendaDuration} min`
+                  : undefined
+              }
             >
               <div className="space-y-3">
                 {/* Existing items */}
                 {agendaItems.length > 0 && (
                   <div className="space-y-1.5">
                     {agendaItems.map((item, index) => {
-                      const categoryConfig = AGENDA_CATEGORIES.find((c) => c.value === item.category);
+                      const categoryConfig = AGENDA_CATEGORIES.find(
+                        (c) => c.value === item.category
+                      );
                       return (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="flex items-center justify-between gap-2 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2"
+                          className="border-border/40 bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-2.5 py-2"
                         >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className={`h-2 w-2 rounded-full flex-shrink-0 ${categoryConfig?.color ?? "bg-gray-500"}`} />
-                            <span className="text-xs font-medium truncate">{item.title}</span>
-                            <Badge variant="outline" className="text-[0.6rem] px-1 py-0 flex-shrink-0">
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <div
+                              className={`h-2 w-2 shrink-0 rounded-full ${categoryConfig?.color ?? "bg-gray-500"}`}
+                            />
+                            <span className="truncate text-xs font-medium">{item.title}</span>
+                            <Badge variant="outline" className="shrink-0 px-1 py-0 text-[0.6rem]">
                               {item.duration}m
                             </Badge>
                             {item.tags.length > 0 && (
-                              <div className="hidden sm:flex gap-0.5">
+                              <div className="hidden gap-0.5 sm:flex">
                                 {item.tags.slice(0, 2).map((tag) => (
-                                  <Badge key={tag} variant="secondary" className="text-[0.6rem] px-1 py-0">
+                                  <Badge
+                                    key={tag}
+                                    variant="secondary"
+                                    className="px-1 py-0 text-[0.6rem]"
+                                  >
                                     {tag}
                                   </Badge>
                                 ))}
@@ -420,8 +447,8 @@ export function MeetingScheduler({
                 )}
 
                 {/* Add new item form */}
-                <div className="space-y-2 rounded-lg border-2 border-dashed border-border/50 p-3">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="border-border/50 space-y-2 rounded-lg border-2 border-dashed p-3">
+                  <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                     <Plus className="h-3.5 w-3.5" />
                     Add Item
                   </div>
@@ -432,7 +459,7 @@ export function MeetingScheduler({
                       placeholder="Item title *"
                       value={newAgendaTitle}
                       onChange={(e) => setNewAgendaTitle(e.target.value)}
-                      className="flex-1 text-xs h-8"
+                      className="h-8 flex-1 text-xs"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !showAdvancedAgenda) {
                           e.preventDefault();
@@ -447,7 +474,7 @@ export function MeetingScheduler({
                       onChange={(e) => setNewAgendaDuration(parseInt(e.target.value) || 15)}
                       min={5}
                       max={180}
-                      className="w-16 text-xs h-8"
+                      className="h-8 w-16 text-xs"
                     />
                   </div>
 
@@ -455,7 +482,7 @@ export function MeetingScheduler({
                   <button
                     type="button"
                     onClick={() => setShowAdvancedAgenda(!showAdvancedAgenda)}
-                    className="flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[0.65rem] transition-colors"
                   >
                     <Settings2 className="h-3 w-3" />
                     {showAdvancedAgenda ? "Hide" : "Show"} advanced options
@@ -483,7 +510,7 @@ export function MeetingScheduler({
 
                       <div className="grid grid-cols-2 gap-2">
                         <Select value={newAgendaCategory} onValueChange={setNewAgendaCategory}>
-                          <SelectTrigger className="text-xs h-8">
+                          <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -499,7 +526,7 @@ export function MeetingScheduler({
                           placeholder="Presenter"
                           value={newAgendaPresenter}
                           onChange={(e) => setNewAgendaPresenter(e.target.value)}
-                          className="text-xs h-8"
+                          className="h-8 text-xs"
                         />
                       </div>
 
@@ -519,7 +546,7 @@ export function MeetingScheduler({
                             onBlur={() => {
                               if (tagInput.trim()) addTag(tagInput);
                             }}
-                            className="text-xs h-8"
+                            className="h-8 text-xs"
                           />
                           <Button
                             type="button"
@@ -534,25 +561,34 @@ export function MeetingScheduler({
 
                         {/* Common tag chips */}
                         <div className="mt-1.5 flex flex-wrap gap-1">
-                          {COMMON_TAGS.filter((t) => !newAgendaTags.includes(t)).slice(0, 6).map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="outline"
-                              className="cursor-pointer text-[0.6rem] px-1.5 py-0 hover:bg-muted"
-                              onClick={() => addTag(tag)}
-                            >
-                              + {tag}
-                            </Badge>
-                          ))}
+                          {COMMON_TAGS.filter((t) => !newAgendaTags.includes(t))
+                            .slice(0, 6)
+                            .map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="hover:bg-muted cursor-pointer px-1.5 py-0 text-[0.6rem]"
+                                onClick={() => addTag(tag)}
+                              >
+                                + {tag}
+                              </Badge>
+                            ))}
                         </div>
 
                         {/* Selected tags */}
                         {newAgendaTags.length > 0 && (
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             {newAgendaTags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="flex items-center gap-0.5 text-[0.6rem] px-1.5 py-0">
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="flex items-center gap-0.5 px-1.5 py-0 text-[0.6rem]"
+                              >
                                 {tag}
-                                <X className="h-2.5 w-2.5 cursor-pointer" onClick={() => removeTag(tag)} />
+                                <X
+                                  className="h-2.5 w-2.5 cursor-pointer"
+                                  onClick={() => removeTag(tag)}
+                                />
                               </Badge>
                             ))}
                           </div>
@@ -566,7 +602,7 @@ export function MeetingScheduler({
                     variant="secondary"
                     size="sm"
                     onClick={addAgendaItem}
-                    className="w-full h-7 text-xs"
+                    className="h-7 w-full text-xs"
                   >
                     <Plus className="mr-1 h-3 w-3" />
                     Add to Agenda
@@ -577,18 +613,14 @@ export function MeetingScheduler({
           </div>
 
           {/* Sticky footer */}
-          <SheetFooter className="border-t border-border/50 px-6 py-4">
+          <SheetFooter className="border-border/50 border-t px-6 py-4">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
-              disabled={
-                isSubmitting ||
-                agendaItems.length === 0 ||
-                selectedOfficials.length === 0
-              }
+              disabled={isSubmitting || agendaItems.length === 0 || selectedOfficials.length === 0}
             >
               {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
             </Button>

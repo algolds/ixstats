@@ -12,7 +12,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onEconomicDataChange",
     name: "Economic Data Change",
-    description: "Monitors economic metrics and triggers on significant changes exceeding configured threshold",
+    description:
+      "Monitors economic metrics and triggers on significant changes exceeding configured threshold",
     category: "economic",
     source: "economic-engine",
     triggerType: "data-change",
@@ -30,7 +31,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onBudgetAlert",
     name: "Budget Alert",
-    description: "Triggers for budget-related events: deficit, surplus, overspending, underspending",
+    description:
+      "Triggers for budget-related events: deficit, surplus, overspending, underspending",
     category: "economic",
     source: "economic-engine",
     triggerType: "threshold",
@@ -57,7 +59,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onTradeEvent",
     name: "Trade Event",
-    description: "Triggers for trade-related events: new partner, increase, decrease, embargo, agreement",
+    description:
+      "Triggers for trade-related events: new partner, increase, decrease, embargo, agreement",
     category: "economic",
     source: "diplomacy",
     triggerType: "data-change",
@@ -66,7 +69,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onDiplomaticEvent",
     name: "Diplomatic Event",
-    description: "Triggers for diplomatic activities: treaties, agreements, missions, conflicts, resolutions",
+    description:
+      "Triggers for diplomatic activities: treaties, agreements, missions, conflicts, resolutions",
     category: "diplomatic",
     source: "diplomacy",
     triggerType: "user-action",
@@ -75,7 +79,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onSecurityEvent",
     name: "Security Event",
-    description: "Triggers when security events occur: terrorism, insurgency, cyber attacks, civil unrest",
+    description:
+      "Triggers when security events occur: terrorism, insurgency, cyber attacks, civil unrest",
     category: "security",
     source: "security-engine",
     triggerType: "pattern",
@@ -84,7 +89,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onDefenseEvent",
     name: "Defense Event",
-    description: "Triggers for defense-related events: unit created/lost, readiness change, doctrine change",
+    description:
+      "Triggers for defense-related events: unit created/lost, readiness change, doctrine change",
     category: "security",
     source: "military",
     triggerType: "user-action",
@@ -210,7 +216,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onThinktankActivity",
     name: "ThinkTank Activity",
-    description: "Triggers for ThinkTank group activities: invites, messages, documents, member changes",
+    description:
+      "Triggers for ThinkTank group activities: invites, messages, documents, member changes",
     category: "social",
     source: "thinktank",
     triggerType: "user-action",
@@ -228,7 +235,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onUserAccountChange",
     name: "User Account Change",
-    description: "Triggers for user account events: country assignment, role change, profile verified",
+    description:
+      "Triggers for user account events: country assignment, role change, profile verified",
     category: "system",
     source: "user-system",
     triggerType: "user-action",
@@ -237,7 +245,8 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onAdminAction",
     name: "Admin Action",
-    description: "Triggers for administrative interventions: announcements, interventions, warnings, maintenance",
+    description:
+      "Triggers for administrative interventions: announcements, interventions, warnings, maintenance",
     category: "system",
     source: "admin",
     triggerType: "user-action",

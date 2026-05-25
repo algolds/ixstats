@@ -114,26 +114,16 @@ export const autosaveHistoryRouter = createTRPCRouter({
 
       // Calculate statistics
       const totalAutosaves = allAutosaves.length;
-      const successCount = allAutosaves.filter(
-        (log) => !log.action.includes("_FAILED")
-      ).length;
-      const failureCount = allAutosaves.filter((log) =>
-        log.action.includes("_FAILED")
-      ).length;
-      const lastAutosave =
-        allAutosaves.length > 0 ? allAutosaves[0]!.timestamp : null;
+      const successCount = allAutosaves.filter((log) => !log.action.includes("_FAILED")).length;
+      const failureCount = allAutosaves.filter((log) => log.action.includes("_FAILED")).length;
+      const lastAutosave = allAutosaves.length > 0 ? allAutosaves[0]!.timestamp : null;
 
       // Section breakdown (count by section type)
       const sectionBreakdown = {
-        identity: allAutosaves.filter((log) =>
-          log.action.includes("IDENTITY")
-        ).length,
-        government: allAutosaves.filter((log) =>
-          log.action.includes("GOVERNMENT")
-        ).length,
+        identity: allAutosaves.filter((log) => log.action.includes("IDENTITY")).length,
+        government: allAutosaves.filter((log) => log.action.includes("GOVERNMENT")).length,
         tax: allAutosaves.filter((log) => log.action.includes("TAX")).length,
-        economy: allAutosaves.filter((log) => log.action.includes("ECONOMY"))
-          .length,
+        economy: allAutosaves.filter((log) => log.action.includes("ECONOMY")).length,
       };
 
       return {
@@ -288,10 +278,7 @@ export const autosaveHistoryRouter = createTRPCRouter({
       });
 
       // Group by date and section
-      const timelineMap = new Map<
-        string,
-        Map<string, number>
-      >();
+      const timelineMap = new Map<string, Map<string, number>>();
 
       autosaves.forEach((log) => {
         const dateKey = log.timestamp.toISOString().split("T")[0]!;
@@ -312,8 +299,7 @@ export const autosaveHistoryRouter = createTRPCRouter({
       });
 
       // Convert to array format
-      const timeline: Array<{ date: string; count: number; section: string }> =
-        [];
+      const timeline: Array<{ date: string; count: number; section: string }> = [];
 
       timelineMap.forEach((sectionMap, date) => {
         sectionMap.forEach((count, section) => {

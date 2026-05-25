@@ -151,7 +151,7 @@ export function AdminSidebar() {
                     : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <item.icon className="h-5 w-5 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <span className="text-sm font-medium">{item.label}</span>
                   {item.description && !active && (
@@ -195,7 +195,7 @@ export function AdminSidebar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="bg-card/50 border-border/50 hidden min-h-screen w-72 flex-shrink-0 flex-col border-r backdrop-blur-sm lg:flex">
+      <div className="bg-card/50 border-border/50 hidden min-h-screen w-72 shrink-0 flex-col border-r backdrop-blur-sm lg:flex">
         {sidebarContent}
       </div>
     </>

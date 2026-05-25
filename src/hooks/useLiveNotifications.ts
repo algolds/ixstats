@@ -91,9 +91,8 @@ export function useLiveNotifications(
 
   // Derived state directly from Query Cache
   const notifications = (notificationsData?.notifications ?? []) as LiveNotification[];
-  const unreadCount = unreadData?.count !== undefined
-    ? unreadData.count
-    : (notificationsData?.unreadCount ?? 0);
+  const unreadCount =
+    unreadData?.count !== undefined ? unreadData.count : (notificationsData?.unreadCount ?? 0);
 
   // Mutations with Optimistic Updates and Rollback
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
@@ -238,7 +237,7 @@ export function useLiveNotifications(
       enabled: enableRealtime && !!userId,
       onData: (notification) => {
         const queryKey = { limit: 50, offset: 0, unreadOnly: false };
-        
+
         utils.notifications.getUserNotifications.setData(queryKey, (oldData) => {
           const normalized: LiveNotification = {
             ...(notification as LiveNotification),
@@ -253,7 +252,9 @@ export function useLiveNotifications(
             };
           }
 
-          const existingIndex = oldData.notifications.findIndex((item) => item.id === normalized.id);
+          const existingIndex = oldData.notifications.findIndex(
+            (item) => item.id === normalized.id
+          );
           let nextNotifications = [...oldData.notifications];
           if (existingIndex !== -1) {
             nextNotifications[existingIndex] = normalized;

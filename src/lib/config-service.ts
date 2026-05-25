@@ -398,9 +398,7 @@ const configCache = new Cache({
  * Read economic configuration from SystemConfig DB table, merging with defaults.
  * Cached for 60 seconds to avoid excessive DB reads during batch calculations.
  */
-export async function getEconomicConfigFromDB(
-  db: any
-): Promise<EconomicConfig> {
+export async function getEconomicConfigFromDB(db: any): Promise<EconomicConfig> {
   // Return cached value if still fresh
   const cached = configCache.get<EconomicConfig>(CACHE_KEY);
   if (cached !== undefined) {
@@ -424,12 +422,8 @@ export async function getEconomicConfigFromDB(
 
     const config: EconomicConfig = {
       ...defaults,
-      globalGrowthFactor: parseFloat(
-        m.globalGrowthFactor ?? String(defaults.globalGrowthFactor)
-      ),
-      baseInflationRate: parseFloat(
-        m.baseInflationRate ?? String(defaults.baseInflationRate)
-      ),
+      globalGrowthFactor: parseFloat(m.globalGrowthFactor ?? String(defaults.globalGrowthFactor)),
+      baseInflationRate: parseFloat(m.baseInflationRate ?? String(defaults.baseInflationRate)),
       tierGrowthModifiers: {
         Impoverished: parseFloat(m.tierGrowthModifier_Impoverished ?? "1.0"),
         Developing: parseFloat(m.tierGrowthModifier_Developing ?? "1.0"),
@@ -439,12 +433,8 @@ export async function getEconomicConfigFromDB(
         "Very Strong": parseFloat(m.tierGrowthModifier_VeryStrong ?? "1.0"),
         Extravagant: parseFloat(m.tierGrowthModifier_Extravagant ?? "1.0"),
       },
-      diminishingReturnsThreshold: parseFloat(
-        m.diminishingReturnsThreshold ?? "60000"
-      ),
-      diminishingReturnsFactor: parseFloat(
-        m.diminishingReturnsFactor ?? "0.5"
-      ),
+      diminishingReturnsThreshold: parseFloat(m.diminishingReturnsThreshold ?? "60000"),
+      diminishingReturnsFactor: parseFloat(m.diminishingReturnsFactor ?? "0.5"),
       minGrowthFloor: parseFloat(m.minGrowthFloor ?? "-0.1"),
     };
 

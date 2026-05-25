@@ -24,9 +24,7 @@ import {
   WEAPON_SYSTEMS,
   DEFENSE_MANUFACTURERS,
 } from "~/lib/military-equipment";
-import {
-  EXPANDED_MILITARY_DATABASE,
-} from "~/lib/military-equipment-extended";
+import { EXPANDED_MILITARY_DATABASE } from "~/lib/military-equipment-extended";
 
 /**
  * Equipment filters interface
@@ -72,7 +70,8 @@ export interface MilitaryEquipmentItem {
   updatedAt: Date;
 }
 
-type CatalogEquipmentRecord = RouterOutputs["militaryEquipment"]["getCatalogEquipment"]["equipment"][number];
+type CatalogEquipmentRecord =
+  RouterOutputs["militaryEquipment"]["getCatalogEquipment"]["equipment"][number];
 
 function transformDatabaseEquipment(item: CatalogEquipmentRecord): MilitaryEquipmentItem {
   const manufacturerName = (item as { manufacturer?: string }).manufacturer ?? "Unknown";

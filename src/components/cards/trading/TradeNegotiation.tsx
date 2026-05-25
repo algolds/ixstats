@@ -185,7 +185,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   key={ownership.id}
                   className="glass-hierarchy-interactive flex items-center gap-3 rounded-lg p-2"
                 >
-                  <div className="relative h-16 w-12 flex-shrink-0 overflow-hidden rounded">
+                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
                     <CardHolographicCover
                       cardType={ownership.cards.cardType || "NATION"}
                       rarity={ownership.cards.rarity || "COMMON"}
@@ -245,7 +245,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   key={ownership.id}
                   className="glass-hierarchy-interactive flex items-center gap-3 rounded-lg p-2"
                 >
-                  <div className="relative h-16 w-12 flex-shrink-0 overflow-hidden rounded">
+                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
                     <CardHolographicCover
                       cardType={ownership.cards.cardType || "NATION"}
                       rarity={ownership.cards.rarity || "COMMON"}

@@ -24,18 +24,19 @@ export const PaintPropertyForm = React.memo(function PaintPropertyForm({
 
   const { data: stats, isLoading } = api.geo.getSubdivisionStats.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId, staleTime: 60_000 },
+    { enabled: !!countryId, staleTime: 60_000 }
   );
 
   const totalPop = stats?.reduce((s, r) => s + (r.population ?? 0), 0) ?? 0;
   const totalArea = stats?.reduce((s, r) => s + (r.areaSqKm ?? 0), 0) ?? 0;
-  const avgDev = stats && stats.length > 0
-    ? (stats.reduce((s, r) => s + r.developmentScore, 0) / stats.length).toFixed(1)
-    : "\u2014";
+  const avgDev =
+    stats && stats.length > 0
+      ? (stats.reduce((s, r) => s + r.developmentScore, 0) / stats.length).toFixed(1)
+      : "\u2014";
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         Province Painter
       </h3>
 
@@ -64,10 +65,10 @@ export const PaintPropertyForm = React.memo(function PaintPropertyForm({
       {/* Summary stats */}
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
         </div>
       ) : stats && stats.length > 0 ? (
-        <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+        <div className="border-border bg-muted/30 rounded-lg border px-3 py-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Regions</span>
             <span className="font-medium tabular-nums">{stats.length}</span>
@@ -78,7 +79,9 @@ export const PaintPropertyForm = React.memo(function PaintPropertyForm({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Total Area</span>
-            <span className="font-medium tabular-nums">{Math.round(totalArea).toLocaleString()} km&sup2;</span>
+            <span className="font-medium tabular-nums">
+              {Math.round(totalArea).toLocaleString()} km&sup2;
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Avg Development</span>
@@ -86,31 +89,44 @@ export const PaintPropertyForm = React.memo(function PaintPropertyForm({
           </div>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No regions to analyze.</p>
+        <p className="text-muted-foreground text-xs">No regions to analyze.</p>
       )}
 
       {/* Per-region ranking */}
       {stats && stats.length > 0 && (
         <div className="space-y-1">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {PAINT_MODES.find(m => m.key === activeMode)?.label} Ranking
+          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            {PAINT_MODES.find((m) => m.key === activeMode)?.label} Ranking
           </div>
           <div className="max-h-40 space-y-0.5 overflow-y-auto">
             {[...stats]
               .sort((a, b) => {
                 switch (activeMode) {
-                  case "population": return (b.population ?? 0) - (a.population ?? 0);
-                  case "development": return b.developmentScore - a.developmentScore;
-                  case "resources": return b.resourceCount - a.resourceCount;
-                  case "wiki": return (b.totalFeatures > 0 ? b.wikiLinked / b.totalFeatures : 0) - (a.totalFeatures > 0 ? a.wikiLinked / a.totalFeatures : 0);
-                  default: return 0;
+                  case "population":
+                    return (b.population ?? 0) - (a.population ?? 0);
+                  case "development":
+                    return b.developmentScore - a.developmentScore;
+                  case "resources":
+                    return b.resourceCount - a.resourceCount;
+                  case "wiki":
+                    return (
+                      (b.totalFeatures > 0 ? b.wikiLinked / b.totalFeatures : 0) -
+                      (a.totalFeatures > 0 ? a.wikiLinked / a.totalFeatures : 0)
+                    );
+                  default:
+                    return 0;
                 }
               })
               .map((s, i) => (
-                <div key={s.id} className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] hover:bg-accent">
-                  <span className="w-4 shrink-0 text-right font-mono text-[10px] text-muted-foreground">{i + 1}</span>
+                <div
+                  key={s.id}
+                  className="hover:bg-accent flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px]"
+                >
+                  <span className="text-muted-foreground w-4 shrink-0 text-right font-mono text-[10px]">
+                    {i + 1}
+                  </span>
                   <span className="flex-1 truncate">{s.name}</span>
-                  <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                  <span className="text-muted-foreground shrink-0 font-mono text-[10px] tabular-nums">
                     {activeMode === "population" && (s.population ?? 0).toLocaleString()}
                     {activeMode === "development" && s.developmentScore.toFixed(1)}
                     {activeMode === "resources" && s.resourceCount}
@@ -124,7 +140,7 @@ export const PaintPropertyForm = React.memo(function PaintPropertyForm({
 
       <button
         onClick={onCancel}
-        className="w-full rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent"
+        className="border-border text-foreground/80 hover:bg-accent w-full rounded-lg border px-3 py-1.5 text-sm transition-colors"
       >
         Done
       </button>

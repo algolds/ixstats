@@ -36,7 +36,7 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
   // Only fetch when visible (enabled flag)
   const { data: intro, isLoading } = api.wiki.getIntro.useQuery(
     { title: wikiTitle, wiki: "ixwiki" },
-    { enabled: visible, staleTime: 5 * 60_000 },
+    { enabled: visible, staleTime: 5 * 60_000 }
   );
 
   useEffect(() => {
@@ -72,44 +72,50 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
     };
   }, []);
 
-  const tooltipContent = visible && mounted
-    ? createPortal(
-        <div
-          className="pointer-events-none fixed z-[9999]"
-          style={{
-            top: position.top,
-            left: position.left,
-            transform: "translate(-100%, -50%)",
-          }}
-        >
-          <div className="pointer-events-auto w-64 rounded-lg border border-border bg-popover p-3 shadow-lg">
-            <h4 className="mb-1 text-sm font-semibold text-foreground">{wikiTitle}</h4>
-            {isLoading ? (
-              <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Loading...
-              </div>
-            ) : intro ? (
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {firstSentences(typeof intro === "string" ? intro : (intro as { intro?: string })?.intro ?? "", 2)}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">No article found.</p>
-            )}
-            <a
-              href={`https://ixwiki.com/wiki/${encodeURIComponent(wikiTitle.replace(/ /g, "_"))}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-            >
-              Open on Wiki
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        </div>,
-        document.body,
-      )
-    : null;
+  const tooltipContent =
+    visible && mounted
+      ? createPortal(
+          <div
+            className="pointer-events-none fixed z-[9999]"
+            style={{
+              top: position.top,
+              left: position.left,
+              transform: "translate(-100%, -50%)",
+            }}
+          >
+            <div className="border-border bg-popover pointer-events-auto w-64 rounded-lg border p-3 shadow-lg">
+              <h4 className="text-foreground mb-1 text-sm font-semibold">{wikiTitle}</h4>
+              {isLoading ? (
+                <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading...
+                </div>
+              ) : intro ? (
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  {firstSentences(
+                    typeof intro === "string"
+                      ? intro
+                      : ((intro as { intro?: string })?.intro ?? ""),
+                    2
+                  )}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-xs">No article found.</p>
+              )}
+              <a
+                href={`https://ixwiki.com/wiki/${encodeURIComponent(wikiTitle.replace(/ /g, "_"))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary mt-2 flex items-center gap-1 text-[11px] font-medium hover:underline"
+              >
+                Open on Wiki
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div

@@ -5,14 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import {
-  AlertTriangle,
-  XCircle,
-  Info,
-  RefreshCw,
-  Home,
-  ArrowLeft,
-} from "lucide-react";
+import { AlertTriangle, XCircle, Info, RefreshCw, Home, ArrowLeft } from "lucide-react";
 
 export interface ErrorDisplayProps {
   title?: string;
@@ -68,7 +61,7 @@ export function ErrorDisplay({
   if (variant === "inline") {
     return (
       <div className={cn("flex items-start gap-2 text-sm", className)}>
-        {showIcon && <Icon className={cn("mt-0.5 h-4 w-4 flex-shrink-0", config.color)} />}
+        {showIcon && <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", config.color)} />}
         <div className="flex-1">
           {title && <p className={cn("font-medium", config.color)}>{title}</p>}
           <p className="text-muted-foreground">{message}</p>

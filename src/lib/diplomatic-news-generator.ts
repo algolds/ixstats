@@ -47,7 +47,10 @@ interface NewsContext {
   reason?: string;
 }
 
-const NEWS_TEMPLATES: Record<NewsEventType, (ctx: NewsContext) => { content: string; hashtags: string[] }> = {
+const NEWS_TEMPLATES: Record<
+  NewsEventType,
+  (ctx: NewsContext) => { content: string; hashtags: string[] }
+> = {
   embassy_established: (ctx) => ({
     content: `ICN Geo: ${ctx.countryName} and ${ctx.targetName} establish formal diplomatic relations. Embassy construction to begin immediately.`,
     hashtags: ["Diplomacy", "Embassy", "InternationalRelations"],
@@ -195,7 +198,7 @@ export async function generateWikiUpdateNews(
   db: PrismaClient,
   countryId: string,
   articleTitle: string,
-  editSummary?: string,
+  editSummary?: string
 ): Promise<string | null> {
   try {
     const account = await db.thinkpagesAccount.findFirst({
@@ -256,7 +259,7 @@ export async function generateStoryPinNews(
   pinTitle: string,
   category: string,
   importance: number,
-  ixTimeYear?: number | null,
+  ixTimeYear?: number | null
 ): Promise<string | null> {
   if (importance < 1) return null; // Only major+ pins generate news
 

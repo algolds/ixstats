@@ -112,7 +112,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <Icon className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
+                <Icon className="h-3.5 w-3.5 shrink-0 text-red-500" />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{op.name}</span>

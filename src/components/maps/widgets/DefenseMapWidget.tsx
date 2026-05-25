@@ -58,14 +58,13 @@ export function DefenseMapWidget({
   const securityScore = securityData?.overallSecurityScore ?? 0;
   const securityLevel = securityData?.securityLevel?.replace("_", " ") ?? "unknown";
   const branchCount = branches?.length ?? 0;
-  const avgReadiness = branchCount > 0
-    ? Math.round(branches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount)
-    : 0;
+  const avgReadiness =
+    branchCount > 0
+      ? Math.round(branches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount)
+      : 0;
 
   const readinessColor =
-    avgReadiness >= 75 ? "text-green-500" :
-    avgReadiness >= 50 ? "text-yellow-500" :
-    "text-red-500";
+    avgReadiness >= 75 ? "text-green-500" : avgReadiness >= 50 ? "text-yellow-500" : "text-red-500";
 
   const initMap = useCallback(async () => {
     if (!containerRef.current || !geometry) return;
@@ -81,9 +80,7 @@ export function DefenseMapWidget({
     const baseStyle = buildBaseStyle() as maplibregl.StyleSpecification;
     delete (baseStyle as Record<string, unknown>).projection;
 
-    const initialCenter: [number, number] = centroid
-      ? [centroid.lng, centroid.lat]
-      : [10, 5];
+    const initialCenter: [number, number] = centroid ? [centroid.lng, centroid.lat] : [10, 5];
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -164,11 +161,13 @@ export function DefenseMapWidget({
         type: "geojson",
         data: {
           type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            properties: {},
-            geometry: geometry as GeoJSON.Geometry,
-          }],
+          features: [
+            {
+              type: "Feature",
+              properties: {},
+              geometry: geometry as GeoJSON.Geometry,
+            },
+          ],
         },
       });
 
@@ -189,7 +188,10 @@ export function DefenseMapWidget({
       // Fit to bounds
       if (bbox) {
         map.fitBounds(
-          [[bbox.minLng, bbox.minLat], [bbox.maxLng, bbox.maxLat]],
+          [
+            [bbox.minLng, bbox.minLat],
+            [bbox.maxLng, bbox.maxLat],
+          ],
           { padding: 40, maxZoom: 10, duration: 0 }
         );
       }
@@ -213,15 +215,17 @@ export function DefenseMapWidget({
 
   if (isLoading) {
     return (
-      <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-red-500/15 ${className}`}>
+      <div
+        className={`glass-hierarchy-child overflow-hidden rounded-xl border border-red-500/15 ${className}`}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Defense Overview</span>
+            <Shield className="text-muted-foreground h-3.5 w-3.5" />
+            <span className="text-foreground text-xs font-medium">Defense Overview</span>
           </div>
         </div>
-        <div className="flex h-48 items-center justify-center bg-muted">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="bg-muted flex h-48 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       </div>
     );
@@ -229,28 +233,32 @@ export function DefenseMapWidget({
 
   if (!hasGeometry) {
     return (
-      <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-red-500/15 ${className}`}>
+      <div
+        className={`glass-hierarchy-child overflow-hidden rounded-xl border border-red-500/15 ${className}`}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Defense Overview</span>
+            <Shield className="text-muted-foreground h-3.5 w-3.5" />
+            <span className="text-foreground text-xs font-medium">Defense Overview</span>
           </div>
         </div>
-        <div className="flex h-48 flex-col items-center justify-center gap-2 bg-muted">
-          <MapPin className="h-6 w-6 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">No map data available</span>
+        <div className="bg-muted flex h-48 flex-col items-center justify-center gap-2">
+          <MapPin className="text-muted-foreground h-6 w-6" />
+          <span className="text-muted-foreground text-xs">No map data available</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-red-500/15 ${className}`}>
+    <div
+      className={`glass-hierarchy-child overflow-hidden rounded-xl border border-red-500/15 ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Shield className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-xs font-medium text-foreground">Defense Overview</span>
+          <span className="text-foreground text-xs font-medium">Defense Overview</span>
         </div>
         <Badge
           variant="outline"
@@ -270,15 +278,15 @@ export function DefenseMapWidget({
       <div className="relative h-48">
         <div ref={containerRef} className="absolute inset-0" />
         {!mapReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="bg-muted absolute inset-0 flex items-center justify-center">
+            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
           </div>
         )}
       </div>
 
       {/* Footer stats */}
-      <div className="flex items-center justify-between border-t border-border/50 px-3 py-1.5">
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+      <div className="border-border/50 flex items-center justify-between border-t px-3 py-1.5">
+        <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
           <span>{branchCount} branches</span>
           <span className={readinessColor}>{avgReadiness}% ready</span>
           {(securityData?.activeThreatCount ?? 0) > 0 && (

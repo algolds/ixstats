@@ -39,7 +39,12 @@ const SHORTCUTS = [
   { keys: "?", desc: "Show shortcuts" },
 ];
 
-export function MapKeyboardControls({ mapRef, onEscapePress, projectionMode, onProjectionChange }: MapKeyboardControlsProps) {
+export function MapKeyboardControls({
+  mapRef,
+  onEscapePress,
+  projectionMode,
+  onProjectionChange,
+}: MapKeyboardControlsProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   const handleKey = useCallback(
@@ -139,14 +144,16 @@ export function MapKeyboardControls({ mapRef, onEscapePress, projectionMode, onP
   return (
     <>
       {/* Bottom-right: copyright + keyboard shortcut button */}
-      <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5">
-        <span className="text-[10px] leading-tight text-muted-foreground/60 select-none text-right">
-          © 2026 Ixnay<br />Powered by IxStates
+      <div className="absolute right-4 bottom-4 z-10 flex items-center gap-1.5">
+        <span className="text-muted-foreground/60 text-right text-[10px] leading-tight select-none">
+          © 2026 Ixnay
+          <br />
+          Powered by IxStates
         </span>
         {/* Desktop only — keyboard shortcuts are irrelevant on touch devices */}
         <button
           onClick={() => setShowHelp((v) => !v)}
-          className="hidden items-center gap-1 rounded-lg bg-card px-2 py-1.5 text-xs text-muted-foreground shadow-md transition-colors hover:bg-accent hover:text-foreground sm:flex"
+          className="bg-card text-muted-foreground hover:bg-accent hover:text-foreground hidden items-center gap-1 rounded-lg px-2 py-1.5 text-xs shadow-md transition-colors sm:flex"
           title="Keyboard shortcuts (?)"
         >
           <Keyboard className="h-3.5 w-3.5" />
@@ -156,14 +163,12 @@ export function MapKeyboardControls({ mapRef, onEscapePress, projectionMode, onP
 
       {/* Help overlay */}
       {showHelp && (
-        <div className="absolute bottom-12 right-4 z-20 w-56 rounded-xl bg-card/95 p-3 shadow-lg ring-1 ring-border backdrop-blur-sm">
+        <div className="bg-card/95 ring-border absolute right-4 bottom-12 z-20 w-56 rounded-xl p-3 shadow-lg ring-1 backdrop-blur-sm">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground">
-              Keyboard Shortcuts
-            </span>
+            <span className="text-foreground text-xs font-semibold">Keyboard Shortcuts</span>
             <button
               onClick={() => setShowHelp(false)}
-              className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground rounded p-0.5"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -171,7 +176,7 @@ export function MapKeyboardControls({ mapRef, onEscapePress, projectionMode, onP
           <div className="space-y-1">
             {SHORTCUTS.map(({ keys, desc }) => (
               <div key={keys} className="flex items-center justify-between text-xs">
-                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground">
+                <kbd className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
                   {keys}
                 </kbd>
                 <span className="text-muted-foreground">{desc}</span>

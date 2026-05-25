@@ -21,9 +21,9 @@ export interface LoreScoreBreakdown {
   tier: string;
   /** Per-component scores */
   components: {
-    wikiDepth: number;      // 0-50
+    wikiDepth: number; // 0-50
     mapStorytelling: number; // 0-25
-    engagement: number;      // 0-25
+    engagement: number; // 0-25
   };
   /** Detailed metrics for display */
   details: {
@@ -64,7 +64,7 @@ export async function calculateLoreScore(
     articleLength?: number;
     sectionCount?: number;
     satelliteCount?: number;
-  },
+  }
 ): Promise<LoreScoreBreakdown> {
   // Fetch all needed data concurrently
   const [storyPins, storylines, cities, loreCards, country] = await Promise.all([
@@ -72,12 +72,14 @@ export async function calculateLoreScore(
     db.storyline.count({ where: { countryId } }),
     db.city.count({ where: { countryId, status: "approved" } }),
     // Lore cards linked to this country
-    db.card.count({
-      where: {
-        ownerId: countryId,
-        cardType: "LORE",
-      },
-    }).catch(() => 0), // Card model might not have ownerId = countryId pattern
+    db.card
+      .count({
+        where: {
+          ownerId: countryId,
+          cardType: "LORE",
+        },
+      })
+      .catch(() => 0), // Card model might not have ownerId = countryId pattern
     db.country.findUnique({
       where: { id: countryId },
       select: { wikiPageTitle: true, name: true },
@@ -120,9 +122,10 @@ export async function calculateLoreScore(
   const hasWiki = country?.wikiPageTitle ? 5 : 0;
 
   // Having story pins with storylines (narrative depth): 0-10 points
-  const narrativeBonus = storylines > 0 && storyPins >= 3
-    ? Math.min(10, Math.round(((storyPins * storylines) / 15) * 10))
-    : 0;
+  const narrativeBonus =
+    storylines > 0 && storyPins >= 3
+      ? Math.min(10, Math.round(((storyPins * storylines) / 15) * 10))
+      : 0;
 
   const engagement = cardScore + hasWiki + narrativeBonus;
 

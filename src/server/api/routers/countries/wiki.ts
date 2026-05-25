@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  cachedStaticProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import {
   getArticleIntro,
   getPageSections,
@@ -15,11 +19,21 @@ import { getEligibleCountries } from "~/lib/eligible-country-service";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [
-  /^File:Flag.icon/i, /^File:Crystal/i, /^File:Nuvola/i,
-  /^File:Commons-logo/i, /^File:Wikisource-logo/i, /^File:Wiktionary-logo/i,
-  /^File:Symbol /i, /^File:Yes ?check/i, /^File:X ?mark/i,
-  /^File:Increase/i, /^File:Decrease/i, /^File:Steady/i,
-  /^File:Green ?arrow/i, /^File:Red ?arrow/i, /\.svg$/i,
+  /^File:Flag.icon/i,
+  /^File:Crystal/i,
+  /^File:Nuvola/i,
+  /^File:Commons-logo/i,
+  /^File:Wikisource-logo/i,
+  /^File:Wiktionary-logo/i,
+  /^File:Symbol /i,
+  /^File:Yes ?check/i,
+  /^File:X ?mark/i,
+  /^File:Increase/i,
+  /^File:Decrease/i,
+  /^File:Steady/i,
+  /^File:Green ?arrow/i,
+  /^File:Red ?arrow/i,
+  /\.svg$/i,
 ];
 
 /**
@@ -35,9 +49,16 @@ function extractWikiIntro(wikitext: string): string | null {
     let depth = 0;
     let i = startIdx;
     while (i < wikitext.length - 1) {
-      if (wikitext[i] === "{" && wikitext[i + 1] === "{") { depth++; i += 2; }
-      else if (wikitext[i] === "}" && wikitext[i + 1] === "}") { depth--; i += 2; if (depth === 0) break; }
-      else { i++; }
+      if (wikitext[i] === "{" && wikitext[i + 1] === "{") {
+        depth++;
+        i += 2;
+      } else if (wikitext[i] === "}" && wikitext[i + 1] === "}") {
+        depth--;
+        i += 2;
+        if (depth === 0) break;
+      } else {
+        i++;
+      }
     }
     contentAfterInfobox = wikitext.substring(i).trim();
   }
@@ -126,7 +147,13 @@ async function fetchWikiSections(
 /** Fetch images from a country's wiki page with thumbnail URLs. */
 async function fetchWikiPageImages(
   name: string
-): Promise<Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> | null> {
+): Promise<Array<{
+  title: string;
+  url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
+}> | null> {
   try {
     return await wikiBridgePageImages(name, { excludePatterns: EXCLUDED_IMAGE_PATTERNS });
   } catch (err) {
@@ -158,9 +185,16 @@ async function fetchWikiRichIntro(
         let depth = 0;
         let i = startIdx;
         while (i < wikitext.length - 1) {
-          if (wikitext[i] === "{" && wikitext[i + 1] === "{") { depth++; i += 2; }
-          else if (wikitext[i] === "}" && wikitext[i + 1] === "}") { depth--; i += 2; if (depth === 0) break; }
-          else { i++; }
+          if (wikitext[i] === "{" && wikitext[i + 1] === "{") {
+            depth++;
+            i += 2;
+          } else if (wikitext[i] === "}" && wikitext[i + 1] === "}") {
+            depth--;
+            i += 2;
+            if (depth === 0) break;
+          } else {
+            i++;
+          }
         }
         contentAfterInfobox = wikitext.substring(i).trim();
       }
@@ -233,7 +267,8 @@ async function fetchWikiRichIntro(
  */
 async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unknown> | null> {
   try {
-    const infobox = await wikiBridgeInfobox(name, "ixwiki") ?? await wikiBridgeInfobox(name, "iiwiki");
+    const infobox =
+      (await wikiBridgeInfobox(name, "ixwiki")) ?? (await wikiBridgeInfobox(name, "iiwiki"));
     if (!infobox) return null;
     const result: Record<string, unknown> = { templateName: infobox.templateName };
     for (const field of infobox.fields) {
@@ -251,12 +286,19 @@ async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unkn
  */
 async function fetchWikiSectionPreviews(
   name: string
-): Promise<Array<{ level: number; line: string; number: string; anchor: string; preview?: string }> | null> {
+): Promise<Array<{
+  level: number;
+  line: string;
+  number: string;
+  anchor: string;
+  preview?: string;
+}> | null> {
   const sections = await fetchWikiSections(name);
   if (!sections || sections.length === 0) return null;
 
   try {
-    const article = await getArticleWikitext(name, "ixwiki") ?? await getArticleWikitext(name, "iiwiki");
+    const article =
+      (await getArticleWikitext(name, "ixwiki")) ?? (await getArticleWikitext(name, "iiwiki"));
     if (!article) return sections.map((s) => ({ ...s, preview: undefined }));
 
     const wikitext = article.wikitext;
@@ -279,7 +321,8 @@ async function fetchWikiSectionPreviews(
       if (hIdx < 0) continue;
 
       const start = headingPositions[hIdx]!.start;
-      const end = hIdx + 1 < headingPositions.length ? headingPositions[hIdx + 1]!.start - 10 : start + 1000;
+      const end =
+        hIdx + 1 < headingPositions.length ? headingPositions[hIdx + 1]!.start - 10 : start + 1000;
       const sectionText = wikitext.substring(start, Math.min(end, start + 1000));
 
       const cleaned = sectionText
@@ -298,7 +341,13 @@ async function fetchWikiSectionPreviews(
       }
     }
 
-    return results as Array<{ level: number; line: string; number: string; anchor: string; preview?: string }>;
+    return results as Array<{
+      level: number;
+      line: string;
+      number: string;
+      anchor: string;
+      preview?: string;
+    }>;
   } catch (err) {
     console.error(`[Wiki] Error fetching section previews for ${name}:`, err);
     return sections.map((s) => ({ ...s, preview: undefined }));
@@ -320,9 +369,11 @@ export const wikiProcedures = {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       if (names.length === 0) return {};
       const results: Record<string, any> = {};
-      await Promise.all(names.map(async (n) => {
-        results[n] = await fetchWikiIntro(n);
-      }));
+      await Promise.all(
+        names.map(async (n) => {
+          results[n] = await fetchWikiIntro(n);
+        })
+      );
       return results;
     }),
 
@@ -486,7 +537,10 @@ export const wikiProcedures = {
           unified.flagUrl = resolveImageUrl(unified.image_flag, wikiSource);
         }
         if (unified.image_coat || unified.coat_of_arms) {
-          unified.coatOfArmsUrl = resolveImageUrl(unified.image_coat || unified.coat_of_arms, wikiSource);
+          unified.coatOfArmsUrl = resolveImageUrl(
+            unified.image_coat || unified.coat_of_arms,
+            wikiSource
+          );
         }
 
         return unified;
@@ -500,7 +554,7 @@ export const wikiProcedures = {
       }
     }),
 
-    getWikiInfobox: cachedStaticProcedure
+  getWikiInfobox: cachedStaticProcedure
     .input(z.object({ name: z.string() }))
     .query(async ({ input }) => {
       const name = input.name.trim();
@@ -519,7 +573,11 @@ export const wikiProcedures = {
         const unified = parseInfoboxWithTemplates(article.wikitext, name);
         if (unified) {
           if (unified.image_flag) unified.flagUrl = resolveImageUrl(unified.image_flag, wikiSource);
-          if (unified.image_coat || unified.coat_of_arms) unified.coatOfArmsUrl = resolveImageUrl(unified.image_coat || unified.coat_of_arms, wikiSource);
+          if (unified.image_coat || unified.coat_of_arms)
+            unified.coatOfArmsUrl = resolveImageUrl(
+              unified.image_coat || unified.coat_of_arms,
+              wikiSource
+            );
           return unified;
         }
 

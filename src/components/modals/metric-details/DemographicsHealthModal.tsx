@@ -74,14 +74,13 @@ export function DemographicsHealthModal({
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery(
-      { countryId },
-      { enabled: !!countryId && isOpen }
-    );
+    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
-  const { data: globalStats, isLoading: globalLoading } =
-    api.countries.getGlobalStats.useQuery(undefined, { enabled: isOpen });
+  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    { enabled: isOpen }
+  );
 
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
@@ -107,8 +106,7 @@ export function DemographicsHealthModal({
     };
 
     const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate =
-      monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
+    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
 
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
@@ -122,10 +120,7 @@ export function DemographicsHealthModal({
         deathRate: currentDeathRate,
         medianAge: currentMedianAge,
       }))
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
   const chartConfig = {
@@ -136,18 +131,18 @@ export function DemographicsHealthModal({
     population: { label: "Population (M)", color: "#f59e0b" },
   };
 
-  const getHealthLevel = (lifeExpectancy: number): { label: string; color: string; variant: "default" | "secondary" | "destructive" } => {
-    if (lifeExpectancy >= 78) return { label: "Excellent", color: "text-green-600", variant: "default" };
+  const getHealthLevel = (
+    lifeExpectancy: number
+  ): { label: string; color: string; variant: "default" | "secondary" | "destructive" } => {
+    if (lifeExpectancy >= 78)
+      return { label: "Excellent", color: "text-green-600", variant: "default" };
     if (lifeExpectancy >= 72) return { label: "Good", color: "text-blue-600", variant: "default" };
-    if (lifeExpectancy >= 65) return { label: "Average", color: "text-yellow-600", variant: "secondary" };
+    if (lifeExpectancy >= 65)
+      return { label: "Average", color: "text-yellow-600", variant: "secondary" };
     return { label: "Below Average", color: "text-red-600", variant: "destructive" };
   };
 
-  const renderTabContent = (
-    activeTab: string,
-    timeRange: TimeRange,
-    chartType: ChartType
-  ) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
@@ -185,14 +180,9 @@ export function DemographicsHealthModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Life Expectancy
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Life Expectancy</p>
                   <p className={`text-2xl font-bold ${healthLevel.color}`}>
-                    <NumberFlowDisplay
-                      value={lifeExpectancy}
-                      decimalPlaces={1}
-                    /> yrs
+                    <NumberFlowDisplay value={lifeExpectancy} decimalPlaces={1} /> yrs
                   </p>
                 </div>
                 <Heart className="h-8 w-8 text-green-500" />
@@ -204,14 +194,10 @@ export function DemographicsHealthModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Birth Rate
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Birth Rate</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    <NumberFlowDisplay
-                      value={demographics?.birthRate || 0}
-                      decimalPlaces={1}
-                    />/1k
+                    <NumberFlowDisplay value={demographics?.birthRate || 0} decimalPlaces={1} />
+                    /1k
                   </p>
                 </div>
                 <Baby className="h-8 w-8 text-blue-500" />
@@ -223,14 +209,13 @@ export function DemographicsHealthModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Median Age
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Median Age</p>
                   <p className="text-2xl font-bold text-purple-600">
                     <NumberFlowDisplay
                       value={demographics?.medianAge || countryData?.medianAge || 0}
                       decimalPlaces={1}
-                    /> yrs
+                    />{" "}
+                    yrs
                   </p>
                 </div>
                 <Clock className="h-8 w-8 text-purple-500" />
@@ -242,9 +227,7 @@ export function DemographicsHealthModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Health Status
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Health Status</p>
                   <Badge variant={healthLevel.variant} className="mt-1 text-lg">
                     {healthLevel.label}
                   </Badge>
@@ -310,22 +293,21 @@ export function DemographicsHealthModal({
       return (
         <Card>
           <CardContent className="py-12 text-center">
-            <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <p className="text-muted-foreground">No historical data available</p>
           </CardContent>
         </Card>
       );
     }
 
-    const ChartComponent = chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
+    const ChartComponent =
+      chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle>Demographics Trends</CardTitle>
-          <CardDescription>
-            Historical population and vital statistics
-          </CardDescription>
+          <CardDescription>Historical population and vital statistics</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-80 w-full">
@@ -411,7 +393,7 @@ export function DemographicsHealthModal({
                 <div className={`text-3xl font-bold ${healthLevel.color}`}>
                   {lifeExpectancy.toFixed(1)} yrs
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   vs {globalAvgLife} yrs global average
                 </div>
               </div>
@@ -437,16 +419,16 @@ export function DemographicsHealthModal({
                       : "destructive"
                   }
                 >
-                  {(demographics?.birthRate || 0) > (demographics?.deathRate || 0) ? "Growing" : "Declining"}
+                  {(demographics?.birthRate || 0) > (demographics?.deathRate || 0)
+                    ? "Growing"
+                    : "Declining"}
                 </Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
                   {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}/1k
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Natural growth rate
-                </div>
+                <div className="text-muted-foreground text-sm">Natural growth rate</div>
               </div>
             </div>
           </CardContent>
@@ -467,17 +449,15 @@ export function DemographicsHealthModal({
                   {(demographics?.medianAge || 0) < 25
                     ? "Young"
                     : (demographics?.medianAge || 0) < 35
-                    ? "Balanced"
-                    : "Aging"}
+                      ? "Balanced"
+                      : "Aging"}
                 </Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600">
                   {(demographics?.medianAge || countryData?.medianAge || 0).toFixed(1)} yrs
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Median age
-                </div>
+                <div className="text-muted-foreground text-sm">Median age</div>
               </div>
             </div>
           </CardContent>
@@ -498,7 +478,8 @@ export function DemographicsHealthModal({
       ? ageDistribution.find((a: any) => a.group?.includes("0-14"))?.percentage || 25
       : 25;
     const workingPct = Array.isArray(ageDistribution)
-      ? ageDistribution.find((a: any) => a.group?.includes("15-64") || a.group?.includes("15-"))?.percentage || 60
+      ? ageDistribution.find((a: any) => a.group?.includes("15-64") || a.group?.includes("15-"))
+          ?.percentage || 60
       : 60;
     const elderlyPct = Array.isArray(ageDistribution)
       ? ageDistribution.find((a: any) => a.group?.includes("65"))?.percentage || 15
@@ -513,29 +494,25 @@ export function DemographicsHealthModal({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <div className="text-lg font-semibold text-blue-600">
-                  {youthPct.toFixed(0)}%
-                </div>
-                <div className="text-xs text-muted-foreground">0-14 Years</div>
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-blue-600">{youthPct.toFixed(0)}%</div>
+                <div className="text-muted-foreground text-xs">0-14 Years</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <div className="text-lg font-semibold text-green-600">
-                  {workingPct.toFixed(0)}%
-                </div>
-                <div className="text-xs text-muted-foreground">15-64 Years</div>
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-green-600">{workingPct.toFixed(0)}%</div>
+                <div className="text-muted-foreground text-xs">15-64 Years</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <div className="text-lg font-semibold text-purple-600">
                   {elderlyPct.toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">65+ Years</div>
+                <div className="text-muted-foreground text-xs">65+ Years</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <div className="text-lg font-semibold text-amber-600">
                   {(demographics?.dependencyRatio || 50).toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">Dependency Ratio</div>
+                <div className="text-muted-foreground text-xs">Dependency Ratio</div>
               </div>
             </div>
           </CardContent>
@@ -552,51 +529,50 @@ export function DemographicsHealthModal({
                 <div className="text-lg font-semibold text-green-600">
                   {(demographics?.literacyRate || 95).toFixed(0)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Literacy Rate
-                </div>
+                <div className="text-muted-foreground text-sm">Literacy Rate</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
                   {(demographics?.urbanRuralSplit?.urban || 60).toFixed(0)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Urban Population
-                </div>
+                <div className="text-muted-foreground text-sm">Urban Population</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
                   {(demographics?.urbanRuralSplit?.rural || 40).toFixed(0)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Rural Population
-                </div>
+                <div className="text-muted-foreground text-sm">Rural Population</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Education Levels breakdown if available */}
-        {demographics?.educationLevels && Array.isArray(demographics.educationLevels) && demographics.educationLevels.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Education Levels</CardTitle>
-              <CardDescription>Population by education attainment</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {demographics.educationLevels.slice(0, 8).map((level: any, i: number) => (
-                  <div key={level.level || i} className="text-center p-3 rounded-lg bg-muted/30">
-                    <div className="text-lg font-semibold" style={{ color: level.color || '#6366f1' }}>
-                      {(level.percentage || level.percent || 0).toFixed(0)}%
+        {demographics?.educationLevels &&
+          Array.isArray(demographics.educationLevels) &&
+          demographics.educationLevels.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Education Levels</CardTitle>
+                <CardDescription>Population by education attainment</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  {demographics.educationLevels.slice(0, 8).map((level: any, i: number) => (
+                    <div key={level.level || i} className="bg-muted/30 rounded-lg p-3 text-center">
+                      <div
+                        className="text-lg font-semibold"
+                        style={{ color: level.color || "#6366f1" }}
+                      >
+                        {(level.percentage || level.percent || 0).toFixed(0)}%
+                      </div>
+                      <div className="text-muted-foreground text-xs">{level.level}</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">{level.level}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
       </div>
     );
   };

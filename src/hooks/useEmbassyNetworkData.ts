@@ -162,7 +162,11 @@ export function useEmbassyNetworkData(
   isOwner: boolean
 ): UseEmbassyNetworkDataReturn {
   // Fetch embassies
-  const { data: embassies, isLoading, refetch } = api.diplomatic.getEmbassies.useQuery({
+  const {
+    data: embassies,
+    isLoading,
+    refetch,
+  } = api.diplomatic.getEmbassies.useQuery({
     countryId,
   });
 

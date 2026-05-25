@@ -410,8 +410,7 @@ export class AuctionService {
         }
 
         // 2. Transfer IxCredits from buyer to seller
-        const marketplaceFee =
-          buyoutPrice > 100 ? Math.floor(buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
+        const marketplaceFee = buyoutPrice > 100 ? Math.floor(buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
         const sellerProceeds = buyoutPrice - marketplaceFee;
 
         const spendResult = await vaultService.spendCredits(
@@ -449,7 +448,10 @@ export class AuctionService {
         );
 
         // 2.5. Award nation card royalties (2% of sale price to nation owner)
-        if (auction.CardOwnership?.cards?.cardType === "NATION" && auction.CardOwnership?.cards?.countryId) {
+        if (
+          auction.CardOwnership?.cards?.cardType === "NATION" &&
+          auction.CardOwnership?.cards?.countryId
+        ) {
           const royaltyAmount = Math.round(buyoutPrice * 0.02 * 100) / 100; // 2% royalty
 
           // Find the nation owner
@@ -457,7 +459,11 @@ export class AuctionService {
             where: { countryId: auction.CardOwnership.cards.countryId },
           });
 
-          if (nationOwner && nationOwner.clerkUserId !== auction.sellerId && nationOwner.clerkUserId !== params.userId) {
+          if (
+            nationOwner &&
+            nationOwner.clerkUserId !== auction.sellerId &&
+            nationOwner.clerkUserId !== params.userId
+          ) {
             // Award royalty to nation owner (only if they're not the buyer or seller)
             await vaultService.earnCredits(
               nationOwner.clerkUserId,
@@ -476,7 +482,7 @@ export class AuctionService {
 
             console.log(
               `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
-              `for nation card sale`
+                `for nation card sale`
             );
           }
         }
@@ -588,7 +594,10 @@ export class AuctionService {
           );
 
           // Award nation card royalties (2% of sale price to nation owner)
-          if (auction.CardOwnership?.cards?.cardType === "NATION" && auction.CardOwnership?.cards?.countryId) {
+          if (
+            auction.CardOwnership?.cards?.cardType === "NATION" &&
+            auction.CardOwnership?.cards?.countryId
+          ) {
             const royaltyAmount = Math.round(finalPrice * 0.02 * 100) / 100; // 2% royalty
 
             // Find the nation owner
@@ -596,7 +605,11 @@ export class AuctionService {
               where: { countryId: auction.CardOwnership.cards.countryId },
             });
 
-            if (nationOwner && nationOwner.clerkUserId !== auction.sellerId && nationOwner.clerkUserId !== auction.currentBidderId) {
+            if (
+              nationOwner &&
+              nationOwner.clerkUserId !== auction.sellerId &&
+              nationOwner.clerkUserId !== auction.currentBidderId
+            ) {
               // Award royalty to nation owner (only if they're not the buyer or seller)
               await vaultService.earnCredits(
                 nationOwner.clerkUserId,
@@ -615,7 +628,7 @@ export class AuctionService {
 
               console.log(
                 `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
-                `for nation card sale`
+                  `for nation card sale`
               );
             }
           }
@@ -912,11 +925,7 @@ export class AuctionService {
    * Broadcast bid event via WebSocket
    * Placeholder for WebSocket integration
    */
-  private async broadcastBidEvent(event: {
-    auctionId: string;
-    bidderId: string;
-    amount: number;
-  }) {
+  private async broadcastBidEvent(event: { auctionId: string; bidderId: string; amount: number }) {
     // This will be implemented by WebSocket server
     // For now, just log the event
     console.log("[Auction Service] Bid event:", event);

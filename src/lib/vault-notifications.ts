@@ -8,9 +8,7 @@
 "use client";
 
 import { notifyFromStore } from "~/hooks/useNotify";
-import type {
-  NotificationCategory,
-} from "~/types/unified-notifications";
+import type { NotificationCategory } from "~/types/unified-notifications";
 
 type ToastType = "success" | "error" | "warning" | "info";
 type ToastPriority = "critical" | "high" | "medium" | "low";

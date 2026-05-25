@@ -240,9 +240,7 @@ export const diplomaticRouter = createTRPCRouter({
 
         for (const event of diplomaticEvents) {
           const targetCountryId =
-            event.country1Id === input.countryId
-              ? event.country2Id
-              : event.country1Id;
+            event.country1Id === input.countryId ? event.country2Id : event.country1Id;
 
           changes.push({
             id: event.id,
@@ -1666,9 +1664,14 @@ export const diplomaticRouter = createTRPCRouter({
         );
 
         if (!creditResult.success) {
-          console.warn(`[Diplomatic] Failed to award credits for mission ${mission.id}:`, creditResult.message);
+          console.warn(
+            `[Diplomatic] Failed to award credits for mission ${mission.id}:`,
+            creditResult.message
+          );
         } else {
-          console.log(`[Diplomatic] Awarded ${creditsEarned} IxC to user ${ctx.user.id} for completing mission ${mission.id}`);
+          console.log(
+            `[Diplomatic] Awarded ${creditsEarned} IxC to user ${ctx.user.id} for completing mission ${mission.id}`
+          );
         }
       }
 
@@ -2101,7 +2104,9 @@ export const diplomaticRouter = createTRPCRouter({
           category: "social",
           priority: "low",
           type: "info",
-          href: followerCountry?.slug ? `/countries/${followerCountry.slug}` : `/countries/${input.followerCountryId}`,
+          href: followerCountry?.slug
+            ? `/countries/${followerCountry.slug}`
+            : `/countries/${input.followerCountryId}`,
           source: "diplomatic-system",
           actionable: false,
           metadata: { followerCountryId: input.followerCountryId },
@@ -3164,9 +3169,8 @@ export const diplomaticRouter = createTRPCRouter({
 
       // Generate scenario using the scenario generator
       // Import is done at the top of the file
-      const { CulturalScenarioGenerator, CULTURAL_SCENARIO_TEMPLATES } = await import(
-        "~/lib/cultural-scenario-generator"
-      );
+      const { CulturalScenarioGenerator, CULTURAL_SCENARIO_TEMPLATES } =
+        await import("~/lib/cultural-scenario-generator");
 
       const template =
         input.preferredScenarioType &&
@@ -4459,9 +4463,7 @@ export const diplomaticRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const statusFilter = input.includeExpired
-        ? {}
-        : { status: { in: ["proposed", "active"] } };
+      const statusFilter = input.includeExpired ? {} : { status: { in: ["proposed", "active"] } };
 
       const actions = await ctx.db.foreignPolicyAction.findMany({
         where: {
@@ -4519,12 +4521,19 @@ export const diplomaticRouter = createTRPCRouter({
         }
 
         // Estimate GDP: currentGdpPerCapita * currentPopulation
-        const gdp1 = (country1.currentGdpPerCapita ?? 10000) * (country1.currentPopulation ?? 1000000);
-        const gdp2 = (country2.currentGdpPerCapita ?? 10000) * (country2.currentPopulation ?? 1000000);
+        const gdp1 =
+          (country1.currentGdpPerCapita ?? 10000) * (country1.currentPopulation ?? 1000000);
+        const gdp2 =
+          (country2.currentGdpPerCapita ?? 10000) * (country2.currentPopulation ?? 1000000);
 
         // Check diplomatic relationship for modifier
         const relation = await ctx.db.diplomaticRelation.findFirst({
-          where: { OR: [{ country1: c1, country2: c2 }, { country1: c2, country2: c1 }] },
+          where: {
+            OR: [
+              { country1: c1, country2: c2 },
+              { country1: c2, country2: c1 },
+            ],
+          },
           select: { strength: true },
         });
 
@@ -4546,8 +4555,12 @@ export const diplomaticRouter = createTRPCRouter({
             lastCalculatedIx: 0,
           },
           include: {
-            country1: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
-            country2: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
+            country1: {
+              select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+            },
+            country2: {
+              select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+            },
           },
         });
       }
@@ -4582,7 +4595,8 @@ export const diplomaticRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      const gdp1 = (initiator.currentGdpPerCapita ?? 10000) * (initiator.currentPopulation ?? 1000000);
+      const gdp1 =
+        (initiator.currentGdpPerCapita ?? 10000) * (initiator.currentPopulation ?? 1000000);
       const gdp2 = (target.currentGdpPerCapita ?? 10000) * (target.currentPopulation ?? 1000000);
 
       // Get bilateral trade for trade share calculation
@@ -4611,7 +4625,7 @@ export const diplomaticRouter = createTRPCRouter({
       switch (input.actionType) {
         case "embargo":
           initiatorGdpImpact = -(tradeShare1 * 0.015 * severityMultiplier);
-          targetGdpImpact = -(tradeShare2 * 0.020 * severityMultiplier);
+          targetGdpImpact = -(tradeShare2 * 0.02 * severityMultiplier);
           relationshipDelta = Math.round(-25 * severityMultiplier);
           category = "trade";
           break;
@@ -4635,7 +4649,7 @@ export const diplomaticRouter = createTRPCRouter({
           break;
         case "blockade":
           initiatorGdpImpact = -0.008 * severityMultiplier;
-          targetGdpImpact = -0.030 * severityMultiplier;
+          targetGdpImpact = -0.03 * severityMultiplier;
           relationshipDelta = Math.round(-35 * severityMultiplier);
           category = "military";
           break;
@@ -4709,10 +4723,7 @@ export const diplomaticRouter = createTRPCRouter({
           message: "Cannot sign a free trade agreement with a hostile nation (relationship < 20).",
         });
       }
-      if (
-        (input.actionType === "embargo" || input.actionType === "blockade") &&
-        strength > 80
-      ) {
+      if ((input.actionType === "embargo" || input.actionType === "blockade") && strength > 80) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Cannot impose embargo/blockade on a close ally (relationship > 80).",
@@ -4752,7 +4763,8 @@ export const diplomaticRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      const gdp1 = (initiator.currentGdpPerCapita ?? 10000) * (initiator.currentPopulation ?? 1000000);
+      const gdp1 =
+        (initiator.currentGdpPerCapita ?? 10000) * (initiator.currentPopulation ?? 1000000);
       const gdp2 = (target.currentGdpPerCapita ?? 10000) * (target.currentPopulation ?? 1000000);
 
       // Normalize country ordering for bilateral trade lookup
@@ -4783,7 +4795,7 @@ export const diplomaticRouter = createTRPCRouter({
       switch (input.actionType) {
         case "embargo":
           initiatorGdpImpact = -(tradeShare1 * 0.015 * severityMultiplier);
-          targetGdpImpact = -(tradeShare2 * 0.020 * severityMultiplier);
+          targetGdpImpact = -(tradeShare2 * 0.02 * severityMultiplier);
           relationshipDelta = Math.round(-25 * severityMultiplier);
           break;
         case "sanction":
@@ -4808,7 +4820,7 @@ export const diplomaticRouter = createTRPCRouter({
           break;
         case "blockade":
           initiatorGdpImpact = -0.008 * severityMultiplier;
-          targetGdpImpact = -0.030 * severityMultiplier;
+          targetGdpImpact = -0.03 * severityMultiplier;
           relationshipDelta = Math.round(-35 * severityMultiplier);
           category = "military";
           break;
@@ -4906,12 +4918,18 @@ export const diplomaticRouter = createTRPCRouter({
       }
 
       // Auto-news: post to ThinkPages
-      const newsType = input.actionType === "embargo" ? "embargo_imposed"
-        : input.actionType === "sanction" ? "sanction_imposed"
-        : input.actionType === "free_trade" ? "free_trade_signed"
-        : input.actionType === "military_alliance" ? "military_alliance_signed"
-        : input.actionType === "blockade" ? "blockade_imposed"
-        : null;
+      const newsType =
+        input.actionType === "embargo"
+          ? "embargo_imposed"
+          : input.actionType === "sanction"
+            ? "sanction_imposed"
+            : input.actionType === "free_trade"
+              ? "free_trade_signed"
+              : input.actionType === "military_alliance"
+                ? "military_alliance_signed"
+                : input.actionType === "blockade"
+                  ? "blockade_imposed"
+                  : null;
 
       if (newsType) {
         void generateDiplomaticNews(ctx.db, initiatorId, newsType, {
@@ -5056,7 +5074,13 @@ export const diplomaticRouter = createTRPCRouter({
             where: { isActive: true },
             include: {
               country: {
-                select: { id: true, name: true, flag: true, currentGdpPerCapita: true, currentPopulation: true },
+                select: {
+                  id: true,
+                  name: true,
+                  flag: true,
+                  currentGdpPerCapita: true,
+                  currentPopulation: true,
+                },
               },
             },
             orderBy: { role: "asc" },
@@ -5079,8 +5103,7 @@ export const diplomaticRouter = createTRPCRouter({
 
       // Calculate aggregate stats
       const totalGdp = alliance.members.reduce((sum, m) => {
-        const gdp =
-          (m.country.currentGdpPerCapita ?? 0) * (m.country.currentPopulation ?? 0);
+        const gdp = (m.country.currentGdpPerCapita ?? 0) * (m.country.currentPopulation ?? 0);
         return sum + gdp;
       }, 0);
 
@@ -5163,16 +5186,19 @@ export const diplomaticRouter = createTRPCRouter({
       // Notification: alliance formed (fire-and-forget)
       try {
         if (ctx.auth?.userId) {
-          await notificationAPI.create({
-            userId: ctx.auth.userId,
-            countryId: ctx.user.countryId,
-            title: "Alliance Formed",
-            message: `You founded the ${input.name} alliance`,
-            type: "DIPLOMATIC",
-            category: "diplomatic",
-            priority: "high",
-            metadata: { allianceId: alliance.id, allianceName: input.name },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: ctx.auth.userId,
+              countryId: ctx.user.countryId,
+              title: "Alliance Formed",
+              message: `You founded the ${input.name} alliance`,
+              type: "DIPLOMATIC",
+              category: "diplomatic",
+              priority: "high",
+              metadata: { allianceId: alliance.id, allianceName: input.name },
+            },
+            ctx.db
+          );
         }
       } catch {}
 
@@ -5261,16 +5287,19 @@ export const diplomaticRouter = createTRPCRouter({
           select: { name: true },
         });
         if (targetCountry?.userId) {
-          await notificationAPI.create({
-            userId: targetCountry.userId,
-            countryId: input.targetCountryId,
-            title: "Alliance Invitation",
-            message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
-            type: "DIPLOMATIC",
-            category: "diplomatic",
-            priority: "high",
-            metadata: { allianceId: input.allianceId },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: targetCountry.userId,
+              countryId: input.targetCountryId,
+              title: "Alliance Invitation",
+              message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
+              type: "DIPLOMATIC",
+              category: "diplomatic",
+              priority: "high",
+              metadata: { allianceId: input.allianceId },
+            },
+            ctx.db
+          );
         }
       } catch {}
 
@@ -5321,7 +5350,12 @@ export const diplomaticRouter = createTRPCRouter({
     .input(
       z.object({
         allianceId: z.string(),
-        actionType: z.enum(["collective_sanction", "shared_defense", "trade_bloc", "joint_statement"]),
+        actionType: z.enum([
+          "collective_sanction",
+          "shared_defense",
+          "trade_bloc",
+          "joint_statement",
+        ]),
         targetId: z.string().optional(),
         title: z.string().min(2),
         description: z.string().optional(),
@@ -5474,8 +5508,7 @@ export const diplomaticRouter = createTRPCRouter({
             select: { countryId: true },
           });
 
-          const fpType =
-            action.actionType === "collective_sanction" ? "sanction" : "free_trade";
+          const fpType = action.actionType === "collective_sanction" ? "sanction" : "free_trade";
 
           for (const member of members) {
             // Skip if action already exists
@@ -5523,7 +5556,10 @@ export const diplomaticRouter = createTRPCRouter({
         allianceId: z.string(),
         title: z.string().min(2),
         content: z.string(),
-        documentType: z.enum(["memo", "policy", "strategy", "communique"]).optional().default("memo"),
+        documentType: z
+          .enum(["memo", "policy", "strategy", "communique"])
+          .optional()
+          .default("memo"),
         isPublic: z.boolean().optional().default(false),
       })
     )
@@ -5600,10 +5636,7 @@ export const diplomaticRouter = createTRPCRouter({
       const missions = await ctx.db.embassyMission.findMany({
         where: {
           embassy: {
-            OR: [
-              { hostCountryId: input.countryId },
-              { guestCountryId: input.countryId },
-            ],
+            OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
           },
           status: { in: ["active", "pending", "in_progress"] },
         },

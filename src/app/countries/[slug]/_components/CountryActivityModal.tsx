@@ -148,7 +148,7 @@ export function CountryActivityModal({
                   <div className="flex items-start gap-3">
                     {/* Activity Icon */}
                     <div
-                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${getActivityColor(activity.type)}`}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${getActivityColor(activity.type)}`}
                     >
                       {getActivityIcon(activity.type)}
                     </div>
@@ -157,7 +157,7 @@ export function CountryActivityModal({
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-start justify-between gap-2">
                         <h4 className="text-sm leading-tight font-semibold">{activity.title}</h4>
-                        <Badge variant="outline" className="flex-shrink-0 text-xs">
+                        <Badge variant="outline" className="shrink-0 text-xs">
                           {activity.source === "thinkpages" ? "ThinkPages" : "Milestone"}
                         </Badge>
                       </div>

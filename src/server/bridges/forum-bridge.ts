@@ -23,7 +23,9 @@ interface XFConversation {
   last_message_username: string;
   is_unread: boolean;
   recipient_count?: number;
-  recipients?: Record<string, { user_id: number; username: string }> | { user_id: number; username: string }[];
+  recipients?:
+    | Record<string, { user_id: number; username: string }>
+    | { user_id: number; username: string }[];
 }
 
 interface XFConversationMessage {
@@ -46,10 +48,7 @@ interface XFConversationMessagesResponse {
 // ─── Bridge Implementation ───────────────────────────────────────
 
 export const forumBridge: BridgeAdapter = {
-  async syncInbound(
-    userId: string,
-    db: PrismaClient
-  ): Promise<BridgeSyncResult> {
+  async syncInbound(userId: string, db: PrismaClient): Promise<BridgeSyncResult> {
     const result: BridgeSyncResult = {
       conversationsCreated: 0,
       conversationsUpdated: 0,
@@ -92,10 +91,7 @@ export const forumBridge: BridgeAdapter = {
           // Create new conversation
           conversation = await db.thinkshareConversation.create({
             data: {
-              type:
-                (xfConv.recipient_count ?? 0) > 2
-                  ? "group"
-                  : "direct",
+              type: (xfConv.recipient_count ?? 0) > 2 ? "group" : "direct",
               name: xfConv.title,
               source: "forum",
               sourceId,
@@ -156,11 +152,10 @@ export const forumBridge: BridgeAdapter = {
         // Fetch messages for this conversation
         let xfMessages: XFConversationMessage[];
         try {
-          const msgResponse =
-            await xfFetchAsUser<XFConversationMessagesResponse>(
-              `/conversations/${xfConv.conversation_id}/messages`,
-              user.forumUserId
-            );
+          const msgResponse = await xfFetchAsUser<XFConversationMessagesResponse>(
+            `/conversations/${xfConv.conversation_id}/messages`,
+            user.forumUserId
+          );
           xfMessages = msgResponse?.messages ?? [];
         } catch {
           continue;
@@ -218,10 +213,7 @@ export const forumBridge: BridgeAdapter = {
         });
         result.conversationsUpdated++;
       } catch (err) {
-        console.error(
-          `[Forum bridge] Failed to sync conversation "${xfConv.title}":`,
-          err
-        );
+        console.error(`[Forum bridge] Failed to sync conversation "${xfConv.title}":`, err);
       }
     }
 
@@ -242,8 +234,7 @@ export const forumBridge: BridgeAdapter = {
     if (!user?.forumUserId) {
       return {
         success: false,
-        error:
-          "No linked forum account. Link your account in Profile > IxnayID.",
+        error: "No linked forum account. Link your account in Profile > IxnayID.",
       };
     }
 

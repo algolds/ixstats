@@ -30,10 +30,9 @@ export function useVaultStats() {
     { enabled: !!userId }
   );
 
-  const { data: myAuctionsData } = api.cardMarket.getMyActiveAuctions.useQuery(
-    undefined,
-    { enabled: !!userId }
-  );
+  const { data: myAuctionsData } = api.cardMarket.getMyActiveAuctions.useQuery(undefined, {
+    enabled: !!userId,
+  });
 
   const refreshMutation = api.nsImport.refreshCardValues.useMutation({
     onSuccess: () => {

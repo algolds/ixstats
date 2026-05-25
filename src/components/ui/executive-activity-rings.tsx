@@ -164,7 +164,7 @@ export const ExecutiveActivityRings: React.FC<ExecutiveActivityRingsProps> = ({
           transition={{ duration: 0.4, delay: index * 0.1 }}
         >
           {/* Activity Ring */}
-          <div className="relative flex-shrink-0">
+          <div className="relative shrink-0">
             <HealthRing
               value={ring.value}
               size={80}
@@ -188,7 +188,7 @@ export const ExecutiveActivityRings: React.FC<ExecutiveActivityRingsProps> = ({
           {/* Info Section */}
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-2">
-              <h4 className="text-foreground group-hover:text-opacity-80 font-semibold transition-colors">
+              <h4 className="text-foreground group-hover:text-foreground/80 font-semibold transition-colors">
                 {ring.label}
               </h4>
               <Badge variant={ring.badgeVariant as any} className="text-xs">

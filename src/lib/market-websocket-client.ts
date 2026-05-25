@@ -1,11 +1,7 @@
 // src/lib/market-websocket-client.ts
 // WebSocket client for real-time marketplace updates
 
-import type {
-  MarketWebSocketMessage,
-  Bid,
-  AuctionListing,
-} from "~/types/marketplace";
+import type { MarketWebSocketMessage, Bid, AuctionListing } from "~/types/marketplace";
 import { withReconnect } from "~/lib/with-reconnect";
 
 type SubscriptionCallback<T> = (data: T) => void;
@@ -24,21 +20,20 @@ interface Subscription {
 export class MarketWebSocketClient {
   private ws: WebSocket | null = null;
   private subscriptions: Map<string, Subscription> = new Map();
-  private reconnect = withReconnect(
-    () => this.connect(),
-    {
-      maxAttempts: 10,
-      strategy: "exponentialWithJitter",
-      baseDelayMs: 1000,
-      maxDelayMs: 30000,
-      onAttempt: (attempt, delayMs) => {
-        console.log(`[MarketWS] Reconnecting in ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt}/10)`);
-      },
-      onGaveUp: () => {
-        console.error("[MarketWS] Max reconnection attempts reached. Giving up.");
-      },
-    }
-  );
+  private reconnect = withReconnect(() => this.connect(), {
+    maxAttempts: 10,
+    strategy: "exponentialWithJitter",
+    baseDelayMs: 1000,
+    maxDelayMs: 30000,
+    onAttempt: (attempt, delayMs) => {
+      console.log(
+        `[MarketWS] Reconnecting in ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt}/10)`
+      );
+    },
+    onGaveUp: () => {
+      console.error("[MarketWS] Max reconnection attempts reached. Giving up.");
+    },
+  });
   private isConnecting = false;
   private isIntentionallyClosed = false;
   private heartbeatInterval: NodeJS.Timeout | null = null;
@@ -48,10 +43,7 @@ export class MarketWebSocketClient {
   constructor() {
     // Determine WebSocket URL based on environment
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host =
-      process.env.NODE_ENV === "production"
-        ? window.location.host
-        : "localhost:3000";
+    const host = process.env.NODE_ENV === "production" ? window.location.host : "localhost:3000";
     this.wsUrl = `${protocol}//${host}/api/market-ws`;
   }
 
@@ -107,10 +99,7 @@ export class MarketWebSocketClient {
   /**
    * Subscribe to bid updates for specific auction
    */
-  subscribeToBid(
-    auctionId: string,
-    callback: SubscriptionCallback<Bid>
-  ): () => void {
+  subscribeToBid(auctionId: string, callback: SubscriptionCallback<Bid>): () => void {
     const subscriptionId = `bid-${auctionId}-${Math.random()}`;
 
     this.subscriptions.set(subscriptionId, {
@@ -175,9 +164,7 @@ export class MarketWebSocketClient {
   /**
    * Subscribe to new auction creations
    */
-  subscribeToNewAuctions(
-    callback: SubscriptionCallback<AuctionListing>
-  ): () => void {
+  subscribeToNewAuctions(callback: SubscriptionCallback<AuctionListing>): () => void {
     const subscriptionId = `new-auction-${Math.random()}`;
 
     this.subscriptions.set(subscriptionId, {
@@ -236,9 +223,7 @@ export class MarketWebSocketClient {
 
     // Re-establish subscriptions if any
     if (this.subscriptions.size > 0) {
-      console.log(
-        `[MarketWS] Re-establishing ${this.subscriptions.size} subscriptions`
-      );
+      console.log(`[MarketWS] Re-establishing ${this.subscriptions.size} subscriptions`);
     }
   }
 
@@ -271,9 +256,7 @@ export class MarketWebSocketClient {
   }
 
   private handleClose(event: CloseEvent): void {
-    console.log(
-      `[MarketWS] Connection closed (code: ${event.code}, reason: ${event.reason})`
-    );
+    console.log(`[MarketWS] Connection closed (code: ${event.code}, reason: ${event.reason})`);
 
     this.isConnecting = false;
 

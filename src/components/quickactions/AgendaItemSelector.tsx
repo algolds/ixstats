@@ -231,7 +231,7 @@ export function AgendaItemSelector({ open, onOpenChange, onSelect }: AgendaItemS
                                 {getCategoryIcon(item.category)}
                                 <h4 className="font-medium">{item.label}</h4>
                                 {selectedItem?.id === item.id && (
-                                  <CheckCircle className="text-primary h-4 w-4 flex-shrink-0" />
+                                  <CheckCircle className="text-primary h-4 w-4 shrink-0" />
                                 )}
                               </div>
                               <p className="text-muted-foreground mb-2 text-sm">
@@ -250,7 +250,7 @@ export function AgendaItemSelector({ open, onOpenChange, onSelect }: AgendaItemS
                             </div>
                             <Badge
                               variant="outline"
-                              className={cn("flex-shrink-0", getCategoryColor(item.category))}
+                              className={cn("shrink-0", getCategoryColor(item.category))}
                             >
                               {item.category}
                             </Badge>
@@ -309,7 +309,7 @@ export function AgendaItemSelector({ open, onOpenChange, onSelect }: AgendaItemS
                             {getCategoryIcon(item.category)}
                             <h4 className="font-medium">{item.label}</h4>
                             {isSelectable && selectedItem?.id === item.id && (
-                              <CheckCircle className="text-primary h-4 w-4 flex-shrink-0" />
+                              <CheckCircle className="text-primary h-4 w-4 shrink-0" />
                             )}
                           </div>
                           <p className="text-muted-foreground text-sm">{item.description}</p>
@@ -323,7 +323,7 @@ export function AgendaItemSelector({ open, onOpenChange, onSelect }: AgendaItemS
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-shrink-0 flex-col items-end gap-2">
+                        <div className="flex shrink-0 flex-col items-end gap-2">
                           <Badge variant="outline" className={getCategoryColor(item.category)}>
                             {item.category}
                           </Badge>
@@ -360,7 +360,7 @@ export function AgendaItemSelector({ open, onOpenChange, onSelect }: AgendaItemS
         {selectedItem && (
           <div className="space-y-3 border-t pt-4">
             <div className="bg-primary/5 border-primary/20 flex items-start gap-3 rounded-lg border p-3">
-              <CheckCircle className="text-primary mt-0.5 h-5 w-5 flex-shrink-0" />
+              <CheckCircle className="text-primary mt-0.5 h-5 w-5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">Selected: {selectedItem.label}</p>
                 <p className="text-muted-foreground text-sm">{selectedItem.description}</p>

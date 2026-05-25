@@ -35,7 +35,9 @@ interface UseMyCountryUnifiedDataReturn {
   refetchQuickActionPolicies: ReturnType<typeof api.quickActions.getPolicies.useQuery>["refetch"];
 }
 
-function deriveDiplomaticMetrics(relations: Record<string, unknown>[] | undefined): DiplomaticMetrics {
+function deriveDiplomaticMetrics(
+  relations: Record<string, unknown>[] | undefined
+): DiplomaticMetrics {
   if (!relations || relations.length === 0) {
     return {
       treatyCount: 0,

@@ -9,13 +9,7 @@
  * get simplified differently. TopoJSON's arc-based approach eliminates this.
  */
 
-import type {
-  Feature,
-  FeatureCollection,
-  Polygon,
-  MultiPolygon,
-  Position,
-} from "geojson";
+import type { Feature, FeatureCollection, Polygon, MultiPolygon, Position } from "geojson";
 
 // TopoJSON packages are CommonJS — use require for compatibility
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -76,10 +70,7 @@ export interface SimplifyResult {
  */
 export function countVertices(geometry: Polygon | MultiPolygon): number {
   if (!geometry?.coordinates) return 0;
-  const allRings =
-    geometry.type === "Polygon"
-      ? geometry.coordinates
-      : geometry.coordinates.flat();
+  const allRings = geometry.type === "Polygon" ? geometry.coordinates : geometry.coordinates.flat();
   return allRings.reduce((sum, ring) => sum + ring.length, 0);
 }
 
@@ -92,10 +83,7 @@ export function roundCoordinates(
 ): Polygon | MultiPolygon {
   const factor = Math.pow(10, precision);
   const roundRing = (ring: Position[]): Position[] =>
-    ring.map(([x, y]) => [
-      Math.round(x! * factor) / factor,
-      Math.round(y! * factor) / factor,
-    ]);
+    ring.map(([x, y]) => [Math.round(x! * factor) / factor, Math.round(y! * factor) / factor]);
 
   if (geometry.type === "Polygon") {
     return {
@@ -136,9 +124,7 @@ function ensureRingsClosed(geometry: Polygon | MultiPolygon): Polygon | MultiPol
  * Fix self-intersections in a polygon.
  * Uses turf.unkinkPolygon → union. Falls back to buffer(0).
  */
-export function fixSelfIntersections(
-  geometry: Polygon | MultiPolygon
-): Polygon | MultiPolygon {
+export function fixSelfIntersections(geometry: Polygon | MultiPolygon): Polygon | MultiPolygon {
   try {
     const turf = require("@turf/turf");
     const feature = turf.feature(geometry);
@@ -288,7 +274,13 @@ export function simplifyProvinceBatch(
     topo = topoServer.topology({ provinces: fc }, quantization);
   } catch (e) {
     warnings.push(`TopoJSON topology construction failed: ${(e as Error).message}`);
-    return { features, stats: [], totalVerticesBefore: totalBefore, totalVerticesAfter: totalBefore, warnings };
+    return {
+      features,
+      stats: [],
+      totalVerticesBefore: totalBefore,
+      totalVerticesAfter: totalBefore,
+      warnings,
+    };
   }
 
   // Step 4: Presimplify (annotate vertex importance via Visvalingam)
@@ -296,7 +288,13 @@ export function simplifyProvinceBatch(
     topo = topoSimplify.presimplify(topo);
   } catch (e) {
     warnings.push(`Presimplify failed: ${(e as Error).message}`);
-    return { features, stats: [], totalVerticesBefore: totalBefore, totalVerticesAfter: totalBefore, warnings };
+    return {
+      features,
+      stats: [],
+      totalVerticesBefore: totalBefore,
+      totalVerticesAfter: totalBefore,
+      warnings,
+    };
   }
 
   // Step 5: Binary search for the right minWeight threshold
@@ -339,7 +337,13 @@ export function simplifyProvinceBatch(
     simplified = topoSimplify.simplify(topo, bestWeight);
   } catch (e) {
     warnings.push(`Simplification failed: ${(e as Error).message}`);
-    return { features, stats: [], totalVerticesBefore: totalBefore, totalVerticesAfter: totalBefore, warnings };
+    return {
+      features,
+      stats: [],
+      totalVerticesBefore: totalBefore,
+      totalVerticesAfter: totalBefore,
+      warnings,
+    };
   }
 
   // Step 7: Convert back to GeoJSON
@@ -348,7 +352,13 @@ export function simplifyProvinceBatch(
     resultFc = topoClient.feature(simplified, simplified.objects.provinces);
   } catch (e) {
     warnings.push(`Feature extraction failed: ${(e as Error).message}`);
-    return { features, stats: [], totalVerticesBefore: totalBefore, totalVerticesAfter: totalBefore, warnings };
+    return {
+      features,
+      stats: [],
+      totalVerticesBefore: totalBefore,
+      totalVerticesAfter: totalBefore,
+      warnings,
+    };
   }
 
   // Step 8: Post-process each feature
@@ -363,7 +373,12 @@ export function simplifyProvinceBatch(
     if (!simplified?.geometry) {
       warnings.push(`Province "${name}" lost geometry during simplification — keeping original`);
       resultFeatures.push(original);
-      stats.push({ name, verticesBefore: beforeCounts[i]!, verticesAfter: beforeCounts[i]!, areaPreserved: 1 });
+      stats.push({
+        name,
+        verticesBefore: beforeCounts[i]!,
+        verticesAfter: beforeCounts[i]!,
+        areaPreserved: 1,
+      });
       continue;
     }
 
@@ -386,9 +401,16 @@ export function simplifyProvinceBatch(
     const hasDegenerateRing = allRings.some((ring) => ring.length < 4);
 
     if (hasDegenerateRing || afterCount < 4) {
-      warnings.push(`Province "${name}" simplified too aggressively (${afterCount} vertices) — keeping original`);
+      warnings.push(
+        `Province "${name}" simplified too aggressively (${afterCount} vertices) — keeping original`
+      );
       resultFeatures.push(original);
-      stats.push({ name, verticesBefore: beforeCounts[i]!, verticesAfter: beforeCounts[i]!, areaPreserved: 1 });
+      stats.push({
+        name,
+        verticesBefore: beforeCounts[i]!,
+        verticesAfter: beforeCounts[i]!,
+        areaPreserved: 1,
+      });
       continue;
     }
 

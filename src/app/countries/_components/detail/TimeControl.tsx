@@ -300,7 +300,7 @@ export function TimeControl({
               value={[timeOffset]}
               onValueChange={handleTimeOffsetChange}
               disabled={isLoading}
-              className="flex-grow"
+              className="grow"
             />
             <Button
               variant="outline"
@@ -364,7 +364,7 @@ export function TimeControl({
               value={[forecastYearsInput]}
               onValueChange={handleForecastYearsInputChange}
               disabled={isLoading}
-              className="flex-grow"
+              className="grow"
             />
             <Button
               variant="outline"
@@ -379,7 +379,7 @@ export function TimeControl({
         </div>
         <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs dark:border-blue-700 dark:bg-blue-900/20">
           <div className="flex items-start">
-            <Info className="mt-0.5 mr-2 h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+            <Info className="mt-0.5 mr-2 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
             <p className="text-muted-foreground">
               Adjust "Time Position" to view historical or future base data. "Forecast Period"
               extends projections from the selected time position.

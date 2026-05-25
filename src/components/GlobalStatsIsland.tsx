@@ -349,7 +349,7 @@ function GlobalStatsIslandContent() {
             <div className="flex min-w-0 items-center gap-2">
               {/* Time and greeting */}
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 flex-shrink-0 text-white/80 md:h-5 md:w-5" />
+                <Clock className="h-4 w-4 shrink-0 text-white/80 md:h-5 md:w-5" />
                 <div className="min-w-0 truncate text-xs md:text-sm">
                   <span className="truncate font-medium">{currentTime.timeDisplay}</span>
                   <span className="ml-1 truncate text-white/70">{currentTime.greeting}</span>

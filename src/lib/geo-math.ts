@@ -154,7 +154,10 @@ export function ringAreaSqMi(ring: [number, number][]): number {
 /**
  * Compute area of a GeoJSON Polygon or MultiPolygon in IxEarth sq km.
  */
-export function geometryAreaSqKm(geometry: { type: string; coordinates: number[][][] | number[][][][] }): number {
+export function geometryAreaSqKm(geometry: {
+  type: string;
+  coordinates: number[][][] | number[][][][];
+}): number {
   if (geometry.type === "Polygon") {
     const coords = geometry.coordinates as [number, number][][];
     let area = ringAreaSqKm(coords[0]!);
@@ -180,7 +183,10 @@ export function geometryAreaSqKm(geometry: { type: string; coordinates: number[]
 /**
  * Compute area in IxEarth sq mi.
  */
-export function geometryAreaSqMi(geometry: { type: string; coordinates: number[][][] | number[][][][] }): number {
+export function geometryAreaSqMi(geometry: {
+  type: string;
+  coordinates: number[][][] | number[][][][];
+}): number {
   return geometryAreaSqKm(geometry) / SQKM_PER_SQMI;
 }
 
@@ -195,7 +201,10 @@ export function ringPerimeterKm(ring: [number, number][]): number {
     total += distanceKm(ring[i - 1]!, ring[i]!);
   }
   // Close the ring if needed
-  if (ring.length > 1 && (ring[0]![0] !== ring[ring.length - 1]![0] || ring[0]![1] !== ring[ring.length - 1]![1])) {
+  if (
+    ring.length > 1 &&
+    (ring[0]![0] !== ring[ring.length - 1]![0] || ring[0]![1] !== ring[ring.length - 1]![1])
+  ) {
     total += distanceKm(ring[ring.length - 1]!, ring[0]!);
   }
   return total;
@@ -273,7 +282,8 @@ export function formatArea(sqKm: number, unit: "km²" | "mi²" = "km²"): string
  */
 export function ringCentroid(ring: [number, number][]): [number, number] {
   if (ring.length === 0) return [0, 0];
-  let lng = 0, lat = 0;
+  let lng = 0,
+    lat = 0;
   for (const p of ring) {
     lng += p[0];
     lat += p[1];
@@ -285,7 +295,10 @@ export function ringCentroid(ring: [number, number][]): [number, number] {
  * Bounding box of a coordinate ring: [minLng, minLat, maxLng, maxLat].
  */
 export function ringBbox(ring: [number, number][]): [number, number, number, number] {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const [x, y] of ring) {
     if (x < minX) minX = x;
     if (y < minY) minY = y;

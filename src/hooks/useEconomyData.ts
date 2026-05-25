@@ -8,9 +8,7 @@ import {
   calculateRealTimeAtomicEffects,
   applyRealTimeEffects,
 } from "~/lib/real-time-atomic-effects";
-import type {
-  EconomyData,
-} from "../types/economics";
+import type { EconomyData } from "../types/economics";
 
 export function useEconomyData(countryId: string) {
   const { data, isLoading, error, refetch } = api.countries.getByIdAtTime.useQuery(
@@ -94,7 +92,9 @@ export function useEconomyData(countryId: string) {
           };
         }
         return null;
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     })();
 
     // Parse EconomicProfile sectorBreakdown as fallback for sector data
@@ -105,25 +105,37 @@ export function useEconomyData(countryId: string) {
         const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
         const sectors = parsed?.primarySectors;
         if (Array.isArray(sectors) && sectors.length > 0) {
-          let agriculture = 0, industry = 0, services = 0;
+          let agriculture = 0,
+            industry = 0,
+            services = 0;
           for (const s of sectors) {
             const pct = Number(s.gdpContribution || s.percentage || 0);
             const name = (s.name || s.sector || "").toLowerCase();
-            if (name.includes("agri") || name.includes("farm") || name.includes("fish")) agriculture += pct;
-            else if (name.includes("industr") || name.includes("manufactur") || name.includes("mining") || name.includes("construct")) industry += pct;
+            if (name.includes("agri") || name.includes("farm") || name.includes("fish"))
+              agriculture += pct;
+            else if (
+              name.includes("industr") ||
+              name.includes("manufactur") ||
+              name.includes("mining") ||
+              name.includes("construct")
+            )
+              industry += pct;
             else services += pct;
           }
           if (agriculture + industry + services > 0) return { agriculture, industry, services };
         }
         return null;
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     })();
 
-    const employmentBySector = parsedEmploymentBySector || sectorFallback || {
-      agriculture: 5,
-      industry: 25,
-      services: 70,
-    };
+    const employmentBySector = parsedEmploymentBySector ||
+      sectorFallback || {
+        agriculture: 5,
+        industry: 25,
+        services: 70,
+      };
 
     const economyData: EconomyData = {
       core: {

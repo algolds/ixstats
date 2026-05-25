@@ -8,7 +8,12 @@
  * Builds on wiki-infobox-parser.ts and wiki-bridge.ts cleanWikiMarkup.
  */
 
-import { parseInfobox, parseCoordTemplate, cleanWikiValue, type ParsedInfobox } from "./wiki-infobox-parser";
+import {
+  parseInfobox,
+  parseCoordTemplate,
+  cleanWikiValue,
+  type ParsedInfobox,
+} from "./wiki-infobox-parser";
 
 // ── Types ──
 
@@ -143,7 +148,8 @@ function extractSections(wikitext: string): WikiSection[] {
 function extractIntro(wikitext: string): string {
   // Remove everything from first heading onward
   const headingIndex = wikitext.search(/^==[^=]/m);
-  const introText = headingIndex > 0 ? wikitext.substring(0, headingIndex) : wikitext.substring(0, 2000);
+  const introText =
+    headingIndex > 0 ? wikitext.substring(0, headingIndex) : wikitext.substring(0, 2000);
   return cleanWikiMarkup(introText);
 }
 

@@ -136,24 +136,20 @@ export class ThinkPagesWebSocketServer {
         ? `group:${event.groupId}`
         : undefined;
     if (!channel) return;
-    this.io
-      .to(channel)
-      .emit("message:update", {
-        type: "message:update",
-        data: event,
-        timestamp: Date.now(),
-        channel,
-      });
+    this.io.to(channel).emit("message:update", {
+      type: "message:update",
+      data: event,
+      timestamp: Date.now(),
+      channel,
+    });
     // Also notify conversation list to refresh
     if (event.conversationId) {
-      this.io
-        .to(channel)
-        .emit("conversation:update", {
-          type: "conversation:updated",
-          conversationId: event.conversationId,
-          data: { lastActivity: Date.now() },
-          timestamp: Date.now(),
-        });
+      this.io.to(channel).emit("conversation:update", {
+        type: "conversation:updated",
+        conversationId: event.conversationId,
+        data: { lastActivity: Date.now() },
+        timestamp: Date.now(),
+      });
     }
   }
 

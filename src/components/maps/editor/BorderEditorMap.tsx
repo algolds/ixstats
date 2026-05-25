@@ -116,18 +116,8 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
         type: "circle",
         source: "vertices",
         paint: {
-          "circle-radius": [
-            "case",
-            ["==", ["get", "selected"], true],
-            7,
-            4,
-          ],
-          "circle-color": [
-            "case",
-            ["==", ["get", "selected"], true],
-            "#f6e05e",
-            "#fff",
-          ],
+          "circle-radius": ["case", ["==", ["get", "selected"], true], 7, 4],
+          "circle-color": ["case", ["==", ["get", "selected"], true], "#f6e05e", "#fff"],
           "circle-stroke-color": "#000",
           "circle-stroke-width": 1,
         },
@@ -221,7 +211,7 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
       map.remove();
       mapRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Helper: safely set data on a source, handling the case where sources aren't ready yet
@@ -237,7 +227,10 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
   // Update active feature geometry
   useEffect(() => {
     const fc = geometry
-      ? { type: "FeatureCollection" as const, features: [{ type: "Feature" as const, geometry, properties: {} }] }
+      ? {
+          type: "FeatureCollection" as const,
+          features: [{ type: "Feature" as const, geometry, properties: {} }],
+        }
       : EMPTY_FC;
     if (safeSetData("active-feature", fc)) return;
 
@@ -246,7 +239,9 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     if (!map) return;
     const handler = () => safeSetData("active-feature", fc);
     map.on("load", handler);
-    return () => { map.off("load", handler); };
+    return () => {
+      map.off("load", handler);
+    };
   }, [geometry, safeSetData]);
 
   // Update vertices
@@ -294,9 +289,14 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
     const map = mapRef.current;
     if (!map) return;
-    const handler = () => { safeSetData("vertices", vFC); safeSetData("midpoints", mFC); };
+    const handler = () => {
+      safeSetData("vertices", vFC);
+      safeSetData("midpoints", mFC);
+    };
     map.on("load", handler);
-    return () => { map.off("load", handler); };
+    return () => {
+      map.off("load", handler);
+    };
   }, [geometry, mode, selectedVertex, safeSetData]);
 
   // Update neighbors
@@ -322,9 +322,14 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
     const map = mapRef.current;
     if (!map) return;
-    const handler = () => { safeSetData("neighbors", nFC); safeSetData("merge-targets", mtFC); };
+    const handler = () => {
+      safeSetData("neighbors", nFC);
+      safeSetData("merge-targets", mtFC);
+    };
     map.on("load", handler);
-    return () => { map.off("load", handler); };
+    return () => {
+      map.off("load", handler);
+    };
   }, [neighborGeometries, mergeTargets, safeSetData]);
 
   // Update split line
@@ -356,7 +361,9 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     if (!map) return;
     const handler = () => safeSetData("split-line", fc);
     map.on("load", handler);
-    return () => { map.off("load", handler); };
+    return () => {
+      map.off("load", handler);
+    };
   }, [splitLine, safeSetData]);
 
   // Fly to feature when loaded
@@ -365,7 +372,10 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     if (!map || !geometry) return;
 
     const rings = getAllRings(geometry);
-    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    let minLng = Infinity,
+      maxLng = -Infinity,
+      minLat = Infinity,
+      maxLat = -Infinity;
     for (const ring of rings) {
       for (const coord of ring) {
         if (coord[0]! < minLng) minLng = coord[0]!;
@@ -376,18 +386,15 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     }
 
     map.fitBounds(
-      [[minLng, minLat], [maxLng, maxLat]],
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
       { padding: 60, duration: 1000 }
     );
-  // Only fly on initial geometry load
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only fly on initial geometry load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!geometry]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="h-full w-full rounded-lg"
-      style={{ minHeight: 400 }}
-    />
-  );
+  return <div ref={containerRef} className="h-full w-full rounded-lg" style={{ minHeight: 400 }} />;
 });

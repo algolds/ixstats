@@ -168,14 +168,14 @@ export function ValidatedSlider({
 
       {showWarning && warning && (
         <div className="flex items-start gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
           <p className="text-sm text-yellow-700 dark:text-yellow-400">{warning.message}</p>
         </div>
       )}
 
       {info && !showWarning && (
         <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 p-2">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
           <p className="text-sm text-blue-700 dark:text-blue-400">{info}</p>
         </div>
       )}

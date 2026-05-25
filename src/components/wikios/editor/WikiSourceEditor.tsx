@@ -37,10 +37,7 @@ import {
   bracketMatching,
   foldGutter,
 } from "@codemirror/language";
-import {
-  highlightSelectionMatches,
-  searchKeymap,
-} from "@codemirror/search";
+import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import {
   Bold,
   Italic,
@@ -205,7 +202,10 @@ const wikitextHighlightPlugin = ViewPlugin.fromClass(
           const validMatches: typeof matches = [];
 
           for (const match of matches) {
-            while (activeRanges.length > 0 && activeRanges[activeRanges.length - 1]!.to <= match.from) {
+            while (
+              activeRanges.length > 0 &&
+              activeRanges[activeRanges.length - 1]!.to <= match.from
+            ) {
               activeRanges.pop();
             }
             if (activeRanges.length > 0) {
@@ -306,19 +306,13 @@ export function WikiSourceEditor({
         syntaxHighlighting(defaultHighlightStyle),
         wikitextHighlightPlugin,
         oneDark,
-        keymap.of([
-          ...defaultKeymap,
-          ...historyKeymap,
-          ...searchKeymap,
-          indentWithTab,
-        ]),
+        keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
         EditorView.lineWrapping,
         updateStats,
         EditorView.theme({
           "&": {
             fontSize: "14px",
-            fontFamily:
-              "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
           },
           "&.cm-focused": {
             outline: "none",
@@ -413,7 +407,9 @@ export function WikiSourceEditor({
 
   // Warn on unload with unsaved changes
   useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => { if (isDirty) e.preventDefault(); };
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) e.preventDefault();
+    };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
@@ -472,12 +468,18 @@ export function WikiSourceEditor({
 
   const handleUndo = useCallback(() => {
     const view = viewRef.current;
-    if (view) { undo(view); view.focus(); }
+    if (view) {
+      undo(view);
+      view.focus();
+    }
   }, []);
 
   const handleRedo = useCallback(() => {
     const view = viewRef.current;
-    if (view) { redo(view); view.focus(); }
+    if (view) {
+      redo(view);
+      view.focus();
+    }
   }, []);
 
   // Insert text at the start/end of the current line (for headings)
@@ -512,7 +514,11 @@ export function WikiSourceEditor({
             Preview
           </button>
           {onSwitchToVisual && (
-            <button className="wikios-editor-btn-secondary" onClick={onSwitchToVisual} type="button">
+            <button
+              className="wikios-editor-btn-secondary"
+              onClick={onSwitchToVisual}
+              type="button"
+            >
               Visual
             </button>
           )}
@@ -541,14 +547,12 @@ export function WikiSourceEditor({
             placeholder="Describe your changes..."
             className="wikios-editor-save-input"
             autoFocus
-            onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave();
+            }}
           />
           <label className="wikios-editor-save-minor">
-            <input
-              type="checkbox"
-              checked={minor}
-              onChange={(e) => setMinor(e.target.checked)}
-            />
+            <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />
             Minor
           </label>
           <button className="wikios-editor-btn-primary" onClick={handleSave} type="button">
@@ -568,27 +572,63 @@ export function WikiSourceEditor({
 
         {/* Text formatting */}
         <div className="wikios-editor-format-group">
-          <FmtBtn icon={Bold} title="Bold ('''text''')" onClick={() => wrapSelection("'''", "'''")} />
-          <FmtBtn icon={Italic} title="Italic (''text'')" onClick={() => wrapSelection("''", "''")} />
-          <FmtBtn icon={Strikethrough} title="Strikethrough" onClick={() => wrapSelection("<s>", "</s>")} />
-          <FmtBtn icon={Superscript} title="Superscript" onClick={() => wrapSelection("<sup>", "</sup>")} />
-          <FmtBtn icon={Subscript} title="Subscript" onClick={() => wrapSelection("<sub>", "</sub>")} />
+          <FmtBtn
+            icon={Bold}
+            title="Bold ('''text''')"
+            onClick={() => wrapSelection("'''", "'''")}
+          />
+          <FmtBtn
+            icon={Italic}
+            title="Italic (''text'')"
+            onClick={() => wrapSelection("''", "''")}
+          />
+          <FmtBtn
+            icon={Strikethrough}
+            title="Strikethrough"
+            onClick={() => wrapSelection("<s>", "</s>")}
+          />
+          <FmtBtn
+            icon={Superscript}
+            title="Superscript"
+            onClick={() => wrapSelection("<sup>", "</sup>")}
+          />
+          <FmtBtn
+            icon={Subscript}
+            title="Subscript"
+            onClick={() => wrapSelection("<sub>", "</sub>")}
+          />
           <FmtBtn icon={Code} title="Code" onClick={() => wrapSelection("<code>", "</code>")} />
         </div>
         <div className="wikios-editor-format-sep" />
 
         {/* Links */}
         <div className="wikios-editor-format-group">
-          <FmtBtn icon={Link2} title="Wiki link ([[Page]])" onClick={() => wrapSelection("[[", "]]")} />
-          <FmtBtn icon={ExternalLink} title="External link" onClick={() => wrapSelection("[", "]")} />
+          <FmtBtn
+            icon={Link2}
+            title="Wiki link ([[Page]])"
+            onClick={() => wrapSelection("[[", "]]")}
+          />
+          <FmtBtn
+            icon={ExternalLink}
+            title="External link"
+            onClick={() => wrapSelection("[", "]")}
+          />
         </div>
         <div className="wikios-editor-format-sep" />
 
         {/* Headings */}
         <div className="wikios-editor-format-group">
           <FmtBtn icon={Heading1} title="Heading 1 (=)" onClick={() => insertAtLine("= ", " =")} />
-          <FmtBtn icon={Heading2} title="Heading 2 (==)" onClick={() => insertAtLine("== ", " ==")} />
-          <FmtBtn icon={Heading3} title="Heading 3 (===)" onClick={() => insertAtLine("=== ", " ===")} />
+          <FmtBtn
+            icon={Heading2}
+            title="Heading 2 (==)"
+            onClick={() => insertAtLine("== ", " ==")}
+          />
+          <FmtBtn
+            icon={Heading3}
+            title="Heading 3 (===)"
+            onClick={() => insertAtLine("=== ", " ===")}
+          />
         </div>
         <div className="wikios-editor-format-sep" />
 
@@ -596,7 +636,11 @@ export function WikiSourceEditor({
         <div className="wikios-editor-format-group">
           <FmtBtn icon={List} title="Bullet list" onClick={() => insertAtCursor("\n* ")} />
           <FmtBtn icon={ListOrdered} title="Numbered list" onClick={() => insertAtCursor("\n# ")} />
-          <FmtBtn icon={Quote} title="Blockquote" onClick={() => wrapSelection("<blockquote>", "</blockquote>")} />
+          <FmtBtn
+            icon={Quote}
+            title="Blockquote"
+            onClick={() => wrapSelection("<blockquote>", "</blockquote>")}
+          />
           <FmtBtn icon={Minus} title="Horizontal rule" onClick={() => insertAtCursor("\n----\n")} />
         </div>
         <div className="wikios-editor-format-sep" />
@@ -604,7 +648,15 @@ export function WikiSourceEditor({
         {/* Media & Templates */}
         <div className="wikios-editor-format-group">
           <FmtBtn icon={Image} title="Insert image" onClick={() => setShowImageSearch(true)} />
-          <FmtBtn icon={Table} title="Table" onClick={() => insertAtCursor('\n{| class="wikitable"\n|-\n! Header 1 !! Header 2\n|-\n| Cell 1 || Cell 2\n|}\n')} />
+          <FmtBtn
+            icon={Table}
+            title="Table"
+            onClick={() =>
+              insertAtCursor(
+                '\n{| class="wikitable"\n|-\n! Header 1 !! Header 2\n|-\n| Cell 1 || Cell 2\n|}\n'
+              )
+            }
+          />
           <FmtBtn icon={FileCode} title="Template" onClick={() => wrapSelection("{{", "}}")} />
           <FmtBtn icon={Hash} title="Category" onClick={() => insertAtCursor("[[Category:]]")} />
           <FmtBtn icon={Type} title="Reference" onClick={() => wrapSelection("<ref>", "</ref>")} />
@@ -618,7 +670,9 @@ export function WikiSourceEditor({
           <div className="wikios-editor-preview">
             <div className="wikios-editor-preview-header">
               <Eye size={12} /> Preview
-              {previewMutation.isPending && <span className="wikios-editor-preview-loading">Rendering...</span>}
+              {previewMutation.isPending && (
+                <span className="wikios-editor-preview-loading">Rendering...</span>
+              )}
             </div>
             <div
               className="wikios-article-content wikios-editor-preview-content"
@@ -630,7 +684,9 @@ export function WikiSourceEditor({
 
       {/* Status bar */}
       <div className="wikios-editor-statusbar">
-        <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
+        <span>
+          Ln {cursorPos.line}, Col {cursorPos.col}
+        </span>
         <span>{lineCount} lines</span>
         <span>{wordCount.toLocaleString()} words</span>
         <span>Wikitext</span>

@@ -262,7 +262,7 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                   />
                 ) : (
                   <Globe
-                    className="h-5 w-5 flex-shrink-0"
+                    className="h-5 w-5 shrink-0"
                     style={{ color: "var(--color-text-muted)" }}
                   />
                 )}
@@ -329,10 +329,7 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                   style={{ borderColor: "var(--color-border-primary)" }}
                 />
               ) : (
-                <Globe
-                  className="h-6 w-6 flex-shrink-0"
-                  style={{ color: "var(--color-text-muted)" }}
-                />
+                <Globe className="h-6 w-6 shrink-0" style={{ color: "var(--color-text-muted)" }} />
               )}
               <div>
                 <span

@@ -263,7 +263,7 @@ export function DiplomaticMeetingScheduler({
                           </p>
                         </div>
                         {selectedCountries.includes(targetCountryId) && (
-                          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-purple-600" />
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-purple-600" />
                         )}
                       </div>
                     </div>

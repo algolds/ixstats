@@ -2,13 +2,7 @@ import React, { useState, useMemo } from "react";
 import { GlassCard } from "./enhanced-card";
 import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Settings,
-  Menu,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-} from "lucide-react";
+import { Settings, Menu, ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import { InterfaceSwitcher } from "../shared/InterfaceSwitcher";
 import { Button } from "./button";
 import { Badge } from "./badge";
@@ -252,7 +246,7 @@ export function UnifiedSidebar({
       >
         <div className="flex w-full items-center gap-3">
           {/* Avatar with UserButton overlayed in the shadow location */}
-          <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-200 text-lg font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-200 text-lg font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-200">
             {profile?.avatarUrl ? (
               <img
                 src={profile.avatarUrl}

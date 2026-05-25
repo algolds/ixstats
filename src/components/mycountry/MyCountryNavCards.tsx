@@ -7,7 +7,14 @@ import { cn } from "~/lib/utils";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 
 interface MyCountryNavCardsProps {
-  currentPage?: "overview" | "executive" | "intelligence" | "defense" | "diplomacy" | "politics" | "map-editor";
+  currentPage?:
+    | "overview"
+    | "executive"
+    | "intelligence"
+    | "defense"
+    | "diplomacy"
+    | "politics"
+    | "map-editor";
   collapsed?: boolean;
 }
 
@@ -80,8 +87,8 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
         className={cn(
           "flex items-center gap-2 transition-all duration-500 ease-in-out",
           collapsed
-            ? "opacity-0 max-h-0 overflow-hidden scale-95 pointer-events-none"
-            : "opacity-100 max-h-[60px] scale-100"
+            ? "pointer-events-none max-h-0 scale-95 overflow-hidden opacity-0"
+            : "max-h-[60px] scale-100 opacity-100"
         )}
         style={{ willChange: "transform, opacity" }}
       >
@@ -99,8 +106,8 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
                     "transition-all duration-200",
                     "hover:scale-110 hover:shadow-lg hover:shadow-black/20",
                     "active:scale-95",
-                    "focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2",
-                    "min-w-[48px] min-h-[48px]",
+                    "focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:outline-none",
+                    "min-h-[48px] min-w-[48px]",
                     "flex items-center justify-center"
                   )}
                   aria-label={`Go to ${card.title}`}
@@ -108,13 +115,9 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
                   <Icon className="h-5 w-5 text-white transition-transform group-hover:rotate-12" />
                 </Link>
               </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                sideOffset={8}
-                className=""
-              >
+              <TooltipContent side="bottom" sideOffset={8} className="">
                 <div className="text-center">
-                  <p className="font-semibold text-sm">{card.title}</p>
+                  <p className="text-sm font-semibold">{card.title}</p>
                   <p className="text-muted-foreground text-xs">{card.description}</p>
                 </div>
               </TooltipContent>

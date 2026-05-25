@@ -376,10 +376,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3 px-4 py-2.5"
               >
-                <Search
-                  className="h-4 w-4 flex-shrink-0"
-                  style={{ color: "var(--color-text-muted)" }}
-                />
+                <Search className="h-4 w-4 shrink-0" style={{ color: "var(--color-text-muted)" }} />
                 <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                   Search {selectedSite.displayName}...
                 </span>
@@ -414,7 +411,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       setShowCategories((prev) => !prev);
                     }}
                     className={cn(
-                      "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors",
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
                       showCategories
                         ? "bg-blue-500/15 text-blue-400"
                         : "hover:bg-accent/50 text-muted-foreground"
@@ -431,13 +428,13 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     >
                       <Loader2
-                        className="h-4 w-4 flex-shrink-0"
+                        className="h-4 w-4 shrink-0"
                         style={{ color: "var(--color-text-muted)" }}
                       />
                     </motion.div>
                   ) : (
                     <Search
-                      className="h-4 w-4 flex-shrink-0"
+                      className="h-4 w-4 shrink-0"
                       style={{ color: "var(--color-text-muted)" }}
                     />
                   )}
@@ -462,14 +459,14 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                         setSearchTerm("");
                         inputRef.current?.focus();
                       }}
-                      className="hover:bg-accent flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors"
+                      className="hover:bg-accent flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors"
                     >
                       <X className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
                     </button>
                   )}
 
                   {/* Wiki Logo */}
-                  <div className="flex flex-shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <IconSwap>
                       <IconSwapItem key={selectedSite.name}>
                         <img
@@ -869,14 +866,14 @@ function SearchResultItemInline({
         <img
           src={result.flagUrl}
           alt={`Flag of ${result.title}`}
-          className="mt-0.5 h-5 w-8 flex-shrink-0 rounded-sm border object-cover shadow-sm"
+          className="mt-0.5 h-5 w-8 shrink-0 rounded-sm border object-cover shadow-sm"
           style={{ borderColor: "var(--color-border-primary)" }}
           referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
         />
       ) : (
         <div
-          className="flex h-5 w-8 flex-shrink-0 items-center justify-center rounded-sm border"
+          className="flex h-5 w-8 shrink-0 items-center justify-center rounded-sm border"
           style={{ borderColor: "var(--color-border-primary)" }}
         >
           <Globe className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
@@ -893,7 +890,7 @@ function SearchResultItemInline({
             {result.title}
           </h4>
           <ExternalLink
-            className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+            className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
             style={{ color: "var(--color-text-muted)" }}
           />
         </div>

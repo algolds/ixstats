@@ -54,10 +54,7 @@ export function useEarnCredits() {
     onError: (err, variables, context) => {
       // Rollback on error
       if (context?.previousBalance) {
-        utils.vault.getBalance.setData(
-          { userId: userId ?? "" },
-          context.previousBalance
-        );
+        utils.vault.getBalance.setData({ userId: userId ?? "" }, context.previousBalance);
       }
       notify.error(err.message || "Failed to earn credits");
     },

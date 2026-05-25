@@ -89,15 +89,13 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={handleOverlayClick}
     >
-      <div className="relative mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
+      <div className="border-border bg-card relative mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-5 py-3">
-          <h2 className="text-sm font-semibold text-foreground">
-            Keyboard Shortcuts
-          </h2>
+        <div className="border-border bg-card sticky top-0 flex items-center justify-between border-b px-5 py-3">
+          <h2 className="text-foreground text-sm font-semibold">Keyboard Shortcuts</h2>
           <button
             onClick={onClose}
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -107,27 +105,22 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
         <div className="space-y-5 p-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
-              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <h3 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">
                 {group.title}
               </h3>
               <div className="space-y-1">
                 {group.shortcuts.map((shortcut) => (
                   <div
                     key={shortcut.keys}
-                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
+                    className="hover:bg-accent/50 flex items-center justify-between rounded-md px-2 py-1.5 text-sm"
                   >
-                    <span className="text-muted-foreground">
-                      {shortcut.description}
-                    </span>
+                    <span className="text-muted-foreground">{shortcut.description}</span>
                     <div className="flex items-center gap-1">
                       {shortcut.keys.split(/(\+| \/ )/).map((part, i) => {
                         const trimmed = part.trim();
                         if (trimmed === "+" || trimmed === "/") {
                           return (
-                            <span
-                              key={i}
-                              className="text-[10px] text-muted-foreground"
-                            >
+                            <span key={i} className="text-muted-foreground text-[10px]">
                               {trimmed}
                             </span>
                           );
@@ -135,7 +128,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                         return (
                           <kbd
                             key={i}
-                            className="inline-flex min-w-[24px] items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-medium text-foreground shadow-sm"
+                            className="border-border bg-muted text-foreground inline-flex min-w-[24px] items-center justify-center rounded border px-1.5 py-0.5 text-[11px] font-medium shadow-sm"
                           >
                             {trimmed}
                           </kbd>
@@ -150,8 +143,9 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border px-5 py-3 text-center text-[11px] text-muted-foreground">
-          Press <kbd className="rounded border border-border bg-muted px-1 text-[10px]">Esc</kbd> or click outside to close
+        <div className="border-border text-muted-foreground border-t px-5 py-3 text-center text-[11px]">
+          Press <kbd className="border-border bg-muted rounded border px-1 text-[10px]">Esc</kbd> or
+          click outside to close
         </div>
       </div>
     </div>

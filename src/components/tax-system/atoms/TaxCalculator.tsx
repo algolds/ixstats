@@ -42,9 +42,7 @@ import type { GovernmentBuilderState } from "~/types/government";
 import { TaxCalculatorEngine } from "~/lib/tax-calculator";
 import { ComponentType } from "~/lib/enums";
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import {
-  calculateUnifiedAtomicModifiers,
-} from "~/lib/atomic-client-calculations";
+import { calculateUnifiedAtomicModifiers } from "~/lib/atomic-client-calculations";
 import { api } from "~/trpc/react";
 
 interface TaxCalculatorProps {

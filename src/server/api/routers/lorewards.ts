@@ -12,16 +12,21 @@ import { scoreDailyWikiOS } from "~/lib/lorewards-scoring";
 export const lorewardsRouter = createTRPCRouter({
   /** Leaderboard by period. */
   getLeaderboard: publicProcedure
-    .input(z.object({
-      period: z.enum(["daily", "weekly", "monthly", "alltime"]).default("alltime"),
-      limit: z.number().min(1).max(50).default(20),
-    }))
+    .input(
+      z.object({
+        period: z.enum(["daily", "weekly", "monthly", "alltime"]).default("alltime"),
+        limit: z.number().min(1).max(50).default(20),
+      })
+    )
     .query(async ({ input }) => {
       const orderField =
-        input.period === "daily" ? "dailyWins" as const :
-        input.period === "weekly" ? "weeklyWins" as const :
-        input.period === "monthly" ? "monthlyWins" as const :
-        "totalScore" as const;
+        input.period === "daily"
+          ? ("dailyWins" as const)
+          : input.period === "weekly"
+            ? ("weeklyWins" as const)
+            : input.period === "monthly"
+              ? ("monthlyWins" as const)
+              : ("totalScore" as const);
 
       const stats = await db.lorewardUserStats.findMany({
         orderBy: { [orderField]: "desc" },
@@ -44,10 +49,12 @@ export const lorewardsRouter = createTRPCRouter({
 
   /** Recent winners feed. */
   getRecentWinners: publicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(50).default(20),
-      type: z.enum(["daily", "weekly", "monthly"]).optional(),
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(50).default(20),
+        type: z.enum(["daily", "weekly", "monthly"]).optional(),
+      })
+    )
     .query(async ({ input }) => {
       const entries = await db.lorewardEntry.findMany({
         where: {
@@ -88,10 +95,7 @@ export const lorewardsRouter = createTRPCRouter({
 
       const recentEntries = await db.lorewardEntry.findMany({
         where: {
-          OR: [
-            { winnerUser: input.username },
-            { runnerUpUser: input.username },
-          ],
+          OR: [{ winnerUser: input.username }, { runnerUpUser: input.username }],
           date: { gte: dateStr },
           status: "approved",
         },
@@ -99,27 +103,31 @@ export const lorewardsRouter = createTRPCRouter({
       });
 
       // Rank position
-      const rank = stats ? await db.lorewardUserStats.count({
-        where: { totalScore: { gt: stats.totalScore } },
-      }) + 1 : null;
+      const rank = stats
+        ? (await db.lorewardUserStats.count({
+            where: { totalScore: { gt: stats.totalScore } },
+          })) + 1
+        : null;
 
       return {
-        stats: stats ? {
-          dailyWins: stats.dailyWins,
-          dailyRunnerUps: stats.dailyRunnerUps,
-          weeklyWins: stats.weeklyWins,
-          monthlyWins: stats.monthlyWins,
-          currentStreak: stats.currentStreak,
-          longestStreak: stats.longestStreak,
-          totalScore: stats.totalScore,
-          totalBytes: stats.totalBytes,
-          lastWinDate: stats.lastWinDate,
-        } : null,
+        stats: stats
+          ? {
+              dailyWins: stats.dailyWins,
+              dailyRunnerUps: stats.dailyRunnerUps,
+              weeklyWins: stats.weeklyWins,
+              monthlyWins: stats.monthlyWins,
+              currentStreak: stats.currentStreak,
+              longestStreak: stats.longestStreak,
+              totalScore: stats.totalScore,
+              totalBytes: stats.totalBytes,
+              lastWinDate: stats.lastWinDate,
+            }
+          : null,
         rank,
         recentEntries: recentEntries.map((e) => ({
           date: e.date,
           type: e.type,
-          role: e.winnerUser === input.username ? "winner" as const : "runner-up" as const,
+          role: e.winnerUser === input.username ? ("winner" as const) : ("runner-up" as const),
           page: e.winnerUser === input.username ? e.winnerPage : e.runnerUpPage,
           score: e.winnerUser === input.username ? e.winnerScore : e.runnerUpScore,
         })),
@@ -128,18 +136,17 @@ export const lorewardsRouter = createTRPCRouter({
 
   /** Paginated award history for a user. */
   getUserAwardHistory: publicProcedure
-    .input(z.object({
-      username: z.string().min(1).max(200),
-      limit: z.number().min(1).max(50).default(20),
-      offset: z.number().min(0).default(0),
-    }))
+    .input(
+      z.object({
+        username: z.string().min(1).max(200),
+        limit: z.number().min(1).max(50).default(20),
+        offset: z.number().min(0).default(0),
+      })
+    )
     .query(async ({ input }) => {
       const entries = await db.lorewardEntry.findMany({
         where: {
-          OR: [
-            { winnerUser: input.username },
-            { runnerUpUser: input.username },
-          ],
+          OR: [{ winnerUser: input.username }, { runnerUpUser: input.username }],
           status: "approved",
         },
         orderBy: { date: "desc" },
@@ -149,10 +156,7 @@ export const lorewardsRouter = createTRPCRouter({
 
       const total = await db.lorewardEntry.count({
         where: {
-          OR: [
-            { winnerUser: input.username },
-            { runnerUpUser: input.username },
-          ],
+          OR: [{ winnerUser: input.username }, { runnerUpUser: input.username }],
           status: "approved",
         },
       });
@@ -161,7 +165,7 @@ export const lorewardsRouter = createTRPCRouter({
         entries: entries.map((e) => ({
           date: e.date,
           type: e.type,
-          role: e.winnerUser === input.username ? "winner" as const : "runner-up" as const,
+          role: e.winnerUser === input.username ? ("winner" as const) : ("runner-up" as const),
           page: e.winnerUser === input.username ? e.winnerPage : e.runnerUpPage,
           score: e.winnerUser === input.username ? e.winnerScore : e.runnerUpScore,
           bytes: e.winnerUser === input.username ? e.winnerBytes : e.runnerUpBytes,
@@ -173,11 +177,13 @@ export const lorewardsRouter = createTRPCRouter({
 
   /** Streak calendar — day-by-day award status for a month. */
   getStreakCalendar: publicProcedure
-    .input(z.object({
-      username: z.string().min(1).max(200),
-      year: z.number().min(2020).max(2030),
-      month: z.number().min(1).max(12),
-    }))
+    .input(
+      z.object({
+        username: z.string().min(1).max(200),
+        year: z.number().min(2020).max(2030),
+        month: z.number().min(1).max(12),
+      })
+    )
     .query(async ({ input }) => {
       const monthStr = String(input.month).padStart(2, "0");
       const prefix = `${input.year}-${monthStr}`;
@@ -187,10 +193,7 @@ export const lorewardsRouter = createTRPCRouter({
           date: { startsWith: prefix },
           type: "daily",
           status: "approved",
-          OR: [
-            { winnerUser: input.username },
-            { runnerUpUser: input.username },
-          ],
+          OR: [{ winnerUser: input.username }, { runnerUpUser: input.username }],
         },
       });
 
@@ -278,11 +281,10 @@ export const lorewardsRouter = createTRPCRouter({
     }),
 
   /** Admin: trigger full sync from state file + OOL page. */
-  triggerSync: protectedProcedure
-    .mutation(async () => {
-      const result = await fullSync();
-      return result;
-    }),
+  triggerSync: protectedProcedure.mutation(async () => {
+    const result = await fullSync();
+    return result;
+  }),
 
   // ---------------------------------------------------------------------------
   // WikiOS Scoring Engine + Cross-Validation
@@ -296,24 +298,28 @@ export const lorewardsRouter = createTRPCRouter({
       return {
         date: result.date,
         editCount: result.editCount,
-        winner: result.winner ? {
-          user: result.winner.user,
-          page: result.winner.page,
-          finalScore: result.winner.finalScore,
-          bytesAdded: result.winner.bytesAdded,
-          scoreBreakdown: result.winner.scoreBreakdown,
-          proseRatio: result.winner.proseRatio,
-          isCollaborative: result.winner.isCollaborative,
-          editDepth: result.winner.editDepth,
-          isNewArticle: result.winner.isNewArticle,
-          inlinkCount: result.winner.inlinkCount,
-        } : null,
-        runnerUp: result.runnerUp ? {
-          user: result.runnerUp.user,
-          page: result.runnerUp.page,
-          finalScore: result.runnerUp.finalScore,
-          scoreBreakdown: result.runnerUp.scoreBreakdown,
-        } : null,
+        winner: result.winner
+          ? {
+              user: result.winner.user,
+              page: result.winner.page,
+              finalScore: result.winner.finalScore,
+              bytesAdded: result.winner.bytesAdded,
+              scoreBreakdown: result.winner.scoreBreakdown,
+              proseRatio: result.winner.proseRatio,
+              isCollaborative: result.winner.isCollaborative,
+              editDepth: result.winner.editDepth,
+              isNewArticle: result.winner.isNewArticle,
+              inlinkCount: result.winner.inlinkCount,
+            }
+          : null,
+        runnerUp: result.runnerUp
+          ? {
+              user: result.runnerUp.user,
+              page: result.runnerUp.page,
+              finalScore: result.runnerUp.finalScore,
+              scoreBreakdown: result.runnerUp.scoreBreakdown,
+            }
+          : null,
         candidates: result.candidates.map((c) => ({
           user: c.user,
           page: c.page,
@@ -354,9 +360,14 @@ export const lorewardsRouter = createTRPCRouter({
           wikiosRunnerUp: wikios.runnerUp?.user ?? null,
           winnersAgree,
           runnerUpsAgree,
-          wikiosCandidates: JSON.stringify(wikios.candidates.map((c) => ({
-            user: c.user, page: c.page, score: c.finalScore, breakdown: c.scoreBreakdown,
-          }))),
+          wikiosCandidates: JSON.stringify(
+            wikios.candidates.map((c) => ({
+              user: c.user,
+              page: c.page,
+              score: c.finalScore,
+              breakdown: c.scoreBreakdown,
+            }))
+          ),
           botCandidates: botEntry?.metadata ?? null,
         },
         update: {
@@ -366,9 +377,14 @@ export const lorewardsRouter = createTRPCRouter({
           wikiosRunnerUp: wikios.runnerUp?.user ?? null,
           winnersAgree,
           runnerUpsAgree,
-          wikiosCandidates: JSON.stringify(wikios.candidates.map((c) => ({
-            user: c.user, page: c.page, score: c.finalScore, breakdown: c.scoreBreakdown,
-          }))),
+          wikiosCandidates: JSON.stringify(
+            wikios.candidates.map((c) => ({
+              user: c.user,
+              page: c.page,
+              score: c.finalScore,
+              breakdown: c.scoreBreakdown,
+            }))
+          ),
         },
       });
 
@@ -390,17 +406,22 @@ export const lorewardsRouter = createTRPCRouter({
           breakdown: wikios.winner?.scoreBreakdown ?? null,
         },
         candidates: wikios.candidates.slice(0, 5).map((c) => ({
-          user: c.user, page: c.page, score: c.finalScore, breakdown: c.scoreBreakdown,
+          user: c.user,
+          page: c.page,
+          score: c.finalScore,
+          breakdown: c.scoreBreakdown,
         })),
       };
     }),
 
   /** Cross-validation history with agreement rate. */
   getCrossValidationHistory: publicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(30),
-      offset: z.number().min(0).default(0),
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(30),
+        offset: z.number().min(0).default(0),
+      })
+    )
     .query(async ({ input }) => {
       const [results, total, agrees] = await Promise.all([
         db.lorewardCrossValidation.findMany({

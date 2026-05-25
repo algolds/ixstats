@@ -40,10 +40,10 @@ export function NationalSecurityModal({ children }: NationalSecurityModalProps) 
             Coming Soon
           </Badge>
           <div className="flex flex-col items-center gap-4">
-            <div className="rounded-full bg-muted p-4">
-              <Clock className="h-8 w-8 text-muted-foreground" />
+            <div className="bg-muted rounded-full p-4">
+              <Clock className="text-muted-foreground h-8 w-8" />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               We&apos;re finishing the integrated threat management system, including incident
               reporting, mitigation protocols, and live situational awareness.
             </p>

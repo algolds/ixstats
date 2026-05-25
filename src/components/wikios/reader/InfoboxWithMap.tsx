@@ -8,8 +8,14 @@ import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 
 const CountryMapEmbed = dynamic(
-  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
-  { ssr: false, loading: () => <div style={{ height: 200, background: "rgba(255,255,255,0.02)" }} /> }
+  () =>
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
+    })),
+  {
+    ssr: false,
+    loading: () => <div style={{ height: 200, background: "rgba(255,255,255,0.02)" }} />,
+  }
 );
 
 interface InfoboxWithMapProps {
@@ -25,9 +31,11 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
 
   const matchedCountry = useMemo(() => {
     if (!countries || countries.length === 0) return null;
-    return countries.find(
-      (c: { name: string; }) => c.name?.toLowerCase() === articleTitle.toLowerCase()
-    ) ?? null;
+    return (
+      countries.find(
+        (c: { name: string }) => c.name?.toLowerCase() === articleTitle.toLowerCase()
+      ) ?? null
+    );
   }, [countries, articleTitle]);
 
   const { data: blurbData } = api.blurbs.getResponsesForCountry.useInfiniteQuery(
@@ -67,10 +75,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
               <span className="wikios-infobox-blurb-content">{r.content}</span>
             </Link>
           ))}
-          <Link
-            href={withBasePath("/blurbs")}
-            className="wikios-infobox-blurbs-more"
-          >
+          <Link href={withBasePath("/blurbs")} className="wikios-infobox-blurbs-more">
             View all blurbs →
           </Link>
         </div>

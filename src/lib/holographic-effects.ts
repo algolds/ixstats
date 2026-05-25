@@ -204,12 +204,7 @@ export function getHolographicClasses(rarity: CardRarity): string {
   const pattern = getHolographicPattern(rarity);
   const intensity = getHolographicIntensity(rarity);
 
-  const baseClasses = [
-    "absolute",
-    "inset-0",
-    "pointer-events-none",
-    "mix-blend-overlay",
-  ];
+  const baseClasses = ["absolute", "inset-0", "pointer-events-none", "mix-blend-overlay"];
 
   const patternClasses: Record<HolographicPattern, string[]> = {
     "rainbow-shimmer": ["bg-gradient-to-br", "animate-holographic-shimmer"],
@@ -230,11 +225,9 @@ export function getHolographicClasses(rarity: CardRarity): string {
     legendary: "opacity-80",
   };
 
-  return [
-    ...baseClasses,
-    ...(patternClasses[pattern] || []),
-    intensityClasses[intensity],
-  ].join(" ");
+  return [...baseClasses, ...(patternClasses[pattern] || []), intensityClasses[intensity]].join(
+    " "
+  );
 }
 
 /**

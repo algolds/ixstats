@@ -162,18 +162,18 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="text-foreground flex min-w-0 items-center gap-3 text-xl font-bold">
-          <BellRing className="h-6 w-6 flex-shrink-0 text-blue-400" />
+          <BellRing className="h-6 w-6 shrink-0 text-blue-400" />
           <span className="truncate">
             {isExecutiveMode ? "Intelligence Center" : "Notification Center"}
           </span>
           {totalUnreadCount > 0 && (
-            <Badge className="bg-destructive text-foreground flex-shrink-0 rounded-full px-2 py-1 text-sm">
+            <Badge className="bg-destructive text-foreground shrink-0 rounded-full px-2 py-1 text-sm">
               {totalUnreadCount}
             </Badge>
           )}
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {totalUnreadCount > 0 && (
             <Button
               size="sm"
@@ -190,7 +190,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 }
               }}
               disabled={markAllAsReadMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex-shrink-0 px-3 py-2 text-xs"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 shrink-0 px-3 py-2 text-xs"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Mark all read
@@ -427,7 +427,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                                 }}
                               >
                                 <div className="flex items-start gap-4">
-                                  <div className={`flex-shrink-0 rounded-lg p-2 ${colors.bg}`}>
+                                  <div className={`shrink-0 rounded-lg p-2 ${colors.bg}`}>
                                     <IconComponent className={`h-5 w-5 ${colors.text}`} />
                                   </div>
                                   <div className="min-w-0 flex-1">
@@ -436,7 +436,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                                         {notification.title}
                                       </div>
                                       {!(notification.status === "read" || notification.read) && (
-                                        <div className="bg-primary mt-1 h-3 w-3 flex-shrink-0 rounded-full" />
+                                        <div className="bg-primary mt-1 h-3 w-3 shrink-0 rounded-full" />
                                       )}
                                     </div>
                                     {(notification.description || notification.message) && (

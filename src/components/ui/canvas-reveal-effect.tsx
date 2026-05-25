@@ -2,7 +2,16 @@
 import { cn } from "~/lib/utils";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { Mesh, Vector2, Vector3, ShaderMaterial as ThreeShaderMaterial, GLSL3, CustomBlending, SrcAlphaFactor, OneFactor } from "three";
+import {
+  Mesh,
+  Vector2,
+  Vector3,
+  ShaderMaterial as ThreeShaderMaterial,
+  GLSL3,
+  CustomBlending,
+  SrcAlphaFactor,
+  OneFactor,
+} from "three";
 import { WebGLErrorBoundary } from "./webgl-error-boundary";
 import { webglContextManager } from "../../lib/webgl-context-manager";
 

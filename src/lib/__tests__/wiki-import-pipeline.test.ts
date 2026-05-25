@@ -160,7 +160,7 @@ describe("Wiki Import Parse Process", () => {
     it("should detect electoral legitimacy", () => {
       const result = parseGovernmentAttributes(pages, "Federal Republic");
 
-      const electoral = result.legitimacySources.find(s => s.type === "electoral");
+      const electoral = result.legitimacySources.find((s) => s.type === "electoral");
       expect(electoral).toBeDefined();
       expect(electoral!.confidence).toBeGreaterThan(50);
     });
@@ -168,7 +168,7 @@ describe("Wiki Import Parse Process", () => {
     it("should detect independent judiciary", () => {
       const result = parseGovernmentAttributes(pages, "Federal Republic");
 
-      const judiciary = result.institutions.find(i => i.type === "independent_judiciary");
+      const judiciary = result.institutions.find((i) => i.type === "independent_judiciary");
       expect(judiciary).toBeDefined();
       expect(judiciary!.confidence).toBeGreaterThan(50);
     });
@@ -176,14 +176,14 @@ describe("Wiki Import Parse Process", () => {
     it("should detect professional bureaucracy", () => {
       const result = parseGovernmentAttributes(pages, "Federal Republic");
 
-      const bureaucracy = result.institutions.find(i => i.type === "professional_bureaucracy");
+      const bureaucracy = result.institutions.find((i) => i.type === "professional_bureaucracy");
       expect(bureaucracy).toBeDefined();
     });
 
     it("should detect rule of law", () => {
       const result = parseGovernmentAttributes(pages, "Federal Republic");
 
-      const ruleOfLaw = result.controlMechanisms.find(c => c.type === "rule_of_law");
+      const ruleOfLaw = result.controlMechanisms.find((c) => c.type === "rule_of_law");
       expect(ruleOfLaw).toBeDefined();
     });
 
@@ -191,7 +191,7 @@ describe("Wiki Import Parse Process", () => {
       const result = parseGovernmentAttributes(pages, "Federal Republic");
 
       const decentralization = result.administrativeFeatures.find(
-        f => f.type === "administrative_decentralization"
+        (f) => f.type === "administrative_decentralization"
       );
       expect(decentralization).toBeDefined();
     });
@@ -199,9 +199,7 @@ describe("Wiki Import Parse Process", () => {
     it("should detect merit-based system", () => {
       const result = parseGovernmentAttributes(pages, "Federal Republic");
 
-      const merit = result.administrativeFeatures.find(
-        f => f.type === "merit_based_system"
-      );
+      const merit = result.administrativeFeatures.find((f) => f.type === "merit_based_system");
       expect(merit).toBeDefined();
     });
 
@@ -257,9 +255,7 @@ describe("Wiki Import Parse Process", () => {
   // ─── Test: Department Parsing ──────────────────────────────────────────────
 
   describe("Step 4: Department Parsing", () => {
-    const pages = [
-      { title: "Government of Testland", content: SAMPLE_GOVERNMENT_PAGE },
-    ];
+    const pages = [{ title: "Government of Testland", content: SAMPLE_GOVERNMENT_PAGE }];
 
     it("should extract ministry names", () => {
       const result = parseDepartments(pages);
@@ -269,7 +265,7 @@ describe("Wiki Import Parse Process", () => {
 
     it("should categorize Defense ministry correctly", () => {
       const result = parseDepartments(pages);
-      const defense = result.find(d => d.name.toLowerCase().includes("defense"));
+      const defense = result.find((d) => d.name.toLowerCase().includes("defense"));
 
       expect(defense).toBeDefined();
       expect(defense!.category).toBe("Defense");
@@ -277,7 +273,7 @@ describe("Wiki Import Parse Process", () => {
 
     it("should categorize Finance ministry correctly", () => {
       const result = parseDepartments(pages);
-      const finance = result.find(d => d.name.toLowerCase().includes("finance"));
+      const finance = result.find((d) => d.name.toLowerCase().includes("finance"));
 
       expect(finance).toBeDefined();
       expect(finance!.category).toBe("Finance");
@@ -285,7 +281,7 @@ describe("Wiki Import Parse Process", () => {
 
     it("should categorize Education ministry correctly", () => {
       const result = parseDepartments(pages);
-      const education = result.find(d => d.name.toLowerCase().includes("education"));
+      const education = result.find((d) => d.name.toLowerCase().includes("education"));
 
       expect(education).toBeDefined();
       expect(education!.category).toBe("Education");
@@ -293,7 +289,7 @@ describe("Wiki Import Parse Process", () => {
 
     it("should categorize Health ministry correctly", () => {
       const result = parseDepartments(pages);
-      const health = result.find(d => d.name.toLowerCase().includes("health"));
+      const health = result.find((d) => d.name.toLowerCase().includes("health"));
 
       expect(health).toBeDefined();
       expect(health!.category).toBe("Health");
@@ -301,7 +297,7 @@ describe("Wiki Import Parse Process", () => {
 
     it("should extract minister names when present", () => {
       const result = parseDepartments(pages);
-      const defense = result.find(d => d.name.toLowerCase().includes("defense"));
+      const defense = result.find((d) => d.name.toLowerCase().includes("defense"));
 
       // Minister name may or may not be extracted depending on regex match
       // Just verify the department was found
@@ -322,7 +318,10 @@ describe("Wiki Import Parse Process", () => {
   describe("Step 5: Revenue Parsing (≥95% confidence)", () => {
     it("should NOT parse vague revenue statements", () => {
       const pages = [
-        { title: "Testland", content: "The country has various sources of revenue including taxes." },
+        {
+          title: "Testland",
+          content: "The country has various sources of revenue including taxes.",
+        },
       ];
 
       const result = parseRevenueSources(pages);
@@ -332,7 +331,10 @@ describe("Wiki Import Parse Process", () => {
 
     it("should parse explicit revenue statements", () => {
       const pages = [
-        { title: "Testland", content: "The primary sources of government revenue are income tax and value-added tax." },
+        {
+          title: "Testland",
+          content: "The primary sources of government revenue are income tax and value-added tax.",
+        },
       ];
 
       const result = parseRevenueSources(pages);
@@ -343,11 +345,14 @@ describe("Wiki Import Parse Process", () => {
 
     it("should categorize income tax as Direct Tax", () => {
       const pages = [
-        { title: "Testland", content: "The primary sources of government revenue are income tax and value-added tax." },
+        {
+          title: "Testland",
+          content: "The primary sources of government revenue are income tax and value-added tax.",
+        },
       ];
 
       const result = parseRevenueSources(pages);
-      const incomeTax = result.sources.find(s => s.name.toLowerCase().includes("income"));
+      const incomeTax = result.sources.find((s) => s.name.toLowerCase().includes("income"));
 
       expect(incomeTax).toBeDefined();
       expect(incomeTax!.category).toBe("Direct Tax");
@@ -355,12 +360,15 @@ describe("Wiki Import Parse Process", () => {
 
     it("should categorize VAT as Indirect Tax", () => {
       const pages = [
-        { title: "Testland", content: "The primary sources of government revenue are income tax and value-added tax." },
+        {
+          title: "Testland",
+          content: "The primary sources of government revenue are income tax and value-added tax.",
+        },
       ];
 
       const result = parseRevenueSources(pages);
-      const vat = result.sources.find(s =>
-        s.name.toLowerCase().includes("value-added") || s.name.toLowerCase().includes("vat")
+      const vat = result.sources.find(
+        (s) => s.name.toLowerCase().includes("value-added") || s.name.toLowerCase().includes("vat")
       );
 
       expect(vat).toBeDefined();
@@ -375,9 +383,7 @@ describe("Wiki Import Parse Process", () => {
       [{ title: "Testland", content: SAMPLE_GOVERNMENT_PAGE }],
       "Federal Republic"
     );
-    const econAttrs = parseEconomyAttributes(
-      [{ title: "Testland", content: SAMPLE_ECONOMY_PAGE }]
-    );
+    const econAttrs = parseEconomyAttributes([{ title: "Testland", content: SAMPLE_ECONOMY_PAGE }]);
 
     it("should return match results", () => {
       const result = matchComponents({
@@ -399,9 +405,7 @@ describe("Wiki Import Parse Process", () => {
         infoboxGovType: "Federal Republic",
       });
 
-      const federal = result.selected.find(
-        c => c.component === "FEDERAL_SYSTEM"
-      );
+      const federal = result.selected.find((c) => c.component === "FEDERAL_SYSTEM");
       expect(federal).toBeDefined();
       expect(federal!.score).toBeGreaterThanOrEqual(80);
     });
@@ -413,9 +417,7 @@ describe("Wiki Import Parse Process", () => {
         infoboxGovType: "Federal Republic",
       });
 
-      const democratic = result.selected.find(
-        c => c.component === "DEMOCRATIC_PROCESS"
-      );
+      const democratic = result.selected.find((c) => c.component === "DEMOCRATIC_PROCESS");
       expect(democratic).toBeDefined();
       expect(democratic!.score).toBeGreaterThanOrEqual(80);
     });
@@ -495,7 +497,7 @@ describe("Wiki Import Parse Process", () => {
         budgetAllocations: [],
       });
 
-      const gdpConflict = conflicts.find(c => c.type === "data_inconsistency");
+      const gdpConflict = conflicts.find((c) => c.type === "data_inconsistency");
       expect(gdpConflict).toBeDefined();
     });
 
@@ -518,7 +520,7 @@ describe("Wiki Import Parse Process", () => {
         ],
       });
 
-      const budgetConflict = conflicts.find(c => c.type === "budget_overflow");
+      const budgetConflict = conflicts.find((c) => c.type === "budget_overflow");
       expect(budgetConflict).toBeDefined();
     });
   });
@@ -571,9 +573,7 @@ describe("Wiki Import Parse Process", () => {
       const infoboxData = parseInfoboxWithTemplates(SAMPLE_COUNTRY_INFOBOX, "Testland");
       expect(infoboxData).not.toBeNull();
 
-      const pages = [
-        { title: "Testland", content: SAMPLE_COUNTRY_INFOBOX },
-      ];
+      const pages = [{ title: "Testland", content: SAMPLE_COUNTRY_INFOBOX }];
 
       const govAttrs = parseGovernmentAttributes(pages, infoboxData!.government_type);
       // Should still work even with limited content

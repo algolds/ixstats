@@ -209,7 +209,7 @@ export function EconomicsHelpSystem({ className }: { className?: string }) {
               </div>
               <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
                 <div className="flex items-start gap-2">
-                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                   <div>
                     <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                       Pro Tip: Use Real Country Data
@@ -493,7 +493,7 @@ export function GovernmentSpendingHelpSystem({ className }: { className?: string
             </p>
             <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
               <div className="flex items-start gap-2">
-                <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                 <div>
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                     Policy-Component Synergies
@@ -660,7 +660,7 @@ export function GovernmentSpendingHelpSystem({ className }: { className?: string
               </div>
               <div className="rounded-lg bg-amber-50 p-4 dark:bg-amber-950/20">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                   <div>
                     <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
                       Balancing Act
@@ -718,7 +718,7 @@ export function GovernmentSpendingHelpSystem({ className }: { className?: string
               </div>
               <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                   <div>
                     <p className="text-sm font-medium text-green-900 dark:text-green-100">
                       Strategic Alignment
@@ -899,7 +899,7 @@ function getHelpContent(section: string) {
               </p>
               <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
                 <div className="flex items-start gap-2">
-                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                   <div>
                     <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                       Component Synergies

@@ -78,7 +78,7 @@ export function AllianceCreatorSheet({
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 flex-shrink-0 text-cyan-500" />
+            <Users className="h-5 w-5 shrink-0 text-cyan-500" />
             Create New Alliance
           </SheetTitle>
           <p className="text-muted-foreground text-sm">

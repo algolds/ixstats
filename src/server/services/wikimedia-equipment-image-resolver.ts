@@ -32,9 +32,7 @@ export interface BatchResolveResult {
 /**
  * Resolve a single equipment image from Wikimedia
  */
-export async function resolveEquipmentImage(
-  equipmentId: string
-): Promise<WikimediaImageResult> {
+export async function resolveEquipmentImage(equipmentId: string): Promise<WikimediaImageResult> {
   try {
     // 1. Fetch equipment from database
     const equipment = await prisma.militaryEquipmentCatalog.findUnique({
@@ -54,8 +52,7 @@ export async function resolveEquipmentImage(
 
     // 2. Check if we have a valid cached URL (updated within 7 days)
     if (equipment.imageUrl && equipment.updatedAt) {
-      const daysSinceUpdate =
-        (Date.now() - equipment.updatedAt.getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceUpdate = (Date.now() - equipment.updatedAt.getTime()) / (1000 * 60 * 60 * 24);
 
       if (daysSinceUpdate < CACHE_DURATION_DAYS) {
         // Validate that URL is accessible
@@ -74,10 +71,7 @@ export async function resolveEquipmentImage(
     }
 
     // 3. Try to resolve from Wikimedia by exact name
-    const wikimediaResult = await searchWikimediaForEquipment(
-      equipment.name,
-      equipment.category
-    );
+    const wikimediaResult = await searchWikimediaForEquipment(equipment.name, equipment.category);
 
     if (wikimediaResult.success && wikimediaResult.imageUrl) {
       // Update database with new URL
@@ -121,9 +115,7 @@ export async function resolveEquipmentImage(
 /**
  * Batch resolve multiple equipment images
  */
-export async function batchResolveImages(
-  equipmentIds: string[]
-): Promise<BatchResolveResult[]> {
+export async function batchResolveImages(equipmentIds: string[]): Promise<BatchResolveResult[]> {
   const results: BatchResolveResult[] = [];
 
   // Process in batches of 5 to avoid rate limiting

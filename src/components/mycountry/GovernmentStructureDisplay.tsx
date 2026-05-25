@@ -23,7 +23,10 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
-import { useAtomicGovernmentOptional, useAtomicStateOptional } from "~/components/atomic/AtomicStateProvider";
+import {
+  useAtomicGovernmentOptional,
+  useAtomicStateOptional,
+} from "~/components/atomic/AtomicStateProvider";
 
 interface GovernmentStructureDisplayProps {
   countryId: string;
@@ -531,7 +534,7 @@ export function GovernmentStructureDisplay({
           {stats.budgetUtilization > 100 && (
             <div className="bg-destructive/10 border-destructive/20 mt-4 rounded-lg border p-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="text-destructive mt-0.5 h-4 w-4 flex-shrink-0" />
+                <AlertTriangle className="text-destructive mt-0.5 h-4 w-4 shrink-0" />
                 <div className="text-sm">
                   <div className="text-destructive font-medium">Budget Overallocation</div>
                   <div className="text-muted-foreground">

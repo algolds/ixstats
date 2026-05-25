@@ -133,11 +133,7 @@ export function getZoneByColor(hexColor: string): ElevationZoneConfig | null {
 
 /** Look up elevation zone for a given elevation in meters */
 export function getZoneForElevation(meters: number): ElevationZoneConfig | null {
-  return (
-    ELEVATION_ZONES.find(
-      (z) => meters >= z.elevationMin && meters <= z.elevationMax
-    ) ?? null
-  );
+  return ELEVATION_ZONES.find((z) => meters >= z.elevationMin && meters <= z.elevationMax) ?? null;
 }
 
 /**
@@ -158,9 +154,7 @@ export function normalizeToMeters(
  * Get the elevation zone for a normalized [0-1] value.
  * Maps procedural generator output directly to the 9-zone system.
  */
-export function getZoneForNormalizedValue(
-  value: number
-): ElevationZoneConfig | null {
+export function getZoneForNormalizedValue(value: number): ElevationZoneConfig | null {
   const meters = normalizeToMeters(value);
   return getZoneForElevation(meters);
 }

@@ -41,7 +41,8 @@ export async function extractDiscordFromClerk(
     // Username may be in different fields depending on Clerk version
     const discordUsername =
       discordAccount.username ??
-      (`${discordAccount.firstName ?? ""}${discordAccount.lastName ? `#${discordAccount.lastName}` : ""}`.trim() || discordUserId);
+      (`${discordAccount.firstName ?? ""}${discordAccount.lastName ? `#${discordAccount.lastName}` : ""}`.trim() ||
+        discordUserId);
 
     if (!discordUserId) return null;
 
@@ -65,7 +66,8 @@ export async function linkDiscordAccount(
   if (!discordInfo) {
     return {
       success: false,
-      error: "No Discord account found in your login. Connect Discord as a sign-in method in your account settings first.",
+      error:
+        "No Discord account found in your login. Connect Discord as a sign-in method in your account settings first.",
     };
   }
 

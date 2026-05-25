@@ -217,9 +217,7 @@ export const loreCardsRouter = createTRPCRouter({
     .input(
       z
         .object({
-          status: z
-            .enum(["PENDING", "APPROVED", "REJECTED", "GENERATED"])
-            .optional(),
+          status: z.enum(["PENDING", "APPROVED", "REJECTED", "GENERATED"]).optional(),
           limit: z.number().int().min(1).max(100).optional().default(50),
           offset: z.number().int().min(0).optional().default(0),
         })
@@ -303,9 +301,7 @@ export const loreCardsRouter = createTRPCRouter({
           },
         });
 
-        console.log(
-          `[Lore Cards] Admin ${adminUserId} approved request ${input.requestId}`
-        );
+        console.log(`[Lore Cards] Admin ${adminUserId} approved request ${input.requestId}`);
 
         return {
           success: true,
@@ -470,8 +466,7 @@ export const loreCardsRouter = createTRPCRouter({
         if (!candidate) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message:
-              "Failed to generate card. Article may not exist or quality may be too low.",
+            message: "Failed to generate card. Article may not exist or quality may be too low.",
           });
         }
 
@@ -515,14 +510,13 @@ export const loreCardsRouter = createTRPCRouter({
    */
   getRequestStats: adminProcedure.query(async ({ ctx }) => {
     try {
-      const [total, pending, approved, rejected, generated] =
-        await Promise.all([
-          ctx.db.loreCardRequest.count(),
-          ctx.db.loreCardRequest.count({ where: { status: "PENDING" } }),
-          ctx.db.loreCardRequest.count({ where: { status: "APPROVED" } }),
-          ctx.db.loreCardRequest.count({ where: { status: "REJECTED" } }),
-          ctx.db.loreCardRequest.count({ where: { status: "GENERATED" } }),
-        ]);
+      const [total, pending, approved, rejected, generated] = await Promise.all([
+        ctx.db.loreCardRequest.count(),
+        ctx.db.loreCardRequest.count({ where: { status: "PENDING" } }),
+        ctx.db.loreCardRequest.count({ where: { status: "APPROVED" } }),
+        ctx.db.loreCardRequest.count({ where: { status: "REJECTED" } }),
+        ctx.db.loreCardRequest.count({ where: { status: "GENERATED" } }),
+      ]);
 
       return {
         total,
@@ -547,11 +541,17 @@ export const loreCardsRouter = createTRPCRouter({
     .input(
       z.object({
         wikiSource: z.enum(["ixwiki", "iiwiki", "all"]).optional().default("all"),
-        rarity: z.enum(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "all"]).optional().default("all"),
+        rarity: z
+          .enum(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "all"])
+          .optional()
+          .default("all"),
         category: z.string().optional(),
         season: z.number().int().min(1).optional(),
         search: z.string().min(1).max(200).optional(),
-        sortBy: z.enum(["rarity", "season", "dateAdded", "marketValue", "title"]).optional().default("dateAdded"),
+        sortBy: z
+          .enum(["rarity", "season", "dateAdded", "marketValue", "title"])
+          .optional()
+          .default("dateAdded"),
         limit: z.number().int().min(1).max(100).optional().default(20),
         offset: z.number().int().min(0).optional().default(0),
       })

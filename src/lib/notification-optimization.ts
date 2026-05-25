@@ -82,9 +82,10 @@ export function calculateEnhancedPriority(
 /**
  * Refines notification category and severity based on content analysis.
  */
-export function categorizeNotification(
-  notification: UnifiedNotification
-): { primary: NotificationCategory; severity: NotificationSeverity } {
+export function categorizeNotification(notification: UnifiedNotification): {
+  primary: NotificationCategory;
+  severity: NotificationSeverity;
+} {
   const category = notification.category;
 
   // Map notification type to severity

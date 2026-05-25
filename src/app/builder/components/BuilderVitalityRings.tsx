@@ -154,7 +154,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
         {/* Country Header */}
         <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
           {flagUrl && (
-            <div className="h-6 w-8 flex-shrink-0 overflow-hidden rounded border border-white/20">
+            <div className="h-6 w-8 shrink-0 overflow-hidden rounded border border-white/20">
               <img src={flagUrl} alt="Flag" className="h-full w-full object-cover" />
             </div>
           )}
@@ -275,7 +275,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
             {/* Vitality Ring with Momentum */}
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
               <motion.div
                 animate={
                   showMomentum
@@ -314,7 +314,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
             {/* Info Section */}
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2">
-                <h4 className="text-foreground group-hover:text-opacity-80 font-semibold transition-colors">
+                <h4 className="text-foreground group-hover:text-foreground/80 font-semibold transition-colors">
                   {ring.label}
                 </h4>
                 <Badge variant={ring.badgeVariant as any} className="text-xs">

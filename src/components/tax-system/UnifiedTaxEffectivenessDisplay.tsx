@@ -393,7 +393,7 @@ export function UnifiedTaxEffectivenessDisplay({
                             transition={{ delay: index * 0.1 }}
                             className="flex items-start space-x-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20"
                           >
-                            <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+                            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
                             <span className="text-sm text-green-800 dark:text-green-300">
                               {synergy}
                             </span>
@@ -419,7 +419,7 @@ export function UnifiedTaxEffectivenessDisplay({
                             transition={{ delay: index * 0.1 }}
                             className="flex items-start space-x-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20"
                           >
-                            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                             <span className="text-sm text-red-800 dark:text-red-300">
                               {conflict}
                             </span>

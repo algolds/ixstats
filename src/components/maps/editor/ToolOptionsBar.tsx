@@ -126,9 +126,9 @@ const labelClass = "text-[10px] font-medium uppercase tracking-wider text-muted-
 
 function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 pr-2 border-r border-border mr-2">
-      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="text-[11px] font-semibold text-foreground">{label}</span>
+    <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
+      <Icon className="text-muted-foreground h-3.5 w-3.5" />
+      <span className="text-foreground text-[11px] font-semibold">{label}</span>
     </div>
   );
 }
@@ -141,14 +141,14 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
   if (mode === "import-provinces") return null;
 
   return (
-    <div className="flex h-8 flex-shrink-0 items-center gap-2 border-b border-border bg-card/80 px-3 backdrop-blur-sm">
+    <div className="border-border bg-card/80 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-sm">
       {/* ── Select mode ── */}
       {mode === "view" && props.selectedCount! > 0 && (
         <>
-          <span className="text-[11px] font-medium text-foreground">
+          <span className="text-foreground text-[11px] font-medium">
             {props.selectedCount} selected
           </span>
-          <div className="h-4 w-px bg-border" />
+          <div className="bg-border h-4 w-px" />
           {props.onDuplicate && (
             <button onClick={props.onDuplicate} className={btnClass} title="Duplicate">
               <Copy className="h-3 w-3" /> Duplicate
@@ -177,18 +177,20 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             className={selectClass}
           >
             {CITY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
             ))}
           </select>
-          <label className="flex items-center gap-1 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-1">
             <input
               type="checkbox"
               checked={props.isNationalCapital ?? false}
               onChange={(e) => props.onCapitalChange?.(e.target.checked)}
-              className="h-3 w-3 rounded border-border"
+              className="border-border h-3 w-3 rounded"
             />
             <Crown className="h-3 w-3 text-amber-500" />
-            <span className="text-[11px] text-muted-foreground">Capital</span>
+            <span className="text-muted-foreground text-[11px]">Capital</span>
           </label>
         </>
       )}
@@ -204,7 +206,9 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             className={selectClass}
           >
             {SUBDIVISION_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
             ))}
           </select>
           <span className={labelClass}>Level</span>
@@ -230,7 +234,9 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             className={selectClass}
           >
             {POI_CATEGORIES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
             ))}
           </select>
         </>
@@ -247,7 +253,9 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             className={selectClass}
           >
             {STORY_CATEGORIES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
             ))}
           </select>
         </>
@@ -264,16 +272,16 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             max={48}
             value={props.labelFontSize ?? 14}
             onChange={(e) => props.onLabelFontSizeChange?.(parseInt(e.target.value))}
-            className="h-4 w-20 accent-primary"
+            className="accent-primary h-4 w-20"
           />
-          <span className="text-[11px] text-muted-foreground tabular-nums w-6">
+          <span className="text-muted-foreground w-6 text-[11px] tabular-nums">
             {props.labelFontSize ?? 14}
           </span>
           <input
             type="color"
             value={props.labelColor ?? "#374151"}
             onChange={(e) => props.onLabelColorChange?.(e.target.value)}
-            className="h-5 w-5 cursor-pointer rounded border border-border"
+            className="border-border h-5 w-5 cursor-pointer rounded border"
           />
           <button
             onClick={() => props.onLabelBoldChange?.(!props.labelBold)}

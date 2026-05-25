@@ -44,14 +44,7 @@ export function AmbientBackground({
           transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
           style={{ filter: blur !== "0px" ? `blur(${blur})` : undefined }}
         >
-          <Image
-            src={imageUrl}
-            alt=""
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
+          <Image src={imageUrl} alt="" fill className="object-cover" priority sizes="100vw" />
         </motion.div>
       ) : (
         /* Fallback gradient */
@@ -66,7 +59,7 @@ export function AmbientBackground({
 
       {/* Overlay gradient for text readability */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
           background: `linear-gradient(to bottom,
             rgba(0, 0, 0, ${overlayOpacity}) 0%,
@@ -78,7 +71,7 @@ export function AmbientBackground({
 
       {/* Bottom fade to background */}
       <div
-        className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
         style={{
           background: "linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)",
         }}

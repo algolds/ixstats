@@ -11,6 +11,11 @@ import {
 import type { GetTokenOptions, SignOutOptions, UserResource } from "@clerk/types";
 import { Link2 } from "lucide-react";
 import { IxnayIDCard } from "~/app/profile/_components/IxnayIDCard";
+import { initConsoleCapture } from "~/lib/console-capture";
+
+if (typeof window !== "undefined") {
+  initConsoleCapture();
+}
 
 interface AuthContextType {
   user: UserResource | null;

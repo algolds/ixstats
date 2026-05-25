@@ -97,10 +97,7 @@ export async function distributePassiveIncome(): Promise<{
 
         processedCount++;
       } catch (error) {
-        console.error(
-          `[Passive Income Cron] Error processing user ${user.id}:`,
-          error
-        );
+        console.error(`[Passive Income Cron] Error processing user ${user.id}:`, error);
         errorCount++;
       }
     }

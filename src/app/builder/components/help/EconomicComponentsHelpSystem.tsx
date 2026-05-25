@@ -91,7 +91,7 @@ export function EconomicComponentsHelpSystem({ className }: HelpSystemProps) {
               </p>
               <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
                 <div className="flex items-start gap-2">
-                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                   <div>
                     <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                       Strategic Selection Matters
@@ -270,7 +270,7 @@ export function EconomicComponentsHelpSystem({ className }: HelpSystemProps) {
 
               <div className="rounded-lg bg-amber-50 p-4 dark:bg-amber-950/20">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                   <div>
                     <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
                       Over-Selection Warning
@@ -657,7 +657,7 @@ export function EconomicComponentsHelpSystem({ className }: HelpSystemProps) {
 
               <div className="rounded-lg bg-purple-50 p-4 dark:bg-purple-950/20">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-600" />
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-purple-600" />
                   <div>
                     <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
                       Cross-Builder Synergies
@@ -916,7 +916,7 @@ export function EconomicComponentsHelpSystem({ className }: HelpSystemProps) {
           {/* Warning Section */}
           <div className="rounded-lg bg-red-50 p-4 dark:bg-red-950/20">
             <div className="flex items-start gap-2">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
               <div>
                 <p className="text-sm font-medium text-red-900 dark:text-red-100">
                   Exceeding Capacity Limits

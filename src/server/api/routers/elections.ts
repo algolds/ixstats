@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
@@ -80,8 +76,13 @@ export const electionsRouter = createTRPCRouter({
         name: z.string().min(1).max(100),
         shortName: z.string().max(10).optional(),
         ideology: z.enum([
-          "far_left", "left", "center_left", "center",
-          "center_right", "right", "far_right",
+          "far_left",
+          "left",
+          "center_left",
+          "center",
+          "center_right",
+          "right",
+          "far_right",
         ]),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
         leaderName: z.string().max(100).optional(),
@@ -123,7 +124,9 @@ export const electionsRouter = createTRPCRouter({
           source: "elections",
           href: "/mycountry/politics",
         });
-      } catch (e) { console.warn("[Notifications] elections.createParty:", e); }
+      } catch (e) {
+        console.warn("[Notifications] elections.createParty:", e);
+      }
 
       return party;
     }),
@@ -134,11 +137,13 @@ export const electionsRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().min(1).max(100).optional(),
         shortName: z.string().max(10).optional(),
-        ideology: z.enum([
-          "far_left", "left", "center_left", "center",
-          "center_right", "right", "far_right",
-        ]).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        ideology: z
+          .enum(["far_left", "left", "center_left", "center", "center_right", "right", "far_right"])
+          .optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .optional(),
         leaderName: z.string().max(100).optional(),
         platform: z.string().optional(),
         baseSupport: z.number().min(0).max(100).optional(),
@@ -338,7 +343,9 @@ export const electionsRouter = createTRPCRouter({
           source: "elections",
           href: "/mycountry/politics",
         });
-      } catch (e) { console.warn("[Notifications] elections.scheduleElection:", e); }
+      } catch (e) {
+        console.warn("[Notifications] elections.scheduleElection:", e);
+      }
 
       return election;
     }),
@@ -439,9 +446,10 @@ export const electionsRouter = createTRPCRouter({
       // Step 1: Calculate economic performance modifier
       // Positive growth → incumbent/status-quo parties benefit; negative → opposition benefits
       const gdpGrowth = country.adjustedGdpGrowth;
-      const economicModifier = gdpGrowth > 0
-        ? Math.min(gdpGrowth * 100, 10) // +10% max boost from good economy
-        : Math.max(gdpGrowth * 150, -15); // -15% max penalty from bad economy
+      const economicModifier =
+        gdpGrowth > 0
+          ? Math.min(gdpGrowth * 100, 10) // +10% max boost from good economy
+          : Math.max(gdpGrowth * 150, -15); // -15% max penalty from bad economy
 
       // Step 2: Calculate per-party vote shares
       const partyVotes: { partyId: string; votes: number; candidateId: string }[] = [];
@@ -579,9 +587,12 @@ export const electionsRouter = createTRPCRouter({
         if (marginOfVictory > 15) stabilityDelta = 0.05;
         else if (marginOfVictory > 5) stabilityDelta = 0.02;
         else if (marginOfVictory > 2) stabilityDelta = -0.05;
-        else stabilityDelta = -0.10;
+        else stabilityDelta = -0.1;
 
-        const newStability = Math.max(0, Math.min(1, (govStructure.politicalStability ?? 0.5) + stabilityDelta));
+        const newStability = Math.max(
+          0,
+          Math.min(1, (govStructure.politicalStability ?? 0.5) + stabilityDelta)
+        );
         const newDemocracy = Math.min(100, (govStructure.democracyIndex ?? 50) + 2); // +2 per peaceful election
 
         await ctx.db.governmentStructure.update({
@@ -654,7 +665,9 @@ export const electionsRouter = createTRPCRouter({
               turnout,
             },
           });
-        } catch (e) { console.warn("[Notifications] elections.simulateElection:", e); }
+        } catch (e) {
+          console.warn("[Notifications] elections.simulateElection:", e);
+        }
       }
 
       return ctx.db.election.findUnique({
@@ -695,7 +708,19 @@ export const electionsRouter = createTRPCRouter({
       if (!legislature) return null;
 
       // Aggregate seat counts per party for summary
-      const partySeatCounts = new Map<string, { party: { id: string; name: string; shortName: string | null; color: string; ideology: string }; seats: number }>();
+      const partySeatCounts = new Map<
+        string,
+        {
+          party: {
+            id: string;
+            name: string;
+            shortName: string | null;
+            color: string;
+            ideology: string;
+          };
+          seats: number;
+        }
+      >();
       for (const seat of legislature.seats) {
         if (seat.party) {
           const existing = partySeatCounts.get(seat.party.id);

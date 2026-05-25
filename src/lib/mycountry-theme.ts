@@ -189,14 +189,70 @@ export const TabColors = {
  * Single source of truth for Tailwind gradient/border/glow classes per section.
  */
 export const SECTION_THEME_CLASSES = {
-  overview:     { gradient: "from-amber-500 to-yellow-500",   activeGlow: "shadow-amber-500/30",   border: "border-amber-500/30",   darkBorder: "dark:border-amber-500/20",   text: "text-amber-500",   ring: "#f59e0b" },
-  executive:    { gradient: "from-amber-500 to-yellow-500",   activeGlow: "shadow-amber-500/30",   border: "border-amber-500/30",   darkBorder: "dark:border-amber-500/20",   text: "text-amber-500",   ring: "#f59e0b" },
-  diplomacy:    { gradient: "from-cyan-500 to-blue-500",      activeGlow: "shadow-cyan-500/30",    border: "border-cyan-500/30",    darkBorder: "dark:border-cyan-500/20",    text: "text-cyan-500",    ring: "#06b6d4" },
-  intelligence: { gradient: "from-blue-500 to-cyan-500",      activeGlow: "shadow-blue-500/30",    border: "border-blue-500/30",    darkBorder: "dark:border-blue-500/20",    text: "text-blue-500",    ring: "#3b82f6" },
-  defense:      { gradient: "from-red-500 to-orange-500",     activeGlow: "shadow-red-500/30",     border: "border-red-500/30",     darkBorder: "dark:border-red-500/20",     text: "text-red-500",     ring: "#ef4444" },
-  politics:     { gradient: "from-indigo-500 to-violet-500",  activeGlow: "shadow-indigo-500/30",  border: "border-indigo-500/30",  darkBorder: "dark:border-indigo-500/20",  text: "text-indigo-500",  ring: "#6366f1" },
-  "map-editor": { gradient: "from-emerald-500 to-teal-500",   activeGlow: "shadow-emerald-500/30", border: "border-emerald-500/30", darkBorder: "dark:border-emerald-500/20", text: "text-emerald-500", ring: "#10b981" },
-  builder:      { gradient: "from-amber-500 to-yellow-500",   activeGlow: "shadow-amber-500/30", border: "border-amber-500/30", darkBorder: "dark:border-amber-500/20", text: "text-amber-500", ring: "#f59e0b" },
+  overview: {
+    gradient: "from-amber-500 to-yellow-500",
+    activeGlow: "shadow-amber-500/30",
+    border: "border-amber-500/30",
+    darkBorder: "dark:border-amber-500/20",
+    text: "text-amber-500",
+    ring: "#f59e0b",
+  },
+  executive: {
+    gradient: "from-amber-500 to-yellow-500",
+    activeGlow: "shadow-amber-500/30",
+    border: "border-amber-500/30",
+    darkBorder: "dark:border-amber-500/20",
+    text: "text-amber-500",
+    ring: "#f59e0b",
+  },
+  diplomacy: {
+    gradient: "from-cyan-500 to-blue-500",
+    activeGlow: "shadow-cyan-500/30",
+    border: "border-cyan-500/30",
+    darkBorder: "dark:border-cyan-500/20",
+    text: "text-cyan-500",
+    ring: "#06b6d4",
+  },
+  intelligence: {
+    gradient: "from-blue-500 to-cyan-500",
+    activeGlow: "shadow-blue-500/30",
+    border: "border-blue-500/30",
+    darkBorder: "dark:border-blue-500/20",
+    text: "text-blue-500",
+    ring: "#3b82f6",
+  },
+  defense: {
+    gradient: "from-red-500 to-orange-500",
+    activeGlow: "shadow-red-500/30",
+    border: "border-red-500/30",
+    darkBorder: "dark:border-red-500/20",
+    text: "text-red-500",
+    ring: "#ef4444",
+  },
+  politics: {
+    gradient: "from-indigo-500 to-violet-500",
+    activeGlow: "shadow-indigo-500/30",
+    border: "border-indigo-500/30",
+    darkBorder: "dark:border-indigo-500/20",
+    text: "text-indigo-500",
+    ring: "#6366f1",
+  },
+  "map-editor": {
+    gradient: "from-emerald-500 to-teal-500",
+    activeGlow: "shadow-emerald-500/30",
+    border: "border-emerald-500/30",
+    darkBorder: "dark:border-emerald-500/20",
+    text: "text-emerald-500",
+    ring: "#10b981",
+  },
+  builder: {
+    gradient: "from-amber-500 to-yellow-500",
+    activeGlow: "shadow-amber-500/30",
+    border: "border-amber-500/30",
+    darkBorder: "dark:border-amber-500/20",
+    text: "text-amber-500",
+    ring: "#f59e0b",
+  },
 } as const;
 
 /**

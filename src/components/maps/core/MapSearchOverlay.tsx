@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Search, Globe, MapPin, Hexagon, Landmark, X, Loader2, Sun, Moon, Settings } from "lucide-react";
+import {
+  Search,
+  Globe,
+  MapPin,
+  Hexagon,
+  Landmark,
+  X,
+  Loader2,
+  Sun,
+  Moon,
+  Settings,
+} from "lucide-react";
 import type { ProjectionMode } from "~/lib/map-config";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useTheme } from "~/context/theme-context";
@@ -38,8 +49,12 @@ function FlagIcon({ name }: { name: string }) {
   useEffect(() => {
     if (url) return;
     let mounted = true;
-    flagService.getFlagUrl(name).then((u) => { if (mounted) setUrl(u); });
-    return () => { mounted = false; };
+    flagService.getFlagUrl(name).then((u) => {
+      if (mounted) setUrl(u);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [name, url]);
 
   if (!url) return null;
@@ -47,12 +62,16 @@ function FlagIcon({ name }: { name: string }) {
     <img
       src={url}
       alt=""
-      className="h-3.5 w-5 flex-shrink-0 rounded-[2px] border border-border object-cover"
+      className="border-border h-3.5 w-5 shrink-0 rounded-[2px] border object-cover"
     />
   );
 }
 
-export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionChange }: MapSearchOverlayProps) {
+export function MapSearchOverlay({
+  onSelectResult,
+  projectionMode,
+  onProjectionChange,
+}: MapSearchOverlayProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
@@ -137,7 +156,7 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
     >
       {/* Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <input
           ref={inputRef}
           type="text"
@@ -152,12 +171,15 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search countries, cities, places..."
-          className={`w-full rounded-xl bg-card py-2.5 pl-9 text-sm text-foreground shadow-lg outline-none ring-1 ring-border transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-blue-400 ${query ? "pr-16" : "pr-9"}`}
+          className={`bg-card text-foreground ring-border placeholder:text-muted-foreground w-full rounded-xl py-2.5 pl-9 text-sm shadow-lg ring-1 transition-shadow outline-none focus:ring-2 focus:ring-blue-400 ${query ? "pr-16" : "pr-9"}`}
         />
         {/* Settings gear */}
         <button
-          onClick={() => { setSettingsOpen((v) => !v); setOpen(false); }}
-          className={`absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground ${query ? "right-8" : "right-2.5"}`}
+          onClick={() => {
+            setSettingsOpen((v) => !v);
+            setOpen(false);
+          }}
+          className={`text-muted-foreground hover:text-foreground absolute top-1/2 -translate-y-1/2 rounded-full p-1 transition-colors ${query ? "right-8" : "right-2.5"}`}
           title="Map settings"
         >
           <Settings className="h-3.5 w-3.5" />
@@ -170,7 +192,7 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
               setSelectedIdx(-1);
               inputRef.current?.focus();
             }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-0.5"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -179,16 +201,16 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="mt-1.5 max-h-80 overflow-y-auto rounded-xl bg-card py-1 shadow-lg ring-1 ring-border">
+        <div className="bg-card ring-border mt-1.5 max-h-80 overflow-y-auto rounded-xl py-1 shadow-lg ring-1">
           {isLoading && !hasResults && (
-            <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
               Searching...
             </div>
           )}
 
           {!isLoading && !hasResults && results !== undefined && (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            <div className="text-muted-foreground px-4 py-6 text-center text-sm">
               No results for &ldquo;{debouncedQuery}&rdquo;
             </div>
           )}
@@ -198,7 +220,7 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
             const Icon = meta.icon;
             return (
               <div key={type}>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
                   <Icon className="h-3 w-3" />
                   {meta.label}
                 </div>
@@ -219,7 +241,7 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
                         <FlagIcon name={result.name} />
                       ) : (
                         <Icon
-                          className={`h-3.5 w-3.5 flex-shrink-0 ${
+                          className={`h-3.5 w-3.5 shrink-0 ${
                             isHighlighted ? "text-blue-500" : "text-muted-foreground"
                           }`}
                         />
@@ -236,15 +258,19 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
 
       {/* Settings panel */}
       {settingsOpen && (
-        <div className="mt-1.5 rounded-xl bg-card p-3 shadow-lg ring-1 ring-border">
+        <div className="bg-card ring-border mt-1.5 rounded-xl p-3 shadow-lg ring-1">
           {/* Theme */}
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground">Theme</span>
+            <span className="text-foreground text-xs font-medium">Theme</span>
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-accent"
+              className="bg-muted text-foreground hover:bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors"
             >
-              {effectiveTheme === "dark" ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+              {effectiveTheme === "dark" ? (
+                <Sun className="h-3 w-3" />
+              ) : (
+                <Moon className="h-3 w-3" />
+              )}
               {effectiveTheme === "dark" ? "Light" : "Dark"}
             </button>
           </div>
@@ -252,8 +278,8 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
           {/* Projection */}
           {onProjectionChange && (
             <div className="mt-2.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-foreground">Projection</span>
-              <div className="flex rounded-md bg-muted p-0.5">
+              <span className="text-foreground text-xs font-medium">Projection</span>
+              <div className="bg-muted flex rounded-md p-0.5">
                 {(["globe", "mercator", "dynamic"] as const).map((mode) => (
                   <button
                     key={mode}

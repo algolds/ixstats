@@ -1,6 +1,6 @@
 /**
  * Mock for ~/trpc/react module
- * 
+ *
  * Provides mock tRPC client hooks for testing without actual API calls.
  */
 

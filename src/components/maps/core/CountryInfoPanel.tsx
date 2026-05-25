@@ -10,8 +10,20 @@
 
 import { useState, useCallback, memo } from "react";
 import {
-  X, ExternalLink, Users, DollarSign, TrendingUp, MapPin, Globe,
-  Crown, BookOpen, Shield, Swords, ChevronDown, ChevronRight, Image as ImageIcon,
+  X,
+  ExternalLink,
+  Users,
+  DollarSign,
+  TrendingUp,
+  MapPin,
+  Globe,
+  Crown,
+  BookOpen,
+  Shield,
+  Swords,
+  ChevronDown,
+  ChevronRight,
+  Image as ImageIcon,
   Pencil,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,18 +43,34 @@ const GdpDetailsModal = dynamic(
   { ssr: false }
 );
 const PopulationDetailsModal = dynamic(
-  () => import("~/components/modals/PopulationDetailsModal").then((m) => ({ default: m.PopulationDetailsModal })),
+  () =>
+    import("~/components/modals/PopulationDetailsModal").then((m) => ({
+      default: m.PopulationDetailsModal,
+    })),
   { ssr: false }
 );
 const GeoProfileContent = dynamic(
   () => import("./GeoProfileContent").then((m) => ({ default: m.GeoProfileContent })),
-  { ssr: false, loading: () => <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-emerald-500" /></div> }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center py-12">
+        <div className="border-muted-foreground/20 h-5 w-5 animate-spin rounded-full border-2 border-t-emerald-500" />
+      </div>
+    ),
+  }
 );
 
 interface CountryInfoPanelProps {
   country: SelectedCountry;
   onClose: () => void;
-  onNeighborClick?: (neighbor: { featureId: string; countryId: string | null; displayName: string; centroidLng?: number; centroidLat?: number }) => void;
+  onNeighborClick?: (neighbor: {
+    featureId: string;
+    countryId: string | null;
+    displayName: string;
+    centroidLng?: number;
+    centroidLat?: number;
+  }) => void;
   onGeographyFilter?: (filter: { type: "continent" | "region"; value: string } | null) => void;
   onEditMap?: () => void;
 }
@@ -74,7 +102,12 @@ function formatArea(n: number | null | undefined): string {
   return `${n.toLocaleString(undefined, { maximumFractionDigits: 0 })} km\u00B2`;
 }
 
-function StatCard({ icon: Icon, label, value, onClick }: {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  onClick,
+}: {
   icon: typeof Users;
   label: string;
   value: string;
@@ -85,18 +118,18 @@ function StatCard({ icon: Icon, label, value, onClick }: {
   return (
     <Tag
       onClick={onClick}
-      className={`rounded-lg bg-muted px-3 py-2 text-left ${
+      className={`bg-muted rounded-lg px-3 py-2 text-left ${
         interactive
-          ? "cursor-pointer transition-colors hover:bg-accent hover:ring-1 hover:ring-blue-300/50 active:scale-[0.98]"
+          ? "hover:bg-accent cursor-pointer transition-colors hover:ring-1 hover:ring-blue-300/50 active:scale-[0.98]"
           : ""
       }`}
     >
-      <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
         <Icon className="h-3 w-3" />
         {label}
         {interactive && <ChevronRight className="ml-auto h-2.5 w-2.5 opacity-40" />}
       </div>
-      <div className="mt-0.5 text-sm font-semibold text-foreground">{value}</div>
+      <div className="text-foreground mt-0.5 text-sm font-semibold">{value}</div>
     </Tag>
   );
 }
@@ -112,7 +145,7 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
     >
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
+        className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
       >
         <X className="h-5 w-5" />
       </button>
@@ -126,8 +159,15 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClose, onNeighborClick, onGeographyFilter, onEditMap }: CountryInfoPanelProps) {
-  const { summary, neighbors, sovereignty, wikiSections, wikiImages, isLoading } = useCountryPanelData(country.countryId, country.displayName);
+export const CountryInfoPanel = memo(function CountryInfoPanel({
+  country,
+  onClose,
+  onNeighborClick,
+  onGeographyFilter,
+  onEditMap,
+}: CountryInfoPanelProps) {
+  const { summary, neighbors, sovereignty, wikiSections, wikiImages, isLoading } =
+    useCountryPanelData(country.countryId, country.displayName);
   // Use summary name for display, but country.displayName for cache-consistent wiki queries
   // (prefetch seeds cache with country.displayName from the GeoJSON layer)
   const displayName = summary?.name ?? country.displayName;
@@ -148,7 +188,11 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     staleTime: 5 * 60_000,
   });
-  const isOwner = !!(userProfile?.countryId && country.countryId && userProfile.countryId === country.countryId);
+  const isOwner = !!(
+    userProfile?.countryId &&
+    country.countryId &&
+    userProfile.countryId === country.countryId
+  );
 
   // Tab state
   const [activeTab, setActiveTab] = useState<"overview" | "info" | "geography">("overview");
@@ -168,7 +212,13 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const handleNeighborClick = useCallback(
-    (neighbor: { featureId: string; countryId: string | null; displayName: string; centroidLng?: number; centroidLat?: number }) => {
+    (neighbor: {
+      featureId: string;
+      countryId: string | null;
+      displayName: string;
+      centroidLng?: number;
+      centroidLat?: number;
+    }) => {
       onNeighborClick?.(neighbor);
     },
     [onNeighborClick]
@@ -177,34 +227,32 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
   const panelContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="border-border/50 flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2.5 overflow-hidden">
           {flagUrl ? (
             <img
               src={flagUrl}
               alt=""
-              className="h-6 w-9 rounded-sm border border-border object-cover"
+              className="border-border h-6 w-9 rounded-sm border object-cover"
             />
           ) : (
             <div
-              className="h-6 w-9 rounded-sm border border-border"
+              className="border-border h-6 w-9 rounded-sm border"
               style={{ backgroundColor: country.fillColor }}
             />
           )}
-          <h3 className="truncate text-base font-semibold text-foreground">
-            {displayName}
-          </h3>
+          <h3 className="text-foreground truncate text-base font-semibold">{displayName}</h3>
         </div>
         <button
           onClick={onClose}
-          className="flex-shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-full p-1.5 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-border/50 px-4">
+      <div className="border-border/50 flex border-b px-4">
         <button
           onClick={() => setActiveTab("overview")}
           className={`relative px-3 py-2 text-xs font-medium transition-colors ${
@@ -215,15 +263,13 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
         >
           Overview
           {activeTab === "overview" && (
-            <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+            <span className="bg-primary absolute inset-x-0 bottom-0 h-0.5 rounded-full" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("info")}
           className={`relative px-3 py-2 text-xs font-medium transition-colors ${
-            activeTab === "info"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+            activeTab === "info" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Info
@@ -257,8 +303,12 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
               <div className="space-y-1.5">
                 {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 2).map((p, i) => (
-                  <WikiHtmlContent key={i} as="p" className="text-xs leading-relaxed text-foreground/80"
-                     html={sanitizeWikiContent(p)} />
+                  <WikiHtmlContent
+                    key={i}
+                    as="p"
+                    className="text-foreground/80 text-xs leading-relaxed"
+                    html={sanitizeWikiContent(p)}
+                  />
                 ))}
                 {wikiRichIntro.paragraphs.length > 2 && (
                   <button
@@ -272,59 +322,82 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             )}
 
             {/* Wiki sections (TOC) */}
-            {wikiSections && wikiSections.length > 0 && (() => {
-              const baseWikiUrl = wikiRichIntro?.wikiUrl ?? `https://ixwiki.com/wiki/${encodeURIComponent(displayName)}`;
-              return (
-                <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <BookOpen className="h-3 w-3" />
-                    Table of Contents ({wikiSections.filter((s) => s.level === 2).length})
-                  </div>
-                  <div className="mt-1.5 space-y-1">
-                    {wikiSections
-                      .filter((s) => s.level <= 3)
-                      .map((section, i) => {
-                        const sectionUrl = `${baseWikiUrl}#${section.anchor}`;
-                        if (section.level === 2) {
+            {wikiSections &&
+              wikiSections.length > 0 &&
+              (() => {
+                const baseWikiUrl =
+                  wikiRichIntro?.wikiUrl ??
+                  `https://ixwiki.com/wiki/${encodeURIComponent(displayName)}`;
+                return (
+                  <div>
+                    <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                      <BookOpen className="h-3 w-3" />
+                      Table of Contents ({wikiSections.filter((s) => s.level === 2).length})
+                    </div>
+                    <div className="mt-1.5 space-y-1">
+                      {wikiSections
+                        .filter((s) => s.level <= 3)
+                        .map((section, i) => {
+                          const sectionUrl = `${baseWikiUrl}#${section.anchor}`;
+                          if (section.level === 2) {
+                            return (
+                              <div
+                                key={`${section.anchor}-${i}`}
+                                className="border-border/30 rounded-md border p-2"
+                              >
+                                <a
+                                  href={sectionUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-600"
+                                >
+                                  {section.line}
+                                </a>
+                                {"preview" in section && section.preview && (
+                                  <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10px] leading-snug">
+                                    {section.preview as string}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          }
                           return (
-                            <div key={`${section.anchor}-${i}`} className="rounded-md border border-border/30 p-2">
-                              <a href={sectionUrl} target="_blank" rel="noopener noreferrer"
-                                 className="block text-xs font-medium text-foreground/90 transition-colors hover:text-blue-600">
-                                {section.line}
-                              </a>
-                              {"preview" in section && section.preview && (
-                                <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground line-clamp-2">
-                                  {section.preview as string}
-                                </p>
-                              )}
-                            </div>
+                            <a
+                              key={`${section.anchor}-${i}`}
+                              href={sectionUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-foreground/50 block truncate pl-3 text-[10px] transition-colors hover:text-blue-600"
+                            >
+                              {section.line}
+                            </a>
                           );
-                        }
-                        return (
-                          <a key={`${section.anchor}-${i}`} href={sectionUrl} target="_blank" rel="noopener noreferrer"
-                             className="block truncate pl-3 text-[10px] text-foreground/50 transition-colors hover:text-blue-600">
-                            {section.line}
-                          </a>
-                        );
-                      })}
+                        })}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             {/* Media Gallery */}
             {wikiImages && wikiImages.length > 0 && (
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
                   <ImageIcon className="h-3 w-3" />
                   Media ({wikiImages.length})
                 </div>
                 <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
                   {wikiImages.slice(0, 12).map((img, i) => (
-                    <button key={`${img.title}-${i}`} onClick={() => setLightboxSrc(img.url)}
-                            className="flex-shrink-0 overflow-hidden rounded-md border border-border transition-transform hover:scale-105">
-                      <img src={img.thumbUrl} alt={img.title.replace(/^File:/, "").replace(/_/g, " ")}
-                           className="h-16 w-auto object-cover" loading="lazy" />
+                    <button
+                      key={`${img.title}-${i}`}
+                      onClick={() => setLightboxSrc(img.url)}
+                      className="border-border shrink-0 overflow-hidden rounded-md border transition-transform hover:scale-105"
+                    >
+                      <img
+                        src={img.thumbUrl}
+                        alt={img.title.replace(/^File:/, "").replace(/_/g, " ")}
+                        className="h-16 w-auto object-cover"
+                        loading="lazy"
+                      />
                     </button>
                   ))}
                 </div>
@@ -333,16 +406,21 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
 
             {/* Wiki link */}
             {wikiRichIntro?.wikiUrl && (
-              <a href={wikiRichIntro.wikiUrl} target="_blank" rel="noopener noreferrer"
-                 className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30">
+              <a
+                href={wikiRichIntro.wikiUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
+              >
                 <BookOpen className="h-3 w-3" />
-                Read full article on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
+                Read full article on{" "}
+                {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
 
             {!wikiRichIntro && !wikiSections && !wikiImages && (
-              <div className="py-8 text-center text-xs text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center text-xs">
                 No wiki article found for this country.
               </div>
             )}
@@ -355,8 +433,12 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
               <div className="mb-3 space-y-1.5">
                 {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 1).map((p, i) => (
-                  <WikiHtmlContent key={i} as="p" className="text-xs leading-relaxed text-foreground/80"
-                     html={sanitizeWikiContent(p)} />
+                  <WikiHtmlContent
+                    key={i}
+                    as="p"
+                    className="text-foreground/80 text-xs leading-relaxed"
+                    html={sanitizeWikiContent(p)}
+                  />
                 ))}
                 {wikiRichIntro.paragraphs.length > 1 && (
                   <button
@@ -370,12 +452,16 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             )}
 
             <div className="grid grid-cols-2 gap-2">
-              <StatCard icon={MapPin} label="Location" value={`${country.centroidLat.toFixed(1)}\u00b0, ${country.centroidLng.toFixed(1)}\u00b0`} />
+              <StatCard
+                icon={MapPin}
+                label="Location"
+                value={`${country.centroidLat.toFixed(1)}\u00b0, ${country.centroidLng.toFixed(1)}\u00b0`}
+              />
             </div>
 
-            <div className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-muted/50 py-2">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">Unclaimed Territory</span>
+            <div className="bg-muted/50 mt-3 flex items-center justify-center gap-1.5 rounded-lg py-2">
+              <Globe className="text-muted-foreground h-3.5 w-3.5" />
+              <span className="text-muted-foreground text-xs font-medium">Unclaimed Territory</span>
             </div>
 
             {wikiRichIntro?.wikiUrl && (
@@ -397,18 +483,21 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />
+                <div key={i} className="bg-muted h-14 animate-pulse rounded-lg" />
               ))}
             </div>
-            <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+            <div className="bg-muted h-6 w-32 animate-pulse rounded" />
           </div>
         ) : summary ? (
           <>
             {/* Brief wiki intro — first paragraph only, full content in Info tab */}
             {wikiRichIntro?.paragraphs?.[0] && (
               <div className="mb-3">
-                <WikiHtmlContent as="p" className="text-xs leading-relaxed text-foreground/80 line-clamp-3"
-                   html={sanitizeWikiContent(wikiRichIntro.paragraphs[0])} />
+                <WikiHtmlContent
+                  as="p"
+                  className="text-foreground/80 line-clamp-3 text-xs leading-relaxed"
+                  html={sanitizeWikiContent(wikiRichIntro.paragraphs[0])}
+                />
                 <button
                   onClick={() => setActiveTab("info")}
                   className="mt-1 text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
@@ -421,19 +510,27 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {/* Quick stats — clickable for modals */}
             <div className="grid grid-cols-2 gap-2">
               <StatCard
-                icon={Users} label="Population" value={formatPopulation(summary.population)}
+                icon={Users}
+                label="Population"
+                value={formatPopulation(summary.population)}
                 onClick={() => setActiveModal("population")}
               />
               <StatCard
-                icon={DollarSign} label="GDP" value={formatNumber(summary.totalGdp)}
+                icon={DollarSign}
+                label="GDP"
+                value={formatNumber(summary.totalGdp)}
                 onClick={() => setActiveModal("gdp")}
               />
               <StatCard
-                icon={DollarSign} label="GDP/Capita" value={formatGdpPerCapita(summary.gdpPerCapita)}
+                icon={DollarSign}
+                label="GDP/Capita"
+                value={formatGdpPerCapita(summary.gdpPerCapita)}
                 onClick={() => setActiveModal("gdp")}
               />
               <StatCard
-                icon={TrendingUp} label="Growth" value={summary.gdpGrowth != null ? `${summary.gdpGrowth.toFixed(1)}%` : "\u2014"}
+                icon={TrendingUp}
+                label="Growth"
+                value={summary.gdpGrowth != null ? `${summary.gdpGrowth.toFixed(1)}%` : "\u2014"}
                 onClick={() => setActiveModal("gdp")}
               />
               <StatCard icon={MapPin} label="Land Area" value={formatArea(summary.landArea)} />
@@ -443,22 +540,26 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {/* Geography — clickable badges to highlight on map */}
             {(summary.continent || summary.region) && (
               <div className="mt-4">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                   Geography
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
                   {summary.continent && (
                     <button
-                      onClick={() => onGeographyFilter?.({ type: "continent", value: summary.continent! })}
-                      className="rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-600 cursor-pointer transition-colors hover:bg-blue-100 hover:ring-1 hover:ring-blue-300/50"
+                      onClick={() =>
+                        onGeographyFilter?.({ type: "continent", value: summary.continent! })
+                      }
+                      className="cursor-pointer rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-600 transition-colors hover:bg-blue-100 hover:ring-1 hover:ring-blue-300/50"
                     >
                       {summary.continent}
                     </button>
                   )}
                   {summary.region && (
                     <button
-                      onClick={() => onGeographyFilter?.({ type: "region", value: summary.region! })}
-                      className="rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-600 cursor-pointer transition-colors hover:bg-indigo-100 hover:ring-1 hover:ring-indigo-300/50"
+                      onClick={() =>
+                        onGeographyFilter?.({ type: "region", value: summary.region! })
+                      }
+                      className="cursor-pointer rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-600 transition-colors hover:bg-indigo-100 hover:ring-1 hover:ring-indigo-300/50"
                     >
                       {summary.region}
                     </button>
@@ -470,12 +571,21 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {/* Leader / Government */}
             {(summary.leader || summary.governmentType) && (
               <div className="mt-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                   Government
                 </div>
-                <div className="mt-1 space-y-0.5 text-xs text-foreground/80">
-                  {summary.leader && <p>Leader: <span className="font-medium text-foreground">{summary.leader}</span></p>}
-                  {summary.governmentType && <p>Type: <span className="font-medium text-foreground">{summary.governmentType}</span></p>}
+                <div className="text-foreground/80 mt-1 space-y-0.5 text-xs">
+                  {summary.leader && (
+                    <p>
+                      Leader: <span className="text-foreground font-medium">{summary.leader}</span>
+                    </p>
+                  )}
+                  {summary.governmentType && (
+                    <p>
+                      Type:{" "}
+                      <span className="text-foreground font-medium">{summary.governmentType}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -483,13 +593,16 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {/* Sovereignty - subject of another */}
             {sovereignty.sovereign && (
               <div className="mt-3">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
                   <Swords className="h-3 w-3" />
                   Sovereignty
                 </div>
                 <div className="mt-1.5 rounded-lg border border-amber-200/50 bg-amber-50/50 p-2">
                   <div className="text-[10px] text-amber-700">
-                    {SOVEREIGNTY_TYPE_MAP[sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]?.label ?? sovereignty.sovereign.relationshipType} of
+                    {SOVEREIGNTY_TYPE_MAP[
+                      sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
+                    ]?.label ?? sovereignty.sovereign.relationshipType}{" "}
+                    of
                   </div>
                   <button
                     onClick={() =>
@@ -502,7 +615,11 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
                     className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-amber-900 transition-colors hover:text-amber-700"
                   >
                     {sovereignty.sovereign.flag && (
-                      <img src={sovereignty.sovereign.flag} alt="" className="h-3.5 w-5 rounded-sm border border-border object-cover" />
+                      <img
+                        src={sovereignty.sovereign.flag}
+                        alt=""
+                        className="border-border h-3.5 w-5 rounded-sm border object-cover"
+                      />
                     )}
                     {sovereignty.sovereign.name}
                   </button>
@@ -512,7 +629,9 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
                       <div className="h-1.5 flex-1 rounded-full bg-amber-200">
                         <div
                           className="h-1.5 rounded-full bg-amber-500"
-                          style={{ width: `${Math.round(sovereignty.sovereign.autonomyLevel * 100)}%` }}
+                          style={{
+                            width: `${Math.round(sovereignty.sovereign.autonomyLevel * 100)}%`,
+                          }}
                         />
                       </div>
                       <span className="text-[10px] font-medium text-amber-700">
@@ -532,7 +651,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {/* Sovereignty - sovereign over others */}
             {sovereignty.subjects.length > 0 && (
               <div className="mt-3">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
                   <Shield className="h-3 w-3" />
                   Domains ({sovereignty.subjects.length})
                 </div>
@@ -554,7 +673,11 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
                       )}
                       {s.name}
                       <span className="text-[9px] text-indigo-400">
-                        ({SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]?.short ?? s.relationshipType})
+                        (
+                        {SOVEREIGNTY_TYPE_MAP[
+                          s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
+                        ]?.short ?? s.relationshipType}
+                        )
                       </span>
                     </button>
                   ))}
@@ -565,7 +688,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
             {/* Neighbors */}
             {neighbors.length > 0 && (
               <div className="mt-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                   Neighbors
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -573,7 +696,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
                     <button
                       key={n.featureId}
                       onClick={() => handleNeighborClick(n)}
-                      className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground"
+                      className="bg-muted text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
                     >
                       {n.displayName}
                     </button>
@@ -613,23 +736,17 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
     <>
       {/* Desktop: Right-side panel */}
       <div
-        className="absolute right-0 top-0 z-20 hidden h-full w-96 sm:block"
+        className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
         style={{ animation: "slideInRight 0.25s ease-out" }}
       >
-        <div className="h-full bg-card shadow-xl">
-          {panelContent}
-        </div>
+        <div className="bg-card h-full shadow-xl">{panelContent}</div>
       </div>
 
       {/* Mobile: Swipeable bottom sheet */}
-      <SwipeableBottomSheet onClose={onClose}>
-        {panelContent}
-      </SwipeableBottomSheet>
+      <SwipeableBottomSheet onClose={onClose}>{panelContent}</SwipeableBottomSheet>
 
       {/* Image lightbox */}
-      {lightboxSrc && (
-        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
-      )}
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
 
       {/* Metric detail modals */}
       {activeModal === "gdp" && summary && (
@@ -651,8 +768,12 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
 
       <style jsx>{`
         @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
         }
       `}</style>
     </>

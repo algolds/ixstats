@@ -264,7 +264,7 @@ export function EnhancedPieChart({
         {/* Pie Chart */}
         <div
           className={cn(
-            "flex-shrink-0 rounded-lg p-4",
+            "shrink-0 rounded-lg p-4",
             getGlassClasses("base", resolvedTheme, sectionId)
           )}
           style={{
@@ -324,7 +324,7 @@ export function EnhancedPieChart({
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     <div
-                      className="h-3 w-3 flex-shrink-0 rounded-sm"
+                      className="h-3 w-3 shrink-0 rounded-sm"
                       style={{ backgroundColor: entry.fill }}
                     />
                     <span className="truncate text-sm text-gray-900 dark:text-gray-100">
@@ -332,7 +332,7 @@ export function EnhancedPieChart({
                     </span>
                   </div>
 
-                  <div className="ml-2 flex-shrink-0 text-right">
+                  <div className="ml-2 shrink-0 text-right">
                     <div className="text-sm text-gray-900 dark:text-gray-100">
                       {formatValue ? formatValue(entry.value) : entry.value}
                     </div>

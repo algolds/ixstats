@@ -107,9 +107,7 @@ export function CountryMapEmbed({
     // Force mercator for country embeds (no globe transition needed)
     delete (baseStyle as Record<string, unknown>).projection;
 
-    const initialCenter: [number, number] = centroid
-      ? [centroid.lng, centroid.lat]
-      : [10, 5];
+    const initialCenter: [number, number] = centroid ? [centroid.lng, centroid.lat] : [10, 5];
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -128,9 +126,7 @@ export function CountryMapEmbed({
         // Filter out the target country — render all others as grey
         const otherCountries: GeoJSON.FeatureCollection = {
           type: "FeatureCollection",
-          features: worldPolitical.features.filter(
-            (f) => f.properties?._countryId !== countryId
-          ),
+          features: worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
         };
 
         map.addSource("source-world-political", {
@@ -213,8 +209,7 @@ export function CountryMapEmbed({
       }
 
       // ── Country fill ──
-      const countryColor =
-        fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
+      const countryColor = fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
 
       const countryGeo: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
@@ -412,7 +407,9 @@ export function CountryMapEmbed({
   // Resize map when container dimensions change
   useEffect(() => {
     if (!containerRef.current || !mapRef.current) return;
-    const observer = new ResizeObserver(() => { mapRef.current?.resize(); });
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.resize();
+    });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [mapReady]);
@@ -420,10 +417,8 @@ export function CountryMapEmbed({
   // ── Loading state ──
   if (isLoading) {
     return (
-      <div
-        className={`flex items-center justify-center bg-muted ${height} ${className}`}
-      >
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <div className={`bg-muted flex items-center justify-center ${height} ${className}`}>
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     );
   }
@@ -432,22 +427,24 @@ export function CountryMapEmbed({
   if (!hasGeometry) {
     return (
       <div
-        className={`flex flex-col items-center justify-center gap-2 bg-muted ${height} ${className}`}
+        className={`bg-muted flex flex-col items-center justify-center gap-2 ${height} ${className}`}
       >
-        <MapPin className="h-6 w-6 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">
-          No map data available
-        </span>
+        <MapPin className="text-muted-foreground h-6 w-6" />
+        <span className="text-muted-foreground text-xs">No map data available</span>
       </div>
     );
   }
 
   return (
     <div className={`relative overflow-hidden ${height} ${className}`} style={{ minHeight: 200 }}>
-      <div ref={containerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
+      <div
+        ref={containerRef}
+        className="absolute inset-0"
+        style={{ width: "100%", height: "100%" }}
+      />
       {!mapReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="bg-muted absolute inset-0 flex items-center justify-center">
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       )}
     </div>

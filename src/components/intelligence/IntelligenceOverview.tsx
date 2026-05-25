@@ -93,7 +93,7 @@ export function IntelligenceOverview({
               className={`glass-hierarchy-child rounded-lg p-2.5 ${metric.bgColor}`}
             >
               <div className="flex items-center gap-1.5">
-                <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.color}`} />
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${metric.color}`} />
                 <span className="text-muted-foreground text-xs font-medium">{metric.label}</span>
               </div>
               <div className="mt-0.5 text-lg font-bold">

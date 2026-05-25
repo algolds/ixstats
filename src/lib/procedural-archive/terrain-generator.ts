@@ -114,19 +114,14 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
           const dist = pointToPolylineDist(nx, ny, cz.boundary);
           if (dist < 0.08) {
             const proximity = 1 - dist / 0.08;
-            collisionBoost = Math.max(
-              collisionBoost,
-              proximity * proximity * cz.elevationBoost
-            );
+            collisionBoost = Math.max(collisionBoost, proximity * proximity * cz.elevationBoost);
           }
         }
       }
 
       const elev = Math.min(
         1,
-        normalizedElev * 0.6 +
-          ridge * 0.4 * terrainRoughness +
-          collisionBoost * 0.3
+        normalizedElev * 0.6 + ridge * 0.4 * terrainRoughness + collisionBoost * 0.3
       );
       enhancedElev[idx] = elev;
 
@@ -191,7 +186,7 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
   //
   // IxWorld area fractions: 51% zone0, 27% zone1, 14% zone2, 6% zone3, ...
   // We compute quantile thresholds then classify per-pixel.
-  const IXWORLD_ZONE_FRACS = [0.510, 0.266, 0.139, 0.062, 0.016, 0.006, 0.001, 0.0003, 0.00001];
+  const IXWORLD_ZONE_FRACS = [0.51, 0.266, 0.139, 0.062, 0.016, 0.006, 0.001, 0.0003, 0.00001];
 
   // Collect land elevation values and compute quantile thresholds
   const landElevValues: number[] = [];
@@ -275,15 +270,23 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
         }
       }
 
-      let maxZVote = 0, maxZIdx = ALTITUDE_ZONES.length;
+      let maxZVote = 0,
+        maxZIdx = ALTITUDE_ZONES.length;
       for (let i = 0; i <= ALTITUDE_ZONES.length; i++) {
-        if (zoneVotes[i]! > maxZVote) { maxZVote = zoneVotes[i]!; maxZIdx = i; }
+        if (zoneVotes[i]! > maxZVote) {
+          maxZVote = zoneVotes[i]!;
+          maxZIdx = i;
+        }
       }
       dsZone[dy * dsW + dx] = maxZIdx === ALTITUDE_ZONES.length ? OCEAN_MARKER : maxZIdx;
 
-      let maxCVote = 0, maxCIdx = 0;
+      let maxCVote = 0,
+        maxCIdx = 0;
       for (let i = 0; i < CLIMATE_TYPES.length; i++) {
-        if (climVotes[i]! > maxCVote) { maxCVote = climVotes[i]!; maxCIdx = i; }
+        if (climVotes[i]! > maxCVote) {
+          maxCVote = climVotes[i]!;
+          maxCIdx = i;
+        }
       }
       dsClimate[dy * dsW + dx] = maxCIdx;
     }
@@ -333,7 +336,10 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
           if (secVisited[lidx]) continue;
 
           const zoneIdx = secGrid[lidx]!;
-          if (zoneIdx === OCEAN_MARKER) { secVisited[lidx] = 1; continue; }
+          if (zoneIdx === OCEAN_MARKER) {
+            secVisited[lidx] = 1;
+            continue;
+          }
 
           secMask.fill(0);
           let regionSize = 0;
@@ -369,7 +375,10 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
           let bestArea = Math.abs(signedArea2(bestRing));
           for (let ri = 1; ri < rings.length; ri++) {
             const a = Math.abs(signedArea2(rings[ri]!));
-            if (a > bestArea) { bestArea = a; bestRing = rings[ri]!; }
+            if (a > bestArea) {
+              bestArea = a;
+              bestRing = rings[ri]!;
+            }
           }
 
           // Convert sector-local grid coords → WGS84
@@ -386,7 +395,8 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
           // Subdivide edges with noise for organic detail
           // IxWorld altitude features avg 38 vertices; raw grid outlines have ~10-15
           simplified = subdivideEdgesWithNoise(simplified, mountainNoise, altitudeFeatures.length);
-          const first = simplified[0]!, last = simplified[simplified.length - 1]!;
+          const first = simplified[0]!,
+            last = simplified[simplified.length - 1]!;
           if (first[0] !== last[0] || first[1] !== last[1]) simplified.push(first);
 
           // Ensure CCW winding
@@ -400,7 +410,10 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
           let dominantClimate = 0;
           let maxCVote = 0;
           for (let ci = 0; ci < climVotes.length; ci++) {
-            if (climVotes[ci]! > maxCVote) { maxCVote = climVotes[ci]!; dominantClimate = ci; }
+            if (climVotes[ci]! > maxCVote) {
+              maxCVote = climVotes[ci]!;
+              dominantClimate = ci;
+            }
           }
           const climate = CLIMATE_TYPES[dominantClimate]!;
 
@@ -479,7 +492,7 @@ export function generateTerrain(params: TerrainParams): TerrainResult {
 function subdivideEdgesWithNoise(
   ring: Position[],
   noise: ReturnType<typeof createNoise>,
-  featureIdx: number,
+  featureIdx: number
 ): Position[] {
   const result: Position[] = [];
   const fOff = featureIdx * 17.3;
@@ -488,21 +501,21 @@ function subdivideEdgesWithNoise(
   for (let i = 0; i < ring.length; i++) {
     result.push(ring[i]!);
     if (i < ring.length - 1) {
-      const curr = ring[i]!, next = ring[i + 1]!;
-      const dx = next[0] - curr[0], dy = next[1] - curr[1];
+      const curr = ring[i]!,
+        next = ring[i + 1]!;
+      const dx = next[0] - curr[0],
+        dy = next[1] - curr[1];
       const segLen = Math.sqrt(dx * dx + dy * dy);
       if (segLen < 0.001) continue;
 
-      const perpX = -dy / segLen, perpY = dx / segLen;
+      const perpX = -dy / segLen,
+        perpY = dx / segLen;
 
       for (let s = 1; s <= SUBS; s++) {
         const t = s / (SUBS + 1);
         const n = fractalNoise(noise, curr[0] * 5 + fOff + s, curr[1] * 5, 2);
         const amp = segLen * 0.12; // 12% of edge length
-        result.push([
-          curr[0] + dx * t + perpX * n * amp,
-          curr[1] + dy * t + perpY * n * amp,
-        ]);
+        result.push([curr[0] + dx * t + perpX * n * amp, curr[1] + dy * t + perpY * n * amp]);
       }
     }
   }
@@ -530,7 +543,8 @@ function extractIcecaps(seed: number): Polygon[] {
   const POINTS_PER_ARC = 400; // Dense vertices per sector arc (IxWorld avg 625 per feature)
 
   // Generate icecap sectors for each pole
-  for (const pole of [1, -1]) { // 1 = north, -1 = south
+  for (const pole of [1, -1]) {
+    // 1 = north, -1 = south
     const baseLat = pole === 1 ? 90 : -90;
     const baseRadius = pole === 1 ? 5 : 8; // South cap is larger
     const noiseAmp = pole === 1 ? 1.5 : 2.0;
@@ -561,19 +575,13 @@ function extractIcecaps(seed: number): Polygon[] {
       // Radial from end of arc toward pole
       for (let r = 1; r <= 3; r++) {
         const t = r / 4;
-        segPoints.push([
-          lastArc[0] * (1 - t),
-          lastArc[1] + (baseLat - lastArc[1]) * t,
-        ]);
+        segPoints.push([lastArc[0] * (1 - t), lastArc[1] + (baseLat - lastArc[1]) * t]);
       }
 
       // Radial from pole back to start of arc
       for (let r = 3; r >= 1; r--) {
         const t = r / 4;
-        segPoints.push([
-          firstArc[0] * (1 - t),
-          firstArc[1] + (baseLat - firstArc[1]) * t,
-        ]);
+        segPoints.push([firstArc[0] * (1 - t), firstArc[1] + (baseLat - firstArc[1]) * t]);
       }
 
       segPoints.push(segPoints[0]!); // Close ring
@@ -587,19 +595,19 @@ function extractIcecaps(seed: number): Polygon[] {
 /**
  * Distance from a point to a polyline (in normalized 0-1 space).
  */
-function pointToPolylineDist(
-  px: number,
-  py: number,
-  line: Position[]
-): number {
+function pointToPolylineDist(px: number, py: number, line: Position[]): number {
   let minDist = Infinity;
   for (let i = 0; i < line.length - 1; i++) {
-    const ax = line[i]![0], ay = line[i]![1];
-    const bx = line[i + 1]![0], by = line[i + 1]![1];
-    const dx = bx - ax, dy = by - ay;
+    const ax = line[i]![0],
+      ay = line[i]![1];
+    const bx = line[i + 1]![0],
+      by = line[i + 1]![1];
+    const dx = bx - ax,
+      dy = by - ay;
     const lenSq = dx * dx + dy * dy;
     const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
-    const projX = ax + t * dx, projY = ay + t * dy;
+    const projX = ax + t * dx,
+      projY = ay + t * dy;
     const dist = Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
     if (dist < minDist) minDist = dist;
   }

@@ -254,10 +254,7 @@ export function PackStack({
       <AnimatePresence>
         {isHovered && (onOpen || onOpenAll) && (
           <motion.div
-            className={cn(
-              "absolute bottom-0 left-0 right-0 z-50",
-              "flex flex-col gap-2 p-2"
-            )}
+            className={cn("absolute right-0 bottom-0 left-0 z-50", "flex flex-col gap-2 p-2")}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
@@ -377,11 +374,7 @@ export function PackStackCompact({
         {/* Pack image or default icon */}
         <div className="absolute inset-0 flex items-center justify-center">
           {packImage ? (
-            <img
-              src={packImage}
-              alt={`${packType} pack`}
-              className="h-full w-full object-cover"
-            />
+            <img src={packImage} alt={`${packType} pack`} className="h-full w-full object-cover" />
           ) : (
             <Package className={cn(config.icon, "text-white/80")} />
           )}

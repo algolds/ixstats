@@ -234,7 +234,7 @@ export function CrossBuilderSynergyDisplay({
                         <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                           {synergy.recommendations.map((rec, index) => (
                             <li key={index} className="flex items-start space-x-1">
-                              <Lightbulb className="mt-0.5 h-3 w-3 flex-shrink-0 text-yellow-500" />
+                              <Lightbulb className="mt-0.5 h-3 w-3 shrink-0 text-yellow-500" />
                               <span>{rec}</span>
                             </li>
                           ))}
@@ -340,7 +340,7 @@ export function CrossBuilderSynergyDisplay({
                         <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                           {conflict.recommendations.map((rec, index) => (
                             <li key={index} className="flex items-start space-x-1">
-                              <AlertCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-orange-500" />
+                              <AlertCircle className="mt-0.5 h-3 w-3 shrink-0 text-orange-500" />
                               <span>{rec}</span>
                             </li>
                           ))}

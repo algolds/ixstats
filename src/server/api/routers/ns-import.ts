@@ -24,7 +24,7 @@ const SYNC_TYPE = "NS_CARD_SYNC";
 async function processNationDeck(
   db: PrismaClient,
   nationName: string,
-  regionName: string,
+  regionName: string
 ): Promise<{ cardsCreated: number; cardsUpdated: number; errors: string[] }> {
   let cardsCreated = 0;
   let cardsUpdated = 0;
@@ -80,7 +80,10 @@ async function processNationDeck(
       const name = nsCard.name;
       if (!name) continue;
 
-      const description = nsCard.description || nsCard.slogan || nsCard.motto ||
+      const description =
+        nsCard.description ||
+        nsCard.slogan ||
+        nsCard.motto ||
         `${nsCard.category || "Unknown"} from ${nsCard.region || "Unknown"}`;
       const artwork = nsCard.flag || "/images/cards/placeholder-nation.png";
 
@@ -90,12 +93,14 @@ async function processNationDeck(
           title: name,
           description,
           artwork,
-          artworkVariants: nsCard.flag ? {
-            original: nsCard.flag,
-            thumbnail: nsCard.flag,
-            large: nsCard.flag,
-            flagUrl: nsCard.flag,
-          } : undefined,
+          artworkVariants: nsCard.flag
+            ? {
+                original: nsCard.flag,
+                thumbnail: nsCard.flag,
+                large: nsCard.flag,
+                flagUrl: nsCard.flag,
+              }
+            : undefined,
           cardType: "NS_IMPORT",
           rarity: nsCard.rarity || "COMMON",
           season: nsSeason,
@@ -146,7 +151,7 @@ async function processRegionNationsInBackground(
   nations: string[],
   regionName: string,
   startFromIndex = 0,
-  initialCounts = { cardsCreated: 0, cardsUpdated: 0, errors: [] as string[] },
+  initialCounts = { cardsCreated: 0, cardsUpdated: 0, errors: [] as string[] }
 ) {
   let nationsProcessed = startFromIndex;
   let cardsCreated = initialCounts.cardsCreated;
@@ -154,7 +159,9 @@ async function processRegionNationsInBackground(
   const errors: string[] = [...initialCounts.errors];
 
   if (startFromIndex > 0) {
-    console.log(`[NS Import] Resuming region ${regionName} from nation ${startFromIndex}/${nations.length} (${cardsCreated} cards already created)`);
+    console.log(
+      `[NS Import] Resuming region ${regionName} from nation ${startFromIndex}/${nations.length} (${cardsCreated} cards already created)`
+    );
   }
 
   for (let i = startFromIndex; i < nations.length; i++) {
@@ -217,7 +224,9 @@ async function processRegionNationsInBackground(
     },
   });
 
-  console.log(`[NS Import] Region ${regionName} complete: ${nationsProcessed} nations, ${cardsCreated} created, ${cardsUpdated} updated, ${errors.length} errors`);
+  console.log(
+    `[NS Import] Region ${regionName} complete: ${nationsProcessed} nations, ${cardsCreated} created, ${cardsUpdated} updated, ${errors.length} errors`
+  );
 }
 
 /**
@@ -228,10 +237,12 @@ async function processSeasonDumpInBackground(
   db: PrismaClient,
   syncLogId: string,
   season: number,
-  xmlData: string,
+  xmlData: string
 ) {
   try {
-    console.log(`[NS Import] Parsing season ${season} card dump (${(xmlData.length / 1024 / 1024).toFixed(2)} MB)...`);
+    console.log(
+      `[NS Import] Parsing season ${season} card dump (${(xmlData.length / 1024 / 1024).toFixed(2)} MB)...`
+    );
     const parsedCards = await nsApiClient.parseNSDump(xmlData);
 
     console.log(`[NS Import] Parsed ${parsedCards.length} cards from season ${season} dump`);
@@ -272,7 +283,9 @@ async function processSeasonDumpInBackground(
             create: {
               id: `card_ns_${nsCard.id}_s${nsCard.season}`,
               title: name,
-              description: nsCard.slogan || `${nsCard.cardcategory || "Nation"} from ${nsCard.region || "Unknown"}`,
+              description:
+                nsCard.slogan ||
+                `${nsCard.cardcategory || "Nation"} from ${nsCard.region || "Unknown"}`,
               artwork,
               cardType: "NS_IMPORT",
               rarity: nsCard.rarity || "COMMON",
@@ -299,8 +312,8 @@ async function processSeasonDumpInBackground(
         })
       );
 
-      cardsCreated += results.filter(r => r.status === "fulfilled").length;
-      errorCount += results.filter(r => r.status === "rejected").length;
+      cardsCreated += results.filter((r) => r.status === "fulfilled").length;
+      errorCount += results.filter((r) => r.status === "rejected").length;
 
       const cardsProcessed = Math.min(i + BATCH_SIZE, parsedCards.length);
 
@@ -362,7 +375,9 @@ async function processSeasonDumpInBackground(
       },
     });
 
-    console.log(`[NS Import] Season ${season} dump complete: ${cardsCreated} processed, ${errorCount} errors`);
+    console.log(
+      `[NS Import] Season ${season} dump complete: ${cardsCreated} processed, ${errorCount} errors`
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[NS Import] Season dump failed:`, msg);
@@ -400,7 +415,7 @@ export const nsImportRouter = createTRPCRouter({
       }
 
       // Deduplicate cards and track quantities
-      const cardMap = new Map<string, { card: typeof deckData.cards[0], quantity: number }>();
+      const cardMap = new Map<string, { card: (typeof deckData.cards)[0]; quantity: number }>();
 
       for (const card of deckData.cards) {
         const key = `${card.id}-${card.season}`;
@@ -416,7 +431,9 @@ export const nsImportRouter = createTRPCRouter({
       // Get unique cards (limit to first 20 unique cards)
       const uniqueCards = Array.from(cardMap.values()).slice(0, 20);
 
-      console.log(`[NS Import] Deduplicated ${deckData.cards.length} cards to ${uniqueCards.length} unique cards`);
+      console.log(
+        `[NS Import] Deduplicated ${deckData.cards.length} cards to ${uniqueCards.length} unique cards`
+      );
 
       // Fetch detailed info for unique cards only
       // Process sequentially to respect rate limits
@@ -557,10 +574,7 @@ export const nsImportRouter = createTRPCRouter({
       }
 
       // Verify with NS API
-      const isVerified = await nsApiClient.verifyOwnership(
-        verification.nationName,
-        input.checksum
-      );
+      const isVerified = await nsApiClient.verifyOwnership(verification.nationName, input.checksum);
 
       if (isVerified) {
         // Mark as verified
@@ -640,14 +654,26 @@ export const nsImportRouter = createTRPCRouter({
       }
 
       const importedCardIds: string[] = [];
-      const importedCardData: { id: string; title: string; artwork: string; rarity: string; season: number; marketValue: number }[] = [];
+      const importedCardData: {
+        id: string;
+        title: string;
+        artwork: string;
+        rarity: string;
+        season: number;
+        marketValue: number;
+      }[] = [];
       const skippedCards: string[] = [];
 
       // Process cards in batches
       for (const nsCard of deckData.cards) {
         try {
           // Fetch full card info since deck API may only provide id, season, rarity
-          if (!nsCard.name || !nsCard.market_value || nsCard.market_value === "0" || nsCard.market_value === "0.00") {
+          if (
+            !nsCard.name ||
+            !nsCard.market_value ||
+            nsCard.market_value === "0" ||
+            nsCard.market_value === "0.00"
+          ) {
             console.log(`[NS Import] Fetching card info for ${nsCard.id} S${nsCard.season}`);
             const cardInfo = await nsApiClient.fetchCardInfo(nsCard.id, nsCard.season);
             if (cardInfo) {
@@ -658,7 +684,9 @@ export const nsImportRouter = createTRPCRouter({
 
           // Skip if we still don't have a name
           if (!nsCard.name) {
-            console.error(`[NS Import] Could not fetch name for card ${nsCard.id} S${nsCard.season}`);
+            console.error(
+              `[NS Import] Could not fetch name for card ${nsCard.id} S${nsCard.season}`
+            );
             skippedCards.push(`Card ${nsCard.id} S${nsCard.season}`);
             continue;
           }
@@ -689,7 +717,11 @@ export const nsImportRouter = createTRPCRouter({
 
           if (!card) {
             // Create new card definition
-            const description = nsCard.description || nsCard.slogan || nsCard.motto || `${nsCard.category || 'Unknown'} from ${nsCard.region || 'Unknown'}`;
+            const description =
+              nsCard.description ||
+              nsCard.slogan ||
+              nsCard.motto ||
+              `${nsCard.category || "Unknown"} from ${nsCard.region || "Unknown"}`;
 
             // Use NS flag as artwork, fallback to placeholder
             const artwork = nsCard.flag || "/images/cards/placeholder-nation.png";
@@ -700,12 +732,14 @@ export const nsImportRouter = createTRPCRouter({
                 title: nsCard.name,
                 description: description,
                 artwork: artwork,
-                artworkVariants: nsCard.flag ? {
-                  original: nsCard.flag,
-                  thumbnail: nsCard.flag,
-                  large: nsCard.flag,
-                  flagUrl: nsCard.flag,
-                } : undefined,
+                artworkVariants: nsCard.flag
+                  ? {
+                      original: nsCard.flag,
+                      thumbnail: nsCard.flag,
+                      large: nsCard.flag,
+                      flagUrl: nsCard.flag,
+                    }
+                  : undefined,
                 cardType: "NS_IMPORT",
                 rarity: nsCard.rarity,
                 season: parseInt(nsCard.season),
@@ -765,7 +799,7 @@ export const nsImportRouter = createTRPCRouter({
             // Get next serial number for this card
             const maxSerial = await ctx.db.cardOwnership.findFirst({
               where: { cardId: card.id },
-              orderBy: { serialNumber: 'desc' },
+              orderBy: { serialNumber: "desc" },
               select: { serialNumber: true },
             });
             const nextSerial = (maxSerial?.serialNumber || 0) + 1;
@@ -892,12 +926,12 @@ export const nsImportRouter = createTRPCRouter({
       const cardsProcessed = Number(cp.cardsProcessed ?? 0);
       const totalCards = Number(cp.totalCards ?? 0);
       const errorCount = Number(cp.errorCount ?? 0);
-      const lastCheckpoint = cp.lastCheckpointAt ? new Date(cp.lastCheckpointAt) : new Date(checkpoint.updatedAt);
+      const lastCheckpoint = cp.lastCheckpointAt
+        ? new Date(cp.lastCheckpointAt)
+        : new Date(checkpoint.updatedAt);
       const completedAt = cp.completedAt ? new Date(cp.completedAt) : null;
 
-      const progress = totalCards > 0
-        ? (cardsProcessed / totalCards) * 100
-        : 0;
+      const progress = totalCards > 0 ? (cardsProcessed / totalCards) * 100 : 0;
 
       return {
         season: input.season,
@@ -915,10 +949,9 @@ export const nsImportRouter = createTRPCRouter({
   /**
    * Admin: Get comprehensive sync health across all seasons
    */
-  getSyncHealth: adminProcedure
-    .query(async () => {
-      return await SyncHealthMonitor.getHealthStats();
-    }),
+  getSyncHealth: adminProcedure.query(async () => {
+    return await SyncHealthMonitor.getHealthStats();
+  }),
 
   /**
    * Admin: Retry failed cards for a specific season
@@ -951,8 +984,11 @@ export const nsImportRouter = createTRPCRouter({
           }
 
           // Create or update card in database
-          const description = cardInfo.description || cardInfo.slogan || cardInfo.motto ||
-            `${cardInfo.category || 'Unknown'} from ${cardInfo.region || 'Unknown'}`;
+          const description =
+            cardInfo.description ||
+            cardInfo.slogan ||
+            cardInfo.motto ||
+            `${cardInfo.category || "Unknown"} from ${cardInfo.region || "Unknown"}`;
 
           await ctx.db.card.upsert({
             where: {
@@ -1120,7 +1156,10 @@ export const nsImportRouter = createTRPCRouter({
       } else if (input.syncTypeFilter === "dump") {
         where = { syncType: { startsWith: "NS_SEASON_DUMP_" } };
       } else if (input.syncTypeFilter === "season") {
-        where = { syncType: { startsWith: "NS_SEASON_" }, NOT: { syncType: { startsWith: "NS_SEASON_DUMP_" } } };
+        where = {
+          syncType: { startsWith: "NS_SEASON_" },
+          NOT: { syncType: { startsWith: "NS_SEASON_DUMP_" } },
+        };
       } else {
         where = { syncType: { startsWith: "NS_" } };
       }
@@ -1131,7 +1170,7 @@ export const nsImportRouter = createTRPCRouter({
         take: input.limit,
       });
 
-      return logs.map(log => ({
+      return logs.map((log) => ({
         id: log.id,
         syncType: log.syncType,
         season: log.season,
@@ -1142,9 +1181,7 @@ export const nsImportRouter = createTRPCRouter({
         errorMessage: log.errorMessage,
         startedAt: log.startedAt,
         completedAt: log.completedAt,
-        duration: log.completedAt
-          ? log.completedAt.getTime() - log.startedAt.getTime()
-          : null,
+        duration: log.completedAt ? log.completedAt.getTime() - log.startedAt.getTime() : null,
       }));
     }),
 
@@ -1174,7 +1211,7 @@ export const nsImportRouter = createTRPCRouter({
 
       const imports = vault?.transactions || [];
 
-      return imports.map(tx => ({
+      return imports.map((tx) => ({
         id: tx.id,
         nationName: (tx.metadata as any)?.nationName || "Unknown",
         cardsImported: (tx.metadata as any)?.cardsImported || 0,
@@ -1217,10 +1254,7 @@ export const nsImportRouter = createTRPCRouter({
       },
     });
 
-    const totalCards = importedCards.reduce(
-      (sum, ownership) => sum + ownership.quantity,
-      0
-    );
+    const totalCards = importedCards.reduce((sum, ownership) => sum + ownership.quantity, 0);
     const totalValue = importedCards.reduce(
       (sum, ownership) => sum + (ownership.cards.marketValue || 0),
       0
@@ -1338,7 +1372,7 @@ export const nsImportRouter = createTRPCRouter({
         ctx.db as unknown as PrismaClient,
         syncLog.id,
         nations,
-        regionName,
+        regionName
       ).catch((error) => {
         console.error(`[NS Import] Background region fetch failed:`, error);
       });
@@ -1417,7 +1451,7 @@ export const nsImportRouter = createTRPCRouter({
         ctx.db as unknown as PrismaClient,
         syncLog.id,
         season,
-        xmlData,
+        xmlData
       ).catch((error) => {
         console.error(`[NS Import] Background season dump failed:`, error);
       });
@@ -1537,7 +1571,8 @@ export const nsImportRouter = createTRPCRouter({
       if (!nations || !Array.isArray(nations) || nations.length === 0 || !regionName) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Job metadata is missing the nation list — cannot resume. Start a new import instead.",
+          message:
+            "Job metadata is missing the nation list — cannot resume. Start a new import instead.",
         });
       }
 
@@ -1561,7 +1596,7 @@ export const nsImportRouter = createTRPCRouter({
 
       console.log(
         `[NS Import] Resuming region "${regionName}" from nation ${resumeFromIndex}/${nations.length} ` +
-        `(${syncLog.cardsCreated ?? 0} cards already created)`
+          `(${syncLog.cardsCreated ?? 0} cards already created)`
       );
 
       // Fire-and-forget background processing, continuing from where we left off
@@ -1575,7 +1610,7 @@ export const nsImportRouter = createTRPCRouter({
           cardsCreated: syncLog.cardsCreated ?? 0,
           cardsUpdated: syncLog.cardsUpdated ?? 0,
           errors: [],
-        },
+        }
       ).catch((error) => {
         console.error(`[NS Import] Background resume failed:`, error);
       });
@@ -1597,9 +1632,13 @@ export const nsImportRouter = createTRPCRouter({
    * then queries each for nation count. Returns top N sorted by size.
    */
   discoverTopRegions: adminProcedure
-    .input(z.object({
-      limit: z.number().int().min(1).max(50).default(15),
-    }).optional())
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(50).default(15),
+        })
+        .optional()
+    )
     .mutation(async ({ input }) => {
       const limit = input?.limit ?? 15;
 
@@ -1621,7 +1660,9 @@ export const nsImportRouter = createTRPCRouter({
         });
       }
 
-      console.log(`[NS Import] Found ${allRegionNames.size} large regions, querying nation counts...`);
+      console.log(
+        `[NS Import] Found ${allRegionNames.size} large regions, querying nation counts...`
+      );
 
       // Query nation counts - limit concurrent requests to stay within rate limits
       const regionData: { id: string; name: string; numnations: number }[] = [];
@@ -1641,7 +1682,10 @@ export const nsImportRouter = createTRPCRouter({
       regionData.sort((a, b) => b.numnations - a.numnations);
       const topRegions = regionData.slice(0, limit);
 
-      console.log(`[NS Import] Top ${topRegions.length} regions:`, topRegions.map((r) => `${r.name} (${r.numnations})`).join(", "));
+      console.log(
+        `[NS Import] Top ${topRegions.length} regions:`,
+        topRegions.map((r) => `${r.name} (${r.numnations})`).join(", ")
+      );
 
       return {
         regions: topRegions,
@@ -1654,9 +1698,14 @@ export const nsImportRouter = createTRPCRouter({
    * for all NS_IMPORT cards that don't have them yet.
    */
   batchUpdateCardStats: adminProcedure
-    .input(z.object({
-      forceAll: z.boolean().optional().default(false),
-    }).optional().default({}))
+    .input(
+      z
+        .object({
+          forceAll: z.boolean().optional().default(false),
+        })
+        .optional()
+        .default({})
+    )
     .mutation(async ({ ctx, input }) => {
       const BATCH = 100;
       let updated = 0;
@@ -1669,7 +1718,9 @@ export const nsImportRouter = createTRPCRouter({
         select: { id: true, nsCardId: true, stats: true },
       });
 
-      console.log(`[NS Import] Batch updating stats for ${cards.length} NS cards (forceAll=${input.forceAll})`);
+      console.log(
+        `[NS Import] Batch updating stats for ${cards.length} NS cards (forceAll=${input.forceAll})`
+      );
 
       for (let i = 0; i < cards.length; i += BATCH) {
         const batch = cards.slice(i, i + BATCH);
@@ -1677,7 +1728,10 @@ export const nsImportRouter = createTRPCRouter({
 
         for (const card of batch) {
           const existingStats = card.stats as Record<string, unknown> | null;
-          if (!existingStats) { skipped++; continue; }
+          if (!existingStats) {
+            skipped++;
+            continue;
+          }
 
           // Skip if already has gameplay stats (unless forceAll)
           if (!input.forceAll && typeof existingStats.economic === "number") {
@@ -1685,15 +1739,18 @@ export const nsImportRouter = createTRPCRouter({
             continue;
           }
 
-          const gameplayStats = nsImportService.generateCardStats({
-            govt: existingStats.govt as string | undefined,
-            marketValue: existingStats.marketValue as string | undefined,
-            badge: existingStats.badge as string | undefined,
-            trophies: existingStats.trophies as string | undefined,
-            region: existingStats.region as string | undefined,
-            category: existingStats.category as string | undefined,
-            cardcategory: existingStats.cardcategory as string | undefined,
-          }, card.nsCardId ?? undefined);
+          const gameplayStats = nsImportService.generateCardStats(
+            {
+              govt: existingStats.govt as string | undefined,
+              marketValue: existingStats.marketValue as string | undefined,
+              badge: existingStats.badge as string | undefined,
+              trophies: existingStats.trophies as string | undefined,
+              region: existingStats.region as string | undefined,
+              category: existingStats.category as string | undefined,
+              cardcategory: existingStats.cardcategory as string | undefined,
+            },
+            card.nsCardId ?? undefined
+          );
 
           updates.push(
             ctx.db.card.update({
@@ -1716,11 +1773,15 @@ export const nsImportRouter = createTRPCRouter({
         }
 
         if ((i + BATCH) % 1000 === 0 || i + BATCH >= cards.length) {
-          console.log(`[NS Import] Progress: ${Math.min(i + BATCH, cards.length)}/${cards.length} (updated: ${updated}, skipped: ${skipped})`);
+          console.log(
+            `[NS Import] Progress: ${Math.min(i + BATCH, cards.length)}/${cards.length} (updated: ${updated}, skipped: ${skipped})`
+          );
         }
       }
 
-      console.log(`[NS Import] Batch stats complete: ${updated} updated, ${skipped} skipped, ${errors} errors`);
+      console.log(
+        `[NS Import] Batch stats complete: ${updated} updated, ${skipped} skipped, ${errors} errors`
+      );
       return { updated, skipped, errors, total: cards.length };
     }),
 
@@ -1752,14 +1813,18 @@ export const nsImportRouter = createTRPCRouter({
 
     // Fix 0-value NS cards by re-fetching from NS API
     const zeroValueCards = ownerships.filter(
-      (o) => o.cards.cardType === "NS_IMPORT" && o.cards.marketValue === 0 && o.cards.nsCardId && o.cards.nsSeason
+      (o) =>
+        o.cards.cardType === "NS_IMPORT" &&
+        o.cards.marketValue === 0 &&
+        o.cards.nsCardId &&
+        o.cards.nsSeason
     );
 
     for (const ownership of zeroValueCards) {
       try {
         const info = await nsApiClient.fetchCardInfo(
           String(ownership.cards.nsCardId),
-          String(ownership.cards.nsSeason),
+          String(ownership.cards.nsSeason)
         );
         if (info?.market_value) {
           const newValue = Math.max(1, parseFloat(info.market_value));

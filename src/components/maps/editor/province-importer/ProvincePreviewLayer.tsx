@@ -67,7 +67,7 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   console.log("[ProvincePreview] MOUNTED", {
     hasMap: !!map,
     provinceCount: provinces.length,
-    includedCount: provinces.filter(p => p.included).length,
+    includedCount: provinces.filter((p) => p.included).length,
     hasBorder: !!countryBorder,
     visible,
   });
@@ -123,8 +123,10 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     }
 
     const vis = visible ? "visible" : "none";
-    if (map.getLayer(BORDER_FILL_LAYER_ID)) map.setLayoutProperty(BORDER_FILL_LAYER_ID, "visibility", vis);
-    if (map.getLayer(BORDER_LINE_LAYER_ID)) map.setLayoutProperty(BORDER_LINE_LAYER_ID, "visibility", vis);
+    if (map.getLayer(BORDER_FILL_LAYER_ID))
+      map.setLayoutProperty(BORDER_FILL_LAYER_ID, "visibility", vis);
+    if (map.getLayer(BORDER_LINE_LAYER_ID))
+      map.setLayoutProperty(BORDER_LINE_LAYER_ID, "visibility", vis);
   }, [map, countryBorder, visible]);
 
   // ── Memoized FeatureCollection — only recomputes when provinces change ──
@@ -133,11 +135,15 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (included.length === 0) return { type: "FeatureCollection", features: [] };
 
     // Compute bounding box of ALL province shapes (included + excluded for full SVG extent)
-    let svgMinX = Infinity, svgMinY = Infinity, svgMaxX = -Infinity, svgMaxY = -Infinity;
+    let svgMinX = Infinity,
+      svgMinY = Infinity,
+      svgMaxX = -Infinity,
+      svgMaxY = -Infinity;
     for (const p of provinces) {
-      const coords = p.geometry.type === "Polygon"
-        ? p.geometry.coordinates
-        : p.geometry.coordinates.flatMap((c) => c);
+      const coords =
+        p.geometry.type === "Polygon"
+          ? p.geometry.coordinates
+          : p.geometry.coordinates.flatMap((c) => c);
       for (const ring of coords) {
         for (const pt of ring) {
           svgMinX = Math.min(svgMinX, pt[0]!);
@@ -153,7 +159,12 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
 
     console.log("[ProvincePreview] FC computation:", {
       includedCount: included.length,
-      svgBounds: { svgMinX: svgMinX.toFixed(2), svgMinY: svgMinY.toFixed(2), svgMaxX: svgMaxX.toFixed(2), svgMaxY: svgMaxY.toFixed(2) },
+      svgBounds: {
+        svgMinX: svgMinX.toFixed(2),
+        svgMinY: svgMinY.toFixed(2),
+        svgMaxX: svgMaxX.toFixed(2),
+        svgMaxY: svgMaxY.toFixed(2),
+      },
       needsTransform,
       hasBorder: !!countryBorder,
     });
@@ -163,21 +174,31 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
       console.log("[ProvincePreview] Passthrough mode (coords already geographic)");
       return {
         type: "FeatureCollection",
-        features: included.map((p, i): Feature => ({
-          type: "Feature", id: i,
-          geometry: normalizeGeometry(p.geometry),
-          properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
-        })),
+        features: included.map(
+          (p, i): Feature => ({
+            type: "Feature",
+            id: i,
+            geometry: normalizeGeometry(p.geometry),
+            properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
+          })
+        ),
       };
     }
 
     // Compute country border bounding box as target
-    let geoMinX = -10, geoMinY = -10, geoMaxX = 10, geoMaxY = 10;
+    let geoMinX = -10,
+      geoMinY = -10,
+      geoMaxX = 10,
+      geoMaxY = 10;
     if (countryBorder) {
-      geoMinX = Infinity; geoMinY = Infinity; geoMaxX = -Infinity; geoMaxY = -Infinity;
-      const borderCoords = countryBorder.type === "Polygon"
-        ? countryBorder.coordinates
-        : countryBorder.coordinates.flatMap((c) => c);
+      geoMinX = Infinity;
+      geoMinY = Infinity;
+      geoMaxX = -Infinity;
+      geoMaxY = -Infinity;
+      const borderCoords =
+        countryBorder.type === "Polygon"
+          ? countryBorder.coordinates
+          : countryBorder.coordinates.flatMap((c) => c);
       for (const ring of borderCoords) {
         for (const pt of ring) {
           geoMinX = Math.min(geoMinX, pt[0]!);
@@ -248,9 +269,10 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (!map) return;
 
     // Skip if data hasn't actually changed (avoids expensive setData calls)
-    const firstCoord = fc.features[0]?.geometry?.type === "Polygon"
-      ? (fc.features[0].geometry as any).coordinates?.[0]?.[0]
-      : (fc.features[0]?.geometry as any)?.coordinates?.[0]?.[0]?.[0];
+    const firstCoord =
+      fc.features[0]?.geometry?.type === "Polygon"
+        ? (fc.features[0].geometry as any).coordinates?.[0]?.[0]
+        : (fc.features[0]?.geometry as any)?.coordinates?.[0]?.[0]?.[0];
     const fcKey = `${fc.features.length}:${JSON.stringify(firstCoord ?? [])}`;
     if (prevFcRef.current === fcKey && map.getSource(SOURCE_ID)) {
       // Just update visibility
@@ -318,20 +340,28 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
         });
 
         // Log bounds for debugging
-        const bounds = fc.features.reduce((acc, f) => {
-          const geom = f.geometry as any;
-          const coords = geom.type === "Polygon" ? geom.coordinates : geom.coordinates?.flatMap((c: any) => c) ?? [];
-          for (const ring of coords) {
-            for (const pt of ring as Position[]) {
-              acc.minLng = Math.min(acc.minLng, pt[0]!);
-              acc.minLat = Math.min(acc.minLat, pt[1]!);
-              acc.maxLng = Math.max(acc.maxLng, pt[0]!);
-              acc.maxLat = Math.max(acc.maxLat, pt[1]!);
+        const bounds = fc.features.reduce(
+          (acc, f) => {
+            const geom = f.geometry as any;
+            const coords =
+              geom.type === "Polygon"
+                ? geom.coordinates
+                : (geom.coordinates?.flatMap((c: any) => c) ?? []);
+            for (const ring of coords) {
+              for (const pt of ring as Position[]) {
+                acc.minLng = Math.min(acc.minLng, pt[0]!);
+                acc.minLat = Math.min(acc.minLat, pt[1]!);
+                acc.maxLng = Math.max(acc.maxLng, pt[0]!);
+                acc.maxLat = Math.max(acc.maxLat, pt[1]!);
+              }
             }
-          }
-          return acc;
-        }, { minLng: Infinity, minLat: Infinity, maxLng: -Infinity, maxLat: -Infinity });
-        console.log(`[ProvincePreview] Created ${fc.features.length} features, bounds: lng ${bounds.minLng.toFixed(2)}-${bounds.maxLng.toFixed(2)}, lat ${bounds.minLat.toFixed(2)}-${bounds.maxLat.toFixed(2)}`);
+            return acc;
+          },
+          { minLng: Infinity, minLat: Infinity, maxLng: -Infinity, maxLat: -Infinity }
+        );
+        console.log(
+          `[ProvincePreview] Created ${fc.features.length} features, bounds: lng ${bounds.minLng.toFixed(2)}-${bounds.maxLng.toFixed(2)}, lat ${bounds.minLat.toFixed(2)}-${bounds.maxLat.toFixed(2)}`
+        );
       }
     } catch (err) {
       console.error("[ProvincePreview] Error creating/updating layers:", err);

@@ -26,7 +26,11 @@ const SOURCE_OPTIONS: { value: WikiSource; label: string; description: string }[
 ];
 
 const DISPLAY_OPTIONS: { value: LoreDisplayMode; label: string; description: string }[] = [
-  { value: "inline", label: "Inline with stats", description: "Lore sections appear alongside data" },
+  {
+    value: "inline",
+    label: "Inline with stats",
+    description: "Lore sections appear alongside data",
+  },
   { value: "sidebar", label: "Sidebar only", description: "Lore content in sidebar panels" },
   { value: "hidden", label: "Hidden", description: "Disable lore display entirely" },
 ];
@@ -78,9 +82,9 @@ export function WikiPreferencesCard() {
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-6 w-48 rounded bg-muted" />
-            <div className="h-6 w-64 rounded bg-muted" />
-            <div className="h-6 w-56 rounded bg-muted" />
+            <div className="bg-muted h-6 w-48 rounded" />
+            <div className="bg-muted h-6 w-64 rounded" />
+            <div className="bg-muted h-6 w-56 rounded" />
           </div>
         </CardContent>
       </Card>
@@ -104,7 +108,10 @@ export function WikiPreferencesCard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
             <div>
-              <Label htmlFor="wiki-auto-scan" className="text-sm font-bold text-slate-900 dark:text-white">
+              <Label
+                htmlFor="wiki-auto-scan"
+                className="text-sm font-bold text-slate-900 dark:text-white"
+              >
                 Autonomous Intelligence
               </Label>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -121,7 +128,7 @@ export function WikiPreferencesCard() {
           </div>
 
           <div className="space-y-3">
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Primary Knowledge Base
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -134,11 +141,13 @@ export function WikiPreferencesCard() {
                   className={cn(
                     "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
                     localPrefs.wikiSourcePriority === option.value
-                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 dark:text-white shadow-inner shadow-indigo-500/5"
+                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5 dark:text-white"
                       : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"
                   )}
                 >
-                  <span className="text-xs font-bold uppercase tracking-widest">{option.label}</span>
+                  <span className="text-xs font-bold tracking-widest uppercase">
+                    {option.label}
+                  </span>
                   <span className="text-[10px] font-medium opacity-70">{option.description}</span>
                 </button>
               ))}
@@ -146,7 +155,7 @@ export function WikiPreferencesCard() {
           </div>
 
           <div className="space-y-3">
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Interface Integration
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -159,11 +168,13 @@ export function WikiPreferencesCard() {
                   className={cn(
                     "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
                     localPrefs.loreDisplayMode === option.value
-                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 dark:text-white shadow-inner shadow-indigo-500/5"
+                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5 dark:text-white"
                       : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"
                   )}
                 >
-                  <span className="text-xs font-bold uppercase tracking-widest">{option.label}</span>
+                  <span className="text-xs font-bold tracking-widest uppercase">
+                    {option.label}
+                  </span>
                   <span className="text-[10px] font-medium opacity-70">{option.description}</span>
                 </button>
               ))}
@@ -173,10 +184,14 @@ export function WikiPreferencesCard() {
           {(updateMutation.isPending || updateMutation.isError) && (
             <div className="mt-4 flex items-center justify-center">
               {updateMutation.isPending && (
-                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 animate-pulse">Synchronizing State...</p>
+                <p className="animate-pulse text-[10px] font-bold tracking-widest text-indigo-500 uppercase">
+                  Synchronizing State...
+                </p>
               )}
               {updateMutation.isError && (
-                <p className="text-[10px] font-bold uppercase tracking-widest text-red-500">Transmission Failed</p>
+                <p className="text-[10px] font-bold tracking-widest text-red-500 uppercase">
+                  Transmission Failed
+                </p>
               )}
             </div>
           )}

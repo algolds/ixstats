@@ -25,13 +25,7 @@ import {
 } from "~/components/ui/table";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  SlidersHorizontal,
-  Plus,
-  Trash2,
-  RotateCcw,
-  AlertTriangle,
-} from "lucide-react";
+import { SlidersHorizontal, Plus, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 
 interface ThresholdForm {
   id: string | undefined;
@@ -151,7 +145,13 @@ export function AlertRulesPanel() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button onClick={() => { setForm(emptyForm); setDialogOpen(true); }} size="sm">
+          <Button
+            onClick={() => {
+              setForm(emptyForm);
+              setDialogOpen(true);
+            }}
+            size="sm"
+          >
             <Plus className="mr-2 h-4 w-4" />
             New Threshold
           </Button>
@@ -184,13 +184,13 @@ export function AlertRulesPanel() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : data?.thresholds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
                       <SlidersHorizontal className="mx-auto mb-2 h-8 w-8 opacity-50" />
                       No alert rules configured
                     </TableCell>
@@ -206,9 +206,13 @@ export function AlertRulesPanel() {
                       >
                         <TableCell className="font-medium">{t.metricName}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px]">{t.alertType}</Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {t.alertType}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{country?.name ?? t.countryId.slice(0, 8)}</TableCell>
+                        <TableCell className="text-sm">
+                          {country?.name ?? t.countryId.slice(0, 8)}
+                        </TableCell>
                         <TableCell className="text-center">
                           {t.criticalMin ?? "—"} / {t.criticalMax ?? "—"}
                         </TableCell>
@@ -219,7 +223,9 @@ export function AlertRulesPanel() {
                           {t.mediumMin ?? "—"} / {t.mediumMax ?? "—"}
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className={`mx-auto h-2 w-2 rounded-full ${t.isActive ? "bg-green-500" : "bg-gray-400"}`} />
+                          <div
+                            className={`mx-auto h-2 w-2 rounded-full ${t.isActive ? "bg-green-500" : "bg-gray-400"}`}
+                          />
                         </TableCell>
                         <TableCell>
                           <Button

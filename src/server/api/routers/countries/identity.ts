@@ -11,11 +11,7 @@ export const identityProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findFirst({
         where: {
-          OR: [
-            { id: input.id },
-            { slug: input.id.toLowerCase() },
-            { name: input.id },
-          ],
+          OR: [{ id: input.id }, { slug: input.id.toLowerCase() }, { name: input.id }],
         },
         select: {
           id: true,
@@ -113,9 +109,7 @@ export const identityProcedures = {
       }
     }),
 
-  getWikiIntro: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .query(async ({ input }) => {
-      return fetchWikiIntro(input.name);
-    }),
+  getWikiIntro: publicProcedure.input(z.object({ name: z.string() })).query(async ({ input }) => {
+    return fetchWikiIntro(input.name);
+  }),
 };

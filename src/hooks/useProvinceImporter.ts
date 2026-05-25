@@ -25,7 +25,13 @@ import {
   applyAffineToProvinces,
   snapProvincesToBorderMultiRing,
 } from "~/lib/province-importer/alignment";
-import { validateTopology, autoFillGaps, resolveOverlaps, clipProvincesToBorder, simplifyProvinces } from "~/lib/province-importer/topology";
+import {
+  validateTopology,
+  autoFillGaps,
+  resolveOverlaps,
+  clipProvincesToBorder,
+  simplifyProvinces,
+} from "~/lib/province-importer/topology";
 import type { ConformanceResult } from "~/lib/province-importer/topology";
 import { sanitizeRegionShape } from "~/lib/border-editor";
 import type { Polygon, MultiPolygon } from "geojson";
@@ -97,7 +103,9 @@ export function useProvinceImporter(countryId: string) {
     if (mt.translate[0] === 0 && mt.translate[1] === 0 && mt.rotate === 0 && mt.scale === 1) return;
 
     // Use aligned provinces as base if available (preserves auto-alignment), otherwise raw
-    const base = hasAutoAligned.current ? applyAffineToProvinces(rawProvinces, transform ?? { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }) : rawProvinces;
+    const base = hasAutoAligned.current
+      ? applyAffineToProvinces(rawProvinces, transform ?? { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 })
+      : rawProvinces;
     const included = base.filter((p) => p.included);
     if (included.length === 0) return;
 
@@ -144,95 +152,99 @@ export function useProvinceImporter(countryId: string) {
   }, [canGoBack, stepIndex]);
 
   // ── Upload Step ──
-  const handleUpload = useCallback(async (file: File) => {
-    setIsProcessing(true);
-    setError(null);
+  const handleUpload = useCallback(
+    async (file: File) => {
+      setIsProcessing(true);
+      setError(null);
 
-    try {
-      // Upload file
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("countryId", countryId);
+      try {
+        // Upload file
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("countryId", countryId);
 
-      const uploadResponse = await fetch("/api/upload-province", {
-        method: "POST",
-        body: formData,
-      });
+        const uploadResponse = await fetch("/api/upload-province", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || "Upload failed");
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.error || "Upload failed");
+        }
+
+        const uploadData = await uploadResponse.json();
+        setUploadId(uploadData.id);
+
+        // Parse the uploaded SVG
+        const result = await parseMutation.mutateAsync({
+          countryId,
+          uploadId: uploadData.id,
+        });
+
+        setRawProvinces(result.provinces as ProvinceFeature[]);
+        if (result.countryBorder) {
+          setCountryBorder(result.countryBorder as Polygon | MultiPolygon);
+        }
+        if (result.log) setParseLog(result.log as string[]);
+        if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
+
+        goToStep("names");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Upload failed");
+      } finally {
+        setIsProcessing(false);
       }
+    },
+    [countryId, parseMutation, goToStep]
+  );
 
-      const uploadData = await uploadResponse.json();
-      setUploadId(uploadData.id);
+  const handleDirectSvg = useCallback(
+    async (svgContent: string) => {
+      setIsProcessing(true);
+      setError(null);
 
-      // Parse the uploaded SVG
-      const result = await parseMutation.mutateAsync({
-        countryId,
-        uploadId: uploadData.id,
-      });
+      try {
+        const result = await parseMutation.mutateAsync({
+          countryId,
+          svgContent,
+        });
 
-      setRawProvinces(result.provinces as ProvinceFeature[]);
-      if (result.countryBorder) {
-        setCountryBorder(result.countryBorder as Polygon | MultiPolygon);
+        setRawProvinces(result.provinces as ProvinceFeature[]);
+        if (result.countryBorder) {
+          setCountryBorder(result.countryBorder as Polygon | MultiPolygon);
+        }
+        if (result.log) setParseLog(result.log as string[]);
+        if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
+
+        goToStep("names");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Parse failed");
+      } finally {
+        setIsProcessing(false);
       }
-      if (result.log) setParseLog(result.log as string[]);
-      if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
-
-      goToStep("names");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [countryId, parseMutation, goToStep]);
-
-  const handleDirectSvg = useCallback(async (svgContent: string) => {
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      const result = await parseMutation.mutateAsync({
-        countryId,
-        svgContent,
-      });
-
-      setRawProvinces(result.provinces as ProvinceFeature[]);
-      if (result.countryBorder) {
-        setCountryBorder(result.countryBorder as Polygon | MultiPolygon);
-      }
-      if (result.log) setParseLog(result.log as string[]);
-      if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
-
-      goToStep("names");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Parse failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [countryId, parseMutation, goToStep]);
+    },
+    [countryId, parseMutation, goToStep]
+  );
 
   // ── Names Step ──
   const updateProvinceName = useCallback((sourceId: string, name: string) => {
-    setRawProvinces((prev) =>
-      prev.map((p) => p.sourceId === sourceId ? { ...p, name } : p)
-    );
+    setRawProvinces((prev) => prev.map((p) => (p.sourceId === sourceId ? { ...p, name } : p)));
     // Also update alignedProvinces if they exist
     setAlignedProvinces((prev) => {
       if (prev.length === 0) return prev;
-      return prev.map((p) => p.sourceId === sourceId ? { ...p, name } : p);
+      return prev.map((p) => (p.sourceId === sourceId ? { ...p, name } : p));
     });
   }, []);
 
   const toggleProvinceIncluded = useCallback((sourceId: string) => {
     setRawProvinces((prev) =>
-      prev.map((p) => p.sourceId === sourceId ? { ...p, included: !p.included } : p)
+      prev.map((p) => (p.sourceId === sourceId ? { ...p, included: !p.included } : p))
     );
     // Also update alignedProvinces if they exist
     setAlignedProvinces((prev) => {
       if (prev.length === 0) return prev;
-      return prev.map((p) => p.sourceId === sourceId ? { ...p, included: !p.included } : p);
+      return prev.map((p) => (p.sourceId === sourceId ? { ...p, included: !p.included } : p));
     });
   }, []);
 
@@ -362,7 +374,7 @@ export function useProvinceImporter(countryId: string) {
           if (!p.included || !p.geometry) return p;
           const { geometry: sanitized } = sanitizeRegionShape(
             p.geometry as Polygon | MultiPolygon,
-            countryBorder,
+            countryBorder
           );
           return { ...p, geometry: sanitized };
         });
@@ -396,7 +408,15 @@ export function useProvinceImporter(countryId: string) {
     } finally {
       setIsProcessing(false);
     }
-  }, [alignedProvinces, rawProvinces, countryId, replaceExisting, commitMutation, countryBorder, simplifyTolerance]);
+  }, [
+    alignedProvinces,
+    rawProvinces,
+    countryId,
+    replaceExisting,
+    commitMutation,
+    countryBorder,
+    simplifyTolerance,
+  ]);
 
   // ── Reset ──
   const reset = useCallback(() => {

@@ -106,10 +106,9 @@ export function extractAltitudeZones(
         if (!ring || ring.length < 4) continue;
 
         // Convert to WGS84 coordinates
-        let wgs84Ring = ring.map(([px, py]) => [
-          (px / width) * 360 - 180,
-          90 - (py / height) * 180,
-        ] as Position);
+        let wgs84Ring = ring.map(
+          ([px, py]) => [(px / width) * 360 - 180, 90 - (py / height) * 180] as Position
+        );
 
         // Chaikin smoothing (3 iterations for smoother boundaries)
         wgs84Ring = chaikinSmooth(wgs84Ring, 3);
@@ -120,7 +119,8 @@ export function extractAltitudeZones(
         if (wgs84Ring.length < 4) continue;
 
         // Ensure closed ring
-        const first = wgs84Ring[0]!, last = wgs84Ring[wgs84Ring.length - 1]!;
+        const first = wgs84Ring[0]!,
+          last = wgs84Ring[wgs84Ring.length - 1]!;
         if (first[0] !== last[0] || first[1] !== last[1]) wgs84Ring.push(first);
 
         // Apply noisy edges for organic feel
@@ -218,17 +218,17 @@ export function extractClimateZones(
         const ring = extractBoundaryRing(regionMask, width, height);
         if (!ring || ring.length < 4) continue;
 
-        let wgs84Ring = ring.map(([px, py]) => [
-          (px / width) * 360 - 180,
-          90 - (py / height) * 180,
-        ] as Position);
+        let wgs84Ring = ring.map(
+          ([px, py]) => [(px / width) * 360 - 180, 90 - (py / height) * 180] as Position
+        );
 
         wgs84Ring = chaikinSmooth(wgs84Ring, 3);
         const tolerance = (1 / width) * 360 * 0.2;
         wgs84Ring = douglasPeuckerSimplify(wgs84Ring, tolerance);
         if (wgs84Ring.length < 4) continue;
 
-        const first = wgs84Ring[0]!, last = wgs84Ring[wgs84Ring.length - 1]!;
+        const first = wgs84Ring[0]!,
+          last = wgs84Ring[wgs84Ring.length - 1]!;
         if (first[0] !== last[0] || first[1] !== last[1]) wgs84Ring.push(first);
 
         wgs84Ring = noisyRing(wgs84Ring, featureCount * 53 + ct * 17, 2, 0.05);
@@ -265,23 +265,25 @@ export function extractClimateZones(
  * Extract the boundary ring of a binary region using contour tracing.
  * Returns pixel coordinates of the outer boundary.
  */
-function extractBoundaryRing(
-  mask: Uint8Array,
-  width: number,
-  height: number
-): Position[] | null {
+function extractBoundaryRing(mask: Uint8Array, width: number, height: number): Position[] | null {
   // Find starting point: first set pixel with an unset neighbor
-  let startX = -1, startY = -1;
+  let startX = -1,
+    startY = -1;
 
-  outer:
-  for (let y = 0; y < height; y++) {
+  outer: for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (mask[y * width + x]) {
         // Check if it's a boundary pixel
-        if (x === 0 || !mask[y * width + (x - 1)] ||
-            x === width - 1 || !mask[y * width + (x + 1)] ||
-            y === 0 || !mask[(y - 1) * width + x] ||
-            y === height - 1 || !mask[(y + 1) * width + x]) {
+        if (
+          x === 0 ||
+          !mask[y * width + (x - 1)] ||
+          x === width - 1 ||
+          !mask[y * width + (x + 1)] ||
+          y === 0 ||
+          !mask[(y - 1) * width + x] ||
+          y === height - 1 ||
+          !mask[(y + 1) * width + x]
+        ) {
           startX = x;
           startY = y;
           break outer;
@@ -297,7 +299,8 @@ function extractBoundaryRing(
   const dx = [1, 1, 0, -1, -1, -1, 0, 1]; // 8-connected directions
   const dy = [0, 1, 1, 1, 0, -1, -1, -1];
 
-  let cx = startX, cy = startY;
+  let cx = startX,
+    cy = startY;
   let dir = 7; // Start looking to the upper-right
   const maxSteps = width * height;
 
@@ -368,16 +371,10 @@ export function chaikinSmooth(ring: Position[], iterations: number = 2): Positio
       const p1 = current[(i + 1) % len]!;
 
       // Q = 0.75 * P[i] + 0.25 * P[i+1]
-      smooth.push([
-        0.75 * p0[0] + 0.25 * p1[0],
-        0.75 * p0[1] + 0.25 * p1[1],
-      ]);
+      smooth.push([0.75 * p0[0] + 0.25 * p1[0], 0.75 * p0[1] + 0.25 * p1[1]]);
 
       // R = 0.25 * P[i] + 0.75 * P[i+1]
-      smooth.push([
-        0.25 * p0[0] + 0.75 * p1[0],
-        0.25 * p0[1] + 0.75 * p1[1],
-      ]);
+      smooth.push([0.25 * p0[0] + 0.75 * p1[0], 0.25 * p0[1] + 0.75 * p1[1]]);
     }
 
     // Close the ring

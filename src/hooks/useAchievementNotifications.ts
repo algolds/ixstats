@@ -172,7 +172,10 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
             legendary: "👑",
           };
 
-          notify.success(`${tierEmojis[achievement.tier]} ${achievement.title}`, `${achievement.description} (+${achievement.points} points)`);
+          notify.success(
+            `${tierEmojis[achievement.tier]} ${achievement.title}`,
+            `${achievement.description} (+${achievement.points} points)`
+          );
         }
 
         // Play sound effect based on tier
@@ -226,7 +229,10 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
       }
 
       if (enableToast && !enableDynamicIsland) {
-        notify.success(`${fullAchievement.title}`, `${fullAchievement.description} (+${fullAchievement.points} points)`);
+        notify.success(
+          `${fullAchievement.title}`,
+          `${fullAchievement.description} (+${fullAchievement.points} points)`
+        );
       }
 
       playAchievementSound(fullAchievement.tier);

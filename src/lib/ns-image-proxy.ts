@@ -1,16 +1,16 @@
 /**
  * NationStates Image Proxy Utilities
- * 
+ *
  * Converts direct NationStates image URLs to proxied URLs
  * to bypass hotlinking restrictions (403 errors).
  */
 
 /**
  * Converts a NationStates image URL to use our proxy endpoint
- * 
+ *
  * @param nsImageUrl - Direct NS image URL (e.g., https://www.nationstates.net/uploads/...)
  * @returns Proxied URL through our API route
- * 
+ *
  * @example
  * ```ts
  * const proxied = proxyNSImage('https://www.nationstates.net/uploads/card_123.jpg');
@@ -38,8 +38,7 @@ export function proxyNSImage(nsImageUrl: string | null | undefined): string {
  */
 export function isNSImageUrl(url: string | null | undefined): boolean {
   if (!url) return false;
-  return url.includes("nationstates.net/images/") || 
-         url.includes("nationstates.net/uploads/");
+  return url.includes("nationstates.net/images/") || url.includes("nationstates.net/uploads/");
 }
 
 /**
@@ -48,4 +47,3 @@ export function isNSImageUrl(url: string | null | undefined): boolean {
 export function proxyNSImages(urls: (string | null | undefined)[]): string[] {
   return urls.map(proxyNSImage);
 }
-

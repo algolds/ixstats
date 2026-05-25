@@ -7,9 +7,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import {
-  resolveEquipmentImage,
-} from "~/server/services/wikimedia-equipment-image-resolver";
+import { resolveEquipmentImage } from "~/server/services/wikimedia-equipment-image-resolver";
 
 const prisma = new PrismaClient();
 
@@ -128,9 +126,7 @@ export async function validateEquipmentImagesJob(): Promise<ValidationJobResult>
     return result;
   } catch (error) {
     result.success = false;
-    result.errors.push(
-      `Fatal error: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
+    result.errors.push(`Fatal error: ${error instanceof Error ? error.message : "Unknown error"}`);
     console.error("[CRON] Validation job failed:", error);
     return result;
   } finally {
@@ -240,7 +236,9 @@ async function sendDiscordNotification(result: ValidationJobResult): Promise<voi
         },
       ],
       footer: {
-        text: result.success ? "Validation completed successfully" : "Validation completed with errors",
+        text: result.success
+          ? "Validation completed successfully"
+          : "Validation completed with errors",
       },
     };
 

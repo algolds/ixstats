@@ -405,7 +405,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
           {/* Activity icon */}
           <div
             className={cn(
-              "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
               typeConfig.bgColor
             )}
           >
@@ -439,7 +439,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
               {activity.trend && (
                 <div
                   className={cn(
-                    "flex-shrink-0 rounded-full px-2 py-1 text-xs font-medium",
+                    "shrink-0 rounded-full px-2 py-1 text-xs font-medium",
                     activity.trend === "trending"
                       ? "bg-orange-500/20 text-orange-400"
                       : activity.trend === "breaking"

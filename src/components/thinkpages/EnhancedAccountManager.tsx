@@ -147,7 +147,10 @@ export function EnhancedAccountManager({
               <div className="flex items-center gap-1">
                 <span className="truncate text-sm font-medium">{account.displayName}</span>
                 {account.verified && (
-                  <span className="inline-flex items-center justify-center h-3 w-3 text-xs leading-none" title="Verified">
+                  <span
+                    className="inline-flex h-3 w-3 items-center justify-center text-xs leading-none"
+                    title="Verified"
+                  >
                     ✅
                   </span>
                 )}

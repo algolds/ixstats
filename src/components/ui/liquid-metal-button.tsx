@@ -17,9 +17,7 @@ export function LiquidMetalButton({
 }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const [ripples, setRipples] = useState<
-    Array<{ x: number; y: number; id: number }>
-  >([]);
+  const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
   const shaderRef = useRef<HTMLDivElement>(null);
   // biome-ignore lint/suspicious/noExplicitAny: External library without types
   const shaderMount = useRef<any>(null);
@@ -79,9 +77,7 @@ export function LiquidMetalButton({
 
     const loadShader = async () => {
       try {
-        const { liquidMetalFragmentShader, ShaderMount } = await import(
-          "@paper-design/shaders"
-        );
+        const { liquidMetalFragmentShader, ShaderMount } = await import("@paper-design/shaders");
 
         if (shaderRef.current) {
           if (shaderMount.current?.destroy) {
@@ -105,7 +101,7 @@ export function LiquidMetalButton({
               u_offsetY: -0.1,
             },
             undefined,
-            0.6,
+            0.6
           );
         }
       } catch (error) {

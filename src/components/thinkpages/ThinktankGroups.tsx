@@ -30,12 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { Label } from "~/components/ui/label";
 import { type RichTextEditorRef } from "~/components/thinkpages/RichTextEditor";
@@ -349,9 +344,7 @@ export function ThinktankGroups({
               return {
                 ...old,
                 messages: old.messages.map((m: any) =>
-                  m.id === update.messageId
-                    ? { ...m, content: update.content ?? m.content }
-                    : m
+                  m.id === update.messageId ? { ...m, content: update.content ?? m.content } : m
                 ),
               };
             });

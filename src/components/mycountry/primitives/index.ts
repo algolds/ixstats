@@ -73,19 +73,12 @@ export { TabHeroBanner } from "./TabHeroBanner";
 export { SectionHero, type StatusBadgeConfig } from "./SectionHero";
 
 // Card background image components
-export {
-  CardBackgroundImage,
-  useCardImage,
-  useAllCardImages,
-} from "./CardBackgroundImage";
+export { CardBackgroundImage, useCardImage, useAllCardImages } from "./CardBackgroundImage";
 
 export { CardImageUploadModal } from "./CardImageUploadModal";
 
 // Enhanced metric tooltip for clickable cards
-export {
-  EnhancedMetricTooltip,
-  type EnhancedMetricTooltipProps,
-} from "./EnhancedMetricTooltip";
+export { EnhancedMetricTooltip, type EnhancedMetricTooltipProps } from "./EnhancedMetricTooltip";
 
 // Re-export card image types for convenience
 export type { CardImageType } from "~/lib/card-image-presets";

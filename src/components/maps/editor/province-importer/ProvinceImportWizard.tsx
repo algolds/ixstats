@@ -1,7 +1,17 @@
 "use client";
 
 import React, { memo, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Upload, Tag, Move, Magnet, CheckCircle, Save } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  Tag,
+  Move,
+  Magnet,
+  CheckCircle,
+  Save,
+} from "lucide-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { UploadStep } from "./UploadStep";
 import { NameDetectionStep } from "./NameDetectionStep";
@@ -44,29 +54,27 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   }, [importer, onComplete]);
 
   return (
-    <div className="flex h-full flex-col bg-card">
+    <div className="bg-card flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">Import Provinces</h2>
+      <div className="border-border flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-foreground text-sm font-semibold">Import Provinces</h2>
         <button
           onClick={handleClose}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center gap-0.5 border-b border-border px-3 py-2">
+      <div className="border-border flex items-center gap-0.5 border-b px-3 py-2">
         {STEP_CONFIG.map((s, i) => {
           const Icon = s.icon;
           const isActive = importer.step === s.key;
           const isPast = importer.stepIndex > i;
           return (
             <React.Fragment key={s.key}>
-              {i > 0 && (
-                <div className={`h-px w-3 ${isPast ? "bg-primary" : "bg-border"}`} />
-              )}
+              {i > 0 && <div className={`h-px w-3 ${isPast ? "bg-primary" : "bg-border"}`} />}
               <button
                 onClick={() => isPast && importer.goToStep(s.key)}
                 disabled={!isPast}
@@ -74,7 +82,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
                   isActive
                     ? "bg-primary/10 text-primary"
                     : isPast
-                      ? "cursor-pointer text-primary/70 hover:bg-accent"
+                      ? "text-primary/70 hover:bg-accent cursor-pointer"
                       : "text-muted-foreground"
                 }`}
               >
@@ -89,7 +97,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
       {/* Step Content */}
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {importer.error && (
-          <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <div className="bg-destructive/10 text-destructive mb-3 rounded-lg px-3 py-2 text-xs">
             {importer.error}
           </div>
         )}
@@ -103,25 +111,29 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
       </div>
 
       {/* Footer Navigation */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-3">
+      <div className="border-border flex items-center justify-between border-t px-4 py-3">
         <button
           onClick={importer.goBack}
           disabled={!importer.canGoBack || importer.isProcessing}
-          className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
+          className="text-muted-foreground hover:bg-accent flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           Back
         </button>
 
-        <div className="text-[10px] text-muted-foreground">
+        <div className="text-muted-foreground text-[10px]">
           {importer.includedCount} province{importer.includedCount !== 1 ? "s" : ""} selected
         </div>
 
         {importer.step !== "commit" ? (
           <button
             onClick={importer.goNext}
-            disabled={!importer.canGoNext || importer.isProcessing || (importer.step === "upload" && importer.rawProvinces.length === 0)}
-            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+            disabled={
+              !importer.canGoNext ||
+              importer.isProcessing ||
+              (importer.step === "upload" && importer.rawProvinces.length === 0)
+            }
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           >
             Next
             <ChevronRight className="h-3.5 w-3.5" />
@@ -130,7 +142,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
           <button
             onClick={handleCommit}
             disabled={importer.isProcessing || importer.includedCount === 0}
-            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           >
             {importer.isProcessing ? "Importing..." : "Import Provinces"}
             <Save className="h-3.5 w-3.5" />

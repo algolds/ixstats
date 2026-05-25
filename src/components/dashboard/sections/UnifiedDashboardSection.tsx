@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import dynamic from "next/dynamic";
+
 import { motion } from "motion/react";
 import Link from "next/link";
 import {
@@ -47,9 +47,7 @@ import { sanitizeUserContent } from "~/lib/sanitize-html";
 
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { SimpleFlag } from "~/components/SimpleFlag";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { useNotify } from "~/hooks/useNotify";
 
 // ─── Config ──────────────────────────────────────────────────────
@@ -77,7 +75,7 @@ const SOURCE_CONFIG: Record<
   forum: { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
 };
 
-const CATEGORY_CONFIG: Record<
+const _CATEGORY_CONFIG: Record<
   string,
   { icon: typeof TrendingUp; bg: string; text: string; label: string; border: string }
 > = {
@@ -162,7 +160,7 @@ const TRENDING_SOURCE: Record<
   crisis: { icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", label: "Crisis" },
 };
 
-const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+const _SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   critical: {
     bg: "bg-red-500/10",
     text: "text-red-600 dark:text-red-400",
@@ -204,7 +202,7 @@ export function UnifiedDashboardSection({
   globalStats: _globalStats,
 }: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
-  const userId = user?.id ?? "";
+  const _userId = user?.id ?? "";
   const notify = useNotify();
   const utils = api.useUtils();
 
@@ -613,7 +611,7 @@ export function UnifiedDashboardSection({
           {/* Sidebar (right 1/3): Community widgets */}
           <div className="space-y-4 md:sticky md:top-6 md:self-start lg:col-span-1">
             {/* Trending Now — Compact */}
-            <Card>
+            <Card className="glass-hierarchy-child border-border/40">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-1.5 text-xs">
                   <Flame className="h-3 w-3 text-orange-400" />
@@ -731,7 +729,7 @@ export function UnifiedDashboardSection({
 
             {/* Economic Tier Distribution */}
             {globalStats?.economicTierDistribution && (
-              <Card>
+              <Card className="glass-hierarchy-child border-border/40">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-1.5 text-xs font-semibold">
                     <Globe className="h-3.5 w-3.5 text-emerald-500" />
@@ -885,7 +883,7 @@ function UnifiedFeedContent({
   if (activities.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <Card className="glass-hierarchy-parent">
+      <Card className="glass-hierarchy-child border-border/40">
         <CardContent className="p-8 text-center">
           <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
@@ -980,7 +978,7 @@ function FollowingFeedContent({
   }
   if (followingCount === 0) {
     return (
-      <Card className="glass-hierarchy-parent">
+      <Card className="glass-hierarchy-child border-border/40">
         <CardContent className="p-8 text-center">
           <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
@@ -998,7 +996,7 @@ function FollowingFeedContent({
   }
   if (activities.length === 0) {
     return (
-      <Card className="glass-hierarchy-parent">
+      <Card className="glass-hierarchy-child border-border/40">
         <CardContent className="p-8 text-center">
           <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
@@ -1152,7 +1150,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
   if (!randomCountries || randomCountries.length === 0) return null;
 
   return (
-    <Card>
+    <Card className="glass-hierarchy-child border-border/40">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-1.5 text-xs">
           <Users className="h-3 w-3 text-blue-400" />
@@ -1178,7 +1176,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
                 }
               >
                 <div className="relative z-10 flex items-center gap-2">
-                  <SimpleFlag countryName={c.name} size="sm" className="flex-shrink-0" />
+                  <SimpleFlag countryName={c.name} size="sm" className="shrink-0" />
                   <div className="min-w-0">
                     <Link
                       href={createUrl(`/countries/${c.slug}`)}
@@ -1238,7 +1236,7 @@ function BlurbOfTheDayCard() {
   if (!prompt) return null;
 
   return (
-    <Card>
+    <Card className="glass-hierarchy-child border-border/40">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-1.5 text-xs">
           <MessageCircle className="h-3 w-3 text-purple-400" />
@@ -1284,7 +1282,7 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
     : "";
 
   return (
-    <div className="group border-border/50 bg-muted/20 hover:bg-muted/40 rounded-xl border p-3 transition-colors">
+    <div className="group glass-hierarchy-child bg-muted/5 hover:bg-muted/15 border-border/30 rounded-xl border p-3 transition-colors">
       <div className="flex items-start gap-3">
         <div
           className={cn(

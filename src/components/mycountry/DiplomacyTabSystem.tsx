@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Send,
-  Calendar,
-  Users,
-  FileText,
-  Building2,
-  Plus,
-} from "lucide-react";
+import { Send, Calendar, Users, FileText, Building2, Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -19,10 +12,7 @@ import { SecureCommunications } from "~/app/mycountry/intelligence/_components/S
 import { DiplomaticEventsHub } from "~/app/mycountry/diplomacy/_components/DiplomaticEventsHub";
 import { api } from "~/trpc/react";
 import { LoadingState } from "~/components/shared";
-import {
-  EmbassyCard,
-  MissionCard,
-} from "~/components/diplomatic/diplomatic-operations";
+import { EmbassyCard, MissionCard } from "~/components/diplomatic/diplomatic-operations";
 
 interface DiplomacyTabSystemProps {
   variant?: "unified" | "standard" | "premium";
@@ -40,33 +30,33 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
   );
 
   // Fetch active embassy missions
-  const { data: missions = [], isLoading: missionsLoading } = api.diplomatic.getActiveMissions.useQuery(
-    { countryId: country?.id || "" },
-    { enabled: !!country?.id }
-  );
+  const { data: missions = [], isLoading: missionsLoading } =
+    api.diplomatic.getActiveMissions.useQuery(
+      { countryId: country?.id || "" },
+      { enabled: !!country?.id }
+    );
 
   if (!country) return null;
 
-  const pendingEmbassies = embassies?.filter((e: any) => e.status === "PENDING" || e.status === "pending").length ?? 0;
+  const pendingEmbassies =
+    embassies?.filter((e: any) => e.status === "PENDING" || e.status === "pending").length ?? 0;
   const activeMissionCount = missions?.length ?? 0;
 
   const TabBadge = ({ count, urgent }: { count: number; urgent?: boolean }) => {
     if (count <= 0) return null;
     return (
-      <span className={`inline-flex items-center justify-center rounded-full text-[9px] font-bold leading-none min-w-[14px] h-3.5 px-1 ${
-        urgent ? "bg-red-500 text-white" : "bg-amber-500 text-white"
-      }`}>
+      <span
+        className={`inline-flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-[9px] leading-none font-bold ${
+          urgent ? "bg-red-500 text-white" : "bg-amber-500 text-white"
+        }`}
+      >
         {count}
       </span>
     );
   };
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={(value) => setActiveTab(value)}
-      className="space-y-4"
-    >
+    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value)} className="space-y-4">
       <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
         <TabsTrigger value="network" className="flex items-center gap-2">
           <Building2 className="h-4 w-4" />
@@ -160,11 +150,7 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
             ) : missions && missions.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {missions.map((mission) => (
-                  <MissionCard
-                    key={mission.id}
-                    mission={mission}
-                    onComplete={() => {}}
-                  />
+                  <MissionCard key={mission.id} mission={mission} onComplete={() => {}} />
                 ))}
               </div>
             ) : (
@@ -173,7 +159,8 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
                   <Calendar className="text-muted-foreground mx-auto mb-4 h-16 w-16 opacity-50" />
                   <h3 className="mb-2 text-lg font-semibold">No Active Missions</h3>
                   <p className="text-muted-foreground mb-4 text-sm">
-                    Launch diplomatic missions to strengthen relationships and achieve strategic goals
+                    Launch diplomatic missions to strengthen relationships and achieve strategic
+                    goals
                   </p>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
@@ -189,7 +176,11 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
       {/* Communications Tab */}
       <TabsContent value="communications">
         <ThemedTabContent theme="diplomacy">
-          <SecureCommunications countryId={country.id} countryName={country.name} clearanceLevel="TOP_SECRET" />
+          <SecureCommunications
+            countryId={country.id}
+            countryName={country.name}
+            clearanceLevel="TOP_SECRET"
+          />
         </ThemedTabContent>
       </TabsContent>
 

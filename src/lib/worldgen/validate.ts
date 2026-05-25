@@ -75,7 +75,9 @@ export function validateAndRepair(graph: PackedGraph): ValidationResult {
   }
 
   // 4. Distribution warnings
-  const landCount = Array.from({ length: cells.n }, (_, i) => i).filter((i) => isLand(graph, i)).length;
+  const landCount = Array.from({ length: cells.n }, (_, i) => i).filter((i) =>
+    isLand(graph, i)
+  ).length;
   const landPct = (landCount / cells.n) * 100;
   if (landPct < 20 || landPct > 60) {
     warnings.push(`Land coverage ${landPct.toFixed(1)}% is outside normal range (20-60%)`);

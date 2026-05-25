@@ -5,11 +5,7 @@
 
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
-import type {
-  AuctionListing,
-  MarketFilters,
-  MarketSort,
-} from "~/types/marketplace";
+import type { AuctionListing, MarketFilters, MarketSort } from "~/types/marketplace";
 
 interface UseMarketDataOptions {
   initialFilters?: Partial<MarketFilters>;
@@ -64,9 +60,7 @@ function mapAuction(auction: any): AuctionListing {
     isExpired: new Date(auction.endTime) < new Date(),
     isFeatured: auction.isFeatured ?? false,
     isExpress:
-      new Date(auction.endTime).getTime() -
-        new Date(auction.createdAt).getTime() <=
-      30 * 60 * 1000,
+      new Date(auction.endTime).getTime() - new Date(auction.createdAt).getTime() <= 30 * 60 * 1000,
     cardInstance: card
       ? {
           id: card.id,
@@ -103,14 +97,8 @@ function mapAuction(auction: any): AuctionListing {
 /**
  * Hook for fetching and managing marketplace auction data via tRPC
  */
-export function useMarketData(
-  options: UseMarketDataOptions = {}
-): UseMarketDataReturn {
-  const {
-    initialFilters = {},
-    initialSort = DEFAULT_SORT,
-    pageSize = 20,
-  } = options;
+export function useMarketData(options: UseMarketDataOptions = {}): UseMarketDataReturn {
+  const { initialFilters = {}, initialSort = DEFAULT_SORT, pageSize = 20 } = options;
 
   const [offset, setOffset] = useState(0);
   const [filters, setFiltersState] = useState<MarketFilters>({
@@ -119,12 +107,11 @@ export function useMarketData(
   });
   const [sort, setSortState] = useState<MarketSort>(initialSort);
 
-  const { data, isLoading, error, refetch } =
-    api.cardMarket.getActiveAuctions.useQuery({
-      limit: pageSize,
-      offset,
-      isFeatured: filters.showFeaturedOnly || undefined,
-    });
+  const { data, isLoading, error, refetch } = api.cardMarket.getActiveAuctions.useQuery({
+    limit: pageSize,
+    offset,
+    isFeatured: filters.showFeaturedOnly || undefined,
+  });
 
   const rawAuctions = data?.auctions ?? [];
   const total = data?.total ?? 0;

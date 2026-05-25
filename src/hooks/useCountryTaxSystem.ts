@@ -17,9 +17,9 @@ import type { TaxBuilderState, TaxCategory, TaxBracket } from "~/hooks/useTaxBui
 
 // Standard staleTime constants (in milliseconds)
 export const STALE_TIME = {
-  FREQUENT: 30_000,    // 30 seconds
-  STANDARD: 60_000,    // 60 seconds
-  STABLE: 300_000,     // 5 minutes
+  FREQUENT: 30_000, // 30 seconds
+  STANDARD: 60_000, // 60 seconds
+  STABLE: 300_000, // 5 minutes
 } as const;
 
 interface UseCountryTaxSystemOptions {
@@ -44,20 +44,20 @@ interface UseCountryTaxSystemReturn {
   taxSystemData: TaxBuilderState | null;
   categories: TaxCategory[];
   brackets: Record<string, TaxBracket[]>;
-  
+
   // Metrics
   metrics: TaxSystemMetrics;
-  
+
   // Query states
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
   isFetching: boolean;
-  
+
   // Mutations
   createTaxSystem: ReturnType<typeof api.taxSystem.create.useMutation>;
   updateTaxSystem: ReturnType<typeof api.taxSystem.update.useMutation>;
-  
+
   // Refetch
   refetch: () => Promise<void>;
 }
@@ -123,10 +123,7 @@ export function useCountryTaxSystem({
 
     const totalTaxRevenue = categories.reduce((sum, cat) => {
       const catBrackets = brackets[cat.id || ""] || [];
-      const catRevenue = catBrackets.reduce(
-        (bSum, bracket) => bSum + (bracket.revenue || 0),
-        0
-      );
+      const catRevenue = catBrackets.reduce((bSum, bracket) => bSum + (bracket.revenue || 0), 0);
       return sum + catRevenue;
     }, 0);
 

@@ -7,10 +7,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
-import {
-  standardMutationCountryOwnerProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { standardMutationCountryOwnerProcedure, adminProcedure } from "~/server/api/trpc";
 import {
   generateTransportNetwork,
   estimateCoastalCities,
@@ -23,10 +20,12 @@ export const transportRouter = createTRPCRouter({
    * Get all transport routes for a country as GeoJSON.
    */
   getCountryRoutes: cachedPublicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      routeType: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        routeType: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const routes = await ctx.db.transportRoute.findMany({
         where: {
@@ -49,7 +48,7 @@ export const transportRouter = createTRPCRouter({
             lengthKm: r.lengthKm,
             terrainDifficulty: r.terrainDifficulty,
             isInternational: r.isInternational,
-            ...(r.properties as Record<string, unknown> ?? {}),
+            ...((r.properties as Record<string, unknown>) ?? {}),
           },
         })),
       };
@@ -91,7 +90,7 @@ export const transportRouter = createTRPCRouter({
             terrainDifficulty: r.terrainDifficulty,
             isInternational: r.isInternational,
             countryName: r.country?.name ?? null,
-            ...(r.properties as Record<string, unknown> ?? {}),
+            ...((r.properties as Record<string, unknown>) ?? {}),
           },
         })),
       };
@@ -149,11 +148,15 @@ export const transportRouter = createTRPCRouter({
    * Available to country owners (generates for their own country) and admins.
    */
   generateRoutes: standardMutationCountryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      routeTypes: z.array(z.enum(["rail", "highway", "road", "shipping_lane", "canal"])).default(["rail", "highway"]),
-      clearExisting: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        routeTypes: z
+          .array(z.enum(["rail", "highway", "road", "shipping_lane", "canal"]))
+          .default(["rail", "highway"]),
+        clearExisting: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Get country + cities
       const country = await ctx.db.country.findUnique({
@@ -250,13 +253,15 @@ export const transportRouter = createTRPCRouter({
         const city = cityNodes.find((c) => c.id === cityId);
         if (!city) continue;
 
-        const routeCount = generated.filter((r) =>
-          r.stops.some((s) => s.cityId === cityId)
-        ).length;
+        const routeCount = generated.filter((r) => r.stops.some((s) => s.cityId === cityId)).length;
 
-        const hubType = city.isCapital ? "station" :
-          city.isCoastal ? "port" :
-          routeCount > 3 ? "junction" : "station";
+        const hubType = city.isCapital
+          ? "station"
+          : city.isCoastal
+            ? "port"
+            : routeCount > 3
+              ? "junction"
+              : "station";
 
         await ctx.db.transportHub.create({
           data: {
@@ -281,14 +286,16 @@ export const transportRouter = createTRPCRouter({
    * Create a single transport route manually.
    */
   createRoute: standardMutationCountryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      routeType: z.string(),
-      name: z.string().optional(),
-      geometry: z.any(), // GeoJSON LineString
-      properties: z.any().optional(),
-      isInternational: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        routeType: z.string(),
+        name: z.string().optional(),
+        geometry: z.any(), // GeoJSON LineString
+        properties: z.any().optional(),
+        isInternational: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.transportRoute.create({
         data: {
@@ -327,21 +334,28 @@ export const transportRouter = createTRPCRouter({
       if (!route) return null;
 
       // Resolve stop city names
-      const stops = (route.stops as Array<{ cityId?: string; name?: string; coordinates?: [number, number]; order?: number }>) ?? [];
-      const cityIds = stops.map(s => s.cityId).filter(Boolean) as string[];
-      const cities = cityIds.length > 0
-        ? await ctx.db.city.findMany({
-            where: { id: { in: cityIds } },
-            select: { id: true, name: true, population: true },
-          })
-        : [];
-      const cityMap = new Map(cities.map(c => [c.id, c]));
+      const stops =
+        (route.stops as Array<{
+          cityId?: string;
+          name?: string;
+          coordinates?: [number, number];
+          order?: number;
+        }>) ?? [];
+      const cityIds = stops.map((s) => s.cityId).filter(Boolean) as string[];
+      const cities =
+        cityIds.length > 0
+          ? await ctx.db.city.findMany({
+              where: { id: { in: cityIds } },
+              select: { id: true, name: true, population: true },
+            })
+          : [];
+      const cityMap = new Map(cities.map((c) => [c.id, c]));
 
       return {
         ...route,
-        stopsResolved: stops.map(s => ({
+        stopsResolved: stops.map((s) => ({
           ...s,
-          cityName: s.cityId ? cityMap.get(s.cityId)?.name ?? s.name : s.name,
+          cityName: s.cityId ? (cityMap.get(s.cityId)?.name ?? s.name) : s.name,
           cityPopulation: s.cityId ? cityMap.get(s.cityId)?.population : null,
         })),
       };
@@ -351,17 +365,19 @@ export const transportRouter = createTRPCRouter({
    * Update route properties (name, type, status, etc).
    */
   updateRoute: standardMutationCountryOwnerProcedure
-    .input(z.object({
-      id: z.string(),
-      countryId: z.string(),
-      name: z.string().optional(),
-      routeType: z.string().optional(),
-      status: z.enum(["planned", "under_construction", "operational", "abandoned"]).optional(),
-      isInternational: z.boolean().optional(),
-      builtYear: z.number().optional(),
-      capacity: z.number().optional(),
-      properties: z.any().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        countryId: z.string(),
+        name: z.string().optional(),
+        routeType: z.string().optional(),
+        status: z.enum(["planned", "under_construction", "operational", "abandoned"]).optional(),
+        isInternational: z.boolean().optional(),
+        builtYear: z.number().optional(),
+        capacity: z.number().optional(),
+        properties: z.any().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, countryId: _cid, ...data } = input;
       // Filter undefined values
@@ -379,11 +395,13 @@ export const transportRouter = createTRPCRouter({
    * Update route geometry (path editing).
    */
   updateRouteGeometry: standardMutationCountryOwnerProcedure
-    .input(z.object({
-      id: z.string(),
-      countryId: z.string(),
-      geometry: z.any(), // GeoJSON LineString
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        countryId: z.string(),
+        geometry: z.any(), // GeoJSON LineString
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Recalculate length from new geometry
       const coords = (input.geometry as { coordinates?: number[][] })?.coordinates ?? [];
@@ -424,14 +442,16 @@ export const transportRouter = createTRPCRouter({
    * Create a transport hub manually.
    */
   createHub: standardMutationCountryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      name: z.string(),
-      hubType: z.enum(["station", "port", "airport", "junction", "interchange"]),
-      coordinates: z.tuple([z.number(), z.number()]),
-      cityId: z.string().optional(),
-      throughput: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        name: z.string(),
+        hubType: z.enum(["station", "port", "airport", "junction", "interchange"]),
+        coordinates: z.tuple([z.number(), z.number()]),
+        cityId: z.string().optional(),
+        throughput: z.number().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.transportHub.create({
         data: {
@@ -449,13 +469,15 @@ export const transportRouter = createTRPCRouter({
    * Update a transport hub.
    */
   updateHub: standardMutationCountryOwnerProcedure
-    .input(z.object({
-      id: z.string(),
-      countryId: z.string(),
-      name: z.string().optional(),
-      hubType: z.enum(["station", "port", "airport", "junction", "interchange"]).optional(),
-      throughput: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        countryId: z.string(),
+        name: z.string().optional(),
+        hubType: z.enum(["station", "port", "airport", "junction", "interchange"]).optional(),
+        throughput: z.number().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, countryId: _cid, ...data } = input;
       const updates: Record<string, unknown> = {};

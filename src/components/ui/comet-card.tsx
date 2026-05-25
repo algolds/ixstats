@@ -1,12 +1,6 @@
 "use client";
 import React, { useRef } from "react";
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  useMotionTemplate,
-} from "motion/react";
+import { motion, useMotionValue, useSpring, useTransform, useMotionTemplate } from "motion/react";
 import { cn } from "~/lib/utils";
 
 /**
@@ -72,23 +66,23 @@ export const CometCard = ({
   const rotateX = useTransform(
     mouseYSpring,
     [-0.5, 0.5],
-    [`-${rotateDepth}deg`, `${rotateDepth}deg`],
+    [`-${rotateDepth}deg`, `${rotateDepth}deg`]
   );
   const rotateY = useTransform(
     mouseXSpring,
     [-0.5, 0.5],
-    [`${rotateDepth}deg`, `-${rotateDepth}deg`],
+    [`${rotateDepth}deg`, `-${rotateDepth}deg`]
   );
 
   const translateX = useTransform(
     mouseXSpring,
     [-0.5, 0.5],
-    [`-${translateDepth}px`, `${translateDepth}px`],
+    [`-${translateDepth}px`, `${translateDepth}px`]
   );
   const translateY = useTransform(
     mouseYSpring,
     [-0.5, 0.5],
-    [`${translateDepth}px`, `-${translateDepth}px`],
+    [`${translateDepth}px`, `-${translateDepth}px`]
   );
 
   const glareX = useTransform(mouseXSpring, [-0.5, 0.5], [0, 100]);
@@ -100,10 +94,7 @@ export const CometCard = ({
   const holographicBackground = useMotionTemplate`linear-gradient(${glareX}deg, rgba(255, 0, 0, ${holographicIntensity * 0.3}) 0%, rgba(255, 127, 0, ${holographicIntensity * 0.3}) 14%, rgba(255, 255, 0, ${holographicIntensity * 0.3}) 28%, rgba(0, 255, 0, ${holographicIntensity * 0.3}) 42%, rgba(0, 0, 255, ${holographicIntensity * 0.3}) 57%, rgba(75, 0, 130, ${holographicIntensity * 0.3}) 71%, rgba(148, 0, 211, ${holographicIntensity * 0.3}) 85%, rgba(255, 0, 0, ${holographicIntensity * 0.3}) 100%)`;
 
   // Glass physics shadow configuration
-  const glassPhysicsShadows: Record<
-    "parent" | "child" | "interactive" | "modal",
-    string
-  > = {
+  const glassPhysicsShadows: Record<"parent" | "child" | "interactive" | "modal", string> = {
     parent:
       "rgba(0, 0, 0, 0.05) 0px 520px 146px 0px, rgba(0, 0, 0, 0.08) 0px 333px 133px 0px, rgba(0, 0, 0, 0.3) 0px 83px 83px 0px, rgba(0, 0, 0, 0.35) 0px 21px 46px 0px",
     child:

@@ -6,11 +6,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { DemoSeedService } from "~/lib/demo-seed";
 import { isSystemOwner } from "~/lib/system-owner-constants";
@@ -130,7 +126,10 @@ export const demoModeRouter = createTRPCRouter({
       // Auto-destroy any existing demo country (config-tracked or orphaned)
       const existingId = await getConfig(ctx.db, DEMO_COUNTRY_KEY);
       const existingDemo = existingId
-        ? await ctx.db.country.findFirst({ where: { id: existingId, isDemo: true }, select: { id: true } })
+        ? await ctx.db.country.findFirst({
+            where: { id: existingId, isDemo: true },
+            select: { id: true },
+          })
         : await ctx.db.country.findFirst({ where: { isDemo: true }, select: { id: true } });
 
       if (existingDemo) {
@@ -143,12 +142,22 @@ export const demoModeRouter = createTRPCRouter({
       const demoCountryId = await DemoSeedService.createDemoCountry(ctx.db, input.sourceCountryId);
 
       // Seed all subsystems (clone-first from source country)
-      const stats = await DemoSeedService.seedAllSubsystems(ctx.db, demoCountryId, userId, input.sourceCountryId);
+      const stats = await DemoSeedService.seedAllSubsystems(
+        ctx.db,
+        demoCountryId,
+        userId,
+        input.sourceCountryId
+      );
 
       // Set config
       await setConfig(ctx.db, DEMO_ACTIVE_KEY, "true", "Whether demo mode is active");
       await setConfig(ctx.db, DEMO_COUNTRY_KEY, demoCountryId, "ID of the demo country");
-      await setConfig(ctx.db, DEMO_SOURCE_KEY, input.sourceCountryId, "Source country for demo cloning");
+      await setConfig(
+        ctx.db,
+        DEMO_SOURCE_KEY,
+        input.sourceCountryId,
+        "Source country for demo cloning"
+      );
 
       return { demoCountryId, stats };
     }),
@@ -167,14 +176,20 @@ export const demoModeRouter = createTRPCRouter({
   reactivate: adminProcedure.mutation(async ({ ctx }) => {
     const countryId = await getConfig(ctx.db, DEMO_COUNTRY_KEY);
     if (!countryId) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "No demo country exists. Use activate first." });
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No demo country exists. Use activate first.",
+      });
     }
 
     const exists = await ctx.db.country.findFirst({
       where: { id: countryId, isDemo: true },
     });
     if (!exists) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Demo country no longer exists. Use activate to create a new one." });
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Demo country no longer exists. Use activate to create a new one.",
+      });
     }
 
     await setConfig(ctx.db, DEMO_ACTIVE_KEY, "true");
@@ -195,7 +210,10 @@ export const demoModeRouter = createTRPCRouter({
 
     const sourceCountryId = await getConfig(ctx.db, DEMO_SOURCE_KEY);
     if (!sourceCountryId) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Source country ID not stored. Destroy and re-activate." });
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Source country ID not stored. Destroy and re-activate.",
+      });
     }
 
     // Wipe existing subsystem data
@@ -208,7 +226,9 @@ export const demoModeRouter = createTRPCRouter({
     await ctx.db.militaryBranch.deleteMany({ where: { countryId } });
     await ctx.db.politicalParty.deleteMany({ where: { countryId } });
     await ctx.db.legislature.deleteMany({ where: { countryId } });
-    await ctx.db.embassy.deleteMany({ where: { OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }] } });
+    await ctx.db.embassy.deleteMany({
+      where: { OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }] },
+    });
     // New models added by clone-first system
     await ctx.db.governmentComponent.deleteMany({ where: { countryId } });
     await ctx.db.economicComponent.deleteMany({ where: { countryId } });
@@ -224,10 +244,13 @@ export const demoModeRouter = createTRPCRouter({
     await ctx.db.borderSecurity.deleteMany({ where: { countryId } });
     // Government tree (cascade from governmentStructure departments)
     const govStructure = await ctx.db.governmentStructure.findFirst({
-      where: { countryId }, select: { id: true },
+      where: { countryId },
+      select: { id: true },
     });
     if (govStructure) {
-      await ctx.db.governmentDepartment.deleteMany({ where: { governmentStructureId: govStructure.id } });
+      await ctx.db.governmentDepartment.deleteMany({
+        where: { governmentStructureId: govStructure.id },
+      });
     }
     // 1:1 economic models
     await ctx.db.demographics.deleteMany({ where: { countryId } });
@@ -245,9 +268,15 @@ export const demoModeRouter = createTRPCRouter({
     await ctx.db.intelligenceAlert.deleteMany({ where: { countryId } });
     // Activity Feed and User Achievements
     await ctx.db.activityFeed.deleteMany({ where: { countryId } });
-    const reseedUser = await ctx.db.user.findFirst({
-      where: { countryId }, select: { clerkUserId: true },
-    }).catch((err: unknown) => { console.error("[DemoMode] Background op failed:", (err as Error).message); return null; });
+    const reseedUser = await ctx.db.user
+      .findFirst({
+        where: { countryId },
+        select: { clerkUserId: true },
+      })
+      .catch((err: unknown) => {
+        console.error("[DemoMode] Background op failed:", (err as Error).message);
+        return null;
+      });
     if (reseedUser?.clerkUserId) {
       await ctx.db.userAchievement.deleteMany({ where: { userId: reseedUser.clerkUserId } });
     }
@@ -255,7 +284,12 @@ export const demoModeRouter = createTRPCRouter({
     await ctx.db.nPCPersonalityAssignment.deleteMany({ where: { countryId } });
 
     // Re-seed from source
-    const stats = await DemoSeedService.seedAllSubsystems(ctx.db, countryId, userId, sourceCountryId);
+    const stats = await DemoSeedService.seedAllSubsystems(
+      ctx.db,
+      countryId,
+      userId,
+      sourceCountryId
+    );
 
     return { stats };
   }),

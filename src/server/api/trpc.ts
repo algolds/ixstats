@@ -105,7 +105,10 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
           if (VERBOSE) console.log(`[TRPC Context] User ${auth.userId} served from context cache`);
         } else if (isDatabaseReadOnly) {
           // In read-only mode, only look up existing users (no creation)
-          if (VERBOSE) console.log(`[TRPC Context] Read-only mode: Looking up user ${auth.userId} (no creation)`);
+          if (VERBOSE)
+            console.log(
+              `[TRPC Context] Read-only mode: Looking up user ${auth.userId} (no creation)`
+            );
           user = await db.user.findUnique({
             where: { clerkUserId: auth.userId },
             include: {
@@ -122,13 +125,16 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
             },
           });
           if (!user) {
-            console.warn(`[TRPC Context] Read-only mode: User ${auth.userId} not found in database (cannot create)`);
+            console.warn(
+              `[TRPC Context] Read-only mode: User ${auth.userId} not found in database (cannot create)`
+            );
           } else {
             setCachedUserContext(auth.userId, user);
           }
         } else {
           // Normal mode: use centralized user management service to ensure correct role
-          if (VERBOSE) console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
+          if (VERBOSE)
+            console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
           const userService = new UserManagementService(db);
           user = await userService.getOrCreateUser(auth.userId);
           if (user) {
@@ -137,9 +143,10 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
         }
 
         if (user) {
-          if (VERBOSE) console.log(
-            `[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
-          );
+          if (VERBOSE)
+            console.log(
+              `[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
+            );
         } else {
           console.error(`[TRPC Context] Failed to get/create user: ${auth.userId}`);
         }
@@ -283,22 +290,20 @@ const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
   if (!ctx.auth?.userId) {
     console.warn(
       `[AUTH_MIDDLEWARE] Unauthenticated access attempt to: ${path || "unknown"}, ` +
-      `IP: ${ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"}`
+        `IP: ${ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"}`
     );
-    throw new UnauthorizedError(
-      "Authentication required. Please sign in to access this resource."
-    );
+    throw new UnauthorizedError("Authentication required. Please sign in to access this resource.");
   }
 
   // Ensure user exists in our database
   if (!ctx.user) {
     console.error(
       `[AUTH_MIDDLEWARE] User ${ctx.auth.userId} authenticated with Clerk but not found in database. ` +
-      `This may indicate a first-time login that failed to create a user record.`
+        `This may indicate a first-time login that failed to create a user record.`
     );
     throw new UnauthorizedError(
       "User account not found in system. Please try logging out and logging back in. " +
-      "If the issue persists, contact support."
+        "If the issue persists, contact support."
     );
   }
 
@@ -322,7 +327,8 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
 
   // System owners and admin-role users can access any country, bypass country ownership check
   const userRole = (ctx.user as any)?.role ?? (ctx.auth as any)?.sessionClaims?.metadata?.role;
-  const isAdmin = isSystemOwner(ctx.auth.userId) ||
+  const isAdmin =
+    isSystemOwner(ctx.auth.userId) ||
     (typeof userRole === "string" && ["admin", "owner", "staff"].includes(userRole));
   if (isAdmin) {
     return next({
@@ -342,14 +348,16 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
     );
     throw new ForbiddenError(
       "Country ownership required. You must create or claim a country before accessing this feature. " +
-      "Visit the Country Builder to get started."
+        "Visit the Country Builder to get started."
     );
   }
 
   // Use country from user context if already loaded (avoids redundant DB query)
-  const country = (ctx.user as any).country || await ctx.db.country.findUnique({
-    where: { id: ctx.user.countryId },
-  });
+  const country =
+    (ctx.user as any).country ||
+    (await ctx.db.country.findUnique({
+      where: { id: ctx.user.countryId },
+    }));
 
   if (!country) {
     console.error(
@@ -357,7 +365,7 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
     );
     throw new InternalError(
       "Your linked country could not be found in the database. " +
-      "This may indicate a data integrity issue. Please contact support."
+        "This may indicate a data integrity issue. Please contact support."
     );
   }
 
@@ -539,7 +547,8 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
     throw new ForbiddenError("MyCountry Premium membership required");
   }
 
-  if (VERBOSE) console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
+  if (VERBOSE)
+    console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
 
   return next({
     ctx: {
@@ -563,7 +572,8 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // If user wasn't loaded in context, try to load it here
   let user = ctx.user;
   if (!user) {
-    if (VERBOSE) console.log(`[ADMIN_MIDDLEWARE] User not in context, loading for ${ctx.auth.userId}`);
+    if (VERBOSE)
+      console.log(`[ADMIN_MIDDLEWARE] User not in context, loading for ${ctx.auth.userId}`);
     try {
       user = await db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
@@ -591,7 +601,10 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
 
   // System owners bypass all role checks
   if (isSystemOwnerUser) {
-    if (VERBOSE) console.log(`[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`);
+    if (VERBOSE)
+      console.log(
+        `[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`
+      );
     return next({
       ctx: {
         ...ctx,
@@ -611,12 +624,12 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   if (!(user as any).role) {
     console.error(
       `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId}). ` +
-      `User record exists but roleId may be NULL or role record may be missing.`
+        `User record exists but roleId may be NULL or role record may be missing.`
     );
     throw new ForbiddenError(
       "Your account has no assigned role. This usually means your account was created before the role system was implemented. " +
-      "Please try logging out and logging back in, or contact support if the issue persists. " +
-      `(User ID: ${ctx.auth.userId.substring(0, 8)}...)`
+        "Please try logging out and logging back in, or contact support if the issue persists. " +
+        `(User ID: ${ctx.auth.userId.substring(0, 8)}...)`
     );
   }
 
@@ -632,7 +645,7 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     );
     throw new ForbiddenError(
       `Admin privileges required. Your current role is "${roleName}" (level ${roleLevel}), which does not have admin access. ` +
-      "Contact a system administrator if you believe this is an error."
+        "Contact a system administrator if you believe this is an error."
     );
   }
 
@@ -667,9 +680,10 @@ const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
   // For intelligence feeds and executive data, ensure sensitive info is filtered
   if (path.includes("Intelligence") || path.includes("executive")) {
     // Log data access for privacy compliance
-    if (VERBOSE) console.log(
-      `[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`
-    );
+    if (VERBOSE)
+      console.log(
+        `[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`
+      );
 
     // Data sanitization based on user permissions handled by individual routers
     // Each router implements appropriate data filtering for public vs authenticated access

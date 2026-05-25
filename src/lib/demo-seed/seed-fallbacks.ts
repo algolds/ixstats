@@ -15,22 +15,29 @@ const demoSuffix = () => Math.random().toString(36).substring(2, 8);
 
 // ─── Meetings ──────────────────────────────────────────────────────
 
-export async function seedMeetings(prisma: Prisma, countryId: string, userId: string): Promise<number> {
+export async function seedMeetings(
+  prisma: Prisma,
+  countryId: string,
+  userId: string
+): Promise<number> {
   const now = new Date();
   const meetings = [
     {
-      countryId, userId,
+      countryId,
+      userId,
       title: "Emergency Economic Review",
       description: "Emergency session to address rising inflation and trade deficit concerns.",
       scheduledDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
       scheduledIxTime: IxTime.getCurrentIxTime() - 4320,
       duration: 120,
       status: "completed",
-      notes: "Agreed to implement targeted fiscal stimulus. Minister of Finance to prepare detailed proposal.",
+      notes:
+        "Agreed to implement targeted fiscal stimulus. Minister of Finance to prepare detailed proposal.",
       completedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       title: "Defense Modernization Briefing",
       description: "Annual review of military modernization program and budget allocations.",
       scheduledDate: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
@@ -41,7 +48,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
       completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000),
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       title: "Weekly Cabinet Session",
       description: "Regular weekly cabinet meeting to review ongoing policy implementations.",
       scheduledDate: now,
@@ -50,7 +58,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
       status: "in_progress",
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       title: "Infrastructure Investment Summit",
       description: "Review proposals for national infrastructure modernization initiative.",
       scheduledDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
@@ -59,7 +68,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
       status: "scheduled",
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       title: "Education Reform Committee",
       description: "Discuss findings from the national education quality assessment.",
       scheduledDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
@@ -68,32 +78,47 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
       status: "scheduled",
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       title: "Healthcare System Review",
       description: "Quarterly review of universal healthcare implementation progress.",
       scheduledDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
       scheduledIxTime: IxTime.getCurrentIxTime() - 10080,
       duration: 120,
       status: "completed",
-      notes: "Hospital capacity targets met in 3 of 5 regions. Rural healthcare initiative extended.",
+      notes:
+        "Hospital capacity targets met in 3 of 5 regions. Rural healthcare initiative extended.",
       completedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
     },
   ];
 
   let count = 0;
   // Fetch officials for attendance (or use generic names)
-  const govStructure = await prisma.governmentStructure.findFirst({ where: { countryId }, select: { id: true } }).catch(() => null);
+  const govStructure = await prisma.governmentStructure
+    .findFirst({ where: { countryId }, select: { id: true } })
+    .catch(() => null);
   const officials = govStructure
-    ? await prisma.governmentOfficial.findMany({ where: { governmentStructureId: govStructure.id }, select: { id: true, name: true, role: true }, take: 5 }).catch(() => [])
+    ? await prisma.governmentOfficial
+        .findMany({
+          where: { governmentStructureId: govStructure.id },
+          select: { id: true, name: true, role: true },
+          take: 5,
+        })
+        .catch(() => [])
     : [];
-  const attendees = officials.length > 0
-    ? officials.map((o) => ({ officialId: o.id, attendeeName: o.name, attendeeRole: o.role ?? "Official" }))
-    : [
-        { officialId: undefined, attendeeName: "Head of State", attendeeRole: "Head of State" },
-        { officialId: undefined, attendeeName: "Minister of Finance", attendeeRole: "Finance" },
-        { officialId: undefined, attendeeName: "Minister of Defense", attendeeRole: "Defense" },
-        { officialId: undefined, attendeeName: "Chief of Staff", attendeeRole: "Chief of Staff" },
-      ];
+  const attendees =
+    officials.length > 0
+      ? officials.map((o) => ({
+          officialId: o.id,
+          attendeeName: o.name,
+          attendeeRole: o.role ?? "Official",
+        }))
+      : [
+          { officialId: undefined, attendeeName: "Head of State", attendeeRole: "Head of State" },
+          { officialId: undefined, attendeeName: "Minister of Finance", attendeeRole: "Finance" },
+          { officialId: undefined, attendeeName: "Minister of Defense", attendeeRole: "Defense" },
+          { officialId: undefined, attendeeName: "Chief of Staff", attendeeRole: "Chief of Staff" },
+        ];
 
   for (const m of meetings) {
     const meeting = await prisma.cabinetMeeting.create({ data: m });
@@ -109,7 +134,12 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
             officialId: att.officialId ?? undefined,
             attendeeName: att.attendeeName,
             attendeeRole: att.attendeeRole,
-            attendanceStatus: m.status === "scheduled" ? "invited" : (a === attendees.length - 1 ? "excused" : "attended"),
+            attendanceStatus:
+              m.status === "scheduled"
+                ? "invited"
+                : a === attendees.length - 1
+                  ? "excused"
+                  : "attended",
           },
         });
         count++;
@@ -119,9 +149,27 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
     if (m.status === "completed" || m.status === "in_progress") {
       await prisma.meetingAgendaItem.createMany({
         data: [
-          { meetingId: meeting.id, title: "Opening Remarks & Previous Minutes", order: 1, status: "completed", category: "administrative" },
-          { meetingId: meeting.id, title: "Key Policy Updates", order: 2, status: m.status === "completed" ? "completed" : "in_progress", category: "policy" },
-          { meetingId: meeting.id, title: "Budget & Resource Allocation", order: 3, status: m.status === "completed" ? "completed" : "pending", category: "fiscal" },
+          {
+            meetingId: meeting.id,
+            title: "Opening Remarks & Previous Minutes",
+            order: 1,
+            status: "completed",
+            category: "administrative",
+          },
+          {
+            meetingId: meeting.id,
+            title: "Key Policy Updates",
+            order: 2,
+            status: m.status === "completed" ? "completed" : "in_progress",
+            category: "policy",
+          },
+          {
+            meetingId: meeting.id,
+            title: "Budget & Resource Allocation",
+            order: 3,
+            status: m.status === "completed" ? "completed" : "pending",
+            category: "fiscal",
+          },
         ],
       });
       count += 3;
@@ -135,7 +183,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
             {
               meetingId: meeting.id,
               title: "Approve Targeted Fiscal Stimulus Package",
-              description: "Cabinet approved a $500M targeted fiscal stimulus focusing on small business grants, infrastructure fast-tracking, and temporary tax relief for affected sectors.",
+              description:
+                "Cabinet approved a $500M targeted fiscal stimulus focusing on small business grants, infrastructure fast-tracking, and temporary tax relief for affected sectors.",
               decisionType: "policy",
               impact: "high",
               votingResult: "unanimous",
@@ -144,7 +193,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
             {
               meetingId: meeting.id,
               title: "Establish Trade Deficit Task Force",
-              description: "Cross-ministry task force to investigate rising trade deficit and recommend corrective measures within 30 days.",
+              description:
+                "Cross-ministry task force to investigate rising trade deficit and recommend corrective measures within 30 days.",
               decisionType: "strategic",
               impact: "medium",
               votingResult: "majority",
@@ -198,7 +248,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
             {
               meetingId: meeting.id,
               title: "Approve Phase 2 Naval Modernization",
-              description: "Phase 2 approved with $3.2B budget for new corvettes, submarine refits, and port infrastructure upgrades.",
+              description:
+                "Phase 2 approved with $3.2B budget for new corvettes, submarine refits, and port infrastructure upgrades.",
               decisionType: "budget",
               impact: "high",
               votingResult: "majority",
@@ -207,7 +258,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
             {
               meetingId: meeting.id,
               title: "Increase Cyber Defense Budget by 15%",
-              description: "Reallocation from reserve fund to expand cyber defense capabilities including personnel, infrastructure, and training.",
+              description:
+                "Reallocation from reserve fund to expand cyber defense capabilities including personnel, infrastructure, and training.",
               decisionType: "budget",
               impact: "medium",
               votingResult: "unanimous",
@@ -251,7 +303,8 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
             {
               meetingId: meeting.id,
               title: "Extend Rural Healthcare Initiative",
-              description: "Continuation of rural healthcare program with expanded coverage to underserved communities and increased funding for mobile clinics.",
+              description:
+                "Continuation of rural healthcare program with expanded coverage to underserved communities and increased funding for mobile clinics.",
               decisionType: "policy",
               impact: "medium",
               votingResult: "unanimous",
@@ -295,7 +348,10 @@ export async function seedMeetings(prisma: Prisma, countryId: string, userId: st
  * Ensure completed meetings have decisions and action items.
  * Safe to call after clone or seed — only creates records if none exist.
  */
-export async function seedMeetingDecisionsIfMissing(prisma: Prisma, countryId: string): Promise<number> {
+export async function seedMeetingDecisionsIfMissing(
+  prisma: Prisma,
+  countryId: string
+): Promise<number> {
   const completedMeetings = await prisma.cabinetMeeting.findMany({
     where: { countryId, status: "completed" },
     select: { id: true, title: true },
@@ -366,94 +422,174 @@ export async function seedMeetingDecisionsIfMissing(prisma: Prisma, countryId: s
 
 // ─── Policies ──────────────────────────────────────────────────────
 
-export async function seedPolicies(prisma: Prisma, countryId: string, userId: string): Promise<number> {
+export async function seedPolicies(
+  prisma: Prisma,
+  countryId: string,
+  userId: string
+): Promise<number> {
   const now = new Date();
   const ixNow = IxTime.getCurrentIxTime();
   const policies = [
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "National Digital Infrastructure Act",
-      description: "Comprehensive broadband expansion and digital services modernization across all regions.",
-      policyType: "legislation", category: "infrastructure", status: "active", priority: "high",
-      objectives: JSON.stringify(["95% broadband coverage by 2028", "Digital government services portal", "Rural connectivity initiative"]),
-      implementationCost: 2500000000, maintenanceCost: 150000000,
-      gdpEffect: 0.3, employmentEffect: 0.5, inflationEffect: 0.1,
+      description:
+        "Comprehensive broadband expansion and digital services modernization across all regions.",
+      policyType: "legislation",
+      category: "infrastructure",
+      status: "active",
+      priority: "high",
+      objectives: JSON.stringify([
+        "95% broadband coverage by 2028",
+        "Digital government services portal",
+        "Rural connectivity initiative",
+      ]),
+      implementationCost: 2500000000,
+      maintenanceCost: 150000000,
+      gdpEffect: 0.3,
+      employmentEffect: 0.5,
+      inflationEffect: 0.1,
       proposedDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
       effectiveDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
-      proposedIxTime: ixNow - 43200, effectiveIxTime: ixNow - 21600,
+      proposedIxTime: ixNow - 43200,
+      effectiveIxTime: ixNow - 21600,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "Green Energy Transition Plan",
-      description: "Phase out coal power plants and transition to renewable energy sources over 10 years.",
-      policyType: "strategic_plan", category: "environmental", status: "active", priority: "critical",
-      objectives: JSON.stringify(["50% renewable energy by 2030", "Carbon tax implementation", "Electric vehicle incentives"]),
-      implementationCost: 8000000000, maintenanceCost: 500000000,
-      gdpEffect: -0.1, employmentEffect: 0.8, inflationEffect: 0.2,
+      description:
+        "Phase out coal power plants and transition to renewable energy sources over 10 years.",
+      policyType: "strategic_plan",
+      category: "environmental",
+      status: "active",
+      priority: "critical",
+      objectives: JSON.stringify([
+        "50% renewable energy by 2030",
+        "Carbon tax implementation",
+        "Electric vehicle incentives",
+      ]),
+      implementationCost: 8000000000,
+      maintenanceCost: 500000000,
+      gdpEffect: -0.1,
+      employmentEffect: 0.8,
+      inflationEffect: 0.2,
       proposedDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
       effectiveDate: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000),
-      proposedIxTime: ixNow - 86400, effectiveIxTime: ixNow - 64800,
+      proposedIxTime: ixNow - 86400,
+      effectiveIxTime: ixNow - 64800,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "Universal Healthcare Expansion",
-      description: "Extend universal healthcare coverage to include dental, mental health, and prescription drugs.",
-      policyType: "reform", category: "social", status: "active", priority: "high",
-      implementationCost: 5000000000, maintenanceCost: 3000000000,
-      gdpEffect: 0.1, employmentEffect: 1.2, inflationEffect: 0.3,
+      description:
+        "Extend universal healthcare coverage to include dental, mental health, and prescription drugs.",
+      policyType: "reform",
+      category: "social",
+      status: "active",
+      priority: "high",
+      implementationCost: 5000000000,
+      maintenanceCost: 3000000000,
+      gdpEffect: 0.1,
+      employmentEffect: 1.2,
+      inflationEffect: 0.3,
       proposedDate: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
       effectiveDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
-      proposedIxTime: ixNow - 129600, effectiveIxTime: ixNow - 86400,
+      proposedIxTime: ixNow - 129600,
+      effectiveIxTime: ixNow - 86400,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "Small Business Innovation Fund",
-      description: "Government-backed venture fund to support technology startups and small business growth.",
-      policyType: "program", category: "economic", status: "active", priority: "medium",
-      implementationCost: 1000000000, maintenanceCost: 100000000,
-      gdpEffect: 0.5, employmentEffect: 1.5, inflationEffect: 0,
+      description:
+        "Government-backed venture fund to support technology startups and small business growth.",
+      policyType: "program",
+      category: "economic",
+      status: "active",
+      priority: "medium",
+      implementationCost: 1000000000,
+      maintenanceCost: 100000000,
+      gdpEffect: 0.5,
+      employmentEffect: 1.5,
+      inflationEffect: 0,
       proposedDate: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
       effectiveDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
-      proposedIxTime: ixNow - 28800, effectiveIxTime: ixNow - 14400,
+      proposedIxTime: ixNow - 28800,
+      effectiveIxTime: ixNow - 14400,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "National Defense Modernization Act",
-      description: "Comprehensive military modernization including cyber capabilities and naval expansion.",
-      policyType: "legislation", category: "defense", status: "active", priority: "critical",
-      implementationCost: 12000000000, maintenanceCost: 2000000000,
-      gdpEffect: 0.2, employmentEffect: 0.3, inflationEffect: 0.1,
+      description:
+        "Comprehensive military modernization including cyber capabilities and naval expansion.",
+      policyType: "legislation",
+      category: "defense",
+      status: "active",
+      priority: "critical",
+      implementationCost: 12000000000,
+      maintenanceCost: 2000000000,
+      gdpEffect: 0.2,
+      employmentEffect: 0.3,
+      inflationEffect: 0.1,
       proposedDate: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000),
       effectiveDate: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
-      proposedIxTime: ixNow - 172800, effectiveIxTime: ixNow - 129600,
+      proposedIxTime: ixNow - 172800,
+      effectiveIxTime: ixNow - 129600,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "Anti-Corruption Transparency Act",
-      description: "Strengthen whistleblower protections and require financial disclosure for all senior officials.",
-      policyType: "legislation", category: "governance", status: "draft", priority: "medium",
-      implementationCost: 50000000, maintenanceCost: 10000000,
-      gdpEffect: 0.1, employmentEffect: 0, inflationEffect: 0,
+      description:
+        "Strengthen whistleblower protections and require financial disclosure for all senior officials.",
+      policyType: "legislation",
+      category: "governance",
+      status: "draft",
+      priority: "medium",
+      implementationCost: 50000000,
+      maintenanceCost: 10000000,
+      gdpEffect: 0.1,
+      employmentEffect: 0,
+      inflationEffect: 0,
       proposedDate: now,
       proposedIxTime: ixNow,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "Agricultural Subsidy Reform",
       description: "Restructure agricultural subsidies to favor sustainable farming practices.",
-      policyType: "reform", category: "economic", status: "review", priority: "medium",
-      implementationCost: 800000000, maintenanceCost: 600000000,
-      gdpEffect: 0.1, employmentEffect: -0.2, inflationEffect: -0.1,
+      policyType: "reform",
+      category: "economic",
+      status: "review",
+      priority: "medium",
+      implementationCost: 800000000,
+      maintenanceCost: 600000000,
+      gdpEffect: 0.1,
+      employmentEffect: -0.2,
+      inflationEffect: -0.1,
       proposedDate: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
       proposedIxTime: ixNow - 7200,
     },
     {
-      countryId, userId,
+      countryId,
+      userId,
       name: "Immigration Reform Package",
-      description: "Streamline skilled worker visa process and strengthen border security measures.",
-      policyType: "legislation", category: "social", status: "draft", priority: "high",
-      implementationCost: 2000000000, maintenanceCost: 500000000,
-      gdpEffect: 0.4, employmentEffect: 0.6, inflationEffect: 0.1,
+      description:
+        "Streamline skilled worker visa process and strengthen border security measures.",
+      policyType: "legislation",
+      category: "social",
+      status: "draft",
+      priority: "high",
+      implementationCost: 2000000000,
+      maintenanceCost: 500000000,
+      gdpEffect: 0.4,
+      employmentEffect: 0.6,
+      inflationEffect: 0.1,
       proposedDate: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
       proposedIxTime: ixNow - 2880,
     },
@@ -462,23 +598,82 @@ export async function seedPolicies(prisma: Prisma, countryId: string, userId: st
   let count = 0;
 
   // Effect log data for active policies (keyed by policy name)
-  const effectLogData: Record<string, Array<{ effectType: string; metricsBefore: string; metricsAfter: string; actualEffect: string; notes: string; daysAgo: number }>> = {
+  const effectLogData: Record<
+    string,
+    Array<{
+      effectType: string;
+      metricsBefore: string;
+      metricsAfter: string;
+      actualEffect: string;
+      notes: string;
+      daysAgo: number;
+    }>
+  > = {
     "National Digital Infrastructure Act": [
-      { effectType: "economic", metricsBefore: JSON.stringify({ broadbandCoverage: 72 }), metricsAfter: JSON.stringify({ broadbandCoverage: 78 }), actualEffect: "+6% broadband coverage", notes: "Phase 1 rollout complete in urban areas.", daysAgo: 10 },
+      {
+        effectType: "economic",
+        metricsBefore: JSON.stringify({ broadbandCoverage: 72 }),
+        metricsAfter: JSON.stringify({ broadbandCoverage: 78 }),
+        actualEffect: "+6% broadband coverage",
+        notes: "Phase 1 rollout complete in urban areas.",
+        daysAgo: 10,
+      },
     ],
     "Green Energy Transition Plan": [
-      { effectType: "environmental", metricsBefore: JSON.stringify({ renewableShare: 22 }), metricsAfter: JSON.stringify({ renewableShare: 26 }), actualEffect: "+4% renewable energy share", notes: "Two coal plants decommissioned ahead of schedule.", daysAgo: 30 },
-      { effectType: "economic", metricsBefore: JSON.stringify({ greenJobs: 45000 }), metricsAfter: JSON.stringify({ greenJobs: 52000 }), actualEffect: "+7,000 green sector jobs", notes: "Solar panel manufacturing facility opened.", daysAgo: 15 },
+      {
+        effectType: "environmental",
+        metricsBefore: JSON.stringify({ renewableShare: 22 }),
+        metricsAfter: JSON.stringify({ renewableShare: 26 }),
+        actualEffect: "+4% renewable energy share",
+        notes: "Two coal plants decommissioned ahead of schedule.",
+        daysAgo: 30,
+      },
+      {
+        effectType: "economic",
+        metricsBefore: JSON.stringify({ greenJobs: 45000 }),
+        metricsAfter: JSON.stringify({ greenJobs: 52000 }),
+        actualEffect: "+7,000 green sector jobs",
+        notes: "Solar panel manufacturing facility opened.",
+        daysAgo: 15,
+      },
     ],
     "Universal Healthcare Expansion": [
-      { effectType: "social", metricsBefore: JSON.stringify({ coverageRate: 85 }), metricsAfter: JSON.stringify({ coverageRate: 91 }), actualEffect: "+6% healthcare coverage", notes: "Dental and mental health services now covered in 3 regions.", daysAgo: 20 },
+      {
+        effectType: "social",
+        metricsBefore: JSON.stringify({ coverageRate: 85 }),
+        metricsAfter: JSON.stringify({ coverageRate: 91 }),
+        actualEffect: "+6% healthcare coverage",
+        notes: "Dental and mental health services now covered in 3 regions.",
+        daysAgo: 20,
+      },
     ],
     "Small Business Innovation Fund": [
-      { effectType: "economic", metricsBefore: JSON.stringify({ startupsCreated: 0 }), metricsAfter: JSON.stringify({ startupsCreated: 140 }), actualEffect: "140 startups funded in first cycle", notes: "Applications exceeded projections by 200%.", daysAgo: 5 },
+      {
+        effectType: "economic",
+        metricsBefore: JSON.stringify({ startupsCreated: 0 }),
+        metricsAfter: JSON.stringify({ startupsCreated: 140 }),
+        actualEffect: "140 startups funded in first cycle",
+        notes: "Applications exceeded projections by 200%.",
+        daysAgo: 5,
+      },
     ],
     "National Defense Modernization Act": [
-      { effectType: "defense", metricsBefore: JSON.stringify({ readinessIndex: 68 }), metricsAfter: JSON.stringify({ readinessIndex: 74 }), actualEffect: "+6 readiness index points", notes: "Cyber defense division fully operational.", daysAgo: 45 },
-      { effectType: "economic", metricsBefore: JSON.stringify({ defenseIndustryJobs: 120000 }), metricsAfter: JSON.stringify({ defenseIndustryJobs: 128000 }), actualEffect: "+8,000 defense industry jobs", notes: "Naval shipyard expansion created new positions.", daysAgo: 25 },
+      {
+        effectType: "defense",
+        metricsBefore: JSON.stringify({ readinessIndex: 68 }),
+        metricsAfter: JSON.stringify({ readinessIndex: 74 }),
+        actualEffect: "+6 readiness index points",
+        notes: "Cyber defense division fully operational.",
+        daysAgo: 45,
+      },
+      {
+        effectType: "economic",
+        metricsBefore: JSON.stringify({ defenseIndustryJobs: 120000 }),
+        metricsAfter: JSON.stringify({ defenseIndustryJobs: 128000 }),
+        actualEffect: "+8,000 defense industry jobs",
+        notes: "Naval shipyard expansion created new positions.",
+        daysAgo: 25,
+      },
     ],
   };
 
@@ -493,7 +688,7 @@ export async function seedPolicies(prisma: Prisma, countryId: string, userId: st
         await prisma.policyEffectLog.create({
           data: {
             policyId: policy.id,
-            appliedIxTime: ixNow - (log.daysAgo * 1440),
+            appliedIxTime: ixNow - log.daysAgo * 1440,
             appliedAt: new Date(now.getTime() - log.daysAgo * 24 * 60 * 60 * 1000),
             effectType: log.effectType,
             metricsBefore: log.metricsBefore,
@@ -515,11 +710,56 @@ export async function seedElections(prisma: Prisma, countryId: string): Promise<
   let count = 0;
 
   const partyData = [
-    { countryId, name: "National Unity Party", shortName: "NUP", ideology: "center_right", color: "#1e40af", leaderName: "Marcus Aurelius Varro", baseSupport: 35, currentSupport: 38 },
-    { countryId, name: "Progressive Democratic Alliance", shortName: "PDA", ideology: "center_left", color: "#dc2626", leaderName: "Lucia Septimia", baseSupport: 28, currentSupport: 26 },
-    { countryId, name: "Conservative Reform Party", shortName: "CRP", ideology: "right", color: "#15803d", leaderName: "Gaius Decimus Albinus", baseSupport: 18, currentSupport: 17 },
-    { countryId, name: "Social Democratic Front", shortName: "SDF", ideology: "left", color: "#d97706", leaderName: "Valeria Messalina", baseSupport: 12, currentSupport: 13 },
-    { countryId, name: "Liberty & Justice Coalition", shortName: "LJC", ideology: "center", color: "#7c3aed", leaderName: "Tiberius Cassius", baseSupport: 7, currentSupport: 6 },
+    {
+      countryId,
+      name: "National Unity Party",
+      shortName: "NUP",
+      ideology: "center_right",
+      color: "#1e40af",
+      leaderName: "Marcus Aurelius Varro",
+      baseSupport: 35,
+      currentSupport: 38,
+    },
+    {
+      countryId,
+      name: "Progressive Democratic Alliance",
+      shortName: "PDA",
+      ideology: "center_left",
+      color: "#dc2626",
+      leaderName: "Lucia Septimia",
+      baseSupport: 28,
+      currentSupport: 26,
+    },
+    {
+      countryId,
+      name: "Conservative Reform Party",
+      shortName: "CRP",
+      ideology: "right",
+      color: "#15803d",
+      leaderName: "Gaius Decimus Albinus",
+      baseSupport: 18,
+      currentSupport: 17,
+    },
+    {
+      countryId,
+      name: "Social Democratic Front",
+      shortName: "SDF",
+      ideology: "left",
+      color: "#d97706",
+      leaderName: "Valeria Messalina",
+      baseSupport: 12,
+      currentSupport: 13,
+    },
+    {
+      countryId,
+      name: "Liberty & Justice Coalition",
+      shortName: "LJC",
+      ideology: "center",
+      color: "#7c3aed",
+      leaderName: "Tiberius Cassius",
+      baseSupport: 7,
+      currentSupport: 6,
+    },
   ];
 
   const parties = [];
@@ -530,8 +770,13 @@ export async function seedElections(prisma: Prisma, countryId: string): Promise<
 
   const legislature = await prisma.legislature.create({
     data: {
-      countryId, name: "Imperial Senate", chamberType: "unicameral",
-      totalSeats: 200, electoralSystem: "proportional", termLength: 5, electionCycle: "fixed",
+      countryId,
+      name: "Imperial Senate",
+      chamberType: "unicameral",
+      totalSeats: 200,
+      electoralSystem: "proportional",
+      termLength: 5,
+      electionCycle: "fixed",
     },
   });
   count++;
@@ -541,7 +786,12 @@ export async function seedElections(prisma: Prisma, countryId: string): Promise<
   for (let i = 0; i < parties.length; i++) {
     for (let s = 0; s < seatDistribution[i]!; s++) {
       await prisma.legislativeSeat.create({
-        data: { legislatureId: legislature.id, partyId: parties[i]!.id, seatNumber: seatNum++, isActive: true },
+        data: {
+          legislatureId: legislature.id,
+          partyId: parties[i]!.id,
+          seatNumber: seatNum++,
+          isActive: true,
+        },
       });
       count++;
     }
@@ -549,9 +799,15 @@ export async function seedElections(prisma: Prisma, countryId: string): Promise<
 
   const election = await prisma.election.create({
     data: {
-      countryId, legislatureId: legislature.id, electionType: "general",
-      name: `${new Date().getFullYear()} General Election`, scheduledIxTime: IxTime.getCurrentIxTime() - 100000,
-      status: "completed", turnout: 72.4, totalVotes: 45000000, marginOfVictory: 12.3,
+      countryId,
+      legislatureId: legislature.id,
+      electionType: "general",
+      name: `${new Date().getFullYear()} General Election`,
+      scheduledIxTime: IxTime.getCurrentIxTime() - 100000,
+      status: "completed",
+      turnout: 72.4,
+      totalVotes: 45000000,
+      marginOfVictory: 12.3,
     },
   });
   count++;
@@ -559,18 +815,22 @@ export async function seedElections(prisma: Prisma, countryId: string): Promise<
   for (let i = 0; i < parties.length; i++) {
     const candidate = await prisma.electionCandidate.create({
       data: {
-        electionId: election.id, partyId: parties[i]!.id,
+        electionId: election.id,
+        partyId: parties[i]!.id,
         candidateName: partyData[i]!.leaderName!,
-        charisma: 40 + Math.random() * 40, politicalCapital: 30 + Math.random() * 50,
+        charisma: 40 + Math.random() * 40,
+        politicalCapital: 30 + Math.random() * 50,
       },
     });
     count++;
 
     await prisma.electionResult.create({
       data: {
-        electionId: election.id, candidateId: candidate.id,
+        electionId: election.id,
+        candidateId: candidate.id,
         votesReceived: Math.round(45000000 * (partyData[i]!.currentSupport / 100)),
-        votePercentage: partyData[i]!.currentSupport, seatsWon: seatDistribution[i]!,
+        votePercentage: partyData[i]!.currentSupport,
+        seatsWon: seatDistribution[i]!,
       },
     });
     count++;
@@ -581,7 +841,11 @@ export async function seedElections(prisma: Prisma, countryId: string): Promise<
 
 // ─── Diplomacy ──────────────────────────────────────────────────────
 
-export async function seedDiplomacy(prisma: Prisma, countryId: string, countryName: string): Promise<number> {
+export async function seedDiplomacy(
+  prisma: Prisma,
+  countryId: string,
+  countryName: string
+): Promise<number> {
   let count = 0;
 
   const otherCountries = await prisma.country.findMany({
@@ -599,9 +863,12 @@ export async function seedDiplomacy(prisma: Prisma, countryId: string, countryNa
 
     await prisma.diplomaticRelation.create({
       data: {
-        country1: countryId, country2: other.id,
-        relationship: relationships[i]!, strength: strengths[i]!,
-        status: "active", lastContact: new Date(),
+        country1: countryId,
+        country2: other.id,
+        relationship: relationships[i]!,
+        strength: strengths[i]!,
+        status: "active",
+        lastContact: new Date(),
         tradeVolume: Math.random() * 50000000000,
       },
     });
@@ -612,12 +879,21 @@ export async function seedDiplomacy(prisma: Prisma, countryId: string, countryNa
     const other = otherCountries[i]!;
     const embassy = await prisma.embassy.create({
       data: {
-        hostCountryId: other.id, guestCountryId: countryId,
+        hostCountryId: other.id,
+        guestCountryId: countryId,
         name: `Embassy of ${countryName} in ${other.name}`,
-        ambassadorName: ["Ambassador Helena Varus", "Ambassador Marcus Scipio", "Ambassador Julia Cornelia"][i],
-        staffCount: 8 + i * 3, status: "active", level: 2 + i,
-        experience: 500 + i * 300, influence: 30 + i * 15,
-        effectiveness: 55 + i * 10, reputation: 60 + i * 8,
+        ambassadorName: [
+          "Ambassador Helena Varus",
+          "Ambassador Marcus Scipio",
+          "Ambassador Julia Cornelia",
+        ][i],
+        staffCount: 8 + i * 3,
+        status: "active",
+        level: 2 + i,
+        experience: 500 + i * 300,
+        influence: 30 + i * 15,
+        effectiveness: 55 + i * 10,
+        reputation: 60 + i * 8,
         budget: 100000 + i * 50000,
       },
     });
@@ -626,12 +902,22 @@ export async function seedDiplomacy(prisma: Prisma, countryId: string, countryNa
     if (i === 0) {
       await prisma.embassyMission.create({
         data: {
-          embassyId: embassy.id, name: "Trade Negotiation", type: "economic",
+          embassyId: embassy.id,
+          name: "Trade Negotiation",
+          type: "economic",
           description: "Negotiate preferential trade terms for agricultural exports.",
-          difficulty: "moderate", status: "active", cost: 15000, duration: 14,
-          startedAt: new Date(), completesAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-          experienceReward: 100, influenceReward: 5, successChance: 65, progress: 35,
-          ixTimeStarted: IxTime.getCurrentIxTime(), ixTimeCompletes: IxTime.getCurrentIxTime() + 20160,
+          difficulty: "moderate",
+          status: "active",
+          cost: 15000,
+          duration: 14,
+          startedAt: new Date(),
+          completesAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          experienceReward: 100,
+          influenceReward: 5,
+          successChance: 65,
+          progress: 35,
+          ixTimeStarted: IxTime.getCurrentIxTime(),
+          ixTimeCompletes: IxTime.getCurrentIxTime() + 20160,
         },
       });
       count++;
@@ -643,7 +929,11 @@ export async function seedDiplomacy(prisma: Prisma, countryId: string, countryNa
 
 // ─── Diplomacy Extras (alliances, foreign policy, cultural exchanges, bilateral trade) ───
 
-export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, countryName: string): Promise<number> {
+export async function seedDiplomacyExtras(
+  prisma: Prisma,
+  countryId: string,
+  countryName: string
+): Promise<number> {
   let count = 0;
 
   const otherCountries = await prisma.country.findMany({
@@ -664,7 +954,8 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
         name: `${countryName} Regional Economic Forum (${suffix})`,
         shortName: "REF",
         type: "economic",
-        description: "A multilateral economic cooperation forum promoting free trade and shared prosperity among member states.",
+        description:
+          "A multilateral economic cooperation forum promoting free trade and shared prosperity among member states.",
         color: "#06b6d4",
         visibility: "public",
         joinPolicy: "application",
@@ -673,11 +964,22 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
       },
     });
     await prisma.allianceMember.create({
-      data: { allianceId: alliance1.id, countryId, role: "founder", votingPower: 2.0, contributionLevel: "high" },
+      data: {
+        allianceId: alliance1.id,
+        countryId,
+        role: "founder",
+        votingPower: 2.0,
+        contributionLevel: "high",
+      },
     });
     if (otherCountries[0]) {
       await prisma.allianceMember.create({
-        data: { allianceId: alliance1.id, countryId: otherCountries[0].id, role: "member", votingPower: 1.0 },
+        data: {
+          allianceId: alliance1.id,
+          countryId: otherCountries[0].id,
+          role: "member",
+          votingPower: 1.0,
+        },
       });
     }
     count += 3;
@@ -687,7 +989,8 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
         name: `${countryName} Strategic Defense Pact (${suffix})`,
         shortName: "SDP",
         type: "military",
-        description: "A mutual defense agreement providing collective security guarantees among member nations.",
+        description:
+          "A mutual defense agreement providing collective security guarantees among member nations.",
         color: "#ef4444",
         visibility: "public",
         joinPolicy: "invite",
@@ -696,18 +999,31 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
       },
     });
     await prisma.allianceMember.create({
-      data: { allianceId: alliance2.id, countryId, role: "founder", votingPower: 2.0, contributionLevel: "high" },
+      data: {
+        allianceId: alliance2.id,
+        countryId,
+        role: "founder",
+        votingPower: 2.0,
+        contributionLevel: "high",
+      },
     });
     if (otherCountries[1]) {
       await prisma.allianceMember.create({
-        data: { allianceId: alliance2.id, countryId: otherCountries[1].id, role: "member", votingPower: 1.0 },
+        data: {
+          allianceId: alliance2.id,
+          countryId: otherCountries[1].id,
+          role: "member",
+          votingPower: 1.0,
+        },
       });
     }
     count += 3;
   }
 
   // ── Foreign Policy Actions ──
-  const existingPolicies = await prisma.foreignPolicyAction.count({ where: { initiatorId: countryId } });
+  const existingPolicies = await prisma.foreignPolicyAction.count({
+    where: { initiatorId: countryId },
+  });
   if (existingPolicies === 0 && otherCountries.length >= 3) {
     await prisma.foreignPolicyAction.createMany({
       data: [
@@ -755,14 +1071,17 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
   }
 
   // ── Cultural Exchanges ──
-  const existingExchanges = await prisma.culturalExchange.count({ where: { hostCountryId: countryId } });
+  const existingExchanges = await prisma.culturalExchange.count({
+    where: { hostCountryId: countryId },
+  });
   if (existingExchanges === 0 && otherCountries.length >= 2) {
     await prisma.culturalExchange.createMany({
       data: [
         {
           title: "International Arts Festival",
           type: "festival",
-          description: "A week-long celebration of visual arts, music, and performing arts from participating nations.",
+          description:
+            "A week-long celebration of visual arts, music, and performing arts from participating nations.",
           hostCountryId: countryId,
           hostCountryName: countryName,
           status: "active",
@@ -778,7 +1097,8 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
         {
           title: "Academic Exchange Program",
           type: "education",
-          description: "Scholar and student exchange program with partner universities, completed last quarter.",
+          description:
+            "Scholar and student exchange program with partner universities, completed last quarter.",
           hostCountryId: countryId,
           hostCountryName: countryName,
           status: "completed",
@@ -813,7 +1133,7 @@ export async function seedDiplomacyExtras(prisma: Prisma, countryId: string, cou
           ["Machinery", "Electronics", "Chemicals"],
           ["Agricultural Products", "Textiles", "Raw Materials"],
           ["Energy", "Minerals", "Manufactured Goods"],
-        ][i] ?? [],
+        ][i] ?? []
       ),
       lastCalculatedIx: IxTime.getCurrentIxTime(),
     }));
@@ -831,45 +1151,70 @@ export async function seedIntelligence(prisma: Prisma, countryId: string): Promi
     {
       countryId,
       title: "Economic Growth Trajectory Analysis",
-      description: "GDP growth has outpaced regional average by 1.2% this quarter. Key drivers: technology sector expansion and increased foreign investment. Risk: potential overheating in real estate market.",
-      type: "OPPORTUNITY" as const, priority: "MEDIUM" as const, area: "ECONOMIC" as const,
-      confidence: 82, urgency: "THIS_MONTH" as const, impactMagnitude: "moderate",
+      description:
+        "GDP growth has outpaced regional average by 1.2% this quarter. Key drivers: technology sector expansion and increased foreign investment. Risk: potential overheating in real estate market.",
+      type: "OPPORTUNITY" as const,
+      priority: "MEDIUM" as const,
+      area: "ECONOMIC" as const,
+      confidence: 82,
+      urgency: "THIS_MONTH" as const,
+      impactMagnitude: "moderate",
       evidence: "Quarterly economic indicators, trade balance data, foreign investment records",
       isActive: true,
     },
     {
       countryId,
       title: "Regional Security Threat Assessment",
-      description: "Intelligence indicates increased military exercises by neighboring states. No immediate threat, but readiness levels should be reviewed. Cyber probing activity detected on government networks.",
-      type: "RISK_MITIGATION" as const, priority: "HIGH" as const, area: "SECURITY" as const,
-      confidence: 71, urgency: "THIS_WEEK" as const, impactMagnitude: "significant",
+      description:
+        "Intelligence indicates increased military exercises by neighboring states. No immediate threat, but readiness levels should be reviewed. Cyber probing activity detected on government networks.",
+      type: "RISK_MITIGATION" as const,
+      priority: "HIGH" as const,
+      area: "SECURITY" as const,
+      confidence: 71,
+      urgency: "THIS_WEEK" as const,
+      impactMagnitude: "significant",
       evidence: "SIGINT intercepts, satellite imagery, cyber intrusion logs",
       isActive: true,
     },
     {
       countryId,
       title: "Public Sentiment Monitoring Report",
-      description: "Government approval rating has stabilized at 58% following infrastructure spending announcements. Social media sentiment trending positive on healthcare reform. Concern flagged on housing affordability in urban centers.",
-      type: "STRATEGIC_INITIATIVE" as const, priority: "LOW" as const, area: "SOCIAL" as const,
-      confidence: 88, urgency: "THIS_QUARTER" as const, impactMagnitude: "minor",
+      description:
+        "Government approval rating has stabilized at 58% following infrastructure spending announcements. Social media sentiment trending positive on healthcare reform. Concern flagged on housing affordability in urban centers.",
+      type: "STRATEGIC_INITIATIVE" as const,
+      priority: "LOW" as const,
+      area: "SOCIAL" as const,
+      confidence: 88,
+      urgency: "THIS_QUARTER" as const,
+      impactMagnitude: "minor",
       evidence: "Public polling data, social media analysis, housing market indices",
       isActive: true,
     },
     {
       countryId,
       title: "Critical Infrastructure Vulnerability Report",
-      description: "Annual audit reveals 3 high-priority vulnerabilities in power grid control systems. Water treatment facilities in eastern region require immediate security upgrades.",
-      type: "HOT_ISSUE" as const, priority: "CRITICAL" as const, area: "INFRASTRUCTURE" as const,
-      confidence: 95, urgency: "IMMEDIATE" as const, impactMagnitude: "critical",
+      description:
+        "Annual audit reveals 3 high-priority vulnerabilities in power grid control systems. Water treatment facilities in eastern region require immediate security upgrades.",
+      type: "HOT_ISSUE" as const,
+      priority: "CRITICAL" as const,
+      area: "INFRASTRUCTURE" as const,
+      confidence: 95,
+      urgency: "IMMEDIATE" as const,
+      impactMagnitude: "critical",
       evidence: "Infrastructure audit reports, penetration testing results, incident response logs",
       isActive: true,
     },
     {
       countryId,
       title: "Diplomatic Opportunity: Trade Bloc Expansion",
-      description: "Three nations have expressed interest in joining the regional trade agreement. Favorable terms could increase GDP by 0.4% annually. Window of opportunity narrows as competing blocs court same nations.",
-      type: "OPPORTUNITY" as const, priority: "HIGH" as const, area: "DIPLOMATIC" as const,
-      confidence: 76, urgency: "THIS_MONTH" as const, impactMagnitude: "significant",
+      description:
+        "Three nations have expressed interest in joining the regional trade agreement. Favorable terms could increase GDP by 0.4% annually. Window of opportunity narrows as competing blocs court same nations.",
+      type: "OPPORTUNITY" as const,
+      priority: "HIGH" as const,
+      area: "DIPLOMATIC" as const,
+      confidence: 76,
+      urgency: "THIS_MONTH" as const,
+      impactMagnitude: "significant",
       evidence: "Diplomatic cables, trade analysis, bilateral meeting summaries",
       isActive: true,
     },
@@ -882,13 +1227,18 @@ export async function seedIntelligence(prisma: Prisma, countryId: string): Promi
 
     await prisma.intelligenceRecommendation.create({
       data: {
-        briefingId: briefing.id, countryId,
+        briefingId: briefing.id,
+        countryId,
         title: `Action Plan: ${b.title.replace("Analysis", "Response").replace("Report", "Action")}`,
         description: `Recommended action based on ${b.title.toLowerCase()}.`,
-        category: b.area, urgency: b.urgency, difficulty: "MODERATE" as const,
-        estimatedDuration: "2-4 weeks", estimatedCost: "$10M-$50M",
+        category: b.area,
+        urgency: b.urgency,
+        difficulty: "MODERATE" as const,
+        estimatedDuration: "2-4 weeks",
+        estimatedCost: "$10M-$50M",
         estimatedBenefit: "Significant improvement in national metrics",
-        prerequisites: "Cabinet approval required", risks: "Political opposition, budget constraints",
+        prerequisites: "Cabinet approval required",
+        risks: "Political opposition, budget constraints",
         successProbability: b.confidence / 100,
         economicImpact: b.area === "ECONOMIC" ? 0.3 : 0.1,
         socialImpact: b.area === "SOCIAL" ? 0.4 : 0.1,
@@ -902,9 +1252,54 @@ export async function seedIntelligence(prisma: Prisma, countryId: string): Promi
   // Add alert thresholds (new for key findings)
   // Model is IntelligenceAlertThreshold with min/max fields per severity level
   const thresholds = [
-    { countryId, userId: "system", alertType: "economic", metricName: "GDP Growth", criticalMin: null, criticalMax: -5.0, highMin: null, highMax: -2.0, mediumMin: null, mediumMax: 0.0, notifyOnCritical: true, notifyOnHigh: true, notifyOnMedium: false, isActive: true },
-    { countryId, userId: "system", alertType: "security", metricName: "Security Score", criticalMin: null, criticalMax: 40.0, highMin: null, highMax: 60.0, mediumMin: null, mediumMax: 70.0, notifyOnCritical: true, notifyOnHigh: true, notifyOnMedium: true, isActive: true },
-    { countryId, userId: "system", alertType: "diplomatic", metricName: "Diplomatic Tension", criticalMin: 90.0, criticalMax: null, highMin: 70.0, highMax: null, mediumMin: 50.0, mediumMax: null, notifyOnCritical: true, notifyOnHigh: true, notifyOnMedium: false, isActive: true },
+    {
+      countryId,
+      userId: "system",
+      alertType: "economic",
+      metricName: "GDP Growth",
+      criticalMin: null,
+      criticalMax: -5.0,
+      highMin: null,
+      highMax: -2.0,
+      mediumMin: null,
+      mediumMax: 0.0,
+      notifyOnCritical: true,
+      notifyOnHigh: true,
+      notifyOnMedium: false,
+      isActive: true,
+    },
+    {
+      countryId,
+      userId: "system",
+      alertType: "security",
+      metricName: "Security Score",
+      criticalMin: null,
+      criticalMax: 40.0,
+      highMin: null,
+      highMax: 60.0,
+      mediumMin: null,
+      mediumMax: 70.0,
+      notifyOnCritical: true,
+      notifyOnHigh: true,
+      notifyOnMedium: true,
+      isActive: true,
+    },
+    {
+      countryId,
+      userId: "system",
+      alertType: "diplomatic",
+      metricName: "Diplomatic Tension",
+      criticalMin: 90.0,
+      criticalMax: null,
+      highMin: 70.0,
+      highMax: null,
+      mediumMin: 50.0,
+      mediumMax: null,
+      notifyOnCritical: true,
+      notifyOnHigh: true,
+      notifyOnMedium: false,
+      isActive: true,
+    },
   ];
 
   for (const t of thresholds) {
@@ -916,10 +1311,74 @@ export async function seedIntelligence(prisma: Prisma, countryId: string): Promi
   // severity uses Priority enum: CRITICAL, HIGH, MEDIUM, LOW
   // category uses Category enum: ECONOMIC, DIPLOMATIC, SOCIAL, SECURITY, etc.
   const alerts = [
-    { countryId, title: "Unusual trade pattern detected", description: "Export volumes to eastern partners have dropped 12% this month, suggesting potential trade disruption.", severity: "MEDIUM" as const, category: "ECONOMIC" as const, alertType: "trade_anomaly", isActive: true, isResolved: false, currentValue: -12, expectedValue: 0, deviation: 12, zScore: 1.8, confidence: 75, factors: "[]" },
-    { countryId, title: "Cyber intrusion attempt blocked", description: "Government network firewall blocked 47 intrusion attempts from unknown foreign IPs in the past 24 hours.", severity: "HIGH" as const, category: "SECURITY" as const, alertType: "cyber_threat", isActive: true, isResolved: false, currentValue: 47, expectedValue: 5, deviation: 42, zScore: 3.2, confidence: 92, factors: "[]" },
-    { countryId, title: "Diplomatic relationship improving", description: "Relations with three neighboring nations have improved by an average of 8 points this quarter.", severity: "LOW" as const, category: "DIPLOMATIC" as const, alertType: "relationship_change", isActive: true, isResolved: false, currentValue: 8, expectedValue: 0, deviation: 8, zScore: 1.1, confidence: 88, factors: "[]" },
-    { countryId, title: "Infrastructure spending ROI exceeding targets", description: "Recent infrastructure investments are yielding 1.4x projected economic returns.", severity: "LOW" as const, category: "ECONOMIC" as const, alertType: "metric_exceeded", isActive: true, isResolved: false, currentValue: 140, expectedValue: 100, deviation: 40, zScore: 2.0, confidence: 80, factors: "[]" },
+    {
+      countryId,
+      title: "Unusual trade pattern detected",
+      description:
+        "Export volumes to eastern partners have dropped 12% this month, suggesting potential trade disruption.",
+      severity: "MEDIUM" as const,
+      category: "ECONOMIC" as const,
+      alertType: "trade_anomaly",
+      isActive: true,
+      isResolved: false,
+      currentValue: -12,
+      expectedValue: 0,
+      deviation: 12,
+      zScore: 1.8,
+      confidence: 75,
+      factors: "[]",
+    },
+    {
+      countryId,
+      title: "Cyber intrusion attempt blocked",
+      description:
+        "Government network firewall blocked 47 intrusion attempts from unknown foreign IPs in the past 24 hours.",
+      severity: "HIGH" as const,
+      category: "SECURITY" as const,
+      alertType: "cyber_threat",
+      isActive: true,
+      isResolved: false,
+      currentValue: 47,
+      expectedValue: 5,
+      deviation: 42,
+      zScore: 3.2,
+      confidence: 92,
+      factors: "[]",
+    },
+    {
+      countryId,
+      title: "Diplomatic relationship improving",
+      description:
+        "Relations with three neighboring nations have improved by an average of 8 points this quarter.",
+      severity: "LOW" as const,
+      category: "DIPLOMATIC" as const,
+      alertType: "relationship_change",
+      isActive: true,
+      isResolved: false,
+      currentValue: 8,
+      expectedValue: 0,
+      deviation: 8,
+      zScore: 1.1,
+      confidence: 88,
+      factors: "[]",
+    },
+    {
+      countryId,
+      title: "Infrastructure spending ROI exceeding targets",
+      description:
+        "Recent infrastructure investments are yielding 1.4x projected economic returns.",
+      severity: "LOW" as const,
+      category: "ECONOMIC" as const,
+      alertType: "metric_exceeded",
+      isActive: true,
+      isResolved: false,
+      currentValue: 140,
+      expectedValue: 100,
+      deviation: 40,
+      zScore: 2.0,
+      confidence: 80,
+      factors: "[]",
+    },
   ];
 
   for (const a of alerts) {
@@ -937,25 +1396,51 @@ export async function seedDefense(prisma: Prisma, countryId: string): Promise<nu
 
   const branches = [
     {
-      countryId, branchType: "army" as const, name: "Imperial Army",
-      description: "Primary land warfare force responsible for territorial defense and power projection.",
-      activeDuty: 180000, reserves: 95000, civilianStaff: 25000,
-      annualBudget: 12000000000, budgetPercent: 45,
-      readinessLevel: 78, technologyLevel: 72, trainingLevel: 80, morale: 75,
+      countryId,
+      branchType: "army" as const,
+      name: "Imperial Army",
+      description:
+        "Primary land warfare force responsible for territorial defense and power projection.",
+      activeDuty: 180000,
+      reserves: 95000,
+      civilianStaff: 25000,
+      annualBudget: 12000000000,
+      budgetPercent: 45,
+      readinessLevel: 78,
+      technologyLevel: 72,
+      trainingLevel: 80,
+      morale: 75,
     },
     {
-      countryId, branchType: "navy" as const, name: "Imperial Navy",
-      description: "Maritime defense and blue-water naval operations. Includes carrier battle groups.",
-      activeDuty: 65000, reserves: 20000, civilianStaff: 12000,
-      annualBudget: 8500000000, budgetPercent: 32,
-      readinessLevel: 82, technologyLevel: 78, trainingLevel: 85, morale: 80,
+      countryId,
+      branchType: "navy" as const,
+      name: "Imperial Navy",
+      description:
+        "Maritime defense and blue-water naval operations. Includes carrier battle groups.",
+      activeDuty: 65000,
+      reserves: 20000,
+      civilianStaff: 12000,
+      annualBudget: 8500000000,
+      budgetPercent: 32,
+      readinessLevel: 82,
+      technologyLevel: 78,
+      trainingLevel: 85,
+      morale: 80,
     },
     {
-      countryId, branchType: "air_force" as const, name: "Imperial Air Force",
+      countryId,
+      branchType: "air_force" as const,
+      name: "Imperial Air Force",
       description: "Aerial warfare, air defense, and strategic airlift capabilities.",
-      activeDuty: 45000, reserves: 15000, civilianStaff: 8000,
-      annualBudget: 6000000000, budgetPercent: 23,
-      readinessLevel: 85, technologyLevel: 82, trainingLevel: 83, morale: 82,
+      activeDuty: 45000,
+      reserves: 15000,
+      civilianStaff: 8000,
+      annualBudget: 6000000000,
+      budgetPercent: 23,
+      readinessLevel: 85,
+      technologyLevel: 82,
+      trainingLevel: 83,
+      morale: 82,
     },
   ];
 
@@ -963,19 +1448,57 @@ export async function seedDefense(prisma: Prisma, countryId: string): Promise<nu
     const branch = await prisma.militaryBranch.create({ data: b });
     count++;
 
-    const unitTypes = b.branchType === "army"
-      ? [{ name: "1st Armored Division", unitType: "armored", personnel: 15000, designation: "1st AD" },
-         { name: "3rd Infantry Brigade", unitType: "infantry", personnel: 5000, designation: "3rd IB" }]
-      : b.branchType === "navy"
-      ? [{ name: "Carrier Strike Group Alpha", unitType: "carrier_group", personnel: 6500, designation: "CSG-A" },
-         { name: "Submarine Squadron 2", unitType: "submarine", personnel: 1200, designation: "SUBRON-2" }]
-      : [{ name: "1st Fighter Wing", unitType: "fighter", personnel: 3000, designation: "1st FW" },
-         { name: "Strategic Airlift Command", unitType: "transport", personnel: 2000, designation: "SAC" }];
+    const unitTypes =
+      b.branchType === "army"
+        ? [
+            {
+              name: "1st Armored Division",
+              unitType: "armored",
+              personnel: 15000,
+              designation: "1st AD",
+            },
+            {
+              name: "3rd Infantry Brigade",
+              unitType: "infantry",
+              personnel: 5000,
+              designation: "3rd IB",
+            },
+          ]
+        : b.branchType === "navy"
+          ? [
+              {
+                name: "Carrier Strike Group Alpha",
+                unitType: "carrier_group",
+                personnel: 6500,
+                designation: "CSG-A",
+              },
+              {
+                name: "Submarine Squadron 2",
+                unitType: "submarine",
+                personnel: 1200,
+                designation: "SUBRON-2",
+              },
+            ]
+          : [
+              {
+                name: "1st Fighter Wing",
+                unitType: "fighter",
+                personnel: 3000,
+                designation: "1st FW",
+              },
+              {
+                name: "Strategic Airlift Command",
+                unitType: "transport",
+                personnel: 2000,
+                designation: "SAC",
+              },
+            ];
 
     for (const u of unitTypes) {
       await prisma.militaryUnit.create({
         data: {
-          branchId: branch.id, ...u,
+          branchId: branch.id,
+          ...u,
           readiness: 60 + Math.random() * 30,
           commanderName: `Gen. ${["Maximus", "Flavius", "Octavius", "Lucius", "Titus", "Severus"][Math.floor(Math.random() * 6)]}`,
         },
@@ -986,10 +1509,16 @@ export async function seedDefense(prisma: Prisma, countryId: string): Promise<nu
 
   await prisma.militaryOperation.create({
     data: {
-      countryId, operationType: "patrol", name: "Operation Vigilant Shield",
+      countryId,
+      operationType: "patrol",
+      name: "Operation Vigilant Shield",
       description: "Maritime patrol and surveillance operation in territorial waters.",
-      status: "active", startIxTime: IxTime.getCurrentIxTime() - 5000,
-      personnelDeployed: 2500, dailyCost: 500000, totalCostSoFar: 15000000, readinessImpact: -5,
+      status: "active",
+      startIxTime: IxTime.getCurrentIxTime() - 5000,
+      personnelDeployed: 2500,
+      dailyCost: 500000,
+      totalCostSoFar: 15000000,
+      readinessImpact: -5,
     },
   });
   count++;
@@ -999,7 +1528,11 @@ export async function seedDefense(prisma: Prisma, countryId: string): Promise<nu
 
 // ─── National Issues ──────────────────────────────────────────────────────
 
-export async function seedNationalIssues(prisma: Prisma, countryId: string, countryName: string): Promise<number> {
+export async function seedNationalIssues(
+  prisma: Prisma,
+  countryId: string,
+  countryName: string
+): Promise<number> {
   const templates = await prisma.nationalIssueTemplate.findMany({
     where: { isActive: true },
     take: 8,
@@ -1010,21 +1543,38 @@ export async function seedNationalIssues(prisma: Prisma, countryId: string, coun
 
   let count = 0;
   const ixNow = IxTime.getCurrentIxTime();
-  const statuses = ["pending", "pending", "pending", "viewed", "viewed", "responded", "responded", "responded"];
+  const statuses = [
+    "pending",
+    "pending",
+    "pending",
+    "viewed",
+    "viewed",
+    "responded",
+    "responded",
+    "responded",
+  ];
 
   for (let i = 0; i < Math.min(templates.length, 8); i++) {
     const t = templates[i]!;
     const status = statuses[i]!;
 
     const issueData: any = {
-      templateId: t.id, countryId,
-      title: t.title.replace(/\{\{countryName\}\}/g, countryName).replace(/\{\{[^}]+\}\}/g, "the region"),
-      description: t.description.replace(/\{\{countryName\}\}/g, countryName).replace(/\{\{[^}]+\}\}/g, "various stakeholders"),
-      domain: t.domain, category: t.category,
-      severity: t.baseSeverity, urgency: t.baseUrgency, status,
+      templateId: t.id,
+      countryId,
+      title: t.title
+        .replace(/\{\{countryName\}\}/g, countryName)
+        .replace(/\{\{[^}]+\}\}/g, "the region"),
+      description: t.description
+        .replace(/\{\{countryName\}\}/g, countryName)
+        .replace(/\{\{[^}]+\}\}/g, "various stakeholders"),
+      domain: t.domain,
+      category: t.category,
+      severity: t.baseSeverity,
+      urgency: t.baseUrgency,
+      status,
       responseOptions: t.responseOptions,
-      createdIxTime: ixNow - (i * 2000),
-      deadlineIxTime: t.deadlineDaysBase ? ixNow + (t.deadlineDaysBase * 1440) : null,
+      createdIxTime: ixNow - i * 2000,
+      deadlineIxTime: t.deadlineDaysBase ? ixNow + t.deadlineDaysBase * 1440 : null,
       autoResolveOptionId: t.deadlineDaysBase ? "option_0" : null,
       contextSnapshot: JSON.stringify({ countryName, gdpFormatted: "$2.1T" }),
     };
@@ -1033,7 +1583,7 @@ export async function seedNationalIssues(prisma: Prisma, countryId: string, coun
       issueData.chosenOptionId = "option_0";
       issueData.chosenOptionLabel = "Balanced approach";
       issueData.respondedAt = new Date();
-      issueData.respondedIxTime = ixNow - (i * 500);
+      issueData.respondedIxTime = ixNow - i * 500;
       issueData.consequenceLog = "Applied balanced response. Public approval adjusted.";
     }
 
@@ -1052,7 +1602,7 @@ export async function seedNationalIssues(prisma: Prisma, countryId: string, coun
           deltaValue: 3.0,
           description: "Public approval increased due to balanced policy response.",
           effectType: "immediate",
-          appliedIxTime: ixNow - (i * 500),
+          appliedIxTime: ixNow - i * 500,
         },
         {
           issueId: issue.id,
@@ -1064,7 +1614,7 @@ export async function seedNationalIssues(prisma: Prisma, countryId: string, coun
           description: "Social cohesion improved marginally following government action.",
           effectType: "gradual",
           effectDuration: 30,
-          appliedIxTime: ixNow - (i * 500),
+          appliedIxTime: ixNow - i * 500,
         },
       ];
       await prisma.nationalIssueConsequence.createMany({ data: consequenceData });
@@ -1083,20 +1633,25 @@ export async function seedCrisisEvents(prisma: Prisma, countryName: string): Pro
       type: "natural_disaster",
       title: "Severe Flooding in Eastern Provinces",
       severity: "HIGH" as const,
-      description: "Unprecedented rainfall has caused major flooding in 3 eastern provinces, displacing 50,000 residents.",
+      description:
+        "Unprecedented rainfall has caused major flooding in 3 eastern provinces, displacing 50,000 residents.",
       category: "CRISIS" as const,
       timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      casualties: 12, economicImpact: -500000000,
-      responseStatus: "responding", location: "Eastern Provinces",
+      casualties: 12,
+      economicImpact: -500000000,
+      responseStatus: "responding",
+      location: "Eastern Provinces",
     },
     {
       type: "economic_crisis",
       title: "Regional Banking Sector Stress",
       severity: "MEDIUM" as const,
-      description: "Three regional banks report elevated non-performing loan ratios. Central bank monitoring closely.",
+      description:
+        "Three regional banks report elevated non-performing loan ratios. Central bank monitoring closely.",
       category: "ECONOMIC" as const,
       timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      economicImpact: -200000000, responseStatus: "monitoring",
+      economicImpact: -200000000,
+      responseStatus: "monitoring",
     },
     {
       type: "diplomatic_incident",
@@ -1115,18 +1670,30 @@ export async function seedCrisisEvents(prisma: Prisma, countryName: string): Pro
 
 // ─── Social ──────────────────────────────────────────────────────
 
-export async function seedSocial(prisma: Prisma, countryId: string, userId: string, countryName: string): Promise<number> {
+export async function seedSocial(
+  prisma: Prisma,
+  countryId: string,
+  userId: string,
+  countryName: string
+): Promise<number> {
   let count = 0;
 
   const account = await prisma.thinkpagesAccount.create({
     data: {
-      clerkUserId: userId, countryId, accountType: "official",
+      clerkUserId: userId,
+      countryId,
+      accountType: "official",
       username: `demo_${countryName.toLowerCase().replace(/\s+/g, "_")}_${Date.now()}`,
       displayName: `Republic of ${countryName}`,
-      firstName: "Government", lastName: "Communications",
+      firstName: "Government",
+      lastName: "Communications",
       bio: `Official government communications account for the Republic of ${countryName}.`,
-      verified: true, followerCount: 12500, followingCount: 45, postCount: 5,
-      personality: "formal", politicalLean: "center_right",
+      verified: true,
+      followerCount: 12500,
+      followingCount: 45,
+      postCount: 5,
+      personality: "formal",
+      politicalLean: "center_right",
     },
   });
   count++;
@@ -1136,25 +1703,36 @@ export async function seedSocial(prisma: Prisma, countryId: string, userId: stri
       accountId: account.id,
       content: `The Infrastructure Investment Summit concluded today with unanimous cabinet approval for the National Digital Infrastructure Act. 95% broadband coverage target set for 2028. #Digital${countryName.replace(/\s+/g, "")} #Infrastructure`,
       postType: "original",
-      likeCount: 342, repostCount: 87, replyCount: 23, impressions: 15600,
+      likeCount: 342,
+      repostCount: 87,
+      replyCount: 23,
+      impressions: 15600,
       hashtags: JSON.stringify([`Digital${countryName.replace(/\s+/g, "")}`, "Infrastructure"]),
       ixTimeTimestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       isAutoGenerated: true,
     },
     {
       accountId: account.id,
-      content: "Breaking: Navy successfully completes maritime exercises. Our territorial waters remain secure. #NationalDefense",
+      content:
+        "Breaking: Navy successfully completes maritime exercises. Our territorial waters remain secure. #NationalDefense",
       postType: "original",
-      likeCount: 891, repostCount: 234, replyCount: 56, impressions: 45000,
+      likeCount: 891,
+      repostCount: 234,
+      replyCount: 56,
+      impressions: 45000,
       hashtags: JSON.stringify(["NationalDefense"]),
       ixTimeTimestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
       isAutoGenerated: true,
     },
     {
       accountId: account.id,
-      content: "Healthcare reform update: Universal coverage expansion has reached 3 of 5 target regions ahead of schedule. Rural healthcare initiative continues to make strong progress. #HealthcareForAll",
+      content:
+        "Healthcare reform update: Universal coverage expansion has reached 3 of 5 target regions ahead of schedule. Rural healthcare initiative continues to make strong progress. #HealthcareForAll",
       postType: "original",
-      likeCount: 567, repostCount: 145, replyCount: 89, impressions: 28000,
+      likeCount: 567,
+      repostCount: 145,
+      replyCount: 89,
+      impressions: 28000,
       hashtags: JSON.stringify(["HealthcareForAll"]),
       ixTimeTimestamp: new Date(),
       isAutoGenerated: true,
@@ -1169,7 +1747,11 @@ export async function seedSocial(prisma: Prisma, countryId: string, userId: stri
 
 // ─── ThinkTank Groups ──────────────────────────────────────────────
 
-export async function seedThinkTanks(prisma: Prisma, userId: string, countryName: string): Promise<number> {
+export async function seedThinkTanks(
+  prisma: Prisma,
+  userId: string,
+  countryName: string
+): Promise<number> {
   // Guard: skip if user already has ThinkTank groups
   const existing = await (prisma as any).thinktankGroup.count({ where: { createdBy: userId } });
   if (existing > 0) return 0;
@@ -1181,7 +1763,8 @@ export async function seedThinkTanks(prisma: Prisma, userId: string, countryName
   const econGroup = await (prisma as any).thinktankGroup.create({
     data: {
       name: `${countryName} Economic Policy Forum`,
-      description: "A collaborative space for discussing economic policy, fiscal strategy, and trade agreements. Open to government advisors and policy analysts.",
+      description:
+        "A collaborative space for discussing economic policy, fiscal strategy, and trade agreements. Open to government advisors and policy analysts.",
       type: "public",
       category: "economics",
       tags: JSON.stringify(["economics", "fiscal-policy", "trade"]),
@@ -1205,11 +1788,41 @@ export async function seedThinkTanks(prisma: Prisma, userId: string, countryName
 
   // Messages
   const econMessages = [
-    { userId, content: "Welcome to the Economic Policy Forum. This space is designated for discussing our fiscal strategy and evaluating policy proposals before they reach the cabinet.", messageType: "text", daysAgo: 5 },
-    { userId: "system_advisor_1", content: "Thank you for the invitation. I've prepared an analysis of our current trade deficit trends — the eastern export corridor shows promising growth potential if we streamline customs procedures.", messageType: "text", daysAgo: 4 },
-    { userId: "system_analyst_1", content: "Agreed. Our modeling suggests that a 15% reduction in customs processing time could boost trade volume by $2.3B annually. I'll upload the detailed projections.", messageType: "text", daysAgo: 3 },
-    { userId, content: "Excellent work. Let's compile this into a formal policy brief for the next cabinet meeting. Can we also factor in the impact on domestic producers?", messageType: "text", daysAgo: 2 },
-    { userId: "system_advisor_1", content: "Domestic impact assessment is underway. Preliminary findings suggest small businesses would benefit from reduced compliance costs, while larger exporters gain from faster turnaround.", messageType: "text", daysAgo: 1 },
+    {
+      userId,
+      content:
+        "Welcome to the Economic Policy Forum. This space is designated for discussing our fiscal strategy and evaluating policy proposals before they reach the cabinet.",
+      messageType: "text",
+      daysAgo: 5,
+    },
+    {
+      userId: "system_advisor_1",
+      content:
+        "Thank you for the invitation. I've prepared an analysis of our current trade deficit trends — the eastern export corridor shows promising growth potential if we streamline customs procedures.",
+      messageType: "text",
+      daysAgo: 4,
+    },
+    {
+      userId: "system_analyst_1",
+      content:
+        "Agreed. Our modeling suggests that a 15% reduction in customs processing time could boost trade volume by $2.3B annually. I'll upload the detailed projections.",
+      messageType: "text",
+      daysAgo: 3,
+    },
+    {
+      userId,
+      content:
+        "Excellent work. Let's compile this into a formal policy brief for the next cabinet meeting. Can we also factor in the impact on domestic producers?",
+      messageType: "text",
+      daysAgo: 2,
+    },
+    {
+      userId: "system_advisor_1",
+      content:
+        "Domestic impact assessment is underway. Preliminary findings suggest small businesses would benefit from reduced compliance costs, while larger exporters gain from faster turnaround.",
+      messageType: "text",
+      daysAgo: 1,
+    },
   ];
   for (const msg of econMessages) {
     await (prisma as any).thinktankMessage.create({
@@ -1242,7 +1855,8 @@ export async function seedThinkTanks(prisma: Prisma, userId: string, countryName
   const secGroup = await (prisma as any).thinktankGroup.create({
     data: {
       name: `${countryName} Security Advisory Council`,
-      description: "Restricted forum for security strategy discussions, threat assessments, and defense coordination among senior officials.",
+      description:
+        "Restricted forum for security strategy discussions, threat assessments, and defense coordination among senior officials.",
       type: "private",
       category: "security",
       tags: JSON.stringify(["security", "defense", "intelligence"]),
@@ -1265,10 +1879,33 @@ export async function seedThinkTanks(prisma: Prisma, userId: string, countryName
 
   // Messages
   const secMessages = [
-    { userId, content: "This council is now active. All discussions here are classified RESTRICTED. Please observe communication protocols.", messageType: "text", daysAgo: 7 },
-    { userId: "system_defense_advisor", content: "Acknowledged. I've completed the quarterly threat landscape review. Overall threat posture remains MODERATE with elevated cyber risk in the eastern sector.", messageType: "text", daysAgo: 6 },
-    { userId, content: "Noted. What's the status of our cyber defense modernization initiative?", messageType: "text", daysAgo: 5 },
-    { userId: "system_defense_advisor", content: "Phase 2 is 78% complete. New intrusion detection systems are operational in 4 of 6 critical infrastructure networks. Full deployment expected within the quarter.", messageType: "text", daysAgo: 4 },
+    {
+      userId,
+      content:
+        "This council is now active. All discussions here are classified RESTRICTED. Please observe communication protocols.",
+      messageType: "text",
+      daysAgo: 7,
+    },
+    {
+      userId: "system_defense_advisor",
+      content:
+        "Acknowledged. I've completed the quarterly threat landscape review. Overall threat posture remains MODERATE with elevated cyber risk in the eastern sector.",
+      messageType: "text",
+      daysAgo: 6,
+    },
+    {
+      userId,
+      content: "Noted. What's the status of our cyber defense modernization initiative?",
+      messageType: "text",
+      daysAgo: 5,
+    },
+    {
+      userId: "system_defense_advisor",
+      content:
+        "Phase 2 is 78% complete. New intrusion detection systems are operational in 4 of 6 critical infrastructure networks. Full deployment expected within the quarter.",
+      messageType: "text",
+      daysAgo: 4,
+    },
   ];
   for (const msg of secMessages) {
     await (prisma as any).thinktankMessage.create({
@@ -1288,7 +1925,11 @@ export async function seedThinkTanks(prisma: Prisma, userId: string, countryName
 
 // ─── ThinkShare Direct Messages ──────────────────────────────────
 
-export async function seedThinkShareDMs(prisma: Prisma, userId: string, _countryName: string): Promise<number> {
+export async function seedThinkShareDMs(
+  prisma: Prisma,
+  userId: string,
+  _countryName: string
+): Promise<number> {
   // Guard: skip if user already has non-diplomatic conversations
   const existing = await (prisma as any).thinkshareConversation.findFirst({
     where: { type: "direct", conversationType: { not: "diplomatic" } },
@@ -1321,12 +1962,46 @@ export async function seedThinkShareDMs(prisma: Prisma, userId: string, _country
   count += 2;
 
   const advisorMessages = [
-    { senderId: "chief_advisor_npc", content: `Good morning. The latest polling data is in — public approval is holding steady at 64%. The healthcare initiative is polling particularly well in the northern provinces.`, daysAgo: 2, hoursOffset: 9 },
-    { senderId: userId, content: "Good to hear. What about the eastern regions? They've been skeptical of the infrastructure spending.", daysAgo: 2, hoursOffset: 10 },
-    { senderId: "chief_advisor_npc", content: "Eastern approval is at 52%, up from 48% last month. The announcement of the Eastport digital hub project helped. I'd recommend a follow-up visit within the next two weeks.", daysAgo: 2, hoursOffset: 10.5 },
-    { senderId: userId, content: "Schedule it. Also, prepare talking points on job creation numbers — those resonate well.", daysAgo: 2, hoursOffset: 11 },
-    { senderId: "chief_advisor_npc", content: "Will do. One more item — the Minister of Finance has requested a private briefing on the Q3 budget projections. Shall I schedule that for tomorrow?", daysAgo: 1, hoursOffset: 14 },
-    { senderId: userId, content: "Yes, slot it in after the morning cabinet session.", daysAgo: 1, hoursOffset: 15 },
+    {
+      senderId: "chief_advisor_npc",
+      content: `Good morning. The latest polling data is in — public approval is holding steady at 64%. The healthcare initiative is polling particularly well in the northern provinces.`,
+      daysAgo: 2,
+      hoursOffset: 9,
+    },
+    {
+      senderId: userId,
+      content:
+        "Good to hear. What about the eastern regions? They've been skeptical of the infrastructure spending.",
+      daysAgo: 2,
+      hoursOffset: 10,
+    },
+    {
+      senderId: "chief_advisor_npc",
+      content:
+        "Eastern approval is at 52%, up from 48% last month. The announcement of the Eastport digital hub project helped. I'd recommend a follow-up visit within the next two weeks.",
+      daysAgo: 2,
+      hoursOffset: 10.5,
+    },
+    {
+      senderId: userId,
+      content:
+        "Schedule it. Also, prepare talking points on job creation numbers — those resonate well.",
+      daysAgo: 2,
+      hoursOffset: 11,
+    },
+    {
+      senderId: "chief_advisor_npc",
+      content:
+        "Will do. One more item — the Minister of Finance has requested a private briefing on the Q3 budget projections. Shall I schedule that for tomorrow?",
+      daysAgo: 1,
+      hoursOffset: 14,
+    },
+    {
+      senderId: userId,
+      content: "Yes, slot it in after the morning cabinet session.",
+      daysAgo: 1,
+      hoursOffset: 15,
+    },
   ];
   for (const msg of advisorMessages) {
     await (prisma as any).thinkshareMessage.create({
@@ -1336,7 +2011,9 @@ export async function seedThinkShareDMs(prisma: Prisma, userId: string, _country
         content: msg.content,
         messageType: "text",
         status: "READ",
-        ixTimeTimestamp: new Date(now.getTime() - msg.daysAgo * 24 * 60 * 60 * 1000 + msg.hoursOffset * 60 * 60 * 1000),
+        ixTimeTimestamp: new Date(
+          now.getTime() - msg.daysAgo * 24 * 60 * 60 * 1000 + msg.hoursOffset * 60 * 60 * 1000
+        ),
       },
     });
     count++;
@@ -1364,10 +2041,33 @@ export async function seedThinkShareDMs(prisma: Prisma, userId: string, _country
   count += 2;
 
   const pressMessages = [
-    { senderId: "press_secretary_npc", content: `We have three media requests pending: (1) Eastern Herald wants a statement on the infrastructure timeline, (2) National Broadcasting is requesting an interview about the trade deficit, (3) World Economic Journal wants comment on the green energy transition.`, daysAgo: 1, hoursOffset: 8 },
-    { senderId: userId, content: "Accept the Eastern Herald request — tie it to the job creation numbers. Defer the trade deficit interview until after the Finance Minister's briefing. Accept the green energy piece.", daysAgo: 1, hoursOffset: 9 },
-    { senderId: "press_secretary_npc", content: "Understood. I'll draft responses for your review. Also, the ThinkPages post about the healthcare expansion is trending — 28K impressions and climbing. Should we amplify it?", daysAgo: 1, hoursOffset: 9.5 },
-    { senderId: userId, content: "Yes, push it. Good timing with the regional expansion announcement coming next week.", daysAgo: 1, hoursOffset: 10 },
+    {
+      senderId: "press_secretary_npc",
+      content: `We have three media requests pending: (1) Eastern Herald wants a statement on the infrastructure timeline, (2) National Broadcasting is requesting an interview about the trade deficit, (3) World Economic Journal wants comment on the green energy transition.`,
+      daysAgo: 1,
+      hoursOffset: 8,
+    },
+    {
+      senderId: userId,
+      content:
+        "Accept the Eastern Herald request — tie it to the job creation numbers. Defer the trade deficit interview until after the Finance Minister's briefing. Accept the green energy piece.",
+      daysAgo: 1,
+      hoursOffset: 9,
+    },
+    {
+      senderId: "press_secretary_npc",
+      content:
+        "Understood. I'll draft responses for your review. Also, the ThinkPages post about the healthcare expansion is trending — 28K impressions and climbing. Should we amplify it?",
+      daysAgo: 1,
+      hoursOffset: 9.5,
+    },
+    {
+      senderId: userId,
+      content:
+        "Yes, push it. Good timing with the regional expansion announcement coming next week.",
+      daysAgo: 1,
+      hoursOffset: 10,
+    },
   ];
   for (const msg of pressMessages) {
     await (prisma as any).thinkshareMessage.create({
@@ -1377,7 +2077,9 @@ export async function seedThinkShareDMs(prisma: Prisma, userId: string, _country
         content: msg.content,
         messageType: "text",
         status: "READ",
-        ixTimeTimestamp: new Date(now.getTime() - msg.daysAgo * 24 * 60 * 60 * 1000 + msg.hoursOffset * 60 * 60 * 1000),
+        ixTimeTimestamp: new Date(
+          now.getTime() - msg.daysAgo * 24 * 60 * 60 * 1000 + msg.hoursOffset * 60 * 60 * 1000
+        ),
       },
     });
     count++;
@@ -1397,19 +2099,34 @@ export async function seedDemographics(prisma: Prisma, countryId: string): Promi
     data: {
       countryId,
       ageDistribution: JSON.stringify({
-        "0-14": 18.2, "15-24": 12.8, "25-54": 40.1,
-        "55-64": 13.5, "65+": 15.4,
+        "0-14": 18.2,
+        "15-24": 12.8,
+        "25-54": 40.1,
+        "55-64": 13.5,
+        "65+": 15.4,
       }),
       regions: JSON.stringify({
-        "Capital Region": 28, "Northern Province": 18, "Eastern Territories": 15,
-        "Western District": 14, "Southern Coast": 13, "Central Highlands": 12,
+        "Capital Region": 28,
+        "Northern Province": 18,
+        "Eastern Territories": 15,
+        "Western District": 14,
+        "Southern Coast": 13,
+        "Central Highlands": 12,
       }),
       educationLevels: JSON.stringify({
-        "No formal education": 2, "Primary": 8, "Secondary": 35,
-        "Vocational": 15, "Bachelor's": 25, "Graduate": 12, "Doctorate": 3,
+        "No formal education": 2,
+        Primary: 8,
+        Secondary: 35,
+        Vocational: 15,
+        "Bachelor's": 25,
+        Graduate: 12,
+        Doctorate: 3,
       }),
       citizenshipStatuses: JSON.stringify({
-        "Citizens": 92, "Permanent Residents": 5, "Temporary Residents": 2, "Other": 1,
+        Citizens: 92,
+        "Permanent Residents": 5,
+        "Temporary Residents": 2,
+        Other: 1,
       }),
       birthRate: 11.2,
       deathRate: 7.8,
@@ -1439,11 +2156,19 @@ export async function seedEconomicProfile(prisma: Prisma, countryId: string): Pr
       easeOfDoingBusiness: 32,
       corruptionIndex: 35,
       sectorBreakdown: JSON.stringify({
-        "Agriculture": 3.2, "Mining & Resources": 5.1, "Manufacturing": 18.5,
-        "Construction": 6.8, "Wholesale & Retail": 12.3, "Transportation": 4.9,
-        "Information Technology": 8.7, "Finance & Insurance": 9.2,
-        "Real Estate": 7.4, "Education": 5.8, "Healthcare": 7.3,
-        "Government": 6.1, "Other Services": 4.7,
+        Agriculture: 3.2,
+        "Mining & Resources": 5.1,
+        Manufacturing: 18.5,
+        Construction: 6.8,
+        "Wholesale & Retail": 12.3,
+        Transportation: 4.9,
+        "Information Technology": 8.7,
+        "Finance & Insurance": 9.2,
+        "Real Estate": 7.4,
+        Education: 5.8,
+        Healthcare: 7.3,
+        Government: 6.1,
+        "Other Services": 4.7,
       }),
       exportsGDPPercent: 28.5,
       importsGDPPercent: 26.1,
@@ -1460,8 +2185,11 @@ export async function seedLaborMarket(prisma: Prisma, countryId: string): Promis
     data: {
       countryId,
       employmentBySector: JSON.stringify({
-        "Agriculture": 4.5, "Industry": 22.3, "Services": 58.7,
-        "Government": 8.2, "Construction": 6.3,
+        Agriculture: 4.5,
+        Industry: 22.3,
+        Services: 58.7,
+        Government: 8.2,
+        Construction: 6.3,
       }),
       youthUnemploymentRate: 12.8,
       femaleParticipationRate: 62.5,
@@ -1469,9 +2197,14 @@ export async function seedLaborMarket(prisma: Prisma, countryId: string): Promis
       medianWage: 42000,
       wageGrowthRate: 2.8,
       wageBySector: JSON.stringify({
-        "Agriculture": 28000, "Industry": 45000, "Services": 48000,
-        "Government": 52000, "Technology": 72000, "Finance": 68000,
-        "Healthcare": 55000, "Education": 44000,
+        Agriculture: 28000,
+        Industry: 45000,
+        Services: 48000,
+        Government: 52000,
+        Technology: 72000,
+        Finance: 68000,
+        Healthcare: 55000,
+        Education: 44000,
       }),
     },
   });
@@ -1500,13 +2233,22 @@ export async function seedFiscalSystem(prisma: Prisma, countryId: string): Promi
       propertyTaxRate: 1.2,
       payrollTaxRate: 7.65,
       exciseTaxRates: JSON.stringify({
-        "Tobacco": 45, "Alcohol": 25, "Fuel": 18, "Luxury Goods": 12,
+        Tobacco: 45,
+        Alcohol: 25,
+        Fuel: 18,
+        "Luxury Goods": 12,
       }),
       wealthTaxRate: 0,
       spendingByCategory: JSON.stringify({
-        "Healthcare": 22, "Defense": 15, "Education": 14, "Social Security": 18,
-        "Infrastructure": 8, "Public Safety": 6, "Science & Technology": 4,
-        "Debt Service": 7, "Other": 6,
+        Healthcare: 22,
+        Defense: 15,
+        Education: 14,
+        "Social Security": 18,
+        Infrastructure: 8,
+        "Public Safety": 6,
+        "Science & Technology": 4,
+        "Debt Service": 7,
+        Other: 6,
       }),
       fiscalBalanceGDPPercent: -2.8,
       primaryBalanceGDPPercent: -1.1,
@@ -1523,9 +2265,12 @@ export async function seedIncomeDistribution(prisma: Prisma, countryId: string):
     data: {
       countryId,
       economicClasses: JSON.stringify({
-        "Upper Class (>$200K)": 8, "Upper Middle ($100K-$200K)": 18,
-        "Middle Class ($50K-$100K)": 32, "Lower Middle ($25K-$50K)": 25,
-        "Working Class ($15K-$25K)": 12, "Below Poverty (<$15K)": 5,
+        "Upper Class (>$200K)": 8,
+        "Upper Middle ($100K-$200K)": 18,
+        "Middle Class ($50K-$100K)": 32,
+        "Lower Middle ($25K-$50K)": 25,
+        "Working Class ($15K-$25K)": 12,
+        "Below Poverty (<$15K)": 5,
       }),
       top10PercentWealth: 48.5,
       bottom50PercentWealth: 8.2,
@@ -1544,9 +2289,15 @@ export async function seedGovernmentBudget(prisma: Prisma, countryId: string): P
     data: {
       countryId,
       spendingCategories: JSON.stringify({
-        "Healthcare": 22, "Defense": 15, "Education": 14, "Social Security": 18,
-        "Infrastructure": 8, "Public Safety": 6, "Science & Technology": 4,
-        "Debt Service": 7, "Other": 6,
+        Healthcare: 22,
+        Defense: 15,
+        Education: 14,
+        "Social Security": 18,
+        Infrastructure: 8,
+        "Public Safety": 6,
+        "Science & Technology": 4,
+        "Debt Service": 7,
+        Other: 6,
       }),
       spendingEfficiency: 72,
       publicInvestmentRate: 4.5,
@@ -1621,7 +2372,11 @@ export async function seedAtomicEffectiveness(prisma: Prisma, countryId: string)
 
 // ─── NationalIdentity ──────────────────────────────────────────────
 
-export async function seedNationalIdentity(prisma: Prisma, countryId: string, countryName: string): Promise<number> {
+export async function seedNationalIdentity(
+  prisma: Prisma,
+  countryId: string,
+  countryName: string
+): Promise<number> {
   await prisma.nationalIdentity.create({
     data: {
       countryId,
@@ -1654,19 +2409,91 @@ export async function seedNationalIdentity(prisma: Prisma, countryId: string, co
 export async function seedGovernmentTree(
   prisma: Prisma,
   countryId: string,
-  governmentStructureId: string,
+  governmentStructureId: string
 ): Promise<number> {
   let count = 0;
 
   const departments = [
-    { name: "Ministry of Finance", shortName: "MoF", category: "economic", minister: "Alexandra Petrova", color: "#059669", priority: 10, description: "Responsible for fiscal policy, taxation, and public finance management.", icon: "💰" },
-    { name: "Ministry of Defense", shortName: "MoD", category: "defense", minister: "General Marcus Thorne", color: "#dc2626", priority: 20, description: "National defense, military operations, and strategic security.", icon: "🛡️" },
-    { name: "Ministry of Foreign Affairs", shortName: "MFA", category: "diplomacy", minister: "Isabella Fontaine", color: "#2563eb", priority: 30, description: "International relations, diplomatic missions, and foreign policy.", icon: "🌐" },
-    { name: "Ministry of Health", shortName: "MoH", category: "social", minister: "Dr. Samuel Chen", color: "#7c3aed", priority: 40, description: "Public health, hospitals, and healthcare regulation.", icon: "🏥" },
-    { name: "Ministry of Education", shortName: "MoE", category: "social", minister: "Prof. Maria Santos", color: "#0891b2", priority: 50, description: "Education policy, schools, universities, and research funding.", icon: "🎓" },
-    { name: "Ministry of Infrastructure", shortName: "MoI", category: "infrastructure", minister: "Viktor Andersen", color: "#d97706", priority: 60, description: "Transportation, utilities, and public infrastructure projects.", icon: "🏗️" },
-    { name: "Ministry of Justice", shortName: "MoJ", category: "governance", minister: "Justice Elena Varga", color: "#4f46e5", priority: 70, description: "Law enforcement, courts, and the judicial system.", icon: "⚖️" },
-    { name: "Ministry of Commerce", shortName: "MoC", category: "economic", minister: "Robert Kingsley", color: "#0d9488", priority: 80, description: "Trade, industry regulation, and economic development.", icon: "📊" },
+    {
+      name: "Ministry of Finance",
+      shortName: "MoF",
+      category: "economic",
+      minister: "Alexandra Petrova",
+      color: "#059669",
+      priority: 10,
+      description: "Responsible for fiscal policy, taxation, and public finance management.",
+      icon: "💰",
+    },
+    {
+      name: "Ministry of Defense",
+      shortName: "MoD",
+      category: "defense",
+      minister: "General Marcus Thorne",
+      color: "#dc2626",
+      priority: 20,
+      description: "National defense, military operations, and strategic security.",
+      icon: "🛡️",
+    },
+    {
+      name: "Ministry of Foreign Affairs",
+      shortName: "MFA",
+      category: "diplomacy",
+      minister: "Isabella Fontaine",
+      color: "#2563eb",
+      priority: 30,
+      description: "International relations, diplomatic missions, and foreign policy.",
+      icon: "🌐",
+    },
+    {
+      name: "Ministry of Health",
+      shortName: "MoH",
+      category: "social",
+      minister: "Dr. Samuel Chen",
+      color: "#7c3aed",
+      priority: 40,
+      description: "Public health, hospitals, and healthcare regulation.",
+      icon: "🏥",
+    },
+    {
+      name: "Ministry of Education",
+      shortName: "MoE",
+      category: "social",
+      minister: "Prof. Maria Santos",
+      color: "#0891b2",
+      priority: 50,
+      description: "Education policy, schools, universities, and research funding.",
+      icon: "🎓",
+    },
+    {
+      name: "Ministry of Infrastructure",
+      shortName: "MoI",
+      category: "infrastructure",
+      minister: "Viktor Andersen",
+      color: "#d97706",
+      priority: 60,
+      description: "Transportation, utilities, and public infrastructure projects.",
+      icon: "🏗️",
+    },
+    {
+      name: "Ministry of Justice",
+      shortName: "MoJ",
+      category: "governance",
+      minister: "Justice Elena Varga",
+      color: "#4f46e5",
+      priority: 70,
+      description: "Law enforcement, courts, and the judicial system.",
+      icon: "⚖️",
+    },
+    {
+      name: "Ministry of Commerce",
+      shortName: "MoC",
+      category: "economic",
+      minister: "Robert Kingsley",
+      color: "#0d9488",
+      priority: 80,
+      description: "Trade, industry regulation, and economic development.",
+      icon: "📊",
+    },
   ];
 
   const deptIds: string[] = [];
@@ -1680,11 +2507,51 @@ export async function seedGovernmentTree(
 
   // Add officials for first 4 departments
   const officials = [
-    { governmentStructureId, departmentId: deptIds[0], name: "Alexandra Petrova", title: "Minister of Finance", role: "minister", bio: "Former central bank governor with 20 years of fiscal policy experience.", priority: 10 },
-    { governmentStructureId, departmentId: deptIds[0], name: "Thomas Richter", title: "Deputy Minister of Finance", role: "deputy_minister", bio: "Tax reform specialist and public finance expert.", priority: 20 },
-    { governmentStructureId, departmentId: deptIds[1], name: "General Marcus Thorne", title: "Minister of Defense", role: "minister", bio: "Distinguished military career spanning 30 years. Former Joint Chiefs chairman.", priority: 10 },
-    { governmentStructureId, departmentId: deptIds[2], name: "Isabella Fontaine", title: "Minister of Foreign Affairs", role: "minister", bio: "Career diplomat with ambassadorial experience in 4 nations.", priority: 10 },
-    { governmentStructureId, departmentId: deptIds[3], name: "Dr. Samuel Chen", title: "Minister of Health", role: "minister", bio: "Leading epidemiologist and public health policy architect.", priority: 10 },
+    {
+      governmentStructureId,
+      departmentId: deptIds[0],
+      name: "Alexandra Petrova",
+      title: "Minister of Finance",
+      role: "minister",
+      bio: "Former central bank governor with 20 years of fiscal policy experience.",
+      priority: 10,
+    },
+    {
+      governmentStructureId,
+      departmentId: deptIds[0],
+      name: "Thomas Richter",
+      title: "Deputy Minister of Finance",
+      role: "deputy_minister",
+      bio: "Tax reform specialist and public finance expert.",
+      priority: 20,
+    },
+    {
+      governmentStructureId,
+      departmentId: deptIds[1],
+      name: "General Marcus Thorne",
+      title: "Minister of Defense",
+      role: "minister",
+      bio: "Distinguished military career spanning 30 years. Former Joint Chiefs chairman.",
+      priority: 10,
+    },
+    {
+      governmentStructureId,
+      departmentId: deptIds[2],
+      name: "Isabella Fontaine",
+      title: "Minister of Foreign Affairs",
+      role: "minister",
+      bio: "Career diplomat with ambassadorial experience in 4 nations.",
+      priority: 10,
+    },
+    {
+      governmentStructureId,
+      departmentId: deptIds[3],
+      name: "Dr. Samuel Chen",
+      title: "Minister of Health",
+      role: "minister",
+      bio: "Leading epidemiologist and public health policy architect.",
+      priority: 10,
+    },
   ];
   for (const official of officials) {
     await (prisma as any).governmentOfficial.create({ data: official });
@@ -1712,13 +2579,55 @@ export async function seedGovernmentTree(
 
   // Revenue sources
   const revenueSources = [
-    { name: "Personal Income Tax", category: "direct_tax", rate: 25, revenueAmount: 120000000000, revenuePercent: 38 },
-    { name: "Corporate Tax", category: "direct_tax", rate: 21, revenueAmount: 65000000000, revenuePercent: 21 },
-    { name: "Sales Tax / VAT", category: "indirect_tax", rate: 8.5, revenueAmount: 52000000000, revenuePercent: 16 },
-    { name: "Payroll Tax", category: "direct_tax", rate: 7.65, revenueAmount: 42000000000, revenuePercent: 13 },
-    { name: "Property Tax", category: "direct_tax", rate: 1.2, revenueAmount: 18000000000, revenuePercent: 6 },
-    { name: "Excise Duties", category: "indirect_tax", rate: null, revenueAmount: 12000000000, revenuePercent: 4 },
-    { name: "Other Revenue", category: "non_tax", rate: null, revenueAmount: 6000000000, revenuePercent: 2 },
+    {
+      name: "Personal Income Tax",
+      category: "direct_tax",
+      rate: 25,
+      revenueAmount: 120000000000,
+      revenuePercent: 38,
+    },
+    {
+      name: "Corporate Tax",
+      category: "direct_tax",
+      rate: 21,
+      revenueAmount: 65000000000,
+      revenuePercent: 21,
+    },
+    {
+      name: "Sales Tax / VAT",
+      category: "indirect_tax",
+      rate: 8.5,
+      revenueAmount: 52000000000,
+      revenuePercent: 16,
+    },
+    {
+      name: "Payroll Tax",
+      category: "direct_tax",
+      rate: 7.65,
+      revenueAmount: 42000000000,
+      revenuePercent: 13,
+    },
+    {
+      name: "Property Tax",
+      category: "direct_tax",
+      rate: 1.2,
+      revenueAmount: 18000000000,
+      revenuePercent: 6,
+    },
+    {
+      name: "Excise Duties",
+      category: "indirect_tax",
+      rate: null,
+      revenueAmount: 12000000000,
+      revenuePercent: 4,
+    },
+    {
+      name: "Other Revenue",
+      category: "non_tax",
+      rate: null,
+      revenueAmount: 6000000000,
+      revenuePercent: 2,
+    },
   ];
   for (const rev of revenueSources) {
     await (prisma as any).revenueSource.create({
@@ -1843,7 +2752,13 @@ export async function seedTaxTree(prisma: Prisma, countryId: string): Promise<nu
   ];
   for (const bracket of brackets) {
     await prisma.taxBracket.create({
-      data: { taxSystemId: taxSystem.id, categoryId: incomeCat.id, marginalRate: true, isActive: true, ...bracket },
+      data: {
+        taxSystemId: taxSystem.id,
+        categoryId: incomeCat.id,
+        marginalRate: true,
+        isActive: true,
+        ...bracket,
+      },
     });
     count++;
   }
@@ -1867,9 +2782,14 @@ export async function seedTaxTree(prisma: Prisma, countryId: string): Promise<nu
 
   await prisma.taxBracket.create({
     data: {
-      taxSystemId: taxSystem.id, categoryId: corpCat.id,
-      bracketName: "Standard Rate", minIncome: 0, rate: 21,
-      marginalRate: false, isActive: true, priority: 10,
+      taxSystemId: taxSystem.id,
+      categoryId: corpCat.id,
+      bracketName: "Standard Rate",
+      minIncome: 0,
+      rate: 21,
+      marginalRate: false,
+      isActive: true,
+      priority: 10,
     },
   });
   count++;
@@ -1893,9 +2813,24 @@ export async function seedTaxTree(prisma: Prisma, countryId: string): Promise<nu
 
   // Exemptions
   const exemptions = [
-    { exemptionName: "Standard Personal Deduction", exemptionType: "personal", description: "Base income exempt from taxation.", exemptionAmount: 15000 },
-    { exemptionName: "Charitable Donations", exemptionType: "deduction", description: "Deduction for verified charitable contributions.", exemptionRate: 100 },
-    { exemptionName: "Medical Expenses", exemptionType: "deduction", description: "Deduction for out-of-pocket medical costs exceeding 7.5% of income.", exemptionRate: 100 },
+    {
+      exemptionName: "Standard Personal Deduction",
+      exemptionType: "personal",
+      description: "Base income exempt from taxation.",
+      exemptionAmount: 15000,
+    },
+    {
+      exemptionName: "Charitable Donations",
+      exemptionType: "deduction",
+      description: "Deduction for verified charitable contributions.",
+      exemptionRate: 100,
+    },
+    {
+      exemptionName: "Medical Expenses",
+      exemptionType: "deduction",
+      description: "Deduction for out-of-pocket medical costs exceeding 7.5% of income.",
+      exemptionRate: 100,
+    },
   ];
   for (const ex of exemptions) {
     await prisma.taxExemption.create({
@@ -1906,18 +2841,66 @@ export async function seedTaxTree(prisma: Prisma, countryId: string): Promise<nu
 
   // TaxDeductions — Personal Income
   const personalDeductions = [
-    { categoryId: incomeCat.id, deductionName: "Charitable Donations", deductionType: "charitable", description: "Deduction for verified charitable contributions.", percentage: 100, isActive: true, priority: 10 },
-    { categoryId: incomeCat.id, deductionName: "Mortgage Interest", deductionType: "housing", description: "Deduction for primary residence mortgage interest.", maximumAmount: 750000, isActive: true, priority: 20 },
-    { categoryId: incomeCat.id, deductionName: "Medical Expenses", deductionType: "medical", description: "Deduction for out-of-pocket medical costs exceeding 7.5% of income.", percentage: 100, isActive: true, priority: 30 },
-    { categoryId: incomeCat.id, deductionName: "Education Expenses", deductionType: "education", description: "Deduction for qualifying tuition and educational materials.", maximumAmount: 10000, isActive: true, priority: 40 },
+    {
+      categoryId: incomeCat.id,
+      deductionName: "Charitable Donations",
+      deductionType: "charitable",
+      description: "Deduction for verified charitable contributions.",
+      percentage: 100,
+      isActive: true,
+      priority: 10,
+    },
+    {
+      categoryId: incomeCat.id,
+      deductionName: "Mortgage Interest",
+      deductionType: "housing",
+      description: "Deduction for primary residence mortgage interest.",
+      maximumAmount: 750000,
+      isActive: true,
+      priority: 20,
+    },
+    {
+      categoryId: incomeCat.id,
+      deductionName: "Medical Expenses",
+      deductionType: "medical",
+      description: "Deduction for out-of-pocket medical costs exceeding 7.5% of income.",
+      percentage: 100,
+      isActive: true,
+      priority: 30,
+    },
+    {
+      categoryId: incomeCat.id,
+      deductionName: "Education Expenses",
+      deductionType: "education",
+      description: "Deduction for qualifying tuition and educational materials.",
+      maximumAmount: 10000,
+      isActive: true,
+      priority: 40,
+    },
   ];
   await prisma.taxDeduction.createMany({ data: personalDeductions });
   count += personalDeductions.length;
 
   // TaxDeductions — Corporate
   const corporateDeductions = [
-    { categoryId: corpCat.id, deductionName: "Business Expenses", deductionType: "operational", description: "Standard deduction for legitimate business operating costs.", percentage: 100, isActive: true, priority: 10 },
-    { categoryId: corpCat.id, deductionName: "R&D Tax Credit", deductionType: "research", description: "Tax credit for qualifying research and development expenditures.", percentage: 20, isActive: true, priority: 20 },
+    {
+      categoryId: corpCat.id,
+      deductionName: "Business Expenses",
+      deductionType: "operational",
+      description: "Standard deduction for legitimate business operating costs.",
+      percentage: 100,
+      isActive: true,
+      priority: 10,
+    },
+    {
+      categoryId: corpCat.id,
+      deductionName: "R&D Tax Credit",
+      deductionType: "research",
+      description: "Tax credit for qualifying research and development expenditures.",
+      percentage: 20,
+      isActive: true,
+      priority: 20,
+    },
   ];
   await prisma.taxDeduction.createMany({ data: corporateDeductions });
   count += corporateDeductions.length;
@@ -1954,7 +2937,8 @@ export async function seedCrossBuilderSynergy(prisma: Prisma, countryId: string)
       taxComponents: JSON.stringify(["PROGRESSIVE_TAX"]),
       synergyType: "governance_economic",
       effectivenessBonus: 8.5,
-      description: "Balanced Governance — democratic institutions paired with mixed-market economics and progressive taxation create a stable, high-performing economy.",
+      description:
+        "Balanced Governance — democratic institutions paired with mixed-market economics and progressive taxation create a stable, high-performing economy.",
       isActive: true,
     },
     {
@@ -1964,7 +2948,8 @@ export async function seedCrossBuilderSynergy(prisma: Prisma, countryId: string)
       taxComponents: JSON.stringify(["CORPORATE_TAX"]),
       synergyType: "market_reform",
       effectivenessBonus: 6.0,
-      description: "Market-Oriented Reform — streamlined regulations with export focus and competitive corporate taxation boost trade competitiveness.",
+      description:
+        "Market-Oriented Reform — streamlined regulations with export focus and competitive corporate taxation boost trade competitiveness.",
       isActive: true,
     },
   ];
@@ -2004,9 +2989,45 @@ export async function seedBorderSecurity(prisma: Prisma, countryId: string): Pro
 
   // Neighbor threat assessments
   const neighbors = [
-    { neighborName: "Northern Republic", borderType: "land", borderLength: 1800, threatLevel: "low", threatScore: 18, militaryThreat: 12, terrorismRisk: 8, smugglingRisk: 22, politicalStability: 72, diplomaticRelations: "friendly", tradeVolume: 15000000000 },
-    { neighborName: "Eastern Federation", borderType: "land", borderLength: 1450, threatLevel: "moderate", threatScore: 42, militaryThreat: 35, terrorismRisk: 18, smugglingRisk: 38, politicalStability: 52, diplomaticRelations: "neutral", tradeVolume: 8000000000 },
-    { neighborName: "Southern Islands", borderType: "maritime", borderLength: 1000, threatLevel: "low", threatScore: 15, militaryThreat: 8, terrorismRisk: 5, smugglingRisk: 28, politicalStability: 78, diplomaticRelations: "allied", tradeVolume: 22000000000 },
+    {
+      neighborName: "Northern Republic",
+      borderType: "land",
+      borderLength: 1800,
+      threatLevel: "low",
+      threatScore: 18,
+      militaryThreat: 12,
+      terrorismRisk: 8,
+      smugglingRisk: 22,
+      politicalStability: 72,
+      diplomaticRelations: "friendly",
+      tradeVolume: 15000000000,
+    },
+    {
+      neighborName: "Eastern Federation",
+      borderType: "land",
+      borderLength: 1450,
+      threatLevel: "moderate",
+      threatScore: 42,
+      militaryThreat: 35,
+      terrorismRisk: 18,
+      smugglingRisk: 38,
+      politicalStability: 52,
+      diplomaticRelations: "neutral",
+      tradeVolume: 8000000000,
+    },
+    {
+      neighborName: "Southern Islands",
+      borderType: "maritime",
+      borderLength: 1000,
+      threatLevel: "low",
+      threatScore: 15,
+      militaryThreat: 8,
+      terrorismRisk: 5,
+      smugglingRisk: 28,
+      politicalStability: 78,
+      diplomaticRelations: "allied",
+      tradeVolume: 22000000000,
+    },
   ];
   for (const neighbor of neighbors) {
     await prisma.neighborThreatAssessment.create({
@@ -2028,7 +3049,7 @@ export async function seedBorderSecurity(prisma: Prisma, countryId: string): Pro
 export async function seedSecureChannels(
   prisma: Prisma,
   demoCountryId: string,
-  countryName: string,
+  countryName: string
 ): Promise<number> {
   // Guard: skip if already seeded
   const existingChannels = await (prisma as any).thinkshareConversation.findFirst({
@@ -2050,7 +3071,7 @@ export async function seedSecureChannels(
   const embassyPartners: { id: string; name: string }[] = embassies.map((e: any) =>
     e.guestCountryId === demoCountryId
       ? { id: e.hostCountryId, name: e.hostCountry.name }
-      : { id: e.guestCountryId, name: e.guestCountry.name },
+      : { id: e.guestCountryId, name: e.guestCountry.name }
   );
 
   const ownMemberships = await prisma.allianceMember.findMany({
@@ -2066,7 +3087,10 @@ export async function seedSecureChannels(
           take: 3,
         })
       : [];
-  const alliancePartners = otherMembers.map((m: any) => ({ id: m.countryId, name: m.country.name }));
+  const alliancePartners = otherMembers.map((m: any) => ({
+    id: m.countryId,
+    name: m.country.name,
+  }));
 
   // Fallback: use any real countries if no embassies seeded yet
   const partners: { id: string; name: string }[] =
@@ -2100,7 +3124,7 @@ export async function seedSecureChannels(
       subject: string;
       priority?: string;
       timestamp: Date;
-    }[],
+    }[]
   ): Promise<void> {
     const conv = await (prisma as any).thinkshareConversation.create({
       data: {
@@ -2184,7 +3208,7 @@ export async function seedSecureChannels(
         subject: "Re: Tariff Schedule Proposal",
         timestamp: new Date(now.getTime() - 30 * 60 * 1000),
       },
-    ],
+    ]
   );
 
   // ── Channel 2: Security Coordination (SECRET, BILATERAL) ──────────
@@ -2220,16 +3244,13 @@ export async function seedSecureChannels(
         subject: "Acknowledgement",
         timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000),
       },
-    ],
+    ]
   );
 
   // ── Channel 3: Alliance Forum (RESTRICTED, MULTILATERAL) ──────────
   const forumPartners = alliancePartners.length > 0 ? alliancePartners : partners.slice(0, 3);
   if (forumPartners.length > 0) {
-    const forumParticipantIds = [
-      demoCountryId,
-      ...forumPartners.slice(0, 3).map((p) => p.id),
-    ];
+    const forumParticipantIds = [demoCountryId, ...forumPartners.slice(0, 3).map((p) => p.id)];
     const firstAlly = forumPartners[0]!;
     await createChannel(
       {
@@ -2262,7 +3283,7 @@ export async function seedSecureChannels(
           subject: "First Session Agenda",
           timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000),
         },
-      ],
+      ]
     );
   }
 
@@ -2293,7 +3314,7 @@ export async function seedSecureChannels(
         priority: "URGENT",
         timestamp: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000 + 25 * 60 * 1000),
       },
-    ],
+    ]
   );
 
   return count;
@@ -2307,10 +3328,7 @@ export async function seedSecureChannels(
  * Fill NULL economic/labor/government/demographics fields on the Country record.
  * Only updates fields that are currently NULL — never overwrites existing data.
  */
-export async function populateCountryFields(
-  prisma: Prisma,
-  countryId: string,
-): Promise<void> {
+export async function populateCountryFields(prisma: Prisma, countryId: string): Promise<void> {
   const country = await prisma.country.findUnique({ where: { id: countryId } });
   if (!country) return;
 
@@ -2323,47 +3341,49 @@ export async function populateCountryFields(
   const totalGdp = pop * gdpPc;
 
   // ─── Core economic indicators ───
-  if (country.nominalGDP == null)              updates.nominalGDP = totalGdp;
-  if (country.realGDPGrowthRate == null)        updates.realGDPGrowthRate = 2.8;
-  if (country.inflationRate == null)            updates.inflationRate = 2.1;
-  if (country.currencyExchangeRate == null)     updates.currencyExchangeRate = 1.0;
-  if (country.actualGdpGrowth === 0)            updates.actualGdpGrowth = 2.8;
+  if (country.nominalGDP == null) updates.nominalGDP = totalGdp;
+  if (country.realGDPGrowthRate == null) updates.realGDPGrowthRate = 2.8;
+  if (country.inflationRate == null) updates.inflationRate = 2.1;
+  if (country.currencyExchangeRate == null) updates.currencyExchangeRate = 1.0;
+  if (country.actualGdpGrowth === 0) updates.actualGdpGrowth = 2.8;
 
   // ─── Labor market ───
-  if (country.unemploymentRate == null)         updates.unemploymentRate = 5.2;
-  if (country.employmentRate == null)           updates.employmentRate = 94.8;
+  if (country.unemploymentRate == null) updates.unemploymentRate = 5.2;
+  if (country.employmentRate == null) updates.employmentRate = 94.8;
   if (country.laborForceParticipationRate == null) updates.laborForceParticipationRate = 64.5;
-  if (country.totalWorkforce == null)           updates.totalWorkforce = Math.round(pop * 0.45);
-  if (country.averageWorkweekHours == null)     updates.averageWorkweekHours = 38.5;
-  if (country.minimumWage == null)              updates.minimumWage = Math.round(gdpPc * 0.35);
-  if (country.averageAnnualIncome == null)      updates.averageAnnualIncome = Math.round(gdpPc * 0.85);
+  if (country.totalWorkforce == null) updates.totalWorkforce = Math.round(pop * 0.45);
+  if (country.averageWorkweekHours == null) updates.averageWorkweekHours = 38.5;
+  if (country.minimumWage == null) updates.minimumWage = Math.round(gdpPc * 0.35);
+  if (country.averageAnnualIncome == null) updates.averageAnnualIncome = Math.round(gdpPc * 0.85);
 
   // ─── Fiscal / government spending ───
-  if (country.taxRevenueGDPPercent == null)     updates.taxRevenueGDPPercent = 22.5;
-  if (country.governmentRevenueTotal == null)   updates.governmentRevenueTotal = Math.round(totalGdp * 0.225);
-  if (country.taxRevenuePerCapita == null)      updates.taxRevenuePerCapita = Math.round(gdpPc * 0.225);
+  if (country.taxRevenueGDPPercent == null) updates.taxRevenueGDPPercent = 22.5;
+  if (country.governmentRevenueTotal == null)
+    updates.governmentRevenueTotal = Math.round(totalGdp * 0.225);
+  if (country.taxRevenuePerCapita == null) updates.taxRevenuePerCapita = Math.round(gdpPc * 0.225);
   if (country.governmentBudgetGDPPercent == null) updates.governmentBudgetGDPPercent = 28.0;
-  if (country.budgetDeficitSurplus == null)     updates.budgetDeficitSurplus = -2.5;
-  if (country.totalGovernmentSpending == null)  updates.totalGovernmentSpending = Math.round(totalGdp * 0.28);
-  if (country.spendingGDPPercent == null)       updates.spendingGDPPercent = 28.0;
-  if (country.spendingPerCapita == null)        updates.spendingPerCapita = Math.round(gdpPc * 0.28);
+  if (country.budgetDeficitSurplus == null) updates.budgetDeficitSurplus = -2.5;
+  if (country.totalGovernmentSpending == null)
+    updates.totalGovernmentSpending = Math.round(totalGdp * 0.28);
+  if (country.spendingGDPPercent == null) updates.spendingGDPPercent = 28.0;
+  if (country.spendingPerCapita == null) updates.spendingPerCapita = Math.round(gdpPc * 0.28);
 
   // ─── Debt ───
-  if (country.totalDebtGDPRatio == null)        updates.totalDebtGDPRatio = 62.0;
-  if (country.internalDebtGDPPercent == null)    updates.internalDebtGDPPercent = 45.0;
-  if (country.externalDebtGDPPercent == null)    updates.externalDebtGDPPercent = 17.0;
-  if (country.debtPerCapita == null)            updates.debtPerCapita = Math.round(gdpPc * 0.62);
-  if (country.interestRates == null)            updates.interestRates = 3.5;
-  if (country.debtServiceCosts == null)         updates.debtServiceCosts = Math.round(totalGdp * 0.025);
+  if (country.totalDebtGDPRatio == null) updates.totalDebtGDPRatio = 62.0;
+  if (country.internalDebtGDPPercent == null) updates.internalDebtGDPPercent = 45.0;
+  if (country.externalDebtGDPPercent == null) updates.externalDebtGDPPercent = 17.0;
+  if (country.debtPerCapita == null) updates.debtPerCapita = Math.round(gdpPc * 0.62);
+  if (country.interestRates == null) updates.interestRates = 3.5;
+  if (country.debtServiceCosts == null) updates.debtServiceCosts = Math.round(totalGdp * 0.025);
 
   // ─── Demographics / social ───
-  if (country.lifeExpectancy == null)           updates.lifeExpectancy = 78.5;
-  if (country.urbanPopulationPercent == null)    updates.urbanPopulationPercent = 68.0;
-  if (country.ruralPopulationPercent == null)    updates.ruralPopulationPercent = 32.0;
-  if (country.literacyRate == null)             updates.literacyRate = 96.5;
-  if (country.povertyRate == null)              updates.povertyRate = 8.5;
-  if (country.incomeInequalityGini == null)      updates.incomeInequalityGini = 0.34;
-  if (country.socialMobilityIndex == null)       updates.socialMobilityIndex = 65.0;
+  if (country.lifeExpectancy == null) updates.lifeExpectancy = 78.5;
+  if (country.urbanPopulationPercent == null) updates.urbanPopulationPercent = 68.0;
+  if (country.ruralPopulationPercent == null) updates.ruralPopulationPercent = 32.0;
+  if (country.literacyRate == null) updates.literacyRate = 96.5;
+  if (country.povertyRate == null) updates.povertyRate = 8.5;
+  if (country.incomeInequalityGini == null) updates.incomeInequalityGini = 0.34;
+  if (country.socialMobilityIndex == null) updates.socialMobilityIndex = 65.0;
 
   // ─── Density (derived) ───
   if (country.populationDensity == null && country.landArea) {
@@ -2374,13 +3394,13 @@ export async function populateCountryFields(
   }
 
   // ─── Vitality scores (if all zero) ───
-  if (country.economicVitality === 0)           updates.economicVitality = 68.0;
-  if (country.populationWellbeing === 0)        updates.populationWellbeing = 72.0;
-  if (country.diplomaticStanding === 0)         updates.diplomaticStanding = 65.0;
-  if (country.governmentalEfficiency === 0)     updates.governmentalEfficiency = 70.0;
-  if (country.overallNationalHealth === 0)      updates.overallNationalHealth = 69.0;
-  if (country.infrastructureRating === 50)      updates.infrastructureRating = 72.0;
-  if (country.tradeBalance === 0)               updates.tradeBalance = Math.round(totalGdp * 0.02);
+  if (country.economicVitality === 0) updates.economicVitality = 68.0;
+  if (country.populationWellbeing === 0) updates.populationWellbeing = 72.0;
+  if (country.diplomaticStanding === 0) updates.diplomaticStanding = 65.0;
+  if (country.governmentalEfficiency === 0) updates.governmentalEfficiency = 70.0;
+  if (country.overallNationalHealth === 0) updates.overallNationalHealth = 69.0;
+  if (country.infrastructureRating === 50) updates.infrastructureRating = 72.0;
+  if (country.tradeBalance === 0) updates.tradeBalance = Math.round(totalGdp * 0.02);
 
   // Only issue the update if there are fields to fill
   if (Object.keys(updates).length > 0) {
@@ -2395,16 +3415,20 @@ export async function populateCountryFields(
 
 export async function seedNPCPersonality(prisma: Prisma, countryId: string): Promise<number> {
   // Check if already assigned
-  const existing = await prisma.nPCPersonalityAssignment.findUnique({
-    where: { countryId },
-  }).catch(() => null);
+  const existing = await prisma.nPCPersonalityAssignment
+    .findUnique({
+      where: { countryId },
+    })
+    .catch(() => null);
   if (existing) return 0;
 
   // Find the least-used active personality
-  const personality = await (prisma as any).nPCPersonality.findFirst({
-    where: { isActive: true },
-    orderBy: { usageCount: "asc" },
-  }).catch(() => null);
+  const personality = await (prisma as any).nPCPersonality
+    .findFirst({
+      where: { isActive: true },
+      orderBy: { usageCount: "asc" },
+    })
+    .catch(() => null);
   if (!personality) return 0; // No personalities in DB
 
   await prisma.nPCPersonalityAssignment.create({
@@ -2418,20 +3442,27 @@ export async function seedNPCPersonality(prisma: Prisma, countryId: string): Pro
   });
 
   // Increment usage count
-  await (prisma as any).nPCPersonality.update({
-    where: { id: personality.id },
-    data: { usageCount: { increment: 1 } },
-  }).catch(() => null);
+  await (prisma as any).nPCPersonality
+    .update({
+      where: { id: personality.id },
+      data: { usageCount: { increment: 1 } },
+    })
+    .catch(() => null);
 
   return 1;
 }
 
 // ─── Internal Stability Metrics ─────────────────────────────────────
 
-export async function seedInternalStabilityMetrics(prisma: Prisma, countryId: string): Promise<number> {
-  const existing = await prisma.internalStabilityMetrics.findUnique({
-    where: { countryId },
-  }).catch(() => null);
+export async function seedInternalStabilityMetrics(
+  prisma: Prisma,
+  countryId: string
+): Promise<number> {
+  const existing = await prisma.internalStabilityMetrics
+    .findUnique({
+      where: { countryId },
+    })
+    .catch(() => null);
   if (existing) return 0;
 
   await prisma.internalStabilityMetrics.create({
@@ -2514,16 +3545,68 @@ export async function seedSecurityThreats(prisma: Prisma, countryId: string): Pr
   const now = new Date();
 
   // Incident data keyed by threat type
-  const incidentsByType: Record<string, Array<{ title: string; description: string; incidentType: string; casualties: number; damage: number; location: string; effectiveness: number; daysAgo: number }>> = {
+  const incidentsByType: Record<
+    string,
+    Array<{
+      title: string;
+      description: string;
+      incidentType: string;
+      casualties: number;
+      damage: number;
+      location: string;
+      effectiveness: number;
+      daysAgo: number;
+    }>
+  > = {
     organized_crime: [
-      { title: "Smuggling Interdiction — Eastern Border", description: "Customs agents intercepted a convoy transporting undeclared goods across the eastern border checkpoint.", incidentType: "interdiction", casualties: 0, damage: 0, location: "Eastern Border Checkpoint 7", effectiveness: 85, daysAgo: 14 },
-      { title: "Money Laundering Probe Initiated", description: "Financial intelligence unit flagged suspicious transaction patterns linked to known criminal networks.", incidentType: "investigation", casualties: 0, damage: 0, location: "National Financial Center", effectiveness: 60, daysAgo: 5 },
+      {
+        title: "Smuggling Interdiction — Eastern Border",
+        description:
+          "Customs agents intercepted a convoy transporting undeclared goods across the eastern border checkpoint.",
+        incidentType: "interdiction",
+        casualties: 0,
+        damage: 0,
+        location: "Eastern Border Checkpoint 7",
+        effectiveness: 85,
+        daysAgo: 14,
+      },
+      {
+        title: "Money Laundering Probe Initiated",
+        description:
+          "Financial intelligence unit flagged suspicious transaction patterns linked to known criminal networks.",
+        incidentType: "investigation",
+        casualties: 0,
+        damage: 0,
+        location: "National Financial Center",
+        effectiveness: 60,
+        daysAgo: 5,
+      },
     ],
     cyber: [
-      { title: "Phishing Campaign Detected", description: "Coordinated phishing attack targeting government email systems. 12 compromised accounts identified and secured.", incidentType: "attack", casualties: 0, damage: 250000, location: "Government IT Infrastructure", effectiveness: 72, daysAgo: 3 },
+      {
+        title: "Phishing Campaign Detected",
+        description:
+          "Coordinated phishing attack targeting government email systems. 12 compromised accounts identified and secured.",
+        incidentType: "attack",
+        casualties: 0,
+        damage: 250000,
+        location: "Government IT Infrastructure",
+        effectiveness: 72,
+        daysAgo: 3,
+      },
     ],
     insurgency: [
-      { title: "Border Patrol Encounter", description: "Routine patrol encountered and dispersed a small group operating near the southern border. No casualties.", incidentType: "encounter", casualties: 0, damage: 5000, location: "Southern Province — Sector 12", effectiveness: 90, daysAgo: 21 },
+      {
+        title: "Border Patrol Encounter",
+        description:
+          "Routine patrol encountered and dispersed a small group operating near the southern border. No casualties.",
+        incidentType: "encounter",
+        casualties: 0,
+        damage: 5000,
+        location: "Southern Province — Sector 12",
+        effectiveness: 90,
+        daysAgo: 21,
+      },
     ],
   };
 
@@ -2562,7 +3645,13 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
   await prisma.territory.createMany({
     data: [
       { countryId, name: "Mainland", geometry: emptyGeom, isMainland: true, areaSqKm: 320000 },
-      { countryId, name: "Southern Islands", geometry: emptyGeom, isMainland: false, areaSqKm: 15000 },
+      {
+        countryId,
+        name: "Southern Islands",
+        geometry: emptyGeom,
+        isMainland: false,
+        areaSqKm: 15000,
+      },
     ],
   });
   count += 2;
@@ -2599,10 +3688,38 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
 
   // Cities (capital + 3 major cities)
   const cities = [
-    { name: "Nova Capita", type: "capital", subdivisionId: subIds[0], population: 4200000, isNationalCapital: true, isSubdivisionCapital: true },
-    { name: "Northgate", type: "city", subdivisionId: subIds[1], population: 1800000, isNationalCapital: false, isSubdivisionCapital: true },
-    { name: "Eastport", type: "city", subdivisionId: subIds[2], population: 1500000, isNationalCapital: false, isSubdivisionCapital: true },
-    { name: "Southhaven", type: "port_city", subdivisionId: subIds[4], population: 1200000, isNationalCapital: false, isSubdivisionCapital: true },
+    {
+      name: "Nova Capita",
+      type: "capital",
+      subdivisionId: subIds[0],
+      population: 4200000,
+      isNationalCapital: true,
+      isSubdivisionCapital: true,
+    },
+    {
+      name: "Northgate",
+      type: "city",
+      subdivisionId: subIds[1],
+      population: 1800000,
+      isNationalCapital: false,
+      isSubdivisionCapital: true,
+    },
+    {
+      name: "Eastport",
+      type: "city",
+      subdivisionId: subIds[2],
+      population: 1500000,
+      isNationalCapital: false,
+      isSubdivisionCapital: true,
+    },
+    {
+      name: "Southhaven",
+      type: "port_city",
+      subdivisionId: subIds[4],
+      population: 1200000,
+      isNationalCapital: false,
+      isSubdivisionCapital: true,
+    },
   ];
   for (const city of cities) {
     await prisma.city.create({
@@ -2624,10 +3741,30 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
 
   // Points of Interest (linked to capital subdivision)
   const pois = [
-    { name: "National Parliament", category: "government", coordinates: { lat: 45.01, lng: 20.01 }, description: "Seat of the national legislature and primary government complex." },
-    { name: "Central Reserve Bank", category: "financial", coordinates: { lat: 45.02, lng: 19.98 }, description: "National central banking authority and monetary policy headquarters." },
-    { name: "National History Museum", category: "cultural", coordinates: { lat: 44.99, lng: 20.03 }, description: "Premier cultural institution housing national heritage collections." },
-    { name: "Nova Capita International Airport", category: "infrastructure", coordinates: { lat: 45.08, lng: 20.15 }, description: "Primary international gateway serving the capital region." },
+    {
+      name: "National Parliament",
+      category: "government",
+      coordinates: { lat: 45.01, lng: 20.01 },
+      description: "Seat of the national legislature and primary government complex.",
+    },
+    {
+      name: "Central Reserve Bank",
+      category: "financial",
+      coordinates: { lat: 45.02, lng: 19.98 },
+      description: "National central banking authority and monetary policy headquarters.",
+    },
+    {
+      name: "National History Museum",
+      category: "cultural",
+      coordinates: { lat: 44.99, lng: 20.03 },
+      description: "Premier cultural institution housing national heritage collections.",
+    },
+    {
+      name: "Nova Capita International Airport",
+      category: "infrastructure",
+      coordinates: { lat: 45.08, lng: 20.15 },
+      description: "Primary international gateway serving the capital region.",
+    },
   ];
   for (const poi of pois) {
     await prisma.pointOfInterest.create({
@@ -2707,10 +3844,12 @@ export async function seedHistory(prisma: Prisma, countryId: string): Promise<nu
   count += historicalRecords.length;
 
   // ComponentEffectivenessHistory: 30 days per active government component
-  const govComponents = await prisma.governmentComponent.findMany({
-    where: { countryId, isActive: true },
-    select: { id: true, componentType: true, effectivenessScore: true },
-  }).catch(() => []);
+  const govComponents = await prisma.governmentComponent
+    .findMany({
+      where: { countryId, isActive: true },
+      select: { id: true, componentType: true, effectivenessScore: true },
+    })
+    .catch(() => []);
 
   if (govComponents.length > 0) {
     const compHistRecords = [];
@@ -2737,30 +3876,154 @@ export async function seedHistory(prisma: Prisma, countryId: string): Promise<nu
 
 // ─── Activity Feed ──────────────────────────────────────────────────
 
-export async function seedActivityFeed(prisma: Prisma, countryId: string, userId: string): Promise<number> {
+export async function seedActivityFeed(
+  prisma: Prisma,
+  countryId: string,
+  userId: string
+): Promise<number> {
   const now = new Date();
 
   const activities = [
-    { type: "economic_report", category: "economic", title: "GDP Report Published", description: "Quarterly GDP figures released showing continued growth across key sectors.", priority: "low" as const },
-    { type: "diplomatic_event", category: "diplomatic", title: "New Embassy Established", description: "Diplomatic mission opened in allied nation, expanding the diplomatic network.", priority: "medium" as const },
-    { type: "military_update", category: "military", title: "Naval Exercise Completed", description: "Joint maritime exercise concluded successfully with allied forces.", priority: "medium" as const },
-    { type: "policy_enacted", category: "political", title: "Infrastructure Act Signed", description: "National Digital Infrastructure Act signed into law by the executive.", priority: "high" as const },
-    { type: "social_milestone", category: "social", title: "Education Reform Milestone", description: "University enrollment reaches all-time high following education subsidies.", priority: "low" as const },
-    { type: "achievement_unlocked", category: "achievement", title: "Economic Powerhouse", description: "Nation GDP surpassed major milestone, earning Economic Powerhouse achievement.", priority: "medium" as const },
-    { type: "election_result", category: "political", title: "General Election Results", description: "National Unity Party secured parliamentary majority in general election.", priority: "high" as const },
-    { type: "trade_agreement", category: "economic", title: "Free Trade Agreement Signed", description: "Bilateral free trade agreement ratified, reducing tariffs on key exports.", priority: "medium" as const },
-    { type: "crisis_response", category: "military", title: "Flood Relief Operation", description: "Military deployed for disaster relief in eastern provinces.", priority: "high" as const },
-    { type: "intelligence_alert", category: "security", title: "Cyber Threat Detected", description: "Intelligence services identified and blocked sophisticated cyber attack.", priority: "high" as const },
-    { type: "diplomatic_meeting", category: "diplomatic", title: "Alliance Summit Concluded", description: "Strategic Defense Pact annual summit agreed on joint security framework.", priority: "medium" as const },
-    { type: "economic_indicator", category: "economic", title: "Trade Surplus Recorded", description: "Monthly trade data shows surplus for third consecutive month.", priority: "low" as const },
-    { type: "government_action", category: "political", title: "Cabinet Reshuffle", description: "Minor cabinet changes announced to strengthen economic policy team.", priority: "medium" as const },
-    { type: "military_drill", category: "military", title: "Air Defense Drill", description: "National air defense exercise tested response readiness across all regions.", priority: "low" as const },
-    { type: "social_event", category: "social", title: "Cultural Festival Opens", description: "International Arts Festival attracting participants from 12 nations.", priority: "low" as const },
-    { type: "health_update", category: "social", title: "Healthcare Expansion", description: "Rural healthcare initiative expanded to cover 2 additional provinces.", priority: "medium" as const },
-    { type: "budget_report", category: "economic", title: "Budget Surplus Announced", description: "Fiscal year ended with modest budget surplus, reducing national debt ratio.", priority: "medium" as const },
-    { type: "diplomatic_incident", category: "diplomatic", title: "Trade Vessel Released", description: "Detained cargo vessel released following diplomatic negotiations.", priority: "low" as const },
-    { type: "security_update", category: "security", title: "Border Security Enhanced", description: "New surveillance systems deployed along eastern border region.", priority: "medium" as const },
-    { type: "national_issue", category: "political", title: "Immigration Reform Debate", description: "Parliamentary debate on immigration reform package enters second reading.", priority: "medium" as const },
+    {
+      type: "economic_report",
+      category: "economic",
+      title: "GDP Report Published",
+      description: "Quarterly GDP figures released showing continued growth across key sectors.",
+      priority: "low" as const,
+    },
+    {
+      type: "diplomatic_event",
+      category: "diplomatic",
+      title: "New Embassy Established",
+      description: "Diplomatic mission opened in allied nation, expanding the diplomatic network.",
+      priority: "medium" as const,
+    },
+    {
+      type: "military_update",
+      category: "military",
+      title: "Naval Exercise Completed",
+      description: "Joint maritime exercise concluded successfully with allied forces.",
+      priority: "medium" as const,
+    },
+    {
+      type: "policy_enacted",
+      category: "political",
+      title: "Infrastructure Act Signed",
+      description: "National Digital Infrastructure Act signed into law by the executive.",
+      priority: "high" as const,
+    },
+    {
+      type: "social_milestone",
+      category: "social",
+      title: "Education Reform Milestone",
+      description: "University enrollment reaches all-time high following education subsidies.",
+      priority: "low" as const,
+    },
+    {
+      type: "achievement_unlocked",
+      category: "achievement",
+      title: "Economic Powerhouse",
+      description: "Nation GDP surpassed major milestone, earning Economic Powerhouse achievement.",
+      priority: "medium" as const,
+    },
+    {
+      type: "election_result",
+      category: "political",
+      title: "General Election Results",
+      description: "National Unity Party secured parliamentary majority in general election.",
+      priority: "high" as const,
+    },
+    {
+      type: "trade_agreement",
+      category: "economic",
+      title: "Free Trade Agreement Signed",
+      description: "Bilateral free trade agreement ratified, reducing tariffs on key exports.",
+      priority: "medium" as const,
+    },
+    {
+      type: "crisis_response",
+      category: "military",
+      title: "Flood Relief Operation",
+      description: "Military deployed for disaster relief in eastern provinces.",
+      priority: "high" as const,
+    },
+    {
+      type: "intelligence_alert",
+      category: "security",
+      title: "Cyber Threat Detected",
+      description: "Intelligence services identified and blocked sophisticated cyber attack.",
+      priority: "high" as const,
+    },
+    {
+      type: "diplomatic_meeting",
+      category: "diplomatic",
+      title: "Alliance Summit Concluded",
+      description: "Strategic Defense Pact annual summit agreed on joint security framework.",
+      priority: "medium" as const,
+    },
+    {
+      type: "economic_indicator",
+      category: "economic",
+      title: "Trade Surplus Recorded",
+      description: "Monthly trade data shows surplus for third consecutive month.",
+      priority: "low" as const,
+    },
+    {
+      type: "government_action",
+      category: "political",
+      title: "Cabinet Reshuffle",
+      description: "Minor cabinet changes announced to strengthen economic policy team.",
+      priority: "medium" as const,
+    },
+    {
+      type: "military_drill",
+      category: "military",
+      title: "Air Defense Drill",
+      description: "National air defense exercise tested response readiness across all regions.",
+      priority: "low" as const,
+    },
+    {
+      type: "social_event",
+      category: "social",
+      title: "Cultural Festival Opens",
+      description: "International Arts Festival attracting participants from 12 nations.",
+      priority: "low" as const,
+    },
+    {
+      type: "health_update",
+      category: "social",
+      title: "Healthcare Expansion",
+      description: "Rural healthcare initiative expanded to cover 2 additional provinces.",
+      priority: "medium" as const,
+    },
+    {
+      type: "budget_report",
+      category: "economic",
+      title: "Budget Surplus Announced",
+      description: "Fiscal year ended with modest budget surplus, reducing national debt ratio.",
+      priority: "medium" as const,
+    },
+    {
+      type: "diplomatic_incident",
+      category: "diplomatic",
+      title: "Trade Vessel Released",
+      description: "Detained cargo vessel released following diplomatic negotiations.",
+      priority: "low" as const,
+    },
+    {
+      type: "security_update",
+      category: "security",
+      title: "Border Security Enhanced",
+      description: "New surveillance systems deployed along eastern border region.",
+      priority: "medium" as const,
+    },
+    {
+      type: "national_issue",
+      category: "political",
+      title: "Immigration Reform Debate",
+      description: "Parliamentary debate on immigration reform package enters second reading.",
+      priority: "medium" as const,
+    },
   ];
 
   const records = activities.map((activity, i) => {
@@ -2771,8 +4034,10 @@ export async function seedActivityFeed(prisma: Prisma, countryId: string, userId
       userId,
       countryId,
       likes: (i * 13 + 7) % 50,
-      views: (i * 37 + 50) % 500 + 50,
-      createdAt: new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000 - hoursOffset * 60 * 60 * 1000),
+      views: ((i * 37 + 50) % 500) + 50,
+      createdAt: new Date(
+        now.getTime() - daysAgo * 24 * 60 * 60 * 1000 - hoursOffset * 60 * 60 * 1000
+      ),
     };
   });
 
@@ -2786,23 +4051,95 @@ export async function seedAchievements(prisma: Prisma, userId: string): Promise<
   const now = new Date();
 
   const achievements = [
-    { achievementId: "econ-first-million", title: "First Million", description: "Country GDP reached $1M", category: "Economic", rarity: "Common", daysAgo: 25 },
-    { achievementId: "econ-millionaire-nation", title: "Millionaire Nation", description: "GDP per capita exceeded $10,000", category: "Economic", rarity: "Uncommon", daysAgo: 20 },
-    { achievementId: "econ-economic-powerhouse", title: "Economic Powerhouse", description: "GDP exceeded $1 Trillion", category: "Economic", rarity: "Rare", daysAgo: 15 },
-    { achievementId: "econ-growth-rocket", title: "Growth Rocket", description: "Achieved 5%+ GDP growth rate", category: "Economic", rarity: "Uncommon", daysAgo: 12 },
-    { achievementId: "mil-first-branch", title: "Armed & Ready", description: "Established first military branch", category: "Military", rarity: "Common", daysAgo: 18 },
-    { achievementId: "mil-armed-forces", title: "Armed Forces", description: "Two military branches operational", category: "Military", rarity: "Uncommon", daysAgo: 14 },
-    { achievementId: "dip-first-embassy", title: "First Embassy", description: "Established first diplomatic embassy", category: "Diplomatic", rarity: "Common", daysAgo: 22 },
-    { achievementId: "dip-diplomatic-network", title: "Diplomatic Network", description: "Three or more active embassies", category: "Diplomatic", rarity: "Uncommon", daysAgo: 10 },
-    { achievementId: "econ-full-employment", title: "Full Employment", description: "Unemployment rate below 3%", category: "Economic", rarity: "Rare", daysAgo: 8 },
-    { achievementId: "econ-price-stability", title: "Price Stability", description: "Inflation maintained below 2%", category: "Economic", rarity: "Uncommon", daysAgo: 5 },
+    {
+      achievementId: "econ-first-million",
+      title: "First Million",
+      description: "Country GDP reached $1M",
+      category: "Economic",
+      rarity: "Common",
+      daysAgo: 25,
+    },
+    {
+      achievementId: "econ-millionaire-nation",
+      title: "Millionaire Nation",
+      description: "GDP per capita exceeded $10,000",
+      category: "Economic",
+      rarity: "Uncommon",
+      daysAgo: 20,
+    },
+    {
+      achievementId: "econ-economic-powerhouse",
+      title: "Economic Powerhouse",
+      description: "GDP exceeded $1 Trillion",
+      category: "Economic",
+      rarity: "Rare",
+      daysAgo: 15,
+    },
+    {
+      achievementId: "econ-growth-rocket",
+      title: "Growth Rocket",
+      description: "Achieved 5%+ GDP growth rate",
+      category: "Economic",
+      rarity: "Uncommon",
+      daysAgo: 12,
+    },
+    {
+      achievementId: "mil-first-branch",
+      title: "Armed & Ready",
+      description: "Established first military branch",
+      category: "Military",
+      rarity: "Common",
+      daysAgo: 18,
+    },
+    {
+      achievementId: "mil-armed-forces",
+      title: "Armed Forces",
+      description: "Two military branches operational",
+      category: "Military",
+      rarity: "Uncommon",
+      daysAgo: 14,
+    },
+    {
+      achievementId: "dip-first-embassy",
+      title: "First Embassy",
+      description: "Established first diplomatic embassy",
+      category: "Diplomatic",
+      rarity: "Common",
+      daysAgo: 22,
+    },
+    {
+      achievementId: "dip-diplomatic-network",
+      title: "Diplomatic Network",
+      description: "Three or more active embassies",
+      category: "Diplomatic",
+      rarity: "Uncommon",
+      daysAgo: 10,
+    },
+    {
+      achievementId: "econ-full-employment",
+      title: "Full Employment",
+      description: "Unemployment rate below 3%",
+      category: "Economic",
+      rarity: "Rare",
+      daysAgo: 8,
+    },
+    {
+      achievementId: "econ-price-stability",
+      title: "Price Stability",
+      description: "Inflation maintained below 2%",
+      category: "Economic",
+      rarity: "Uncommon",
+      daysAgo: 5,
+    },
   ];
 
   // Deduplicate against existing
-  const existing = await prisma.userAchievement.findMany({
-    where: { userId },
-    select: { achievementId: true },
-  }).catch(() => []);
+  const existing = await prisma.userAchievement
+    .findMany({
+      where: { userId },
+      select: { achievementId: true },
+    })
+    .catch(() => []);
   const existingIds = new Set(existing.map((e: { achievementId: string }) => e.achievementId));
 
   const toCreate = achievements

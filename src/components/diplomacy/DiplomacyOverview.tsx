@@ -130,7 +130,7 @@ export function DiplomacyOverview({ countryId, onTabChange }: DiplomacyOverviewP
               onClick={() => onTabChange?.(metric.tab)}
             >
               <div className="flex items-center gap-1.5">
-                <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.color}`} />
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${metric.color}`} />
                 <span className="text-muted-foreground text-xs font-medium">{metric.label}</span>
               </div>
               <div className="mt-0.5 text-lg font-bold">{metric.value}</div>
@@ -200,7 +200,7 @@ export function DiplomacyOverview({ countryId, onTabChange }: DiplomacyOverviewP
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-cyan-500" />
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-cyan-500" />
                           <span className="truncate text-sm font-semibold">
                             {embassy.country || embassy.hostCountry || embassy.name || "Embassy"}
                           </span>
@@ -250,7 +250,7 @@ export function DiplomacyOverview({ countryId, onTabChange }: DiplomacyOverviewP
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <Users className="h-3.5 w-3.5 flex-shrink-0 text-purple-500" />
+                          <Users className="h-3.5 w-3.5 shrink-0 text-purple-500" />
                           <span className="truncate text-sm font-semibold">
                             {alliance.name || "Alliance"}
                           </span>

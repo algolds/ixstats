@@ -5,7 +5,13 @@ import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const SUBDIVISION_TYPES = [
-  "province", "state", "region", "territory", "district", "county", "department",
+  "province",
+  "state",
+  "region",
+  "territory",
+  "district",
+  "county",
+  "department",
 ];
 
 const inputClasses =
@@ -48,9 +54,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         type="text"
         placeholder="Capital city (optional)"
         value={form.capital ?? ""}
-        onChange={(e) =>
-          onChange({ ...form, capital: e.target.value || undefined })
-        }
+        onChange={(e) => onChange({ ...form, capital: e.target.value || undefined })}
         className={inputClasses}
       />
       <div className="grid grid-cols-2 gap-2">
@@ -80,14 +84,16 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         />
       </div>
       <div className="flex items-center gap-2">
-        <label className="text-xs text-muted-foreground whitespace-nowrap">Color</label>
+        <label className="text-muted-foreground text-xs whitespace-nowrap">Color</label>
         <input
           type="color"
           value={form.color ?? "#a78bfa"}
           onChange={(e) => onChange({ ...form, color: e.target.value })}
-          className="h-7 w-10 cursor-pointer rounded border border-border bg-transparent p-0.5"
+          className="border-border h-7 w-10 cursor-pointer rounded border bg-transparent p-0.5"
         />
-        <span className="text-[10px] text-muted-foreground font-mono">{form.color ?? "default"}</span>
+        <span className="text-muted-foreground font-mono text-[10px]">
+          {form.color ?? "default"}
+        </span>
       </div>
       <WikiLinkWizard
         value={form.wikiPageTitle}

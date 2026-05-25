@@ -14,10 +14,7 @@ import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 /**
  * Interpolate the latitude where a segment crosses lng=180.
  */
-function interpolateAtMeridian(
-  a: [number, number],
-  b: [number, number]
-): [number, number] {
+function interpolateAtMeridian(a: [number, number], b: [number, number]): [number, number] {
   const t = (180 - a[0]) / (b[0] - a[0]);
   return [180, a[1] + t * (b[1] - a[1])];
 }
@@ -27,13 +24,9 @@ function interpolateAtMeridian(
  * against the line lng=180, keeping the specified side.
  * side="left" keeps lng <= 180, side="right" keeps lng >= 180.
  */
-function clipRing(
-  ring: Position[],
-  side: "left" | "right"
-): Position[] {
+function clipRing(ring: Position[], side: "left" | "right"): Position[] {
   const result: Position[] = [];
-  const inside = (lng: number) =>
-    side === "left" ? lng <= 180 : lng >= 180;
+  const inside = (lng: number) => (side === "left" ? lng <= 180 : lng >= 180);
 
   for (let i = 0; i < ring.length; i++) {
     const curr = ring[i] as [number, number];
@@ -105,9 +98,7 @@ function unwrapRing(ring: Position[]): Position[] {
  * Handles both raw (lng > 180) and pre-normalized (jumps across ±180) data.
  * Returns an array of Polygon coordinate sets (may be 1 or 2).
  */
-function splitPolygonRings(
-  rings: Position[][]
-): Position[][][] {
+function splitPolygonRings(rings: Position[][]): Position[][][] {
   if (!rings.some(ringCrossesAntimeridian)) {
     return [rings];
   }
@@ -116,9 +107,7 @@ function splitPolygonRings(
   const unwrapped = rings.map(unwrapRing);
 
   // Clip to the left side (lng <= 180)
-  const leftRings = unwrapped
-    .map((ring) => clipRing(ring, "left"))
-    .filter((r) => r.length >= 4);
+  const leftRings = unwrapped.map((ring) => clipRing(ring, "left")).filter((r) => r.length >= 4);
 
   // Clip to the right side (lng >= 180), then shift by -360
   const rightRings = unwrapped
@@ -158,10 +147,12 @@ export function splitFeatureAtAntimeridian(feature: Feature): Feature[] {
     for (const polygon of geom.coordinates) {
       allParts.push(...splitPolygonRings(polygon));
     }
-    return [{
-      ...feature,
-      geometry: { type: "MultiPolygon" as const, coordinates: allParts },
-    }];
+    return [
+      {
+        ...feature,
+        geometry: { type: "MultiPolygon" as const, coordinates: allParts },
+      },
+    ];
   }
 
   // Other geometry types: return as-is
@@ -171,9 +162,7 @@ export function splitFeatureAtAntimeridian(feature: Feature): Feature[] {
 /**
  * Split all features in a FeatureCollection at the antimeridian.
  */
-export function splitCollectionAtAntimeridian(
-  fc: FeatureCollection
-): FeatureCollection {
+export function splitCollectionAtAntimeridian(fc: FeatureCollection): FeatureCollection {
   return {
     ...fc,
     features: fc.features.flatMap(splitFeatureAtAntimeridian),
@@ -201,18 +190,12 @@ export function displayNameToFeatureId(name: string): string {
  * Calculate the centroid of a GeoJSON feature geometry.
  * Simple average of all coordinates (sufficient for display purposes).
  */
-export function calculateSimpleCentroid(
-  geometry: Geometry
-): [number, number] | null {
+export function calculateSimpleCentroid(geometry: Geometry): [number, number] | null {
   const coords: Position[] = [];
 
   function extractCoords(c: unknown): void {
     if (!Array.isArray(c)) return;
-    if (
-      c.length >= 2 &&
-      typeof c[0] === "number" &&
-      typeof c[1] === "number"
-    ) {
+    if (c.length >= 2 && typeof c[0] === "number" && typeof c[1] === "number") {
       coords.push(c as Position);
       return;
     }
@@ -221,9 +204,7 @@ export function calculateSimpleCentroid(
     }
   }
 
-  extractCoords(
-    (geometry as Geometry & { coordinates: unknown }).coordinates
-  );
+  extractCoords((geometry as Geometry & { coordinates: unknown }).coordinates);
 
   if (coords.length === 0) return null;
 
@@ -237,9 +218,7 @@ export function calculateSimpleCentroid(
  * Calculate bounding box of a geometry.
  * Returns [minLng, minLat, maxLng, maxLat].
  */
-export function calculateBBox(
-  geometry: Geometry
-): [number, number, number, number] | null {
+export function calculateBBox(geometry: Geometry): [number, number, number, number] | null {
   let minLng = Infinity;
   let minLat = Infinity;
   let maxLng = -Infinity;
@@ -247,11 +226,7 @@ export function calculateBBox(
 
   function scan(c: unknown): void {
     if (!Array.isArray(c)) return;
-    if (
-      c.length >= 2 &&
-      typeof c[0] === "number" &&
-      typeof c[1] === "number"
-    ) {
+    if (c.length >= 2 && typeof c[0] === "number" && typeof c[1] === "number") {
       minLng = Math.min(minLng, c[0] as number);
       minLat = Math.min(minLat, c[1] as number);
       maxLng = Math.max(maxLng, c[0] as number);
@@ -274,10 +249,7 @@ export function calculateBBox(
  * Uses the fill property from GeoJSON if available, otherwise generates
  * a pastel color from a predefined palette.
  */
-export function getFeatureFillColor(
-  feature: Feature,
-  fallbackPalette: string[]
-): string {
+export function getFeatureFillColor(feature: Feature, fallbackPalette: string[]): string {
   const fill = feature.properties?.fill;
   if (fill && fill !== "#ffffff") {
     return fill;

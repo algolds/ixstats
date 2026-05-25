@@ -33,7 +33,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const socket = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
-  
+
   // Update ref when options change
   useEffect(() => {
     optionsRef.current = options;
@@ -46,11 +46,10 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   // No-op function for SSR
   const noOp = useCallback(() => {}, []);
 
-  const updatePresence = useCallback(
-    (status: "online" | "away" | "busy" | "offline") => {
-      // Skip on server
-      if (isServer) return;
-      
+  const updatePresence = useCallback((status: "online" | "away" | "busy" | "offline") => {
+    // Skip on server
+    if (isServer) return;
+
     if (socket.current?.connected && optionsRef.current.accountId) {
       socket.current.emit("presence:update", {
         accountId: optionsRef.current.accountId,
@@ -65,7 +64,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   const connect = useCallback(() => {
     // Skip on server
     if (isServer) return;
-    
+
     if (socket.current?.connected) {
       return;
     }
@@ -79,11 +78,12 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
     const protocol = window.location.protocol === "https:" ? "https" : "http";
     const host = window.location.host;
-    
+
     // In production, we connect to the same host but with Socket.IO path
-    const url = process.env.NODE_ENV === "production"
-      ? `${protocol}://${host}`
-      : `http://localhost:${wsPort}`;
+    const url =
+      process.env.NODE_ENV === "production"
+        ? `${protocol}://${host}`
+        : `http://localhost:${wsPort}`;
 
     socket.current = io(url, {
       path: "/ws/thinkpages",
@@ -165,14 +165,17 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     });
 
     socket.current.on("connect_error", (error) => {
-      console.warn("ThinkPages WebSocket connection failed - continuing without real-time features", error);
+      console.warn(
+        "ThinkPages WebSocket connection failed - continuing without real-time features",
+        error
+      );
       optionsRef.current.onError?.(error);
     });
   }, [updatePresence]);
 
   const disconnect = useCallback(() => {
     if (isServer) return;
-    
+
     typingTimeout.current.forEach((timeout) => clearTimeout(timeout));
     typingTimeout.current.clear();
 
@@ -202,7 +205,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const subscribeToConversation = useCallback((conversationId: string) => {
     if (isServer) return;
-    
+
     if (socket.current?.connected) {
       socket.current.emit("subscribe", {
         channel: `conversation:${conversationId}`,
@@ -218,7 +221,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const unsubscribeFromConversation = useCallback((conversationId: string) => {
     if (isServer) return;
-    
+
     if (socket.current?.connected) {
       socket.current.emit("unsubscribe", {
         channel: `conversation:${conversationId}`,
@@ -241,7 +244,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const subscribeToGroup = useCallback((groupId: string) => {
     if (isServer) return;
-    
+
     if (socket.current?.connected) {
       socket.current.emit("subscribe", {
         channel: `group:${groupId}`,
@@ -275,7 +278,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   // Initialize connection (only runs on client)
   useEffect(() => {
     if (isServer) return;
-    
+
     if (options.accountId) {
       connect();
     }
@@ -290,7 +293,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     if (isServer || typeof document === "undefined") {
       return;
     }
-    
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         updatePresence("away");

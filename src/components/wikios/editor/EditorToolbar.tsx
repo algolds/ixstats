@@ -52,10 +52,7 @@ export function EditorToolbar({ onSave, onCancel, onSwitchToSource, title }: Edi
             <button className="wikios-toolbar-cancel" onClick={onCancel}>
               Cancel
             </button>
-            <button
-              className="wikios-toolbar-save"
-              onClick={() => setShowSavePanel(true)}
-            >
+            <button className="wikios-toolbar-save" onClick={() => setShowSavePanel(true)}>
               Save...
             </button>
           </div>
@@ -82,10 +79,7 @@ export function EditorToolbar({ onSave, onCancel, onSwitchToSource, title }: Edi
                 <span>Minor edit</span>
               </label>
               <div className="wikios-save-buttons">
-                <button
-                  className="wikios-toolbar-cancel"
-                  onClick={() => setShowSavePanel(false)}
-                >
+                <button className="wikios-toolbar-cancel" onClick={() => setShowSavePanel(false)}>
                   Back
                 </button>
                 <button className="wikios-toolbar-save" onClick={handleSave}>
@@ -115,12 +109,7 @@ function ToolbarButton({
   onClick?: () => void;
 }) {
   return (
-    <button
-      className="wikios-toolbar-btn"
-      title={title}
-      style={style}
-      type="button"
-    >
+    <button className="wikios-toolbar-btn" title={title} style={style} type="button">
       {label}
     </button>
   );

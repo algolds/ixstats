@@ -263,18 +263,13 @@ export function MediaSearchModal({
             break;
 
           case "SEARCH_ERROR":
-            notify.error(
-              "Search failed",
-              `${error.message}. Please try a different search term.`
-            );
+            notify.error("Search failed", `${error.message}. Please try a different search term.`);
             break;
 
           default:
             // Generic error message with details if available
             const message = error.message || "Failed to download image";
-            notify.error(
-              message.length > 100 ? message.substring(0, 100) + "..." : message
-            );
+            notify.error(message.length > 100 ? message.substring(0, 100) + "..." : message);
         }
       } else {
         notify.error("Failed to download image. Please try again.");
@@ -318,15 +313,17 @@ export function MediaSearchModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative mx-2 sm:mx-4 flex max-h-[90vh] w-[98vw] sm:w-[95vw] md:w-[90vw] lg:max-w-4xl flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl"
+            className="relative mx-2 flex max-h-[90vh] w-[98vw] flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl sm:mx-4 sm:w-[95vw] md:w-[90vw] lg:max-w-4xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-              <h3 className="text-sm sm:text-base md:text-lg font-bold text-white">Search Image Repository</h3>
+            <div className="flex items-center justify-between border-b border-white/10 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
+              <h3 className="text-sm font-bold text-white sm:text-base md:text-lg">
+                Search Image Repository
+              </h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -339,28 +336,28 @@ export function MediaSearchModal({
               }
               className="flex min-h-0 flex-1 flex-col"
             >
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 rounded-none border-b border-white/10 bg-transparent p-0">
+              <TabsList className="grid w-full grid-cols-2 rounded-none border-b border-white/10 bg-transparent p-0 sm:grid-cols-4">
                 <TabsTrigger
                   value="repository"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
+                  className="rounded-none text-xs data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none sm:text-sm"
                 >
                   Repository
                 </TabsTrigger>
                 <TabsTrigger
                   value="wiki-commons"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
+                  className="rounded-none text-xs data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none sm:text-sm"
                 >
                   Wiki Commons
                 </TabsTrigger>
                 <TabsTrigger
                   value="wiki"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
+                  className="rounded-none text-xs data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none sm:text-sm"
                 >
                   Wiki
                 </TabsTrigger>
                 <TabsTrigger
                   value="upload"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
+                  className="rounded-none text-xs data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none sm:text-sm"
                 >
                   Upload
                 </TabsTrigger>
@@ -384,7 +381,7 @@ export function MediaSearchModal({
                 <div className="max-h-[60vh] flex-1 overflow-y-auto p-4">
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                     {isLoadingRepo && images.length === 0 ? (
-                      <div className="col-span-1 xs:col-span-2 flex h-48 items-center justify-center md:col-span-3">
+                      <div className="xs:col-span-2 col-span-1 flex h-48 items-center justify-center md:col-span-3">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                       </div>
                     ) : images.length > 0 ? (
@@ -403,7 +400,7 @@ export function MediaSearchModal({
                             <img
                               src={image.url}
                               alt={image.description ?? "Unsplash Image"}
-                              className="h-24 sm:h-28 md:h-32 w-full object-cover"
+                              className="h-24 w-full object-cover sm:h-28 md:h-32"
                               loading="lazy"
                               decoding="async"
                             />
@@ -419,7 +416,7 @@ export function MediaSearchModal({
                         ))}
                       </>
                     ) : (
-                      <div className="text-muted-foreground col-span-1 xs:col-span-2 p-4 sm:p-6 md:p-8 text-center md:col-span-3 text-sm">
+                      <div className="text-muted-foreground xs:col-span-2 col-span-1 p-4 text-center text-sm sm:p-6 md:col-span-3 md:p-8">
                         {debouncedRepoQuery && !isLoadingRepo
                           ? 'No images found. Try a different search query, or use the "Upload" tab to add your own image.'
                           : debouncedRepoQuery
@@ -640,7 +637,7 @@ export function MediaSearchModal({
                         <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                       </div>
                     ) : wikiSearchError ? (
-                      <div className="col-span-2 md:col-span-3 p-8 text-center">
+                      <div className="col-span-2 p-8 text-center md:col-span-3">
                         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-6">
                           <p className="mb-2 text-lg font-semibold text-red-400">Search Failed</p>
                           <p className="text-sm text-red-300">
@@ -693,7 +690,8 @@ export function MediaSearchModal({
                       </>
                     ) : debouncedWikiQuery ? (
                       <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
-                        No images found for "{debouncedWikiQuery}". Try a different search query, or use the "Upload" tab to add your own image.
+                        No images found for "{debouncedWikiQuery}". Try a different search query, or
+                        use the "Upload" tab to add your own image.
                       </div>
                     ) : (
                       <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">

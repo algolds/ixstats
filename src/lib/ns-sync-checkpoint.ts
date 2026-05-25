@@ -58,7 +58,7 @@ export class CheckpointManager {
     try {
       console.log(
         `[Checkpoint] Saving checkpoint for season ${checkpoint.season}: ` +
-        `${checkpoint.cardsProcessed}/${checkpoint.totalCards} cards (${checkpoint.errorCount} errors)`
+          `${checkpoint.cardsProcessed}/${checkpoint.totalCards} cards (${checkpoint.errorCount} errors)`
       );
 
       const checkpointJson = {
@@ -66,7 +66,10 @@ export class CheckpointManager {
         cardsProcessed: checkpoint.cardsProcessed,
         totalCards: checkpoint.totalCards,
         errorCount: checkpoint.errorCount,
-        startedAt: checkpoint.startedAt instanceof Date ? checkpoint.startedAt.toISOString() : checkpoint.startedAt,
+        startedAt:
+          checkpoint.startedAt instanceof Date
+            ? checkpoint.startedAt.toISOString()
+            : checkpoint.startedAt,
         lastCheckpointAt:
           checkpoint.lastCheckpointAt instanceof Date
             ? checkpoint.lastCheckpointAt.toISOString()
@@ -115,7 +118,10 @@ export class CheckpointManager {
         metadata: (cp.metadata as Record<string, any>) || {},
       };
     } catch (error) {
-      console.error(`[Checkpoint] Failed to save checkpoint for season ${checkpoint.season}:`, error);
+      console.error(
+        `[Checkpoint] Failed to save checkpoint for season ${checkpoint.season}:`,
+        error
+      );
       throw error;
     }
   }
@@ -154,8 +160,8 @@ export class CheckpointManager {
 
       console.log(
         `[Checkpoint] Loaded checkpoint for season ${season}: ` +
-        `${cp.cardsProcessed}/${cp.totalCards} cards processed ` +
-        `(${cp.errorCount} errors, last saved: ${new Date(cp.lastCheckpointAt).toISOString()})`
+          `${cp.cardsProcessed}/${cp.totalCards} cards processed ` +
+          `(${cp.errorCount} errors, last saved: ${new Date(cp.lastCheckpointAt).toISOString()})`
       );
 
       return {
@@ -224,7 +230,9 @@ export class CheckpointManager {
    * @returns Created checkpoint
    */
   async createInitialCheckpoint(season: number, totalCards: number): Promise<SyncCheckpoint> {
-    console.log(`[Checkpoint] Creating initial checkpoint for season ${season} (${totalCards} cards)`);
+    console.log(
+      `[Checkpoint] Creating initial checkpoint for season ${season} (${totalCards} cards)`
+    );
 
     return await this.saveCheckpoint({
       season,
@@ -257,7 +265,9 @@ export class CheckpointManager {
       });
 
       if (!checkpoint) {
-        console.warn(`[Checkpoint] Cannot mark completed - no checkpoint exists for season ${season}`);
+        console.warn(
+          `[Checkpoint] Cannot mark completed - no checkpoint exists for season ${season}`
+        );
         return;
       }
 
@@ -282,7 +292,10 @@ export class CheckpointManager {
 
       console.log(`[Checkpoint] Marked checkpoint as completed for season ${season}`);
     } catch (error) {
-      console.error(`[Checkpoint] Error marking checkpoint as completed for season ${season}:`, error);
+      console.error(
+        `[Checkpoint] Error marking checkpoint as completed for season ${season}:`,
+        error
+      );
       throw error;
     }
   }
@@ -356,8 +369,10 @@ export class CheckpointManager {
       return checkpoints.map((checkpoint) => ({
         id: checkpoint.id,
         season: checkpoint.season ?? 0,
-        status: ((checkpoint.checkpoint as any)?.status ??
-          "IN_PROGRESS") as "IN_PROGRESS" | "COMPLETED" | "FAILED",
+        status: ((checkpoint.checkpoint as any)?.status ?? "IN_PROGRESS") as
+          | "IN_PROGRESS"
+          | "COMPLETED"
+          | "FAILED",
         cardsProcessed: Number((checkpoint.checkpoint as any)?.cardsProcessed ?? 0),
         totalCards: Number((checkpoint.checkpoint as any)?.totalCards ?? 0),
         lastProcessedCardId: checkpoint.lastCardId ?? null,

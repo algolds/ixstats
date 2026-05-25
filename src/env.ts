@@ -153,7 +153,8 @@ export const env = createEnv({
     IXWIKI_IMAGE_BASE_URL: process.env.IXWIKI_IMAGE_BASE_URL,
     // Unsplash
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
-    NEXT_PUBLIC_UNSPLASH_ACCESS_KEY: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_ACCESS_KEY,
+    NEXT_PUBLIC_UNSPLASH_ACCESS_KEY:
+      process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_ACCESS_KEY,
     // Server
     PORT: process.env.PORT,
     VERCEL_URL: process.env.VERCEL_URL,

@@ -354,7 +354,7 @@ export function GovernmentSectionEnhanced({
                         key={idx}
                         className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20"
                       >
-                        <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
+                        <CheckCircle className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
                             {comp1Data?.name} + {comp2Data?.name}
@@ -402,7 +402,7 @@ export function GovernmentSectionEnhanced({
                         key={idx}
                         className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20"
                       >
-                        <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+                        <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
                             {comp1Data?.name} + {comp2Data?.name}
@@ -471,7 +471,7 @@ export function GovernmentSectionEnhanced({
                       <ul className="space-y-2">
                         {effectivenessData.recommendations.map((rec, idx) => (
                           <li key={idx} className="flex items-start gap-2">
-                            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
                             <span className="text-sm text-slate-700 dark:text-slate-300">
                               {rec}
                             </span>

@@ -51,21 +51,21 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   const { data: routeData } = api.transport.getCountryRoutes.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   const { data: stats } = api.transport.getTransportStats.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   if (!countryId) {
     return (
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Transport Routes
         </h3>
-        <p className="text-xs text-muted-foreground">No country selected.</p>
+        <p className="text-muted-foreground text-xs">No country selected.</p>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         Transport Network
       </h3>
 
@@ -82,26 +82,30 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
       {stats && stats.totalRoutes > 0 && (
         <div className="flex gap-3 text-xs">
           <div className="text-center">
-            <div className="font-semibold tabular-nums text-foreground">{stats.totalRoutes}</div>
-            <div className="text-[10px] text-muted-foreground">Routes</div>
+            <div className="text-foreground font-semibold tabular-nums">{stats.totalRoutes}</div>
+            <div className="text-muted-foreground text-[10px]">Routes</div>
           </div>
           <div className="text-center">
-            <div className="font-semibold tabular-nums text-foreground">{stats.totalKm.toLocaleString()}</div>
-            <div className="text-[10px] text-muted-foreground">km</div>
+            <div className="text-foreground font-semibold tabular-nums">
+              {stats.totalKm.toLocaleString()}
+            </div>
+            <div className="text-muted-foreground text-[10px]">km</div>
           </div>
           <div className="text-center">
-            <div className="font-semibold tabular-nums text-foreground">{stats.totalHubs}</div>
-            <div className="text-[10px] text-muted-foreground">Hubs</div>
+            <div className="text-foreground font-semibold tabular-nums">{stats.totalHubs}</div>
+            <div className="text-muted-foreground text-[10px]">Hubs</div>
           </div>
         </div>
       )}
 
       {/* Tab switcher */}
-      <div className="flex gap-1 rounded-lg bg-muted p-0.5">
+      <div className="bg-muted flex gap-1 rounded-lg p-0.5">
         <button
           onClick={() => setTab("routes")}
           className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-            tab === "routes" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            tab === "routes"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Routes ({routes.length})
@@ -109,7 +113,9 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         <button
           onClick={() => setTab("generate")}
           className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-            tab === "generate" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            tab === "generate"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Generate
@@ -120,54 +126,65 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
       {tab === "routes" && (
         <div className="space-y-1">
           {routes.length === 0 ? (
-            <p className="py-4 text-center text-xs text-muted-foreground">
+            <p className="text-muted-foreground py-4 text-center text-xs">
               No routes yet. Use the Generate tab to create routes.
             </p>
           ) : (
             <div className="max-h-60 space-y-0.5 overflow-y-auto">
               {routes.map((route) => {
                 const props = route.properties as Record<string, unknown>;
-                const routeType = ROUTE_TYPES.find(r => r.value === props.routeType);
+                const routeType = ROUTE_TYPES.find((r) => r.value === props.routeType);
                 const status = (props.status as string) ?? "operational";
 
                 return (
                   <div
                     key={props.id as string}
-                    className="group flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs hover:bg-accent"
+                    className="group hover:bg-accent flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs"
                   >
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: routeType?.color ?? "#888" }}
                     />
-                    <span className="flex-1 truncate text-foreground">
+                    <span className="text-foreground flex-1 truncate">
                       {(props.name as string) ?? `${routeType?.label ?? "Route"}`}
                     </span>
-                    <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                    <span className="text-muted-foreground shrink-0 text-[10px] tabular-nums">
                       {props.lengthKm ? `${Number(props.lengthKm).toLocaleString()}km` : ""}
                     </span>
                     <span
                       className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                        status === "operational" ? "bg-emerald-500"
-                          : status === "planned" ? "bg-slate-400"
-                          : status === "under_construction" ? "bg-amber-500"
-                          : "bg-red-500"
+                        status === "operational"
+                          ? "bg-emerald-500"
+                          : status === "planned"
+                            ? "bg-slate-400"
+                            : status === "under_construction"
+                              ? "bg-amber-500"
+                              : "bg-red-500"
                       }`}
                       title={status.replace("_", " ")}
                     />
-                    <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         onClick={() => {
-                          const newStatus = status === "operational" ? "abandoned"
-                            : status === "abandoned" ? "planned"
-                            : status === "planned" ? "under_construction"
-                            : "operational";
+                          const newStatus =
+                            status === "operational"
+                              ? "abandoned"
+                              : status === "abandoned"
+                                ? "planned"
+                                : status === "planned"
+                                  ? "under_construction"
+                                  : "operational";
                           updateRoute.mutate({
                             id: props.id as string,
                             countryId,
-                            status: newStatus as "planned" | "under_construction" | "operational" | "abandoned",
+                            status: newStatus as
+                              | "planned"
+                              | "under_construction"
+                              | "operational"
+                              | "abandoned",
                           });
                         }}
-                        className="rounded p-1 text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500/10"
+                        className="text-muted-foreground rounded p-1 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500/10"
                         title="Cycle status"
                       >
                         <Pencil className="h-3 w-3" />
@@ -179,7 +196,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                           }
                         }}
                         disabled={deleteRoute.isPending}
-                        className="rounded p-1 text-muted-foreground hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/10"
+                        className="text-muted-foreground rounded p-1 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/10"
                         title="Delete route"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -220,12 +237,12 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
             })}
           </div>
 
-          <label className="flex items-center gap-2 text-xs text-foreground/80">
+          <label className="text-foreground/80 flex items-center gap-2 text-xs">
             <input
               type="checkbox"
               checked={clearExisting}
               onChange={(e) => setClearExisting(e.target.checked)}
-              className="rounded border-border text-primary focus:ring-primary"
+              className="border-border text-primary focus:ring-primary rounded"
             />
             Clear existing routes first
           </label>
@@ -233,7 +250,8 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
           {generateRoutes.isSuccess && generateRoutes.data && (
             <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Generated {generateRoutes.data.routesCreated} routes ({generateRoutes.data.totalLengthKm} km)
+              Generated {generateRoutes.data.routesCreated} routes (
+              {generateRoutes.data.totalLengthKm} km)
             </div>
           )}
 
@@ -246,12 +264,24 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
           <button
             onClick={async () => {
               if (!countryId || selectedTypes.length === 0) return;
-              try { await generateRoutes.mutateAsync({ countryId, routeTypes: selectedTypes, clearExisting }); } catch { /* shown via state */ }
+              try {
+                await generateRoutes.mutateAsync({
+                  countryId,
+                  routeTypes: selectedTypes,
+                  clearExisting,
+                });
+              } catch {
+                /* shown via state */
+              }
             }}
             disabled={selectedTypes.length === 0 || generateRoutes.isPending}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50"
           >
-            {generateRoutes.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {generateRoutes.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
             {generateRoutes.isPending ? "Generating..." : "Generate Routes"}
           </button>
         </div>
@@ -259,7 +289,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
       <button
         onClick={onCancel}
-        className="w-full rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 hover:bg-accent"
+        className="border-border text-foreground/80 hover:bg-accent w-full rounded-lg border px-3 py-1.5 text-sm"
       >
         Done
       </button>

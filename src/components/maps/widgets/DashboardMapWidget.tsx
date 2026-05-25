@@ -18,10 +18,7 @@ interface DashboardMapWidgetProps {
   className?: string;
 }
 
-export function DashboardMapWidget({
-  userCountryId,
-  className = "",
-}: DashboardMapWidgetProps) {
+export function DashboardMapWidget({ userCountryId, className = "" }: DashboardMapWidgetProps) {
   return (
     <div
       className={`glass-hierarchy-child overflow-hidden rounded-xl border border-blue-500/15 ${className}`}
@@ -29,15 +26,12 @@ export function DashboardMapWidget({
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-foreground">
+          <Globe className="text-muted-foreground h-3.5 w-3.5" />
+          <span className="text-foreground text-xs font-medium">
             {userCountryId ? "Your Territory" : "World Map"}
           </span>
         </div>
-        <a
-          href={"/maps"}
-          className="text-[10px] text-blue-500 hover:text-blue-600"
-        >
+        <a href={"/maps"} className="text-[10px] text-blue-500 hover:text-blue-600">
           Full map →
         </a>
       </div>
@@ -54,11 +48,9 @@ export function DashboardMapWidget({
             boundsPadding={60}
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-2 bg-muted/50">
-            <MapPin className="h-5 w-5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              Select a country to view map
-            </span>
+          <div className="bg-muted/50 flex h-full flex-col items-center justify-center gap-2">
+            <MapPin className="text-muted-foreground h-5 w-5" />
+            <span className="text-muted-foreground text-xs">Select a country to view map</span>
           </div>
         )}
       </div>

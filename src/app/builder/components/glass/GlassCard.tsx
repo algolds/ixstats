@@ -90,7 +90,7 @@ export function GlassCard({
 
   const cardClasses = cn(
     "rounded-xl overflow-hidden transition-all duration-300",
-    "bg-opacity-50 touch-manipulation",
+    "bg-black/50 touch-manipulation",
     depthStyles[finalDepth],
     blurStyles[blur],
     gradientStyles[gradient],

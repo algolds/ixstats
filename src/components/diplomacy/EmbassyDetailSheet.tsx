@@ -160,7 +160,7 @@ export function EmbassyDetailSheet({
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-start gap-2">
-            <Building2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-cyan-500" />
+            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-cyan-500" />
             <span className="line-clamp-2">
               {isLoading ? "Loading..." : (embassy?.name ?? "Embassy Not Found")}
             </span>

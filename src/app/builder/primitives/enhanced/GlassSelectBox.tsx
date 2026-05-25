@@ -194,7 +194,7 @@ export function GlassSelectBox({
 
         <div className="relative flex min-w-0 flex-1 items-center gap-3">
           {selectedOption?.icon && (
-            <selectedOption.icon className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
+            <selectedOption.icon className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
           )}
 
           <div className="min-w-0 flex-1">
@@ -216,7 +216,7 @@ export function GlassSelectBox({
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="ml-2 flex-shrink-0"
+          className="ml-2 shrink-0"
         >
           <ChevronDown className="text-muted-foreground h-4 w-4" />
         </motion.div>
@@ -279,7 +279,7 @@ export function GlassSelectBox({
                     )}
                   >
                     {option.icon && (
-                      <option.icon className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
+                      <option.icon className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
                     )}
 
                     <div className="min-w-0 flex-1">
@@ -292,7 +292,7 @@ export function GlassSelectBox({
                     </div>
 
                     {option.value === value && (
-                      <Check className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
+                      <Check className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
                     )}
                   </motion.button>
                 ))

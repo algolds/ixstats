@@ -37,7 +37,7 @@ export const DiplomaticTimeline = React.memo<DiplomaticTimelineProps>(({ events 
                 key={event.id}
                 className="bg-muted/30 hover:bg-muted/50 flex items-start gap-4 rounded-lg p-4 transition-colors"
               >
-                <div className="mt-1 flex-shrink-0">
+                <div className="mt-1 shrink-0">
                   <div className="h-2 w-2 rounded-full bg-blue-600" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -50,7 +50,7 @@ export const DiplomaticTimeline = React.memo<DiplomaticTimelineProps>(({ events 
                   <p className="text-muted-foreground mb-2 text-sm">{event.description}</p>
                   <p className="text-muted-foreground text-xs">{event.date}</p>
                 </div>
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <Badge
                     className={`${
                       event.status === "allied" || event.status === "friendly"

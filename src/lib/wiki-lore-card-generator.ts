@@ -69,14 +69,22 @@ interface LoreCardCandidate {
  * Category-based stat weights for lore cards.
  * Each category emphasizes different stats based on thematic relevance.
  */
-const CATEGORY_STAT_WEIGHTS: Record<string, { economic: number; diplomatic: number; military: number; social: number }> = {
-  [LORE_CATEGORIES.HISTORICAL_FIGURES]: { economic: 0.15, diplomatic: 0.40, military: 0.15, social: 0.30 },
-  [LORE_CATEGORIES.LOCATIONS]:          { economic: 0.40, diplomatic: 0.20, military: 0.15, social: 0.25 },
-  [LORE_CATEGORIES.EVENTS]:             { economic: 0.20, diplomatic: 0.30, military: 0.35, social: 0.15 },
-  [LORE_CATEGORIES.ARTIFACTS]:          { economic: 0.30, diplomatic: 0.20, military: 0.10, social: 0.40 },
-  [LORE_CATEGORIES.CULTURE]:            { economic: 0.20, diplomatic: 0.25, military: 0.10, social: 0.45 },
-  [LORE_CATEGORIES.MYTHOLOGY]:          { economic: 0.15, diplomatic: 0.20, military: 0.25, social: 0.40 },
-  default:                              { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
+const CATEGORY_STAT_WEIGHTS: Record<
+  string,
+  { economic: number; diplomatic: number; military: number; social: number }
+> = {
+  [LORE_CATEGORIES.HISTORICAL_FIGURES]: {
+    economic: 0.15,
+    diplomatic: 0.4,
+    military: 0.15,
+    social: 0.3,
+  },
+  [LORE_CATEGORIES.LOCATIONS]: { economic: 0.4, diplomatic: 0.2, military: 0.15, social: 0.25 },
+  [LORE_CATEGORIES.EVENTS]: { economic: 0.2, diplomatic: 0.3, military: 0.35, social: 0.15 },
+  [LORE_CATEGORIES.ARTIFACTS]: { economic: 0.3, diplomatic: 0.2, military: 0.1, social: 0.4 },
+  [LORE_CATEGORIES.CULTURE]: { economic: 0.2, diplomatic: 0.25, military: 0.1, social: 0.45 },
+  [LORE_CATEGORIES.MYTHOLOGY]: { economic: 0.15, diplomatic: 0.2, military: 0.25, social: 0.4 },
+  default: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
 };
 
 /**
@@ -158,7 +166,7 @@ export class WikiLoreCardGenerator {
 
       console.log(
         `[Lore Card Generator] Generated ${rarity} card for "${articleTitle}" ` +
-        `(quality: ${qualityScore.toFixed(1)}, category: ${category})`
+          `(quality: ${qualityScore.toFixed(1)}, category: ${category})`
       );
 
       return candidate;
@@ -171,10 +179,7 @@ export class WikiLoreCardGenerator {
   /**
    * Fetch article data from wiki API
    */
-  private async fetchArticleData(
-    title: string,
-    wikiSource: WikiSource
-  ): Promise<any | null> {
+  private async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -232,12 +237,12 @@ export class WikiLoreCardGenerator {
         // Get first non-icon image
         const firstImage = page.images.find((img: any) => {
           const filename = img.title?.toLowerCase() || "";
-          return !filename.includes("icon") &&
-                 !filename.includes("flag") &&
-                 !filename.includes("logo") &&
-                 (filename.endsWith(".jpg") ||
-                  filename.endsWith(".jpeg") ||
-                  filename.endsWith(".png"));
+          return (
+            !filename.includes("icon") &&
+            !filename.includes("flag") &&
+            !filename.includes("logo") &&
+            (filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png"))
+          );
         });
         if (firstImage) {
           featuredImage = await this.getImageUrl(firstImage.title, wikiSource);
@@ -300,7 +305,7 @@ export class WikiLoreCardGenerator {
     const infoboxText = infoboxMatch[0];
 
     // Extract key-value pairs from infobox
-    const lines = infoboxText.split('\n');
+    const lines = infoboxText.split("\n");
     for (const line of lines) {
       const match = line.match(/^\s*\|\s*([^=]+?)\s*=\s*(.+?)\s*$/);
       if (match) {
@@ -308,9 +313,9 @@ export class WikiLoreCardGenerator {
         let value = match[2]?.trim() || "";
 
         // Clean value (remove nested templates, links)
-        value = value.replace(/\{\{[^}]*\}\}/g, ''); // Remove templates
-        value = value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1'); // Extract link text
-        value = value.replace(/<[^>]+>/g, ''); // Remove HTML tags
+        value = value.replace(/\{\{[^}]*\}\}/g, ""); // Remove templates
+        value = value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1"); // Extract link text
+        value = value.replace(/<[^>]+>/g, ""); // Remove HTML tags
         value = value.trim();
 
         if (value && key) {
@@ -331,26 +336,26 @@ export class WikiLoreCardGenerator {
 
     // First, preserve infobox
     const infoboxMatch = wikitext.match(/\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i);
-    const infoboxPlaceholder = infoboxMatch ? `___INFOBOX_PLACEHOLDER___` : '';
+    const infoboxPlaceholder = infoboxMatch ? `___INFOBOX_PLACEHOLDER___` : "";
     if (infoboxMatch) {
       cleaned = cleaned.replace(infoboxMatch[0], infoboxPlaceholder);
     }
 
     // Remove all other templates (nested template handling)
-    let prevCleaned = '';
+    let prevCleaned = "";
     while (prevCleaned !== cleaned) {
       prevCleaned = cleaned;
-      cleaned = cleaned.replace(/\{\{[^{}]*\}\}/g, '');
+      cleaned = cleaned.replace(/\{\{[^{}]*\}\}/g, "");
     }
 
     // Restore infobox if it was there
     if (infoboxMatch) {
-      cleaned = cleaned.replace(infoboxPlaceholder, '');
+      cleaned = cleaned.replace(infoboxPlaceholder, "");
     }
 
     // Remove reference tags
-    cleaned = cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, '');
-    cleaned = cleaned.replace(/<ref[^>]*\/>/gi, '');
+    cleaned = cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, "");
+    cleaned = cleaned.replace(/<ref[^>]*\/>/gi, "");
 
     return cleaned;
   }
@@ -364,7 +369,7 @@ export class WikiLoreCardGenerator {
       const userAgent = getWikiUserAgent(wikiSource);
 
       // Remove "File:" or "Image:" prefix if present
-      const cleanFilename = filename.replace(/^(File|Image):/i, '');
+      const cleanFilename = filename.replace(/^(File|Image):/i, "");
 
       const url = new URL(apiUrl);
       url.searchParams.set("action", "query");
@@ -394,10 +399,7 @@ export class WikiLoreCardGenerator {
   /**
    * Check if lore card already exists for this article
    */
-  private async checkCardExists(
-    articleTitle: string,
-    wikiSource: WikiSource
-  ): Promise<boolean> {
+  private async checkCardExists(articleTitle: string, wikiSource: WikiSource): Promise<boolean> {
     const existing = await db.card.findFirst({
       where: {
         wikiArticleTitle: articleTitle,
@@ -429,9 +431,7 @@ export class WikiLoreCardGenerator {
     // Check if featured (has {{featured}} template or in Featured category)
     const isFeatured =
       /{{featured/i.test(rawText) ||
-      articleData.categories?.some((cat: any) =>
-        cat.title?.toLowerCase().includes("featured")
-      );
+      articleData.categories?.some((cat: any) => cat.title?.toLowerCase().includes("featured"));
 
     return {
       length: cleanText.length, // Use cleaned text length
@@ -605,10 +605,7 @@ export class WikiLoreCardGenerator {
     if (!extract) return "A historical article from the wiki archives.";
 
     // Clean up extract
-    let summary = extract
-      .replace(/\n/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    let summary = extract.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
 
     // Limit to 200 characters
     if (summary.length > 200) {
@@ -640,10 +637,16 @@ export class WikiLoreCardGenerator {
     const weights = CATEGORY_STAT_WEIGHTS[category] ?? CATEGORY_STAT_WEIGHTS.default!;
 
     return {
-      economic: Math.round(Math.min(basePower * weights.economic + refPower * 0.15 + featuredBonus * 0.1, 100)),
-      diplomatic: Math.round(Math.min(basePower * weights.diplomatic + linkPower * 0.2 + featuredBonus * 0.15, 100)),
+      economic: Math.round(
+        Math.min(basePower * weights.economic + refPower * 0.15 + featuredBonus * 0.1, 100)
+      ),
+      diplomatic: Math.round(
+        Math.min(basePower * weights.diplomatic + linkPower * 0.2 + featuredBonus * 0.15, 100)
+      ),
       military: Math.round(Math.min(basePower * weights.military + refPower * 0.1, 100)),
-      social: Math.round(Math.min(basePower * weights.social + linkPower * 0.15 + featuredBonus * 0.2, 100)),
+      social: Math.round(
+        Math.min(basePower * weights.social + linkPower * 0.15 + featuredBonus * 0.2, 100)
+      ),
     };
   }
 
@@ -658,10 +661,7 @@ export class WikiLoreCardGenerator {
       (quality.referenceCount * 10 + quality.inboundLinks * 5) / 2,
       100
     );
-    const culturalImpact = Math.min(
-      quality.inboundLinks * 10 + (quality.isFeatured ? 50 : 0),
-      100
-    );
+    const culturalImpact = Math.min(quality.inboundLinks * 10 + (quality.isFeatured ? 50 : 0), 100);
     return {
       historicalSignificance: Math.round(historicalSignificance),
       culturalImpact: Math.round(culturalImpact),
@@ -730,10 +730,7 @@ export class WikiLoreCardGenerator {
   /**
    * Check if a wiki article has a page image
    */
-  private async checkArticleHasImage(
-    title: string,
-    wikiSource: WikiSource
-  ): Promise<boolean> {
+  private async checkArticleHasImage(title: string, wikiSource: WikiSource): Promise<boolean> {
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -762,10 +759,7 @@ export class WikiLoreCardGenerator {
    * Fetch random articles that have images, for lore card generation.
    * Fetches extra candidates to account for articles without images.
    */
-  async fetchRandomArticlesWithImages(
-    count: number,
-    wikiSource: WikiSource
-  ): Promise<string[]> {
+  async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
     const candidates = await this.fetchRandomArticles(count * 3, wikiSource);
     const withImages: string[] = [];
 
@@ -781,10 +775,7 @@ export class WikiLoreCardGenerator {
   /**
    * Fetch random articles from wiki for card generation
    */
-  async fetchRandomArticles(
-    count: number,
-    wikiSource: WikiSource
-  ): Promise<string[]> {
+  async fetchRandomArticles(count: number, wikiSource: WikiSource): Promise<string[]> {
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);

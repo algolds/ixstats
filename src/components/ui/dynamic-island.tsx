@@ -443,7 +443,10 @@ const calculateDimensions = (
   }
 
   // For other preset sizes, use the preset width directly without MIN_WIDTH restriction
-  return { width: `${resolvedSize.width}px`, height: resolvedSize.aspectRatio * resolvedSize.width };
+  return {
+    width: `${resolvedSize.width}px`,
+    height: resolvedSize.aspectRatio * resolvedSize.width,
+  };
 };
 
 const DynamicIslandContent = ({

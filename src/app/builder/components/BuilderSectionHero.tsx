@@ -120,7 +120,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
               </div>
 
               {/* Actions moved to nav bar */}
-              <div className="bg-card/40 border-border/60 flex h-[42px] flex-shrink-0 items-center gap-1 rounded-xl border px-2 backdrop-blur-lg">
+              <div className="bg-card/40 border-border/60 flex h-[42px] shrink-0 items-center gap-1 rounded-xl border px-2 backdrop-blur-lg">
                 {/* Autosave indicator */}
                 {lastSaved && (
                   <div className="text-muted-foreground border-border/60 mr-2 hidden items-center gap-2 border-r pr-3 text-xs lg:flex">

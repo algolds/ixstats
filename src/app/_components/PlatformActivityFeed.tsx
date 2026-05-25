@@ -636,7 +636,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
                   <div className="relative z-10 flex gap-4">
                     {/* User Avatar */}
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <Avatar className="h-12 w-12">
                         {activity.user.countryFlag ? (
                           <AvatarImage src={activity.user.countryFlag} />

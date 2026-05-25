@@ -5,8 +5,7 @@
  * and provides lookup/search for the editor's template inserter.
  */
 
-const MW_API =
-  process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
+const MW_API = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,9 +40,7 @@ export interface TemplateDataInfo {
  * Fetch TemplateData for one or more templates from MediaWiki.
  * Uses the templatedata API action.
  */
-export async function fetchTemplateData(
-  titles: string[]
-): Promise<Map<string, TemplateDataInfo>> {
+export async function fetchTemplateData(titles: string[]): Promise<Map<string, TemplateDataInfo>> {
   const result = new Map<string, TemplateDataInfo>();
   if (titles.length === 0) return result;
 
@@ -54,9 +51,7 @@ export async function fetchTemplateData(
   }
 
   for (const batch of batches) {
-    const normalizedTitles = batch.map((t) =>
-      t.startsWith("Template:") ? t : `Template:${t}`
-    );
+    const normalizedTitles = batch.map((t) => (t.startsWith("Template:") ? t : `Template:${t}`));
     const params = new URLSearchParams({
       action: "templatedata",
       titles: normalizedTitles.join("|"),
@@ -99,10 +94,7 @@ export async function fetchTemplateData(
         }
       }
     } catch (err) {
-      console.error(
-        `[WikiOS] Failed to fetch TemplateData for batch:`,
-        err
-      );
+      console.error(`[WikiOS] Failed to fetch TemplateData for batch:`, err);
     }
   }
 
@@ -187,11 +179,15 @@ export function categorizeTemplate(name: string, description?: string): string {
   const lower = (name + " " + (description ?? "")).toLowerCase();
   if (lower.includes("infobox")) return "infobox";
   if (lower.includes("navbox") || lower.includes("navigation")) return "navigation";
-  if (lower.includes("citation") || lower.includes("cite") || lower.includes("ref")) return "citation";
-  if (lower.includes("stub") || lower.includes("maintenance") || lower.includes("cleanup")) return "maintenance";
+  if (lower.includes("citation") || lower.includes("cite") || lower.includes("ref"))
+    return "citation";
+  if (lower.includes("stub") || lower.includes("maintenance") || lower.includes("cleanup"))
+    return "maintenance";
   if (lower.includes("flag") || lower.includes("icon")) return "icon";
   if (lower.includes("sidebar")) return "sidebar";
-  if (lower.includes("hatnote") || lower.includes("about") || lower.includes("redirect")) return "hatnote";
-  if (lower.includes("map") || lower.includes("coord") || lower.includes("location")) return "geographic";
+  if (lower.includes("hatnote") || lower.includes("about") || lower.includes("redirect"))
+    return "hatnote";
+  if (lower.includes("map") || lower.includes("coord") || lower.includes("location"))
+    return "geographic";
   return "general";
 }

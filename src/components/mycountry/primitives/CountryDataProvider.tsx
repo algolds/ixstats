@@ -45,9 +45,8 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
   } = api.users.getProfile.useQuery(undefined, { enabled: !!userId });
 
   // Demo mode takes priority, then dev view, then user's actual country
-  const effectiveCountryId = (isDemoActive && demoCountryId)
-    ? demoCountryId
-    : viewCountryId ?? userProfile?.countryId ?? "";
+  const effectiveCountryId =
+    isDemoActive && demoCountryId ? demoCountryId : (viewCountryId ?? userProfile?.countryId ?? "");
 
   const {
     data: country,
@@ -59,8 +58,7 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
   );
 
   // Get public system information (IxTime)
-  const { data: ixTimeData, isLoading: ixTimeLoading } =
-    api.system.getCurrentIxTime.useQuery();
+  const { data: ixTimeData, isLoading: ixTimeLoading } = api.system.getCurrentIxTime.useQuery();
 
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
     { countryId: country?.id || "" },
@@ -111,20 +109,20 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 animate-pulse rounded-full bg-muted"></div>
+            <div className="bg-muted h-12 w-12 animate-pulse rounded-full"></div>
             <div className="space-y-2">
-              <div className="h-8 w-64 animate-pulse rounded bg-muted"></div>
-              <div className="h-4 w-48 animate-pulse rounded bg-muted"></div>
+              <div className="bg-muted h-8 w-64 animate-pulse rounded"></div>
+              <div className="bg-muted h-4 w-48 animate-pulse rounded"></div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded bg-muted"></div>
+              <div key={i} className="bg-muted h-24 animate-pulse rounded"></div>
             ))}
           </div>
 
-          <div className="h-96 animate-pulse rounded bg-muted"></div>
+          <div className="bg-muted h-96 animate-pulse rounded"></div>
         </div>
       </div>
     );

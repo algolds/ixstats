@@ -23,9 +23,9 @@
 
 /** Climate zone distribution entry for a country */
 export interface ClimateZoneEntry {
-  type: string;        // Full name e.g. "Tropical Wet (Ar)"
-  code?: string;       // Short code e.g. "Ar"
-  name?: string;       // Display name e.g. "Tropical Wet"
+  type: string; // Full name e.g. "Tropical Wet (Ar)"
+  code?: string; // Short code e.g. "Ar"
+  name?: string; // Display name e.g. "Tropical Wet"
   percentArea: number; // 0–100
   areaSqKm: number;
   agricultureFactor: number; // 0.0–0.9
@@ -33,8 +33,8 @@ export interface ClimateZoneEntry {
 
 /** Elevation zone distribution entry for a country */
 export interface ElevationZoneEntry {
-  zone: string;        // e.g. "zone_4"
-  name: string;        // e.g. "Low Mountains"
+  zone: string; // e.g. "zone_4"
+  name: string; // e.g. "Low Mountains"
   percentArea: number; // 0–100
   areaSqKm: number;
   minElev: number;
@@ -98,27 +98,126 @@ export interface CrisisRiskFactors {
 // ─────────────────────────────────────────────────────────────────
 
 /** Climate metadata — agriculture factors, temperature, precipitation per Trewartha zone */
-export const CLIMATE_METADATA: Record<string, {
-  tempModifier: number;
-  diurnalRangeC: number;
-  precipMmYr: number;
-  growingSeasonDays: number;
-  agricultureFactor: number;
-  description: string;
-  vegetation: string;
-}> = {
-  "Tropical Wet (Ar)":          { tempModifier: 3,   diurnalRangeC: 8,  precipMmYr: 2200, growingSeasonDays: 365, agricultureFactor: 0.7,  description: "Hot and humid year-round with heavy rainfall",               vegetation: "Tropical rainforest, dense canopy" },
-  "Tropical Wet-And-Dry (Aw)":  { tempModifier: 2,   diurnalRangeC: 11, precipMmYr: 1500, growingSeasonDays: 270, agricultureFactor: 0.8,  description: "Tropical with distinct wet and dry seasons",                 vegetation: "Savanna, tropical grassland, open woodland" },
-  "Desert or Arid (Bw)":        { tempModifier: 5,   diurnalRangeC: 18, precipMmYr: 100,  growingSeasonDays: 60,  agricultureFactor: 0.05, description: "Extremely dry with intense solar radiation",                  vegetation: "Sparse xerophytes, barren sand/rock" },
-  "Steppe or Semiarid (Bs)":    { tempModifier: 3,   diurnalRangeC: 15, precipMmYr: 350,  growingSeasonDays: 150, agricultureFactor: 0.3,  description: "Low rainfall with hot daytime temperatures",                 vegetation: "Short grass steppe, scrubland" },
-  "Subtropical Dry Summer (Cs)": { tempModifier: 1,  diurnalRangeC: 14, precipMmYr: 600,  growingSeasonDays: 245, agricultureFactor: 0.75, description: "Warm with dry summers and mild wet winters",                 vegetation: "Mediterranean scrub, evergreen woodland" },
-  "Subtropical Humid (Cf)":     { tempModifier: 0,   diurnalRangeC: 10, precipMmYr: 1200, growingSeasonDays: 300, agricultureFactor: 0.9,  description: "Warm with year-round moisture",                              vegetation: "Broadleaf evergreen forest, mixed woodland" },
-  "Temperate Oceanic (Do)":     { tempModifier: -2,  diurnalRangeC: 9,  precipMmYr: 1100, growingSeasonDays: 250, agricultureFactor: 0.85, description: "Maritime influence with mild, wet conditions",                vegetation: "Deciduous forest, lush grassland" },
-  "Temperate Continental (Dc)": { tempModifier: -3,  diurnalRangeC: 13, precipMmYr: 700,  growingSeasonDays: 180, agricultureFactor: 0.8,  description: "Cold winters, warm summers, moderate precipitation",         vegetation: "Mixed deciduous-coniferous forest" },
-  "Boreal (E)":                 { tempModifier: -10, diurnalRangeC: 14, precipMmYr: 400,  growingSeasonDays: 100, agricultureFactor: 0.15, description: "Long cold winters with brief cool summers",                  vegetation: "Taiga, coniferous forest" },
-  "Tundra (Ft)":                { tempModifier: -18, diurnalRangeC: 10, precipMmYr: 250,  growingSeasonDays: 45,  agricultureFactor: 0.02, description: "Very cold with minimal vegetation and permafrost",           vegetation: "Mosses, lichens, dwarf shrubs" },
-  "Ice Cap (Fi)":               { tempModifier: -25, diurnalRangeC: 8,  precipMmYr: 100,  growingSeasonDays: 0,   agricultureFactor: 0.0,  description: "Permanently frozen, virtually no precipitation",             vegetation: "None (permanent ice)" },
-  "Highland (H)":               { tempModifier: -12, diurnalRangeC: 12, precipMmYr: 600,  growingSeasonDays: 130, agricultureFactor: 0.2,  description: "High altitude with cold temps and orographic precipitation", vegetation: "Alpine meadow, montane forest" },
+export const CLIMATE_METADATA: Record<
+  string,
+  {
+    tempModifier: number;
+    diurnalRangeC: number;
+    precipMmYr: number;
+    growingSeasonDays: number;
+    agricultureFactor: number;
+    description: string;
+    vegetation: string;
+  }
+> = {
+  "Tropical Wet (Ar)": {
+    tempModifier: 3,
+    diurnalRangeC: 8,
+    precipMmYr: 2200,
+    growingSeasonDays: 365,
+    agricultureFactor: 0.7,
+    description: "Hot and humid year-round with heavy rainfall",
+    vegetation: "Tropical rainforest, dense canopy",
+  },
+  "Tropical Wet-And-Dry (Aw)": {
+    tempModifier: 2,
+    diurnalRangeC: 11,
+    precipMmYr: 1500,
+    growingSeasonDays: 270,
+    agricultureFactor: 0.8,
+    description: "Tropical with distinct wet and dry seasons",
+    vegetation: "Savanna, tropical grassland, open woodland",
+  },
+  "Desert or Arid (Bw)": {
+    tempModifier: 5,
+    diurnalRangeC: 18,
+    precipMmYr: 100,
+    growingSeasonDays: 60,
+    agricultureFactor: 0.05,
+    description: "Extremely dry with intense solar radiation",
+    vegetation: "Sparse xerophytes, barren sand/rock",
+  },
+  "Steppe or Semiarid (Bs)": {
+    tempModifier: 3,
+    diurnalRangeC: 15,
+    precipMmYr: 350,
+    growingSeasonDays: 150,
+    agricultureFactor: 0.3,
+    description: "Low rainfall with hot daytime temperatures",
+    vegetation: "Short grass steppe, scrubland",
+  },
+  "Subtropical Dry Summer (Cs)": {
+    tempModifier: 1,
+    diurnalRangeC: 14,
+    precipMmYr: 600,
+    growingSeasonDays: 245,
+    agricultureFactor: 0.75,
+    description: "Warm with dry summers and mild wet winters",
+    vegetation: "Mediterranean scrub, evergreen woodland",
+  },
+  "Subtropical Humid (Cf)": {
+    tempModifier: 0,
+    diurnalRangeC: 10,
+    precipMmYr: 1200,
+    growingSeasonDays: 300,
+    agricultureFactor: 0.9,
+    description: "Warm with year-round moisture",
+    vegetation: "Broadleaf evergreen forest, mixed woodland",
+  },
+  "Temperate Oceanic (Do)": {
+    tempModifier: -2,
+    diurnalRangeC: 9,
+    precipMmYr: 1100,
+    growingSeasonDays: 250,
+    agricultureFactor: 0.85,
+    description: "Maritime influence with mild, wet conditions",
+    vegetation: "Deciduous forest, lush grassland",
+  },
+  "Temperate Continental (Dc)": {
+    tempModifier: -3,
+    diurnalRangeC: 13,
+    precipMmYr: 700,
+    growingSeasonDays: 180,
+    agricultureFactor: 0.8,
+    description: "Cold winters, warm summers, moderate precipitation",
+    vegetation: "Mixed deciduous-coniferous forest",
+  },
+  "Boreal (E)": {
+    tempModifier: -10,
+    diurnalRangeC: 14,
+    precipMmYr: 400,
+    growingSeasonDays: 100,
+    agricultureFactor: 0.15,
+    description: "Long cold winters with brief cool summers",
+    vegetation: "Taiga, coniferous forest",
+  },
+  "Tundra (Ft)": {
+    tempModifier: -18,
+    diurnalRangeC: 10,
+    precipMmYr: 250,
+    growingSeasonDays: 45,
+    agricultureFactor: 0.02,
+    description: "Very cold with minimal vegetation and permafrost",
+    vegetation: "Mosses, lichens, dwarf shrubs",
+  },
+  "Ice Cap (Fi)": {
+    tempModifier: -25,
+    diurnalRangeC: 8,
+    precipMmYr: 100,
+    growingSeasonDays: 0,
+    agricultureFactor: 0.0,
+    description: "Permanently frozen, virtually no precipitation",
+    vegetation: "None (permanent ice)",
+  },
+  "Highland (H)": {
+    tempModifier: -12,
+    diurnalRangeC: 12,
+    precipMmYr: 600,
+    growingSeasonDays: 130,
+    agricultureFactor: 0.2,
+    description: "High altitude with cold temps and orographic precipitation",
+    vegetation: "Alpine meadow, montane forest",
+  },
 };
 
 /** Short code → full climate name lookup */
@@ -139,9 +238,18 @@ export const CLIMATE_CODE_TO_NAME: Record<string, string> = {
 
 /** Canonical Trewartha fill colors → climate code. Used to identify climate zones from SVG map data. */
 export const CLIMATE_COLORS: Record<string, string> = {
-  "#990000": "Ar",  "#ff3300": "Aw",  "#ffff33": "Bw",  "#ff9933": "Bs",
-  "#669900": "Cs",  "#336600": "Cf",  "#00ff99": "Do",  "#0099ff": "Dc",
-  "#0066cc": "E",   "#b9b9b9": "Ft",  "#99ffff": "Fi",  "#ffccff": "H",
+  "#990000": "Ar",
+  "#ff3300": "Aw",
+  "#ffff33": "Bw",
+  "#ff9933": "Bs",
+  "#669900": "Cs",
+  "#336600": "Cf",
+  "#00ff99": "Do",
+  "#0099ff": "Dc",
+  "#0066cc": "E",
+  "#b9b9b9": "Ft",
+  "#99ffff": "Fi",
+  "#ffccff": "H",
 };
 
 /**
@@ -183,15 +291,63 @@ export function resolveClimateFromColor(fill: string): string | null {
 
 /** Elevation zone definitions */
 export const ELEVATION_ZONES = [
-  { zoneId: "zone_0", zoneName: "Coastal Lowlands",  elevationMin: 0,    elevationMax: 99,   color: "#a8c995" },
-  { zoneId: "zone_1", zoneName: "Low Hills",         elevationMin: 100,  elevationMax: 349,  color: "#c3d3a1" },
-  { zoneId: "zone_2", zoneName: "Rolling Hills",     elevationMin: 350,  elevationMax: 499,  color: "#dcdcac" },
-  { zoneId: "zone_3", zoneName: "Uplands",           elevationMin: 500,  elevationMax: 999,  color: "#f7e6b8" },
-  { zoneId: "zone_4", zoneName: "Low Mountains",     elevationMin: 1000, elevationMax: 1999, color: "#dac497" },
-  { zoneId: "zone_5", zoneName: "Mid Mountains",     elevationMin: 2000, elevationMax: 2999, color: "#bea276" },
-  { zoneId: "zone_6", zoneName: "High Mountains",    elevationMin: 3000, elevationMax: 3999, color: "#9c7b50" },
-  { zoneId: "zone_7", zoneName: "Alpine",            elevationMin: 4000, elevationMax: 4999, color: "#796142" },
-  { zoneId: "zone_8", zoneName: "Extreme Alpine",    elevationMin: 5000, elevationMax: 9999, color: "#4f4236" },
+  {
+    zoneId: "zone_0",
+    zoneName: "Coastal Lowlands",
+    elevationMin: 0,
+    elevationMax: 99,
+    color: "#a8c995",
+  },
+  {
+    zoneId: "zone_1",
+    zoneName: "Low Hills",
+    elevationMin: 100,
+    elevationMax: 349,
+    color: "#c3d3a1",
+  },
+  {
+    zoneId: "zone_2",
+    zoneName: "Rolling Hills",
+    elevationMin: 350,
+    elevationMax: 499,
+    color: "#dcdcac",
+  },
+  { zoneId: "zone_3", zoneName: "Uplands", elevationMin: 500, elevationMax: 999, color: "#f7e6b8" },
+  {
+    zoneId: "zone_4",
+    zoneName: "Low Mountains",
+    elevationMin: 1000,
+    elevationMax: 1999,
+    color: "#dac497",
+  },
+  {
+    zoneId: "zone_5",
+    zoneName: "Mid Mountains",
+    elevationMin: 2000,
+    elevationMax: 2999,
+    color: "#bea276",
+  },
+  {
+    zoneId: "zone_6",
+    zoneName: "High Mountains",
+    elevationMin: 3000,
+    elevationMax: 3999,
+    color: "#9c7b50",
+  },
+  {
+    zoneId: "zone_7",
+    zoneName: "Alpine",
+    elevationMin: 4000,
+    elevationMax: 4999,
+    color: "#796142",
+  },
+  {
+    zoneId: "zone_8",
+    zoneName: "Extreme Alpine",
+    elevationMin: 5000,
+    elevationMax: 9999,
+    color: "#4f4236",
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────
@@ -341,10 +497,7 @@ export function estimateTemperature(
  * Estimate annual precipitation from climate zones and elevation.
  * Area-weighted from climate type, with orographic adjustment.
  */
-export function estimatePrecipitation(
-  zones: ClimateZoneEntry[],
-  meanElevation: number
-): number {
+export function estimatePrecipitation(zones: ClimateZoneEntry[], meanElevation: number): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -363,10 +516,7 @@ export function estimatePrecipitation(
 /**
  * Compute drainage density (river length per area).
  */
-export function computeDrainageDensity(
-  totalRiverLengthKm: number,
-  areaKm2: number
-): number {
+export function computeDrainageDensity(totalRiverLengthKm: number, areaKm2: number): number {
   if (areaKm2 <= 0) return 0;
   return Math.round((totalRiverLengthKm / areaKm2) * 1000) / 1000;
 }
@@ -418,7 +568,7 @@ export function computeEconomicGeoModifiers(profile: GeoProfile): EconomicGeoMod
   if (dominant.includes("Desert") || dominant.includes("Bw")) {
     gdpModifier *= 0.95; // -5% desert penalty
   } else if (dominant.includes("Ice Cap") || dominant.includes("Fi")) {
-    gdpModifier *= 0.90; // -10% ice cap penalty
+    gdpModifier *= 0.9; // -10% ice cap penalty
   } else if (dominant.includes("Tundra") || dominant.includes("Ft")) {
     gdpModifier *= 0.93; // -7% tundra penalty
   }
@@ -515,43 +665,62 @@ export function computeCrisisRiskFactors(profile: GeoProfile): CrisisRiskFactors
   const hasCoast = profile.coastlineKm > 100;
 
   // Hurricane risk: tropical + coastal
-  const isTropical = dominant.includes("Tropical") || dominant.includes("(Ar)") || dominant.includes("(Aw)");
+  const isTropical =
+    dominant.includes("Tropical") || dominant.includes("(Ar)") || dominant.includes("(Aw)");
   const hurricane = isTropical && hasCoast ? 0.7 : isTropical ? 0.2 : hasCoast ? 0.1 : 0;
 
   // Earthquake risk: high terrain roughness (mountain boundary zones)
-  const earthquake = profile.terrainRoughness > 0.5 ? 0.6
-    : profile.terrainRoughness > 0.3 ? 0.3
-    : 0.1;
+  const earthquake =
+    profile.terrainRoughness > 0.5 ? 0.6 : profile.terrainRoughness > 0.3 ? 0.3 : 0.1;
 
   // Drought risk: arid climate + low arable land
-  const isArid = dominant.includes("Desert") || dominant.includes("Bw") || dominant.includes("Steppe") || dominant.includes("Bs");
-  const drought = isArid && profile.arableLandPercent < 15 ? 0.8
-    : isArid ? 0.5
-    : profile.arableLandPercent < 20 ? 0.3
-    : 0.1;
+  const isArid =
+    dominant.includes("Desert") ||
+    dominant.includes("Bw") ||
+    dominant.includes("Steppe") ||
+    dominant.includes("Bs");
+  const drought =
+    isArid && profile.arableLandPercent < 15
+      ? 0.8
+      : isArid
+        ? 0.5
+        : profile.arableLandPercent < 20
+          ? 0.3
+          : 0.1;
 
   // Flood risk: high drainage density + humid climate
-  const isHumid = dominant.includes("Humid") || dominant.includes("Cf") || dominant.includes("Oceanic") || dominant.includes("Do");
-  const flood = profile.drainageDensity > 0.8 && isHumid ? 0.7
-    : profile.drainageDensity > 0.5 ? 0.4
-    : isHumid ? 0.3
-    : 0.1;
+  const isHumid =
+    dominant.includes("Humid") ||
+    dominant.includes("Cf") ||
+    dominant.includes("Oceanic") ||
+    dominant.includes("Do");
+  const flood =
+    profile.drainageDensity > 0.8 && isHumid
+      ? 0.7
+      : profile.drainageDensity > 0.5
+        ? 0.4
+        : isHumid
+          ? 0.3
+          : 0.1;
 
   // Wildfire risk: dry summer climate (Mediterranean, steppe)
-  const isDrySummer = dominant.includes("Dry Summer") || dominant.includes("Cs") || dominant.includes("Steppe") || dominant.includes("Bs");
-  const wildfire = isDrySummer ? 0.6
-    : isArid ? 0.3
-    : 0.1;
+  const isDrySummer =
+    dominant.includes("Dry Summer") ||
+    dominant.includes("Cs") ||
+    dominant.includes("Steppe") ||
+    dominant.includes("Bs");
+  const wildfire = isDrySummer ? 0.6 : isArid ? 0.3 : 0.1;
 
   // Pandemic risk: high population density correlates with tropical + humid
-  const pandemic = isTropical ? 0.4
-    : isHumid ? 0.3
-    : 0.2;
+  const pandemic = isTropical ? 0.4 : isHumid ? 0.3 : 0.2;
 
   // Famine risk: low arable + low water resources
-  const famine = profile.arableLandPercent < 10 && profile.drainageDensity < 0.3 ? 0.7
-    : profile.arableLandPercent < 20 ? 0.4
-    : 0.1;
+  const famine =
+    profile.arableLandPercent < 10 && profile.drainageDensity < 0.3
+      ? 0.7
+      : profile.arableLandPercent < 20
+        ? 0.4
+        : 0.1;
 
   return {
     hurricane: Math.round(hurricane * 100) / 100,
@@ -612,14 +781,16 @@ export function buildGeoProfile(raw: {
   const drainageDensity = computeDrainageDensity(raw.totalRiverLengthKm, raw.areaKm2);
 
   // Dominant climate = largest area
-  const dominantClimate = raw.climateDistribution.length > 0
-    ? raw.climateDistribution.reduce((a, b) => a.areaSqKm > b.areaSqKm ? a : b).type
-    : null;
+  const dominantClimate =
+    raw.climateDistribution.length > 0
+      ? raw.climateDistribution.reduce((a, b) => (a.areaSqKm > b.areaSqKm ? a : b)).type
+      : null;
 
   // Dominant elevation = largest area
-  const dominantElevation = raw.elevationProfile.length > 0
-    ? raw.elevationProfile.reduce((a, b) => a.areaSqKm > b.areaSqKm ? a : b).name
-    : null;
+  const dominantElevation =
+    raw.elevationProfile.length > 0
+      ? raw.elevationProfile.reduce((a, b) => (a.areaSqKm > b.areaSqKm ? a : b)).name
+      : null;
 
   return {
     arableLandPercent,

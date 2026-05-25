@@ -299,7 +299,7 @@ export default function ReferenceDataPage() {
                             </p>
                           </div>
                         </div>
-                        <ExternalLink className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                        <ExternalLink className="text-muted-foreground h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
 
                       {/* Count badge */}

@@ -690,7 +690,7 @@ export function CountryEconomicPanel({
                     const Icon = field.icon;
                     return (
                       <div key={field.label} className="flex items-start gap-3">
-                        <Icon className="text-primary mt-0.5 h-5 w-5 flex-shrink-0" />
+                        <Icon className="text-primary mt-0.5 h-5 w-5 shrink-0" />
                         <div>
                           <p className="text-muted-foreground mb-0.5 text-xs">{field.label}</p>
                           <p className="text-sm font-semibold">{field.value}</p>

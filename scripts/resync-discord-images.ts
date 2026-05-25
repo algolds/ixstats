@@ -37,7 +37,9 @@ async function downloadImage(url: string, filepath: string): Promise<boolean> {
   }
 }
 
-function parseDiscordUrl(url: string): { channelId: string; messageId: string; filename: string } | null {
+function parseDiscordUrl(
+  url: string
+): { channelId: string; messageId: string; filename: string } | null {
   try {
     const parsed = new URL(url);
     if (!["cdn.discordapp.com", "media.discordapp.net"].includes(parsed.hostname)) return null;
@@ -73,11 +75,13 @@ async function main() {
     orderBy: { createdAt: "desc" },
   });
 
-  const discordAttachments = allAttachments.filter((a) =>
-    a.url.includes("cdn.discordapp.com") || a.url.includes("media.discordapp.net")
+  const discordAttachments = allAttachments.filter(
+    (a) => a.url.includes("cdn.discordapp.com") || a.url.includes("media.discordapp.net")
   );
 
-  console.log(`Found ${allAttachments.length} total attachments, ${discordAttachments.length} from Discord CDN`);
+  console.log(
+    `Found ${allAttachments.length} total attachments, ${discordAttachments.length} from Discord CDN`
+  );
 
   let processed = 0;
   let failed = 0;
@@ -104,25 +108,29 @@ async function main() {
 
       if (apiResponse.status === 429) {
         const retryAfter = parseInt(apiResponse.headers.get("retry-after") ?? "5", 10);
-        console.warn(`[${i + 1}/${discordAttachments.length}] 429 rate limited, waiting ${retryAfter}s...`);
+        console.warn(
+          `[${i + 1}/${discordAttachments.length}] 429 rate limited, waiting ${retryAfter}s...`
+        );
         await new Promise((r) => setTimeout(r, (retryAfter + 1) * 1000));
         i--;
         continue;
       }
 
       if (!apiResponse.ok) {
-        console.warn(`[${i + 1}/${discordAttachments.length}] Skipped ${att.id} (msg ${info.messageId}): API ${apiResponse.status}`);
+        console.warn(
+          `[${i + 1}/${discordAttachments.length}] Skipped ${att.id} (msg ${info.messageId}): API ${apiResponse.status}`
+        );
         failed++;
         continue;
       }
 
       const message = await apiResponse.json();
-      const attachment = message.attachments?.find(
-        (a: any) => a.filename === info!.filename
-      );
+      const attachment = message.attachments?.find((a: any) => a.filename === info!.filename);
 
       if (!attachment?.url) {
-        console.warn(`[${i + 1}/${discordAttachments.length}] Skipped ${att.id} (msg ${info.messageId}): attachment not in API`);
+        console.warn(
+          `[${i + 1}/${discordAttachments.length}] Skipped ${att.id} (msg ${info.messageId}): attachment not in API`
+        );
         failed++;
         continue;
       }
@@ -139,7 +147,9 @@ async function main() {
           data: { url: `${BASE_PATH}/images/discord/${localFilename}` },
         });
         processed++;
-        console.log(`[${i + 1}/${discordAttachments.length}] OK ${att.id} → /images/discord/${localFilename}`);
+        console.log(
+          `[${i + 1}/${discordAttachments.length}] OK ${att.id} → /images/discord/${localFilename}`
+        );
       } else {
         console.warn(`[${i + 1}/${discordAttachments.length}] Failed ${att.id}: download error`);
         failed++;

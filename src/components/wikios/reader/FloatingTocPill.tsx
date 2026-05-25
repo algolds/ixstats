@@ -108,11 +108,27 @@ export function FloatingTocPill({ entries, titleRef }: FloatingTocPillProps) {
         aria-expanded={open}
         aria-label="Table of contents"
       >
-        <svg className="wikios-toc-pill-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg
+          className="wikios-toc-pill-icon"
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
           <path d="M2 4h12M2 8h8M2 12h10" />
         </svg>
         <span className="wikios-toc-pill-label">{activeLabel}</span>
-        <svg className={`wikios-toc-pill-chevron ${open ? "wikios-toc-pill-chevron--open" : ""}`} width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg
+          className={`wikios-toc-pill-chevron ${open ? "wikios-toc-pill-chevron--open" : ""}`}
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
           <path d="M3 5l3 3 3-3" />
         </svg>
       </button>

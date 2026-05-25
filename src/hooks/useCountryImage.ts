@@ -6,10 +6,7 @@ import {
   type CountryImageData,
   type ImageContext,
 } from "~/lib/country-image-engine";
-import {
-  unsplashService,
-  type UnsplashImageData,
-} from "~/lib/unsplash-service";
+import { unsplashService, type UnsplashImageData } from "~/lib/unsplash-service";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -55,10 +52,7 @@ function getSessionCache(key: string): UnsplashImageData | null {
 function setSessionCache(key: string, data: UnsplashImageData): void {
   if (typeof window === "undefined") return;
   try {
-    sessionStorage.setItem(
-      `${SESSION_PREFIX}${key}`,
-      JSON.stringify({ data, ts: Date.now() }),
-    );
+    sessionStorage.setItem(`${SESSION_PREFIX}${key}`, JSON.stringify({ data, ts: Date.now() }));
   } catch {
     // sessionStorage may be full or unavailable
   }
@@ -90,7 +84,7 @@ export function useCountryImage({
       countryData?.economicTier,
       countryData?.region,
       countryData?.governmentType,
-    ],
+    ]
   );
 
   useEffect(() => {
@@ -125,10 +119,7 @@ export function useCountryImage({
     }
 
     // 3. Generate keywords and fetch
-    const { query, fallbackQuery, orientation } = generateImageKeywords(
-      countryData,
-      context,
-    );
+    const { query, fallbackQuery, orientation } = generateImageKeywords(countryData, context);
 
     // Deduplicate in-flight requests
     let request = inflightRequests.get(cacheKey);

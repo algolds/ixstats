@@ -1060,16 +1060,19 @@ export const securityRouter = createTRPCRouter({
       // Notification: security event resolved (fire-and-forget)
       try {
         if (ctx.auth?.userId) {
-          await notificationAPI.create({
-            userId: ctx.auth.userId,
-            countryId: event.countryId,
-            title: "Threat Resolved",
-            message: "A security event has been successfully resolved",
-            type: "SECURITY",
-            category: "security",
-            priority: "medium",
-            metadata: { eventId: input.id },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: ctx.auth.userId,
+              countryId: event.countryId,
+              title: "Threat Resolved",
+              message: "A security event has been successfully resolved",
+              type: "SECURITY",
+              category: "security",
+              priority: "medium",
+              metadata: { eventId: input.id },
+            },
+            ctx.db
+          );
         }
       } catch {}
 
@@ -1683,9 +1686,7 @@ export const securityRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const statusFilter = input.includeCompleted
-        ? {}
-        : { status: { in: ["planned", "active"] } };
+      const statusFilter = input.includeCompleted ? {} : { status: { in: ["planned", "active"] } };
 
       return ctx.db.militaryOperation.findMany({
         where: { countryId: input.countryId, ...statusFilter },
@@ -1702,7 +1703,13 @@ export const securityRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        operationType: z.enum(["peacekeeping", "defense_pact", "blockade", "intervention", "training"]),
+        operationType: z.enum([
+          "peacekeeping",
+          "defense_pact",
+          "blockade",
+          "intervention",
+          "training",
+        ]),
         name: z.string().min(2),
         description: z.string().optional(),
         targetCountryId: z.string().optional(),
@@ -1880,7 +1887,9 @@ export const securityRouter = createTRPCRouter({
       });
 
       // Restore partial unit readiness (+5 per recalled unit)
-      const unitDeployments = operation.deployments.filter((d) => d.unitId && d.status === "deployed");
+      const unitDeployments = operation.deployments.filter(
+        (d) => d.unitId && d.status === "deployed"
+      );
       if (unitDeployments.length > 0) {
         const unitIds = unitDeployments.map((d) => d.unitId!);
         await ctx.db.militaryUnit.updateMany({
@@ -1911,16 +1920,19 @@ export const securityRouter = createTRPCRouter({
       // Notification: operation completed (fire-and-forget)
       try {
         if (ctx.auth?.userId) {
-          await notificationAPI.create({
-            userId: ctx.auth.userId,
-            countryId: operation.countryId,
-            title: "Operation Complete",
-            message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
-            type: "MILITARY",
-            category: "military",
-            priority: "high",
-            metadata: { operationId: input.operationId, result: input.successRating },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: ctx.auth.userId,
+              countryId: operation.countryId,
+              title: "Operation Complete",
+              message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
+              type: "MILITARY",
+              category: "military",
+              priority: "high",
+              metadata: { operationId: input.operationId, result: input.successRating },
+            },
+            ctx.db
+          );
         }
       } catch {}
 
@@ -1953,7 +1965,10 @@ export const securityRouter = createTRPCRouter({
       }
 
       if (userProfile.countryId === input.defenderId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot declare conflict against yourself." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot declare conflict against yourself.",
+        });
       }
 
       // Check for existing active conflict
@@ -1998,16 +2013,19 @@ export const securityRouter = createTRPCRouter({
           select: { userId: true, name: true },
         });
         if (defenderCountry?.userId) {
-          await notificationAPI.create({
-            userId: defenderCountry.userId,
-            countryId: input.defenderId,
-            title: "Conflict Proposed",
-            message: `${conflict.initiator.name} has proposed a military conflict against your nation`,
-            type: "MILITARY",
-            category: "military",
-            priority: "high",
-            metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: defenderCountry.userId,
+              countryId: input.defenderId,
+              title: "Conflict Proposed",
+              message: `${conflict.initiator.name} has proposed a military conflict against your nation`,
+              type: "MILITARY",
+              category: "military",
+              priority: "high",
+              metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
+            },
+            ctx.db
+          );
         }
       } catch {}
 
@@ -2057,16 +2075,19 @@ export const securityRouter = createTRPCRouter({
             select: { userId: true },
           });
           if (initiatorCountry?.userId) {
-            await notificationAPI.create({
-              userId: initiatorCountry.userId,
-              countryId: conflict.initiatorId,
-              title: "Conflict Declined",
-              message: "Your conflict proposal was declined",
-              type: "MILITARY",
-              category: "military",
-              priority: "medium",
-              metadata: { conflictId: input.conflictId },
-            }, ctx.db);
+            await notificationAPI.create(
+              {
+                userId: initiatorCountry.userId,
+                countryId: conflict.initiatorId,
+                title: "Conflict Declined",
+                message: "Your conflict proposal was declined",
+                type: "MILITARY",
+                category: "military",
+                priority: "medium",
+                metadata: { conflictId: input.conflictId },
+              },
+              ctx.db
+            );
           }
         } catch {}
 
@@ -2093,16 +2114,19 @@ export const securityRouter = createTRPCRouter({
           select: { userId: true },
         });
         if (initiatorCountry?.userId) {
-          await notificationAPI.create({
-            userId: initiatorCountry.userId,
-            countryId: conflict.initiatorId,
-            title: "Conflict Accepted",
-            message: `${accepted.defender.name} has accepted your conflict proposal - hostilities begin`,
-            type: "MILITARY",
-            category: "military",
-            priority: "high",
-            metadata: { conflictId: input.conflictId },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: initiatorCountry.userId,
+              countryId: conflict.initiatorId,
+              title: "Conflict Accepted",
+              message: `${accepted.defender.name} has accepted your conflict proposal - hostilities begin`,
+              type: "MILITARY",
+              category: "military",
+              priority: "high",
+              metadata: { conflictId: input.conflictId },
+            },
+            ctx.db
+          );
         }
       } catch {}
 
@@ -2187,7 +2211,8 @@ export const securityRouter = createTRPCRouter({
 
       // Random swing factor (10-30%)
       const swing = 0.1 + Math.random() * 0.2;
-      const effectiveRatio = initiatorStrength / totalStrength + (Math.random() > 0.5 ? swing : -swing);
+      const effectiveRatio =
+        initiatorStrength / totalStrength + (Math.random() > 0.5 ? swing : -swing);
 
       const initiatorWins = effectiveRatio > 0.5;
       const marginOfVictory = Math.abs(effectiveRatio - 0.5);

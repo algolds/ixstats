@@ -91,7 +91,8 @@ export const EconomicComponentType = {
   FREE_TRADE: "FREE_TRADE",
 } as const;
 
-export type EconomicComponentType = (typeof EconomicComponentType)[keyof typeof EconomicComponentType];
+export type EconomicComponentType =
+  (typeof EconomicComponentType)[keyof typeof EconomicComponentType];
 
 export const TaxComponentType = {
   PROGRESSIVE_TAX: "PROGRESSIVE_TAX",

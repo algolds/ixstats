@@ -25,10 +25,13 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
   );
 
   const countryMap = useMemo(() => {
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any)?.countries ?? [];
+    const list = Array.isArray(countriesData)
+      ? countriesData
+      : ((countriesData as any)?.countries ?? []);
     const map = new Map<string, { flagUrl?: string | null; economicTier?: string | null }>();
     for (const c of list as any[]) {
-      if (c.name) map.set(c.name.toLowerCase(), { flagUrl: c.flagUrl, economicTier: c.economicTier });
+      if (c.name)
+        map.set(c.name.toLowerCase(), { flagUrl: c.flagUrl, economicTier: c.economicTier });
     }
     return map;
   }, [countriesData]);
@@ -45,7 +48,9 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
               return (
                 <Link
                   key={m.title}
-                  href={withBasePath(`/w/special/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+                  href={withBasePath(
+                    `/w/special/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                  )}
                   className="wikios-portal-pill"
                 >
                   <Folder className="h-3 w-3 opacity-50" />
@@ -60,9 +65,7 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
       {/* Pages */}
       {pages.length > 0 && (
         <div className="wikios-portal-section">
-          <h2 className="wikios-portal-section-title">
-            Pages in category ({pages.length})
-          </h2>
+          <h2 className="wikios-portal-section-title">Pages in category ({pages.length})</h2>
           <div className="wikios-portal-articles">
             {pages.map((m) => {
               const match = countryMap.get(m.title.toLowerCase());
@@ -73,9 +76,14 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
                   className="wikios-portal-card"
                 >
                   {match?.flagUrl ? (
-                    <img src={match.flagUrl} alt="" className="wikios-portal-card-flag" loading="lazy" />
+                    <img
+                      src={match.flagUrl}
+                      alt=""
+                      className="wikios-portal-card-flag"
+                      loading="lazy"
+                    />
                   ) : (
-                    <FileText className="h-3.5 w-3.5 opacity-40 shrink-0" />
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
                   )}
                   <span className="wikios-portal-card-title">{m.title}</span>
                   {match?.economicTier && (
@@ -89,7 +97,7 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
       )}
 
       {pages.length === 0 && subcategories.length === 0 && (
-        <p className="text-[var(--wikios-text-dim)] py-8 text-center text-sm">
+        <p className="py-8 text-center text-sm text-[var(--wikios-text-dim)]">
           This category is empty.
         </p>
       )}

@@ -152,7 +152,7 @@ export function RealTimeIntelligenceDashboard({
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 {latestUpdate.category && (
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     {React.createElement(
                       categoryIcons[latestUpdate.category as keyof typeof categoryIcons] ||
                         Activity,
@@ -216,7 +216,7 @@ export function RealTimeIntelligenceDashboard({
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
                         <div className="min-w-0 flex-1">
                           <div className="mb-1 flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">

@@ -175,7 +175,8 @@ export function CardPacksAdmin() {
       packType: formData.packType,
       priceCredits: formData.priceCredits,
       cardCount: formData.cardCount,
-      guaranteedRarity: formData.guaranteedRarity === "none" ? undefined : formData.guaranteedRarity,
+      guaranteedRarity:
+        formData.guaranteedRarity === "none" ? undefined : formData.guaranteedRarity,
       isActive: formData.isActive,
     });
   };
@@ -191,7 +192,8 @@ export function CardPacksAdmin() {
         packType: formData.packType,
         priceCredits: formData.priceCredits,
         cardCount: formData.cardCount,
-      guaranteedRarity: formData.guaranteedRarity === "none" ? undefined : formData.guaranteedRarity,
+        guaranteedRarity:
+          formData.guaranteedRarity === "none" ? undefined : formData.guaranteedRarity,
         isActive: formData.isActive,
       },
     });

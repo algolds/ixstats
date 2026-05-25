@@ -412,7 +412,9 @@ export function UnifiedNotificationCenter({
             <div className="flex items-center gap-2">
               {config.enableFiltering && (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  <DropdownMenuTrigger
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
                     <Filter className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>

@@ -208,7 +208,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       <CardHeader className="relative z-10 pb-4">
         <div className="flex items-start gap-4">
           {/* Flag + Coat of Arms */}
-          <div className="flex-shrink-0 space-y-2">
+          <div className="shrink-0 space-y-2">
             {data.flagUrl ? (
               <div className="border-border overflow-hidden rounded-lg border shadow-md">
                 <img
@@ -334,7 +334,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                     <div className="space-y-1.5 px-3 pb-3">
                       {section.fields.map((field, i) => (
                         <div key={i} className="flex items-start justify-between gap-3 py-1">
-                          <span className="text-muted-foreground flex-shrink-0 text-sm">
+                          <span className="text-muted-foreground shrink-0 text-sm">
                             {field.label}:
                           </span>
                           <span
@@ -399,7 +399,7 @@ function RawInfoboxToggle({ rawInfobox }: { rawInfobox: Record<string, string> }
               <div className="bg-muted/30 max-h-64 space-y-1 overflow-y-auto rounded-md p-3 font-mono text-xs">
                 {entries.map(([key, value]) => (
                   <div key={key} className="flex gap-2">
-                    <span className="flex-shrink-0 text-blue-500">{key}:</span>
+                    <span className="shrink-0 text-blue-500">{key}:</span>
                     <span className="text-muted-foreground truncate">{value}</span>
                   </div>
                 ))}

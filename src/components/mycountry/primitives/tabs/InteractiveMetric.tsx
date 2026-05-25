@@ -6,7 +6,15 @@ import { AnimatedNumber } from "~/components/ui/animated-number";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp, Info, ExternalLink } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  ExternalLink,
+} from "lucide-react";
 
 export interface InteractiveMetricProps {
   value: number;
@@ -143,11 +151,11 @@ export function InteractiveMetric({
   className = "",
 }: InteractiveMetricProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   const colors = colorConfig[color];
   const sizes = sizeConfig[size];
   const isClickable = !!onClick || !!expandedContent;
-  
+
   const handleClick = () => {
     if (onClick) {
       onClick();
@@ -159,18 +167,16 @@ export function InteractiveMetric({
   // Trend display
   const TrendDisplay = () => {
     if (!trend) return null;
-    
+
     const icons = {
       up: TrendingUp,
       down: TrendingDown,
       stable: Minus,
     };
-    
+
     const TrendIcon = icons[trend.direction];
-    const isPositive = trend.isPositive !== undefined 
-      ? trend.isPositive 
-      : trend.direction === "up";
-    
+    const isPositive = trend.isPositive !== undefined ? trend.isPositive : trend.direction === "up";
+
     return (
       <span
         className={cn(
@@ -201,21 +207,17 @@ export function InteractiveMetric({
       whileTap={isClickable ? { scale: 0.98 } : undefined}
     >
       <div className={cn("flex items-start", sizes.gap)}>
-        {Icon && (
-          <Icon className={cn(sizes.icon, colors.icon, "flex-shrink-0 mt-1")} />
-        )}
-        <div className="flex-1 min-w-0">
+        {Icon && <Icon className={cn(sizes.icon, colors.icon, "mt-1 shrink-0")} />}
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <span className={cn(sizes.label, "text-muted-foreground font-medium")}>
-              {label}
-            </span>
+            <span className={cn(sizes.label, "text-muted-foreground font-medium")}>{label}</span>
             {tooltip && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Info className="h-3 w-3 text-muted-foreground" />
+                  <Info className="text-muted-foreground h-3 w-3" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs max-w-xs">{tooltip}</p>
+                  <p className="max-w-xs text-xs">{tooltip}</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -224,11 +226,11 @@ export function InteractiveMetric({
                 animate={{ rotate: isExpanded ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-3 w-3" />
               </motion.span>
             )}
           </div>
-          
+
           <div className={cn("flex items-baseline gap-2", sizes.gap)}>
             <span className={cn(sizes.value, "font-bold tracking-tight", colors.text)}>
               {prefix}
@@ -241,17 +243,13 @@ export function InteractiveMetric({
             </span>
             <TrendDisplay />
           </div>
-          
-          {description && (
-            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-          )}
+
+          {description && <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>}
         </div>
-        
-        {onClick && (
-          <ExternalLink className={cn(sizes.icon, "text-muted-foreground flex-shrink-0")} />
-        )}
+
+        {onClick && <ExternalLink className={cn(sizes.icon, "text-muted-foreground shrink-0")} />}
       </div>
-      
+
       {/* Expanded content */}
       <AnimatePresence>
         {isExpanded && expandedContent && (
@@ -262,9 +260,7 @@ export function InteractiveMetric({
             transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             className="overflow-hidden"
           >
-            <div className="pt-3 border-t border-border/50 mt-3">
-              {expandedContent}
-            </div>
+            <div className="border-border/50 mt-3 border-t pt-3">{expandedContent}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -295,9 +291,7 @@ export function MetricTooltip({
         <div className="text-center">
           <p className="font-semibold">{label}</p>
           <p className="text-lg font-bold">{value}</p>
-          {description && (
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
-          )}
+          {description && <p className="text-muted-foreground mt-1 text-xs">{description}</p>}
         </div>
       </TooltipContent>
     </Tooltip>

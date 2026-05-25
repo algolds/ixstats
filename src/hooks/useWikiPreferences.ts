@@ -26,10 +26,10 @@ const DEFAULTS: WikiPreferences = {
 export function useWikiPreferences(): WikiPreferences & { isLoading: boolean } {
   const { user } = useUser();
 
-  const { data, isLoading } = api.users.getPreferences.useQuery(
-    undefined,
-    { enabled: !!user, staleTime: 5 * 60_000 }
-  );
+  const { data, isLoading } = api.users.getPreferences.useQuery(undefined, {
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
 
   if (!data) {
     return { ...DEFAULTS, isLoading };
@@ -37,8 +37,10 @@ export function useWikiPreferences(): WikiPreferences & { isLoading: boolean } {
 
   return {
     autoScan: (data as any).wikiAutoScan ?? DEFAULTS.autoScan,
-    sourcePriority: ((data as any).wikiSourcePriority ?? DEFAULTS.sourcePriority) as WikiPreferences["sourcePriority"],
-    displayMode: ((data as any).wikiDisplayMode ?? DEFAULTS.displayMode) as WikiPreferences["displayMode"],
+    sourcePriority: ((data as any).wikiSourcePriority ??
+      DEFAULTS.sourcePriority) as WikiPreferences["sourcePriority"],
+    displayMode: ((data as any).wikiDisplayMode ??
+      DEFAULTS.displayMode) as WikiPreferences["displayMode"],
     isLoading,
   };
 }

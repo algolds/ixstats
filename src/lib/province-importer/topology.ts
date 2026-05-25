@@ -20,12 +20,7 @@ import {
   union,
 } from "@turf/turf";
 import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
-import type {
-  ProvinceFeature,
-  TopologyReport,
-  GapReport,
-  OverlapReport,
-} from "./types";
+import type { ProvinceFeature, TopologyReport, GapReport, OverlapReport } from "./types";
 
 // ──────────────────────────────────────────────
 // Main Validation Entry Point
@@ -48,7 +43,9 @@ export function validateTopology(
       coveragePercent: 0,
       totalProvincesArea: 0,
       countryArea: 0,
-      featureIssues: [{ provinceIndex: -1, provinceName: "(none)", issues: ["No provinces included"] }],
+      featureIssues: [
+        { provinceIndex: -1, provinceName: "(none)", issues: ["No provinces included"] },
+      ],
     };
   }
 
@@ -66,11 +63,14 @@ export function validateTopology(
   const overlaps = detectOverlaps(included);
 
   // Coverage
-  const coveragePercent = countryArea > 0
-    ? Math.min(100, (totalProvincesArea / countryArea) * 100)
-    : 0;
+  const coveragePercent =
+    countryArea > 0 ? Math.min(100, (totalProvincesArea / countryArea) * 100) : 0;
 
-  const valid = featureIssues.length === 0 && gaps.length === 0 && overlaps.length === 0 && coveragePercent > 95;
+  const valid =
+    featureIssues.length === 0 &&
+    gaps.length === 0 &&
+    overlaps.length === 0 &&
+    coveragePercent > 95;
 
   return {
     valid,
@@ -109,9 +109,7 @@ export function detectGaps(
     let unionGeom: Feature<Polygon | MultiPolygon> | null = provincePolygons[0]!;
     for (let i = 1; i < provincePolygons.length; i++) {
       try {
-        const result = union(
-          featureCollection([unionGeom!, provincePolygons[i]!])
-        );
+        const result = union(featureCollection([unionGeom!, provincePolygons[i]!]));
         if (result) unionGeom = result as Feature<Polygon | MultiPolygon>;
       } catch {
         // Skip invalid geometry in union
@@ -124,9 +122,7 @@ export function detectGaps(
     const countryFeature = toTurfFeature(countryBorder);
     if (!countryFeature) return [];
 
-    const diff = difference(
-      featureCollection([countryFeature, unionGeom])
-    );
+    const diff = difference(featureCollection([countryFeature, unionGeom]));
 
     if (!diff || !diff.geometry) return [];
 
@@ -241,7 +237,10 @@ export function autoFillGaps(
   countryBorder: Polygon | MultiPolygon
 ): ProvinceFeature[] {
   const countryArea = computeAreaSqKm(countryBorder);
-  const result = provinces.map((p) => ({ ...p, geometry: { ...p.geometry } as Polygon | MultiPolygon }));
+  const result = provinces.map((p) => ({
+    ...p,
+    geometry: { ...p.geometry } as Polygon | MultiPolygon,
+  }));
 
   for (const gap of gaps) {
     if (!gap.autoFixable) continue;
@@ -295,7 +294,10 @@ export function resolveOverlaps(
   provinces: ProvinceFeature[],
   overlaps: OverlapReport[]
 ): ProvinceFeature[] {
-  const result = provinces.map((p) => ({ ...p, geometry: { ...p.geometry } as Polygon | MultiPolygon }));
+  const result = provinces.map((p) => ({
+    ...p,
+    geometry: { ...p.geometry } as Polygon | MultiPolygon,
+  }));
 
   for (const overlap of overlaps) {
     // Find the two provinces
@@ -378,9 +380,7 @@ export function simplifyProvinces(
 // Individual Feature Validation
 // ──────────────────────────────────────────────
 
-function validateIndividualFeatures(
-  provinces: ProvinceFeature[]
-): TopologyReport["featureIssues"] {
+function validateIndividualFeatures(provinces: ProvinceFeature[]): TopologyReport["featureIssues"] {
   const issues: TopologyReport["featureIssues"] = [];
 
   for (let i = 0; i < provinces.length; i++) {
@@ -390,9 +390,8 @@ function validateIndividualFeatures(
     const featureIssues: string[] = [];
 
     // Check geometry validity
-    const rings = p.geometry.type === "Polygon"
-      ? p.geometry.coordinates
-      : p.geometry.coordinates.flat();
+    const rings =
+      p.geometry.type === "Polygon" ? p.geometry.coordinates : p.geometry.coordinates.flat();
 
     for (let ri = 0; ri < rings.length; ri++) {
       const ring = rings[ri]!;
@@ -483,10 +482,7 @@ function bboxOverlap(
   return !(a[2] < b[0] || b[2] < a[0] || a[3] < b[1] || b[3] < a[1]);
 }
 
-function findAdjacentProvinces(
-  gapGeom: Polygon,
-  provinces: ProvinceFeature[]
-): string[] {
+function findAdjacentProvinces(gapGeom: Polygon, provinces: ProvinceFeature[]): string[] {
   const adjacent: string[] = [];
   const gapBbox = bbox(makeFeature(gapGeom)) as [number, number, number, number];
 
@@ -549,7 +545,10 @@ export function clipProvincesToBorder(
     try {
       const provFeat = makeFeature(p.geometry);
       const clipped = intersect(
-        featureCollection([provFeat as Feature<Polygon | MultiPolygon>, countryFeat as Feature<Polygon | MultiPolygon>])
+        featureCollection([
+          provFeat as Feature<Polygon | MultiPolygon>,
+          countryFeat as Feature<Polygon | MultiPolygon>,
+        ])
       );
 
       if (!clipped) {
@@ -592,7 +591,10 @@ export function clipGeometryToBorder(
     const feat = makeFeature(geometry);
     const borderFeat = makeFeature(countryBorder);
     const clipped = intersect(
-      featureCollection([feat as Feature<Polygon | MultiPolygon>, borderFeat as Feature<Polygon | MultiPolygon>])
+      featureCollection([
+        feat as Feature<Polygon | MultiPolygon>,
+        borderFeat as Feature<Polygon | MultiPolygon>,
+      ])
     );
 
     if (!clipped) return { geometry, wasClipped: true };

@@ -351,7 +351,7 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
           {/* Type icon */}
           <div
             className={cn(
-              "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg",
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
               "bg-white/10 transition-colors group-hover:bg-white/20"
             )}
           >
@@ -371,7 +371,7 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
               </div>
 
               {/* Relevance score */}
-              <div className="flex-shrink-0 text-xs text-[--intel-silver]">
+              <div className="shrink-0 text-xs text-[--intel-silver]">
                 {Math.round(result.relevanceScore * 100)}% match
               </div>
             </div>
@@ -449,7 +449,7 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
           </div>
 
           {/* Actions */}
-          <div className="flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button className="rounded p-1 text-[--intel-silver] transition-colors hover:text-white">
               <RiBookmarkLine className="h-4 w-4" />
             </button>

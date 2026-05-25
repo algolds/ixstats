@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { DashboardPlayerWidget } from "./DashboardPlayerWidget";
-import { useUserCountry } from "~/hooks/useUserCountry";
+import { DashboardQuickLinks } from "./DashboardQuickLinks";
+import { VaultWidget } from "~/components/mycountry/VaultWidget";
 
 interface DashboardSidebarLayoutProps {
   children: ReactNode;
@@ -15,7 +16,6 @@ export function DashboardSidebarLayout({
   heroSection,
   alerts,
 }: DashboardSidebarLayoutProps) {
-  const { userProfile } = useUserCountry();
   return (
     <div className="space-y-0">
       {/* Hero Section */}
@@ -28,9 +28,11 @@ export function DashboardSidebarLayout({
         {/* Main Layout — icon rail + content */}
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed icon rail */}
-          <div className="relative z-30 hidden flex-shrink-0 lg:block">
+          <div className="relative z-30 hidden shrink-0 lg:block">
             <div className="sticky top-6 space-y-3">
               <DashboardPlayerWidget />
+              <VaultWidget />
+              <DashboardQuickLinks />
             </div>
           </div>
 

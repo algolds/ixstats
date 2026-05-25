@@ -1103,7 +1103,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                     {selectedRelation.recentActivity && (
                       <div className="rounded-lg border border-[--intel-amber]/20 bg-[--intel-amber]/10 p-3">
                         <div className="flex items-start gap-2">
-                          <RiInformationLine className="mt-0.5 h-4 w-4 flex-shrink-0 text-[--intel-amber]" />
+                          <RiInformationLine className="mt-0.5 h-4 w-4 shrink-0 text-[--intel-amber]" />
                           <div>
                             <p className="text-sm font-medium text-[--intel-amber]">
                               Recent Activity

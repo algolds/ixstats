@@ -152,7 +152,11 @@ export async function runMapPipeline(
         layers[layerType] = collection;
       }
 
-      report("parsing", 50, `Generated: ${world.stats.countryCount} countries, ${world.stats.altitudeZoneCount} altitude zones`);
+      report(
+        "parsing",
+        50,
+        `Generated: ${world.stats.countryCount} countries, ${world.stats.altitudeZoneCount} altitude zones`
+      );
     }
 
     // ────── Stage 2: Enrich altitude features with elevation metadata ──────
@@ -179,24 +183,24 @@ export async function runMapPipeline(
             props.zoneName = zone.zoneName;
             props.elevationMin = zone.elevationMin;
             props.elevationMax = zone.elevationMax;
-            props.elevationMidpoint = Math.round(
-              (zone.elevationMin + zone.elevationMax) / 2
-            );
+            props.elevationMidpoint = Math.round((zone.elevationMin + zone.elevationMax) / 2);
             props.elevationLabel = `${zone.elevationMin}-${zone.elevationMax}m`;
             enriched++;
           }
         }
       }
-      report("enrichment", 70, `Enriched ${enriched}/${layers.altitudes.features.length} altitude features`);
+      report(
+        "enrichment",
+        70,
+        `Enriched ${enriched}/${layers.altitudes.features.length} altitude features`
+      );
     }
 
     // ────── Stage 3: Validate ──────
     report("validation", 80, "Validating layers...");
 
     for (const [layerType, collection] of Object.entries(layers)) {
-      const invalidFeatures = collection.features.filter(
-        (f) => !f.geometry || !f.geometry.type
-      );
+      const invalidFeatures = collection.features.filter((f) => !f.geometry || !f.geometry.type);
       if (invalidFeatures.length > 0) {
         warnings.push(
           `${layerType}: ${invalidFeatures.length} features with invalid/missing geometry`
@@ -233,15 +237,13 @@ export async function runMapPipeline(
 /**
  * Validate a pipeline result before importing to database.
  */
-export function validatePipelineResult(
-  result: PipelineResult
-): { valid: boolean; errors: string[] } {
+export function validatePipelineResult(result: PipelineResult): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
-  const totalFeatures = Object.values(result.metadata.featureCounts).reduce(
-    (sum, n) => sum + n,
-    0
-  );
+  const totalFeatures = Object.values(result.metadata.featureCounts).reduce((sum, n) => sum + n, 0);
   if (totalFeatures === 0) {
     errors.push("No features were produced by the pipeline");
   }
@@ -253,9 +255,7 @@ export function validatePipelineResult(
 
   // Check for features without IDs
   for (const [layerType, collection] of Object.entries(result.layers)) {
-    const noId = collection.features.filter(
-      (f) => !f.id && !f.properties?.featureId
-    );
+    const noId = collection.features.filter((f) => !f.id && !f.properties?.featureId);
     if (noId.length > 0) {
       errors.push(`${layerType}: ${noId.length} features missing featureId`);
     }

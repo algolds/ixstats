@@ -201,7 +201,7 @@ export const CardCarousel = React.memo<CardCarouselProps>(
                   delay: index * 0.1,
                   ease: "easeOut",
                 }}
-                className="flex-shrink-0 snap-center"
+                className="shrink-0 snap-center"
               >
                 <CardDisplay card={card} size={cardSize} onClick={onCardClick} />
               </motion.div>
@@ -209,7 +209,7 @@ export const CardCarousel = React.memo<CardCarouselProps>(
           </AnimatePresence>
 
           {/* Padding at the end */}
-          <div className="w-2 flex-shrink-0 sm:w-4" />
+          <div className="w-2 shrink-0 sm:w-4" />
         </div>
 
         {/* Navigation arrows */}

@@ -161,7 +161,7 @@ body {
 }
 
 /* Dark mode styling for card backgrounds */
-.dark .bg-card {
+.dark .bg-card:not([class*="glass-"]) {
   background: rgba(31, 41, 55, 0.9) !important;
   border-color: rgba(75, 85, 99, 0.4) !important;
 }
@@ -182,9 +182,7 @@ body {
 /* Focus styles for accessibility */
 .focus\:ring-2:focus {
   outline: none;
-  ring-width: 2px;
-  ring-color: var(--color-brand-primary);
-  ring-opacity: 0.5;
+  box-shadow: 0 0 0 2px var(--color-brand-primary);
 }
 
 /* High contrast mode support */

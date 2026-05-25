@@ -44,9 +44,7 @@ function MessagesRouterInner() {
   const [activeFolder, setActiveFolder] = useState<MessageFolder>(() =>
     getFolderFromPathname(pathname)
   );
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [folderNavExpanded, setFolderNavExpanded] = useState(false);
@@ -108,10 +106,7 @@ function MessagesRouterInner() {
 
   // ── Selected conversation object ──
   const selectedConversation = useMemo(
-    () =>
-      activeFolderConversations.find(
-        (c: any) => c.id === selectedConversationId
-      ) ?? null,
+    () => activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null,
     [activeFolderConversations, selectedConversationId]
   );
 
@@ -119,111 +114,107 @@ function MessagesRouterInner() {
   const [presenceMap, setPresenceMap] = useState<Record<string, string>>({});
 
   // ── WebSocket ──
-  const wsOptions = useMemo(() => ({
-    accountId: currentUserId,
-    autoReconnect: true,
-    onMessageUpdate: (data: any) => {
-      if (!selectedConversationId || data.conversationId !== selectedConversationId) return;
+  const wsOptions = useMemo(
+    () => ({
+      accountId: currentUserId,
+      autoReconnect: true,
+      onMessageUpdate: (data: any) => {
+        if (!selectedConversationId || data.conversationId !== selectedConversationId) return;
 
-      const queryKey = { conversationId: selectedConversationId, userId: currentUserId };
+        const queryKey = { conversationId: selectedConversationId, userId: currentUserId };
 
-      if (data.type === "message:new") {
-        utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-          if (!old) return old;
-          // Avoid duplicate messages
-          if (old.messages.some((m: any) => m.id === data.messageId)) return old;
+        if (data.type === "message:new") {
+          utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+            if (!old) return old;
+            // Avoid duplicate messages
+            if (old.messages.some((m: any) => m.id === data.messageId)) return old;
 
-          let senderAccount;
-          if (data.accountId === currentUserId) {
-            senderAccount = {
-              id: currentUserId,
-              username: user?.username ?? "me",
-              displayName: user?.fullName ?? user?.username ?? "Me",
-              profileImageUrl: user?.imageUrl ?? null,
-              accountType: "country" as const,
+            let senderAccount;
+            if (data.accountId === currentUserId) {
+              senderAccount = {
+                id: currentUserId,
+                username: user?.username ?? "me",
+                displayName: user?.fullName ?? user?.username ?? "Me",
+                profileImageUrl: user?.imageUrl ?? null,
+                accountType: "country" as const,
+              };
+            } else {
+              const participant = selectedConversation?.otherParticipants.find(
+                (p: any) => p.accountId === data.accountId
+              );
+              senderAccount = participant?.account ?? {
+                id: data.accountId,
+                username: "user",
+                displayName: "User",
+                profileImageUrl: null,
+                accountType: "country" as const,
+              };
+            }
+
+            const newMessage = {
+              id: data.messageId,
+              conversationId: data.conversationId!,
+              accountId: data.accountId,
+              account: senderAccount,
+              content: data.content ?? "",
+              messageType: "text" as const,
+              ixTimeTimestamp: new Date(data.timestamp),
+              createdAt: new Date(data.timestamp),
+              reactions: {},
+              mentions: [],
+              attachments: [],
+              replyTo: undefined,
+              readReceipts: [],
+              isSystem: false,
+              editedAt: null,
+              deletedAt: null,
+              source: null,
             };
-          } else {
-            const participant = selectedConversation?.otherParticipants.find(
-              (p: any) => p.accountId === data.accountId
-            );
-            senderAccount = participant?.account ?? {
-              id: data.accountId,
-              username: "user",
-              displayName: "User",
-              profileImageUrl: null,
-              accountType: "country" as const,
+
+            return {
+              ...old,
+              messages: [newMessage, ...old.messages],
             };
-          }
+          });
 
-          const newMessage = {
-            id: data.messageId,
-            conversationId: data.conversationId!,
-            accountId: data.accountId,
-            account: senderAccount,
-            content: data.content ?? "",
-            messageType: "text" as const,
-            ixTimeTimestamp: new Date(data.timestamp),
-            createdAt: new Date(data.timestamp),
-            reactions: {},
-            mentions: [],
-            attachments: [],
-            replyTo: undefined,
-            readReceipts: [],
-            isSystem: false,
-            editedAt: null,
-            deletedAt: null,
-            source: null,
-          };
-
-          return {
-            ...old,
-            messages: [newMessage, ...old.messages],
-          };
-        });
-
-        // Refetch conversations list to update preview/unread state
+          // Refetch conversations list to update preview/unread state
+          void refetchConversations();
+        } else if (data.type === "message:updated") {
+          utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              messages: old.messages.map((m: any) =>
+                m.id === data.messageId
+                  ? { ...m, content: data.content ?? m.content, editedAt: new Date(data.timestamp) }
+                  : m
+              ),
+            };
+          });
+        } else if (data.type === "message:deleted") {
+          utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              messages: old.messages.filter((m: any) => m.id !== data.messageId),
+            };
+          });
+        }
+      },
+      onConversationUpdate: () => {
         void refetchConversations();
-      } else if (data.type === "message:updated") {
-        utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            messages: old.messages.map((m: any) =>
-              m.id === data.messageId
-                ? { ...m, content: data.content ?? m.content, editedAt: new Date(data.timestamp) }
-                : m
-            ),
-          };
-        });
-      } else if (data.type === "message:deleted") {
-        utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            messages: old.messages.filter((m: any) => m.id !== data.messageId),
-          };
-        });
-      }
-    },
-    onConversationUpdate: () => {
-      void refetchConversations();
-    },
-    onPresenceUpdate: (data: any) => {
-      if (data.accountId) {
-        setPresenceMap((prev) => ({
-          ...prev,
-          [data.accountId]: data.status,
-        }));
-      }
-    },
-  }), [
-    currentUserId,
-    refetchConversations,
-    selectedConversationId,
-    selectedConversation,
-    user,
-    utils
-  ]);
+      },
+      onPresenceUpdate: (data: any) => {
+        if (data.accountId) {
+          setPresenceMap((prev) => ({
+            ...prev,
+            [data.accountId]: data.status,
+          }));
+        }
+      },
+    }),
+    [currentUserId, refetchConversations, selectedConversationId, selectedConversation, user, utils]
+  );
 
   const {
     clientState: rawClientState,
@@ -294,20 +285,16 @@ function MessagesRouterInner() {
       }
 
       const participantIds =
-        participantId === currentUserId
-          ? [currentUserId]
-          : [currentUserId, participantId];
+        participantId === currentUserId ? [currentUserId] : [currentUserId, participantId];
 
       // Source based on active folder
-      const source =
-        activeFolder === "diplomatic" ? "diplomatic" : "thinkshare";
+      const source = activeFolder === "diplomatic" ? "diplomatic" : "thinkshare";
 
       try {
         const result = await createConversation.mutateAsync({
           participantIds,
           source: source as any,
-          conversationType:
-            activeFolder === "diplomatic" ? "diplomatic" : undefined,
+          conversationType: activeFolder === "diplomatic" ? "diplomatic" : undefined,
         });
         setSelectedConversationId(result.id);
         setShowNewConversation(false);
@@ -317,13 +304,7 @@ function MessagesRouterInner() {
         notify.error(error.message || "Failed to create conversation");
       }
     },
-    [
-      currentUserId,
-      activeFolder,
-      createConversation,
-      notify,
-      refetchConversations,
-    ]
+    [currentUserId, activeFolder, createConversation, notify, refetchConversations]
   );
 
   // ── Render ──
@@ -363,9 +344,7 @@ function MessagesRouterInner() {
               sendTypingIndicator={sendTypingIndicator}
             />
           ) : activeFolder === "groups" ? (
-            <MessagesGroupsPanel
-              onSelectGroup={setSelectedConversationId}
-            />
+            <MessagesGroupsPanel onSelectGroup={setSelectedConversationId} />
           ) : (
             <MessagesEmptyState
               activeFolder={activeFolder}

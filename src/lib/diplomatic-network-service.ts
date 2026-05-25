@@ -258,10 +258,17 @@ export class DiplomaticNetworkService {
     // Economic Multiplier (1.0 - 2.0)
     // Based on trade relationships and embassy economic specializations
     const tradeRelationships = relationships.filter(
-      (r: { relationship: string; treaties: string[]; tradeVolume: number }) => r.treaties?.includes("Trade Agreement") || r.tradeVolume > 100000
+      (r: { relationship: string; treaties: string[]; tradeVolume: number }) =>
+        r.treaties?.includes("Trade Agreement") || r.tradeVolume > 100000
     ).length;
     const economicEmbassies = embassies.filter(
-      (e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.specialization === "economic" || e.specialization === "trade"
+      (e: {
+        specialization: string;
+        level: number;
+        type: string;
+        status: string;
+        metrics: { participants: number };
+      }) => e.specialization === "economic" || e.specialization === "trade"
     ).length;
 
     const baseEconomicBonus = Math.min(0.5, tradeRelationships * 0.05 + economicEmbassies * 0.08);
@@ -270,11 +277,18 @@ export class DiplomaticNetworkService {
 
     // Research Speed Bonus (0-50%)
     // Based on research cooperation treaties and cultural exchanges
-    const researchTreaties = relationships.filter((r: { relationship: string; treaties: string[]; tradeVolume: number }) =>
-      r.treaties?.includes("Research Cooperation")
+    const researchTreaties = relationships.filter(
+      (r: { relationship: string; treaties: string[]; tradeVolume: number }) =>
+        r.treaties?.includes("Research Cooperation")
     ).length;
     const culturalPrograms = exchanges.filter(
-      (e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.type === "technology" || e.type === "education"
+      (e: {
+        specialization: string;
+        level: number;
+        type: string;
+        status: string;
+        metrics: { participants: number };
+      }) => e.type === "technology" || e.type === "education"
     ).length;
 
     const researchSpeedBonus = Math.min(
@@ -284,10 +298,27 @@ export class DiplomaticNetworkService {
 
     // Cultural Influence Bonus (0-100 points)
     // Based on cultural exchanges and embassy cultural specializations
-    const culturalEmbassies = embassies.filter((e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.specialization === "cultural").length;
-    const activeExchanges = exchanges.filter((e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.status === "active").length;
+    const culturalEmbassies = embassies.filter(
+      (e: {
+        specialization: string;
+        level: number;
+        type: string;
+        status: string;
+        metrics: { participants: number };
+      }) => e.specialization === "cultural"
+    ).length;
+    const activeExchanges = exchanges.filter(
+      (e: {
+        specialization: string;
+        level: number;
+        type: string;
+        status: string;
+        metrics: { participants: number };
+      }) => e.status === "active"
+    ).length;
     const totalParticipants = exchanges.reduce(
-      (sum: number, e: { metrics: { participants: number } }) => sum + (e.metrics?.participants || 0),
+      (sum: number, e: { metrics: { participants: number } }) =>
+        sum + (e.metrics?.participants || 0),
       0
     );
 
@@ -299,10 +330,17 @@ export class DiplomaticNetworkService {
     // Intelligence Gathering Bonus (0-30%)
     // Based on embassy network coverage and security specializations
     const securityEmbassies = embassies.filter(
-      (e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.specialization === "security" || e.level >= 3
+      (e: {
+        specialization: string;
+        level: number;
+        type: string;
+        status: string;
+        metrics: { participants: number };
+      }) => e.specialization === "security" || e.level >= 3
     ).length;
     const allianceRelationships = relationships.filter(
-      (r: { relationship: string; treaties: string[]; tradeVolume: number }) => r.relationship === "alliance"
+      (r: { relationship: string; treaties: string[]; tradeVolume: number }) =>
+        r.relationship === "alliance"
     ).length;
 
     const intelligenceGatheringBonus = Math.min(
@@ -416,7 +454,10 @@ export class DiplomaticNetworkService {
 
     if (
       allianceCandidates.length > 0 &&
-      relationships.filter((r: { relationship: string; treaties: string[]; tradeVolume: number }) => r.relationship === "alliance").length < 3
+      relationships.filter(
+        (r: { relationship: string; treaties: string[]; tradeVolume: number }) =>
+          r.relationship === "alliance"
+      ).length < 3
     ) {
       const target = allianceCandidates.sort((a: any, b: any) => b.strength - a.strength)[0];
       opportunities.push({

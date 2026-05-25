@@ -100,7 +100,8 @@ function cellHabitability(
 
   // Precipitation factor: moderate is best
   let precipScore: number;
-  if (precipNorm < 0.05) precipScore = 0.1; // desert
+  if (precipNorm < 0.05)
+    precipScore = 0.1; // desert
   else if (precipNorm < 0.2) precipScore = 0.3 + precipNorm * 3;
   else if (precipNorm <= 0.6) precipScore = 1.0;
   else precipScore = 1.0 - (precipNorm - 0.6) * 0.5; // too wet
@@ -118,7 +119,10 @@ function cellHabitability(
   // Coastal bonus (trade access)
   const coastBonus = coastDist < 5 ? 0.2 : coastDist < 15 ? 0.1 : 0;
 
-  return Math.min(1, tempScore * 0.3 + precipScore * 0.25 + elevScore * 0.25 + riverBonus + coastBonus);
+  return Math.min(
+    1,
+    tempScore * 0.3 + precipScore * 0.25 + elevScore * 0.25 + riverBonus + coastBonus
+  );
 }
 
 // ──────────────────────────────────────────────
@@ -155,7 +159,12 @@ export function generatePopulation(params: PopulationGenParams): PopulationResul
       const rx = ri % width;
       const ry = Math.floor(ri / width);
       const rd = riverDist[ri]!;
-      for (const [ddx, ddy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+      for (const [ddx, ddy] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ] as const) {
         const rnx = rx + ddx;
         const rny = ry + ddy;
         if (rnx < 0 || rnx >= width || rny < 0 || rny >= height) continue;
@@ -199,8 +208,8 @@ export function generatePopulation(params: PopulationGenParams): PopulationResul
   }
 
   // Step 2: Distribute population
-  const totalPop = params.totalPopulation ??
-    Math.max(1_000_000, (params.countryCount ?? 30) * 5_000_000);
+  const totalPop =
+    params.totalPopulation ?? Math.max(1_000_000, (params.countryCount ?? 30) * 5_000_000);
 
   const density = new Float32Array(cellCount);
   if (totalHab > 0) {
@@ -245,7 +254,12 @@ export function generatePopulation(params: PopulationGenParams): PopulationResul
         }
       }
       if (bestIdx >= 0 && bestHab > 0.3) {
-        candidates.push({ idx: bestIdx, hab: bestHab, x: bestIdx % width, y: Math.floor(bestIdx / width) });
+        candidates.push({
+          idx: bestIdx,
+          hab: bestHab,
+          x: bestIdx % width,
+          y: Math.floor(bestIdx / width),
+        });
       }
     }
   }
@@ -291,14 +305,20 @@ export function generatePopulation(params: PopulationGenParams): PopulationResul
           : "village";
 
     // Population scaling by tier (Azgaar-inspired)
-    const tierMultiplier = tier === "capital" ? 100 : tier === "major_city" ? 50 : tier === "town" ? 20 : 5;
+    const tierMultiplier =
+      tier === "capital" ? 100 : tier === "major_city" ? 50 : tier === "town" ? 20 : 5;
     const cityPop = Math.round(density[cand.idx]! * tierMultiplier * (0.8 + rng() * 0.4));
 
     // Port detection (Azgaar pattern: safe harbor = exactly 1 adjacent water cell)
     let isPort = false;
     let waterCount = 0;
     let waterCellIdx = -1;
-    for (const [ddx, ddy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+    for (const [ddx, ddy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ] as const) {
       const wnx = cand.x + ddx;
       const wny = cand.y + ddy;
       if (wnx >= 0 && wnx < width && wny >= 0 && wny < height) {
@@ -391,7 +411,12 @@ function computeBfsDistance(
 
       if (fromOcean && isOcean) {
         // Check if adjacent to land
-        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+        for (const [dx, dy] of [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ] as const) {
           const nx = x + dx;
           const ny = y + dy;
           if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
@@ -413,7 +438,12 @@ function computeBfsDistance(
     const y = Math.floor(idx / width);
     const d = dist[idx]!;
 
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+    for (const [dx, dy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ] as const) {
       const nx = x + dx;
       const ny = y + dy;
       if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;

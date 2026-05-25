@@ -59,10 +59,8 @@ export function useOverviewHealthRings({
     { countryId: countryId ?? "" },
     { enabled }
   );
-  const { data: intelligenceOverview, isLoading: l7 } = api.unifiedIntelligence.getOverview.useQuery(
-    { countryId: countryId ?? "" },
-    { enabled }
-  );
+  const { data: intelligenceOverview, isLoading: l7 } =
+    api.unifiedIntelligence.getOverview.useQuery({ countryId: countryId ?? "" }, { enabled });
 
   // ---- Defense data ----
   const { data: securityAssessment, isLoading: l8 } = api.security.getSecurityAssessment.useQuery(
@@ -82,30 +80,31 @@ export function useOverviewHealthRings({
     const activeMeetings = meetings?.filter((m) => m.status === "in_progress").length ?? 0;
     const totalIssues = issueCount?.total ?? 0;
     const urgentIssues = issueCount?.urgent ?? 0;
-    const pendingActions = meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
+    const pendingActions =
+      meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
 
     const executiveHealth = clamp(
-      50
-      + Math.min(activePolicies * 4, 20)
-      + Math.min(activeMeetings * 5, 10)
-      - Math.min(totalIssues * 3, 15)
-      - Math.min(urgentIssues * 5, 15)
-      - Math.min(pendingActions * 2, 10)
+      50 +
+        Math.min(activePolicies * 4, 20) +
+        Math.min(activeMeetings * 5, 10) -
+        Math.min(totalIssues * 3, 15) -
+        Math.min(urgentIssues * 5, 15) -
+        Math.min(pendingActions * 2, 10)
     );
 
     // ---- Diplomatic Health ----
-    const activeEmbassies = embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+    const activeEmbassies =
+      embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
     const totalEmbassies = embassies?.length ?? 0;
     const totalRelations = relations?.length ?? 0;
-    const avgStrength = totalRelations > 0
-      ? relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations
-      : 0;
+    const avgStrength =
+      totalRelations > 0
+        ? relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations
+        : 0;
 
     const embassyRatio = totalEmbassies > 0 ? activeEmbassies / totalEmbassies : 0;
     const diplomaticHealth = clamp(
-      avgStrength * 0.5
-      + embassyRatio * 30
-      + Math.min(totalRelations * 2, 20)
+      avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20)
     );
 
     // ---- Intelligence Health ----
@@ -115,28 +114,32 @@ export function useOverviewHealthRings({
     const otherAlerts = Math.max(totalAlerts - criticalAlerts, 0);
 
     const intelligenceHealth = clamp(
-      defOverviewScore
-      - Math.min(criticalAlerts * 10, 20)
-      - Math.min(otherAlerts * 2, 10)
+      defOverviewScore - Math.min(criticalAlerts * 10, 20) - Math.min(otherAlerts * 2, 10)
     );
 
     // ---- Defense Health ----
     const overallSecurityScore = securityAssessment?.overallSecurityScore ?? 50;
     const branchCount = militaryBranches?.length ?? 0;
-    const avgReadiness = branchCount > 0
-      ? militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount
-      : 0;
+    const avgReadiness =
+      branchCount > 0
+        ? militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount
+        : 0;
 
-    const defenseHealth = clamp(
-      overallSecurityScore * 0.6
-      + avgReadiness * 0.4
-    );
+    const defenseHealth = clamp(overallSecurityScore * 0.6 + avgReadiness * 0.4);
 
     // ---- Build ring configs ----
-    const execSubtitle = executiveHealth >= 70 ? "well-managed" : executiveHealth >= 40 ? "needs attention" : "critical";
-    const diploSubtitle = diplomaticHealth >= 70 ? "strong ties" : diplomaticHealth >= 40 ? "developing" : "isolated";
-    const intelSubtitle = intelligenceHealth >= 70 ? "secure" : intelligenceHealth >= 40 ? "monitoring" : "at risk";
-    const defSubtitle = defenseHealth >= 70 ? "combat ready" : defenseHealth >= 40 ? "operational" : "vulnerable";
+    const execSubtitle =
+      executiveHealth >= 70
+        ? "well-managed"
+        : executiveHealth >= 40
+          ? "needs attention"
+          : "critical";
+    const diploSubtitle =
+      diplomaticHealth >= 70 ? "strong ties" : diplomaticHealth >= 40 ? "developing" : "isolated";
+    const intelSubtitle =
+      intelligenceHealth >= 70 ? "secure" : intelligenceHealth >= 40 ? "monitoring" : "at risk";
+    const defSubtitle =
+      defenseHealth >= 70 ? "combat ready" : defenseHealth >= 40 ? "operational" : "vulnerable";
 
     return [
       {
@@ -184,7 +187,18 @@ export function useOverviewHealthRings({
         onClick: () => onNavigate?.("defense"),
       },
     ];
-  }, [meetings, policies, issueCount, embassies, relations, defenseOverview, intelligenceOverview, securityAssessment, militaryBranches, onNavigate]);
+  }, [
+    meetings,
+    policies,
+    issueCount,
+    embassies,
+    relations,
+    defenseOverview,
+    intelligenceOverview,
+    securityAssessment,
+    militaryBranches,
+    onNavigate,
+  ]);
 
   return { rings, isLoading };
 }

@@ -85,7 +85,7 @@ export const CoreIndicatorsHelp = {
 
       <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
         <div className="flex items-start gap-2">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
           <div>
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
               Real-World Reference Points

@@ -31,7 +31,8 @@ const scrollBarVariants = cva("flex touch-none select-none transition-colors", {
 });
 
 export interface ScrollAreaProps
-  extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>,
     VariantProps<typeof scrollAreaVariants> {
   scrollHideDelay?: number;
   type?: "auto" | "always" | "scroll" | "hover";
@@ -59,8 +60,9 @@ const ScrollArea = React.forwardRef<
 
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
 
-interface ScrollBarProps
-  extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar> {
+interface ScrollBarProps extends React.ComponentPropsWithoutRef<
+  typeof ScrollAreaPrimitive.ScrollAreaScrollbar
+> {
   scrollHideDelay?: number;
   type?: "auto" | "always" | "scroll" | "hover";
 }

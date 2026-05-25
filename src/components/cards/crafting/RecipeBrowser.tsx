@@ -165,8 +165,7 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
                       <div
                         className={cn(
                           "rounded px-2 py-0.5 font-semibold",
-                          rarityConfig.borderColor.replace("border-", "bg-"),
-                          "bg-opacity-20",
+                          `${rarityConfig.borderColor.replace("border-", "bg-")}/20`,
                           rarityConfig.color
                         )}
                       >

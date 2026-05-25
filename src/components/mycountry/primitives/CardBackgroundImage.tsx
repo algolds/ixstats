@@ -3,11 +3,11 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
-import { 
-  getCardImagePreset, 
-  getFallbackGradient, 
+import {
+  getCardImagePreset,
+  getFallbackGradient,
   allowsCustomUpload,
-  type CardImageType 
+  type CardImageType,
 } from "~/lib/card-image-presets";
 import { Edit2, ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -57,7 +57,7 @@ export function CardBackgroundImage({
 
   // Get preset for this card type
   const preset = getCardImagePreset(cardType);
-  
+
   // Determine the image URL to display
   const imageUrl = previewImageUrl || cardImage?.imageUrl || null;
   const hasImage = !!imageUrl && !imageError;
@@ -74,7 +74,7 @@ export function CardBackgroundImage({
   const fallbackClass = getFallbackGradient(cardType);
 
   return (
-    <div 
+    <div
       className={cn(
         "relative overflow-hidden rounded-xl",
         !hasImage && `bg-gradient-to-br ${fallbackClass}`,
@@ -101,7 +101,7 @@ export function CardBackgroundImage({
               onError={() => setImageError(true)}
             />
             {/* Dark overlay for text readability */}
-            <div 
+            <div
               className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"
               style={{ opacity: overlayOpacity }}
             />
@@ -123,29 +123,21 @@ export function CardBackgroundImage({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 z-10 h-8 w-8 bg-black/30 hover:bg-black/50 text-white"
+              className="absolute top-2 right-2 z-10 h-8 w-8 bg-black/30 text-white hover:bg-black/50"
               onClick={(e) => {
                 e.stopPropagation();
                 onEditClick();
               }}
             >
-              {hasImage ? (
-                <Edit2 className="h-4 w-4" />
-              ) : (
-                <ImageIcon className="h-4 w-4" />
-              )}
+              {hasImage ? <Edit2 className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            {hasImage ? "Change image" : "Add custom image"}
-          </TooltipContent>
+          <TooltipContent>{hasImage ? "Change image" : "Add custom image"}</TooltipContent>
         </Tooltip>
       )}
 
       {/* Content */}
-      <div className="relative z-[5]">
-        {children}
-      </div>
+      <div className="relative z-[5]">{children}</div>
     </div>
   );
 }
@@ -154,7 +146,11 @@ export function CardBackgroundImage({
  * Hook to get card image for a specific card type
  */
 export function useCardImage(countryId: string, cardType: CardImageType) {
-  const { data: cardImage, isLoading, refetch } = api.cardImages.getByCountryAndType.useQuery(
+  const {
+    data: cardImage,
+    isLoading,
+    refetch,
+  } = api.cardImages.getByCountryAndType.useQuery(
     { countryId, cardType },
     { enabled: !!countryId }
   );
@@ -178,10 +174,11 @@ export function useCardImage(countryId: string, cardType: CardImageType) {
  * Hook to get all card images for a country
  */
 export function useAllCardImages(countryId: string) {
-  const { data: cardImages, isLoading, refetch } = api.cardImages.getAllByCountry.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const {
+    data: cardImages,
+    isLoading,
+    refetch,
+  } = api.cardImages.getAllByCountry.useQuery({ countryId }, { enabled: !!countryId });
 
   return {
     cardImages: cardImages ?? {},

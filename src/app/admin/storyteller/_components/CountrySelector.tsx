@@ -126,7 +126,7 @@ export function CountrySelector({
                     {c.economicTier ?? "Unknown"}
                   </span>
                 </div>
-                {isSelected && <CheckCircle2 className="text-primary h-4 w-4 flex-shrink-0" />}
+                {isSelected && <CheckCircle2 className="text-primary h-4 w-4 shrink-0" />}
               </button>
             );
           })}

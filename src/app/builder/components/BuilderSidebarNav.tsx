@@ -122,11 +122,11 @@ export function BuilderSidebarNav({
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
-                <item.icon size={14} className="flex-shrink-0" />
+                <item.icon size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">{item.shortTitle}</span>
-                {!accessible && <Lock className="text-muted-foreground/40 h-3 w-3 flex-shrink-0" />}
+                {!accessible && <Lock className="text-muted-foreground/40 h-3 w-3 shrink-0" />}
                 {completed && isBuildStep && !isActive && (
-                  <Check className="h-3 w-3 flex-shrink-0 text-emerald-500" />
+                  <Check className="h-3 w-3 shrink-0 text-emerald-500" />
                 )}
               </button>
             );
@@ -161,13 +161,13 @@ export function BuilderSidebarNav({
               )}
               aria-current={isActive ? "page" : undefined}
             >
-              <item.icon size={16} className="flex-shrink-0" />
+              <item.icon size={16} className="shrink-0" />
               <span className="truncate">{item.title}</span>
               {!accessible && (
-                <Lock className="text-muted-foreground/40 ml-auto h-3.5 w-3.5 flex-shrink-0" />
+                <Lock className="text-muted-foreground/40 ml-auto h-3.5 w-3.5 shrink-0" />
               )}
               {completed && isBuildStep && !isActive && accessible && (
-                <Check className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
+                <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-emerald-500" />
               )}
               {isBuildStep && accessible && !completed && !isActive && (
                 <span className="text-muted-foreground/50 ml-auto text-[10px]">

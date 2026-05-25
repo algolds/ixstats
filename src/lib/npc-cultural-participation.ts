@@ -12,14 +12,8 @@
  * - Simulate NPC-initiated cultural exchange proposals
  */
 
-import {
-  NPCPersonalitySystem,
-  type NPCPersonality,
-} from "./diplomatic-npc-personality";
-import {
-  type CulturalScenarioType,
-  type CulturalScenario,
-} from "./cultural-scenario-generator";
+import { NPCPersonalitySystem, type NPCPersonality } from "./diplomatic-npc-personality";
+import { type CulturalScenarioType, type CulturalScenario } from "./cultural-scenario-generator";
 
 // ============================================================================
 // TYPE DEFINITIONS

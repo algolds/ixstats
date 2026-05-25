@@ -26,7 +26,7 @@ export function ViewingAsBanner() {
         "text-amber-950 shadow-md"
       )}
     >
-      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+      <AlertTriangle className="h-4 w-4 shrink-0" />
       <span className="text-sm font-medium">
         DEV MODE: Viewing as <strong>{viewCountryName || viewCountryId}</strong>
       </span>

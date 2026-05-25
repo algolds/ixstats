@@ -59,20 +59,34 @@ export function useSystemValidation() {
 
   const allQueriesLoaded = useMemo(() => {
     if (!isRunning) return false;
-    return !database.isLoading && !database.isFetching
-      && !auth.isLoading && !auth.isFetching
-      && !ixTime.isLoading && !ixTime.isFetching
-      && !economic.isLoading && !economic.isFetching
-      && !subsystems.isLoading && !subsystems.isFetching
-      && !routers.isLoading && !routers.isFetching;
+    return (
+      !database.isLoading &&
+      !database.isFetching &&
+      !auth.isLoading &&
+      !auth.isFetching &&
+      !ixTime.isLoading &&
+      !ixTime.isFetching &&
+      !economic.isLoading &&
+      !economic.isFetching &&
+      !subsystems.isLoading &&
+      !subsystems.isFetching &&
+      !routers.isLoading &&
+      !routers.isFetching
+    );
   }, [
     isRunning,
-    database.isLoading, database.isFetching,
-    auth.isLoading, auth.isFetching,
-    ixTime.isLoading, ixTime.isFetching,
-    economic.isLoading, economic.isFetching,
-    subsystems.isLoading, subsystems.isFetching,
-    routers.isLoading, routers.isFetching,
+    database.isLoading,
+    database.isFetching,
+    auth.isLoading,
+    auth.isFetching,
+    ixTime.isLoading,
+    ixTime.isFetching,
+    economic.isLoading,
+    economic.isFetching,
+    subsystems.isLoading,
+    subsystems.isFetching,
+    routers.isLoading,
+    routers.isFetching,
   ]);
 
   const summary = useMemo(() => {
@@ -93,7 +107,9 @@ export function useSystemValidation() {
 
   const isLoading = isRunning && !allQueriesLoaded;
   const progress = isRunning
-    ? [database, auth, ixTime, economic, subsystems, routers].filter((q) => !q.isLoading && !q.isFetching).length
+    ? [database, auth, ixTime, economic, subsystems, routers].filter(
+        (q) => !q.isLoading && !q.isFetching
+      ).length
     : 0;
 
   return {

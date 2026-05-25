@@ -180,10 +180,7 @@ function PartyRow({
 
   return (
     <div className="flex items-center gap-2 py-1">
-      <div
-        className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-        style={{ backgroundColor: party.color }}
-      />
+      <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: party.color }} />
       <span className="min-w-0 flex-1 truncate text-sm font-medium">
         {party.shortName ?? party.name}
       </span>
@@ -195,7 +192,7 @@ function PartyRow({
         </span>
       )}
       {pct !== undefined ? (
-        <div className="flex flex-shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full">
             <div
               className="h-full rounded-full"
@@ -368,7 +365,7 @@ export function PoliticsOverview({
                 return (
                   <div key={party.id} className="flex items-center gap-2 py-1">
                     <div
-                      className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: party.color }}
                     />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">
@@ -376,12 +373,12 @@ export function PoliticsOverview({
                     </span>
                     {meta && (
                       <span
-                        className={`hidden flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline-flex ${meta.bg} ${meta.color}`}
+                        className={`hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline-flex ${meta.bg} ${meta.color}`}
                       >
                         {meta.label}
                       </span>
                     )}
-                    <div className="flex flex-shrink-0 items-center gap-1.5">
+                    <div className="flex shrink-0 items-center gap-1.5">
                       <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full">
                         <div
                           className="h-full rounded-full"
@@ -431,7 +428,7 @@ export function PoliticsOverview({
               {/* Winner */}
               <div className="bg-muted/40 col-span-2 flex items-center gap-2.5 rounded-lg p-3">
                 <div
-                  className="h-4 w-4 flex-shrink-0 rounded-full"
+                  className="h-4 w-4 shrink-0 rounded-full"
                   style={{ backgroundColor: electionWinner.candidate?.party.color ?? "#6366f1" }}
                 />
                 <div className="min-w-0">

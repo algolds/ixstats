@@ -80,10 +80,7 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
 
   try {
     // Generate cards from IxWiki
-    const ixwikiResults = await generateCardsFromWiki(
-      "ixwiki",
-      GENERATION_CONFIG.targetPerWiki
-    );
+    const ixwikiResults = await generateCardsFromWiki("ixwiki", GENERATION_CONFIG.targetPerWiki);
     result.ixwikiCount = ixwikiResults.generated;
     result.failed += ixwikiResults.failed;
     result.errors.push(...ixwikiResults.errors);
@@ -97,10 +94,7 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
     }
 
     // Generate cards from IIWiki
-    const iiwikiResults = await generateCardsFromWiki(
-      "iiwiki",
-      GENERATION_CONFIG.targetPerWiki
-    );
+    const iiwikiResults = await generateCardsFromWiki("iiwiki", GENERATION_CONFIG.targetPerWiki);
     result.iiwikiCount = iiwikiResults.generated;
     result.failed += iiwikiResults.failed;
     result.errors.push(...iiwikiResults.errors);
@@ -120,15 +114,18 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
     // Log summary
     console.log(
       `[Lore Card Cron] Generation complete:\n` +
-      `  Generated: ${result.generated} cards (IxWiki: ${result.ixwikiCount}, IIWiki: ${result.iiwikiCount})\n` +
-      `  Failed: ${result.failed}\n` +
-      `  Duration: ${(result.duration / 1000).toFixed(2)}s\n` +
-      `  Rarity breakdown: ${JSON.stringify(result.rarityBreakdown)}\n` +
-      `  Category breakdown: ${JSON.stringify(result.categoryBreakdown)}`
+        `  Generated: ${result.generated} cards (IxWiki: ${result.ixwikiCount}, IIWiki: ${result.iiwikiCount})\n` +
+        `  Failed: ${result.failed}\n` +
+        `  Duration: ${(result.duration / 1000).toFixed(2)}s\n` +
+        `  Rarity breakdown: ${JSON.stringify(result.rarityBreakdown)}\n` +
+        `  Category breakdown: ${JSON.stringify(result.categoryBreakdown)}`
     );
 
     if (result.errors.length > 0) {
-      console.error(`[Lore Card Cron] Errors (${result.errors.length}):`, result.errors.slice(0, 5));
+      console.error(
+        `[Lore Card Cron] Errors (${result.errors.length}):`,
+        result.errors.slice(0, 5)
+      );
     }
 
     // Log to database
@@ -181,7 +178,10 @@ async function generateCardsFromWiki(
 
     try {
       // Fetch random articles
-      const articleTitles = await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, wikiSource);
+      const articleTitles = await wikiLoreCardGenerator.fetchRandomArticlesWithImages(
+        5,
+        wikiSource
+      );
 
       if (articleTitles.length === 0) {
         console.warn(`[Lore Card Cron] No random articles returned from ${wikiSource}`);
@@ -197,7 +197,10 @@ async function generateCardsFromWiki(
           const candidate = await Promise.race([
             wikiLoreCardGenerator.generateCard(articleTitle, wikiSource, { requireImage: true }),
             new Promise<null>((_, reject) =>
-              setTimeout(() => reject(new Error("Generation timeout")), GENERATION_CONFIG.generationTimeout)
+              setTimeout(
+                () => reject(new Error("Generation timeout")),
+                GENERATION_CONFIG.generationTimeout
+              )
             ),
           ]);
 
@@ -210,7 +213,7 @@ async function generateCardsFromWiki(
           if (candidate.qualityScore < GENERATION_CONFIG.minQualityScore) {
             console.log(
               `[Lore Card Cron] Skipping "${articleTitle}" - quality score ${candidate.qualityScore.toFixed(1)} ` +
-              `below threshold ${GENERATION_CONFIG.minQualityScore}`
+                `below threshold ${GENERATION_CONFIG.minQualityScore}`
             );
             continue;
           }
@@ -221,12 +224,14 @@ async function generateCardsFromWiki(
           result.generated++;
 
           // Track breakdowns
-          result.rarityBreakdown[candidate.rarity] = (result.rarityBreakdown[candidate.rarity] || 0) + 1;
-          result.categoryBreakdown[candidate.category] = (result.categoryBreakdown[candidate.category] || 0) + 1;
+          result.rarityBreakdown[candidate.rarity] =
+            (result.rarityBreakdown[candidate.rarity] || 0) + 1;
+          result.categoryBreakdown[candidate.category] =
+            (result.categoryBreakdown[candidate.category] || 0) + 1;
 
           console.log(
             `[Lore Card Cron] ✓ Generated ${candidate.rarity} card: "${candidate.title}" ` +
-            `(${wikiSource}, quality: ${candidate.qualityScore.toFixed(1)})`
+              `(${wikiSource}, quality: ${candidate.qualityScore.toFixed(1)})`
           );
         } catch (error) {
           result.failed++;
@@ -242,7 +247,9 @@ async function generateCardsFromWiki(
     }
   }
 
-  console.log(`[Lore Card Cron] ${wikiSource} complete: ${result.generated} generated, ${result.failed} failed`);
+  console.log(
+    `[Lore Card Cron] ${wikiSource} complete: ${result.generated} generated, ${result.failed} failed`
+  );
   return result;
 }
 
@@ -281,12 +288,12 @@ export async function getLastGenerationResult(): Promise<LoreCardGenerationResul
 
     if (!lastLog) return null;
 
-	const metadata: Partial<{
-		ixwikiCount: number;
-		iiwikiCount: number;
-		rarityBreakdown: Record<string, number>;
-		categoryBreakdown: Record<string, number>;
-	}> = {};
+    const metadata: Partial<{
+      ixwikiCount: number;
+      iiwikiCount: number;
+      rarityBreakdown: Record<string, number>;
+      categoryBreakdown: Record<string, number>;
+    }> = {};
     const errors = lastLog.errorMessage ? JSON.parse(lastLog.errorMessage) : [];
 
     return {
@@ -296,9 +303,10 @@ export async function getLastGenerationResult(): Promise<LoreCardGenerationResul
       iiwikiCount: metadata.iiwikiCount || 0,
       failed: lastLog.itemsFailed,
       errors,
-      duration: lastLog.completedAt && lastLog.startedAt
-        ? lastLog.completedAt.getTime() - lastLog.startedAt.getTime()
-        : 0,
+      duration:
+        lastLog.completedAt && lastLog.startedAt
+          ? lastLog.completedAt.getTime() - lastLog.startedAt.getTime()
+          : 0,
       timestamp: lastLog.startedAt,
       rarityBreakdown: metadata.rarityBreakdown || {},
       categoryBreakdown: metadata.categoryBreakdown || {},

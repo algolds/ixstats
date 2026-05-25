@@ -26,8 +26,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 
-
-
 interface RichTextEditorProps {
   placeholder?: string;
   initialContent?: string;
@@ -596,7 +594,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
                   className="bg-background flex items-center gap-2 rounded-lg border p-2 text-sm"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-1">
-                    <Paperclip className="text-muted-foreground h-3 w-3 flex-shrink-0" />
+                    <Paperclip className="text-muted-foreground h-3 w-3 shrink-0" />
                     <span className="truncate font-medium">{file.name}</span>
                     <span className="text-muted-foreground text-xs">
                       ({formatFileSize(file.size)})

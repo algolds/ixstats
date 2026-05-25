@@ -189,7 +189,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                         {JSON.parse((exchange as any).objectives || "[]").map(
                           (objective: string, idx: number) => (
                             <div key={idx} className="flex items-start gap-2">
-                              <RiCheckboxCircleLine className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                              <RiCheckboxCircleLine className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
                               <span className="text-sm text-[--intel-silver]">{objective}</span>
                             </div>
                           )
@@ -455,7 +455,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 {exchange.status === "active" && (
                   <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
                     <div className="flex items-start gap-3">
-                      <RiFlashlightLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-cyan-400" />
+                      <RiFlashlightLine className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
                       <div className="flex-1">
                         <h6 className="text-foreground mb-1 font-medium">Generate Scenario</h6>
                         <p className="mb-3 text-xs text-[--intel-silver]">

@@ -23,7 +23,7 @@ export function EconomyBuilderSidebar({
   maxComponents = 12,
 }: EconomyBuilderSidebarProps) {
   return (
-    <div className="sticky top-4 w-80 flex-shrink-0 self-start">
+    <div className="sticky top-4 w-80 shrink-0 self-start">
       <BuilderIntegrationSidebar
         selectedComponents={selectedComponents}
         maxComponents={maxComponents}

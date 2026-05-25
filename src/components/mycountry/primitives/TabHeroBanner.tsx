@@ -57,35 +57,32 @@ export const TabHeroBanner = React.memo(function TabHeroBanner({
   className,
 }: TabHeroBannerProps) {
   const gradient = (accentColor && ACCENT_GRADIENTS[accentColor]) ?? "from-muted/10 to-transparent";
-  const iconClasses = (accentColor && ACCENT_ICON_BG[accentColor]) ?? "bg-muted/50 text-muted-foreground";
+  const iconClasses =
+    (accentColor && ACCENT_ICON_BG[accentColor]) ?? "bg-muted/50 text-muted-foreground";
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-lg mb-4",
+        "relative mb-4 overflow-hidden rounded-lg",
         heightClass,
         accentColor && `border-b-2 border-${accentColor}-500/30`,
-        className,
+        className
       )}
     >
       {/* Themed gradient background */}
       <div className={cn("absolute inset-0 z-0 bg-gradient-to-r", gradient)} />
 
       {/* Content overlay */}
-      <div className="relative z-[1] flex items-center h-full px-4 sm:px-6">
+      <div className="relative z-[1] flex h-full items-center px-4 sm:px-6">
         {Icon && (
-          <div className={cn("rounded-lg p-2 mr-3 flex-shrink-0", iconClasses)}>
+          <div className={cn("mr-3 shrink-0 rounded-lg p-2", iconClasses)}>
             <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
         )}
         <div>
-          <h3 className="text-sm sm:text-base font-semibold text-foreground">
-            {title}
-          </h3>
+          <h3 className="text-foreground text-sm font-semibold sm:text-base">{title}</h3>
           {subtitle && (
-            <p className="text-xs sm:text-sm mt-0.5 text-muted-foreground">
-              {subtitle}
-            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs sm:text-sm">{subtitle}</p>
           )}
         </div>
       </div>

@@ -358,10 +358,8 @@ export function useScenarioById(scenarioId: string) {
   const scenario = useMemo(() => {
     if (dbScenario) {
       const scenario: ScenarioResponse = dbScenario;
-      const country1Name =
-        (scenario as Partial<ParsedDiplomaticScenario>).country1Name ?? "";
-      const country2Name =
-        (scenario as Partial<ParsedDiplomaticScenario>).country2Name ?? "";
+      const country1Name = (scenario as Partial<ParsedDiplomaticScenario>).country1Name ?? "";
+      const country2Name = (scenario as Partial<ParsedDiplomaticScenario>).country2Name ?? "";
       const updatedAt =
         (scenario as Partial<ParsedDiplomaticScenario>).updatedAt ?? scenario.createdAt;
 
@@ -376,9 +374,7 @@ export function useScenarioById(scenarioId: string) {
         country2Name,
         relationshipState: scenario.relationshipState,
         relationshipStrength: scenario.relationshipStrength,
-        responseOptions: Array.isArray(scenario.responseOptions)
-          ? scenario.responseOptions
-          : [],
+        responseOptions: Array.isArray(scenario.responseOptions) ? scenario.responseOptions : [],
         tags: Array.isArray(scenario.tags) ? scenario.tags : [],
         culturalImpact: scenario.culturalImpact,
         diplomaticRisk: scenario.diplomaticRisk,

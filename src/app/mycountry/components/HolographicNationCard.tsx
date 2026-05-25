@@ -220,7 +220,7 @@ export function HolographicNationCard({
             <motion.div
               whileHover={{ scale: 1.05, rotateY: 5 }}
               transition={{ type: "spring", stiffness: 300 }}
-              className="flex-shrink-0"
+              className="shrink-0"
             >
               <div className="relative">
                 {flagUrl ? (

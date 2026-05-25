@@ -535,7 +535,9 @@ export class ProductionStartup {
 
       // Dev mode: log memory config
       if (isDevMode) {
-        console.log(`[ProductionStartup] Dev cache limits: global=${memoryConfig.cache.maxEntries}, intelligence=${memoryConfig.intelligence.maxCacheSize}, trpc=${memoryConfig.trpc.maxCacheSize}`);
+        console.log(
+          `[ProductionStartup] Dev cache limits: global=${memoryConfig.cache.maxEntries}, intelligence=${memoryConfig.intelligence.maxCacheSize}, trpc=${memoryConfig.trpc.maxCacheSize}`
+        );
       }
     } catch (error) {
       console.error("[ProductionStartup] Failed to initialize:", error);

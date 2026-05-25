@@ -62,34 +62,34 @@ const NS_RARITY_MAP: Record<string, CardRarity> = {
  * Each profile: [economic, diplomatic, military, social]
  */
 const GOVT_STAT_PROFILES: Record<string, [number, number, number, number]> = {
-  "Anarchy":                       [20, 15, 10, 30],
-  "Authoritarian Democracy":       [50, 40, 60, 35],
-  "Benevolent Dictatorship":       [45, 50, 55, 50],
-  "Capitalist Paradise":           [90, 45, 30, 25],
-  "Capitalizt":                    [85, 40, 25, 20],
-  "Civil Rights Lovefest":         [40, 70, 15, 95],
-  "Compulsory Consumerist State":  [75, 35, 45, 30],
-  "Conservative Democracy":        [60, 55, 50, 45],
-  "Corporate Bordello":            [80, 30, 35, 20],
-  "Corporate Police State":        [70, 25, 75, 15],
-  "Corrupt Dictatorship":          [35, 15, 70, 10],
-  "Democratic Socialists":         [50, 65, 25, 75],
-  "Father Knows Best State":       [55, 35, 65, 30],
-  "Free-Market Paradise":          [85, 50, 20, 35],
-  "Inoffensive Centrist Democracy":[50, 60, 30, 55],
-  "Iron Fist Consumerists":        [65, 20, 80, 15],
-  "Iron Fist Socialists":          [30, 20, 85, 20],
-  "Left-Leaning College State":    [45, 65, 15, 80],
-  "Left-wing Utopia":              [40, 70, 10, 90],
-  "Liberal Democratic Socialists":  [50, 70, 20, 80],
-  "Libertarian Police State":      [70, 30, 70, 20],
-  "Moralistic Democracy":          [55, 55, 45, 50],
-  "Mother Knows Best State":       [50, 40, 60, 40],
-  "New York Times Democracy":      [60, 65, 35, 65],
-  "Psychotic Dictatorship":        [25, 10, 90, 5],
-  "Right-wing Utopia":             [75, 40, 50, 30],
-  "Scandinavian Liberal Paradise":  [55, 75, 15, 85],
-  "Tyranny by Majority":           [45, 35, 55, 40],
+  Anarchy: [20, 15, 10, 30],
+  "Authoritarian Democracy": [50, 40, 60, 35],
+  "Benevolent Dictatorship": [45, 50, 55, 50],
+  "Capitalist Paradise": [90, 45, 30, 25],
+  Capitalizt: [85, 40, 25, 20],
+  "Civil Rights Lovefest": [40, 70, 15, 95],
+  "Compulsory Consumerist State": [75, 35, 45, 30],
+  "Conservative Democracy": [60, 55, 50, 45],
+  "Corporate Bordello": [80, 30, 35, 20],
+  "Corporate Police State": [70, 25, 75, 15],
+  "Corrupt Dictatorship": [35, 15, 70, 10],
+  "Democratic Socialists": [50, 65, 25, 75],
+  "Father Knows Best State": [55, 35, 65, 30],
+  "Free-Market Paradise": [85, 50, 20, 35],
+  "Inoffensive Centrist Democracy": [50, 60, 30, 55],
+  "Iron Fist Consumerists": [65, 20, 80, 15],
+  "Iron Fist Socialists": [30, 20, 85, 20],
+  "Left-Leaning College State": [45, 65, 15, 80],
+  "Left-wing Utopia": [40, 70, 10, 90],
+  "Liberal Democratic Socialists": [50, 70, 20, 80],
+  "Libertarian Police State": [70, 30, 70, 20],
+  "Moralistic Democracy": [55, 55, 45, 50],
+  "Mother Knows Best State": [50, 40, 60, 40],
+  "New York Times Democracy": [60, 65, 35, 65],
+  "Psychotic Dictatorship": [25, 10, 90, 5],
+  "Right-wing Utopia": [75, 40, 50, 30],
+  "Scandinavian Liberal Paradise": [55, 75, 15, 85],
+  "Tyranny by Majority": [45, 35, 55, 40],
 };
 
 /**
@@ -116,15 +116,18 @@ export class NSImportService {
    * Generate gameplay stats (economic/diplomatic/military/social, each 0-100)
    * from NS card metadata fields.
    */
-  generateCardStats(nsData: {
-    govt?: string;
-    marketValue?: string;
-    badge?: string;
-    trophies?: string;
-    region?: string;
-    category?: string;
-    cardcategory?: string;
-  }, cardId?: number): { economic: number; diplomatic: number; military: number; social: number } {
+  generateCardStats(
+    nsData: {
+      govt?: string;
+      marketValue?: string;
+      badge?: string;
+      trophies?: string;
+      region?: string;
+      category?: string;
+      cardcategory?: string;
+    },
+    cardId?: number
+  ): { economic: number; diplomatic: number; military: number; social: number } {
     // Deterministic jitter seeded from cardId (±3)
     const jitter = (seed: number, index: number) => {
       const hash = ((seed * 2654435761 + index * 40503) >>> 0) % 7;
@@ -148,10 +151,10 @@ export class NSImportService {
     const trophyBonus = Math.min(trophyCount * 3, 15);
 
     return {
-      economic:   clamp(profile[0] + marketBonus + jitter(id, 0)),
+      economic: clamp(profile[0] + marketBonus + jitter(id, 0)),
       diplomatic: clamp(profile[1] + badgeBonus + Math.floor(trophyBonus / 2) + jitter(id, 1)),
-      military:   clamp(profile[2] + jitter(id, 2)),
-      social:     clamp(profile[3] + Math.floor(trophyBonus / 2) + jitter(id, 3)),
+      military: clamp(profile[2] + jitter(id, 2)),
+      social: clamp(profile[3] + Math.floor(trophyBonus / 2) + jitter(id, 3)),
     };
   }
 
@@ -203,15 +206,18 @@ export class NSImportService {
         marketValue: nsCard.market_value,
         badge: nsCard.badge,
         trophies: nsCard.trophies,
-        ...this.generateCardStats({
-          govt: nsCard.govt,
-          marketValue: nsCard.market_value,
-          badge: nsCard.badge,
-          trophies: nsCard.trophies,
-          region: nsCard.region,
-          category: nsCard.category,
-          cardcategory: nsCard.cardcategory,
-        }, cardId),
+        ...this.generateCardStats(
+          {
+            govt: nsCard.govt,
+            marketValue: nsCard.market_value,
+            badge: nsCard.badge,
+            trophies: nsCard.trophies,
+            region: nsCard.region,
+            category: nsCard.category,
+            cardcategory: nsCard.cardcategory,
+          },
+          cardId
+        ),
       },
       totalSupply: 1,
       marketValue: this.convertNSValueToIxCredits(marketValue),
@@ -422,10 +428,7 @@ export class NSImportService {
       const totalCards = deckData.cards.length;
 
       // Deduplicate cards and track quantities
-      const cardMap = new Map<
-        string,
-        { card: NSCard; quantity: number }
-      >();
+      const cardMap = new Map<string, { card: NSCard; quantity: number }>();
 
       for (const card of deckData.cards) {
         const key = `${card.id}-${card.season}`;
@@ -455,10 +458,7 @@ export class NSImportService {
         try {
           // Fetch full card info if name is missing
           if (!nsCard.name) {
-            const cardInfo = await nsApiClient.fetchCardInfo(
-              nsCard.id,
-              nsCard.season
-            );
+            const cardInfo = await nsApiClient.fetchCardInfo(nsCard.id, nsCard.season);
             if (cardInfo) {
               Object.assign(nsCard, cardInfo);
             }
@@ -466,9 +466,7 @@ export class NSImportService {
 
           // Skip if still no name
           if (!nsCard.name) {
-            result.errors.push(
-              `Card ${nsCard.id} S${nsCard.season}: No name available`
-            );
+            result.errors.push(`Card ${nsCard.id} S${nsCard.season}: No name available`);
             continue;
           }
 
@@ -485,8 +483,7 @@ export class NSImportService {
             result.duplicatesSkipped++;
           }
         } catch (error) {
-          const errorMsg =
-            error instanceof Error ? error.message : "Unknown error";
+          const errorMsg = error instanceof Error ? error.message : "Unknown error";
           result.errors.push(`Card ${nsCard.name || nsCard.id}: ${errorMsg}`);
           console.error(`[NS Import] Failed to import card:`, error);
         }
@@ -505,9 +502,7 @@ export class NSImportService {
       return result;
     } catch (error) {
       console.error("[NS Import] Import failed:", error);
-      result.errors.push(
-        error instanceof Error ? error.message : "Unknown error"
-      );
+      result.errors.push(error instanceof Error ? error.message : "Unknown error");
       return result;
     }
   }
@@ -609,10 +604,7 @@ export class NSImportService {
       },
     });
 
-    const totalCards = importedCards.reduce(
-      (sum, ownership) => sum + ownership.quantity,
-      0
-    );
+    const totalCards = importedCards.reduce((sum, ownership) => sum + ownership.quantity, 0);
     const totalValue = importedCards.reduce(
       (sum, ownership) => sum + (ownership.cards.marketValue || 0),
       0

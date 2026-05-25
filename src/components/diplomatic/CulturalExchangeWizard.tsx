@@ -576,7 +576,7 @@ export function CulturalExchangeWizard({
                           </p>
                         </div>
                         {isSelected && (
-                          <RiCheckLine className="h-4 w-4 flex-shrink-0 text-[--intel-gold]" />
+                          <RiCheckLine className="h-4 w-4 shrink-0 text-[--intel-gold]" />
                         )}
                       </div>
                     </div>
@@ -870,7 +870,7 @@ export function CulturalExchangeWizard({
   return (
     <div className="bg-background flex h-full flex-col overflow-hidden rounded-lg">
       {/* Header */}
-      <div className="border-border bg-muted/30 flex flex-shrink-0 items-center justify-between border-b p-4">
+      <div className="border-border bg-muted/30 flex shrink-0 items-center justify-between border-b p-4">
         <div>
           <h2 className="text-foreground text-xl font-bold">Create Cultural Exchange</h2>
           <p className="text-muted-foreground mt-1 text-xs">Step {currentStep} of 5</p>
@@ -881,7 +881,7 @@ export function CulturalExchangeWizard({
       </div>
 
       {/* Progress Bar */}
-      <div className="flex-shrink-0 px-4 py-3">
+      <div className="shrink-0 px-4 py-3">
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((step) => (
             <div
@@ -901,7 +901,7 @@ export function CulturalExchangeWizard({
       </div>
 
       {/* Footer */}
-      <div className="border-border bg-muted/30 flex flex-shrink-0 justify-between gap-4 border-t p-4">
+      <div className="border-border bg-muted/30 flex shrink-0 justify-between gap-4 border-t p-4">
         <Button variant="outline" onClick={currentStep === 1 ? onCancel : handlePrevious}>
           <RiArrowLeftLine className="mr-2" />
           {currentStep === 1 ? "Cancel" : "Previous"}

@@ -19,17 +19,15 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="flex h-8 items-center gap-2 border-b border-border bg-muted/50 px-3 text-xs">
-      <span className="font-medium text-foreground">
-        {selectedCount} selected
-      </span>
+    <div className="border-border bg-muted/50 flex h-8 items-center gap-2 border-b px-3 text-xs">
+      <span className="text-foreground font-medium">{selectedCount} selected</span>
 
-      <div className="mx-1 h-4 w-px bg-border" />
+      <div className="bg-border mx-1 h-4 w-px" />
 
       <button
         onClick={onDeselectAll}
         disabled={isMutating}
-        className="flex items-center gap-1 rounded px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
       >
         <X className="h-3 w-3" />
         Deselect All

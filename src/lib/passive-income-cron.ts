@@ -124,7 +124,9 @@ export async function distributePassiveIncome() {
       );
 
       // Log progress every batch
-      console.log(`[CRON] Processed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(countries.length / BATCH_SIZE)}`);
+      console.log(
+        `[CRON] Processed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(countries.length / BATCH_SIZE)}`
+      );
     }
 
     const duration = Date.now() - startTime;

@@ -14,8 +14,10 @@ export interface ValidationRule {
   severity?: "error" | "warning" | "info";
 }
 
-export interface ValidatedInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+export interface ValidatedInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange"
+> {
   label?: string;
   description?: string;
   rules?: ValidationRule[];

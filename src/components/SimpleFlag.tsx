@@ -30,15 +30,15 @@ export function SimpleFlag({
   const { flagUrl, isLoading } = useFlag(countryName);
 
   if (isLoading) {
-    return (
-      <div className={`${sizeClasses[size]} ${className} bg-muted animate-pulse rounded`} />
-    );
+    return <div className={`${sizeClasses[size]} ${className} bg-muted animate-pulse rounded`} />;
   }
 
   if (!flagUrl) {
     if (!showPlaceholder) return null;
     return (
-      <div className={`${sizeClasses[size]} ${className} bg-muted flex items-center justify-center rounded`}>
+      <div
+        className={`${sizeClasses[size]} ${className} bg-muted flex items-center justify-center rounded`}
+      >
         <Flag className="text-muted-foreground h-3 w-3" />
       </div>
     );
@@ -48,7 +48,7 @@ export function SimpleFlag({
     <img
       src={flagUrl}
       alt={`Flag of ${countryName}`}
-      className={`${sizeClasses[size]} ${className} object-cover rounded`}
+      className={`${sizeClasses[size]} ${className} rounded object-cover`}
       loading="lazy"
     />
   );

@@ -397,13 +397,16 @@ export function IntroDisclosure({
     }
   }, [currentStep]);
 
-  const handleSwipe = React.useCallback((swipeDirection: "left" | "right") => {
-    if (swipeDirection === "left") {
-      handleNext();
-    } else {
-      handlePrevious();
-    }
-  }, [handleNext, handlePrevious]);
+  const handleSwipe = React.useCallback(
+    (swipeDirection: "left" | "right") => {
+      if (swipeDirection === "left") {
+        handleNext();
+      } else {
+        handlePrevious();
+      }
+    },
+    [handleNext, handlePrevious]
+  );
 
   // Call useSwipe hook before any early returns (Rules of Hooks)
   const { handleDragEnd } = useSwipe(handleSwipe);

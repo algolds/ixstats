@@ -383,7 +383,10 @@ export function useDiplomaticOperations({
   // Mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      notify.success("Embassy Established", `Your embassy is now active in ${data.hostCountryName || "the host nation"}.`);
+      notify.success(
+        "Embassy Established",
+        `Your embassy is now active in ${data.hostCountryName || "the host nation"}.`
+      );
       setEstablishEmbassyOpen(false);
       setNewEmbassyData({ hostCountry: "", name: "", location: "", ambassador: "" });
       void refetchEmbassies();
@@ -426,7 +429,10 @@ export function useDiplomaticOperations({
 
   const createExchangeMutation = api.diplomatic.createCulturalExchange.useMutation({
     onSuccess: () => {
-      notify.success("Cultural Exchange Created", "Your cultural exchange program has been created!");
+      notify.success(
+        "Cultural Exchange Created",
+        "Your cultural exchange program has been created!"
+      );
       setCreateExchangeOpen(false);
       setNewExchangeData({
         title: "",
@@ -444,7 +450,10 @@ export function useDiplomaticOperations({
 
   const allocateBudgetMutation = api.diplomatic.allocateBudget.useMutation({
     onSuccess: () => {
-      notify.success("Budget Allocated", `$${budgetAmount.toLocaleString()} has been allocated to the embassy.`);
+      notify.success(
+        "Budget Allocated",
+        `$${budgetAmount.toLocaleString()} has been allocated to the embassy.`
+      );
       setAllocateBudgetOpen(false);
       setBudgetAmount(10000);
       refetchEmbassies();
@@ -456,7 +465,10 @@ export function useDiplomaticOperations({
 
   const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
     onSuccess: (upgrade) => {
-      notify.success("Upgrade Initiated", `${upgrade.name || "Embassy upgrade"} will complete in ${upgrade.duration} days.`);
+      notify.success(
+        "Upgrade Initiated",
+        `${upgrade.name || "Embassy upgrade"} will complete in ${upgrade.duration} days.`
+      );
       setUpgradeEmbassyOpen(false);
       setSelectedUpgradeType("staff_expansion");
       refetchEmbassies();

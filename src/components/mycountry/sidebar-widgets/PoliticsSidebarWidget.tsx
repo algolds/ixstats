@@ -24,15 +24,15 @@ interface LogEntry {
 export function PoliticsSidebarWidget({ countryId }: PoliticsSidebarWidgetProps) {
   const { data: parties } = api.elections.getParties.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: elections } = api.elections.getElections.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: legislature } = api.elections.getLegislature.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const log = useMemo((): LogEntry[] => {
@@ -45,7 +45,9 @@ export function PoliticsSidebarWidget({ countryId }: PoliticsSidebarWidgetProps)
         icon: Landmark,
         iconColor: "text-indigo-500",
         text: `Legislature: ${legislature.totalSeats} seats configured`,
-        time: new Date((legislature as any).updatedAt ?? (legislature as any).createdAt ?? Date.now()),
+        time: new Date(
+          (legislature as any).updatedAt ?? (legislature as any).createdAt ?? Date.now()
+        ),
       });
     }
 
@@ -67,14 +69,14 @@ export function PoliticsSidebarWidget({ countryId }: PoliticsSidebarWidgetProps)
         id: `election-${e.id}`,
         icon: isCompleted ? CheckCircle : BarChart3,
         iconColor: isCompleted ? "text-green-500" : "text-violet-500",
-        text: isCompleted ? `Completed: ${e.name ?? "Election"}` : `Scheduled: ${e.name ?? "Election"}`,
+        text: isCompleted
+          ? `Completed: ${e.name ?? "Election"}`
+          : `Scheduled: ${e.name ?? "Election"}`,
         time: new Date(e.updatedAt ?? e.createdAt),
       });
     });
 
-    return entries
-      .sort((a, b) => b.time.getTime() - a.time.getTime())
-      .slice(0, 5);
+    return entries.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 5);
   }, [parties, elections, legislature]);
 
   return (
@@ -84,20 +86,25 @@ export function PoliticsSidebarWidget({ countryId }: PoliticsSidebarWidgetProps)
           <ScrollText className="h-3.5 w-3.5 text-indigo-500" />
           <span className="text-xs font-semibold">Political Log</span>
         </div>
-        <Badge variant="outline" className="border-indigo-500/30 px-1.5 py-0 text-[0.65rem] text-indigo-600 dark:text-indigo-400">
+        <Badge
+          variant="outline"
+          className="border-indigo-500/30 px-1.5 py-0 text-[0.65rem] text-indigo-600 dark:text-indigo-400"
+        >
           {log.length}
         </Badge>
       </div>
       <div className="space-y-1.5">
         {log.length === 0 && (
-          <p className="text-[11px] text-muted-foreground text-center py-3">No political activity yet</p>
+          <p className="text-muted-foreground py-3 text-center text-[11px]">
+            No political activity yet
+          </p>
         )}
         {log.map((entry) => (
           <div key={entry.id} className="flex items-start gap-2 py-1">
-            <entry.icon className={`h-3 w-3 mt-0.5 flex-shrink-0 ${entry.iconColor}`} />
+            <entry.icon className={`mt-0.5 h-3 w-3 shrink-0 ${entry.iconColor}`} />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] leading-snug line-clamp-1">{entry.text}</p>
-              <span className="text-[10px] text-muted-foreground">{getTimeAgo(entry.time)}</span>
+              <p className="line-clamp-1 text-[11px] leading-snug">{entry.text}</p>
+              <span className="text-muted-foreground text-[10px]">{getTimeAgo(entry.time)}</span>
             </div>
           </div>
         ))}

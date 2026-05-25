@@ -54,7 +54,9 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     try {
       const stored = sessionStorage.getItem("wikios:recentArticles");
       if (stored) setRecentArticles(JSON.parse(stored));
-    } catch { /* SSR or private browsing */ }
+    } catch {
+      /* SSR or private browsing */
+    }
   }, []);
 
   const setWikiPage = useCallback((title: string | null, toc: TocEntry[]) => {
@@ -70,7 +72,9 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
           sessionStorage.setItem("wikios:recentArticles", JSON.stringify(next));
           return next;
         });
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }, []);
 
@@ -82,12 +86,15 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const restoreSession = useCallback((title?: string) => {
-    const target = title ?? recentArticles[0];
-    if (target) {
-      navigateWithBasePath(`/w/${encodeURIComponent(target.replace(/ /g, "_"))}`, router);
-    }
-  }, [recentArticles, router]);
+  const restoreSession = useCallback(
+    (title?: string) => {
+      const target = title ?? recentArticles[0];
+      if (target) {
+        navigateWithBasePath(`/w/${encodeURIComponent(target.replace(/ /g, "_"))}`, router);
+      }
+    },
+    [recentArticles, router]
+  );
 
   return (
     <WikiContext.Provider

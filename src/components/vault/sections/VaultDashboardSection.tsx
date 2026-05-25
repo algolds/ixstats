@@ -41,10 +41,12 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
   const { stats, loading: statsLoading, refreshing } = useVaultStats();
   const { activities, loading: activitiesLoading } = useRecentActivity();
 
-  const { data: earningsData, isLoading: earningsLoading } =
-    api.vault.getTodayEarnings.useQuery(undefined, {
+  const { data: earningsData, isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(
+    undefined,
+    {
       enabled: !!user,
-    });
+    }
+  );
 
   const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(
     { userId: user?.id ?? "" },
@@ -106,20 +108,45 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
       {/* Stats Strip */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          { label: "Total Cards", value: stats?.totalCards ?? 0, icon: Layers, color: "text-amber-400" },
-          { label: refreshing ? "Syncing Values..." : "Deck Value", value: stats?.deckValue ?? 0, icon: TrendingUp, color: "text-purple-400", suffix: " IxC" },
-          { label: "Unopened Packs", value: stats?.unopenedPacks ?? 0, icon: Package, color: "text-blue-400" },
-          { label: "Active Auctions", value: stats?.activeAuctions ?? 0, icon: ShoppingBag, color: "text-cyan-400" },
+          {
+            label: "Total Cards",
+            value: stats?.totalCards ?? 0,
+            icon: Layers,
+            color: "text-amber-400",
+          },
+          {
+            label: refreshing ? "Syncing Values..." : "Deck Value",
+            value: stats?.deckValue ?? 0,
+            icon: TrendingUp,
+            color: "text-purple-400",
+            suffix: " IxC",
+          },
+          {
+            label: "Unopened Packs",
+            value: stats?.unopenedPacks ?? 0,
+            icon: Package,
+            color: "text-blue-400",
+          },
+          {
+            label: "Active Auctions",
+            value: stats?.activeAuctions ?? 0,
+            icon: ShoppingBag,
+            color: "text-cyan-400",
+          },
         ].map((stat) => (
-          <div key={stat.label} className="glass-hierarchy-child flex items-center gap-2.5 rounded-lg p-2.5">
+          <div
+            key={stat.label}
+            className="glass-hierarchy-child flex items-center gap-2.5 rounded-lg p-2.5"
+          >
             <stat.icon className={cn("h-3.5 w-3.5 flex-shrink-0", stat.color)} />
             <div className="min-w-0 flex-1">
-              <p className="text-[0.65rem] text-muted-foreground truncate">{stat.label}</p>
+              <p className="text-muted-foreground truncate text-[0.65rem]">{stat.label}</p>
               {statsLoading ? (
                 <Skeleton className="h-5 w-12" />
               ) : (
-                <p className={cn("text-lg font-bold leading-tight", stat.color)}>
-                  <NumberFlow value={stat.value} />{stat.suffix ?? ""}
+                <p className={cn("text-lg leading-tight font-bold", stat.color)}>
+                  <NumberFlow value={stat.value} />
+                  {stat.suffix ?? ""}
                 </p>
               )}
             </div>
@@ -137,10 +164,24 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           </div>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { title: "Open Packs", icon: Package, section: "acquire" as VaultSection, color: "text-purple-400", badge: stats?.unopenedPacks },
-              { title: "Market", icon: ShoppingCart, section: "acquire" as VaultSection, color: "text-blue-400" },
-              { title: "My Cards", icon: Layers, section: "cards" as VaultSection, color: "text-amber-400" },
-              { title: "Import NS", icon: Gift, section: "import" as VaultSection, color: "text-cyan-400" },
+              {
+                title: "Market",
+                icon: ShoppingCart,
+                section: "acquire" as VaultSection,
+                color: "text-blue-400",
+              },
+              {
+                title: "My Cards",
+                icon: Layers,
+                section: "cards" as VaultSection,
+                color: "text-amber-400",
+              },
+              {
+                title: "Import NS",
+                icon: Gift,
+                section: "import" as VaultSection,
+                color: "text-cyan-400",
+              },
             ].map((action) => (
               <button
                 key={action.title}
@@ -156,7 +197,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                     </Badge>
                   )}
                 </div>
-                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                <ArrowRight className="text-muted-foreground h-3 w-3" />
               </button>
             ))}
           </div>
@@ -180,13 +221,18 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                 +<NumberFlow value={earningsData?.total ?? 0} /> IxC
               </div>
               {earningsData?.sources?.map((source, i) => (
-                <div key={`${source.type}-${i}`} className="flex items-center justify-between text-xs">
+                <div
+                  key={`${source.type}-${i}`}
+                  className="flex items-center justify-between text-xs"
+                >
                   <span className="text-muted-foreground">{source.label}</span>
-                  <span className="font-semibold text-amber-400">+{source.amount.toLocaleString()}</span>
+                  <span className="font-semibold text-amber-400">
+                    +{source.amount.toLocaleString()}
+                  </span>
                 </div>
               ))}
               {/* Login Streak inline */}
-              <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+              <div className="border-border mt-2 flex items-center justify-between border-t pt-2">
                 <div className="flex items-center gap-1.5">
                   <Flame className="h-3.5 w-3.5 text-orange-400" />
                   <span className="text-xs font-semibold">Login Streak</span>
@@ -210,24 +256,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
         </Card>
       </div>
 
-      {/* Unopened Packs CTA */}
-      {stats.unopenedPacks > 0 && (
-        <button
-          onClick={() => onNavigate?.("acquire")}
-          className="glass-hierarchy-interactive flex w-full items-center justify-between rounded-lg border border-purple-500/20 p-3 text-left transition-all hover:scale-[1.01] hover:border-purple-500/40"
-        >
-          <div className="flex items-center gap-2.5">
-            <Package className="h-4 w-4 text-purple-400" />
-            <div>
-              <p className="text-xs font-bold text-purple-400">
-                {stats.unopenedPacks} Unopened Pack{stats.unopenedPacks > 1 ? "s" : ""}
-              </p>
-              <p className="text-[0.6rem] text-muted-foreground">Open your packs to discover new cards!</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-purple-400" />
-        </button>
-      )}
+      {/* Unopened Packs CTA - Removed */}
 
       {/* Featured Cards */}
       <Card className="glass-hierarchy-child p-3">
@@ -239,29 +268,41 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           {featuredCards.length > 0 && (
             <button
               onClick={() => onNavigate?.("cards")}
-              className="flex items-center gap-1 text-[0.65rem] text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[0.65rem] transition-colors"
             >
               View All <ArrowRight className="h-2.5 w-2.5" />
             </button>
           )}
         </div>
         {topCardsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-48 rounded-lg" />
+            ))}
           </div>
         ) : featuredCards.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6">
-            <Layers className="mb-2 h-8 w-8 text-muted-foreground/40" />
-            <p className="text-xs font-semibold text-foreground/80">No Cards Yet</p>
-            <p className="text-[0.6rem] text-muted-foreground mb-2">Import your NationStates cards to get started</p>
-            <Button size="sm" variant="outline" onClick={() => onNavigate?.("import")} className="text-xs">
+            <Layers className="text-muted-foreground/40 mb-2 h-8 w-8" />
+            <p className="text-foreground/80 text-xs font-semibold">No Cards Yet</p>
+            <p className="text-muted-foreground mb-2 text-[0.6rem]">
+              Import your NationStates cards to get started
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onNavigate?.("import")}
+              className="text-xs"
+            >
               <Download className="mr-1.5 h-3 w-3" /> Import NS Cards
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 justify-items-center">
+          <div className="grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-3">
             {featuredCards.map((card) => (
-              <div key={card.id} className="glass-hierarchy-child flex w-full flex-col items-center rounded-lg p-3">
+              <div
+                key={card.id}
+                className="glass-hierarchy-child flex w-full flex-col items-center rounded-lg p-3"
+              >
                 <CardDisplay
                   card={card}
                   size="medium"
@@ -286,10 +327,12 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
         </div>
         {loading ? (
           <div className="space-y-1.5">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-6 w-full" />)}
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-6 w-full" />
+            ))}
           </div>
         ) : !activities || activities.length === 0 ? (
-          <p className="py-3 text-center text-xs text-muted-foreground">No recent activity</p>
+          <p className="text-muted-foreground py-3 text-center text-xs">No recent activity</p>
         ) : (
           <div className="space-y-1">
             {activities.slice(0, 8).map((activity) => {
@@ -307,8 +350,11 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                     )}
                     <span className="text-muted-foreground">{activity.source}</span>
                   </div>
-                  <span className={cn("font-semibold", isPositive ? "text-green-400" : "text-red-400")}>
-                    {isPositive ? "+" : "-"}{Math.abs(activity.amount).toLocaleString()} IxC
+                  <span
+                    className={cn("font-semibold", isPositive ? "text-green-400" : "text-red-400")}
+                  >
+                    {isPositive ? "+" : "-"}
+                    {Math.abs(activity.amount).toLocaleString()} IxC
                   </span>
                 </div>
               );

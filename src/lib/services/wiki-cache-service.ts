@@ -248,7 +248,9 @@ export class WikiCacheService {
       }
 
       // Layer 3: Fetch from MediaWiki API
-      console.log(`[WikiCache] Cache miss for infobox: ${countryName} (${wikiSource}), fetching from API`);
+      console.log(
+        `[WikiCache] Cache miss for infobox: ${countryName} (${wikiSource}), fetching from API`
+      );
       const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName);
 
       const now = Date.now();
@@ -351,7 +353,9 @@ export class WikiCacheService {
       }
 
       // Layer 3: Fetch from MediaWiki API
-      console.log(`[WikiCache] Cache miss for page: ${pageName} (${wikiSource}), fetching from API`);
+      console.log(
+        `[WikiCache] Cache miss for page: ${pageName} (${wikiSource}), fetching from API`
+      );
       const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName);
 
       const content = typeof wikitext === "string" ? wikitext : null;
@@ -458,7 +462,9 @@ export class WikiCacheService {
       }
 
       // Layer 3: Fetch from MediaWiki API
-      console.log(`[WikiCache] Cache miss for flag: ${countryName} (${wikiSource}), fetching from API`);
+      console.log(
+        `[WikiCache] Cache miss for flag: ${countryName} (${wikiSource}), fetching from API`
+      );
       const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName);
 
       const url = typeof flagUrl === "string" ? flagUrl : null;

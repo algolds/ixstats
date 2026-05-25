@@ -34,10 +34,10 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-foreground">Upload Province Map</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Upload an SVG or PNG file containing your province/subdivision boundaries.
-          SVG files from Inkscape work best — provinces are detected from path groups.
+        <h3 className="text-foreground text-sm font-medium">Upload Province Map</h3>
+        <p className="text-muted-foreground mt-1 text-xs">
+          Upload an SVG or PNG file containing your province/subdivision boundaries. SVG files from
+          Inkscape work best — provinces are detected from path groups.
         </p>
       </div>
 
@@ -53,17 +53,19 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
         {importer.isProcessing ? (
           <>
-            <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium text-foreground">Processing...</p>
-            <p className="mt-1 text-xs text-muted-foreground">Parsing provinces from uploaded file</p>
+            <Loader2 className="text-primary mb-3 h-8 w-8 animate-spin" />
+            <p className="text-foreground text-sm font-medium">Processing...</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Parsing provinces from uploaded file
+            </p>
           </>
         ) : (
           <>
-            <Upload className="mb-3 h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium text-foreground">
+            <Upload className="text-muted-foreground mb-3 h-8 w-8" />
+            <p className="text-foreground text-sm font-medium">
               {isDragActive ? "Drop file here" : "Drag & drop or click to upload"}
             </p>
-            <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" /> SVG
               </span>
@@ -79,15 +81,16 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
       {/* Existing subdivisions info */}
       {importer.existingSubdivisions.length > 0 && (
         <div className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-          This country has {importer.existingSubdivisions.length} existing subdivision{importer.existingSubdivisions.length !== 1 ? "s" : ""}.
-          You can choose to replace them in the final step.
+          This country has {importer.existingSubdivisions.length} existing subdivision
+          {importer.existingSubdivisions.length !== 1 ? "s" : ""}. You can choose to replace them in
+          the final step.
         </div>
       )}
 
-      <div className="text-[10px] text-muted-foreground">
+      <div className="text-muted-foreground text-[10px]">
         <strong>Tips:</strong> For best results, use an Inkscape SVG where each province is a
-        separate path or group. Name your groups/paths with province names. For PNG files,
-        use distinct fill colors for each province.
+        separate path or group. Name your groups/paths with province names. For PNG files, use
+        distinct fill colors for each province.
       </div>
     </div>
   );

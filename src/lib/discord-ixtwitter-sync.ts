@@ -214,10 +214,7 @@ async function getOrCreateDiscordAccount(
   // Try to find existing account by discord username
   const existingAccount = await db.thinkpagesAccount.findFirst({
     where: {
-      OR: [
-        { username: discordUsername },
-        { bio: { contains: `discord:${discordUsername}` } },
-      ],
+      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
     },
   });
 
@@ -277,10 +274,7 @@ async function getOrCreateHandleAccount(
   // Get the main Discord user account to inherit country/verified status
   const mainAccount = await db.thinkpagesAccount.findFirst({
     where: {
-      OR: [
-        { username: discordUsername },
-        { bio: { contains: `discord:${discordUsername}` } },
-      ],
+      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
     },
     select: { id: true, verified: true, countryId: true },
   });
@@ -490,7 +484,9 @@ async function createPostFromMessage(
           reactionCounts,
         },
       });
-      console.log(`[DiscordPoster] Updated truncated/legacy post ${existingPost.id} to full content with marker, reply link, and reactions`);
+      console.log(
+        `[DiscordPoster] Updated truncated/legacy post ${existingPost.id} to full content with marker, reply link, and reactions`
+      );
     }
     return true;
   }
@@ -524,9 +520,7 @@ async function createPostFromMessage(
       likeCount,
       reactionCounts,
       mediaAttachments:
-        mediaEntries.length > 0
-          ? { createMany: { data: mediaEntries } }
-          : undefined,
+        mediaEntries.length > 0 ? { createMany: { data: mediaEntries } } : undefined,
     },
   });
 
@@ -568,10 +562,17 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
         const handle = extractPrimaryHandle(message.content);
         let accountId: string;
         if (handle) {
-          const handleAccountId = await getOrCreateHandleAccount(db, handle, message.author.username);
-          accountId = handleAccountId || (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
+          const handleAccountId = await getOrCreateHandleAccount(
+            db,
+            handle,
+            message.author.username
+          );
+          accountId =
+            handleAccountId ||
+            (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
         } else {
-          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
+          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message))
+            .accountId;
         }
 
         const ok = await createPostFromMessage(db, accountId, message);
@@ -599,7 +600,11 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
   }
 }
 
-export async function backfillIxTwitterToThinkPages(): Promise<{ posted: number; skipped: number; alreadyPosted: number }> {
+export async function backfillIxTwitterToThinkPages(): Promise<{
+  posted: number;
+  skipped: number;
+  alreadyPosted: number;
+}> {
   if (!DISCORD_BOT_TOKEN) {
     console.warn("[DiscordPoster] DISCORD_BOT_TOKEN not set, skipping backfill");
     return { posted: 0, skipped: 0, alreadyPosted: 0 };
@@ -639,17 +644,26 @@ export async function backfillIxTwitterToThinkPages(): Promise<{ posted: number;
         const handle = extractPrimaryHandle(message.content);
         let accountId: string;
         if (handle) {
-          const handleAccountId = await getOrCreateHandleAccount(db, handle, message.author.username);
-          accountId = handleAccountId || (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
+          const handleAccountId = await getOrCreateHandleAccount(
+            db,
+            handle,
+            message.author.username
+          );
+          accountId =
+            handleAccountId ||
+            (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
         } else {
-          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
+          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message))
+            .accountId;
         }
 
         const ok = await createPostFromMessage(db, accountId, message);
         if (ok) {
           posted++;
           if (posted % 50 === 0) {
-            console.log(`[DiscordPoster] Backfill progress: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`);
+            console.log(
+              `[DiscordPoster] Backfill progress: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`
+            );
           }
         } else {
           skipped++;
@@ -660,7 +674,9 @@ export async function backfillIxTwitterToThinkPages(): Promise<{ posted: number;
       }
     }
 
-    console.log(`[DiscordPoster] Backfill complete: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`);
+    console.log(
+      `[DiscordPoster] Backfill complete: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`
+    );
     return { posted, skipped, alreadyPosted };
   } catch (error) {
     console.error("[DiscordPoster] Backfill failed:", error);

@@ -36,8 +36,7 @@ export function MessagesConversationPanel({
   // Filter conversations by search query
   const filtered = searchQuery.trim()
     ? conversations.filter((c) => {
-        const name =
-          c.otherParticipants[0]?.account?.displayName ?? c.name ?? "";
+        const name = c.otherParticipants[0]?.account?.displayName ?? c.name ?? "";
         return name.toLowerCase().includes(searchQuery.toLowerCase());
       })
     : conversations;
@@ -45,9 +44,9 @@ export function MessagesConversationPanel({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="shrink-0 border-b border-border/50 p-3">
+      <div className="border-border/50 shrink-0 border-b p-3">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="text-foreground text-sm font-semibold">
             {folderConfig?.title ?? "Messages"}
           </h2>
           {activeFolder === "personal" && (
@@ -63,7 +62,7 @@ export function MessagesConversationPanel({
           )}
         </div>
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
@@ -77,19 +76,19 @@ export function MessagesConversationPanel({
       <div className="flex-1 overflow-y-auto p-1.5">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="px-3 py-12 text-center">
-            <p className="text-sm font-medium text-muted-foreground">
+            <p className="text-muted-foreground text-sm font-medium">
               {searchQuery.trim()
                 ? "No matching conversations"
-                : folderConfig?.emptyTitle ?? "No conversations"}
+                : (folderConfig?.emptyTitle ?? "No conversations")}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
+            <p className="text-muted-foreground/70 mt-1 text-xs">
               {searchQuery.trim()
                 ? "Try a different search term"
-                : folderConfig?.emptyDescription ?? ""}
+                : (folderConfig?.emptyDescription ?? "")}
             </p>
             {activeFolder === "personal" && !searchQuery.trim() && (
               <Button

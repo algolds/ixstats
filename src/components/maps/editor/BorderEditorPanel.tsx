@@ -36,14 +36,12 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
     : 0;
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-y-auto rounded-lg border border-border bg-card/90 p-3 backdrop-blur">
+    <div className="border-border bg-card/90 flex h-full flex-col gap-3 overflow-y-auto rounded-lg border p-3 backdrop-blur">
       {/* Feature Info */}
       {featureId ? (
         <div>
-          <h3 className="text-sm font-semibold text-foreground">
-            {displayName || featureId}
-          </h3>
-          <p className="text-xs text-muted-foreground">{featureId}</p>
+          <h3 className="text-foreground text-sm font-semibold">{displayName || featureId}</h3>
+          <p className="text-muted-foreground text-xs">{featureId}</p>
           {isDirty && (
             <span className="mt-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-500">
               Modified
@@ -51,7 +49,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" />
           <span className="text-sm">No feature selected</span>
         </div>
@@ -59,18 +57,21 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
 
       {/* Stats */}
       {geometry && (
-        <div className="space-y-1 border-t border-border pt-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="border-border space-y-1 border-t pt-2">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <MapPin className="h-3.5 w-3.5" />
             <span>{vertices.length} vertices</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <Layers className="h-3.5 w-3.5" />
-            <span>{ringCount} ring{ringCount !== 1 ? "s" : ""}</span>
+            <span>
+              {ringCount} ring{ringCount !== 1 ? "s" : ""}
+            </span>
           </div>
           {areaKm2 !== null && (
-            <div className="text-xs text-muted-foreground">
-              Area: {areaKm2 > 1000000
+            <div className="text-muted-foreground text-xs">
+              Area:{" "}
+              {areaKm2 > 1000000
                 ? `${(areaKm2 / 1000000).toFixed(2)}M km²`
                 : `${Math.round(areaKm2).toLocaleString()} km²`}
             </div>
@@ -80,8 +81,8 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
 
       {/* Neighbors (for merge mode) */}
       {mode === "merge" && neighbors.length > 0 && (
-        <div className="border-t border-border pt-2">
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-foreground">
+        <div className="border-border border-t pt-2">
+          <div className="text-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
             <Users className="h-3.5 w-3.5" />
             Select neighbors to merge
           </div>
@@ -105,20 +106,18 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
 
       {/* Neighbor list (non-merge mode) */}
       {mode !== "merge" && neighbors.length > 0 && (
-        <div className="border-t border-border pt-2">
-          <div className="mb-1 text-xs font-medium text-muted-foreground">
+        <div className="border-border border-t pt-2">
+          <div className="text-muted-foreground mb-1 text-xs font-medium">
             Neighbors ({neighbors.length})
           </div>
           <div className="space-y-0.5">
             {neighbors.slice(0, 10).map((n) => (
-              <div key={n.featureId} className="text-xs text-muted-foreground">
+              <div key={n.featureId} className="text-muted-foreground text-xs">
                 {n.displayName || n.featureId}
               </div>
             ))}
             {neighbors.length > 10 && (
-              <div className="text-xs text-muted-foreground/50">
-                +{neighbors.length - 10} more
-              </div>
+              <div className="text-muted-foreground/50 text-xs">+{neighbors.length - 10} more</div>
             )}
           </div>
         </div>

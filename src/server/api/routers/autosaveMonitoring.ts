@@ -15,13 +15,13 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 function getTimeRangeDate(range: string): Date {
   const now = new Date();
   switch (range) {
-    case '1h':
+    case "1h":
       return new Date(now.getTime() - 60 * 60 * 1000);
-    case '24h':
+    case "24h":
       return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    case '7d':
+    case "7d":
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    case '30d':
+    case "30d":
       return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     default:
       return new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -33,11 +33,11 @@ function getTimeRangeDate(range: string): Date {
  */
 function getGranularityInterval(granularity: string): number {
   switch (granularity) {
-    case 'minute':
+    case "minute":
       return 60 * 1000;
-    case 'hour':
+    case "hour":
       return 60 * 60 * 1000;
-    case 'day':
+    case "day":
       return 24 * 60 * 60 * 1000;
     default:
       return 60 * 60 * 1000; // Default to hour
@@ -51,13 +51,13 @@ function groupByGranularity(timestamp: Date, granularity: string): string {
   const date = new Date(timestamp);
 
   switch (granularity) {
-    case 'minute':
+    case "minute":
       date.setSeconds(0, 0);
       return date.toISOString();
-    case 'hour':
+    case "hour":
       date.setMinutes(0, 0, 0);
       return date.toISOString();
-    case 'day':
+    case "day":
       date.setHours(0, 0, 0, 0);
       return date.toISOString();
     default:
@@ -76,7 +76,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
   getAutosaveStats: adminProcedure
     .input(
       z.object({
-        timeRange: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -114,7 +114,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
         if (autosave.details) {
           try {
             const details = JSON.parse(autosave.details);
-            if (details.duration && typeof details.duration === 'number') {
+            if (details.duration && typeof details.duration === "number") {
               averageDuration += details.duration;
               durationCount++;
             }
@@ -147,7 +147,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
         economy: 0,
       };
       autosaves.forEach((autosave) => {
-        const section = autosave.action.split(':')[1] as keyof typeof sectionCounts;
+        const section = autosave.action.split(":")[1] as keyof typeof sectionCounts;
         if (section && section in sectionCounts) {
           sectionCounts[section]++;
         }
@@ -171,8 +171,8 @@ export const autosaveMonitoringRouter = createTRPCRouter({
   getAutosaveTimeSeries: adminProcedure
     .input(
       z.object({
-        timeRange: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
-        granularity: z.enum(['minute', 'hour', 'day']).default('hour'),
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
+        granularity: z.enum(["minute", "hour", "day"]).default("hour"),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -193,12 +193,15 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           success: true,
         },
         orderBy: {
-          timestamp: 'asc',
+          timestamp: "asc",
         },
       });
 
       // Group by granularity
-      const timeSeriesMap = new Map<string, { timestamp: string; count: number; successCount: number; failureCount: number }>();
+      const timeSeriesMap = new Map<
+        string,
+        { timestamp: string; count: number; successCount: number; failureCount: number }
+      >();
 
       autosaves.forEach((autosave) => {
         const timeKey = groupByGranularity(autosave.timestamp, input.granularity);
@@ -238,7 +241,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
   getFailureAnalysis: adminProcedure
     .input(
       z.object({
-        timeRange: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -266,7 +269,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
       // Group by error type
       const errorCountMap = new Map<string, number>();
       failures.forEach((failure) => {
-        const errorMsg = failure.error || 'Unknown error';
+        const errorMsg = failure.error || "Unknown error";
         errorCountMap.set(errorMsg, (errorCountMap.get(errorMsg) || 0) + 1);
       });
       const errorTypes = Array.from(errorCountMap.entries())
@@ -276,7 +279,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
       // Group by section
       const sectionCountMap = new Map<string, number>();
       failures.forEach((failure) => {
-        const section = failure.action.split(':')[1] || 'unknown';
+        const section = failure.action.split(":")[1] || "unknown";
         sectionCountMap.set(section, (sectionCountMap.get(section) || 0) + 1);
       });
       const failedSections = Array.from(sectionCountMap.entries())
@@ -299,7 +302,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
   getActiveUsers: adminProcedure
     .input(
       z.object({
-        timeRange: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -326,12 +329,15 @@ export const autosaveMonitoringRouter = createTRPCRouter({
       });
 
       // Group by user
-      const userStatsMap = new Map<string, {
-        userId: string;
-        autosaveCount: number;
-        lastAutosave: Date;
-        failureCount: number;
-      }>();
+      const userStatsMap = new Map<
+        string,
+        {
+          userId: string;
+          autosaveCount: number;
+          lastAutosave: Date;
+          failureCount: number;
+        }
+      >();
 
       autosaves.forEach((autosave) => {
         if (!autosave.userId) return;
@@ -356,8 +362,8 @@ export const autosaveMonitoringRouter = createTRPCRouter({
       });
 
       // Convert to array and sort by autosave count
-      const users = Array.from(userStatsMap.values()).sort((a, b) =>
-        b.autosaveCount - a.autosaveCount
+      const users = Array.from(userStatsMap.values()).sort(
+        (a, b) => b.autosaveCount - a.autosaveCount
       );
 
       return { users };
@@ -400,7 +406,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
       if (autosave.details) {
         try {
           const details = JSON.parse(autosave.details);
-          if (details.duration && typeof details.duration === 'number') {
+          if (details.duration && typeof details.duration === "number") {
             durationSum += details.duration;
             durationCount++;
           }
@@ -415,15 +421,15 @@ export const autosaveMonitoringRouter = createTRPCRouter({
     }
 
     // Determine health status
-    let status: 'healthy' | 'degraded' | 'critical';
+    let status: "healthy" | "degraded" | "critical";
     const failureRate = autosavesLast5Min > 0 ? (failuresLast5Min / autosavesLast5Min) * 100 : 0;
 
     if (failureRate >= 50) {
-      status = 'critical';
+      status = "critical";
     } else if (failureRate >= 20 || (avgResponseTime && avgResponseTime > 5000)) {
-      status = 'degraded';
+      status = "degraded";
     } else {
-      status = 'healthy';
+      status = "healthy";
     }
 
     return {

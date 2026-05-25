@@ -6,7 +6,8 @@ import Link from "next/link";
 import { RefreshCw, Users, TrendingUp, MapPin, Scaling, Flag } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
-import { cn, getTierStyle } from "~/lib/theme-utils";
+import { cn } from "~/lib/utils";
+import { getTierStyle } from "~/lib/theme-utils";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import type { CountryStats } from "~/types/ixstats";
 import { createUrl } from "~/lib/url-utils";
@@ -143,7 +144,7 @@ export function CountryCard({
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex min-w-0 items-center space-x-3">
-              <div className="relative h-6 w-8 flex-shrink-0">
+              <div className="relative h-6 w-8 shrink-0">
                 {propFlagLoading ? (
                   <Skeleton className="h-full w-full rounded" />
                 ) : propFlagUrl ? (
@@ -175,7 +176,7 @@ export function CountryCard({
                     size="icon"
                     onClick={handleUpdate}
                     disabled={updateMutation.isPending}
-                    className="h-7 w-7 flex-shrink-0"
+                    className="h-7 w-7 shrink-0"
                     aria-label={`Update ${country.name}`}
                   >
                     <RefreshCw
@@ -196,13 +197,13 @@ export function CountryCard({
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex-grow">
+        <CardContent className="grow">
           <div className="mb-4 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div key={stat.label} className="flex items-start space-x-2">
-                  <Icon className={cn("mt-0.5 h-4 w-4 flex-shrink-0", stat.color)} />
+                  <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", stat.color)} />
                   <div className="min-w-0 flex-1">
                     <p className="text-muted-foreground truncate text-xs">{stat.label}</p>
                     <p className="text-card-foreground truncate font-medium" title={stat.value}>

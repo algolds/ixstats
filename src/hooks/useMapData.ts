@@ -13,20 +13,13 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
-import {
-  LAYER_CONFIGS,
-  MAP_LAYER_TYPES,
-  type MapLayerType,
-} from "~/lib/map-config";
+import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/map-config";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
 import { getCachedMapLayers, setCachedMapLayers } from "~/lib/map-idb-cache";
 
 /** Layers that are always visible and cannot be toggled off */
-export const LOCKED_LAYERS: MapLayerType[] = [
-  "background",
-  "altitudes",
-];
+export const LOCKED_LAYERS: MapLayerType[] = ["background", "altitudes"];
 
 const DEFAULT_VISIBLE: MapLayerType[] = [
   "background",
@@ -39,14 +32,12 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 
 /** Layers to pre-fetch on initial load.
  * Climate excluded — lazy-loaded on toggle to save ~2MB on initial bundle. */
-const ALL_PREFETCH_LAYERS: MapLayerType[] = [
-  ...DEFAULT_VISIBLE,
-];
+const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
 
 /** Shared query options for map data - long cache, no refetching */
 export const MAP_QUERY_OPTIONS = {
-  staleTime: 30 * 60 * 1000,     // 30 min - map data rarely changes
-  gcTime: 2 * 60 * 60 * 1000,    // 2 hours - keep in cache long after unmount
+  staleTime: 30 * 60 * 1000, // 30 min - map data rarely changes
+  gcTime: 2 * 60 * 60 * 1000, // 2 hours - keep in cache long after unmount
   refetchOnWindowFocus: false,
   refetchOnMount: false,
   refetchOnReconnect: false,
@@ -92,12 +83,16 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
     isLoading: queryLoading,
     error,
   } = api.geo.getWorldMap.useQuery(
-    { layers: allRequestedLayers, zoom: zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined },
+    {
+      layers: allRequestedLayers,
+      zoom:
+        zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
+    },
     {
       ...MAP_QUERY_OPTIONS,
       // Use IndexedDB data as placeholder until server responds
-      placeholderData: idbData as typeof layerData ?? undefined,
-    },
+      placeholderData: (idbData as typeof layerData) ?? undefined,
+    }
   );
 
   // Persist fresh server data to IndexedDB
@@ -123,19 +118,14 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
     return Object.entries(effectiveData)
       .filter(
         ([type]) =>
-          MAP_LAYER_TYPES.includes(type as MapLayerType) &&
-          LAYER_CONFIGS[type as MapLayerType]
+          MAP_LAYER_TYPES.includes(type as MapLayerType) && LAYER_CONFIGS[type as MapLayerType]
       )
       .map(([type, data]) => ({
         type: type as MapLayerType,
         data: data as FeatureCollection,
         visible: visibleLayers.has(type as MapLayerType),
       }))
-      .sort(
-        (a, b) =>
-          (LAYER_CONFIGS[a.type]?.zIndex ?? 0) -
-          (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
-      );
+      .sort((a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0));
   }, [effectiveData, visibleLayers]);
 
   const toggleLayer = useCallback((layer: MapLayerType) => {
@@ -178,21 +168,15 @@ export function useMapPrefetch() {
 
   useEffect(() => {
     // Fire-and-forget prefetch using batched bundle endpoint (single request)
-    utils.geo.getMapBundle.prefetch(
-      { layers: ALL_PREFETCH_LAYERS },
-      MAP_QUERY_OPTIONS,
-    );
+    utils.geo.getMapBundle.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
     // Also prefetch individual endpoints for backward compatibility with non-batched consumers
-    utils.geo.getWorldMap.prefetch(
-      { layers: ALL_PREFETCH_LAYERS },
-      MAP_QUERY_OPTIONS,
-    );
+    utils.geo.getWorldMap.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After political layer is available, warm ALL per-country data
   const { data: worldMap } = api.geo.getWorldMap.useQuery(
     { layers: ALL_PREFETCH_LAYERS },
-    { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current },
+    { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current }
   );
 
   useEffect(() => {
@@ -223,14 +207,16 @@ export function useMapPrefetch() {
       try {
         const bulkSummaries = await utils.countries.getBulkMapSummaries.fetch(
           { countryIds },
-          wikiOpts,
+          wikiOpts
         );
         if (bulkSummaries) {
           for (const [id, summary] of Object.entries(bulkSummaries)) {
             utils.countries.getMapSummary.setData({ countryId: id }, summary);
           }
         }
-      } catch { /* summaries will load on click instead */ }
+      } catch {
+        /* summaries will load on click instead */
+      }
     })();
 
     // ── 2. Bulk rich wiki intros (map panel + /countries/[slug] page) ──
@@ -243,7 +229,7 @@ export function useMapPrefetch() {
           const chunk = countryNames.slice(i, i + 20);
           const bulk = await utils.countries.getBulkWikiRichIntros.fetch(
             { countryNames: chunk },
-            wikiOpts,
+            wikiOpts
           );
           if (bulk) {
             for (const [name, data] of Object.entries(bulk)) {
@@ -251,7 +237,9 @@ export function useMapPrefetch() {
             }
           }
         }
-      } catch { /* rich intros will load on click instead */ }
+      } catch {
+        /* rich intros will load on click instead */
+      }
     })();
 
     // NOTE: Page images, infoboxes, and section previews load on-demand

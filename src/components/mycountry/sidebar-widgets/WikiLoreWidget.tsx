@@ -31,11 +31,36 @@ interface WikiLoreWidgetProps {
 
 // Color mapping for dynamic Tailwind classes
 const THEME_COLORS: Record<string, { bg: string; text: string; border: string; iconBg: string }> = {
-  amber: { bg: "from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10", text: "text-amber-600", border: "border-amber-200/30 dark:border-amber-800/20", iconBg: "bg-amber-100 dark:bg-amber-900/30" },
-  red: { bg: "from-red-50/50 to-rose-50/30 dark:from-red-950/20 dark:to-rose-950/10", text: "text-red-600", border: "border-red-200/30 dark:border-red-800/20", iconBg: "bg-red-100 dark:bg-red-900/30" },
-  indigo: { bg: "from-indigo-50/50 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/10", text: "text-indigo-600", border: "border-indigo-200/30 dark:border-indigo-800/20", iconBg: "bg-indigo-100 dark:bg-indigo-900/30" },
-  cyan: { bg: "from-cyan-50/50 to-sky-50/30 dark:from-cyan-950/20 dark:to-sky-950/10", text: "text-cyan-600", border: "border-cyan-200/30 dark:border-cyan-800/20", iconBg: "bg-cyan-100 dark:bg-cyan-900/30" },
-  blue: { bg: "from-blue-50/50 to-sky-50/30 dark:from-blue-950/20 dark:to-sky-950/10", text: "text-blue-600", border: "border-blue-200/30 dark:border-blue-800/20", iconBg: "bg-blue-100 dark:bg-blue-900/30" },
+  amber: {
+    bg: "from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10",
+    text: "text-amber-600",
+    border: "border-amber-200/30 dark:border-amber-800/20",
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+  },
+  red: {
+    bg: "from-red-50/50 to-rose-50/30 dark:from-red-950/20 dark:to-rose-950/10",
+    text: "text-red-600",
+    border: "border-red-200/30 dark:border-red-800/20",
+    iconBg: "bg-red-100 dark:bg-red-900/30",
+  },
+  indigo: {
+    bg: "from-indigo-50/50 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/10",
+    text: "text-indigo-600",
+    border: "border-indigo-200/30 dark:border-indigo-800/20",
+    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+  },
+  cyan: {
+    bg: "from-cyan-50/50 to-sky-50/30 dark:from-cyan-950/20 dark:to-sky-950/10",
+    text: "text-cyan-600",
+    border: "border-cyan-200/30 dark:border-cyan-800/20",
+    iconBg: "bg-cyan-100 dark:bg-cyan-900/30",
+  },
+  blue: {
+    bg: "from-blue-50/50 to-sky-50/30 dark:from-blue-950/20 dark:to-sky-950/10",
+    text: "text-blue-600",
+    border: "border-blue-200/30 dark:border-blue-800/20",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+  },
 };
 
 export const WikiLoreWidget = memo(function WikiLoreWidget({
@@ -68,29 +93,28 @@ export const WikiLoreWidget = memo(function WikiLoreWidget({
   return (
     <div className={`rounded-xl border ${colors.border} bg-gradient-to-br ${colors.bg} p-3`}>
       {/* Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center gap-2"
-      >
+      <button onClick={() => setIsExpanded(!isExpanded)} className="flex w-full items-center gap-2">
         <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${colors.iconBg}`}>
           <Icon className={`h-3.5 w-3.5 ${colors.text}`} />
         </div>
-        <h4 className="flex-1 text-left text-xs font-semibold text-foreground">{title}</h4>
-        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+        <h4 className="text-foreground flex-1 text-left text-xs font-semibold">{title}</h4>
+        <ChevronDown
+          className={`text-muted-foreground h-3.5 w-3.5 transition-transform ${isExpanded ? "" : "-rotate-90"}`}
+        />
       </button>
 
       {isExpanded && (
         <div className="mt-2 space-y-2">
           {isLoading ? (
             <div className="flex items-center gap-2 py-2">
-              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">Searching wiki...</span>
+              <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+              <span className="text-muted-foreground text-[10px]">Searching wiki...</span>
             </div>
           ) : (
             <>
               {/* Lead article intro */}
               {introText && (
-                <p className="line-clamp-3 text-[11px] leading-relaxed text-foreground/70">
+                <p className="text-foreground/70 line-clamp-3 text-[11px] leading-relaxed">
                   {introText}
                 </p>
               )}
@@ -105,11 +129,11 @@ export const WikiLoreWidget = memo(function WikiLoreWidget({
                       href={wikiUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-foreground/80 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                      className="text-foreground/80 flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                     >
-                      <BookOpen className={`h-3 w-3 flex-shrink-0 ${colors.text}`} />
+                      <BookOpen className={`h-3 w-3 shrink-0 ${colors.text}`} />
                       <span className="truncate">{article.title.replace(/_/g, " ")}</span>
-                      <ExternalLink className="ml-auto h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/50" />
+                      <ExternalLink className="text-muted-foreground/50 ml-auto h-2.5 w-2.5 shrink-0" />
                     </a>
                   );
                 })}

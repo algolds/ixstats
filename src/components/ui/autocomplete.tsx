@@ -47,47 +47,52 @@ export const Autocomplete = React.memo(function Autocomplete({
   const preventBlurRef = useRef(false);
 
   // Notify parent when open state changes
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    setOpen(newOpen);
-    if (onOpenChange) {
-      onOpenChange(newOpen);
-    }
-    if (!newOpen && onBlur) {
-      onBlur();
-    }
-  }, [onOpenChange, onBlur]);
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      setOpen(newOpen);
+      if (onOpenChange) {
+        onOpenChange(newOpen);
+      }
+      if (!newOpen && onBlur) {
+        onBlur();
+      }
+    },
+    [onOpenChange, onBlur]
+  );
 
   // Filter suggestions based on current value - memoize to avoid recalculation
-  const filteredGlobal = useMemo(() =>
-    globalSuggestions.filter((s) =>
-      s.value.toLowerCase().includes(value.toLowerCase())
-    ),
+  const filteredGlobal = useMemo(
+    () => globalSuggestions.filter((s) => s.value.toLowerCase().includes(value.toLowerCase())),
     [globalSuggestions, value]
   );
 
-  const filteredUser = useMemo(() =>
-    userSuggestions.filter((s) =>
-      s.value.toLowerCase().includes(value.toLowerCase())
-    ),
+  const filteredUser = useMemo(
+    () => userSuggestions.filter((s) => s.value.toLowerCase().includes(value.toLowerCase())),
     [userSuggestions, value]
   );
 
-  const handleSelect = useCallback((selectedValue: string) => {
-    preventBlurRef.current = true;
-    onChange(selectedValue);
-    handleOpenChange(false);
-    // Restore focus after selection
-    setTimeout(() => {
-      inputRef.current?.focus();
-      preventBlurRef.current = false;
-    }, 0);
-  }, [onChange, handleOpenChange]);
+  const handleSelect = useCallback(
+    (selectedValue: string) => {
+      preventBlurRef.current = true;
+      onChange(selectedValue);
+      handleOpenChange(false);
+      // Restore focus after selection
+      setTimeout(() => {
+        inputRef.current?.focus();
+        preventBlurRef.current = false;
+      }, 0);
+    },
+    [onChange, handleOpenChange]
+  );
 
   // Memoize input event handlers to prevent re-renders
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    if (!open) handleOpenChange(true);
-  }, [onChange, open, handleOpenChange]);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+      if (!open) handleOpenChange(true);
+    },
+    [onChange, open, handleOpenChange]
+  );
 
   const handleInputFocus = useCallback(() => {
     handleOpenChange(true);

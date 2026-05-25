@@ -5,7 +5,6 @@ import { Skeleton } from "./skeleton";
 import { AnimatedNumber } from "./animated-number";
 import { HealthRing } from "./health-ring";
 
-
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion";
 import { ChevronDown, ChevronUp, Users, BarChart3, CheckCircle } from "lucide-react";
 import { formatCurrency } from "~/lib/chart-utils";

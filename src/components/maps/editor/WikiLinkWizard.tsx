@@ -66,12 +66,15 @@ export function WikiLinkWizard({
     { enabled: !!value && showInfobox, staleTime: 5 * 60_000 }
   );
 
-  const handleSelect = useCallback((title: string) => {
-    onChange(title);
-    setSearchQuery("");
-    setIsSearching(false);
-    setShowInfobox(true);
-  }, [onChange]);
+  const handleSelect = useCallback(
+    (title: string) => {
+      onChange(title);
+      setSearchQuery("");
+      setIsSearching(false);
+      setShowInfobox(true);
+    },
+    [onChange]
+  );
 
   const handleUnlink = useCallback(() => {
     onChange(undefined);
@@ -87,7 +90,12 @@ export function WikiLinkWizard({
 
     for (const f of infobox.fields) {
       const key = f.key.toLowerCase();
-      if ((key === "population_estimate" || key === "population_total" || key === "population_census") && typeof f.typedValue === "number") {
+      if (
+        (key === "population_estimate" ||
+          key === "population_total" ||
+          key === "population_census") &&
+        typeof f.typedValue === "number"
+      ) {
         fields.population = f.typedValue;
       }
       if (key === "area_km2" && typeof f.typedValue === "number") {
@@ -123,7 +131,9 @@ export function WikiLinkWizard({
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
     return Math.round(2 * R * Math.asin(Math.sqrt(a)));
   })();
 
@@ -133,7 +143,9 @@ export function WikiLinkWizard({
       <div className="space-y-1.5">
         <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs dark:bg-emerald-950/30">
           <Link2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-          <span className="flex-1 truncate font-medium text-emerald-700 dark:text-emerald-300">{value}</span>
+          <span className="flex-1 truncate font-medium text-emerald-700 dark:text-emerald-300">
+            {value}
+          </span>
           <button
             onClick={() => setShowInfobox((v) => !v)}
             className="rounded p-0.5 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
@@ -163,20 +175,22 @@ export function WikiLinkWizard({
 
         {/* Infobox preview + import */}
         {showInfobox && (
-          <div className="rounded-md border border-border bg-muted/50 p-2">
+          <div className="border-border bg-muted/50 rounded-md border p-2">
             {infoboxLoading && (
-              <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
                 <Loader2 className="h-3 w-3 animate-spin" /> Parsing infobox...
               </div>
             )}
 
             {infobox && !infobox.hasInfobox && (
-              <div className="py-1 text-xs text-muted-foreground">No infobox found on this page.</div>
+              <div className="text-muted-foreground py-1 text-xs">
+                No infobox found on this page.
+              </div>
             )}
 
             {infobox?.hasInfobox && (
               <>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                   {infobox.templateName}
                 </div>
                 <div className="mt-1 max-h-32 space-y-0.5 overflow-y-auto">
@@ -185,8 +199,10 @@ export function WikiLinkWizard({
                     .slice(0, 12)
                     .map((f, i) => (
                       <div key={i} className="flex items-center gap-1.5 text-[11px]">
-                        <span className="w-24 shrink-0 truncate text-muted-foreground">{f.key}</span>
-                        <span className="truncate text-foreground">{f.cleanValue}</span>
+                        <span className="text-muted-foreground w-24 shrink-0 truncate">
+                          {f.key}
+                        </span>
+                        <span className="text-foreground truncate">{f.cleanValue}</span>
                       </div>
                     ))}
                 </div>
@@ -218,34 +234,34 @@ export function WikiLinkWizard({
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
         <input
           ref={inputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-border bg-background py-1.5 pl-7 pr-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-blue-400"
+          className="border-border bg-background text-foreground w-full rounded-md border py-1.5 pr-2 pl-7 text-xs outline-none focus:ring-1 focus:ring-blue-400"
         />
         {searchLoading && (
-          <Loader2 className="absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground absolute top-1/2 right-2 h-3 w-3 -translate-y-1/2 animate-spin" />
         )}
       </div>
 
       {/* Search results dropdown */}
       {searchResults && searchResults.results.length > 0 && searchQuery.length >= 2 && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+        <div className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto rounded-md border shadow-lg">
           {searchResults.results.map((r, i) => (
             <button
               key={i}
               onClick={() => handleSelect(r.title)}
-              className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent"
+              className="hover:bg-accent flex w-full items-start gap-2 px-2.5 py-1.5 text-left text-xs transition-colors"
             >
-              <Link2 className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+              <Link2 className="text-muted-foreground mt-0.5 h-3 w-3 shrink-0" />
               <div className="min-w-0">
-                <div className="truncate font-medium text-foreground">{r.title}</div>
+                <div className="text-foreground truncate font-medium">{r.title}</div>
                 {r.description && (
-                  <div className="truncate text-[10px] text-muted-foreground">{r.description}</div>
+                  <div className="text-muted-foreground truncate text-[10px]">{r.description}</div>
                 )}
               </div>
             </button>
@@ -254,17 +270,23 @@ export function WikiLinkWizard({
       )}
 
       {/* No results */}
-      {searchResults && searchResults.results.length === 0 && debouncedQuery.length >= 2 && !searchLoading && (
-        <div className="mt-1 text-[10px] text-muted-foreground">
-          No wiki pages found for &ldquo;{debouncedQuery}&rdquo;
-        </div>
-      )}
+      {searchResults &&
+        searchResults.results.length === 0 &&
+        debouncedQuery.length >= 2 &&
+        !searchLoading && (
+          <div className="text-muted-foreground mt-1 text-[10px]">
+            No wiki pages found for &ldquo;{debouncedQuery}&rdquo;
+          </div>
+        )}
 
       {/* Skip option */}
       {searchQuery.length === 0 && (
         <button
-          onClick={() => { setIsSearching(false); onChange(undefined); }}
-          className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            setIsSearching(false);
+            onChange(undefined);
+          }}
+          className="text-muted-foreground hover:text-foreground mt-1 text-[10px]"
         >
           Skip wiki linking
         </button>

@@ -10,22 +10,17 @@ interface MessagesEmptyStateProps {
   onNewConversation?: () => void;
 }
 
-export function MessagesEmptyState({
-  activeFolder,
-  onNewConversation,
-}: MessagesEmptyStateProps) {
+export function MessagesEmptyState({ activeFolder, onNewConversation }: MessagesEmptyStateProps) {
   const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
   const Icon = folderConfig?.icon ?? MessageSquare;
 
   return (
     <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
-        <Icon className="h-8 w-8 text-muted-foreground" />
+      <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
+        <Icon className="text-muted-foreground h-8 w-8" />
       </div>
-      <h3 className="mb-1 text-base font-semibold text-foreground">
-        Select a conversation
-      </h3>
-      <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+      <h3 className="text-foreground mb-1 text-base font-semibold">Select a conversation</h3>
+      <p className="text-muted-foreground mb-6 max-w-sm text-sm">
         Choose a conversation from the sidebar, or start a new one to begin messaging.
       </p>
       {activeFolder === "personal" && onNewConversation && (

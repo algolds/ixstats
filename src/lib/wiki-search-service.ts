@@ -13,15 +13,9 @@ export interface WikiConfig {
  * Check if a fetch response is a Cloudflare challenge page instead of valid JSON.
  * Throws a descriptive error if Cloudflare is blocking the request.
  */
-async function assertNotCloudflareChallenge(
-  response: Response,
-  site: string
-): Promise<void> {
+async function assertNotCloudflareChallenge(response: Response, site: string): Promise<void> {
   const contentType = response.headers.get("content-type") || "";
-  if (
-    !response.ok &&
-    contentType.includes("text/html")
-  ) {
+  if (!response.ok && contentType.includes("text/html")) {
     const body = await response.text();
     if (
       body.includes("Just a moment") ||
@@ -263,7 +257,7 @@ async function searchFilesFulltext(
     const response = await fetch(url, {
       headers: {
         "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+        "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -472,7 +466,7 @@ async function getAllCategoryMembers(categoryFilter: string, config: WikiConfig)
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+        "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -526,7 +520,7 @@ async function getCategorySubcategories(
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+        "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -636,7 +630,7 @@ async function performTargetedSearch(
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+        "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -767,7 +761,7 @@ async function getPageWikitext(pageName: string, config: WikiConfig): Promise<st
   const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
     headers: {
       "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+      "Api-User-Agent": "IxStats-Builder",
     },
   });
 
@@ -1448,7 +1442,7 @@ async function getImageUrl(
     const response = await fetch(url, {
       headers: {
         "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+        "Api-User-Agent": "IxStats-Builder",
         Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
         Connection: "keep-alive",
@@ -1504,7 +1498,10 @@ async function getImageUrl(
     console.log(`[WikiImageSearch] Found image URL for ${filename}: ${imageUrl}`);
     return imageUrl;
   } catch (error) {
-    console.error(`[WikiImageSearch] Exception getting image URL for ${filename} on ${site}:`, error);
+    console.error(
+      `[WikiImageSearch] Exception getting image URL for ${filename} on ${site}:`,
+      error
+    );
     return null;
   }
 }
@@ -1582,7 +1579,7 @@ export async function searchWikiImagesWithPagination(
     const response = await fetch(url, {
       headers: {
         "User-Agent": "IxStats-Builder",
-          "Api-User-Agent": "IxStats-Builder",
+        "Api-User-Agent": "IxStats-Builder",
         Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",
@@ -1593,11 +1590,15 @@ export async function searchWikiImagesWithPagination(
       },
     });
 
-    console.log(`[WikiImageSearch] Response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`);
+    console.log(
+      `[WikiImageSearch] Response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[WikiImageSearch] Error response (${response.status}): ${errorText.substring(0, 500)}`);
+      console.error(
+        `[WikiImageSearch] Error response (${response.status}): ${errorText.substring(0, 500)}`
+      );
 
       // Cloudflare protection or other blocking
       if (response.status === 403 || response.status === 503 || errorText.includes("cloudflare")) {
@@ -1611,7 +1612,9 @@ export async function searchWikiImagesWithPagination(
         throw error;
       }
 
-      const error = new Error(`NETWORK_ERROR: Failed to fetch images from ${site} (HTTP ${response.status}: ${response.statusText})`);
+      const error = new Error(
+        `NETWORK_ERROR: Failed to fetch images from ${site} (HTTP ${response.status}: ${response.statusText})`
+      );
       (error as any).code = "NETWORK_ERROR";
       (error as any).site = site;
       (error as any).statusCode = response.status;
@@ -1738,7 +1741,9 @@ export async function searchWikiImagesWithPagination(
 
     // Handle other errors
     if (error instanceof Error) {
-      const wrappedError = new Error(`SEARCH_ERROR: Failed to search ${site} images: ${error.message}`);
+      const wrappedError = new Error(
+        `SEARCH_ERROR: Failed to search ${site} images: ${error.message}`
+      );
       (wrappedError as any).code = "SEARCH_ERROR";
       (wrappedError as any).site = site;
       (wrappedError as any).originalError = error;

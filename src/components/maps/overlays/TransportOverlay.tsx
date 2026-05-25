@@ -23,11 +23,11 @@ const HUBS_SOURCE = "transport-hubs-source";
 const HUBS_LAYER = "transport-hubs-circle";
 
 const ROUTE_COLORS: Record<string, string> = {
-  rail: "#374151",       // gray-700
-  highway: "#f97316",    // orange-500
-  road: "#92400e",       // amber-800
+  rail: "#374151", // gray-700
+  highway: "#f97316", // orange-500
+  road: "#92400e", // amber-800
   shipping_lane: "#3b82f6", // blue-500
-  canal: "#06b6d4",      // cyan-500
+  canal: "#06b6d4", // cyan-500
 };
 
 const ROUTE_WIDTHS: Record<string, number> = {
@@ -49,7 +49,14 @@ interface TransportOverlayProps {
   onHubClick?: (hubId: string, lngLat: { lng: number; lat: number }) => void;
 }
 
-export function TransportOverlay({ map, routeData, hubData, visible, onRouteClick, onHubClick }: TransportOverlayProps) {
+export function TransportOverlay({
+  map,
+  routeData,
+  hubData,
+  visible,
+  onRouteClick,
+  onHubClick,
+}: TransportOverlayProps) {
   useEffect(() => {
     if (!map || !map.isStyleLoaded()) return;
 
@@ -68,21 +75,33 @@ export function TransportOverlay({ map, routeData, hubData, visible, onRouteClic
         source: ROUTES_SOURCE,
         paint: {
           "line-color": [
-            "match", ["get", "routeType"],
-            "rail", ROUTE_COLORS.rail!,
-            "highway", ROUTE_COLORS.highway!,
-            "road", ROUTE_COLORS.road!,
-            "shipping_lane", ROUTE_COLORS.shipping_lane!,
-            "canal", ROUTE_COLORS.canal!,
+            "match",
+            ["get", "routeType"],
+            "rail",
+            ROUTE_COLORS.rail!,
+            "highway",
+            ROUTE_COLORS.highway!,
+            "road",
+            ROUTE_COLORS.road!,
+            "shipping_lane",
+            ROUTE_COLORS.shipping_lane!,
+            "canal",
+            ROUTE_COLORS.canal!,
             "#888888", // fallback
           ],
           "line-width": [
-            "match", ["get", "routeType"],
-            "rail", ROUTE_WIDTHS.rail!,
-            "highway", ROUTE_WIDTHS.highway!,
-            "road", ROUTE_WIDTHS.road!,
-            "shipping_lane", ROUTE_WIDTHS.shipping_lane!,
-            "canal", ROUTE_WIDTHS.canal!,
+            "match",
+            ["get", "routeType"],
+            "rail",
+            ROUTE_WIDTHS.rail!,
+            "highway",
+            ROUTE_WIDTHS.highway!,
+            "road",
+            ROUTE_WIDTHS.road!,
+            "shipping_lane",
+            ROUTE_WIDTHS.shipping_lane!,
+            "canal",
+            ROUTE_WIDTHS.canal!,
             1.5, // fallback
           ],
           "line-opacity": 0.8,
@@ -109,10 +128,7 @@ export function TransportOverlay({ map, routeData, hubData, visible, onRouteClic
           type: "circle",
           source: HUBS_SOURCE,
           paint: {
-            "circle-radius": [
-              "interpolate", ["linear"], ["get", "connections"],
-              1, 3, 5, 6, 10, 9,
-            ],
+            "circle-radius": ["interpolate", ["linear"], ["get", "connections"], 1, 3, 5, 6, 10, 9],
             "circle-color": "#1f2937",
             "circle-stroke-color": "#ffffff",
             "circle-stroke-width": 1,
@@ -158,8 +174,12 @@ export function TransportOverlay({ map, routeData, hubData, visible, onRouteClic
       }
     };
 
-    const handleMouseEnter = () => { map.getCanvas().style.cursor = "pointer"; };
-    const handleMouseLeave = () => { map.getCanvas().style.cursor = ""; };
+    const handleMouseEnter = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+    const handleMouseLeave = () => {
+      map.getCanvas().style.cursor = "";
+    };
 
     if (map.getLayer(ROUTES_LAYER)) {
       map.on("click", ROUTES_LAYER, handleRouteClick);
@@ -184,7 +204,9 @@ export function TransportOverlay({ map, routeData, hubData, visible, onRouteClic
           map.off("mouseenter", HUBS_LAYER, handleMouseEnter);
           map.off("mouseleave", HUBS_LAYER, handleMouseLeave);
         }
-      } catch { /* map destroyed */ }
+      } catch {
+        /* map destroyed */
+      }
     };
   }, [map, visible, onRouteClick, onHubClick]);
 
@@ -197,7 +219,9 @@ export function TransportOverlay({ map, routeData, hubData, visible, onRouteClic
         if (map.getLayer(ROUTES_LAYER)) map.removeLayer(ROUTES_LAYER);
         if (map.getSource(HUBS_SOURCE)) map.removeSource(HUBS_SOURCE);
         if (map.getSource(ROUTES_SOURCE)) map.removeSource(ROUTES_SOURCE);
-      } catch { /* map destroyed */ }
+      } catch {
+        /* map destroyed */
+      }
     };
   }, [map]);
 

@@ -55,13 +55,22 @@ export function formatMWTimeAgo(ts: string | number | null | undefined): string 
 /**
  * Format a MediaWiki timestamp as a locale date string.
  */
-export function formatMWDate(ts: string | number | null | undefined, options?: Intl.DateTimeFormatOptions): string {
+export function formatMWDate(
+  ts: string | number | null | undefined,
+  options?: Intl.DateTimeFormatOptions
+): string {
   const iso = parseMWTimestamp(ts);
   if (!iso) return "";
   const date = new Date(iso);
   if (isNaN(date.getTime())) return "";
-  return date.toLocaleString("en-US", options ?? {
-    month: "short", day: "numeric", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+  return date.toLocaleString(
+    "en-US",
+    options ?? {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
 }

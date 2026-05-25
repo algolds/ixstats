@@ -255,7 +255,10 @@ export function useUnifiedIntelligence({
 
   const sendMessageMutation = api.unifiedIntelligence.sendSecureMessage.useMutation({
     onSuccess: (result) => {
-      notify.success("Message Sent", `Secure message sent to ${result.recipientCount} recipient(s)`);
+      notify.success(
+        "Message Sent",
+        `Secure message sent to ${result.recipientCount} recipient(s)`
+      );
       void refetchChannels();
     },
     onError: (error) => {

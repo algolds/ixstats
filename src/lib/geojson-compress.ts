@@ -22,7 +22,7 @@ function truncCoord(n: number, factor: number): number {
 function truncPosition(p: Position, factor: number): Position {
   const lng = truncCoord(p[0], factor);
   const lat = Math.max(-MAX_LAT, Math.min(MAX_LAT, truncCoord(p[1], factor)));
-  return p.length > 2 ? [lng, lat, ...p.slice(2)] as Position : [lng, lat] as Position;
+  return p.length > 2 ? ([lng, lat, ...p.slice(2)] as Position) : ([lng, lat] as Position);
 }
 
 function truncPositions(coords: Position[], factor: number): Position[] {

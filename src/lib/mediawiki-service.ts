@@ -1843,25 +1843,30 @@ export class IxnayWikiService {
    * Bulk fetch article data for multiple titles (efficient for lore card generation)
    * Fetches extracts, pageimages, categories, links, and revisions for multiple articles in one API call
    */
-  async fetchArticlesDataBulk(
-    titles: string[]
-  ): Promise<Map<string, {
-    title: string;
-    extract: string;
-    text: string;
-    image?: string;
-    categories: Array<{ title: string }>;
-    links: Array<{ title: string }>;
-    inboundLinks: number;
-    lastModified: Date;
-    url: string;
-  } | null>> {
+  async fetchArticlesDataBulk(titles: string[]): Promise<
+    Map<
+      string,
+      {
+        title: string;
+        extract: string;
+        text: string;
+        image?: string;
+        categories: Array<{ title: string }>;
+        links: Array<{ title: string }>;
+        inboundLinks: number;
+        lastModified: Date;
+        url: string;
+      } | null
+    >
+  > {
     const results = new Map<string, any>();
 
     if (titles.length === 0) return results;
 
     try {
-      console.log(`[MediaWiki] Bulk fetching data for ${titles.length} articles from ${this.wikiSource}`);
+      console.log(
+        `[MediaWiki] Bulk fetching data for ${titles.length} articles from ${this.wikiSource}`
+      );
 
       // MediaWiki API supports up to 50 titles per request
       const BATCH_SIZE = 50;
@@ -1960,11 +1965,15 @@ export class IxnayWikiService {
             lastModified: page.revisions?.[0]?.timestamp
               ? new Date(page.revisions[0].timestamp)
               : new Date(),
-            url: page.fullurl || `https://${this.wikiSource === "ixwiki" ? "ixwiki.com" : "iiwiki.com"}/wiki/${encodeURIComponent(page.title)}`,
+            url:
+              page.fullurl ||
+              `https://${this.wikiSource === "ixwiki" ? "ixwiki.com" : "iiwiki.com"}/wiki/${encodeURIComponent(page.title)}`,
           };
 
           results.set(page.title, articleData);
-          console.log(`[MediaWiki] ✓ Bulk fetched: ${page.title} (${articleData.text.length} chars, ${inboundLinks} inbound links)`);
+          console.log(
+            `[MediaWiki] ✓ Bulk fetched: ${page.title} (${articleData.text.length} chars, ${inboundLinks} inbound links)`
+          );
         }
       }
 

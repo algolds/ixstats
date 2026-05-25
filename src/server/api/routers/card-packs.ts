@@ -3,17 +3,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
-import {
-  purchasePack,
-  openPack,
-  getAvailablePacks,
-  getUserPacks,
-} from "~/lib/card-pack-service";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { purchasePack, openPack, getAvailablePacks, getUserPacks } from "~/lib/card-pack-service";
 import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
 
@@ -116,11 +107,7 @@ export const cardPacksRouter = createTRPCRouter({
           });
         }
 
-        const packs = await getUserPacks(
-          ctx.db,
-          ctx.user.id,
-          input?.isOpened
-        );
+        const packs = await getUserPacks(ctx.db, ctx.user.id, input?.isOpened);
 
         return {
           success: true,
@@ -159,19 +146,24 @@ export const cardPacksRouter = createTRPCRouter({
         const userPack = await purchasePack(ctx.db, ctx.user.id, input.packId);
 
         // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch((err: unknown) => { console.error("[CardPacks] Background op failed:", (err as Error).message); });
+        syncUserToForum(ctx.user.id).catch((err: unknown) => {
+          console.error("[CardPacks] Background op failed:", (err as Error).message);
+        });
 
         // Notification: pack purchased (fire-and-forget)
         try {
-          await notificationAPI.create({
-            userId: ctx.user.id,
-            title: "Pack Purchased",
-            message: "Your card pack is ready to open!",
-            type: "CARD",
-            category: "achievement",
-            priority: "medium",
-            metadata: { packId: input.packId },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: ctx.user.id,
+              title: "Pack Purchased",
+              message: "Your card pack is ready to open!",
+              type: "CARD",
+              category: "achievement",
+              priority: "medium",
+              metadata: { packId: input.packId },
+            },
+            ctx.db
+          );
         } catch {}
 
         return {
@@ -233,7 +225,9 @@ export const cardPacksRouter = createTRPCRouter({
         const cards = await openPack(ctx.db, ctx.user.id, input.userPackId);
 
         // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch((err: unknown) => { console.error("[CardPacks] Background op failed:", (err as Error).message); });
+        syncUserToForum(ctx.user.id).catch((err: unknown) => {
+          console.error("[CardPacks] Background op failed:", (err as Error).message);
+        });
 
         // Format cards with rarity reveal data
         const revealData = cards.map((card) => ({
@@ -251,15 +245,19 @@ export const cardPacksRouter = createTRPCRouter({
             const order = ["COMMON", "UNCOMMON", "RARE", "EPIC", "ULTRA_RARE", "LEGENDARY"];
             return order.indexOf(c.rarity) > order.indexOf(best) ? c.rarity : best;
           }, "COMMON");
-          await notificationAPI.create({
-            userId: ctx.user.id,
-            title: "Cards Revealed!",
-            message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
-            type: "CARD",
-            category: "achievement",
-            priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
-            metadata: { cardCount: cards.length, bestRarity },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: ctx.user.id,
+              title: "Cards Revealed!",
+              message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
+              type: "CARD",
+              category: "achievement",
+              priority:
+                bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
+              metadata: { cardCount: cards.length, bestRarity },
+            },
+            ctx.db
+          );
         } catch {}
 
         return {
@@ -347,10 +345,7 @@ export const cardPacksRouter = createTRPCRouter({
         console.error("[CardPacks] Error creating pack:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to create pack",
+          message: error instanceof Error ? error.message : "Failed to create pack",
         });
       }
     }),
@@ -470,15 +465,18 @@ export const cardPacksRouter = createTRPCRouter({
         // Trigger notification if requested
         if (input.sendNotification) {
           try {
-            await notificationAPI.create({
-              userId: input.targetUserId,
-              title: "Pack Received!",
-              message: `You have been awarded a ${userPack.pack.name} by an Administrator!`,
-              type: "CARD",
-              category: "achievement",
-              priority: "high",
-              metadata: { packId: input.packId, userPackId: userPack.id },
-            }, ctx.db);
+            await notificationAPI.create(
+              {
+                userId: input.targetUserId,
+                title: "Pack Received!",
+                message: `You have been awarded a ${userPack.pack.name} by an Administrator!`,
+                type: "CARD",
+                category: "achievement",
+                priority: "high",
+                metadata: { packId: input.packId, userPackId: userPack.id },
+              },
+              ctx.db
+            );
           } catch (e) {
             console.error("[CardPacks] Failed to send pack award notification:", e);
           }

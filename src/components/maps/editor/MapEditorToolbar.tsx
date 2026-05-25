@@ -15,7 +15,17 @@
  */
 
 import { useCallback } from "react";
-import { MousePointer2, MapPin, Hexagon, Landmark, FileUp, Route, Paintbrush, BookMarked, Type } from "lucide-react";
+import {
+  MousePointer2,
+  MapPin,
+  Hexagon,
+  Landmark,
+  FileUp,
+  Route,
+  Paintbrush,
+  BookMarked,
+  Type,
+} from "lucide-react";
 import { MousePointerIcon, MapPinIcon, LandmarkIcon, PaintBrushIcon } from "~/components/ui/icons";
 import type { EditorMode } from "~/hooks/useMapEditor";
 
@@ -48,14 +58,21 @@ const TOOLS: ToolDef[] = [
 ];
 
 /** Animated icon overrides for toolbar tools (only where a good visual match exists) */
-const ANIMATED_TOOL_ICONS: Partial<Record<EditorMode, React.ComponentType<{ size?: number; className?: string }>>> = {
+const ANIMATED_TOOL_ICONS: Partial<
+  Record<EditorMode, React.ComponentType<{ size?: number; className?: string }>>
+> = {
   view: MousePointerIcon,
   "add-city": MapPinIcon,
   "add-poi": LandmarkIcon,
   paint: PaintBrushIcon,
 };
 
-export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: MapEditorToolbarProps) {
+export function MapEditorToolbar({
+  mode,
+  onModeChange,
+  disabled,
+  horizontal,
+}: MapEditorToolbarProps) {
   const handleClick = useCallback(
     (toolMode: EditorMode) => {
       // If clicking the active tool, deactivate to view mode
@@ -84,11 +101,12 @@ export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: M
 
         return (
           <div key={tool.mode} className={horizontal ? "flex items-center" : ""}>
-            {showSep && (
-              horizontal
-                ? <div className="mx-0.5 h-5 w-px bg-border" />
-                : <div className="my-0.5 h-px w-5 bg-border" />
-            )}
+            {showSep &&
+              (horizontal ? (
+                <div className="bg-border mx-0.5 h-5 w-px" />
+              ) : (
+                <div className="bg-border my-0.5 h-px w-5" />
+              ))}
             <button
               onClick={() => handleClick(tool.mode)}
               className={`group relative flex items-center justify-center rounded-md transition-colors ${
@@ -104,14 +122,14 @@ export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: M
 
               {/* Tooltip (desktop only, shows on hover to the right / above) */}
               <div
-                className={`pointer-events-none absolute z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[11px] font-medium text-popover-foreground shadow-md ring-1 ring-border group-hover:block ${
+                className={`bg-popover text-popover-foreground ring-border pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block ${
                   horizontal
                     ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-                    : "left-full top-1/2 ml-1.5 -translate-y-1/2"
+                    : "top-1/2 left-full ml-1.5 -translate-y-1/2"
                 }`}
               >
                 {tool.label}
-                <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
                   {tool.shortcut}
                 </span>
               </div>

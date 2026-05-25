@@ -268,8 +268,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
           actualGdpGrowth: country.adjustedGdpGrowth || 0.02,
           projected2040Population: country.currentPopulation || 0,
           projected2040Gdp: country.currentTotalGdp || 0,
-          projected2040GdpPerCapita:
-            country.currentGdpPerCapita || 0,
+          projected2040GdpPerCapita: country.currentGdpPerCapita || 0,
         } as CountryStats;
 
         // Create economy data from country economic data
@@ -284,15 +283,13 @@ export const enhancedEconomicsRouter = createTRPCRouter({
             totalDebtGDPRatio: country.totalDebtGDPRatio || 60,
             budgetDeficitSurplus: country.budgetDeficitSurplus || 0,
             taxRevenueGDPPercent: country.taxRevenueGDPPercent || 20,
-            debtServiceCosts:
-              country.debtServiceCosts || country.currentTotalGdp * 0.03,
+            debtServiceCosts: country.debtServiceCosts || country.currentTotalGdp * 0.03,
             interestRates: country.interestRates || 0.03,
           },
           labor: {
             unemploymentRate: country.unemploymentRate || 6,
             employmentRate: 100 - (country.unemploymentRate || 6),
-            laborForceParticipationRate:
-              country.laborForceParticipationRate || 65,
+            laborForceParticipationRate: country.laborForceParticipationRate || 65,
           },
           income: {
             incomeInequalityGini: country.incomeInequalityGini || 0.35,
@@ -362,52 +359,60 @@ export const enhancedEconomicsRouter = createTRPCRouter({
           .default(["overall"]),
       })
     )
-    .query(async ({ ctx, input }): Promise<{ countryId: string; analysis: EconomicAnalysisResult }[]> => {
-      try {
-        const { countryIds, metrics } = input;
+    .query(
+      async ({
+        ctx,
+        input,
+      }): Promise<{ countryId: string; analysis: EconomicAnalysisResult }[]> => {
+        try {
+          const { countryIds, metrics } = input;
 
-        const comparisons: { countryId: string; analysis: EconomicAnalysisResult }[] = [];
+          const comparisons: { countryId: string; analysis: EconomicAnalysisResult }[] = [];
 
-        for (const countryId of countryIds) {
-          // Get individual country analysis (reusing the logic above)
-          const analysis = await enhancedEconomicsRouter
-            .createCaller(ctx as Record<string, unknown>)
-            .getCountryEconomicAnalysis({ countryId, analysisType: "comprehensive" });
+          for (const countryId of countryIds) {
+            // Get individual country analysis (reusing the logic above)
+            const analysis = await enhancedEconomicsRouter
+              .createCaller(ctx as Record<string, unknown>)
+              .getCountryEconomicAnalysis({ countryId, analysisType: "comprehensive" });
 
-          comparisons.push({
-            countryId,
-            analysis,
+            comparisons.push({
+              countryId,
+              analysis,
+            });
+          }
+
+          // Create comparison structure
+          const comparison: {
+            countries: { countryId: string; analysis: EconomicAnalysisResult }[];
+            rankings: Record<string, unknown>[];
+          } = {
+            countries: comparisons,
+            rankings: metrics.map((metric) => ({
+              metric,
+              ranking: comparisons
+                .map((c, index) => ({
+                  countryId: c.countryId,
+                  score:
+                    metric === "overall"
+                      ? c.analysis.comprehensive.overallRating.score
+                      : c.analysis.comprehensive[metric]?.overallScore || 0,
+                  rank: index + 1,
+                }))
+                .sort((a, b) => b.score - a.score)
+                .map((item, index) => ({ ...item, rank: index + 1 })),
+            })),
+          };
+
+          return comparison.countries;
+        } catch (error) {
+          console.error("Country comparison failed:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Country comparison failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           });
         }
-
-        // Create comparison structure
-        const comparison: { countries: { countryId: string; analysis: EconomicAnalysisResult }[]; rankings: Record<string, unknown>[] } = {
-          countries: comparisons,
-          rankings: metrics.map((metric) => ({
-            metric,
-            ranking: comparisons
-              .map((c, index) => ({
-                countryId: c.countryId,
-                score:
-                  metric === "overall"
-                    ? c.analysis.comprehensive.overallRating.score
-                    : c.analysis.comprehensive[metric]?.overallScore || 0,
-                rank: index + 1,
-              }))
-              .sort((a, b) => b.score - a.score)
-              .map((item, index) => ({ ...item, rank: index + 1 })),
-          })),
-        };
-
-        return comparison.countries;
-      } catch (error) {
-        console.error("Country comparison failed:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Country comparison failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
       }
-    }),
+    ),
 });
 
 export type EnhancedEconomicsRouter = typeof enhancedEconomicsRouter;

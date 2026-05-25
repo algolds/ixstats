@@ -35,10 +35,7 @@ export class VaultService {
       // First, try to find the User record (handles both database id and clerkUserId)
       const user = await db.user.findFirst({
         where: {
-          OR: [
-            { id: userIdOrClerkId },
-            { clerkUserId: userIdOrClerkId },
-          ],
+          OR: [{ id: userIdOrClerkId }, { clerkUserId: userIdOrClerkId }],
         },
       });
 
@@ -340,11 +337,11 @@ export class VaultService {
       // Check if daily bonus can be claimed
       const lastLoginDate = vault.lastLoginDate ? new Date(vault.lastLoginDate) : null;
       const now = new Date();
-      const canClaimDailyBonus = !lastLoginDate || (
+      const canClaimDailyBonus =
+        !lastLoginDate ||
         lastLoginDate.getUTCFullYear() !== now.getUTCFullYear() ||
         lastLoginDate.getUTCMonth() !== now.getUTCMonth() ||
-        lastLoginDate.getUTCDate() !== now.getUTCDate()
-      );
+        lastLoginDate.getUTCDate() !== now.getUTCDate();
 
       return {
         credits: vault.credits,
@@ -461,14 +458,9 @@ export class VaultService {
       const bonus = Math.min(newStreak, vaultCfg.maxStreakBonus);
 
       // Award bonus
-      const earnResult = await this.earnCredits(
-        userId,
-        bonus,
-        "EARN_ACTIVE",
-        "DAILY_LOGIN",
-        db,
-        { streak: newStreak }
-      );
+      const earnResult = await this.earnCredits(userId, bonus, "EARN_ACTIVE", "DAILY_LOGIN", db, {
+        streak: newStreak,
+      });
 
       if (!earnResult.success) {
         return {
@@ -479,7 +471,9 @@ export class VaultService {
         };
       }
 
-      console.log(`[Vault Service] User ${userId} claimed daily bonus: ${bonus} IxC (streak: ${newStreak})`);
+      console.log(
+        `[Vault Service] User ${userId} claimed daily bonus: ${bonus} IxC (streak: ${newStreak})`
+      );
 
       return {
         success: true,
@@ -513,9 +507,7 @@ export class VaultService {
 
       if (lastLogin) {
         // Calculate days between last login and now
-        const daysDiff = Math.floor(
-          (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const daysDiff = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
 
         if (daysDiff === 1) {
           // Consecutive day - increment streak
@@ -596,8 +588,8 @@ export class VaultService {
 
       console.log(
         `[Vault Service] Calculated passive income for ${countryId}: ${totalDividend.toFixed(2)} IxC ` +
-        `(base: ${baseRate.toFixed(2)}, pop: ${populationBonus.toFixed(2)}, growth: ${growthBonus.toFixed(2)}, ` +
-        `budget: ${budgetMultiplier.toFixed(3)}x)`
+          `(base: ${baseRate.toFixed(2)}, pop: ${populationBonus.toFixed(2)}, growth: ${growthBonus.toFixed(2)}, ` +
+          `budget: ${budgetMultiplier.toFixed(3)}x)`
       );
 
       return Math.round(totalDividend * 100) / 100; // Round to 2 decimals
@@ -631,14 +623,17 @@ export class VaultService {
       });
 
       // Group by type
-      const breakdown = todayTransactions.reduce((acc, tx) => {
-        const type = tx.type;
-        if (!acc[type]) {
-          acc[type] = 0;
-        }
-        acc[type] += tx.credits;
-        return acc;
-      }, {} as Record<string, number>);
+      const breakdown = todayTransactions.reduce(
+        (acc, tx) => {
+          const type = tx.type;
+          if (!acc[type]) {
+            acc[type] = 0;
+          }
+          acc[type] += tx.credits;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       return {
         total: vault.todayEarned,
@@ -719,11 +714,19 @@ export async function getVaultConfig(db: {
     );
 
     const config: VaultConfig = {
-      activeDailyCap: parseFloat(m.vault_activeDailyCap ?? String(VAULT_CONFIG_DEFAULTS.activeDailyCap)),
-      socialDailyCap: parseFloat(m.vault_socialDailyCap ?? String(VAULT_CONFIG_DEFAULTS.socialDailyCap)),
+      activeDailyCap: parseFloat(
+        m.vault_activeDailyCap ?? String(VAULT_CONFIG_DEFAULTS.activeDailyCap)
+      ),
+      socialDailyCap: parseFloat(
+        m.vault_socialDailyCap ?? String(VAULT_CONFIG_DEFAULTS.socialDailyCap)
+      ),
       xpPerLevel: parseFloat(m.vault_xpPerLevel ?? String(VAULT_CONFIG_DEFAULTS.xpPerLevel)),
-      maxStreakBonus: parseFloat(m.vault_maxStreakBonus ?? String(VAULT_CONFIG_DEFAULTS.maxStreakBonus)),
-      premiumMultiplier: parseFloat(m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)),
+      maxStreakBonus: parseFloat(
+        m.vault_maxStreakBonus ?? String(VAULT_CONFIG_DEFAULTS.maxStreakBonus)
+      ),
+      premiumMultiplier: parseFloat(
+        m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)
+      ),
     };
 
     vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);

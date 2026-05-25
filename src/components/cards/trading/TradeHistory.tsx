@@ -234,7 +234,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
 
               {/* Arrow indicator */}
               {onTradeClick && (
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <ChevronRight className="h-5 w-5 text-white/40" />
                 </div>
               )}

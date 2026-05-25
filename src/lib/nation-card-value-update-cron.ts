@@ -176,9 +176,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
         let correlation = 0;
         if (card.valueHistory.length >= 10) {
           // Get card value history (newest to oldest, reverse to oldest to newest)
-          const cardValues = [...card.valueHistory]
-            .reverse()
-            .map((h) => h.value);
+          const cardValues = [...card.valueHistory].reverse().map((h) => h.value);
 
           // Get corresponding GDP values for the same time periods
           // For simplicity, use current GDP as approximation (in production, would query GDP history)
@@ -186,7 +184,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
           // In a real implementation, we'd query GDP history at matching timestamps
           // For now, calculate correlation using current GDP growth trend
-          const gdpGrowthFactor = 1 + (country.adjustedGdpGrowth / 100);
+          const gdpGrowthFactor = 1 + country.adjustedGdpGrowth / 100;
           const syntheticGdpValues = cardValues.map((_, idx) => {
             return country.currentTotalGdp * Math.pow(gdpGrowthFactor, -idx / 30); // Backtrack GDP
           });

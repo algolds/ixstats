@@ -212,7 +212,7 @@ export function calculateQualityScore(metadata: ArticleMetadata): number {
 
   // Length score (0-30 points)
   // 100 chars = 1 point, maxes out at 3000 chars (30 points)
-  score += Math.min((metadata.length / 100), 30);
+  score += Math.min(metadata.length / 100, 30);
 
   // Reference score (0-25 points)
   // Each reference = 5 points, max 5 references
@@ -283,9 +283,7 @@ export function checkArticleEligibility(
   // Check minimum length
   if (metadata.length < rules.minLength) {
     eligible = false;
-    reasons.push(
-      `Article too short: ${metadata.length} chars (minimum: ${rules.minLength})`
-    );
+    reasons.push(`Article too short: ${metadata.length} chars (minimum: ${rules.minLength})`);
   }
 
   // Check image requirement
@@ -299,9 +297,7 @@ export function checkArticleEligibility(
   // Check category requirement
   if (metadata.categoryCount < rules.minCategories) {
     eligible = false;
-    reasons.push(
-      `Too few categories: ${metadata.categoryCount} (minimum: ${rules.minCategories})`
-    );
+    reasons.push(`Too few categories: ${metadata.categoryCount} (minimum: ${rules.minCategories})`);
   }
 
   // Check reference requirement
@@ -342,9 +338,7 @@ export function checkArticleEligibility(
   // Check minimum quality score
   if (score < rules.minQualityScore) {
     eligible = false;
-    reasons.push(
-      `Quality score too low: ${score.toFixed(1)} (minimum: ${rules.minQualityScore})`
-    );
+    reasons.push(`Quality score too low: ${score.toFixed(1)} (minimum: ${rules.minQualityScore})`);
   }
 
   return {
@@ -367,7 +361,7 @@ export function checkBatchEligibility(
   articles: ArticleMetadata[],
   rules: EligibilityRules = DEFAULT_ELIGIBILITY_RULES
 ): EligibilityResult[] {
-  return articles.map(article => checkArticleEligibility(article, rules));
+  return articles.map((article) => checkArticleEligibility(article, rules));
 }
 
 /**
@@ -382,7 +376,7 @@ export function filterEligibleArticles(
   rules: EligibilityRules = DEFAULT_ELIGIBILITY_RULES
 ): EligibilityResult[] {
   const results = checkBatchEligibility(articles, rules);
-  return results.filter(result => result.eligible);
+  return results.filter((result) => result.eligible);
 }
 
 /**
@@ -404,15 +398,15 @@ export function getEligibilityStats(
 } {
   const results = checkBatchEligibility(articles, rules);
 
-  const eligible = results.filter(r => r.eligible).length;
+  const eligible = results.filter((r) => r.eligible).length;
   const ineligible = results.length - eligible;
 
   const averageScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
 
   // Collect all reasons
   const reasonCounts = new Map<string, number>();
-  results.forEach(result => {
-    result.reasons.forEach(reason => {
+  results.forEach((result) => {
+    result.reasons.forEach((reason) => {
       reasonCounts.set(reason, (reasonCounts.get(reason) || 0) + 1);
     });
   });
@@ -443,9 +437,7 @@ export function hasExcludedCategory(
   categories: string[],
   excludePatterns: RegExp[] = DEFAULT_ELIGIBILITY_RULES.excludePatterns
 ): boolean {
-  return categories.some(category =>
-    excludePatterns.some(pattern => pattern.test(category))
-  );
+  return categories.some((category) => excludePatterns.some((pattern) => pattern.test(category)));
 }
 
 /**

@@ -66,14 +66,22 @@ const PRIORITY_OPTIONS = [
 
 function getTypeIcon(type: string | null) {
   switch (type) {
-    case "info": return <Info className="h-4 w-4 text-blue-500" />;
-    case "warning": return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    case "success": return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case "error": return <AlertCircle className="h-4 w-4 text-red-500" />;
-    case "crisis": return <AlertTriangle className="h-4 w-4 text-red-500" />;
-    case "economic": return <Zap className="h-4 w-4 text-purple-500" />;
-    case "diplomatic": return <Users className="h-4 w-4 text-indigo-500" />;
-    default: return <Bell className="h-4 w-4 text-gray-500" />;
+    case "info":
+      return <Info className="h-4 w-4 text-blue-500" />;
+    case "warning":
+      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    case "success":
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case "error":
+      return <AlertCircle className="h-4 w-4 text-red-500" />;
+    case "crisis":
+      return <AlertTriangle className="h-4 w-4 text-red-500" />;
+    case "economic":
+      return <Zap className="h-4 w-4 text-purple-500" />;
+    case "diplomatic":
+      return <Users className="h-4 w-4 text-indigo-500" />;
+    default:
+      return <Bell className="h-4 w-4 text-gray-500" />;
   }
 }
 
@@ -121,39 +129,64 @@ export function NotificationBrowser() {
     <div className="space-y-4">
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative min-w-[200px] flex-1">
           <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
           <Input
             placeholder="Search title, description, message..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
             className="pl-8"
           />
         </div>
 
-        <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(0); }}>
+        <Select
+          value={typeFilter}
+          onValueChange={(v) => {
+            setTypeFilter(v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
             {TYPE_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v); setPage(0); }}>
+        <Select
+          value={priorityFilter}
+          onValueChange={(v) => {
+            setPriorityFilter(v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
             {PRIORITY_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select value={readFilter} onValueChange={(v) => { setReadFilter(v); setPage(0); }}>
+        <Select
+          value={readFilter}
+          onValueChange={(v) => {
+            setReadFilter(v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-[130px]">
             <SelectValue placeholder="Read status" />
           </SelectTrigger>
@@ -190,7 +223,9 @@ export function NotificationBrowser() {
         <CardHeader className="py-3">
           <CardTitle className="flex items-center justify-between text-sm">
             <span>
-              {data ? `${data.totalCount} notification${data.totalCount !== 1 ? "s" : ""}` : "Loading..."}
+              {data
+                ? `${data.totalCount} notification${data.totalCount !== 1 ? "s" : ""}`
+                : "Loading..."}
             </span>
           </CardTitle>
         </CardHeader>
@@ -212,13 +247,13 @@ export function NotificationBrowser() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : data?.notifications.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
                       <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
                       No notifications found
                     </TableCell>
@@ -230,7 +265,7 @@ export function NotificationBrowser() {
                       <TableRow key={n.id} className={!n.read ? "bg-accent/30" : ""}>
                         <TableCell>{getTypeIcon(n.type)}</TableCell>
                         <TableCell className="max-w-[300px]">
-                          <div className="truncate font-medium text-sm">{n.title}</div>
+                          <div className="truncate text-sm font-medium">{n.title}</div>
                           {n.description && (
                             <div className="text-muted-foreground truncate text-xs">
                               {n.description}
@@ -264,7 +299,7 @@ export function NotificationBrowser() {
                         </TableCell>
                         <TableCell>
                           {n.read ? (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <Eye className="text-muted-foreground h-4 w-4" />
                           ) : (
                             <EyeOff className="h-4 w-4 text-blue-500" />
                           )}

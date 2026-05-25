@@ -24,15 +24,15 @@ interface LogEntry {
 export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProps) {
   const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: relations } = api.diplomatic.getRelationships.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: foreignPolicies } = api.diplomatic.getActiveForeignPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const log = useMemo((): LogEntry[] => {
@@ -64,16 +64,17 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
         entries.push({
           id: `fp-${fp.id}`,
           icon: Scale,
-          iconColor: fp.actionType === "free_trade" || fp.actionType === "military_alliance" ? "text-green-500" : "text-red-500",
+          iconColor:
+            fp.actionType === "free_trade" || fp.actionType === "military_alliance"
+              ? "text-green-500"
+              : "text-red-500",
           text: `${fp.actionType?.replace(/_/g, " ")} → ${fp.target?.name ?? "Unknown"}`,
           time: new Date(fp.createdAt),
         });
       }
     });
 
-    return entries
-      .sort((a, b) => b.time.getTime() - a.time.getTime())
-      .slice(0, 5);
+    return entries.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 5);
   }, [embassies, relations, foreignPolicies]);
 
   return (
@@ -83,20 +84,25 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
           <ScrollText className="h-3.5 w-3.5 text-cyan-500" />
           <span className="text-xs font-semibold">Diplomatic Log</span>
         </div>
-        <Badge variant="outline" className="border-cyan-500/30 px-1.5 py-0 text-[0.65rem] text-cyan-600 dark:text-cyan-400">
+        <Badge
+          variant="outline"
+          className="border-cyan-500/30 px-1.5 py-0 text-[0.65rem] text-cyan-600 dark:text-cyan-400"
+        >
           {log.length}
         </Badge>
       </div>
       <div className="space-y-1.5">
         {log.length === 0 && (
-          <p className="text-[11px] text-muted-foreground text-center py-3">No diplomatic activity yet</p>
+          <p className="text-muted-foreground py-3 text-center text-[11px]">
+            No diplomatic activity yet
+          </p>
         )}
         {log.map((entry) => (
           <div key={entry.id} className="flex items-start gap-2 py-1">
-            <entry.icon className={`h-3 w-3 mt-0.5 flex-shrink-0 ${entry.iconColor}`} />
+            <entry.icon className={`mt-0.5 h-3 w-3 shrink-0 ${entry.iconColor}`} />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] leading-snug line-clamp-1">{entry.text}</p>
-              <span className="text-[10px] text-muted-foreground">{getTimeAgo(entry.time)}</span>
+              <p className="line-clamp-1 text-[11px] leading-snug">{entry.text}</p>
+              <span className="text-muted-foreground text-[10px]">{getTimeAgo(entry.time)}</span>
             </div>
           </div>
         ))}

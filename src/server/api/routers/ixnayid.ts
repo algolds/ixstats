@@ -4,17 +4,13 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { lookupWikiUser, linkWikiAccount } from "~/lib/wiki-user-sync";
 import { linkDiscordAccount } from "~/lib/discord-user-sync";
 import { linkForumAccount } from "~/modules/forum";
 
 export const ixnayidRouter = createTRPCRouter({
-
   // =========================================================================
   // STATUS — all linked accounts at once
   // =========================================================================

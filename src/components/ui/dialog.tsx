@@ -65,7 +65,7 @@ function DialogContent({
             target.closest("[data-radix-select-content]") ||
             target.closest("[data-radix-dropdown-menu-content]") ||
             target.closest("[data-radix-popover-content]") ||
-            target.closest("[role=\"listbox\"]")
+            target.closest('[role="listbox"]')
           ) {
             e.preventDefault();
           }

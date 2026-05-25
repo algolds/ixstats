@@ -1,7 +1,18 @@
 "use client";
 
 import React from "react";
-import { Users, Briefcase, TrendingUp, TrendingDown, BarChart3, LineChart, Globe, Info, Target, Activity } from "lucide-react";
+import {
+  Users,
+  Briefcase,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  LineChart,
+  Globe,
+  Info,
+  Target,
+  Activity,
+} from "lucide-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -64,14 +75,13 @@ export function LaborDetailsModal({
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery(
-      { countryId },
-      { enabled: !!countryId && isOpen }
-    );
+    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
-  const { data: globalStats, isLoading: globalLoading } =
-    api.countries.getGlobalStats.useQuery(undefined, { enabled: isOpen });
+  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    { enabled: isOpen }
+  );
 
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
@@ -96,8 +106,7 @@ export function LaborDetailsModal({
     };
 
     const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate =
-      monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
+    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
 
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
@@ -123,10 +132,7 @@ export function LaborDetailsModal({
           participationRate: currentParticipation,
         };
       })
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
   const chartConfig = {
@@ -136,11 +142,7 @@ export function LaborDetailsModal({
     participationRate: { label: "Participation Rate %", color: "#7c3aed" },
   };
 
-  const renderTabContent = (
-    activeTab: string,
-    timeRange: TimeRange,
-    chartType: ChartType
-  ) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
@@ -176,14 +178,9 @@ export function LaborDetailsModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Labor Force
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Labor Force</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    <NumberFlowDisplay
-                      value={labor?.totalWorkforce || 0}
-                      decimalPlaces={0}
-                    />
+                    <NumberFlowDisplay value={labor?.totalWorkforce || 0} decimalPlaces={0} />
                   </p>
                 </div>
                 <Users className="h-8 w-8 text-blue-500" />
@@ -195,9 +192,7 @@ export function LaborDetailsModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Participation Rate
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Participation Rate</p>
                   <p className="text-2xl font-bold text-purple-600">
                     <NumberFlowDisplay
                       value={labor?.laborForceParticipationRate || 0}
@@ -215,15 +210,9 @@ export function LaborDetailsModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Employment Rate
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Employment Rate</p>
                   <p className="text-2xl font-bold text-green-600">
-                    <NumberFlowDisplay
-                      value={labor?.employmentRate || 0}
-                      decimalPlaces={1}
-                    />
-                    %
+                    <NumberFlowDisplay value={labor?.employmentRate || 0} decimalPlaces={1} />%
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-500" />
@@ -235,15 +224,9 @@ export function LaborDetailsModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Unemployment Rate
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Unemployment Rate</p>
                   <p className="text-2xl font-bold text-red-600">
-                    <NumberFlowDisplay
-                      value={labor?.unemploymentRate || 0}
-                      decimalPlaces={1}
-                    />
-                    %
+                    <NumberFlowDisplay value={labor?.unemploymentRate || 0} decimalPlaces={1} />%
                   </p>
                 </div>
                 <TrendingDown className="h-8 w-8 text-red-500" />
@@ -259,29 +242,35 @@ export function LaborDetailsModal({
               <Briefcase className="h-5 w-5 text-blue-500" />
               Labor Force Summary
             </CardTitle>
-            <CardDescription>
-              Workforce composition and employment statistics
-            </CardDescription>
+            <CardDescription>Workforce composition and employment statistics</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  {((labor?.totalWorkforce || 0) / (countryData?.currentPopulation || 1) * 100).toFixed(1)}%
+                  {(
+                    ((labor?.totalWorkforce || 0) / (countryData?.currentPopulation || 1)) *
+                    100
+                  ).toFixed(1)}
+                  %
                 </div>
-                <div className="text-muted-foreground text-sm">
-                  Of Total Population
-                </div>
+                <div className="text-muted-foreground text-sm">Of Total Population</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {((labor?.employmentRate || 0) * (labor?.totalWorkforce || 0) / 100).toLocaleString()}
+                  {(
+                    ((labor?.employmentRate || 0) * (labor?.totalWorkforce || 0)) /
+                    100
+                  ).toLocaleString()}
                 </div>
                 <div className="text-muted-foreground text-sm">Employed</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-red-600">
-                  {((labor?.unemploymentRate || 0) * (labor?.totalWorkforce || 0) / 100).toLocaleString()}
+                  {(
+                    ((labor?.unemploymentRate || 0) * (labor?.totalWorkforce || 0)) /
+                    100
+                  ).toLocaleString()}
                 </div>
                 <div className="text-muted-foreground text-sm">Unemployed</div>
               </div>
@@ -309,33 +298,28 @@ export function LaborDetailsModal({
       return (
         <Card>
           <CardContent className="py-12 text-center">
-            <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <p className="text-muted-foreground">No historical data available</p>
           </CardContent>
         </Card>
       );
     }
 
-    const ChartComponent = chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
+    const ChartComponent =
+      chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle>Labor Force Trends</CardTitle>
-          <CardDescription>
-            Historical employment and participation metrics
-          </CardDescription>
+          <CardDescription>Historical employment and participation metrics</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ChartComponent data={processedData}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} />
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 {chartType === "area" ? (
@@ -426,17 +410,13 @@ export function LaborDetailsModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Employment Rate</span>
-                <Badge
-                  variant={employmentRate >= globalAvgEmployment ? "default" : "secondary"}
-                >
+                <Badge variant={employmentRate >= globalAvgEmployment ? "default" : "secondary"}>
                   {employmentRate >= globalAvgEmployment ? "Above Avg" : "Below Avg"}
                 </Badge>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">
-                  {employmentRate.toFixed(1)}%
-                </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-3xl font-bold text-blue-600">{employmentRate.toFixed(1)}%</div>
+                <div className="text-muted-foreground text-sm">
                   vs {globalAvgEmployment}% global average
                 </div>
               </div>
@@ -467,7 +447,7 @@ export function LaborDetailsModal({
                 <div className="text-3xl font-bold text-green-600">
                   {(labor?.laborForceParticipationRate || 0).toFixed(1)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   Working-age population in labor force
                 </div>
               </div>
@@ -491,24 +471,22 @@ export function LaborDetailsModal({
                     (labor?.unemploymentRate || 0) < 5
                       ? "default"
                       : (labor?.unemploymentRate || 0) < 10
-                      ? "secondary"
-                      : "destructive"
+                        ? "secondary"
+                        : "destructive"
                   }
                 >
                   {(labor?.unemploymentRate || 0) < 5
                     ? "Healthy"
                     : (labor?.unemploymentRate || 0) < 10
-                    ? "Moderate"
-                    : "Struggling"}
+                      ? "Moderate"
+                      : "Struggling"}
                 </Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-600">
                   {(labor?.unemploymentRate || 0).toFixed(1)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Unemployment rate
-                </div>
+                <div className="text-muted-foreground text-sm">Unemployment rate</div>
               </div>
             </div>
           </CardContent>
@@ -534,19 +512,21 @@ export function LaborDetailsModal({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {Object.entries(sectors).slice(0, 8).map(([sector, value]: [string, any]) => (
-                <div key={sector} className="text-center p-4 rounded-lg bg-muted/30">
-                  <div className="text-lg font-semibold">
-                    {typeof value === 'number' ? value.toFixed(1) : value}%
+              {Object.entries(sectors)
+                .slice(0, 8)
+                .map(([sector, value]: [string, any]) => (
+                  <div key={sector} className="bg-muted/30 rounded-lg p-4 text-center">
+                    <div className="text-lg font-semibold">
+                      {typeof value === "number" ? value.toFixed(1) : value}%
+                    </div>
+                    <div className="text-muted-foreground text-xs capitalize">
+                      {sector.replace(/_/g, " ")}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground capitalize">
-                    {sector.replace(/_/g, " ")}
-                  </div>
-                </div>
-              ))}
+                ))}
               {Object.keys(sectors).length === 0 && (
-                <div className="col-span-4 text-center py-8">
-                  <Briefcase className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                <div className="col-span-4 py-8 text-center">
+                  <Briefcase className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
                   <p className="text-muted-foreground">No sector data available</p>
                 </div>
               )}
@@ -563,27 +543,24 @@ export function LaborDetailsModal({
             <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  ${((countryData?.currentTotalGdp || 0) / (labor?.totalWorkforce || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  $
+                  {(
+                    (countryData?.currentTotalGdp || 0) / (labor?.totalWorkforce || 1)
+                  ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  GDP per Worker
-                </div>
+                <div className="text-muted-foreground text-sm">GDP per Worker</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
                   {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "N/A"}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Productivity Index
-                </div>
+                <div className="text-muted-foreground text-sm">Productivity Index</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
                   {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "N/A"} yrs
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Avg. Education
-                </div>
+                <div className="text-muted-foreground text-sm">Avg. Education</div>
               </div>
             </div>
           </CardContent>

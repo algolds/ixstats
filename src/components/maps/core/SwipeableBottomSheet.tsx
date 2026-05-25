@@ -36,13 +36,16 @@ export function SwipeableBottomSheet({
     setIsDragging(true);
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const delta = Math.max(0, touch.clientY - startYRef.current);
-    setDragDelta(delta);
-  }, [isDragging]);
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const delta = Math.max(0, touch.clientY - startYRef.current);
+      setDragDelta(delta);
+    },
+    [isDragging]
+  );
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
@@ -61,7 +64,7 @@ export function SwipeableBottomSheet({
       }}
     >
       <div
-        className="rounded-t-2xl bg-card shadow-xl"
+        className="bg-card rounded-t-2xl shadow-xl"
         style={{
           maxHeight,
           transform: dragDelta > 0 ? `translateY(${dragDelta}px)` : undefined,
@@ -71,20 +74,24 @@ export function SwipeableBottomSheet({
       >
         {/* Drag handle — touch target for swiping */}
         <div
-          className="flex cursor-grab justify-center pb-1 pt-3 active:cursor-grabbing"
+          className="flex cursor-grab justify-center pt-3 pb-1 active:cursor-grabbing"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="h-1 w-10 rounded-full bg-border" />
+          <div className="bg-border h-1 w-10 rounded-full" />
         </div>
         {children}
       </div>
 
       <style jsx>{`
         @keyframes slideInUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
         }
       `}</style>
     </div>

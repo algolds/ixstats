@@ -49,9 +49,7 @@ export const blurbsRouter = createTRPCRouter({
   getAllPrompts: adminProcedure
     .input(
       z.object({
-        status: z
-          .enum(["DRAFT", "ACTIVE", "CLOSED", "ARCHIVED"])
-          .optional(),
+        status: z.enum(["DRAFT", "ACTIVE", "CLOSED", "ARCHIVED"]).optional(),
         limit: z.number().min(1).max(100).default(50),
       })
     )
@@ -325,8 +323,7 @@ export const blurbsRouter = createTRPCRouter({
       const response = await db.blurbResponse.findUnique({
         where: { id: input.responseId },
       });
-      if (!response || response.userId !== user.id)
-        throw new TRPCError({ code: "NOT_FOUND" });
+      if (!response || response.userId !== user.id) throw new TRPCError({ code: "NOT_FOUND" });
 
       // 24h edit window
       const editWindow = 24 * 60 * 60 * 1000;
@@ -384,7 +381,11 @@ export const blurbsRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1).max(200),
         question: z.string().min(1).max(500),
-        slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+        slug: z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[a-z0-9-]+$/),
         status: z.enum(["DRAFT", "ACTIVE"]).default("DRAFT"),
         scheduledFor: z.string().datetime().optional(),
         closedAt: z.string().datetime().optional(),
@@ -514,9 +515,7 @@ async function crossPostToThinkPages(
   const prefix = `[blurb:${promptSlug}|${promptTitle}]\n\n`;
   const maxContent = 280 - prefix.length;
   const truncated =
-    content.length > maxContent
-      ? content.slice(0, maxContent - 3) + "..."
-      : content;
+    content.length > maxContent ? content.slice(0, maxContent - 3) + "..." : content;
 
   const post = await db.thinkpagesPost.create({
     data: {

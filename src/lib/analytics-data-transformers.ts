@@ -208,7 +208,9 @@ export function generateSectorPerformanceData(
   const colors = ["emerald", "blue", "purple", "cyan", "orange", "yellow"];
 
   return sectors.map((sector, index) => {
-    const sectorInfo = sectorData[sector] as { performance?: number; growth?: number; contribution?: number } | undefined;
+    const sectorInfo = sectorData[sector] as
+      | { performance?: number; growth?: number; contribution?: number }
+      | undefined;
     const employment = employmentData[sector] || 0;
 
     // Calculate performance based on employment and contribution

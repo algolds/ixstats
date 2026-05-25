@@ -62,14 +62,14 @@ export function HeroSection({
           <img
             src={flagUrl}
             alt=""
-            className="h-full w-full object-cover scale-110 blur-[12px] saturate-150"
+            className="h-full w-full scale-110 object-cover blur-[12px] saturate-150"
             loading="eager"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
+          <div className="from-background via-background/70 to-background/30 absolute inset-0 bg-gradient-to-t" />
         </div>
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-amber-700/25 via-purple-700/15 to-pink-700/10 dark:from-amber-600/20 dark:via-purple-600/15 dark:to-pink-600/10">
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <div className="from-background via-background/60 absolute inset-0 bg-gradient-to-t to-transparent" />
         </div>
       )}
 
@@ -77,7 +77,7 @@ export function HeroSection({
       <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-4 md:pb-6">
         <div className="flex items-end gap-3 md:gap-4">
           {/* Flag */}
-          <div className="mb-2 h-16 w-16 flex-shrink-0 md:h-20 md:w-20 lg:h-24 lg:w-24">
+          <div className="mb-2 h-16 w-16 shrink-0 md:h-20 md:w-20 lg:h-24 lg:w-24">
             <UnifiedCountryFlag
               countryName={country.name}
               size="xl"
@@ -94,7 +94,7 @@ export function HeroSection({
           {/* Country Name and Basic Info */}
           <div className="min-w-0 flex-1">
             {/* MyCountry Badge */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Badge className="border-amber-400/30 bg-amber-600/90 font-semibold text-white backdrop-blur-sm">
                 <Crown className="mr-1.5 h-3 w-3" />
                 My Country
@@ -104,10 +104,10 @@ export function HeroSection({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-foreground/70 hover:text-foreground hover:bg-foreground/10"
+                    className="text-foreground/70 hover:text-foreground hover:bg-foreground/10 h-6 px-2"
                   >
-                    <Edit3 className="h-3 w-3 mr-1" />
-                    <span className="hidden sm:inline text-xs">Edit</span>
+                    <Edit3 className="mr-1 h-3 w-3" />
+                    <span className="hidden text-xs sm:inline">Edit</span>
                   </Button>
                 </Link>
               )}
@@ -115,12 +115,12 @@ export function HeroSection({
 
             {/* Official name subtitle (e.g. "The Fourth Imperium of") */}
             {country.officialName && country.officialName !== country.name && (
-              <p className="text-xs font-medium text-foreground/60 drop-shadow-sm md:text-sm">
+              <p className="text-foreground/60 text-xs font-medium drop-shadow-sm md:text-sm">
                 {country.officialName}
               </p>
             )}
 
-            <h1 className="mb-2 text-2xl font-bold text-foreground drop-shadow-md md:text-3xl lg:text-4xl">
+            <h1 className="text-foreground mb-2 text-2xl font-bold drop-shadow-md md:text-3xl lg:text-4xl">
               {country.name.replace(/_/g, " ")}
             </h1>
 
@@ -156,7 +156,7 @@ export function HeroSection({
 
           {/* Inline Health Rings — desktop */}
           {healthRings && healthRings.length > 0 && (
-            <div className="mb-2 hidden md:flex items-center gap-2 flex-shrink-0">
+            <div className="mb-2 hidden shrink-0 items-center gap-2 md:flex">
               {healthRings.map((ring) => {
                 const Icon = ring.icon;
                 return (
@@ -166,7 +166,9 @@ export function HeroSection({
                     onClick={ring.onClick}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") ring.onClick?.(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") ring.onClick?.();
+                    }}
                     title={`${ring.label}: ${ring.displayValue ?? `${ring.value.toFixed(0)}%`} — ${ring.subtitle}`}
                   >
                     <HealthRing
@@ -177,7 +179,7 @@ export function HeroSection({
                       label=""
                       tooltip=""
                     />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                       <Icon className="h-3 w-3" style={{ color: ring.color }} />
                     </div>
                   </div>
@@ -189,7 +191,7 @@ export function HeroSection({
 
         {/* Inline Health Rings — mobile (below badges) */}
         {healthRings && healthRings.length > 0 && (
-          <div className="mt-2 flex md:hidden items-center gap-3">
+          <div className="mt-2 flex items-center gap-3 md:hidden">
             {healthRings.map((ring) => {
               const RingIcon = ring.icon;
               return (
@@ -208,11 +210,13 @@ export function HeroSection({
                       label=""
                       tooltip=""
                     />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                       <RingIcon className="h-2.5 w-2.5" style={{ color: ring.color }} />
                     </div>
                   </div>
-                  <span className="text-[10px] font-medium text-foreground/70">{ring.displayValue ?? `${ring.value.toFixed(0)}%`}</span>
+                  <span className="text-foreground/70 text-[10px] font-medium">
+                    {ring.displayValue ?? `${ring.value.toFixed(0)}%`}
+                  </span>
                 </button>
               );
             })}

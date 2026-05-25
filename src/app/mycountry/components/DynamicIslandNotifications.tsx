@@ -310,7 +310,7 @@ export function DynamicIslandNotifications({
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="mt-0.5 flex-shrink-0">
+                            <div className="mt-0.5 shrink-0">
                               {getNotificationIcon(notification.type, notification.severity)}
                             </div>
 
@@ -320,7 +320,7 @@ export function DynamicIslandNotifications({
                                   {notification.title}
                                 </h4>
                                 {!notification.read && (
-                                  <div className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
+                                  <div className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                                 )}
                               </div>
 

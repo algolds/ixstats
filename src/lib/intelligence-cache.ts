@@ -8,10 +8,10 @@ export type CacheType = "critical" | "standard" | "historical" | "static";
 
 // TTL mapping by CacheType (in seconds, for globalCache)
 const TTL_BY_TYPE: Record<CacheType, number> = {
-  critical: 10,    // 10 seconds
-  standard: 30,    // 30 seconds
-  historical: 300,  // 5 minutes
-  static: 3600,    // 1 hour
+  critical: 10, // 10 seconds
+  standard: 30, // 30 seconds
+  historical: 300, // 5 minutes
+  static: 3600, // 1 hour
 };
 
 /**
@@ -49,7 +49,11 @@ class IntelligenceCacheFacade {
   invalidateCountryIntelligence(countryId: string): number {
     // Delegate to globalCache pattern-based deletion
     // We can't easily do pattern matching on globalCache, so clear by known patterns
-    const patterns = [`intel:country:${countryId}`, `intel:intelligence:${countryId}`, `intel:vitality:${countryId}`];
+    const patterns = [
+      `intel:country:${countryId}`,
+      `intel:intelligence:${countryId}`,
+      `intel:vitality:${countryId}`,
+    ];
     let count = 0;
     for (const key of patterns) {
       void globalCache.delete(key);

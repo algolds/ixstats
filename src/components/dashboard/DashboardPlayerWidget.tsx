@@ -2,12 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, ClipboardList, AlertTriangle, MessageSquare, ChevronRight } from "lucide-react";
+import {
+  Mail,
+  ClipboardList,
+  AlertTriangle,
+  MessageSquare,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Users,
+} from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
 import { Skeleton } from "~/components/ui/skeleton";
+import {
+  ECONOMIC_TIER_INFO,
+  POPULATION_TIER_INFO,
+  getEconomicTierFromGdpPerCapita,
+  getPopulationTierFromPopulation,
+} from "~/types/ixstats";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
 
@@ -25,7 +39,58 @@ function formatCompact(num: number): string {
   if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
   if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
   if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-  return num.toLocaleString();
+  return num.toString();
+}
+
+function MiniProgressCircle({
+  progress,
+  colorClass = "stroke-emerald-500",
+}: {
+  progress: number;
+  colorClass?: string;
+}) {
+  const radius = 6;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference;
+  return (
+    <svg className="h-4 w-4 -rotate-90 transform shrink-0" viewBox="0 0 16 16">
+      <circle
+        cx="8"
+        cy="8"
+        r={radius}
+        fill="none"
+        className="stroke-slate-200 dark:stroke-slate-800"
+        strokeWidth="1.8"
+      />
+      <circle
+        cx="8"
+        cy="8"
+        r={radius}
+        fill="none"
+        className={colorClass}
+        strokeWidth="1.8"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function GrowthArrow({ rate }: { rate: number }) {
+  if (rate === 0) return null;
+  const absPct = Math.abs(rate) * 100;
+  const isUp = rate > 0;
+  const intensity = absPct < 1 ? "opacity-30" : absPct < 3 ? "opacity-60" : "opacity-100";
+  const scale = absPct >= 3 ? "scale-110" : "";
+  const Icon = isUp ? TrendingUp : TrendingDown;
+  const color = isUp ? "text-green-500" : "text-red-500";
+  return (
+    <Icon
+      className={cn("h-3 w-3 transition-all", color, intensity, scale)}
+      strokeWidth={absPct >= 3 ? 3 : 2.5}
+    />
+  );
 }
 
 export function DashboardPlayerWidget() {
@@ -76,7 +141,7 @@ export function DashboardPlayerWidget() {
 
   if (profileLoading) {
     return (
-      <div className="border-border/50 bg-background/80 w-48 space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
+      <div className="glass-hierarchy-child w-48 space-y-2.5 rounded-xl border border-border/40 p-3 shadow-sm">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-4 w-28" />
@@ -114,42 +179,114 @@ export function DashboardPlayerWidget() {
   const popDisplayLabel =
     popView === "total" ? "Population" : popView === "growth" ? "Pop Growth" : "Density";
 
+  // Tier progress calculations
+  const econTier = stats.gdpPerCapita ? getEconomicTierFromGdpPerCapita(stats.gdpPerCapita) : null;
+  const econInfo = econTier ? ECONOMIC_TIER_INFO[econTier] : null;
+  const econMin = econInfo ? econInfo.min : 0;
+  const econMax = econInfo ? (econInfo.max === Infinity ? econMin * 1.5 : econInfo.max) : 100;
+  const econProgress = econInfo
+    ? Math.min(100, Math.max(0, ((stats.gdpPerCapita - econMin) / (econMax - econMin)) * 100))
+    : 0;
+
+  const popTier = stats.population ? getPopulationTierFromPopulation(stats.population) : null;
+  const popInfo = popTier ? POPULATION_TIER_INFO[popTier] : null;
+  const popMin = popInfo ? popInfo.min : 0;
+  const popMax = popInfo ? (popInfo.max === Infinity ? popMin * 2 : popInfo.max) : 100;
+  const popProgress = popInfo
+    ? Math.min(100, Math.max(0, ((stats.population - popMin) / (popMax - popMin)) * 100))
+    : 0;
+
   const msgFolders = folderCounts as Record<FolderKey, number> | undefined;
   const hasMessages = msgFolders && Object.values(msgFolders).some((c) => c > 0);
   const activeCrisesList = activeCrises ?? [];
   const crisesCount = crisisStats?.activeEvents ?? 0;
 
   return (
-    <div className="border-border/50 bg-background/80 w-48 space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
+    <div className="glass-hierarchy-child w-48 space-y-2.5 rounded-xl border border-border/40 p-3 shadow-sm">
       {/* GDP/Pop Stat Cards */}
       {dashboard && (
-        <div className="grid grid-cols-2 gap-1.5">
-          <button
-            onClick={cycleGdp}
-            title="Click to cycle GDP view"
-            className="group cursor-pointer rounded-lg bg-emerald-500/8 px-2 py-1.5 text-left transition-colors hover:bg-emerald-500/15 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
-          >
-            <p className="text-muted-foreground text-[8px] leading-tight flex items-center justify-between">
-              <span>{gdpDisplayLabel}</span>
-              <span className="opacity-0 group-hover:opacity-60 transition-opacity">↻</span>
-            </p>
-            <p className="text-[10px] leading-tight font-semibold text-emerald-600 dark:text-emerald-400">
-              {gdpDisplayValue}
-            </p>
-          </button>
-          <button
-            onClick={cyclePop}
-            title="Click to cycle Population view"
-            className="group cursor-pointer rounded-lg bg-blue-500/8 px-2 py-1.5 text-left transition-colors hover:bg-blue-500/15 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
-          >
-            <p className="text-muted-foreground text-[8px] leading-tight flex items-center justify-between">
-              <span>{popDisplayLabel}</span>
-              <span className="opacity-0 group-hover:opacity-60 transition-opacity">↻</span>
-            </p>
-            <p className="text-[10px] leading-tight font-semibold text-blue-600 dark:text-blue-400">
-              {popDisplayValue}
-            </p>
-          </button>
+        <div className="space-y-3">
+          {/* GDP Card */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-semibold text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                Economy
+              </span>
+              <button
+                onClick={cycleGdp}
+                title="Cycle view"
+                className="text-[8px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 rounded px-1 py-0.5 hover:bg-white/5 transition-colors"
+              >
+                <span>{gdpDisplayLabel}</span>
+                <span className="text-[7px]">↻</span>
+              </button>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
+                {gdpDisplayValue}
+              </span>
+              <div className="flex items-center gap-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+                <GrowthArrow rate={stats.growth} />
+                <span>{stats.growth >= 0 ? "+" : ""}{(stats.growth * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+            {/* Economic Tier Progress */}
+            {econTier && (
+              <div className="flex items-center justify-between text-[8px] bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/15 dark:border-emerald-500/10 rounded-md px-1.5 py-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground font-medium">Tier:</span>
+                  <span className="font-bold text-foreground">{econTier}</span>
+                </div>
+                <div className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span>{Math.round(econProgress)}%</span>
+                  <MiniProgressCircle progress={econProgress} colorClass="stroke-emerald-500 dark:stroke-emerald-400" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="border-border/30 border-t" />
+
+          {/* Population Card */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-semibold text-muted-foreground flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                Demographics
+              </span>
+              <button
+                onClick={cyclePop}
+                title="Cycle view"
+                className="text-[8px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 rounded px-1 py-0.5 hover:bg-white/5 transition-colors"
+              >
+                <span>{popDisplayLabel}</span>
+                <span className="text-[7px]">↻</span>
+              </button>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] font-bold text-blue-600 dark:text-blue-400">
+                {popDisplayValue}
+              </span>
+              <div className="flex items-center gap-0.5 text-[9px] font-medium text-blue-600 dark:text-blue-400">
+                <GrowthArrow rate={stats.popGrowth} />
+                <span>{stats.popGrowth >= 0 ? "+" : ""}{(stats.popGrowth * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+            {/* Population Tier Progress */}
+            {popTier && (
+              <div className="flex items-center justify-between text-[8px] bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/15 dark:border-blue-500/10 rounded-md px-1.5 py-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground font-medium">Tier:</span>
+                  <span className="font-bold text-foreground">{popTier}</span>
+                </div>
+                <div className="flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
+                  <span>{Math.round(popProgress)}%</span>
+                  <MiniProgressCircle progress={popProgress} colorClass="stroke-blue-500 dark:stroke-blue-400" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

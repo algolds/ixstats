@@ -93,7 +93,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
         {/* Icon */}
         <div
-          className={`rounded-full p-2 sm:p-3 ${config.bgColor} flex-shrink-0 transition-transform group-hover:scale-110`}
+          className={`rounded-full p-2 sm:p-3 ${config.bgColor} shrink-0 transition-transform group-hover:scale-110`}
         >
           <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 ${config.color}`} />
         </div>
@@ -123,7 +123,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
             )}
             <span className="max-w-[100px] truncate sm:max-w-none">{activity.user.name}</span>
             <span className="hidden sm:inline">•</span>
-            <Clock className="h-3 w-3 flex-shrink-0" />
+            <Clock className="h-3 w-3 shrink-0" />
             <span className="text-xs">
               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
             </span>

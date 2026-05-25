@@ -252,9 +252,9 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div className="flex flex-1 items-center gap-2">
                           {isApplied ? (
-                            <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
+                            <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
                           ) : (
-                            <XCircle className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                            <XCircle className="text-muted-foreground h-4 w-4 shrink-0" />
                           )}
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">

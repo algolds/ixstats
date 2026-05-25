@@ -69,7 +69,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
           <div className="space-y-6">
             {/* Warning Message */}
             <div className="flex items-start gap-3 rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
-              <RiAlertLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-orange-400" />
+              <RiAlertLine className="mt-0.5 h-5 w-5 shrink-0 text-orange-400" />
               <div className="text-sm text-[--intel-silver]">
                 <p className="mb-1 font-medium text-orange-400">Limited Editing</p>
                 <p>

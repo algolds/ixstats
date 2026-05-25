@@ -150,29 +150,35 @@ export class AchievementService {
       // Get diplomatic counts from database
       const [treatyCount, tradePartnerCount, allianceCount] = await Promise.all([
         // Count treaties where this country is a party (parties is a JSON/text field containing country IDs)
-        db.treaty.count({
-          where: {
-            parties: { contains: countryId },
-            status: "active",
-          },
-        }).catch(() => 0),
+        db.treaty
+          .count({
+            where: {
+              parties: { contains: countryId },
+              status: "active",
+            },
+          })
+          .catch(() => 0),
 
         // Count trade partners via diplomatic relations with non-zero trade volume
-        db.diplomaticRelation.count({
-          where: {
-            OR: [{ country1: countryId }, { country2: countryId }],
-            tradeVolume: { gt: 0 },
-            status: "active",
-          },
-        }).catch(() => 0),
+        db.diplomaticRelation
+          .count({
+            where: {
+              OR: [{ country1: countryId }, { country2: countryId }],
+              tradeVolume: { gt: 0 },
+              status: "active",
+            },
+          })
+          .catch(() => 0),
 
         // Count alliance memberships
-        db.allianceMember.count({
-          where: {
-            countryId,
-            isActive: true,
-          },
-        }).catch(() => 0),
+        db.allianceMember
+          .count({
+            where: {
+              countryId,
+              isActive: true,
+            },
+          })
+          .catch(() => 0),
       ]);
 
       // Build extended achievement data
@@ -204,12 +210,14 @@ export class AchievementService {
         governmentType: country.governmentType ?? undefined,
         thinkpageCount,
         followerCount,
-        trendingPostCount: await db.thinkpagesPost.count({
-          where: {
-            account: { clerkUserId: userId },
-            trending: true,
-          },
-        }).catch(() => 0),
+        trendingPostCount: await db.thinkpagesPost
+          .count({
+            where: {
+              account: { clerkUserId: userId },
+              trending: true,
+            },
+          })
+          .catch(() => 0),
         daysActive,
         totalAchievements,
       };
@@ -270,7 +278,7 @@ export class AchievementService {
             if (earnResult.success) {
               console.log(
                 `[Achievement Service] Awarded ${creditReward} IxC for "${definition.title}" ` +
-                `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
+                  `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
               );
             } else {
               console.warn(
@@ -290,13 +298,7 @@ export class AchievementService {
             try {
               const cardId = getCardRewardForAchievement(achievementId);
               if (cardId) {
-                await awardAchievementCard(
-                  db,
-                  userId,
-                  cardId,
-                  achievementId,
-                  definition.title
-                );
+                await awardAchievementCard(db, userId, cardId, achievementId, definition.title);
                 console.log(
                   `[Achievement Service] Awarded commemorative card "${cardId}" for "${definition.title}"`
                 );
@@ -417,7 +419,7 @@ export class AchievementService {
         if (earnResult.success) {
           console.log(
             `[Achievement Service] Awarded ${creditReward} IxC for manual unlock of "${definition.title}" ` +
-            `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
+              `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
           );
         } else {
           console.warn(
@@ -437,23 +439,14 @@ export class AchievementService {
         try {
           const cardId = getCardRewardForAchievement(achievementId);
           if (cardId) {
-            await awardAchievementCard(
-              db,
-              userId,
-              cardId,
-              achievementId,
-              definition.title
-            );
+            await awardAchievementCard(db, userId, cardId, achievementId, definition.title);
             console.log(
               `[Achievement Service] Awarded commemorative card "${cardId}" for manual unlock of "${definition.title}"`
             );
           }
         } catch (cardError) {
           // Don't block achievement unlock if card award fails
-          console.error(
-            `[Achievement Service] Error awarding card for manual unlock:`,
-            cardError
-          );
+          console.error(`[Achievement Service] Error awarding card for manual unlock:`, cardError);
         }
       }
 

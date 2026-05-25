@@ -749,7 +749,7 @@ export const IncomeWealthDistribution = memo(function IncomeWealthDistribution({
 
       <div className="rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] p-4">
         <div className="flex items-start">
-          <Info className="mt-0.5 mr-3 h-5 w-5 flex-shrink-0 text-[var(--color-info)]" />
+          <Info className="mt-0.5 mr-3 h-5 w-5 shrink-0 text-[var(--color-info)]" />
           <div>
             <h4 className="mb-1 text-sm font-medium text-[var(--color-text-primary)]">
               Distribution Analysis

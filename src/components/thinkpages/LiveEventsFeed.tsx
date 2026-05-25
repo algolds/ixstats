@@ -160,7 +160,7 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
                   onClick={() => onEventClick?.(event.id)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 rounded-lg bg-white/10 p-2">
+                    <div className="shrink-0 rounded-lg bg-white/10 p-2">
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">

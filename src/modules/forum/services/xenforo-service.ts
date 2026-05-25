@@ -230,8 +230,12 @@ export function getXfApiUrl(): string {
 }
 
 // Internal aliases for backward compat within this file
-function getApiKey(): string | undefined { return getXfApiKey(); }
-function getApiUrl(): string { return getXfApiUrl(); }
+function getApiKey(): string | undefined {
+  return getXfApiKey();
+}
+function getApiUrl(): string {
+  return getXfApiUrl();
+}
 
 function stripBBCode(text: string): string {
   return text.replace(/\[\/?\w+(?:=[^\]]*)?]/g, "").trim();
@@ -271,10 +275,7 @@ async function xfFetch<T>(endpoint: string): Promise<T | null> {
  * POST to XenForo API endpoint.
  * Used for creating/updating resources (custom fields, user profiles).
  */
-export async function xfPost<T>(
-  endpoint: string,
-  body: Record<string, string>
-): Promise<T | null> {
+export async function xfPost<T>(endpoint: string, body: Record<string, string>): Promise<T | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 
@@ -318,7 +319,9 @@ export async function getForumTrendingThreads(limit = 15): Promise<ForumThread[]
   if (!getApiKey()) return [];
 
   const baseUrl = "https://forum.ixwiki.com";
-  const data = await xfFetch<XFThreadsResponse>(`/threads/?order=last_post_date&direction=desc&limit=${limit}`);
+  const data = await xfFetch<XFThreadsResponse>(
+    `/threads/?order=last_post_date&direction=desc&limit=${limit}`
+  );
 
   const threads: ForumThread[] = (data?.threads ?? []).map((t) => ({
     threadId: t.thread_id,
@@ -408,10 +411,7 @@ export async function getForumActivity(limit = 15): Promise<ForumActivityItem[]>
  * GET from XenForo API acting as a specific user.
  * Uses XF-Api-User header to impersonate the user (requires super admin API key).
  */
-export async function xfFetchAsUser<T>(
-  endpoint: string,
-  xfUserId: number
-): Promise<T | null> {
+export async function xfFetchAsUser<T>(endpoint: string, xfUserId: number): Promise<T | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 
@@ -486,10 +486,7 @@ export async function xfPostAsUser<T>(
 /**
  * DELETE from XenForo API, optionally acting as a specific user.
  */
-export async function xfDelete<T>(
-  endpoint: string,
-  xfUserId?: number
-): Promise<T | null> {
+export async function xfDelete<T>(endpoint: string, xfUserId?: number): Promise<T | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 

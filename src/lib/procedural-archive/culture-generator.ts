@@ -36,11 +36,23 @@ export type CultureEconomy = (typeof CULTURE_TRAITS.economy)[number];
 export type CultureTemperament = (typeof CULTURE_TRAITS.temperament)[number];
 
 /** Culture type determines expansion behavior (from Azgaar's FMG) */
-export type CultureType = "Naval" | "Highland" | "Lake" | "River" | "Hunting" | "Nomadic" | "Generic";
+export type CultureType =
+  | "Naval"
+  | "Highland"
+  | "Lake"
+  | "River"
+  | "Hunting"
+  | "Nomadic"
+  | "Generic";
 
 const EXPANSION_MULTIPLIER: Record<CultureType, number> = {
-  Naval: 1.5, Nomadic: 1.5, River: 1.1, Generic: 1.0,
-  Lake: 0.9, Highland: 0.8, Hunting: 0.7,
+  Naval: 1.5,
+  Nomadic: 1.5,
+  River: 1.1,
+  Generic: 1.0,
+  Lake: 0.9,
+  Highland: 0.8,
+  Hunting: 0.7,
 };
 
 const BIOME_CHANGE_PENALTY = 20;
@@ -101,10 +113,26 @@ export interface CultureGenParams {
 // ──────────────────────────────────────────────
 
 const CULTURE_COLORS = [
-  "#e6194B", "#3cb44b", "#ffe119", "#4363d8", "#f58231",
-  "#911eb4", "#42d4f4", "#f032e6", "#bfef45", "#fabed4",
-  "#469990", "#dcbeff", "#9A6324", "#fffac8", "#800000",
-  "#aaffc3", "#808000", "#ffd8b1", "#000075", "#a9a9a9",
+  "#e6194B",
+  "#3cb44b",
+  "#ffe119",
+  "#4363d8",
+  "#f58231",
+  "#911eb4",
+  "#42d4f4",
+  "#f032e6",
+  "#bfef45",
+  "#fabed4",
+  "#469990",
+  "#dcbeff",
+  "#9A6324",
+  "#fffac8",
+  "#800000",
+  "#aaffc3",
+  "#808000",
+  "#ffd8b1",
+  "#000075",
+  "#a9a9a9",
 ];
 
 // ──────────────────────────────────────────────
@@ -117,8 +145,8 @@ export function generateCultures(params: CultureGenParams): CultureResult {
   const { width, height, data: elevData, seaLevel } = heightmap;
 
   // Determine culture count
-  const cultureCount = params.cultureCount ??
-    Math.max(4, Math.min(20, Math.floor((params.countryCount ?? 30) / 4)));
+  const cultureCount =
+    params.cultureCount ?? Math.max(4, Math.min(20, Math.floor((params.countryCount ?? 30) / 4)));
 
   // Step 1: Place culture seeds on land via Poisson disk sampling
   const seeds: Array<{ x: number; y: number; idx: number }> = [];
@@ -172,9 +200,10 @@ export function generateCultures(params: CultureGenParams): CultureResult {
     // Classify culture type (Azgaar pattern)
     const onRiver = params.riverCells?.has(s.idx) ?? false;
     const biomeIdx = params.biomeGrid ? params.biomeGrid.data[s.idx] : undefined;
-    const biomeCost = (biomeIdx !== undefined && biomeIdx < BIOME_TYPES.length)
-      ? BIOME_MOVEMENT_COST[BIOME_TYPES[biomeIdx]!] ?? 50
-      : 50;
+    const biomeCost =
+      biomeIdx !== undefined && biomeIdx < BIOME_TYPES.length
+        ? (BIOME_MOVEMENT_COST[BIOME_TYPES[biomeIdx]!] ?? 50)
+        : 50;
 
     let cultureType: CultureType;
     if (coastal && waterNeighbors > 3) cultureType = "Naval";
@@ -185,17 +214,33 @@ export function generateCultures(params: CultureGenParams): CultureResult {
     else cultureType = "Generic";
 
     // Geography-influenced trait selection
-    const orientation: CultureOrientation = coastal ? "maritime" : elevNorm > 0.3 ? "continental" : "riverine";
-    const lifestyle: CultureLifestyle = cultureType === "Nomadic" ? "nomadic" : elevNorm > 0.5 ? "semi-nomadic" : rng() < 0.7 ? "settled" : "semi-nomadic";
-    const social: CultureSocial = ["hierarchical", "egalitarian", "meritocratic"][Math.floor(rng() * 3)] as CultureSocial;
-    const economy: CultureEconomy = cultureType === "Naval"
-      ? "mercantile"
-      : cultureType === "Highland" || cultureType === "Nomadic"
-        ? "pastoral"
-        : rng() < 0.6
-          ? "agrarian"
-          : "industrial";
-    const temperament: CultureTemperament = ["warlike", "peaceful", "isolationist", "expansionist"][Math.floor(rng() * 4)] as CultureTemperament;
+    const orientation: CultureOrientation = coastal
+      ? "maritime"
+      : elevNorm > 0.3
+        ? "continental"
+        : "riverine";
+    const lifestyle: CultureLifestyle =
+      cultureType === "Nomadic"
+        ? "nomadic"
+        : elevNorm > 0.5
+          ? "semi-nomadic"
+          : rng() < 0.7
+            ? "settled"
+            : "semi-nomadic";
+    const social: CultureSocial = ["hierarchical", "egalitarian", "meritocratic"][
+      Math.floor(rng() * 3)
+    ] as CultureSocial;
+    const economy: CultureEconomy =
+      cultureType === "Naval"
+        ? "mercantile"
+        : cultureType === "Highland" || cultureType === "Nomadic"
+          ? "pastoral"
+          : rng() < 0.6
+            ? "agrarian"
+            : "industrial";
+    const temperament: CultureTemperament = ["warlike", "peaceful", "isolationist", "expansionist"][
+      Math.floor(rng() * 4)
+    ] as CultureTemperament;
 
     const familyId = families[i % families.length]!.id;
 
@@ -215,7 +260,7 @@ export function generateCultures(params: CultureGenParams): CultureResult {
   // Step 3: Priority-queue BFS expansion (Azgaar pattern)
   const grid = new Int16Array(width * height).fill(-1);
   const costGrid = new Float32Array(width * height).fill(Infinity);
-  const maxExpansionCost = 200 * Math.sqrt(width * height) / 400;
+  const maxExpansionCost = (200 * Math.sqrt(width * height)) / 400;
 
   // Binary min-heap for priority queue
   const heap: Array<{ idx: number; cultureId: number; cost: number }> = [];
@@ -238,7 +283,8 @@ export function generateCultures(params: CultureGenParams): CultureResult {
       let i = 0;
       while (true) {
         let smallest = i;
-        const l = 2 * i + 1, r = 2 * i + 2;
+        const l = 2 * i + 1,
+          r = 2 * i + 2;
         if (l < heap.length && heap[l]!.cost < heap[smallest]!.cost) smallest = l;
         if (r < heap.length && heap[r]!.cost < heap[smallest]!.cost) smallest = r;
         if (smallest === i) break;
@@ -272,7 +318,12 @@ export function generateCultures(params: CultureGenParams): CultureResult {
     const culture = cultures[cultureId]!;
     const expansionism = EXPANSION_MULTIPLIER[culture.cultureType];
 
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+    for (const [dx, dy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ] as const) {
       const nx = x + dx;
       const ny = y + dy;
       if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
@@ -289,7 +340,13 @@ export function generateCultures(params: CultureGenParams): CultureResult {
       if (params.biomeGrid) {
         const curBiome = params.biomeGrid.data[idx];
         const nbBiome = params.biomeGrid.data[nidx];
-        if (curBiome !== undefined && nbBiome !== undefined && curBiome !== nbBiome && curBiome !== 255 && nbBiome !== 255) {
+        if (
+          curBiome !== undefined &&
+          nbBiome !== undefined &&
+          curBiome !== nbBiome &&
+          curBiome !== 255 &&
+          nbBiome !== 255
+        ) {
           terrainCost += BIOME_CHANGE_PENALTY;
         }
       }

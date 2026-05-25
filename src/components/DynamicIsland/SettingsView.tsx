@@ -127,7 +127,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
         <div className="space-y-3">
           {/* Theme Switcher — always shown */}
           <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-            <div className="bg-primary/20 flex-shrink-0 rounded p-1.5">
+            <div className="bg-primary/20 shrink-0 rounded p-1.5">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-primary h-4 w-4" />
               ) : (
@@ -179,7 +179,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             }
             className="bg-card hover:bg-accent/10 border-border flex w-full items-center justify-start gap-3 rounded-lg p-3 transition-all"
           >
-            <div className="flex-shrink-0 rounded bg-blue-500/20 p-1.5">
+            <div className="shrink-0 rounded bg-blue-500/20 p-1.5">
               <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="min-w-0 flex-1 text-left">
@@ -235,7 +235,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             /* IxStats settings */
             <>
               <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-                <div className="flex-shrink-0 rounded bg-purple-500/20 p-1.5">
+                <div className="shrink-0 rounded bg-purple-500/20 p-1.5">
                   <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -257,7 +257,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               </div>
 
               <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-                <div className="flex-shrink-0 rounded bg-blue-500/20 p-1.5">
+                <div className="shrink-0 rounded bg-blue-500/20 p-1.5">
                   <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -354,7 +354,7 @@ function SettingsToggle({
 }) {
   return (
     <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-      <div className={`flex-shrink-0 rounded p-1.5 ${iconBg}`}>{icon}</div>
+      <div className={`shrink-0 rounded p-1.5 ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
         <div className="text-xs text-gray-600 dark:text-gray-400">{description}</div>

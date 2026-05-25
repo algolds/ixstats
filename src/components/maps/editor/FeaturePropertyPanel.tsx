@@ -8,7 +8,14 @@ import React from "react";
  */
 
 import { Loader2, Check, CheckCircle2 } from "lucide-react";
-import type { EditorMode, CityFormData, SubdivisionFormData, POIFormData, StoryPinFormData, MapLabelFormData } from "~/hooks/useMapEditor";
+import type {
+  EditorMode,
+  CityFormData,
+  SubdivisionFormData,
+  POIFormData,
+  StoryPinFormData,
+  MapLabelFormData,
+} from "~/hooks/useMapEditor";
 import {
   CityPropertyForm,
   SubdivisionPropertyForm,
@@ -56,7 +63,9 @@ interface FeaturePropertyPanelProps {
   countryId?: string;
 }
 
-export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(props: FeaturePropertyPanelProps) {
+export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
+  props: FeaturePropertyPanelProps
+) {
   const { mode, onCancel, countryId } = props;
 
   if (mode === "view") return null;
@@ -70,7 +79,16 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
   }
 
   const isEdit = mode.startsWith("edit-");
-  const { pendingCoordinates, pendingGeometry, isMutating, error, lastSavedAt, onSubmit, pendingPointInfo, isPendingPointInfoLoading } = props;
+  const {
+    pendingCoordinates,
+    pendingGeometry,
+    isMutating,
+    error,
+    lastSavedAt,
+    onSubmit,
+    pendingPointInfo,
+    isPendingPointInfoLoading,
+  } = props;
 
   const hasLocation =
     isEdit ||
@@ -82,7 +100,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
 
   const hasName =
     ((mode === "add-city" || mode === "edit-city") && props.cityForm.name.trim()) ||
-    ((mode === "add-subdivision" || mode === "edit-subdivision") && props.subdivisionForm.name.trim()) ||
+    ((mode === "add-subdivision" || mode === "edit-subdivision") &&
+      props.subdivisionForm.name.trim()) ||
     ((mode === "add-poi" || mode === "edit-poi") && props.poiForm.name.trim()) ||
     ((mode === "add-story-pin" || mode === "edit-story-pin") && props.storyPinForm?.title.trim()) ||
     ((mode === "add-label" || mode === "edit-label") && props.mapLabelForm?.text.trim());
@@ -91,19 +110,25 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
 
   // Mode title mapping
   const titles: Record<string, string> = {
-    "add-city": "New City", "edit-city": "Edit City",
-    "add-subdivision": "New Region", "edit-subdivision": "Edit Region",
-    "add-poi": "New POI", "edit-poi": "Edit POI",
-    "add-story-pin": "New Story Pin", "edit-story-pin": "Edit Story Pin",
-    "add-label": "New Map Label", "edit-label": "Edit Map Label",
+    "add-city": "New City",
+    "edit-city": "Edit City",
+    "add-subdivision": "New Region",
+    "edit-subdivision": "Edit Region",
+    "add-poi": "New POI",
+    "edit-poi": "Edit POI",
+    "add-story-pin": "New Story Pin",
+    "edit-story-pin": "Edit Story Pin",
+    "add-label": "New Map Label",
+    "edit-label": "Edit Map Label",
   };
 
-  const isPointMode = mode === "add-city" || mode === "add-poi" || mode === "add-story-pin" || mode === "add-label";
+  const isPointMode =
+    mode === "add-city" || mode === "add-poi" || mode === "add-story-pin" || mode === "add-label";
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {titles[mode] ?? mode}
         </h3>
       </div>
@@ -131,12 +156,12 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
       {pendingCoordinates && isPointMode && (
         <div className="flex flex-wrap gap-1.5">
           {isPendingPointInfoLoading && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+            <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px]">
               <Loader2 className="h-2.5 w-2.5 animate-spin" /> Terrain...
             </span>
           )}
           {pendingPointInfo?.elevation?.zoneName && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
+            <span className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
               {pendingPointInfo.elevation.color && (
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-sm"
@@ -152,7 +177,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
             </span>
           )}
           {pendingPointInfo?.climate?.climateName && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
+            <span className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
               {pendingPointInfo.climate.color && (
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-sm"
@@ -176,20 +201,39 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
 
       {/* Delegate to the correct form sub-panel */}
       {(mode === "add-city" || mode === "edit-city") && (
-        <CityPropertyForm form={props.cityForm} onChange={props.onCityFormChange} pendingCoordinates={pendingCoordinates} />
+        <CityPropertyForm
+          form={props.cityForm}
+          onChange={props.onCityFormChange}
+          pendingCoordinates={pendingCoordinates}
+        />
       )}
       {(mode === "add-subdivision" || mode === "edit-subdivision") && (
-        <SubdivisionPropertyForm form={props.subdivisionForm} onChange={props.onSubdivisionFormChange} />
+        <SubdivisionPropertyForm
+          form={props.subdivisionForm}
+          onChange={props.onSubdivisionFormChange}
+        />
       )}
       {(mode === "add-poi" || mode === "edit-poi") && (
-        <POIPropertyForm form={props.poiForm} onChange={props.onPOIFormChange} pendingCoordinates={pendingCoordinates} />
+        <POIPropertyForm
+          form={props.poiForm}
+          onChange={props.onPOIFormChange}
+          pendingCoordinates={pendingCoordinates}
+        />
       )}
-      {(mode === "add-story-pin" || mode === "edit-story-pin") && props.storyPinForm && props.onStoryPinFormChange && (
-        <StoryPinPropertyForm form={props.storyPinForm} onChange={props.onStoryPinFormChange} countryId={countryId} />
-      )}
-      {(mode === "add-label" || mode === "edit-label") && props.mapLabelForm && props.onMapLabelFormChange && (
-        <MapLabelPropertyForm form={props.mapLabelForm} onChange={props.onMapLabelFormChange} />
-      )}
+      {(mode === "add-story-pin" || mode === "edit-story-pin") &&
+        props.storyPinForm &&
+        props.onStoryPinFormChange && (
+          <StoryPinPropertyForm
+            form={props.storyPinForm}
+            onChange={props.onStoryPinFormChange}
+            countryId={countryId}
+          />
+        )}
+      {(mode === "add-label" || mode === "edit-label") &&
+        props.mapLabelForm &&
+        props.onMapLabelFormChange && (
+          <MapLabelPropertyForm form={props.mapLabelForm} onChange={props.onMapLabelFormChange} />
+        )}
 
       {/* Success flash with fade-in animation */}
       {lastSavedAt && !error && (
@@ -214,10 +258,10 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
         <button
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-3 sm:py-1.5 text-base sm:text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:py-1.5 sm:text-sm"
         >
           {isMutating ? (
-            <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin sm:h-3.5 sm:w-3.5" />
           ) : (
             <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           )}
@@ -225,7 +269,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
         </button>
         <button
           onClick={onCancel}
-          className="rounded-lg border border-border px-3 py-3 sm:py-1.5 text-base sm:text-sm text-foreground/80 transition-colors hover:bg-accent active:bg-accent"
+          className="border-border text-foreground/80 hover:bg-accent active:bg-accent rounded-lg border px-3 py-3 text-base transition-colors sm:py-1.5 sm:text-sm"
         >
           Cancel
         </button>
@@ -234,8 +278,14 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(pro
       {/* eslint-disable-next-line react/no-unknown-property */}
       <style jsx>{`
         @keyframes featureSavedFadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
       `}</style>
     </div>

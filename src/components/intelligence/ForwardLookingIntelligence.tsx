@@ -358,7 +358,7 @@ const ProjectionDisplay: React.FC<ProjectionDisplayProps> = ({
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {selectedProjection.keyFactors.map((factor: any, index: number) => (
             <div key={index} className="flex items-start gap-2">
-              <div className="bg-accent mt-2 h-2 w-2 flex-shrink-0 rounded-full" />
+              <div className="bg-accent mt-2 h-2 w-2 shrink-0 rounded-full" />
               <span className="text-sm">{factor}</span>
             </div>
           ))}
@@ -423,7 +423,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
                       key={index}
                       className="text-muted-foreground flex items-start gap-2 text-sm"
                     >
-                      <span className="bg-muted-foreground mt-2 h-1 w-1 flex-shrink-0 rounded-full" />
+                      <span className="bg-muted-foreground mt-2 h-1 w-1 shrink-0 rounded-full" />
                       {factor}
                     </li>
                   ))}
@@ -452,7 +452,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
             <ul className="space-y-2">
               {(riskAssessment.mitigation?.shortTerm || []).map((action: any, index: number) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-yellow-400" />
+                  <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-yellow-400" />
                   {action}
                 </li>
               ))}
@@ -464,7 +464,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
             <ul className="space-y-2">
               {(riskAssessment.mitigation?.longTerm || []).map((strategy: any, index: number) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" />
+                  <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-400" />
                   {strategy}
                 </li>
               ))}
@@ -574,7 +574,7 @@ const CompetitiveIntelligenceDisplay: React.FC<{
           <ul className="space-y-2">
             {(competitive.competitiveAdvantages || []).map((advantage: any, index: number) => (
               <li key={index} className="flex items-start gap-2 text-sm">
-                <TrendingUp className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
                 {advantage}
               </li>
             ))}
@@ -586,7 +586,7 @@ const CompetitiveIntelligenceDisplay: React.FC<{
           <ul className="space-y-2">
             {(competitive.vulnerabilities || []).map((vulnerability: any, index: number) => (
               <li key={index} className="flex items-start gap-2 text-sm">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-400" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-400" />
                 {vulnerability}
               </li>
             ))}
@@ -666,7 +666,7 @@ const MilestoneTimeline: FC<MilestoneTimelineProps> = ({ milestones }) => {
                 {(milestones.tierProgressions?.requirements || []).map(
                   (req: any, index: number) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
-                      <span className="bg-accent mt-2 h-2 w-2 flex-shrink-0 rounded-full" />
+                      <span className="bg-accent mt-2 h-2 w-2 shrink-0 rounded-full" />
                       {req}
                     </li>
                   )
@@ -685,7 +685,7 @@ const MilestoneTimeline: FC<MilestoneTimelineProps> = ({ milestones }) => {
           <div className="space-y-6">
             {allMilestones.map((milestone, index) => (
               <div key={index} className="flex gap-4">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <div
                     className={`h-3 w-3 rounded-full ${getMilestoneCategoryColor(milestone.category)} mt-1`}
                   />
@@ -694,7 +694,7 @@ const MilestoneTimeline: FC<MilestoneTimelineProps> = ({ milestones }) => {
                   )}
                 </div>
 
-                <div className="flex-grow">
+                <div className="grow">
                   <div className="mb-2 flex items-start justify-between">
                     <div>
                       <h4 className="font-medium">{milestone.description}</h4>

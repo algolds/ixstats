@@ -23,25 +23,25 @@ export const TREWARTHA_TYPES = [
   { id: 5, code: "Cs", name: "Subtropical Dry Summer" },
   { id: 6, code: "Do", name: "Temperate Oceanic" },
   { id: 7, code: "Dc", name: "Temperate Continental" },
-  { id: 8, code: "E",  name: "Boreal" },
+  { id: 8, code: "E", name: "Boreal" },
   { id: 9, code: "Ft", name: "Tundra" },
   { id: 10, code: "Fi", name: "Ice Cap" },
-  { id: 11, code: "H",  name: "Highland" },
+  { id: 11, code: "H", name: "Highland" },
 ] as const;
 
 export const TREWARTHA_COLORS: Record<string, string> = {
-  Ar: "#960000",   // deep red
-  Aw: "#ff0000",   // red
-  Bs: "#f5a500",   // orange
-  Bw: "#ffff00",   // yellow
-  Cf: "#96ff00",   // lime
-  Cs: "#00c800",   // green
-  Do: "#00ff6e",   // seafoam
-  Dc: "#37c8ff",   // sky blue
-  E:  "#007d7d",   // teal
-  Ft: "#b2b2b2",   // grey
-  Fi: "#ffffff",   // white
-  H:  "#966496",   // mauve
+  Ar: "#960000", // deep red
+  Aw: "#ff0000", // red
+  Bs: "#f5a500", // orange
+  Bw: "#ffff00", // yellow
+  Cf: "#96ff00", // lime
+  Cs: "#00c800", // green
+  Do: "#00ff6e", // seafoam
+  Dc: "#37c8ff", // sky blue
+  E: "#007d7d", // teal
+  Ft: "#b2b2b2", // grey
+  Fi: "#ffffff", // white
+  H: "#966496", // mauve
 };
 
 // ──────────────────────────────────────────────
@@ -66,7 +66,7 @@ export function computeClimate(graph: PackedGraph, params: WorldGenParams): void
     // Coastal moderation: bias toward 15°C for cells near coast
     const coastDist = cells.coastDist[i]!;
     if (coastDist < 5 && isLand(graph, i)) {
-      temp = temp + (15 - temp) * 0.20;
+      temp = temp + (15 - temp) * 0.2;
     }
 
     // Clamp to Int8 range
@@ -145,7 +145,7 @@ function classifyTrewartha(
 
   // Frozen climates
   if (temp < -20) return 10; // Fi (Ice Cap)
-  if (temp < -10) return 9;  // Ft (Tundra)
+  if (temp < -10) return 9; // Ft (Tundra)
 
   // Boreal
   if (temp >= -10 && temp < 0) return 8; // E (Boreal)
@@ -167,7 +167,7 @@ function classifyTrewartha(
   // Tropical (>=22°C)
   if (prec > 200) return 0; // Ar (Wet)
   if (prec >= 100) return 1; // Aw (Dry)
-  if (prec >= 50) return 2;  // Bs (Steppe)
+  if (prec >= 50) return 2; // Bs (Steppe)
   return 3; // Bw (Desert)
 }
 

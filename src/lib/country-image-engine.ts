@@ -106,18 +106,38 @@ function pickDeterministic<T>(arr: T[], seed: string): T {
 // ── Keyword Layers ───────────────────────────────────────────────────────
 
 const GEOGRAPHIC_KEYWORDS: Record<string, string[]> = {
-  Africa: ["african landscape", "savanna architecture", "modern african city", "african marketplace"],
+  Africa: [
+    "african landscape",
+    "savanna architecture",
+    "modern african city",
+    "african marketplace",
+  ],
   Asia: ["asian temple", "modern asian city", "traditional asian architecture", "bamboo forest"],
-  Europe: ["european architecture", "medieval cathedral", "alpine landscape", "mediterranean coast"],
+  Europe: [
+    "european architecture",
+    "medieval cathedral",
+    "alpine landscape",
+    "mediterranean coast",
+  ],
   "North America": ["american skyline", "colonial architecture", "mountain landscape", "prairie"],
-  "South America": ["latin american city", "colonial plaza", "andean mountains", "tropical rainforest"],
+  "South America": [
+    "latin american city",
+    "colonial plaza",
+    "andean mountains",
+    "tropical rainforest",
+  ],
   Oceania: ["pacific island", "coral coast", "modern pacific city", "volcanic landscape"],
   Antarctica: ["arctic landscape", "frozen tundra", "glacial formation", "polar station"],
 };
 
 const ECONOMIC_KEYWORDS: Record<string, string[]> = {
   Extravagant: ["luxury skyscraper", "gleaming downtown", "opulent architecture", "glass tower"],
-  "Very Strong": ["modern skyline", "developed infrastructure", "urban development", "financial center"],
+  "Very Strong": [
+    "modern skyline",
+    "developed infrastructure",
+    "urban development",
+    "financial center",
+  ],
   Strong: ["growing cityscape", "commercial district", "modern buildings", "city development"],
   Healthy: ["city development", "urban growth", "mixed use district", "infrastructure"],
   Developed: ["developing city", "construction progress", "growing town", "commercial area"],
@@ -229,8 +249,10 @@ function getUrbanizationKeyword(data: CountryImageData): string | null {
   if (urban == null) return null;
 
   const seed = `urban_${Math.round(urban / 10)}`;
-  if (urban > 80) return pickDeterministic(["dense metropolis", "urban canyon", "city lights"], seed);
-  if (urban > 50) return pickDeterministic(["suburban district", "mixed development", "town center"], seed);
+  if (urban > 80)
+    return pickDeterministic(["dense metropolis", "urban canyon", "city lights"], seed);
+  if (urban > 50)
+    return pickDeterministic(["suburban district", "mixed development", "town center"], seed);
   return pickDeterministic(["rural countryside", "pastoral landscape", "village life"], seed);
 }
 
@@ -238,9 +260,14 @@ function getCoastalKeyword(data: CountryImageData): string | null {
   const coast = data.coastlineKm;
   if (coast == null) return null;
 
-  if (coast > 1000) return pickDeterministic(["coastal harbor", "port city", "seaside skyline"], `coast_${coast}`);
-  if (coast > 0) return pickDeterministic(["coastal town", "harbor view", "beach community"], `coast_${coast}`);
-  return pickDeterministic(["inland plateau", "continental interior", "mountain valley"], `coast_0`);
+  if (coast > 1000)
+    return pickDeterministic(["coastal harbor", "port city", "seaside skyline"], `coast_${coast}`);
+  if (coast > 0)
+    return pickDeterministic(["coastal town", "harbor view", "beach community"], `coast_${coast}`);
+  return pickDeterministic(
+    ["inland plateau", "continental interior", "mountain valley"],
+    `coast_0`
+  );
 }
 
 function getSectorKeyword(data: CountryImageData): string | null {
@@ -255,9 +282,18 @@ function getSectorKeyword(data: CountryImageData): string | null {
 
     const seed = `sector_${Math.round(agri)}_${Math.round(industry)}_${Math.round(services)}`;
 
-    if (agri > 40) return pickDeterministic(["agricultural fields", "farmland aerial", "harvest landscape"], seed);
-    if (industry > 40) return pickDeterministic(["industrial complex", "factory district", "manufacturing plant"], seed);
-    if (services > 60) return pickDeterministic(["business district", "tech campus", "office towers"], seed);
+    if (agri > 40)
+      return pickDeterministic(
+        ["agricultural fields", "farmland aerial", "harvest landscape"],
+        seed
+      );
+    if (industry > 40)
+      return pickDeterministic(
+        ["industrial complex", "factory district", "manufacturing plant"],
+        seed
+      );
+    if (services > 60)
+      return pickDeterministic(["business district", "tech campus", "office towers"], seed);
   } catch {
     // ignore parse errors
   }
@@ -267,7 +303,10 @@ function getSectorKeyword(data: CountryImageData): string | null {
 function getContextKeyword(context: ImageContext, data: CountryImageData): string {
   const keywords = CONTEXT_KEYWORDS[context];
   if (!keywords) return "cityscape";
-  return pickDeterministic(keywords, `ctx_${context}_${data.continent ?? ""}_${data.economicTier ?? ""}`);
+  return pickDeterministic(
+    keywords,
+    `ctx_${context}_${data.continent ?? ""}_${data.economicTier ?? ""}`
+  );
 }
 
 // ── Query Builder ────────────────────────────────────────────────────────
@@ -280,7 +319,7 @@ function buildQuery(
   govKw: string | null,
   urbanKw: string | null,
   coastalKw: string | null,
-  sectorKw: string | null,
+  sectorKw: string | null
 ): string {
   // Section headers & hero: combine context + geographic/governance modifier
   if (context === "hero") {
@@ -293,9 +332,14 @@ function buildQuery(
   }
 
   // Tab-level and sector contexts: context + geographic/economic modifier
-  if (context.startsWith("exec_") || context.startsWith("diplo_") ||
-      context.startsWith("intel_") || context.startsWith("defense_") ||
-      context.startsWith("overview_") || context.startsWith("sector_")) {
+  if (
+    context.startsWith("exec_") ||
+    context.startsWith("diplo_") ||
+    context.startsWith("intel_") ||
+    context.startsWith("defense_") ||
+    context.startsWith("overview_") ||
+    context.startsWith("sector_")
+  ) {
     const modifier = geoKw || econKw;
     return modifier ? `${contextKw} ${modifier}` : contextKw;
   }
@@ -309,7 +353,7 @@ function buildQuery(
 
 export function generateImageKeywords(
   countryData: CountryImageData,
-  context: ImageContext,
+  context: ImageContext
 ): ImageKeywordResult {
   const contextKw = getContextKeyword(context, countryData);
   const geoKw = getGeographicKeyword(countryData);

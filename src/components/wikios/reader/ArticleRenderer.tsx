@@ -96,17 +96,17 @@ export function ArticleRenderer({
   const isStashed = stashQuery.data?.stashed ?? false;
 
   // Annotation overlay — highlights + selection toolbar
-  const { toggleButton: markupToggle, toolbarPortal, annotationPopover } =
-    useAnnotationOverlay(contentRef, title, isAuthenticated, isStashed);
+  const {
+    toggleButton: markupToggle,
+    toolbarPortal,
+    annotationPopover,
+  } = useAnnotationOverlay(contentRef, title, isAuthenticated, isStashed);
 
   // Citation hover tooltips
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
   // Award badge detection
-  const awardQuery = api.lorewards.isAwardWinningArticle.useQuery(
-    { title },
-    { staleTime: 300000 }
-  );
+  const awardQuery = api.lorewards.isAwardWinningArticle.useQuery({ title }, { staleTime: 300000 });
   const awardData = awardQuery.data;
 
   const slug = encodeURIComponent(title.replace(/ /g, "_"));
@@ -125,7 +125,7 @@ export function ArticleRenderer({
             href={`${WIKI_SOURCE_LABELS[wikiSource]!.url}${encodeURIComponent(title.replace(/ /g, "_"))}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/40 px-2 py-0.5 rounded hover:underline"
+            className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-600 hover:underline dark:bg-amber-950/40 dark:text-amber-400"
           >
             <ExternalLink size={11} />
             From {WIKI_SOURCE_LABELS[wikiSource]!.label}
@@ -134,23 +134,21 @@ export function ArticleRenderer({
       )}
 
       {/* Award banner */}
-      {awardData?.isAward && (() => {
-        const count = awardData.entries.length;
-        return (
-          <Link
-            href={withBasePath("/w/special/lorewards")}
-            className="wikios-award-banner"
-          >
-            <Trophy size={15} />
-            <span className="wikios-award-banner-text">
-              {count > 1 ? `${count}x Award-winning article` : "Award-winning article"}
-            </span>
-            <span className="wikios-award-banner-detail">
-              {formatAwardDates(awardData.entries)}
-            </span>
-          </Link>
-        );
-      })()}
+      {awardData?.isAward &&
+        (() => {
+          const count = awardData.entries.length;
+          return (
+            <Link href={withBasePath("/w/special/lorewards")} className="wikios-award-banner">
+              <Trophy size={15} />
+              <span className="wikios-award-banner-text">
+                {count > 1 ? `${count}x Award-winning article` : "Award-winning article"}
+              </span>
+              <span className="wikios-award-banner-detail">
+                {formatAwardDates(awardData.entries)}
+              </span>
+            </Link>
+          );
+        })()}
 
       {/* Article toolbar — quick actions */}
       <div className="wikios-article-toolbar">
@@ -178,19 +176,14 @@ export function ArticleRenderer({
 
       {/* Page-top notices (WIP, stub, hatnotes) */}
       {noticesHtml && (
-        <div
-          className="wikios-notices"
-          dangerouslySetInnerHTML={{ __html: noticesHtml }}
-        />
+        <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
       )}
 
       {/* Content + sticky TOC side-by-side */}
       <div className="wikios-article-with-toc">
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
-            {infoboxHtml && (
-              <InfoboxWithMap infoboxHtml={infoboxHtml} articleTitle={title} />
-            )}
+            {infoboxHtml && <InfoboxWithMap infoboxHtml={infoboxHtml} articleTitle={title} />}
             <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
           </div>
 
@@ -220,7 +213,15 @@ export function ArticleRenderer({
 // ---------------------------------------------------------------------------
 // Quick History Modal
 // ---------------------------------------------------------------------------
-function QuickHistoryModal({ title, slug, onClose }: { title: string; slug: string; onClose: () => void }) {
+function QuickHistoryModal({
+  title,
+  slug,
+  onClose,
+}: {
+  title: string;
+  slug: string;
+  onClose: () => void;
+}) {
   const { data, isLoading } = api.wikios.getHistory.useQuery(
     { title, limit: 10 },
     { staleTime: 30_000 }
@@ -236,7 +237,9 @@ function QuickHistoryModal({ title, slug, onClose }: { title: string; slug: stri
             <History size={16} />
             <span>Recent History</span>
           </div>
-          <button onClick={onClose} className="wikios-quick-modal-close"><X size={16} /></button>
+          <button onClick={onClose} className="wikios-quick-modal-close">
+            <X size={16} />
+          </button>
         </div>
 
         <div className="wikios-quick-modal-body">
@@ -249,18 +252,20 @@ function QuickHistoryModal({ title, slug, onClose }: { title: string; slug: stri
                 <div className="wikios-quick-modal-row-main">
                   <span className="wikios-quick-modal-date">
                     {new Date(rev.timestamp).toLocaleDateString("en-US", {
-                      month: "short", day: "numeric",
+                      month: "short",
+                      day: "numeric",
                     })}
                   </span>
                   <span className="wikios-quick-modal-user">{rev.user}</span>
-                  <span className={`wikios-quick-modal-diff ${sizeChange > 0 ? "wikios-diff-positive" : sizeChange < 0 ? "wikios-diff-negative" : ""}`}>
-                    {sizeChange > 0 ? "+" : ""}{sizeChange.toLocaleString()}
+                  <span
+                    className={`wikios-quick-modal-diff ${sizeChange > 0 ? "wikios-diff-positive" : sizeChange < 0 ? "wikios-diff-negative" : ""}`}
+                  >
+                    {sizeChange > 0 ? "+" : ""}
+                    {sizeChange.toLocaleString()}
                   </span>
                   {rev.minor && <span className="wikios-quick-modal-minor">m</span>}
                 </div>
-                {rev.comment && (
-                  <div className="wikios-quick-modal-comment">{rev.comment}</div>
-                )}
+                {rev.comment && <div className="wikios-quick-modal-comment">{rev.comment}</div>}
               </div>
             );
           })}
@@ -282,7 +287,15 @@ function QuickHistoryModal({ title, slug, onClose }: { title: string; slug: stri
 // ---------------------------------------------------------------------------
 // Quick Backlinks Modal
 // ---------------------------------------------------------------------------
-function QuickBacklinksModal({ title, slug, onClose }: { title: string; slug: string; onClose: () => void }) {
+function QuickBacklinksModal({
+  title,
+  slug,
+  onClose,
+}: {
+  title: string;
+  slug: string;
+  onClose: () => void;
+}) {
   const { data, isLoading } = api.wikios.getBacklinks.useQuery(
     { title, limit: 20 },
     { staleTime: 60_000 }
@@ -298,7 +311,9 @@ function QuickBacklinksModal({ title, slug, onClose }: { title: string; slug: st
             <Link2 size={16} />
             <span>What Links Here</span>
           </div>
-          <button onClick={onClose} className="wikios-quick-modal-close"><X size={16} /></button>
+          <button onClick={onClose} className="wikios-quick-modal-close">
+            <X size={16} />
+          </button>
         </div>
 
         <div className="wikios-quick-modal-body">
@@ -334,7 +349,20 @@ function QuickBacklinksModal({ title, slug, onClose }: { title: string; slug: st
 // ---------------------------------------------------------------------------
 // Award date formatting — groups intelligently by year/month
 // ---------------------------------------------------------------------------
-const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function formatAwardDates(entries: Array<{ date: string; type: string }>): string {
   if (entries.length === 1) {
@@ -361,9 +389,9 @@ function formatAwardDates(entries: Array<{ date: string; type: string }>): strin
   }
 
   // Build display with consecutive day ranges collapsed: "Mar 19-23, 26 2026"
-  return groups.map((g) =>
-    `${SHORT_MONTHS[g.month]} ${collapseDays(g.days)} ${g.year}`
-  ).join(" \u00b7 ");
+  return groups
+    .map((g) => `${SHORT_MONTHS[g.month]} ${collapseDays(g.days)} ${g.year}`)
+    .join(" \u00b7 ");
 }
 
 /** Collapse consecutive days into ranges: [19,20,21,23,26] → "19-21, 23, 26" */
@@ -427,7 +455,9 @@ function ArticleFooter({ title, lastModified }: { title: string; lastModified: s
         <p className="wikios-last-modified">
           Last modified:{" "}
           {new Date(lastModified).toLocaleDateString("en-US", {
-            year: "numeric", month: "long", day: "numeric",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </p>
       )}

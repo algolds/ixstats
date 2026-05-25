@@ -18,9 +18,9 @@ function getLocalAgent(): https.Agent {
   if (!_localAgent) {
     _localAgent = new https.Agent({
       rejectUnauthorized: false, // Cert is for ixwiki.com, not 127.0.0.1
-      servername: "ixwiki.com",  // SNI must match nginx server_name
+      servername: "ixwiki.com", // SNI must match nginx server_name
       keepAlive: true,
-      maxSockets: 6,             // Match IxnayWikiService's maxConcurrent
+      maxSockets: 6, // Match IxnayWikiService's maxConcurrent
       keepAliveMsecs: 60_000,
     });
   }
@@ -31,10 +31,7 @@ function getLocalAgent(): https.Agent {
  * Make a local HTTP request using Node's https module.
  * Returns a standard Response-like object.
  */
-function localHttpGet(
-  path: string,
-  timeoutMs: number,
-): Promise<{ status: number; text: string }> {
+function localHttpGet(path: string, timeoutMs: number): Promise<{ status: number; text: string }> {
   return new Promise((resolve, reject) => {
     const req = https.get(
       {
@@ -50,12 +47,17 @@ function localHttpGet(
       },
       (res) => {
         let data = "";
-        res.on("data", (chunk: Buffer) => { data += chunk.toString(); });
+        res.on("data", (chunk: Buffer) => {
+          data += chunk.toString();
+        });
         res.on("end", () => resolve({ status: res.statusCode ?? 500, text: data }));
         res.on("error", reject);
-      },
+      }
     );
-    req.on("timeout", () => { req.destroy(); reject(new Error("Local wiki fetch timeout")); });
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Local wiki fetch timeout"));
+    });
     req.on("error", reject);
   });
 }
@@ -68,10 +70,7 @@ function localHttpGet(
  * @param timeoutMs  Request timeout (default 5000ms)
  * @returns Standard Response object
  */
-export async function localWikiFetch(
-  path: string,
-  timeoutMs = 5000,
-): Promise<Response> {
+export async function localWikiFetch(path: string, timeoutMs = 5000): Promise<Response> {
   // Only use local routing in production (same server as MediaWiki)
   if (process.env.NODE_ENV !== "production") {
     return fetch(`https://ixwiki.com${path}`, {

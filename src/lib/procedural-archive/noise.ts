@@ -13,7 +13,7 @@ function seedRNG(seed: number): () => number {
     state ^= state << 13;
     state ^= state >> 17;
     state ^= state << 5;
-    return ((state >>> 0) / 0xffffffff);
+    return (state >>> 0) / 0xffffffff;
   };
 }
 
@@ -40,8 +40,14 @@ function buildPermTable(seed: number): Uint8Array {
 
 // 2D gradient vectors
 const GRAD2 = [
-  [1, 1], [-1, 1], [1, -1], [-1, -1],
-  [1, 0], [-1, 0], [0, 1], [0, -1],
+  [1, 1],
+  [-1, 1],
+  [1, -1],
+  [-1, -1],
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
 ];
 
 function dot2(g: number[], x: number, y: number): number {
@@ -58,9 +64,18 @@ const G3 = 1 / 6;
 
 // 3D gradient vectors
 const GRAD3 = [
-  [1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0],
-  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
-  [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1],
+  [1, 1, 0],
+  [-1, 1, 0],
+  [1, -1, 0],
+  [-1, -1, 0],
+  [1, 0, 1],
+  [-1, 0, 1],
+  [1, 0, -1],
+  [-1, 0, -1],
+  [0, 1, 1],
+  [0, -1, 1],
+  [0, 1, -1],
+  [0, -1, -1],
 ];
 
 function dot3(g: number[], x: number, y: number, z: number): number {
@@ -109,7 +124,9 @@ export function createNoise(seed: number): NoiseGenerator {
     const gi2 = perm[ii + 1 + perm[jj + 1]!]! % 8;
 
     // Contribution from three corners
-    let n0 = 0, n1 = 0, n2 = 0;
+    let n0 = 0,
+      n1 = 0,
+      n2 = 0;
 
     let t0 = 0.5 - x0 * x0 - y0 * y0;
     if (t0 >= 0) {
@@ -154,19 +171,49 @@ export function createNoise(seed: number): NoiseGenerator {
 
     if (x0 >= y0) {
       if (y0 >= z0) {
-        i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+        i1 = 1;
+        j1 = 0;
+        k1 = 0;
+        i2 = 1;
+        j2 = 1;
+        k2 = 0;
       } else if (x0 >= z0) {
-        i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1;
+        i1 = 1;
+        j1 = 0;
+        k1 = 0;
+        i2 = 1;
+        j2 = 0;
+        k2 = 1;
       } else {
-        i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1;
+        i1 = 0;
+        j1 = 0;
+        k1 = 1;
+        i2 = 1;
+        j2 = 0;
+        k2 = 1;
       }
     } else {
       if (y0 < z0) {
-        i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1;
+        i1 = 0;
+        j1 = 0;
+        k1 = 1;
+        i2 = 0;
+        j2 = 1;
+        k2 = 1;
       } else if (x0 < z0) {
-        i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1;
+        i1 = 0;
+        j1 = 1;
+        k1 = 0;
+        i2 = 0;
+        j2 = 1;
+        k2 = 1;
       } else {
-        i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+        i1 = 0;
+        j1 = 1;
+        k1 = 0;
+        i2 = 1;
+        j2 = 1;
+        k2 = 0;
       }
     }
 
@@ -189,19 +236,34 @@ export function createNoise(seed: number): NoiseGenerator {
     const gi2 = perm[ii + i2 + perm[jj + j2 + perm[kk + k2]!]!]! % 12;
     const gi3 = perm[ii + 1 + perm[jj + 1 + perm[kk + 1]!]!]! % 12;
 
-    let n0 = 0, n1 = 0, n2 = 0, n3 = 0;
+    let n0 = 0,
+      n1 = 0,
+      n2 = 0,
+      n3 = 0;
 
     let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
-    if (t0 >= 0) { t0 *= t0; n0 = t0 * t0 * dot3(GRAD3[gi0]!, x0, y0, z0); }
+    if (t0 >= 0) {
+      t0 *= t0;
+      n0 = t0 * t0 * dot3(GRAD3[gi0]!, x0, y0, z0);
+    }
 
     let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
-    if (t1 >= 0) { t1 *= t1; n1 = t1 * t1 * dot3(GRAD3[gi1]!, x1, y1, z1); }
+    if (t1 >= 0) {
+      t1 *= t1;
+      n1 = t1 * t1 * dot3(GRAD3[gi1]!, x1, y1, z1);
+    }
 
     let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
-    if (t2 >= 0) { t2 *= t2; n2 = t2 * t2 * dot3(GRAD3[gi2]!, x2, y2, z2); }
+    if (t2 >= 0) {
+      t2 *= t2;
+      n2 = t2 * t2 * dot3(GRAD3[gi2]!, x2, y2, z2);
+    }
 
     let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
-    if (t3 >= 0) { t3 *= t3; n3 = t3 * t3 * dot3(GRAD3[gi3]!, x3, y3, z3); }
+    if (t3 >= 0) {
+      t3 *= t3;
+      n3 = t3 * t3 * dot3(GRAD3[gi3]!, x3, y3, z3);
+    }
 
     // Scale to [-1, 1]
     return 32 * (n0 + n1 + n2 + n3);
@@ -319,6 +381,7 @@ export function domainWarp2D(
 ): [number, number] {
   // Use different offsets for X and Y displacement to avoid correlation
   const dx = fractalNoise(gen, x * frequency, y * frequency, octaves, 2.0, 0.5) * amplitude;
-  const dy = fractalNoise(gen, x * frequency + 100, y * frequency + 100, octaves, 2.0, 0.5) * amplitude;
+  const dy =
+    fractalNoise(gen, x * frequency + 100, y * frequency + 100, octaves, 2.0, 0.5) * amplitude;
   return [dx, dy];
 }

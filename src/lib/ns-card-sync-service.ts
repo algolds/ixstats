@@ -92,8 +92,10 @@ export async function performSync(season: number): Promise<SyncStatus> {
     const xmlData = await nsApiClient.fetchCardDump(season);
     const nsCards = await nsApiClient.parseNSDump(xmlData);
 
-    console.log(`[NS Card Sync] Processing ${nsCards.length} cards for season ${season}` +
-      (resumeFromCheckpoint ? ` (resuming from card ${startIndex})` : ""));
+    console.log(
+      `[NS Card Sync] Processing ${nsCards.length} cards for season ${season}` +
+        (resumeFromCheckpoint ? ` (resuming from card ${startIndex})` : "")
+    );
 
     // Create initial checkpoint if not resuming
     if (!resumeFromCheckpoint) {
@@ -125,7 +127,8 @@ export async function performSync(season: number): Promise<SyncStatus> {
                 await tx.card.create({
                   data: {
                     title: nsCard.name || `NS Card ${nsCard.id}`,
-                    description: nsCard.slogan || `NationStates trading card from season ${nsCard.season}`,
+                    description:
+                      nsCard.slogan || `NationStates trading card from season ${nsCard.season}`,
                     artwork: nsCard.flag || "",
                     cardType: "NS_IMPORT",
                     rarity: nsCard.rarity as any, // Cast to Prisma CardRarity enum
@@ -187,7 +190,7 @@ export async function performSync(season: number): Promise<SyncStatus> {
         if ((i + batchSize) % 1000 === 0 || i + batchSize >= nsCards.length) {
           console.log(
             `[NS Card Sync] Progress: ${status.cardsProcessed}/${nsCards.length} ` +
-            `(${status.cardsCreated} created, ${status.cardsUpdated} updated, ${status.errors.length} errors)`
+              `(${status.cardsCreated} created, ${status.cardsUpdated} updated, ${status.errors.length} errors)`
           );
         }
 
@@ -215,7 +218,8 @@ export async function performSync(season: number): Promise<SyncStatus> {
     }
 
     status.endTime = new Date();
-    status.status = status.errors.length > 0 && status.cardsProcessed === 0 ? "failed" : "completed";
+    status.status =
+      status.errors.length > 0 && status.cardsProcessed === 0 ? "failed" : "completed";
 
     // Mark checkpoint as completed or clear it
     if (status.status === "completed") {
@@ -418,8 +422,7 @@ export async function validateSyncHealth(): Promise<{
       continue;
     }
 
-    const hoursSinceSync =
-      (Date.now() - latestSync.startTime.getTime()) / (1000 * 60 * 60);
+    const hoursSinceSync = (Date.now() - latestSync.startTime.getTime()) / (1000 * 60 * 60);
 
     results.push({
       season,
@@ -541,7 +544,7 @@ export async function batchImportUserDeck(
 
   console.log(
     `[Batch Import] Completed for user ${userId}: ` +
-    `${progress.created} created, ${progress.duplicates} duplicates, ${progress.errors.length} errors`
+      `${progress.created} created, ${progress.duplicates} duplicates, ${progress.errors.length} errors`
   );
 
   return progress;

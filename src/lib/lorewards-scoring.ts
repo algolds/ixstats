@@ -13,14 +13,14 @@ import * as mysql from "mysql2/promise";
 // ---------------------------------------------------------------------------
 
 export interface ScoringWeights {
-  proseWeight: number;        // Weight in prose multiplier formula (default 0.7)
+  proseWeight: number; // Weight in prose multiplier formula (default 0.7)
   collaborativeBonus: number; // Multiplier for cross-country edits (default 1.3)
-  depthMaxBonus: number;      // Max bonus for edit depth (default 0.3)
-  noveltyBonus: number;       // Multiplier for new article creation (default 1.2)
+  depthMaxBonus: number; // Max bonus for edit depth (default 0.3)
+  noveltyBonus: number; // Multiplier for new article creation (default 1.2)
   importanceMaxBonus: number; // Max bonus for inlink count (default 0.2)
-  listPenalty: number;        // Multiplier for "List of..." articles (default 0.3)
-  minorOnlyPenalty: number;   // Multiplier for all-minor edits (default 0.2)
-  minSingleEdit: number;      // Min bytes for winner qualification (default 1000)
+  listPenalty: number; // Multiplier for "List of..." articles (default 0.3)
+  minorOnlyPenalty: number; // Multiplier for all-minor edits (default 0.2)
+  minSingleEdit: number; // Min bytes for winner qualification (default 1000)
 }
 
 const DEFAULT_WEIGHTS: ScoringWeights = {
@@ -80,7 +80,8 @@ function getPool(): mysql.Pool {
       user: process.env.IXWIKI_DB_USER || "ixwiki",
       password: process.env.IXWIKI_DB_PASSWORD || "",
       database: process.env.IXWIKI_DB_NAME || "ixwiki",
-      waitForConnections: true, connectionLimit: 3,
+      waitForConnections: true,
+      connectionLimit: 3,
     });
   }
   return pool;
@@ -95,7 +96,7 @@ const homeCountryCache = new Map<string, string | null>();
 
 export async function scoreDailyWikiOS(
   dateStr: string,
-  weights: ScoringWeights = DEFAULT_WEIGHTS,
+  weights: ScoringWeights = DEFAULT_WEIGHTS
 ): Promise<WikiOSScoringResult> {
   const db = getPool();
 
@@ -123,12 +124,21 @@ export async function scoreDailyWikiOS(
   const editCount = revRows.length;
 
   // 2. Aggregate by user|page
-  const aggMap = new Map<string, {
-    user: string; page: string; pageId: number; actorId: number;
-    bytesAdded: number; largestEdit: number; editCount: number;
-    isMinorOnly: boolean; revIds: number[];
-    hasNewArticle: boolean; // rev_parent_id IS NULL for any revision
-  }>();
+  const aggMap = new Map<
+    string,
+    {
+      user: string;
+      page: string;
+      pageId: number;
+      actorId: number;
+      bytesAdded: number;
+      largestEdit: number;
+      editCount: number;
+      isMinorOnly: boolean;
+      revIds: number[];
+      hasNewArticle: boolean; // rev_parent_id IS NULL for any revision
+    }
+  >();
 
   for (const row of revRows) {
     const user = String(row.actor_name);
@@ -138,9 +148,15 @@ export async function scoreDailyWikiOS(
 
     if (!aggMap.has(key)) {
       aggMap.set(key, {
-        user, page, pageId: row.page_id as number, actorId: row.actor_id as number,
-        bytesAdded: 0, largestEdit: 0, editCount: 0,
-        isMinorOnly: true, revIds: [],
+        user,
+        page,
+        pageId: row.page_id as number,
+        actorId: row.actor_id as number,
+        bytesAdded: 0,
+        largestEdit: 0,
+        editCount: 0,
+        isMinorOnly: true,
+        revIds: [],
         hasNewArticle: row.rev_parent_id === null,
       });
     }
@@ -170,7 +186,7 @@ export async function scoreDailyWikiOS(
       getInlinkCount(db, c.page),
     ]);
 
-    const proseMultiplier = (1 - weights.proseWeight) + (prose * weights.proseWeight);
+    const proseMultiplier = 1 - weights.proseWeight + prose * weights.proseWeight;
     const collaborativeMultiplier = collab ? weights.collaborativeBonus : 1.0;
     const depthMultiplier = 1.0 + Math.min(depth / 20, weights.depthMaxBonus);
     const noveltyMultiplier = c.hasNewArticle ? weights.noveltyBonus : 1.0;
@@ -201,14 +217,23 @@ export async function scoreDailyWikiOS(
     if (isList) parts.push(`list:${weights.listPenalty}x`);
 
     enriched.push({
-      user: c.user, page: c.page, pageId: c.pageId,
-      bytesAdded: c.bytesAdded, largestEdit: c.largestEdit, editCount: c.editCount,
+      user: c.user,
+      page: c.page,
+      pageId: c.pageId,
+      bytesAdded: c.bytesAdded,
+      largestEdit: c.largestEdit,
+      editCount: c.editCount,
       isMinorOnly: c.isMinorOnly,
-      proseRatio: prose, proseMultiplier,
-      isCollaborative: collab, collaborativeMultiplier,
-      editDepth: depth, depthMultiplier,
-      isNewArticle: c.hasNewArticle, noveltyMultiplier,
-      inlinkCount: inlinks, importanceMultiplier,
+      proseRatio: prose,
+      proseMultiplier,
+      isCollaborative: collab,
+      collaborativeMultiplier,
+      editDepth: depth,
+      depthMultiplier,
+      isNewArticle: c.hasNewArticle,
+      noveltyMultiplier,
+      inlinkCount: inlinks,
+      importanceMultiplier,
       finalScore: score,
       scoreBreakdown: parts.join(" · "),
     });
@@ -221,14 +246,23 @@ export async function scoreDailyWikiOS(
     if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) score *= weights.minorOnlyPenalty;
 
     enriched.push({
-      user: c.user, page: c.page, pageId: c.pageId,
-      bytesAdded: c.bytesAdded, largestEdit: c.largestEdit, editCount: c.editCount,
+      user: c.user,
+      page: c.page,
+      pageId: c.pageId,
+      bytesAdded: c.bytesAdded,
+      largestEdit: c.largestEdit,
+      editCount: c.editCount,
       isMinorOnly: c.isMinorOnly,
-      proseRatio: -1, proseMultiplier: 1,
-      isCollaborative: false, collaborativeMultiplier: 1,
-      editDepth: 0, depthMultiplier: 1,
-      isNewArticle: false, noveltyMultiplier: 1,
-      inlinkCount: 0, importanceMultiplier: 1,
+      proseRatio: -1,
+      proseMultiplier: 1,
+      isCollaborative: false,
+      collaborativeMultiplier: 1,
+      editDepth: 0,
+      depthMultiplier: 1,
+      isNewArticle: false,
+      noveltyMultiplier: 1,
+      inlinkCount: 0,
+      importanceMultiplier: 1,
       finalScore: Math.round(score),
       scoreBreakdown: `base:${c.bytesAdded} (unenriched)`,
     });
@@ -268,7 +302,9 @@ export async function scoreDailyWikiOS(
 // ---------------------------------------------------------------------------
 
 async function analyzeProseRatio(
-  db: mysql.Pool, revIds: number[], pageId: number,
+  db: mysql.Pool,
+  revIds: number[],
+  pageId: number
 ): Promise<number> {
   if (revIds.length === 0) return 0;
 
@@ -331,7 +367,9 @@ async function analyzeProseRatio(
 // ---------------------------------------------------------------------------
 
 async function isCollaborativeEdit(
-  db: mysql.Pool, actorId: number, pageId: number,
+  db: mysql.Pool,
+  actorId: number,
+  pageId: number
 ): Promise<boolean> {
   // Get article's country categories
   const articleCountry = await getArticleCountry(db, pageId);

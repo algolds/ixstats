@@ -237,7 +237,9 @@ export function parseInfobox(wikitext: string): ParsedInfobox | null {
 
   // Extract template name (first line before |)
   const firstPipe = infoboxContent.indexOf("|");
-  const templateName = (firstPipe >= 0 ? infoboxContent.slice(0, firstPipe) : infoboxContent).trim();
+  const templateName = (
+    firstPipe >= 0 ? infoboxContent.slice(0, firstPipe) : infoboxContent
+  ).trim();
 
   if (firstPipe === -1) return { templateName, fields: [] };
 

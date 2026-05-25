@@ -29,10 +29,7 @@ const TARGET_RIVER_COUNT = 1000;
  * @param graph  The packed Voronoi graph (heightmap and features must be set)
  * @param params World generation parameters
  */
-export function generateRivers(
-  graph: PackedGraph,
-  params: WorldGenParams
-): void {
+export function generateRivers(graph: PackedGraph, params: WorldGenParams): void {
   const rng = makeRng(params.seed + 3); // offset seed for river-specific randomness
 
   // Reset river data
@@ -219,11 +216,7 @@ function collectLandCellsSortedDesc(graph: PackedGraph): number[] {
  * Accumulate flux from highest cells to lowest.
  * Each cell passes its accumulated flux to its downstream neighbor.
  */
-function accumulateFlux(
-  graph: PackedGraph,
-  landCells: number[],
-  downstream: Int32Array
-): void {
+function accumulateFlux(graph: PackedGraph, landCells: number[], downstream: Int32Array): void {
   const { cells } = graph;
 
   for (const i of landCells) {
@@ -243,10 +236,7 @@ function accumulateFlux(
  * Uses the 97th percentile of land cell flux values (top ~3%).
  * Adjusts if the resulting river count would be too far from target.
  */
-function computeRiverThreshold(
-  graph: PackedGraph,
-  landCells: number[]
-): number {
+function computeRiverThreshold(graph: PackedGraph, landCells: number[]): number {
   const { cells } = graph;
 
   // Collect all land flux values
@@ -370,7 +360,7 @@ function estimateRiverLength(graph: PackedGraph, riverCells: number[]): number {
     const dx = cells.p[curr * 2]! - cells.p[prev * 2]!;
     const dy = cells.p[curr * 2 + 1]! - cells.p[prev * 2 + 1]!;
     const avgLat = (cells.p[curr * 2 + 1]! + cells.p[prev * 2 + 1]!) / 2;
-    const cosLat = Math.cos(avgLat * Math.PI / 180);
+    const cosLat = Math.cos((avgLat * Math.PI) / 180);
 
     // Approximate great-circle distance
     const dxKm = dx * DEG_TO_KM * cosLat;

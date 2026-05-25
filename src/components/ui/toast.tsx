@@ -22,7 +22,6 @@ import { Toaster } from "sonner";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
-
 export interface Toast {
   id: string;
   title: string;
@@ -68,7 +67,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const noopDispatch = React.useCallback((_action: ToastAction) => {}, []);
 
   return (
-    <ToastContext.Provider value={{ state: { toasts: [] }, dispatch: noopDispatch, toast: toastFn }}>
+    <ToastContext.Provider
+      value={{ state: { toasts: [] }, dispatch: noopDispatch, toast: toastFn }}
+    >
       {children}
       <Toaster
         position="top-center"

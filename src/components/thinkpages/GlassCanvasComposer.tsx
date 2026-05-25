@@ -30,7 +30,7 @@ import { withBasePath } from "~/lib/base-path";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -82,12 +82,16 @@ export function GlassCanvasComposer({
   const [isExpanded, setIsExpanded] = useState(true);
   const composerRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
-  const hasContent = content.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
+  const hasContent =
+    content.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
 
-  const accountAvatarUrl = account.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(account.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
+  const accountAvatarUrl =
+    account.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(account.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
 
   const getAccountAvatar = (acc: any) =>
-    acc.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
+    acc.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
 
   // Auto-collapse on scroll down (only if no content is being composed)
   useEffect(() => {
@@ -424,7 +428,7 @@ export function GlassCanvasComposer({
                 <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
                   <div className="flex items-center gap-2.5">
                     <CollapsibleTrigger asChild>
-                      <div className="flex flex-1 items-center gap-2.5 cursor-pointer rounded-md p-1 hover:bg-white/5 transition-colors">
+                      <div className="flex flex-1 cursor-pointer items-center gap-2.5 rounded-md p-1 transition-colors hover:bg-white/5">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
                           <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
@@ -432,10 +436,18 @@ export function GlassCanvasComposer({
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-medium leading-tight">{account.displayName}</div>
-                          <div className="text-muted-foreground text-[0.65rem]">@{account.username}</div>
+                          <div className="text-xs leading-tight font-medium">
+                            {account.displayName}
+                          </div>
+                          <div className="text-muted-foreground text-[0.65rem]">
+                            @{account.username}
+                          </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 pointer-events-none">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="pointer-events-none h-7 w-7 p-0"
+                        >
                           {showAccountManager ? (
                             <ChevronUp className="h-3.5 w-3.5" />
                           ) : (
@@ -493,7 +505,9 @@ export function GlassCanvasComposer({
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-[0.65rem] font-medium">{acc.displayName}</div>
+                              <div className="truncate text-[0.65rem] font-medium">
+                                {acc.displayName}
+                              </div>
                             </div>
                             <Badge variant="outline" className="h-3.5 px-1 py-0 text-[9px]">
                               {acc.accountType}
@@ -547,7 +561,10 @@ export function GlassCanvasComposer({
                   <div className="flex items-center justify-between text-[0.65rem]">
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">Live data</span>
-                      {(hasEconomicData || hasHistoricalData || hasDiplomaticData || hasTradeData) && (
+                      {(hasEconomicData ||
+                        hasHistoricalData ||
+                        hasDiplomaticData ||
+                        hasTradeData) && (
                         <Badge
                           variant="outline"
                           className="h-3.5 border-green-500/30 bg-green-500/10 px-1 py-0 text-[9px] text-green-400"
@@ -667,7 +684,9 @@ export function GlassCanvasComposer({
                           variant="outline"
                           size="sm"
                           onClick={() => addVisualization("economic_chart")}
-                          disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
+                          disabled={
+                            isGeneratingVisualization || isLoadingHistory || !hasHistoricalData
+                          }
                           className="h-auto flex-col p-2"
                         >
                           {isLoadingHistory ? (
@@ -711,7 +730,9 @@ export function GlassCanvasComposer({
                           variant="outline"
                           size="sm"
                           onClick={() => addVisualization("gdp_growth")}
-                          disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
+                          disabled={
+                            isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
+                          }
                           className="h-auto flex-col p-2"
                         >
                           {isLoadingEconomic ? (

@@ -13,11 +13,7 @@ import {
   Map,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
 /**
  * Enhanced tooltip content for metric cards
@@ -114,7 +110,11 @@ function TrendIcon({
     <span
       className={cn(
         "inline-flex items-center gap-1 text-xs font-medium",
-        positive ? "text-green-600 dark:text-green-500" : direction === "stable" ? "text-muted-foreground" : "text-red-600 dark:text-red-500"
+        positive
+          ? "text-green-600 dark:text-green-500"
+          : direction === "stable"
+            ? "text-muted-foreground"
+            : "text-red-600 dark:text-red-500"
       )}
     >
       <Icon className="h-3 w-3" />
@@ -207,15 +207,13 @@ export function EnhancedMetricTooltip({
 }: EnhancedMetricTooltipProps) {
   return (
     <Tooltip delayDuration={200}>
-      <TooltipTrigger asChild>
-        {children}
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent
         side={side}
         className={cn(
-          "w-64 p-0 overflow-hidden",
+          "w-64 overflow-hidden p-0",
           "bg-background/95 backdrop-blur-xl",
-          "border border-border/50 shadow-xl",
+          "border-border/50 border shadow-xl",
           className
         )}
         sideOffset={8}
@@ -226,11 +224,11 @@ export function EnhancedMetricTooltip({
           transition={{ duration: 0.15 }}
         >
           {/* Header with title and value */}
-          <div className="border-b border-border/30 bg-muted/30 p-3">
+          <div className="border-border/30 bg-muted/30 border-b p-3">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h4 className="font-semibold text-sm">{title}</h4>
-                <div className="flex items-center gap-2 mt-0.5">
+                <h4 className="text-sm font-semibold">{title}</h4>
+                <div className="mt-0.5 flex items-center gap-2">
                   <span className="text-lg font-bold">{value}</span>
                   {trend && (
                     <TrendIcon
@@ -245,48 +243,47 @@ export function EnhancedMetricTooltip({
           </div>
 
           {/* Body */}
-          <div className="p-3 space-y-3">
+          <div className="space-y-3 p-3">
             {/* Description */}
             {description && (
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                {description}
-              </p>
+              <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
             )}
 
             {/* Comparison section */}
-            {comparison && (comparison.global !== undefined || comparison.regional !== undefined) && (
-              <div className="space-y-1.5 pt-1 border-t border-border/30">
-                <p className="text-muted-foreground text-[10px] uppercase tracking-wider font-medium mb-2">
-                  Comparison
-                </p>
-                {comparison.global !== undefined && (
-                  <ComparisonRow
-                    label={comparison.globalLabel || "Global Avg"}
-                    icon={Globe}
-                    value={formatComparisonValue(comparison.global, unit)}
-                    rawValue={rawValue}
-                    compareValue={comparison.global}
-                    unit={unit}
-                  />
-                )}
-                {comparison.regional !== undefined && (
-                  <ComparisonRow
-                    label={comparison.regionalLabel || "Regional Avg"}
-                    icon={Map}
-                    value={formatComparisonValue(comparison.regional, unit)}
-                    rawValue={rawValue}
-                    compareValue={comparison.regional}
-                    unit={unit}
-                  />
-                )}
-              </div>
-            )}
+            {comparison &&
+              (comparison.global !== undefined || comparison.regional !== undefined) && (
+                <div className="border-border/30 space-y-1.5 border-t pt-1">
+                  <p className="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase">
+                    Comparison
+                  </p>
+                  {comparison.global !== undefined && (
+                    <ComparisonRow
+                      label={comparison.globalLabel || "Global Avg"}
+                      icon={Globe}
+                      value={formatComparisonValue(comparison.global, unit)}
+                      rawValue={rawValue}
+                      compareValue={comparison.global}
+                      unit={unit}
+                    />
+                  )}
+                  {comparison.regional !== undefined && (
+                    <ComparisonRow
+                      label={comparison.regionalLabel || "Regional Avg"}
+                      icon={Map}
+                      value={formatComparisonValue(comparison.regional, unit)}
+                      rawValue={rawValue}
+                      compareValue={comparison.regional}
+                      unit={unit}
+                    />
+                  )}
+                </div>
+              )}
 
             {/* Click hint */}
             {!hideClickHint && (
-              <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-border/30">
-                <MousePointerClick className="h-3 w-3 text-primary/60" />
-                <span className="text-[10px] text-primary/60 font-medium">
+              <div className="border-border/30 flex items-center justify-center gap-1.5 border-t pt-2">
+                <MousePointerClick className="text-primary/60 h-3 w-3" />
+                <span className="text-primary/60 text-[10px] font-medium">
                   Click for detailed analysis
                 </span>
               </div>

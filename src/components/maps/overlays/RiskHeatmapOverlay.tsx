@@ -20,10 +20,10 @@ const CRISIS_SOURCE = "crisis-events-source";
 const CRISIS_LAYER = "crisis-events-circle";
 
 const RISK_STOPS: [number, string][] = [
-  [0, "#22c55e"],    // green (safe)
-  [0.3, "#facc15"],  // yellow (moderate)
-  [0.6, "#f97316"],  // orange (elevated)
-  [0.9, "#dc2626"],  // red (high risk)
+  [0, "#22c55e"], // green (safe)
+  [0.3, "#facc15"], // yellow (moderate)
+  [0.6, "#f97316"], // orange (elevated)
+  [0.9, "#dc2626"], // red (high risk)
 ];
 
 function interpolateColor(value: number, stops: [number, string][]): string {
@@ -35,9 +35,15 @@ function interpolateColor(value: number, stops: [number, string][]): string {
     const [t1, c1] = stops[i + 1]!;
     if (value >= t0 && value <= t1) {
       const t = (value - t0) / (t1 - t0);
-      const r = Math.round(parseInt(c0.slice(1, 3), 16) * (1 - t) + parseInt(c1.slice(1, 3), 16) * t);
-      const g = Math.round(parseInt(c0.slice(3, 5), 16) * (1 - t) + parseInt(c1.slice(3, 5), 16) * t);
-      const b = Math.round(parseInt(c0.slice(5, 7), 16) * (1 - t) + parseInt(c1.slice(5, 7), 16) * t);
+      const r = Math.round(
+        parseInt(c0.slice(1, 3), 16) * (1 - t) + parseInt(c1.slice(1, 3), 16) * t
+      );
+      const g = Math.round(
+        parseInt(c0.slice(3, 5), 16) * (1 - t) + parseInt(c1.slice(3, 5), 16) * t
+      );
+      const b = Math.round(
+        parseInt(c0.slice(5, 7), 16) * (1 - t) + parseInt(c1.slice(5, 7), 16) * t
+      );
       return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
     }
   }
@@ -51,7 +57,12 @@ interface RiskHeatmapOverlayProps {
   visible: boolean;
 }
 
-export function RiskHeatmapOverlay({ map, riskData, crisisEvents, visible }: RiskHeatmapOverlayProps) {
+export function RiskHeatmapOverlay({
+  map,
+  riskData,
+  crisisEvents,
+  visible,
+}: RiskHeatmapOverlayProps) {
   const activeRef = useRef(false);
 
   useEffect(() => {
@@ -100,10 +111,7 @@ export function RiskHeatmapOverlay({ map, riskData, crisisEvents, visible }: Ris
         type: "circle",
         source: CRISIS_SOURCE,
         paint: {
-          "circle-radius": [
-            "interpolate", ["linear"], ["get", "severity"],
-            1, 5, 5, 10, 10, 16,
-          ],
+          "circle-radius": ["interpolate", ["linear"], ["get", "severity"], 1, 5, 5, 10, 10, 16],
           "circle-color": "#ef4444",
           "circle-opacity": 0.85,
           "circle-stroke-color": "#ffffff",
@@ -125,7 +133,9 @@ export function RiskHeatmapOverlay({ map, riskData, crisisEvents, visible }: Ris
         }
         if (map.getLayer(CRISIS_LAYER)) map.removeLayer(CRISIS_LAYER);
         if (map.getSource(CRISIS_SOURCE)) map.removeSource(CRISIS_SOURCE);
-      } catch { /* map may be destroyed */ }
+      } catch {
+        /* map may be destroyed */
+      }
       activeRef.current = false;
     };
   }, [map]);

@@ -954,7 +954,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                           isRestricted && "text-muted-foreground/40 cursor-not-allowed"
                         )}
                       >
-                        <section.icon className="h-4 w-4 flex-shrink-0" />
+                        <section.icon className="h-4 w-4 shrink-0" />
                         <span className="flex-1">{section.label}</span>
                         {isRestricted && (
                           <RiLockLine className="h-3 w-3 text-red-500 dark:text-red-400" />
@@ -1679,7 +1679,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
             <DynamicIslandProvider initialSize={SIZE_PRESETS.ULTRA}>
               <DynamicIsland id="diplomatic-actions">
                 <DynamicContainer className="flex h-full w-full flex-col p-4">
-                  <DynamicTitle className="mb-3 flex flex-shrink-0 items-center gap-3 text-lg font-bold text-[--intel-gold]">
+                  <DynamicTitle className="mb-3 flex shrink-0 items-center gap-3 text-lg font-bold text-[--intel-gold]">
                     <IntelligenceGlyph type="diplomatic" />
                     Diplomatic Actions
                   </DynamicTitle>

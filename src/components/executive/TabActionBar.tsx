@@ -106,7 +106,7 @@ export const TabActionBar = React.memo(function TabActionBar({
     >
       {/* Left: Icon + Title */}
       <div className="flex min-w-0 items-center gap-2.5">
-        <div className={cn("flex-shrink-0 rounded-lg p-1.5", accent.bg)}>
+        <div className={cn("shrink-0 rounded-lg p-1.5", accent.bg)}>
           <Icon className={cn("h-4 w-4", accent.text)} />
         </div>
         <div className="min-w-0">
@@ -116,7 +116,7 @@ export const TabActionBar = React.memo(function TabActionBar({
       </div>
 
       {/* Right: Stats + CTA */}
-      <div className="flex flex-shrink-0 items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         {/* Inline stats */}
         {stats && stats.length > 0 && (
           <div className="flex items-center gap-3">

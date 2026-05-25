@@ -4,12 +4,7 @@ import { useState } from "react";
 import { Search, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Input } from "~/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
 
 interface MessagesNewConversationModalProps {
@@ -58,22 +53,20 @@ export function MessagesNewConversationModal({
           <button
             onClick={() => handleCreate(currentUserId)}
             disabled={isCreating}
-            className="flex w-full items-center gap-3 rounded-lg border border-border/50 p-3 text-left transition-colors hover:bg-muted/50"
+            className="border-border/50 hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <div>
               <p className="text-sm font-medium">Message Myself</p>
-              <p className="text-xs text-muted-foreground">
-                Save notes and drafts
-              </p>
+              <p className="text-muted-foreground text-xs">Save notes and drafts</p>
             </div>
           </button>
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               placeholder="Search users..."
               value={searchQuery}
@@ -87,26 +80,22 @@ export function MessagesNewConversationModal({
           <div className="max-h-64 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center py-6">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
               </div>
             ) : searchQuery.length <= 2 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
+              <p className="text-muted-foreground py-6 text-center text-sm">
                 Type at least 3 characters to search
               </p>
             ) : !users || users.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                No users found
-              </p>
+              <p className="text-muted-foreground py-6 text-center text-sm">No users found</p>
             ) : (
               <div className="space-y-1">
                 {(users as any[]).map((user: any) => (
                   <button
                     key={user.id || user.clerkUserId}
-                    onClick={() =>
-                      handleCreate(user.clerkUserId || user.id)
-                    }
+                    onClick={() => handleCreate(user.clerkUserId || user.id)}
                     disabled={isCreating}
-                    className="flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-muted/50"
+                    className="hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors"
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.country?.flag ?? undefined} />
@@ -123,7 +112,7 @@ export function MessagesNewConversationModal({
                         {user.country?.name ?? user.displayName ?? "Unknown"}
                       </p>
                       {user.country?.slug && (
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="text-muted-foreground truncate text-xs">
                           @{user.country.slug}
                         </p>
                       )}

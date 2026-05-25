@@ -583,7 +583,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         const hostCountryId = input.countryId;
         const hostCountry = await ctx.db.country.findUnique({
           where: { id: hostCountryId },
-          select: { id: true, name: true, flag: true }
+          select: { id: true, name: true, flag: true },
         });
 
         if (hostCountry) {
@@ -1108,7 +1108,9 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1217,7 +1219,9 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1288,7 +1292,9 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message);
+          });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -1383,7 +1389,9 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1490,7 +1498,9 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1582,7 +1592,9 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({

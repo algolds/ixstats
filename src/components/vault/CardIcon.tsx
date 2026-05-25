@@ -40,12 +40,7 @@ export function CardIcon({
 
   return (
     <motion.div
-      className={cn(
-        "relative rounded-lg overflow-hidden",
-        config.width,
-        config.height,
-        className
-      )}
+      className={cn("relative overflow-hidden rounded-lg", config.width, config.height, className)}
       initial={{ scale: 1, rotateY: 0 }}
       whileHover={
         animated

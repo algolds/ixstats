@@ -134,10 +134,7 @@
   --glass-social-hover: rgba(40, 24, 16, 0.2);
   --glass-security: rgba(16, 16, 40, 0.15);
   --glass-security-hover: rgba(16, 16, 40, 0.2);
-  /* Blur Levels */
-  --blur-subtle: 4px;
-  --blur-moderate: 8px;
-  --blur-prominent: 16px;
+  /* Blur Levels — values synchronized with glass-refraction.css */
   --blur-dramatic: 24px;
   /* Glow Effects */
   --glow-diplomatic: 0 0 20px rgba(99, 102, 241, 0.3);

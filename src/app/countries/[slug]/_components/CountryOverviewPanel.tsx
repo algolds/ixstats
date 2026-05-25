@@ -272,7 +272,7 @@ export function CountryOverviewPanel({
                         const Icon = field.icon;
                         return (
                           <div key={field.label} className="flex items-start gap-2.5">
-                            <Icon className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                            <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                             <div>
                               <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
                                 {field.label}
@@ -542,7 +542,7 @@ export function CountryOverviewPanel({
                           }`}
                         >
                           <div
-                            className={`h-2 w-2 rounded-full ${getActivityColor()} mt-1.5 flex-shrink-0`}
+                            className={`h-2 w-2 rounded-full ${getActivityColor()} mt-1.5 shrink-0`}
                           ></div>
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-1.5">

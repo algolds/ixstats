@@ -35,8 +35,8 @@ export const LoreScoreBadge = memo(function LoreScoreBadge({
 
   if (isLoading) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
-        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+      <span className="bg-muted inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+        <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
       </span>
     );
   }
@@ -59,7 +59,9 @@ export const LoreScoreBadge = memo(function LoreScoreBadge({
 
   // Detailed variant
   return (
-    <div className={`rounded-lg border border-border/30 p-3 ${colorClass.replace("text-", "").includes("bg-") ? "" : ""}`}>
+    <div
+      className={`border-border/30 rounded-lg border p-3 ${colorClass.replace("text-", "").includes("bg-") ? "" : ""}`}
+    >
       <div className="flex items-center gap-2">
         <BookOpen className="h-4 w-4" />
         <div>
@@ -80,14 +82,16 @@ function ScoreBar({ label, value, max }: { label: string; value: number; max: nu
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <span className="w-20 text-[9px] text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground w-20 text-[9px]">{label}</span>
       <div className="h-1.5 flex-1 rounded-full bg-black/5 dark:bg-white/5">
         <div
           className="h-full rounded-full bg-current opacity-60 transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-8 text-right text-[9px] font-medium">{value}/{max}</span>
+      <span className="w-8 text-right text-[9px] font-medium">
+        {value}/{max}
+      </span>
     </div>
   );
 }

@@ -88,7 +88,7 @@ export function UpcomingEventsWidget() {
                     <span className="text-foreground truncate text-sm font-medium">
                       {event.title}
                     </span>
-                    <Badge variant="outline" className="flex-shrink-0 text-xs capitalize">
+                    <Badge variant="outline" className="shrink-0 text-xs capitalize">
                       {event.type.replace("_", " ")}
                     </Badge>
                   </div>

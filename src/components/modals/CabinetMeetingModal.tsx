@@ -337,7 +337,7 @@ export function CabinetMeetingModal({
                           key={item.id}
                           className="bg-card hover:border-primary/50 group flex items-start gap-3 rounded-lg border p-3 transition-colors"
                         >
-                          <div className="bg-primary/10 text-primary mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+                          <div className="bg-primary/10 text-primary mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
                             {index + 1}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -374,7 +374,7 @@ export function CabinetMeetingModal({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeAgendaItem(item.id)}
-                            className="h-6 w-6 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                            className="h-6 w-6 shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
                           >
                             <X className="h-4 w-4" />
                           </Button>

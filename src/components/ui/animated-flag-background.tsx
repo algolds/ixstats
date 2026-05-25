@@ -14,9 +14,9 @@ interface AnimatedFlagBackgroundProps {
 const STRIP_WIDTH = 2; // px per vertical slice
 
 const PARAMS = {
-  subtle:   { amplitude: 6,  waveLenDiv: 2.5, speed: 0.03, shading: 0.08 },
-  moderate: { amplitude: 12, waveLenDiv: 3,   speed: 0.05, shading: 0.12 },
-  strong:   { amplitude: 20, waveLenDiv: 3.5, speed: 0.07, shading: 0.18 },
+  subtle: { amplitude: 6, waveLenDiv: 2.5, speed: 0.03, shading: 0.08 },
+  moderate: { amplitude: 12, waveLenDiv: 3, speed: 0.05, shading: 0.12 },
+  strong: { amplitude: 20, waveLenDiv: 3.5, speed: 0.07, shading: 0.18 },
 } as const;
 
 export const AnimatedFlagBackground: React.FC<AnimatedFlagBackgroundProps> = ({
@@ -123,7 +123,7 @@ function drawFrame(
   w: number,
   h: number,
   p: (typeof PARAMS)[keyof typeof PARAMS],
-  time: number,
+  time: number
 ) {
   if (w === 0 || h === 0) return;
 
@@ -149,17 +149,21 @@ function drawFrame(
     // Draw the strip at the displaced position
     ctx.drawImage(
       img,
-      sx, 0, sw, img.height, // source
-      x, yOffset + amplitude, STRIP_WIDTH, h, // destination (offset by amplitude so wave stays in bounds)
+      sx,
+      0,
+      sw,
+      img.height, // source
+      x,
+      yOffset + amplitude,
+      STRIP_WIDTH,
+      h // destination (offset by amplitude so wave stays in bounds)
     );
 
     // 3D shading — highlight on upslopes, shadow on downslopes
     const slope = Math.cos(x / wavelength - time) * amplitude * pct;
     if (Math.abs(slope) > 0.5) {
-      const alpha = Math.min(Math.abs(slope) / wavelength * shading * 80, shading);
-      ctx.fillStyle = slope > 0
-        ? `rgba(255,255,255,${alpha})`
-        : `rgba(0,0,0,${alpha})`;
+      const alpha = Math.min((Math.abs(slope) / wavelength) * shading * 80, shading);
+      ctx.fillStyle = slope > 0 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
       ctx.fillRect(x, yOffset + amplitude, STRIP_WIDTH, h);
     }
   }

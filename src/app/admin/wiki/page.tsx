@@ -622,7 +622,7 @@ function BulkScannerSection() {
         {/* Results */}
         {scanComplete && scanResults.length === 0 && (
           <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-400">
-            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <AlertTriangle className="h-4 w-4 shrink-0" />
             No wiki matches found for unlinked countries.
           </div>
         )}

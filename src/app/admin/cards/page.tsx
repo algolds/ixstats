@@ -895,7 +895,7 @@ export default function CardAdminDashboardPage() {
             {healthStats && healthStats.alerts.length > 0 && (
               <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
                 <div className="mb-3 flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-400" />
+                  <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
                   <h3 className="text-lg font-semibold text-red-400">Active Alerts</h3>
                 </div>
                 <div className="space-y-2">

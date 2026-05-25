@@ -198,7 +198,7 @@ export function BuilderIntegrationSidebar({
                   color="#22c55e"
                   label="Economic Health"
                   tooltip={`Economic Health: ${metrics.economicHealth.toFixed(1)}% - Overall economic system effectiveness including synergies and conflicts`}
-                  className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  className="shrink-0 transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-1.5">
@@ -220,7 +220,7 @@ export function BuilderIntegrationSidebar({
                   color="#3b82f6"
                   label="Integration Score"
                   tooltip={`Integration Score: ${metrics.crossBuilderScore.toFixed(1)}% - How well economy, government, and tax systems work together`}
-                  className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  className="shrink-0 transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-1.5">
@@ -242,7 +242,7 @@ export function BuilderIntegrationSidebar({
                   color="#a855f7"
                   label="Component Quality"
                   tooltip={`Component Quality: ${metrics.overallEffectiveness.toFixed(1)}% - Average effectiveness of selected atomic components`}
-                  className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  className="shrink-0 transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-1.5">

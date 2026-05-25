@@ -68,10 +68,7 @@ function delay(ms: number): Promise<void> {
 }
 
 /** Haversine distance in km between two [lng, lat] points. */
-function haversineKm(
-  coords1: [number, number],
-  coords2: [number, number],
-): number {
+function haversineKm(coords1: [number, number], coords2: [number, number]): number {
   const R = 6371;
   const dLat = ((coords2[1] - coords1[1]) * Math.PI) / 180;
   const dLng = ((coords2[0] - coords1[0]) * Math.PI) / 180;
@@ -214,12 +211,18 @@ export function useWikiScanner(params: {
             // Check population
             const popField = fields.find(
               (f: { key: string }) =>
-                f.key === "population_estimate" || f.key === "population_total" || f.key === "population_census",
+                f.key === "population_estimate" ||
+                f.key === "population_total" ||
+                f.key === "population_census"
             );
             if (popField && feature.properties.population) {
               const wikiPop = parseInt(String(popField.value).replace(/[,.\s]/g, ""), 10);
               const mapPop = feature.properties.population as number;
-              if (!isNaN(wikiPop) && wikiPop > 0 && Math.abs(wikiPop - mapPop) / Math.max(wikiPop, mapPop) > 0.1) {
+              if (
+                !isNaN(wikiPop) &&
+                wikiPop > 0 &&
+                Math.abs(wikiPop - mapPop) / Math.max(wikiPop, mapPop) > 0.1
+              ) {
                 featureConflicts.push({
                   featureId: feature.id,
                   featureName: feature.name,
@@ -232,8 +235,12 @@ export function useWikiScanner(params: {
 
             // Check coordinates
             if (feature.coordinates) {
-              const latField = fields.find((f: { key: string }) => f.key === "latd" || f.key === "latitude");
-              const lngField = fields.find((f: { key: string }) => f.key === "longd" || f.key === "longitude");
+              const latField = fields.find(
+                (f: { key: string }) => f.key === "latd" || f.key === "latitude"
+              );
+              const lngField = fields.find(
+                (f: { key: string }) => f.key === "longd" || f.key === "longitude"
+              );
               if (latField && lngField) {
                 const wikiLat = parseFloat(String(latField.value));
                 const wikiLng = parseFloat(String(lngField.value));
@@ -254,11 +261,17 @@ export function useWikiScanner(params: {
 
             // Check area for subdivisions
             if (feature.type === "subdivision" && feature.properties.areaSqKm) {
-              const areaField = fields.find((f: { key: string }) => f.key === "area_km2" || f.key === "area");
+              const areaField = fields.find(
+                (f: { key: string }) => f.key === "area_km2" || f.key === "area"
+              );
               if (areaField) {
                 const wikiArea = parseFloat(String(areaField.value).replace(/[,\s]/g, ""));
                 const mapArea = feature.properties.areaSqKm as number;
-                if (!isNaN(wikiArea) && wikiArea > 0 && Math.abs(wikiArea - mapArea) / Math.max(wikiArea, mapArea) > 0.15) {
+                if (
+                  !isNaN(wikiArea) &&
+                  wikiArea > 0 &&
+                  Math.abs(wikiArea - mapArea) / Math.max(wikiArea, mapArea) > 0.15
+                ) {
                   featureConflicts.push({
                     featureId: feature.id,
                     featureName: feature.name,
@@ -299,7 +312,7 @@ export function useWikiScanner(params: {
       // Remove from scan results
       setScanResults((prev) => prev.filter((r) => r.featureId !== featureId));
     },
-    [features, onLinkFeature],
+    [features, onLinkFeature]
   );
 
   return {

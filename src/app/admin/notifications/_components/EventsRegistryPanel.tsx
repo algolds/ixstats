@@ -74,10 +74,7 @@ export function EventsRegistryPanel() {
   const { data, isLoading, refetch } = api.notifications.getAllEvents.useQuery();
   const seedMutation = api.notifications.seedEvents.useMutation({
     onSuccess: (res) => {
-      notify.success(
-        "Events seeded",
-        `${res.created} created, ${res.skipped} already existed`
-      );
+      notify.success("Events seeded", `${res.created} created, ${res.skipped} already existed`);
       refetch();
     },
     onError: (e) => notify.error("Failed to seed events", e.message),
@@ -98,20 +95,28 @@ export function EventsRegistryPanel() {
 
   const filtered = useMemo(() => {
     if (!data?.configs) return [];
-    return data.configs.filter((c) => {
-      if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.eventKey.toLowerCase().includes(search.toLowerCase()) && !(c.description ?? "").toLowerCase().includes(search.toLowerCase())) return false;
-      if (categoryFilter && c.category !== categoryFilter) return false;
-      if (sourceFilter && c.source !== sourceFilter) return false;
-      if (triggerFilter && c.triggerType !== triggerFilter) return false;
-      if (statusFilter === "enabled" && !c.enabled) return false;
-      if (statusFilter === "disabled" && c.enabled) return false;
-      return true;
-    }).sort((a, b) => {
-      const ca = CATEGORY_ORDER[a.category] ?? 99;
-      const cb = CATEGORY_ORDER[b.category] ?? 99;
-      if (ca !== cb) return ca - cb;
-      return a.name.localeCompare(b.name);
-    });
+    return data.configs
+      .filter((c) => {
+        if (
+          search &&
+          !c.name.toLowerCase().includes(search.toLowerCase()) &&
+          !c.eventKey.toLowerCase().includes(search.toLowerCase()) &&
+          !(c.description ?? "").toLowerCase().includes(search.toLowerCase())
+        )
+          return false;
+        if (categoryFilter && c.category !== categoryFilter) return false;
+        if (sourceFilter && c.source !== sourceFilter) return false;
+        if (triggerFilter && c.triggerType !== triggerFilter) return false;
+        if (statusFilter === "enabled" && !c.enabled) return false;
+        if (statusFilter === "disabled" && c.enabled) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const ca = CATEGORY_ORDER[a.category] ?? 99;
+        const cb = CATEGORY_ORDER[b.category] ?? 99;
+        if (ca !== cb) return ca - cb;
+        return a.name.localeCompare(b.name);
+      });
   }, [data, search, categoryFilter, sourceFilter, triggerFilter, statusFilter]);
 
   const grouped = useMemo(() => {
@@ -226,11 +231,7 @@ export function EventsRegistryPanel() {
               <PowerOff className="mr-2 h-4 w-4 text-red-500" />
               Disable All
             </Button>
-            <Button
-              onClick={() => refetch()}
-              variant="ghost"
-              size="sm"
-            >
+            <Button onClick={() => refetch()} variant="ghost" size="sm">
               <RotateCcw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -244,7 +245,7 @@ export function EventsRegistryPanel() {
           <Card>
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-3">
-                <div className="flex-1 min-w-[200px]">
+                <div className="min-w-[200px] flex-1">
                   <label className="text-muted-foreground mb-1 block text-xs font-medium">
                     Search
                   </label>
@@ -347,9 +348,7 @@ export function EventsRegistryPanel() {
             {Array.from(grouped.entries()).map(([category, events]) => (
               <div key={category}>
                 <div className="mb-3 flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">
-                    {CATEGORY_LABELS[category] ?? category}
-                  </h3>
+                  <h3 className="text-lg font-semibold">{CATEGORY_LABELS[category] ?? category}</h3>
                   <Badge variant="outline" className="text-xs">
                     {events.length}
                   </Badge>
@@ -358,9 +357,7 @@ export function EventsRegistryPanel() {
                       variant="ghost"
                       size="sm"
                       className="h-6 text-xs"
-                      onClick={() =>
-                        batchToggleMutation.mutate({ enabled: true, category })
-                      }
+                      onClick={() => batchToggleMutation.mutate({ enabled: true, category })}
                       disabled={batchToggleMutation.isPending}
                     >
                       Enable all
@@ -369,9 +366,7 @@ export function EventsRegistryPanel() {
                       variant="ghost"
                       size="sm"
                       className="h-6 text-xs"
-                      onClick={() =>
-                        batchToggleMutation.mutate({ enabled: false, category })
-                      }
+                      onClick={() => batchToggleMutation.mutate({ enabled: false, category })}
                       disabled={batchToggleMutation.isPending}
                     >
                       Disable all
@@ -391,7 +386,7 @@ export function EventsRegistryPanel() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="truncate font-medium text-sm">{event.name}</h4>
+                              <h4 className="truncate text-sm font-medium">{event.name}</h4>
                               <Badge
                                 variant={event.enabled ? "default" : "secondary"}
                                 className="h-5 text-[10px]"
@@ -460,9 +455,7 @@ export function EventsRegistryPanel() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-3 p-12">
             <Bell className="text-muted-foreground h-12 w-12" />
-            <p className="text-muted-foreground text-sm">
-              No notification events configured yet.
-            </p>
+            <p className="text-muted-foreground text-sm">No notification events configured yet.</p>
             <p className="text-muted-foreground text-xs">
               Click "Seed Default Events" to populate from the registry.
             </p>

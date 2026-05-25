@@ -112,18 +112,23 @@ export function usePolicyAnalytics({ countryId }: UsePolicyAnalyticsParams) {
   const [selectedScenario, setSelectedScenario] = useState<string>("baseline");
 
   // Fetch government data
-  const { data: governmentData, isLoading: govLoading } =
-    api.government.getByCountryId.useQuery({ countryId });
+  const { data: governmentData, isLoading: govLoading } = api.government.getByCountryId.useQuery({
+    countryId,
+  });
 
   // Fetch atomic components
-  const { data: components, isLoading: componentsLoading } =
-    api.government.getComponents.useQuery({ countryId });
+  const { data: components, isLoading: componentsLoading } = api.government.getComponents.useQuery({
+    countryId,
+  });
 
   // Fetch country data for baseline
   const { data: countryData } = api.countries.getByIdBasic.useQuery({ id: countryId });
 
   // Fetch all countries for comparison
-  const { data: allCountries } = api.countries.getAll.useQuery({ limit: 200 }, { staleTime: 5 * 60 * 1000 });
+  const { data: allCountries } = api.countries.getAll.useQuery(
+    { limit: 200 },
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   // Loading state
   const isLoading = govLoading || componentsLoading;
@@ -132,9 +137,10 @@ export function usePolicyAnalytics({ countryId }: UsePolicyAnalyticsParams) {
   const policyEffectiveness = useMemo((): PolicyEffectivenessData | null => {
     if (!governmentData || !components) return null;
 
-    const avgComponentEffectiveness = components.length > 0
-      ? components.reduce((sum, c) => sum + c.effectivenessScore, 0) / components.length
-      : 0;
+    const avgComponentEffectiveness =
+      components.length > 0
+        ? components.reduce((sum, c) => sum + c.effectivenessScore, 0) / components.length
+        : 0;
 
     const taxEfficiency = governmentData.totalBudget > 0 ? 75 : 50;
     const spendingEfficiency = 70;
@@ -164,11 +170,13 @@ export function usePolicyAnalytics({ countryId }: UsePolicyAnalyticsParams) {
     });
 
     // Calculate average for radar chart
-    const radarData: SynergyRadarPoint[] = Object.entries(categoryScores).map(([category, scores]) => ({
-      category,
-      score: scores.reduce((sum, s) => sum + s, 0) / scores.length,
-      fullMark: 100,
-    }));
+    const radarData: SynergyRadarPoint[] = Object.entries(categoryScores).map(
+      ([category, scores]) => ({
+        category,
+        score: scores.reduce((sum, s) => sum + s, 0) / scores.length,
+        fullMark: 100,
+      })
+    );
 
     // Detect synergies and conflicts
     const synergies: SynergyItem[] = [];
@@ -213,17 +221,16 @@ export function usePolicyAnalytics({ countryId }: UsePolicyAnalyticsParams) {
 
     // Calculate growth impact (higher taxes = lower growth, more spending = higher growth)
     const taxGrowthImpact = ((baseTaxRate - simulatedTaxRate) / 10) * 0.5;
-    const spendingGrowthImpact = (
-      (simulatedEducationSpending + simulatedHealthSpending) - 27
-    ) / 10 * 0.3;
+    const spendingGrowthImpact =
+      ((simulatedEducationSpending + simulatedHealthSpending - 27) / 10) * 0.3;
 
     const projectedGrowth = baseGrowth + taxGrowthImpact + spendingGrowthImpact;
 
     // Calculate budget balance
     const revenue = baseGDP * (simulatedTaxRate / 100);
-    const spending = baseGDP * (
-      (simulatedEducationSpending + simulatedHealthSpending + simulatedDefenseSpending) / 100
-    );
+    const spending =
+      baseGDP *
+      ((simulatedEducationSpending + simulatedHealthSpending + simulatedDefenseSpending) / 100);
     const balance = revenue - spending;
 
     return {
@@ -232,7 +239,13 @@ export function usePolicyAnalytics({ countryId }: UsePolicyAnalyticsParams) {
       budgetBalance: balance,
       efficiency: 75 + (baseGrowth - projectedGrowth) * 5,
     };
-  }, [simulatedTaxRate, simulatedEducationSpending, simulatedHealthSpending, simulatedDefenseSpending, countryData]);
+  }, [
+    simulatedTaxRate,
+    simulatedEducationSpending,
+    simulatedHealthSpending,
+    simulatedDefenseSpending,
+    countryData,
+  ]);
 
   // Comparative analysis
   const comparativeData = useMemo((): ComparativeCountryData[] | null => {
@@ -243,7 +256,10 @@ export function usePolicyAnalytics({ countryId }: UsePolicyAnalyticsParams) {
     const similarCountries = allCountries.countries
       .filter((c: any) => {
         const otherGdpPerCapita = c.currentGdpPerCapita || 0;
-        return Math.abs(otherGdpPerCapita - countryGdpPerCapita) < (countryGdpPerCapita * 0.3) && c.id !== countryId;
+        return (
+          Math.abs(otherGdpPerCapita - countryGdpPerCapita) < countryGdpPerCapita * 0.3 &&
+          c.id !== countryId
+        );
       })
       .slice(0, 5);
 

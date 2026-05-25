@@ -46,11 +46,11 @@ export interface SvgCoordinateConfig {
 export const IXEARTH_SVG_CONFIG: SvgCoordinateConfig = {
   viewBoxWidth: 25625,
   viewBoxHeight: 15729,
-  equatorY: 110.1222 / 0.04392143,      // ≈ 2507.58
+  equatorY: 110.1222 / 0.04392143, // ≈ 2507.58
   primeMeridianX: 153.9062 / 0.04392139, // ≈ 3505.11
-  pixelsPerLng: 1 / 0.04392139,          // ≈ 22.768
-  pixelsPerLat: 1 / 0.04392143,          // ≈ 22.768
-  primeMeridianReferenceLng: 0,           // PM is at lng = 0
+  pixelsPerLng: 1 / 0.04392139, // ≈ 22.768
+  pixelsPerLat: 1 / 0.04392143, // ≈ 22.768
+  primeMeridianReferenceLng: 0, // PM is at lng = 0
 };
 
 /**
@@ -67,8 +67,7 @@ export function svgToWgs84(
 ): [number, number] {
   const lat = (config.equatorY - svgY) / config.pixelsPerLat;
   const lng =
-    (svgX - config.primeMeridianX) / config.pixelsPerLng +
-    config.primeMeridianReferenceLng;
+    (svgX - config.primeMeridianX) / config.pixelsPerLng + config.primeMeridianReferenceLng;
 
   return [lng, lat];
 }
@@ -84,8 +83,7 @@ export function wgs84ToSvg(
 ): [number, number] {
   const svgY = config.equatorY - lat * config.pixelsPerLat;
   const svgX =
-    (lng - config.primeMeridianReferenceLng) * config.pixelsPerLng +
-    config.primeMeridianX;
+    (lng - config.primeMeridianReferenceLng) * config.pixelsPerLng + config.primeMeridianX;
 
   return [svgX, svgY];
 }
@@ -201,7 +199,10 @@ export function createConfigFromCalibration(
   if (filtered.length < 2) return null;
 
   // Step 3: Least-squares on clean data (one round of LS + one more outlier pass).
-  let a = 0, b = 0, c = 0, d = 0;
+  let a = 0,
+    b = 0,
+    c = 0,
+    d = 0;
   for (let round = 0; round < 2; round++) {
     const result = linearRegression(filtered);
     if (!result) return null;
@@ -245,8 +246,14 @@ function linearRegression(
   const n = points.length;
   if (n < 2) return null;
 
-  let sumX = 0, sumLng = 0, sumXX = 0, sumXLng = 0;
-  let sumY = 0, sumLat = 0, sumYY = 0, sumYLat = 0;
+  let sumX = 0,
+    sumLng = 0,
+    sumXX = 0,
+    sumXLng = 0;
+  let sumY = 0,
+    sumLat = 0,
+    sumYY = 0,
+    sumYLat = 0;
 
   for (const p of points) {
     sumX += p.svgX;

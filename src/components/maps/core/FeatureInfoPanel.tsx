@@ -8,7 +8,16 @@
  */
 
 import { memo } from "react";
-import { X, MapPin, Users, BookOpen, Landmark, ExternalLink, BookMarked, Calendar } from "lucide-react";
+import {
+  X,
+  MapPin,
+  Users,
+  BookOpen,
+  Landmark,
+  ExternalLink,
+  BookMarked,
+  Calendar,
+} from "lucide-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import type { SelectedFeature } from "./IxWorldMap";
@@ -27,26 +36,28 @@ function formatPopulation(n: number | null | undefined): string {
   return n.toLocaleString();
 }
 
-export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClose, onOpenStoryModal }: FeatureInfoPanelProps) {
+export const FeatureInfoPanel = memo(function FeatureInfoPanel({
+  feature,
+  onClose,
+  onOpenStoryModal,
+}: FeatureInfoPanelProps) {
   // Fetch wiki intro on demand (only if wikiPageTitle is set)
-  const { data: wikiIntro, isLoading: wikiLoading } =
-    api.geo.getFeatureWikiIntro.useQuery(
-      { wikiPageTitle: feature.wikiPageTitle! },
-      {
-        enabled: !!feature.wikiPageTitle,
-        staleTime: 5 * 60_000,
-        gcTime: 30 * 60_000,
-      }
-    );
+  const { data: wikiIntro, isLoading: wikiLoading } = api.geo.getFeatureWikiIntro.useQuery(
+    { wikiPageTitle: feature.wikiPageTitle! },
+    {
+      enabled: !!feature.wikiPageTitle,
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+    }
+  );
 
-  const isCity =
-    feature.featureType === "city" || feature.featureType === "capital";
+  const isCity = feature.featureType === "city" || feature.featureType === "capital";
   const isStoryPin = feature.featureType === "storyPin";
 
   const panelContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="border-border/50 flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2.5 overflow-hidden">
           <div
             className={`flex h-7 w-7 items-center justify-center rounded-lg ${
@@ -64,18 +75,12 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
             )}
           </div>
           <div className="min-w-0">
-            <h3 className="truncate text-base font-semibold text-foreground">
-              {feature.name}
-            </h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-foreground truncate text-base font-semibold">{feature.name}</h3>
+            <p className="text-muted-foreground text-xs">
               {isCity
-                ? (feature.cityType ?? "City")
-                    .charAt(0)
-                    .toUpperCase() +
+                ? (feature.cityType ?? "City").charAt(0).toUpperCase() +
                   (feature.cityType ?? "city").slice(1)
-                : (feature.category ?? "Landmark")
-                    .charAt(0)
-                    .toUpperCase() +
+                : (feature.category ?? "Landmark").charAt(0).toUpperCase() +
                   (feature.category ?? "landmark").slice(1)}
               {" \u00B7 "}
               {feature.countryName}
@@ -84,30 +89,27 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
         </div>
         <button
           onClick={onClose}
-          className="flex-shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-full p-1.5 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Body */}
-      <div
-        className="overflow-y-auto p-4"
-        style={{ maxHeight: "calc(100% - 56px)" }}
-      >
+      <div className="overflow-y-auto p-4" style={{ maxHeight: "calc(100% - 56px)" }}>
         {/* Wiki intro loading skeleton */}
         {wikiLoading && feature.wikiPageTitle && (
           <div className="mb-3 space-y-1.5">
-            <div className="h-3 w-full animate-pulse rounded bg-muted" />
-            <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-            <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+            <div className="bg-muted h-3 w-full animate-pulse rounded" />
+            <div className="bg-muted h-3 w-4/5 animate-pulse rounded" />
+            <div className="bg-muted h-3 w-3/5 animate-pulse rounded" />
           </div>
         )}
 
         {/* Wiki intro text */}
         {wikiIntro?.extract && (
           <div className="mb-3">
-            <p className="line-clamp-5 text-xs leading-relaxed text-foreground/80">
+            <p className="text-foreground/80 line-clamp-5 text-xs leading-relaxed">
               {wikiIntro.extract}
             </p>
           </div>
@@ -115,12 +117,12 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
 
         {/* City population */}
         {isCity && feature.population != null && (
-          <div className="rounded-lg bg-muted px-3 py-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="bg-muted rounded-lg px-3 py-2">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
               <Users className="h-3 w-3" />
               Population
             </div>
-            <div className="mt-0.5 text-sm font-semibold text-foreground">
+            <div className="text-foreground mt-0.5 text-sm font-semibold">
               {formatPopulation(feature.population)}
             </div>
           </div>
@@ -128,13 +130,11 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
 
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
-          <div className="rounded-lg bg-muted px-3 py-2">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="bg-muted rounded-lg px-3 py-2">
+            <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
               Description
             </div>
-            <p className="mt-0.5 text-xs leading-relaxed text-foreground">
-              {feature.description}
-            </p>
+            <p className="text-foreground mt-0.5 text-xs leading-relaxed">{feature.description}</p>
           </div>
         )}
 
@@ -142,7 +142,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
         {isStoryPin && (
           <div className="space-y-2">
             {(feature.ixTimeYear || feature.eraLabel) && (
-              <div className="flex items-center gap-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
                 <Calendar className="h-3.5 w-3.5 text-purple-600" />
                 <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
                   {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
@@ -152,7 +152,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
               </div>
             )}
             {feature.category && (
-              <span className="inline-block rounded-full bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 text-[10px] font-medium capitalize text-purple-700 dark:text-purple-300">
+              <span className="inline-block rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 capitalize dark:bg-purple-900/30 dark:text-purple-300">
                 {feature.category}
               </span>
             )}
@@ -178,8 +178,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
               className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
             >
               <BookOpen className="h-3 w-3" />
-              Read on{" "}
-              {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+              Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
             </a>
           )}
           {feature.countrySlug && (
@@ -200,21 +199,23 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({ feature, onClos
     <>
       {/* Desktop: Right-side panel */}
       <div
-        className="absolute right-0 top-0 z-20 hidden h-full w-96 sm:block"
+        className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
         style={{ animation: "slideInRight 0.25s ease-out" }}
       >
-        <div className="h-full bg-card shadow-xl">{panelContent}</div>
+        <div className="bg-card h-full shadow-xl">{panelContent}</div>
       </div>
 
       {/* Mobile: Swipeable bottom sheet */}
-      <SwipeableBottomSheet onClose={onClose}>
-        {panelContent}
-      </SwipeableBottomSheet>
+      <SwipeableBottomSheet onClose={onClose}>{panelContent}</SwipeableBottomSheet>
 
       <style jsx>{`
         @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
         }
       `}</style>
     </>

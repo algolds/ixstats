@@ -361,7 +361,7 @@ function ThinkPagesContent({
     <div className="space-y-4">
       <Card className="glass-hierarchy-parent">
         <CardContent className="flex items-start gap-4 p-4">
-          <MessageSquare className="mt-0.5 h-6 w-6 flex-shrink-0 text-purple-500" />
+          <MessageSquare className="mt-0.5 h-6 w-6 shrink-0 text-purple-500" />
           <div className="flex-1">
             <h3 className="mb-1 text-sm font-semibold">Welcome to the Feed</h3>
             <p className="text-muted-foreground text-xs">

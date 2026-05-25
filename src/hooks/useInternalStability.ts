@@ -13,10 +13,7 @@ interface UseInternalStabilityProps {
 export function useInternalStability({ countryId }: UseInternalStabilityProps) {
   const notify = useNotify();
   const { data: stabilityData, refetch: refetchStability } =
-    api.security.getInternalStability.useQuery(
-      { countryId },
-      { enabled: !!countryId }
-    );
+    api.security.getInternalStability.useQuery({ countryId }, { enabled: !!countryId });
 
   const resolveEvent = api.security.resolveSecurityEvent.useMutation({
     onSuccess: () => {

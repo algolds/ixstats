@@ -30,14 +30,46 @@ export function IntelligenceSidebarWidget({ countryId }: IntelligenceSidebarWidg
   const securityLevel = defenseOverview?.securityLevel?.replace("_", " ") ?? "Unknown";
   const criticalAlerts = intelligenceOverview?.alerts?.critical ?? 0;
   const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
-  const activeEmbassies = embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+  const activeEmbassies =
+    embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
   const findingsCount = keyFindings?.findings.length ?? 0;
 
   const stats = [
-    { icon: Shield, label: "Security", value: `${securityScore}/100`, sub: securityLevel, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/50" },
-    { icon: AlertTriangle, label: "Alerts", value: `${criticalAlerts} critical`, sub: `${totalAlerts} total`, color: criticalAlerts > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400", bg: criticalAlerts > 0 ? "bg-red-50 dark:bg-red-950/50" : "bg-green-50 dark:bg-green-950/50" },
-    { icon: Globe, label: "Network", value: `${activeEmbassies} active`, sub: "embassies", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/50" },
-    { icon: FileText, label: "Findings", value: `${findingsCount}`, sub: "auto-generated", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-950/50" },
+    {
+      icon: Shield,
+      label: "Security",
+      value: `${securityScore}/100`,
+      sub: securityLevel,
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-950/50",
+    },
+    {
+      icon: AlertTriangle,
+      label: "Alerts",
+      value: `${criticalAlerts} critical`,
+      sub: `${totalAlerts} total`,
+      color:
+        criticalAlerts > 0
+          ? "text-red-600 dark:text-red-400"
+          : "text-green-600 dark:text-green-400",
+      bg: criticalAlerts > 0 ? "bg-red-50 dark:bg-red-950/50" : "bg-green-50 dark:bg-green-950/50",
+    },
+    {
+      icon: Globe,
+      label: "Network",
+      value: `${activeEmbassies} active`,
+      sub: "embassies",
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-950/50",
+    },
+    {
+      icon: FileText,
+      label: "Findings",
+      value: `${findingsCount}`,
+      sub: "auto-generated",
+      color: "text-purple-600 dark:text-purple-400",
+      bg: "bg-purple-50 dark:bg-purple-950/50",
+    },
   ];
 
   return (
@@ -47,15 +79,18 @@ export function IntelligenceSidebarWidget({ countryId }: IntelligenceSidebarWidg
           <Brain className="h-3.5 w-3.5 text-blue-500" />
           <span className="text-xs font-semibold">Intelligence Status</span>
         </div>
-        <Badge variant="outline" className="border-blue-500/30 px-1.5 py-0 text-[0.65rem] text-blue-600 dark:text-blue-400">
+        <Badge
+          variant="outline"
+          className="border-blue-500/30 px-1.5 py-0 text-[0.65rem] text-blue-600 dark:text-blue-400"
+        >
           LIVE
         </Badge>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.label} className={`rounded-lg ${stat.bg} px-3 py-2`}>
             <div className="flex items-center gap-1.5">
-              <stat.icon className={`h-3.5 w-3.5 flex-shrink-0 ${stat.color}`} />
+              <stat.icon className={`h-3.5 w-3.5 shrink-0 ${stat.color}`} />
               <span className="text-xs font-medium">{stat.label}</span>
             </div>
             <div className={`mt-0.5 text-sm font-bold ${stat.color}`}>{stat.value}</div>

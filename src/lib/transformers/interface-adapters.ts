@@ -1,10 +1,6 @@
 import type { ExecutiveAction, QuickAction } from "~/types/actions";
 import type { IntelligenceItem, IntelligenceMetric } from "~/types/intelligence-unified";
-import type {
-  StandardPriority,
-  StandardCategory,
-  StandardTrend,
-} from "~/types/base";
+import type { StandardPriority, StandardCategory, StandardTrend } from "~/types/base";
 
 // Category to icon mapping
 const CATEGORY_ICONS: Record<string, string> = {

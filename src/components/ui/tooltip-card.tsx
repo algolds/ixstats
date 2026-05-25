@@ -131,7 +131,7 @@ export const Tooltip = ({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
-                className="pointer-events-none fixed z-[100020] min-w-[15rem] max-w-xs overflow-hidden rounded-md border border-transparent bg-white shadow-lg ring-1 shadow-black/5 ring-black/5 dark:bg-neutral-900 dark:shadow-white/10 dark:ring-white/5"
+                className="pointer-events-none fixed z-[100020] max-w-xs min-w-[15rem] overflow-hidden rounded-md border border-transparent bg-white shadow-lg ring-1 shadow-black/5 ring-black/5 dark:bg-neutral-900 dark:shadow-white/10 dark:ring-white/5"
                 style={{
                   top: position.y,
                   left: position.x,

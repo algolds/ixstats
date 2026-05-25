@@ -44,21 +44,81 @@ export interface BiomeConfig {
 }
 
 export const BIOME_CONFIGS: Record<BiomeType, BiomeConfig> = {
-  tropical_rainforest: { id: "tropical_rainforest", name: "Tropical Rainforest", color: "#006400", description: "Hot, wet year-round" },
-  tropical_seasonal_forest: { id: "tropical_seasonal_forest", name: "Tropical Seasonal Forest", color: "#228B22", description: "Hot, wet/dry seasons" },
-  tropical_savanna: { id: "tropical_savanna", name: "Tropical Savanna", color: "#BDB76B", description: "Hot, dry grassland with scattered trees" },
-  subtropical_desert: { id: "subtropical_desert", name: "Subtropical Desert", color: "#EDC9AF", description: "Hot, very dry" },
-  temperate_grassland: { id: "temperate_grassland", name: "Temperate Grassland", color: "#9ACD32", description: "Moderate temp, moderate precipitation" },
-  temperate_deciduous_forest: { id: "temperate_deciduous_forest", name: "Temperate Deciduous Forest", color: "#2E8B57", description: "Moderate, seasonal leaf drop" },
-  temperate_rainforest: { id: "temperate_rainforest", name: "Temperate Rainforest", color: "#006B3C", description: "Cool, very wet" },
-  mediterranean: { id: "mediterranean", name: "Mediterranean", color: "#CC7722", description: "Hot dry summer, mild wet winter" },
-  boreal_forest: { id: "boreal_forest", name: "Boreal Forest (Taiga)", color: "#355E3B", description: "Cold, moderate precipitation" },
-  tundra: { id: "tundra", name: "Tundra", color: "#A8B8C8", description: "Very cold, low precipitation" },
+  tropical_rainforest: {
+    id: "tropical_rainforest",
+    name: "Tropical Rainforest",
+    color: "#006400",
+    description: "Hot, wet year-round",
+  },
+  tropical_seasonal_forest: {
+    id: "tropical_seasonal_forest",
+    name: "Tropical Seasonal Forest",
+    color: "#228B22",
+    description: "Hot, wet/dry seasons",
+  },
+  tropical_savanna: {
+    id: "tropical_savanna",
+    name: "Tropical Savanna",
+    color: "#BDB76B",
+    description: "Hot, dry grassland with scattered trees",
+  },
+  subtropical_desert: {
+    id: "subtropical_desert",
+    name: "Subtropical Desert",
+    color: "#EDC9AF",
+    description: "Hot, very dry",
+  },
+  temperate_grassland: {
+    id: "temperate_grassland",
+    name: "Temperate Grassland",
+    color: "#9ACD32",
+    description: "Moderate temp, moderate precipitation",
+  },
+  temperate_deciduous_forest: {
+    id: "temperate_deciduous_forest",
+    name: "Temperate Deciduous Forest",
+    color: "#2E8B57",
+    description: "Moderate, seasonal leaf drop",
+  },
+  temperate_rainforest: {
+    id: "temperate_rainforest",
+    name: "Temperate Rainforest",
+    color: "#006B3C",
+    description: "Cool, very wet",
+  },
+  mediterranean: {
+    id: "mediterranean",
+    name: "Mediterranean",
+    color: "#CC7722",
+    description: "Hot dry summer, mild wet winter",
+  },
+  boreal_forest: {
+    id: "boreal_forest",
+    name: "Boreal Forest (Taiga)",
+    color: "#355E3B",
+    description: "Cold, moderate precipitation",
+  },
+  tundra: {
+    id: "tundra",
+    name: "Tundra",
+    color: "#A8B8C8",
+    description: "Very cold, low precipitation",
+  },
   alpine: { id: "alpine", name: "Alpine", color: "#8B7D6B", description: "High elevation, cold" },
-  mangrove: { id: "mangrove", name: "Mangrove", color: "#4A7C59", description: "Tropical coastal wetland" },
+  mangrove: {
+    id: "mangrove",
+    name: "Mangrove",
+    color: "#4A7C59",
+    description: "Tropical coastal wetland",
+  },
   wetland: { id: "wetland", name: "Wetland", color: "#4682B4", description: "Saturated lowland" },
   steppe: { id: "steppe", name: "Steppe", color: "#C2B280", description: "Semi-arid grassland" },
-  ice_sheet: { id: "ice_sheet", name: "Ice Sheet", color: "#F0F8FF", description: "Permanent ice cover" },
+  ice_sheet: {
+    id: "ice_sheet",
+    name: "Ice Sheet",
+    color: "#F0F8FF",
+    description: "Permanent ice cover",
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -196,7 +256,7 @@ export function classifyBiomeGrid(
   precipGrid: Float32Array,
   heightmap: HeightmapResult,
   width: number,
-  height: number,
+  height: number
 ): BiomeGrid {
   const data = new Uint8Array(width * height);
   const seaLevel = heightmap.seaLevel;
@@ -248,7 +308,12 @@ export function computeCoastalDistance(
 
       // Check neighbors for ocean
       let coastal = false;
-      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+      for (const [dx, dy] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ] as const) {
         const nx = x + dx;
         const ny = y + dy;
         if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
@@ -273,7 +338,12 @@ export function computeCoastalDistance(
     const y = Math.floor(idx / width);
     const d = dist[idx]!;
 
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+    for (const [dx, dy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ] as const) {
       const nx = x + dx;
       const ny = y + dy;
       if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;

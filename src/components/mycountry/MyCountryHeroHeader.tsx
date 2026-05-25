@@ -66,7 +66,7 @@ export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderPro
           <Badge
             className={cn(
               "border-amber-400/30 bg-white/10 font-semibold text-white backdrop-blur-sm",
-              "transition-all hover:bg-white/20 hover:scale-105"
+              "transition-all hover:scale-105 hover:bg-white/20"
             )}
           >
             <TrendingUp className="mr-1.5 h-3 w-3" />
@@ -77,7 +77,7 @@ export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderPro
           <Badge
             className={cn(
               "border-amber-400/30 bg-white/10 font-semibold text-white backdrop-blur-sm",
-              "transition-all hover:bg-white/20 hover:scale-105"
+              "transition-all hover:scale-105 hover:bg-white/20"
             )}
           >
             <Users className="mr-1.5 h-3 w-3" />
@@ -89,7 +89,7 @@ export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderPro
             <Badge
               className={cn(
                 "border-amber-400/30 bg-white/10 font-semibold text-white backdrop-blur-sm",
-                "transition-all hover:bg-white/20 hover:scale-105",
+                "transition-all hover:scale-105 hover:bg-white/20",
                 country.adjustedGdpGrowth > 0 ? "border-green-400/30" : "border-red-400/30"
               )}
             >
@@ -103,7 +103,7 @@ export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderPro
             <Badge
               className={cn(
                 "border-amber-400/30 bg-white/10 font-semibold text-white backdrop-blur-sm",
-                "transition-all hover:bg-white/20 hover:scale-105"
+                "transition-all hover:scale-105 hover:bg-white/20"
               )}
             >
               <Crown className="mr-1.5 h-3 w-3" />

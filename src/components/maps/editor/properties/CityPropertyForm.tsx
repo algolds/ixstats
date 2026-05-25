@@ -4,9 +4,7 @@ import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
-const CITY_TYPES = [
-  "capital", "city", "town", "village", "hamlet", "port", "fortress",
-];
+const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
 
 const inputClasses =
   "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
@@ -88,25 +86,21 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         />
       </div>
       <div className="space-y-1">
-        <label className="flex items-center gap-2 text-sm text-foreground/80">
+        <label className="text-foreground/80 flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={form.isNationalCapital}
-            onChange={(e) =>
-              onChange({ ...form, isNationalCapital: e.target.checked })
-            }
-            className="rounded border-border text-primary focus:ring-primary"
+            onChange={(e) => onChange({ ...form, isNationalCapital: e.target.checked })}
+            className="border-border text-primary focus:ring-primary rounded"
           />
           National capital
         </label>
-        <label className="flex items-center gap-2 text-sm text-foreground/80">
+        <label className="text-foreground/80 flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={form.isSubdivisionCapital}
-            onChange={(e) =>
-              onChange({ ...form, isSubdivisionCapital: e.target.checked })
-            }
-            className="rounded border-border text-primary focus:ring-primary"
+            onChange={(e) => onChange({ ...form, isSubdivisionCapital: e.target.checked })}
+            className="border-border text-primary focus:ring-primary rounded"
           />
           Regional capital
         </label>

@@ -84,7 +84,7 @@ export function ValidationFeedback({
               >
                 <Alert className={cn("px-4 py-3", config.bg)}>
                   <div className="flex items-start gap-2">
-                    <Icon className={cn("mt-0.5 h-4 w-4 flex-shrink-0", config.color)} />
+                    <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", config.color)} />
                     <div className="flex-1 space-y-1">
                       <AlertDescription>
                         <div className="space-y-1">
@@ -129,7 +129,7 @@ export function ValidationFeedback({
                 transition={{ duration: 0.2 }}
                 className="flex items-start gap-2 text-sm"
               >
-                <Icon className={cn("mt-0.5 h-4 w-4 flex-shrink-0", config.color)} />
+                <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", config.color)} />
                 {msg.field && (
                   <Badge variant="outline" className={cn("text-xs", config.badge)}>
                     {msg.field}
@@ -139,7 +139,7 @@ export function ValidationFeedback({
                 {onDismiss && (
                   <button
                     onClick={() => onDismiss(index)}
-                    className="text-muted-foreground hover:text-foreground flex-shrink-0 transition-colors"
+                    className="text-muted-foreground hover:text-foreground shrink-0 transition-colors"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -158,7 +158,7 @@ export function ValidationFeedback({
             >
               <Alert className={cn("px-3 py-2", config.bg)}>
                 <div className="flex items-start gap-2">
-                  <Icon className={cn("mt-0.5 h-4 w-4 flex-shrink-0", config.color)} />
+                  <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", config.color)} />
                   <div className="flex-1">
                     <AlertDescription>
                       <div className="flex items-start gap-2">
@@ -174,7 +174,7 @@ export function ValidationFeedback({
                   {onDismiss && (
                     <button
                       onClick={() => onDismiss(index)}
-                      className="text-muted-foreground hover:text-foreground flex-shrink-0 transition-colors"
+                      className="text-muted-foreground hover:text-foreground shrink-0 transition-colors"
                     >
                       <X className="h-4 w-4" />
                     </button>

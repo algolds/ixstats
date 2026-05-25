@@ -64,8 +64,10 @@ export function mapCountryToEconomyData(country: any) {
   if (govBudget) {
     if (govBudget.spendingCategories) {
       try {
-        const raw = typeof govBudget.spendingCategories === "string"
-          ? JSON.parse(govBudget.spendingCategories) : govBudget.spendingCategories;
+        const raw =
+          typeof govBudget.spendingCategories === "string"
+            ? JSON.parse(govBudget.spendingCategories)
+            : govBudget.spendingCategories;
         if (typeof raw === "object" && !Array.isArray(raw)) {
           const totalSpending = economicData.spending.totalSpending || profile.totalGdp * 0.28;
           economicData.spending.spendingCategories = Object.entries(raw).map(([category, pct]) => ({
@@ -75,10 +77,14 @@ export function mapCountryToEconomyData(country: any) {
             percent: Number(pct),
           }));
         }
-      } catch { /* keep template default */ }
+      } catch {
+        /* keep template default */
+      }
     }
-    if (govBudget.spendingEfficiency != null) economicData.spending.spendingEfficiency = govBudget.spendingEfficiency;
-    if (govBudget.socialSpendingPercent != null) economicData.spending.socialSpendingPercent = govBudget.socialSpendingPercent;
+    if (govBudget.spendingEfficiency != null)
+      economicData.spending.spendingEfficiency = govBudget.spendingEfficiency;
+    if (govBudget.socialSpendingPercent != null)
+      economicData.spending.socialSpendingPercent = govBudget.socialSpendingPercent;
   }
 
   // Wire FiscalSystem relation (tax rates)
@@ -101,37 +107,52 @@ export function mapCountryToEconomyData(country: any) {
       economicData.fiscal.taxRates.wealthTaxRate = fiscal.wealthTaxRate;
     }
     if (fiscal.taxEfficiency != null) economicData.fiscal.taxEfficiency = fiscal.taxEfficiency;
-    if (fiscal.fiscalBalanceGDPPercent != null) economicData.fiscal.fiscalBalanceGDPPercent = fiscal.fiscalBalanceGDPPercent;
+    if (fiscal.fiscalBalanceGDPPercent != null)
+      economicData.fiscal.fiscalBalanceGDPPercent = fiscal.fiscalBalanceGDPPercent;
     // personalIncomeTaxRates and corporateTaxRates are JSON strings
     if (fiscal.personalIncomeTaxRates) {
       try {
-        const raw = typeof fiscal.personalIncomeTaxRates === "string"
-          ? JSON.parse(fiscal.personalIncomeTaxRates) : fiscal.personalIncomeTaxRates;
+        const raw =
+          typeof fiscal.personalIncomeTaxRates === "string"
+            ? JSON.parse(fiscal.personalIncomeTaxRates)
+            : fiscal.personalIncomeTaxRates;
         economicData.fiscal.taxRates = economicData.fiscal.taxRates ?? {};
         economicData.fiscal.taxRates.personalIncomeTaxRates = raw;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     if (fiscal.corporateTaxRates) {
       try {
-        const raw = typeof fiscal.corporateTaxRates === "string"
-          ? JSON.parse(fiscal.corporateTaxRates) : fiscal.corporateTaxRates;
+        const raw =
+          typeof fiscal.corporateTaxRates === "string"
+            ? JSON.parse(fiscal.corporateTaxRates)
+            : fiscal.corporateTaxRates;
         economicData.fiscal.taxRates = economicData.fiscal.taxRates ?? {};
         economicData.fiscal.taxRates.corporateTaxRates = raw;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 
   // Wire IncomeDistribution relation
   const incomeDist = country.incomeDistribution;
   if (incomeDist) {
-    if (incomeDist.top10PercentWealth != null) economicData.income.top10PercentWealth = incomeDist.top10PercentWealth;
-    if (incomeDist.bottom50PercentWealth != null) economicData.income.bottom50PercentWealth = incomeDist.bottom50PercentWealth;
-    if (incomeDist.middleClassPercent != null) economicData.income.middleClassPercent = incomeDist.middleClassPercent;
-    if (incomeDist.intergenerationalMobility != null) economicData.income.intergenerationalMobility = incomeDist.intergenerationalMobility;
+    if (incomeDist.top10PercentWealth != null)
+      economicData.income.top10PercentWealth = incomeDist.top10PercentWealth;
+    if (incomeDist.bottom50PercentWealth != null)
+      economicData.income.bottom50PercentWealth = incomeDist.bottom50PercentWealth;
+    if (incomeDist.middleClassPercent != null)
+      economicData.income.middleClassPercent = incomeDist.middleClassPercent;
+    if (incomeDist.intergenerationalMobility != null)
+      economicData.income.intergenerationalMobility = incomeDist.intergenerationalMobility;
     if (incomeDist.economicClasses) {
       try {
-        const raw = typeof incomeDist.economicClasses === "string"
-          ? JSON.parse(incomeDist.economicClasses) : incomeDist.economicClasses;
+        const raw =
+          typeof incomeDist.economicClasses === "string"
+            ? JSON.parse(incomeDist.economicClasses)
+            : incomeDist.economicClasses;
         if (Array.isArray(raw)) {
           economicData.income.economicClasses = raw;
         } else if (typeof raw === "object") {
@@ -140,31 +161,45 @@ export function mapCountryToEconomyData(country: any) {
             percentage: Number(pct),
           }));
         }
-      } catch { /* keep template default */ }
+      } catch {
+        /* keep template default */
+      }
     }
   }
 
   // Wire EconomicProfile relation (sector breakdown, trade)
   const econProfile = country.economicProfile;
   if (econProfile) {
-    if (econProfile.gdpGrowthVolatility != null) economicData.core.gdpVolatility = econProfile.gdpGrowthVolatility;
-    if (econProfile.economicComplexity != null) economicData.core.economicComplexity = econProfile.economicComplexity;
-    if (econProfile.innovationIndex != null) economicData.core.innovationIndex = econProfile.innovationIndex;
-    if (econProfile.competitivenessRank != null) economicData.core.competitivenessRank = econProfile.competitivenessRank;
-    if (econProfile.easeOfDoingBusiness != null) economicData.core.easeOfDoingBusiness = econProfile.easeOfDoingBusiness;
-    if (econProfile.corruptionIndex != null) economicData.core.corruptionIndex = econProfile.corruptionIndex;
+    if (econProfile.gdpGrowthVolatility != null)
+      economicData.core.gdpVolatility = econProfile.gdpGrowthVolatility;
+    if (econProfile.economicComplexity != null)
+      economicData.core.economicComplexity = econProfile.economicComplexity;
+    if (econProfile.innovationIndex != null)
+      economicData.core.innovationIndex = econProfile.innovationIndex;
+    if (econProfile.competitivenessRank != null)
+      economicData.core.competitivenessRank = econProfile.competitivenessRank;
+    if (econProfile.easeOfDoingBusiness != null)
+      economicData.core.easeOfDoingBusiness = econProfile.easeOfDoingBusiness;
+    if (econProfile.corruptionIndex != null)
+      economicData.core.corruptionIndex = econProfile.corruptionIndex;
     if (econProfile.sectorBreakdown) {
       try {
-        const raw = typeof econProfile.sectorBreakdown === "string"
-          ? JSON.parse(econProfile.sectorBreakdown) : econProfile.sectorBreakdown;
+        const raw =
+          typeof econProfile.sectorBreakdown === "string"
+            ? JSON.parse(econProfile.sectorBreakdown)
+            : econProfile.sectorBreakdown;
         if (typeof raw === "object") {
           economicData.core.sectorBreakdown = raw;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     if (econProfile.tradeBalance != null) economicData.core.tradeBalance = econProfile.tradeBalance;
-    if (econProfile.exportsGDPPercent != null) economicData.core.exportsGDPPercent = econProfile.exportsGDPPercent;
-    if (econProfile.importsGDPPercent != null) economicData.core.importsGDPPercent = econProfile.importsGDPPercent;
+    if (econProfile.exportsGDPPercent != null)
+      economicData.core.exportsGDPPercent = econProfile.exportsGDPPercent;
+    if (econProfile.importsGDPPercent != null)
+      economicData.core.importsGDPPercent = econProfile.importsGDPPercent;
   }
 
   // Wire LaborMarket relation (sector employment, wage data)
@@ -172,26 +207,38 @@ export function mapCountryToEconomyData(country: any) {
   if (laborMarket) {
     if (laborMarket.employmentBySector) {
       try {
-        const raw = typeof laborMarket.employmentBySector === "string"
-          ? JSON.parse(laborMarket.employmentBySector) : laborMarket.employmentBySector;
+        const raw =
+          typeof laborMarket.employmentBySector === "string"
+            ? JSON.parse(laborMarket.employmentBySector)
+            : laborMarket.employmentBySector;
         if (typeof raw === "object") {
           economicData.labor.employmentBySector = raw;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
-    if (laborMarket.youthUnemploymentRate != null) economicData.labor.youthUnemploymentRate = laborMarket.youthUnemploymentRate;
-    if (laborMarket.femaleParticipationRate != null) economicData.labor.femaleParticipationRate = laborMarket.femaleParticipationRate;
-    if (laborMarket.informalEmploymentRate != null) economicData.labor.informalEmploymentRate = laborMarket.informalEmploymentRate;
+    if (laborMarket.youthUnemploymentRate != null)
+      economicData.labor.youthUnemploymentRate = laborMarket.youthUnemploymentRate;
+    if (laborMarket.femaleParticipationRate != null)
+      economicData.labor.femaleParticipationRate = laborMarket.femaleParticipationRate;
+    if (laborMarket.informalEmploymentRate != null)
+      economicData.labor.informalEmploymentRate = laborMarket.informalEmploymentRate;
     if (laborMarket.medianWage != null) economicData.labor.medianWage = laborMarket.medianWage;
-    if (laborMarket.wageGrowthRate != null) economicData.labor.wageGrowthRate = laborMarket.wageGrowthRate;
+    if (laborMarket.wageGrowthRate != null)
+      economicData.labor.wageGrowthRate = laborMarket.wageGrowthRate;
     if (laborMarket.wageBySector) {
       try {
-        const raw = typeof laborMarket.wageBySector === "string"
-          ? JSON.parse(laborMarket.wageBySector) : laborMarket.wageBySector;
+        const raw =
+          typeof laborMarket.wageBySector === "string"
+            ? JSON.parse(laborMarket.wageBySector)
+            : laborMarket.wageBySector;
         if (typeof raw === "object") {
           economicData.labor.wageBySector = raw;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -215,7 +262,10 @@ export function mapCountryToEconomyData(country: any) {
     // ageDistribution: DB stores { "0-14": 18.2, ... }, UI needs [{ group, percentage }]
     if (demo.ageDistribution) {
       try {
-        const raw = typeof demo.ageDistribution === "string" ? JSON.parse(demo.ageDistribution) : demo.ageDistribution;
+        const raw =
+          typeof demo.ageDistribution === "string"
+            ? JSON.parse(demo.ageDistribution)
+            : demo.ageDistribution;
         if (Array.isArray(raw)) {
           economicData.demographics.ageDistribution = raw;
         } else if (typeof raw === "object") {
@@ -223,16 +273,25 @@ export function mapCountryToEconomyData(country: any) {
             group,
             percentage: Number(val),
             percent: Number(val),
-            color: group.includes("0-14") ? "#3b82f6" : group.includes("65") ? "#f59e0b" : "#10b981",
+            color: group.includes("0-14")
+              ? "#3b82f6"
+              : group.includes("65")
+                ? "#f59e0b"
+                : "#10b981",
           }));
         }
-      } catch { /* keep template default */ }
+      } catch {
+        /* keep template default */
+      }
     }
 
     // educationLevels: DB stores { "Primary": 8, ... }, UI needs [{ level, percentage }]
     if (demo.educationLevels) {
       try {
-        const raw = typeof demo.educationLevels === "string" ? JSON.parse(demo.educationLevels) : demo.educationLevels;
+        const raw =
+          typeof demo.educationLevels === "string"
+            ? JSON.parse(demo.educationLevels)
+            : demo.educationLevels;
         if (Array.isArray(raw)) {
           economicData.demographics.educationLevels = raw;
         } else if (typeof raw === "object") {
@@ -240,11 +299,21 @@ export function mapCountryToEconomyData(country: any) {
             level,
             percentage: Number(val),
             percent: Number(val),
-            color: level.toLowerCase().includes("tertiary") || level.toLowerCase().includes("bachelor") || level.toLowerCase().includes("graduate") || level.toLowerCase().includes("doctor") ? "#10b981" :
-                   level.toLowerCase().includes("secondary") || level.toLowerCase().includes("vocational") ? "#f59e0b" : "#ef4444",
+            color:
+              level.toLowerCase().includes("tertiary") ||
+              level.toLowerCase().includes("bachelor") ||
+              level.toLowerCase().includes("graduate") ||
+              level.toLowerCase().includes("doctor")
+                ? "#10b981"
+                : level.toLowerCase().includes("secondary") ||
+                    level.toLowerCase().includes("vocational")
+                  ? "#f59e0b"
+                  : "#ef4444",
           }));
         }
-      } catch { /* keep template default */ }
+      } catch {
+        /* keep template default */
+      }
     }
 
     // regions: DB stores { "Capital Region": 28, ... }, UI needs [{ region, percentage }]
@@ -264,26 +333,36 @@ export function mapCountryToEconomyData(country: any) {
           economicData.demographics.regions = arr;
           economicData.demographics.regionalDistribution = arr;
         }
-      } catch { /* keep template default */ }
+      } catch {
+        /* keep template default */
+      }
     }
 
     // citizenshipStatuses
     if (demo.citizenshipStatuses) {
       try {
-        const raw = typeof demo.citizenshipStatuses === "string" ? JSON.parse(demo.citizenshipStatuses) : demo.citizenshipStatuses;
+        const raw =
+          typeof demo.citizenshipStatuses === "string"
+            ? JSON.parse(demo.citizenshipStatuses)
+            : demo.citizenshipStatuses;
         if (Array.isArray(raw)) {
           economicData.demographics.citizenshipStatuses = raw;
         } else if (typeof raw === "object") {
-          economicData.demographics.citizenshipStatuses = Object.entries(raw).map(([status, val]) => ({
-            status,
-            percentage: Number(val),
-          }));
+          economicData.demographics.citizenshipStatuses = Object.entries(raw).map(
+            ([status, val]) => ({
+              status,
+              percentage: Number(val),
+            })
+          );
         }
-      } catch { /* keep template default */ }
+      } catch {
+        /* keep template default */
+      }
     }
 
     if (demo.medianAge != null) economicData.demographics.medianAge = demo.medianAge;
-    if (demo.dependencyRatio != null) economicData.demographics.dependencyRatio = demo.dependencyRatio;
+    if (demo.dependencyRatio != null)
+      economicData.demographics.dependencyRatio = demo.dependencyRatio;
     if (demo.birthRate != null) economicData.demographics.birthRate = demo.birthRate;
     if (demo.deathRate != null) economicData.demographics.deathRate = demo.deathRate;
     if (demo.migrationRate != null) economicData.demographics.migrationRate = demo.migrationRate;

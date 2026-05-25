@@ -504,7 +504,7 @@ export function VaultAdmin() {
                             <img
                               src={user.country.flag}
                               alt=""
-                              className="h-4 w-6 flex-shrink-0 rounded-sm object-cover"
+                              className="h-4 w-6 shrink-0 rounded-sm object-cover"
                             />
                           )}
                           <div className="min-w-0">
@@ -680,7 +680,7 @@ export function VaultAdmin() {
                     <img
                       src={selectedUser.country.flag}
                       alt=""
-                      className="h-4 w-6 flex-shrink-0 rounded-sm object-cover"
+                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
                     />
                   )}
                   <div
@@ -927,7 +927,7 @@ export function VaultAdmin() {
                     <img
                       src={selectedUser.country.flag}
                       alt=""
-                      className="h-4 w-6 flex-shrink-0 rounded-sm object-cover"
+                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
                     />
                   )}
                   <div

@@ -83,9 +83,7 @@ export function resolveArtworkUrl(artwork: string | null, basePath = ""): string
 }
 
 /** Compute rarity breakdown from a list of cards */
-export function computeRarityCounts(
-  cards: Array<{ rarity: string }>
-): Record<string, number> {
+export function computeRarityCounts(cards: Array<{ rarity: string }>): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const c of cards) {
     counts[c.rarity] = (counts[c.rarity] ?? 0) + 1;

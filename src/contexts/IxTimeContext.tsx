@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useEffect, type ReactNode } from "react";
-import { useIxTimeStore, useIxTimeTimestamp, useIxTimeFormatted, useIxTimeGameYear, useIxTimeMultiplier } from "~/stores/ixtime-store";
+import {
+  useIxTimeStore,
+  useIxTimeTimestamp,
+  useIxTimeFormatted,
+  useIxTimeGameYear,
+  useIxTimeMultiplier,
+} from "~/stores/ixtime-store";
 
 interface IxTimeProviderProps {
   children: ReactNode;

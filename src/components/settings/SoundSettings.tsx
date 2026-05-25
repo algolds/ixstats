@@ -65,13 +65,7 @@ interface VolumeSliderProps {
   className?: string;
 }
 
-const VolumeSlider: React.FC<VolumeSliderProps> = ({
-  label,
-  value,
-  onChange,
-  icon,
-  className,
-}) => {
+const VolumeSlider: React.FC<VolumeSliderProps> = ({ label, value, onChange, icon, className }) => {
   const percentage = Math.round(value * 100);
 
   return (
@@ -81,11 +75,11 @@ const VolumeSlider: React.FC<VolumeSliderProps> = ({
           {icon}
           <span>{label}</span>
         </div>
-        <span className="text-sm font-mono text-white/60">{percentage}%</span>
+        <span className="font-mono text-sm text-white/60">{percentage}%</span>
       </div>
       <div className="relative h-2 w-full rounded-full bg-white/10">
         <motion.div
-          className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+          className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
           style={{ width: `${percentage}%` }}
           initial={false}
           animate={{ width: `${percentage}%` }}
@@ -200,16 +194,9 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({ className }) => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Sound Settings</h2>
-          <p className="mt-1 text-sm text-white/60">
-            Customize audio experience for IxCards
-          </p>
+          <p className="mt-1 text-sm text-white/60">Customize audio experience for IxCards</p>
         </div>
-        <Button
-          onClick={handleToggleEnabled}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
+        <Button onClick={handleToggleEnabled} variant="outline" size="sm" className="gap-2">
           {settings.enabled ? (
             <>
               <Volume2 className="h-4 w-4" />
@@ -260,9 +247,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({ className }) => {
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">
-              Individual Sounds
-            </h3>
+            <h3 className="text-lg font-semibold text-white">Individual Sounds</h3>
             <Button
               onClick={handleReset}
               variant="ghost"
@@ -287,9 +272,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({ className }) => {
                       key={sound}
                       className="flex items-center justify-between rounded-lg bg-white/5 p-3 transition-colors hover:bg-white/10"
                     >
-                      <span className="text-sm text-white/90">
-                        {SOUND_NAMES[sound]}
-                      </span>
+                      <span className="text-sm text-white/90">{SOUND_NAMES[sound]}</span>
                       <div className="flex items-center gap-2">
                         <Button
                           onClick={() => handlePreviewSound(sound)}
@@ -299,10 +282,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({ className }) => {
                           disabled={!settings.enabled || isMuted}
                         >
                           <Play
-                            className={cn(
-                              "h-4 w-4",
-                              isPlaying && "animate-pulse text-blue-400"
-                            )}
+                            className={cn("h-4 w-4", isPlaying && "animate-pulse text-blue-400")}
                           />
                         </Button>
                         <Button
@@ -330,9 +310,9 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({ className }) => {
       {/* Info */}
       <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-white/70">
         <p>
-          <strong className="text-white/90">Note:</strong> Sound files are
-          optional. If sounds are missing, the system will gracefully fall back
-          to silent mode without affecting functionality.
+          <strong className="text-white/90">Note:</strong> Sound files are optional. If sounds are
+          missing, the system will gracefully fall back to silent mode without affecting
+          functionality.
         </p>
       </div>
     </div>

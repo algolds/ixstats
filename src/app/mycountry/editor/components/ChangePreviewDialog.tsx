@@ -138,7 +138,7 @@ export function ChangePreviewDialog({
                       </span>
                     </div>
                   </div>
-                  <Clock className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                  <Clock className="text-muted-foreground h-4 w-4 shrink-0" />
                 </div>
 
                 <AnimatePresence>
@@ -154,7 +154,7 @@ export function ChangePreviewDialog({
                           <p className="text-muted-foreground text-xs font-semibold">Warnings:</p>
                           {change.impact.warnings.map((warning, i) => (
                             <p key={i} className="text-muted-foreground flex gap-2 text-xs">
-                              <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                               {warning}
                             </p>
                           ))}
@@ -167,7 +167,7 @@ export function ChangePreviewDialog({
                           </p>
                           {change.impact.reasons.map((reason, i) => (
                             <p key={i} className="text-muted-foreground flex gap-2 text-xs">
-                              <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                              <Info className="mt-0.5 h-3 w-3 shrink-0" />
                               {reason}
                             </p>
                           ))}

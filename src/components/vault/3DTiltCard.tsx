@@ -85,7 +85,7 @@ export function TiltCard({
     >
       <motion.div
         className={cn(
-          "relative overflow-hidden glass-hierarchy-child vault-tilt-card transition-all duration-300",
+          "glass-hierarchy-child vault-tilt-card relative overflow-hidden transition-all duration-300",
           glowClasses[glowColor],
           onClick && "cursor-pointer",
           className
@@ -104,7 +104,7 @@ export function TiltCard({
       >
         {/* Shimmer overlay on hover */}
         <motion.div
-          className="absolute inset-0 pointer-events-none z-10"
+          className="pointer-events-none absolute inset-0 z-10"
           animate={{
             background: isHovering
               ? "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)"
@@ -139,10 +139,10 @@ export function TiltCard({
                     glowColor === "gold"
                       ? "text-gold-400"
                       : glowColor === "purple"
-                      ? "text-purple-400"
-                      : glowColor === "cyan"
-                      ? "text-cyan-400"
-                      : "text-blue-400"
+                        ? "text-purple-400"
+                        : glowColor === "cyan"
+                          ? "text-cyan-400"
+                          : "text-blue-400"
                   )}
                 />
               </motion.div>
@@ -155,7 +155,7 @@ export function TiltCard({
 
         {/* Bottom glow line */}
         <motion.div
-          className="absolute bottom-0 left-0 right-0 h-0.5"
+          className="absolute right-0 bottom-0 left-0 h-0.5"
           style={{
             background: `linear-gradient(90deg, transparent, ${glowColors[glowColor]}, transparent)`,
           }}
@@ -193,13 +193,13 @@ export function TiltStatCard({
     trend === "up"
       ? () => <span className="text-green-400">↗</span>
       : trend === "down"
-      ? () => <span className="text-red-400">↘</span>
-      : () => <span className="text-gray-400">→</span>;
+        ? () => <span className="text-red-400">↘</span>
+        : () => <span className="text-gray-400">→</span>;
 
   return (
     <TiltCard glowColor={glowColor} showSparkles={!loading}>
       <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-medium text-white/80">{title}</h3>
           <motion.div
             animate={{ rotate: loading ? 360 : 0 }}
@@ -211,14 +211,14 @@ export function TiltStatCard({
                 glowColor === "gold"
                   ? "text-gold-400"
                   : glowColor === "purple"
-                  ? "text-purple-400"
-                  : glowColor === "cyan"
-                  ? "text-cyan-400"
-                  : glowColor === "blue"
-                  ? "text-blue-400"
-                  : glowColor === "green"
-                  ? "text-green-400"
-                  : "text-orange-400"
+                    ? "text-purple-400"
+                    : glowColor === "cyan"
+                      ? "text-cyan-400"
+                      : glowColor === "blue"
+                        ? "text-blue-400"
+                        : glowColor === "green"
+                          ? "text-green-400"
+                          : "text-orange-400"
               )}
             />
           </motion.div>
@@ -231,18 +231,18 @@ export function TiltStatCard({
               glowColor === "gold"
                 ? "text-gold-400"
                 : glowColor === "purple"
-                ? "text-purple-400"
-                : glowColor === "cyan"
-                ? "text-cyan-400"
-                : glowColor === "blue"
-                ? "text-blue-400"
-                : glowColor === "green"
-                ? "text-green-400"
-                : "text-orange-400"
+                  ? "text-purple-400"
+                  : glowColor === "cyan"
+                    ? "text-cyan-400"
+                    : glowColor === "blue"
+                      ? "text-blue-400"
+                      : glowColor === "green"
+                        ? "text-green-400"
+                        : "text-orange-400"
             )}
           >
             {loading ? (
-              <div className="h-9 w-24 animate-pulse bg-white/10 rounded" />
+              <div className="h-9 w-24 animate-pulse rounded bg-white/10" />
             ) : typeof value === "number" ? (
               <motion.span
                 initial={{ opacity: 0, y: 10 }}

@@ -19,17 +19,37 @@ export interface GeneratedResource {
   resourceType: string;
   name: string;
   coordinates: [number, number]; // [lng, lat]
-  quantity: number;   // 0–1
-  quality: number;    // 0–1
+  quantity: number; // 0–1
+  quality: number; // 0–1
   climateZone: string | null;
   elevationZone: string | null;
 }
 
 /** Resource naming templates */
 const RESOURCE_NAMES: Record<string, string[]> = {
-  fishery: ["Coastal Fishery", "Deep-Sea Grounds", "Reef Fishery", "Estuary Fishery", "Trawling Zone"],
-  forest: ["Old-Growth Forest", "Timber Reserve", "Hardwood Forest", "Tropical Canopy", "Managed Woodland"],
-  mineral: ["Iron Deposit", "Copper Vein", "Zinc Mine", "Bauxite Deposit", "Rare Earth Site", "Gold Deposit", "Silver Mine"],
+  fishery: [
+    "Coastal Fishery",
+    "Deep-Sea Grounds",
+    "Reef Fishery",
+    "Estuary Fishery",
+    "Trawling Zone",
+  ],
+  forest: [
+    "Old-Growth Forest",
+    "Timber Reserve",
+    "Hardwood Forest",
+    "Tropical Canopy",
+    "Managed Woodland",
+  ],
+  mineral: [
+    "Iron Deposit",
+    "Copper Vein",
+    "Zinc Mine",
+    "Bauxite Deposit",
+    "Rare Earth Site",
+    "Gold Deposit",
+    "Silver Mine",
+  ],
   oil: ["Oil Field", "Petroleum Reserve", "Crude Basin", "Offshore Well"],
   gas: ["Natural Gas Field", "Gas Reserve", "Shale Gas Deposit"],
   freshwater: ["River Basin", "Freshwater Aquifer", "Glacial Lake", "Reservoir System"],
@@ -111,8 +131,11 @@ export function generateResourcesForCountry(
 
   // 4. Oil/Gas — arid zones
   const aridZones = profile.climateDistribution.filter(
-    (z) => z.type.includes("Desert") || z.type.includes("Bw") ||
-           z.type.includes("Steppe") || z.type.includes("Bs")
+    (z) =>
+      z.type.includes("Desert") ||
+      z.type.includes("Bw") ||
+      z.type.includes("Steppe") ||
+      z.type.includes("Bs")
   );
   if (aridZones.length > 0) {
     const totalAridPercent = aridZones.reduce((s, z) => s + z.percentArea, 0);
@@ -201,11 +224,11 @@ function randomCoastalPoint(
   bbox: [number, number, number, number]
 ): [number, number] {
   const edge = rng(); // which edge
-  const t = rng();    // position along edge
+  const t = rng(); // position along edge
   const [minLng, minLat, maxLng, maxLat] = bbox;
 
   if (edge < 0.25) return [minLng + t * (maxLng - minLng), minLat]; // south
-  if (edge < 0.5)  return [minLng + t * (maxLng - minLng), maxLat]; // north
+  if (edge < 0.5) return [minLng + t * (maxLng - minLng), maxLat]; // north
   if (edge < 0.75) return [minLng, minLat + t * (maxLat - minLat)]; // west
   return [maxLng, minLat + t * (maxLat - minLat)]; // east
 }
@@ -222,10 +245,7 @@ function randomInteriorPoint(
   const ry = (rng() + rng()) / 2;
   const lng = minLng + rx * (maxLng - minLng);
   const lat = minLat + ry * (maxLat - minLat);
-  return [
-    Math.round(lng * 1000) / 1000,
-    Math.round(lat * 1000) / 1000,
-  ];
+  return [Math.round(lng * 1000) / 1000, Math.round(lat * 1000) / 1000];
 }
 
 /** Simple seeded RNG (mulberry32) */

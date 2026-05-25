@@ -34,16 +34,19 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
     if (showTimeout.current) clearTimeout(showTimeout.current);
   }, []);
 
-  const showPreview = useCallback((title: string, rect: DOMRect) => {
-    clearTimers();
-    showTimeout.current = setTimeout(() => {
-      setPreview({
-        title,
-        x: rect.left + rect.width / 2,
-        y: rect.bottom + 6,
-      });
-    }, SHOW_DELAY);
-  }, [clearTimers]);
+  const showPreview = useCallback(
+    (title: string, rect: DOMRect) => {
+      clearTimers();
+      showTimeout.current = setTimeout(() => {
+        setPreview({
+          title,
+          x: rect.left + rect.width / 2,
+          y: rect.bottom + 6,
+        });
+      }, SHOW_DELAY);
+    },
+    [clearTimers]
+  );
 
   const hidePreview = useCallback(() => {
     clearTimers();
@@ -93,8 +96,13 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
 
       // Don't intercept Special:, File:, or external links
       const path = match[1]!;
-      if (path.startsWith("Special:") || path.startsWith("Special%3A") ||
-          path.startsWith("File:") || path.startsWith("File%3A")) return;
+      if (
+        path.startsWith("Special:") ||
+        path.startsWith("Special%3A") ||
+        path.startsWith("File:") ||
+        path.startsWith("File%3A")
+      )
+        return;
 
       // Client-side navigation instead of full page reload
       e.preventDefault();
@@ -147,10 +155,7 @@ function LinkPreviewPopup({
   onMouseLeave: () => void;
 }) {
   // Single call — resolves redirects server-side, never shows "#REDIRECT"
-  const { data } = api.wikios.getIntroResolved.useQuery(
-    { title },
-    { staleTime: 60_000 }
-  );
+  const { data } = api.wikios.getIntroResolved.useQuery({ title }, { staleTime: 60_000 });
 
   const displayTitle = data?.title ?? title;
   const displayText = data?.text ?? null;

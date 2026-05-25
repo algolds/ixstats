@@ -15,7 +15,6 @@
 
 import { makeRng } from "./rng";
 
-
 // ─── Types ───────────────────────────────────────────────────
 
 export interface PlateVelocity {
@@ -129,14 +128,7 @@ export function simulatePlates(
   }));
 
   // Step 7: Detect plate collisions
-  const collisions = detectCollisions(
-    plateAssignment,
-    width,
-    height,
-    plates,
-    oceanPlates,
-    seed
-  );
+  const collisions = detectCollisions(plateAssignment, width, height, plates, oceanPlates, seed);
 
   return { plateAssignment, oceanPlates, plates, collisions, width, height };
 }
@@ -165,7 +157,7 @@ function farthestPointSeed(
     // Update distances from the last seed
     const [sx, sy] = seeds[i - 1]!;
     for (let y = 0; y < height; y++) {
-      const latRad = ((y / height) - 0.5) * Math.PI;
+      const latRad = (y / height - 0.5) * Math.PI;
       const cosLat = Math.cos(latRad);
       for (let x = 0; x < width; x++) {
         let dx = Math.abs(x - sx);
@@ -302,8 +294,9 @@ function classifyOceanPlates(
   }
 
   // Sort plates by size (largest first)
-  const sorted = Array.from({ length: plateCount }, (_, i) => i)
-    .sort((a, b) => cellCounts[b]! - cellCounts[a]!);
+  const sorted = Array.from({ length: plateCount }, (_, i) => i).sort(
+    (a, b) => cellCounts[b]! - cellCounts[a]!
+  );
 
   // Start with top `continentCount` as continental, rest as ocean
   const oceanPlates = new Set<number>();
@@ -366,11 +359,7 @@ function classifyOceanPlates(
  * Smooth plate boundaries using majority-vote filtering.
  * Each boundary cell adopts the most common plate among its 8 neighbors.
  */
-function smoothBoundaries(
-  assignment: Uint16Array,
-  width: number,
-  height: number
-): void {
+function smoothBoundaries(assignment: Uint16Array, width: number, height: number): void {
   const copy = new Uint16Array(assignment);
 
   for (let y = 1; y < height - 1; y++) {
@@ -558,11 +547,7 @@ function detectCollisions(
  * Compute velocity at a point from an Euler pole rotation.
  * Simplified for equirectangular: v = omega × r (cross product).
  */
-function eulerVelocityAt(
-  vel: PlateVelocity,
-  nx: number,
-  ny: number
-): [number, number] {
+function eulerVelocityAt(vel: PlateVelocity, nx: number, ny: number): [number, number] {
   // Treat the Euler pole direction as (epX, epY) and the point as (nx, ny)
   // Velocity is perpendicular to the vector from pole to point, scaled by angular velocity
   const dx = nx - vel.eulerPoleX * 0.5 - 0.5;
@@ -571,8 +556,8 @@ function eulerVelocityAt(
   if (r < 0.001) return [0, 0];
 
   // Perpendicular direction (rotated 90°)
-  const vx = -dy / r * vel.angularVelocity;
-  const vy = dx / r * vel.angularVelocity;
+  const vx = (-dy / r) * vel.angularVelocity;
+  const vy = (dx / r) * vel.angularVelocity;
   return [vx, vy];
 }
 
@@ -582,12 +567,7 @@ function eulerVelocityAt(
  * Get 8-connected neighbor indices for a grid cell.
  * Wraps horizontally (equirectangular), clamps vertically.
  */
-export function getNeighbors8(
-  x: number,
-  y: number,
-  width: number,
-  height: number
-): number[] {
+export function getNeighbors8(x: number, y: number, width: number, height: number): number[] {
   const neighbors: number[] = [];
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
@@ -595,8 +575,8 @@ export function getNeighbors8(
       const ny = y + dy;
       if (ny < 0 || ny >= height) continue;
       let nx = x + dx;
-      if (nx < 0) nx += width;       // Wrap left
-      if (nx >= width) nx -= width;   // Wrap right
+      if (nx < 0) nx += width; // Wrap left
+      if (nx >= width) nx -= width; // Wrap right
       neighbors.push(ny * width + nx);
     }
   }
@@ -606,12 +586,7 @@ export function getNeighbors8(
 /**
  * Get 4-connected neighbor indices (no diagonals).
  */
-export function getNeighbors4(
-  x: number,
-  y: number,
-  width: number,
-  height: number
-): number[] {
+export function getNeighbors4(x: number, y: number, width: number, height: number): number[] {
   const neighbors: number[] = [];
   if (y > 0) neighbors.push((y - 1) * width + x);
   if (y < height - 1) neighbors.push((y + 1) * width + x);

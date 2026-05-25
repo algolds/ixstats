@@ -259,12 +259,14 @@ export class AdvancedCacheSystem {
    */
   getStats(): CacheStats {
     const memoryStats = this.memoryCache.getStats();
-    const avgGetTime = this.performanceMetrics.getTimeCount > 0
-      ? this.performanceMetrics.getTimeSum / this.performanceMetrics.getTimeCount
-      : 0;
-    const avgSetTime = this.performanceMetrics.setTimeCount > 0
-      ? this.performanceMetrics.setTimeSum / this.performanceMetrics.setTimeCount
-      : 0;
+    const avgGetTime =
+      this.performanceMetrics.getTimeCount > 0
+        ? this.performanceMetrics.getTimeSum / this.performanceMetrics.getTimeCount
+        : 0;
+    const avgSetTime =
+      this.performanceMetrics.setTimeCount > 0
+        ? this.performanceMetrics.setTimeSum / this.performanceMetrics.setTimeCount
+        : 0;
 
     return {
       memory: memoryStats,

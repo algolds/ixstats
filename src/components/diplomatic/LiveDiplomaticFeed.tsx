@@ -127,7 +127,7 @@ const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
           {/* Event Icon */}
           <div
             className={cn(
-              "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
               `bg-${colorClass.replace("text-", "").replace("-400", "-500")}/20`
             )}
           >
@@ -387,7 +387,7 @@ const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
           )}
         >
           <div className="flex items-start gap-3">
-            <RiAlarmWarningLine className="mt-0.5 h-5 w-5 flex-shrink-0" />
+            <RiAlarmWarningLine className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="flex-1">
               <div className="mb-1 font-medium">
                 {state.connectionError.includes("Offline mode")

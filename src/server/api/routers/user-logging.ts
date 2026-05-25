@@ -14,6 +14,61 @@ import { TRPCError } from "@trpc/server";
 
 export const userLoggingRouter = createTRPCRouter({
   /**
+   * Submit user feedback with diagnostic logs
+   */
+  submitFeedback: protectedProcedure
+    .input(
+      z.object({
+        feedbackType: z.string(),
+        message: z.string(),
+        url: z.string(),
+        userAgent: z.string(),
+        logs: z.array(
+          z.object({
+            type: z.string(),
+            message: z.string(),
+            timestamp: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.db.systemLog.create({
+          data: {
+            level: "INFO",
+            category: "USER_FEEDBACK",
+            message: `Feedback (${input.feedbackType}): ${input.message.slice(0, 200)}`,
+            userId: ctx.user.id,
+            countryId: ctx.user.countryId || null,
+            userAgent: input.userAgent.slice(0, 255),
+            metadata: JSON.stringify({
+              feedbackType: input.feedbackType,
+              message: input.message,
+              url: input.url,
+              consoleLogs: input.logs,
+            }),
+          },
+        });
+
+        return {
+          success: true,
+          message: "Feedback submitted successfully",
+        };
+      } catch (error) {
+        ErrorLogger.logError(error as Error, {
+          component: "UserLoggingRouter",
+          action: "SUBMIT_FEEDBACK",
+          userId: ctx.user?.id,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to submit feedback",
+        });
+      }
+    }),
+
+  /**
    * Get current user's activity summary
    */
   getMyActivitySummary: protectedProcedure

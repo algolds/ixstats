@@ -87,15 +87,18 @@ export function TestSuitePanel() {
       case "crisis":
         notify.notify({
           title: "Major Crisis Declared",
-          message: "A severe diplomatic crisis has broken out in Sector 4. Immediate intervention required.",
+          message:
+            "A severe diplomatic crisis has broken out in Sector 4. Immediate intervention required.",
           type: "error",
           priority: "critical",
           category: "crisis",
           persistent: true,
-          actions: [{
-            label: "Deploy Peacekeepers",
-            onClick: () => addResult("✅ Peacekeepers deployed"),
-          }],
+          actions: [
+            {
+              label: "Deploy Peacekeepers",
+              onClick: () => addResult("✅ Peacekeepers deployed"),
+            },
+          ],
         });
         addResult("🔴 Crisis alert triggered");
         break;
@@ -113,7 +116,8 @@ export function TestSuitePanel() {
       case "security":
         notify.notify({
           title: "Intrusion Attempt Blocked",
-          message: "Firewall detected and neutralized a brute force attack on your intelligence database.",
+          message:
+            "Firewall detected and neutralized a brute force attack on your intelligence database.",
           type: "warning",
           priority: "high",
           category: "security",
@@ -124,15 +128,18 @@ export function TestSuitePanel() {
       case "trade":
         notify.notify({
           title: "New Trade Pact Proposal",
-          message: "Burgundie has sent a bilateral commerce treaty proposal offering +12% Tariff efficiency.",
+          message:
+            "Burgundie has sent a bilateral commerce treaty proposal offering +12% Tariff efficiency.",
           type: "info",
           priority: "medium",
           category: "economic",
           duration: 5000,
-          actions: [{
-            label: "Accept Treaty",
-            onClick: () => addResult("✅ Treaty accepted"),
-          }],
+          actions: [
+            {
+              label: "Accept Treaty",
+              onClick: () => addResult("✅ Treaty accepted"),
+            },
+          ],
         });
         addResult("🤝 Trade pact notification fired");
         break;
@@ -152,10 +159,12 @@ export function TestSuitePanel() {
       persistent,
       silent,
       actions: hasAction
-        ? [{
-            label: "Run Test Callback",
-            onClick: () => addResult("✅ Custom callback executed"),
-          }]
+        ? [
+            {
+              label: "Run Test Callback",
+              onClick: () => addResult("✅ Custom callback executed"),
+            },
+          ]
         : undefined,
     });
     addResult(`📨 Custom "${title}" notification triggered`);
@@ -174,7 +183,14 @@ export function TestSuitePanel() {
         severity: "urgent",
         deliveryMethod: "dynamic-island",
         actionable: true,
-        actions: [{ id: "test", label: "Investigate", type: "primary", onClick: () => addResult("🔍 Investigate clicked") }],
+        actions: [
+          {
+            id: "test",
+            label: "Investigate",
+            type: "primary",
+            onClick: () => addResult("🔍 Investigate clicked"),
+          },
+        ],
         triggers: [{ type: "data-change", source: "admin-panel", data: {}, confidence: 1.0 }],
         status: "pending" as const,
         relevanceScore: 90,
@@ -198,7 +214,14 @@ export function TestSuitePanel() {
         severity: "important",
         deliveryMethod: "dynamic-island",
         actionable: true,
-        actions: [{ id: "view", label: "View Dashboard", type: "primary", onClick: () => addResult("📊 Dashboard opened") }],
+        actions: [
+          {
+            id: "view",
+            label: "View Dashboard",
+            type: "primary",
+            onClick: () => addResult("📊 Dashboard opened"),
+          },
+        ],
         triggers: [{ type: "data-change", source: "economic-system", data: {}, confidence: 0.9 }],
         status: "pending" as const,
         relevanceScore: 85,
@@ -322,41 +345,41 @@ export function TestSuitePanel() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Button
               onClick={testIntelligence}
-              className="border-red-500/30 bg-red-500/20 p-4 h-auto hover:bg-red-500/30"
+              className="h-auto border-red-500/30 bg-red-500/20 p-4 hover:bg-red-500/30"
             >
               <Shield className="mr-2 h-5 w-5 text-red-400" />
               <div className="text-left">
-                <div className="font-medium text-sm">Intelligence</div>
+                <div className="text-sm font-medium">Intelligence</div>
                 <div className="text-[10px] opacity-70">Critical alert</div>
               </div>
             </Button>
             <Button
               onClick={testEconomic}
-              className="border-green-500/30 bg-green-500/20 p-4 h-auto hover:bg-green-500/30"
+              className="h-auto border-green-500/30 bg-green-500/20 p-4 hover:bg-green-500/30"
             >
               <DollarSign className="mr-2 h-5 w-5 text-green-400" />
               <div className="text-left">
-                <div className="font-medium text-sm">Economic</div>
+                <div className="text-sm font-medium">Economic</div>
                 <div className="text-[10px] opacity-70">GDP update</div>
               </div>
             </Button>
             <Button
               onClick={testDiplomatic}
-              className="border-blue-500/30 bg-blue-500/20 p-4 h-auto hover:bg-blue-500/30"
+              className="h-auto border-blue-500/30 bg-blue-500/20 p-4 hover:bg-blue-500/30"
             >
               <Globe className="mr-2 h-5 w-5 text-blue-400" />
               <div className="text-left">
-                <div className="font-medium text-sm">Diplomatic</div>
+                <div className="text-sm font-medium">Diplomatic</div>
                 <div className="text-[10px] opacity-70">Treaty event</div>
               </div>
             </Button>
             <Button
               onClick={testAchievement}
-              className="border-yellow-500/30 bg-yellow-500/20 p-4 h-auto hover:bg-yellow-500/30"
+              className="h-auto border-yellow-500/30 bg-yellow-500/20 p-4 hover:bg-yellow-500/30"
             >
               <Trophy className="mr-2 h-5 w-5 text-yellow-400" />
               <div className="text-left">
-                <div className="font-medium text-sm">Achievement</div>
+                <div className="text-sm font-medium">Achievement</div>
                 <div className="text-[10px] opacity-70">Unlock test</div>
               </div>
             </Button>
@@ -412,7 +435,9 @@ export function TestSuitePanel() {
                     className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
                     {TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -424,7 +449,9 @@ export function TestSuitePanel() {
                     className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
                     {PRIORITIES.map((p) => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -437,13 +464,15 @@ export function TestSuitePanel() {
                   className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            <div className="space-y-4 border border-border/40 rounded-lg p-4 bg-card/40">
+            <div className="border-border/40 bg-card/40 space-y-4 rounded-lg border p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-sm font-medium">Persistent</Label>
@@ -454,7 +483,9 @@ export function TestSuitePanel() {
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-sm font-medium">Silent</Label>
-                  <p className="text-muted-foreground text-xs">Suppress toast, add to center only</p>
+                  <p className="text-muted-foreground text-xs">
+                    Suppress toast, add to center only
+                  </p>
                 </div>
                 <Switch checked={silent} onCheckedChange={setSilent} />
               </div>
@@ -485,7 +516,7 @@ export function TestSuitePanel() {
         <CardContent>
           <ScrollArea className="h-48">
             {testResults.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">
+              <p className="text-muted-foreground py-4 text-center text-sm">
                 No test results yet. Run some tests above.
               </p>
             ) : (
@@ -494,11 +525,13 @@ export function TestSuitePanel() {
                   let color = "bg-blue-500/10 text-blue-400";
                   if (result.includes("✅")) color = "bg-green-500/10 text-green-400";
                   else if (result.includes("❌")) color = "bg-red-500/10 text-red-400";
-                  else if (result.includes("🧪") || result.includes("🎉")) color = "bg-purple-500/10 text-purple-400";
+                  else if (result.includes("🧪") || result.includes("🎉"))
+                    color = "bg-purple-500/10 text-purple-400";
                   else if (result.includes("🔴")) color = "bg-red-500/10 text-red-400";
                   else if (result.includes("🏆")) color = "bg-yellow-500/10 text-yellow-400";
                   else if (result.includes("🛡️")) color = "bg-amber-500/10 text-amber-400";
-                  else if (result.includes("🤝") || result.includes("📨")) color = "bg-blue-500/10 text-blue-400";
+                  else if (result.includes("🤝") || result.includes("📨"))
+                    color = "bg-blue-500/10 text-blue-400";
                   return (
                     <div key={i} className={`rounded px-3 py-1.5 font-mono text-xs ${color}`}>
                       {result}

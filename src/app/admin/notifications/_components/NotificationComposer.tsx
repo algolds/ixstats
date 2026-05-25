@@ -20,16 +20,34 @@ import { useNotify } from "~/hooks/useNotify";
 import { Send, Plus, Bell } from "lucide-react";
 
 const TYPES = [
-  "info", "warning", "success", "error", "alert", "update",
-  "economic", "crisis", "diplomatic", "system",
+  "info",
+  "warning",
+  "success",
+  "error",
+  "alert",
+  "update",
+  "economic",
+  "crisis",
+  "diplomatic",
+  "system",
 ] as const;
 
 const LEVELS = ["low", "medium", "high", "critical"] as const;
 
 const CATEGORIES = [
-  "economic", "diplomatic", "governance", "social", "security",
-  "system", "achievement", "crisis", "opportunity",
-  "intelligence", "policy", "global", "military",
+  "economic",
+  "diplomatic",
+  "governance",
+  "social",
+  "security",
+  "system",
+  "achievement",
+  "crisis",
+  "opportunity",
+  "intelligence",
+  "policy",
+  "global",
+  "military",
 ] as const;
 
 interface FormState {
@@ -85,7 +103,8 @@ const PRESETS = [
     label: "Maintenance",
     fill: {
       title: "🔧 Scheduled Maintenance",
-      description: "The system will undergo maintenance in 2 hours. Some features may be unavailable.",
+      description:
+        "The system will undergo maintenance in 2 hours. Some features may be unavailable.",
       type: "system",
       level: "medium",
       category: "system",
@@ -173,7 +192,7 @@ export function NotificationComposer() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Compose form */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6 lg:col-span-2">
         {/* Templates */}
         <Card>
           <CardHeader>
@@ -185,12 +204,7 @@ export function NotificationComposer() {
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {PRESETS.map((p) => (
-                <Button
-                  key={p.label}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => applyPreset(p)}
-                >
+                <Button key={p.label} variant="outline" size="sm" onClick={() => applyPreset(p)}>
                   {p.label}
                 </Button>
               ))}
@@ -263,10 +277,7 @@ export function NotificationComposer() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select
-                  value={form.category}
-                  onValueChange={(v) => handleField("category", v)}
-                >
+                <Select value={form.category} onValueChange={(v) => handleField("category", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
@@ -284,9 +295,7 @@ export function NotificationComposer() {
                 <Label>Scope</Label>
                 <Select
                   value={form.scope}
-                  onValueChange={(v) =>
-                    handleField("scope", v as FormState["scope"])
-                  }
+                  onValueChange={(v) => handleField("scope", v as FormState["scope"])}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -303,10 +312,7 @@ export function NotificationComposer() {
             {form.scope === "country" && (
               <div className="space-y-2">
                 <Label>Country</Label>
-                <Select
-                  value={form.countryId}
-                  onValueChange={(v) => handleField("countryId", v)}
-                >
+                <Select value={form.countryId} onValueChange={(v) => handleField("countryId", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
@@ -373,12 +379,18 @@ export function NotificationComposer() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="text-muted-foreground space-y-1">
-              <p><strong>Global:</strong> All users receive this notification.</p>
-              <p><strong>Country:</strong> All users belonging to the selected country receive it.</p>
-              <p><strong>User:</strong> Only the specified user receives it.</p>
+              <p>
+                <strong>Global:</strong> All users receive this notification.
+              </p>
+              <p>
+                <strong>Country:</strong> All users belonging to the selected country receive it.
+              </p>
+              <p>
+                <strong>User:</strong> Only the specified user receives it.
+              </p>
               <p className="mt-2">
-                Notifications are delivered in real-time via WebSocket when users are active,
-                or fetched on next page load.
+                Notifications are delivered in real-time via WebSocket when users are active, or
+                fetched on next page load.
               </p>
             </div>
           </CardContent>
@@ -386,7 +398,7 @@ export function NotificationComposer() {
 
         {createMutation.isPending && (
           <Card>
-            <CardContent className="p-4 text-center text-sm text-muted-foreground">
+            <CardContent className="text-muted-foreground p-4 text-center text-sm">
               Sending notification...
             </CardContent>
           </Card>

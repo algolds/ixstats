@@ -104,9 +104,10 @@ export function ColoredProgress({
   const [displayValue, setDisplayValue] = React.useState(animate ? 0 : value);
 
   // Use defense theme or standard variant-based styles
-  const styles = theme === "defense"
-    ? getDefenseThemeStyles(value, showPulse && value < 25)
-    : getVariantStyles(variant || getVariantFromValue(value), showPulse && value < 25);
+  const styles =
+    theme === "defense"
+      ? getDefenseThemeStyles(value, showPulse && value < 25)
+      : getVariantStyles(variant || getVariantFromValue(value), showPulse && value < 25);
 
   // Animate value on mount
   React.useEffect(() => {
@@ -123,11 +124,7 @@ export function ColoredProgress({
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
-      className={cn(
-        "relative h-2 w-full overflow-hidden rounded-full",
-        styles.bg,
-        className
-      )}
+      className={cn("relative h-2 w-full overflow-hidden rounded-full", styles.bg, className)}
       {...props}
     >
       <ProgressPrimitive.Indicator

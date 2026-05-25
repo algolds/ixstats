@@ -5,8 +5,18 @@
  */
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // Mirror the bot's USERNAME_ALIASES
@@ -80,7 +90,14 @@ export function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntr
 
     // Check for "None awarded"
     if (/Winner:\s*None\s*awarded/i.test(line)) {
-      entries.push({ date: dateStr, type: "daily", winnerUser: null, winnerPage: null, runnerUpUser: null, runnerUpPage: null });
+      entries.push({
+        date: dateStr,
+        type: "daily",
+        winnerUser: null,
+        winnerPage: null,
+        runnerUpUser: null,
+        runnerUpPage: null,
+      });
       continue;
     }
 
@@ -90,7 +107,9 @@ export function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntr
     let runnerUpPage: string | null = null;
 
     // Format A: Winner: [[User:X]] for [[Article]]
-    const fmtA_winner = line.match(/Winner\s*:\s*\[\[User:([^\]|]+)[^\]]*\]\]\s*for\s*\[\[([^\]]+)\]\]/i);
+    const fmtA_winner = line.match(
+      /Winner\s*:\s*\[\[User:([^\]|]+)[^\]]*\]\]\s*for\s*\[\[([^\]]+)\]\]/i
+    );
     if (fmtA_winner) {
       winnerUser = resolveUsername(fmtA_winner[1]!.trim());
       winnerPage = fmtA_winner[2]!.trim();
@@ -98,7 +117,9 @@ export function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntr
 
     // Format B: Winner: [[Article]] ([[User:X]])
     if (!fmtA_winner) {
-      const fmtB_winner = line.match(/Winner\s*:\s*\[\[([^\]]+)\]\]\s*\(\[\[User:([^\]|]+)[^\]]*\]\]\)/i);
+      const fmtB_winner = line.match(
+        /Winner\s*:\s*\[\[([^\]]+)\]\]\s*\(\[\[User:([^\]|]+)[^\]]*\]\]\)/i
+      );
       if (fmtB_winner) {
         winnerPage = fmtB_winner[1]!.trim();
         winnerUser = resolveUsername(fmtB_winner[2]!.trim());
@@ -106,7 +127,9 @@ export function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntr
     }
 
     // Format A runner-up
-    const fmtA_runner = line.match(/Runner[- ]?up\s*:\s*\[\[User:([^\]|]+)[^\]]*\]\]\s*for\s*\[\[([^\]]+)\]\]/i);
+    const fmtA_runner = line.match(
+      /Runner[- ]?up\s*:\s*\[\[User:([^\]|]+)[^\]]*\]\]\s*for\s*\[\[([^\]]+)\]\]/i
+    );
     if (fmtA_runner) {
       runnerUpUser = resolveUsername(fmtA_runner[1]!.trim());
       runnerUpPage = fmtA_runner[2]!.trim();
@@ -114,14 +137,23 @@ export function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntr
 
     // Format B runner-up
     if (!fmtA_runner) {
-      const fmtB_runner = line.match(/Runner[- ]?up\s*:\s*\[\[([^\]]+)\]\]\s*\(\[\[User:([^\]|]+)[^\]]*\]\]\)/i);
+      const fmtB_runner = line.match(
+        /Runner[- ]?up\s*:\s*\[\[([^\]]+)\]\]\s*\(\[\[User:([^\]|]+)[^\]]*\]\]\)/i
+      );
       if (fmtB_runner) {
         runnerUpPage = fmtB_runner[1]!.trim();
         runnerUpUser = resolveUsername(fmtB_runner[2]!.trim());
       }
     }
 
-    entries.push({ date: dateStr, type: "daily", winnerUser, winnerPage, runnerUpUser, runnerUpPage });
+    entries.push({
+      date: dateStr,
+      type: "daily",
+      winnerUser,
+      winnerPage,
+      runnerUpUser,
+      runnerUpPage,
+    });
   }
 
   return entries;
@@ -215,14 +247,28 @@ export function parseWeeklyEntries(wikitext: string, year: number): ParsedOOLEnt
     // Format with article: [[User:X]] for [[Article]]
     const withArticle = afterDate.match(/\[\[User:\s*([^\]|]+)\]\]\s*for\s*\[\[([^\]]+)\]\]/i);
     if (withArticle) {
-      entries.push({ date: dateStr, type: "weekly", winnerUser: resolveUsername(withArticle[1]!.trim()), winnerPage: withArticle[2]!.trim(), runnerUpUser: null, runnerUpPage: null });
+      entries.push({
+        date: dateStr,
+        type: "weekly",
+        winnerUser: resolveUsername(withArticle[1]!.trim()),
+        winnerPage: withArticle[2]!.trim(),
+        runnerUpUser: null,
+        runnerUpPage: null,
+      });
       continue;
     }
 
     // Just user link
     const user = extractUser(afterDate);
     if (user) {
-      entries.push({ date: dateStr, type: "weekly", winnerUser: user, winnerPage: null, runnerUpUser: null, runnerUpPage: null });
+      entries.push({
+        date: dateStr,
+        type: "weekly",
+        winnerUser: user,
+        winnerPage: null,
+        runnerUpUser: null,
+        runnerUpPage: null,
+      });
     }
   }
 
@@ -266,20 +312,47 @@ export function parseMonthlyEntries(wikitext: string, year: number): ParsedOOLEn
       // With article
       const withArt = rest.match(/\[\[User:\s*([^\]|]+)\]\]\s*for\s*\[\[([^\]]+)\]\]/i);
       if (withArt) {
-        entries.push({ date: dateStr, type: "monthly", winnerUser: resolveUsername(withArt[1]!.trim()), winnerPage: withArt[2]!.trim(), runnerUpUser: null, runnerUpPage: null, month, year });
+        entries.push({
+          date: dateStr,
+          type: "monthly",
+          winnerUser: resolveUsername(withArt[1]!.trim()),
+          winnerPage: withArt[2]!.trim(),
+          runnerUpUser: null,
+          runnerUpPage: null,
+          month,
+          year,
+        });
         continue;
       }
 
       const user = extractUser(rest);
       if (user) {
-        entries.push({ date: dateStr, type: "monthly", winnerUser: user, winnerPage: null, runnerUpUser: null, runnerUpPage: null, month, year });
+        entries.push({
+          date: dateStr,
+          type: "monthly",
+          winnerUser: user,
+          winnerPage: null,
+          runnerUpUser: null,
+          runnerUpPage: null,
+          month,
+          year,
+        });
         continue;
       }
 
       // Plain text username: '''Username'''
       const plainUser = rest.match(/'''([^']+)'''/);
       if (plainUser) {
-        entries.push({ date: dateStr, type: "monthly", winnerUser: resolveUsername(plainUser[1]!.trim()), winnerPage: null, runnerUpUser: null, runnerUpPage: null, month, year });
+        entries.push({
+          date: dateStr,
+          type: "monthly",
+          winnerUser: resolveUsername(plainUser[1]!.trim()),
+          winnerPage: null,
+          runnerUpUser: null,
+          runnerUpPage: null,
+          month,
+          year,
+        });
       }
       continue;
     }
@@ -292,7 +365,16 @@ export function parseMonthlyEntries(wikitext: string, year: number): ParsedOOLEn
 
       const user = extractUser(line);
       if (user) {
-        entries.push({ date: dateStr, type: "monthly", winnerUser: user, winnerPage: null, runnerUpUser: null, runnerUpPage: null, month: currentMonth, year });
+        entries.push({
+          date: dateStr,
+          type: "monthly",
+          winnerUser: user,
+          winnerPage: null,
+          runnerUpUser: null,
+          runnerUpPage: null,
+          month: currentMonth,
+          year,
+        });
       }
     }
   }

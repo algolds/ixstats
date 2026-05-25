@@ -54,13 +54,10 @@ export function wikiOSUrlToMediawiki(url: string): string {
 export function transformWikiLinks(html: string): string {
   // Transform href="/wiki/..." to href="/w/..."
   // Preserve external links and special URLs
-  return html.replace(
-    /href="\/wiki\/([^"]*?)"/g,
-    (_match, path: string) => {
-      const wikiosPath = withBasePath(`/w/${path}`);
-      return `href="${wikiosPath}"`;
-    }
-  );
+  return html.replace(/href="\/wiki\/([^"]*?)"/g, (_match, path: string) => {
+    const wikiosPath = withBasePath(`/w/${path}`);
+    return `href="${wikiosPath}"`;
+  });
 }
 
 /**
@@ -76,10 +73,24 @@ export function parseTitle(fullTitle: string): { namespace: string; title: strin
 
   const potentialNamespace = fullTitle.slice(0, colonIndex);
   const knownNamespaces = [
-    "Talk", "User", "User_talk", "Project", "Project_talk",
-    "File", "File_talk", "MediaWiki", "MediaWiki_talk",
-    "Template", "Template_talk", "Help", "Help_talk",
-    "Category", "Category_talk", "Special", "Module", "Module_talk",
+    "Talk",
+    "User",
+    "User_talk",
+    "Project",
+    "Project_talk",
+    "File",
+    "File_talk",
+    "MediaWiki",
+    "MediaWiki_talk",
+    "Template",
+    "Template_talk",
+    "Help",
+    "Help_talk",
+    "Category",
+    "Category_talk",
+    "Special",
+    "Module",
+    "Module_talk",
   ];
 
   if (knownNamespaces.includes(potentialNamespace)) {

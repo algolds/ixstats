@@ -460,7 +460,10 @@ export class IxStatsCalculator {
     });
   }
 
-  private applySpecialModifiers(stats: CountryStats, effects: StorytellerEffectRecord[]): CountryStats {
+  private applySpecialModifiers(
+    stats: CountryStats,
+    effects: StorytellerEffectRecord[]
+  ): CountryStats {
     const modifiedStats = { ...stats };
 
     effects.forEach((input) => {

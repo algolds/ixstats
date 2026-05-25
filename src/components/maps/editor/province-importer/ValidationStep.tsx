@@ -21,15 +21,15 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-foreground">Topology Validation</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <h3 className="text-foreground text-sm font-medium">Topology Validation</h3>
+        <p className="text-muted-foreground mt-1 text-xs">
           Checking for gaps, overlaps, and geometry issues.
         </p>
       </div>
 
       {!report ? (
-        <div className="flex items-center gap-2 rounded-lg bg-accent px-3 py-3 text-xs text-muted-foreground">
-          <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="bg-accent text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-3 text-xs">
+          <div className="border-primary h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" />
           Running validation...
         </div>
       ) : (
@@ -51,12 +51,14 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
           </div>
 
           {/* Coverage */}
-          <div className="rounded-lg border border-border p-3">
+          <div className="border-border rounded-lg border p-3">
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Coverage</span>
-              <span className="font-mono font-medium text-foreground">{report.coveragePercent}%</span>
+              <span className="text-foreground font-mono font-medium">
+                {report.coveragePercent}%
+              </span>
             </div>
-            <div className="h-2 w-full rounded-full bg-accent">
+            <div className="bg-accent h-2 w-full rounded-full">
               <div
                 className={`h-full rounded-full transition-all ${
                   report.coveragePercent > 95
@@ -68,7 +70,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 style={{ width: `${Math.min(100, report.coveragePercent)}%` }}
               />
             </div>
-            <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+            <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
               <span>Provinces: {report.totalProvincesArea.toLocaleString()} km²</span>
               <span>Country: {report.countryArea.toLocaleString()} km²</span>
             </div>
@@ -85,7 +87,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 {report.gaps.some((g) => g.autoFixable) && (
                   <button
                     onClick={importer.autoFixGaps}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-primary hover:bg-accent"
+                    className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium"
                   >
                     <Wrench className="h-3 w-3" />
                     Auto-fix small gaps
@@ -93,20 +95,19 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 )}
               </div>
               {report.gaps.slice(0, 5).map((gap, i) => (
-                <div key={i} className="rounded bg-accent px-2 py-1.5 text-[10px]">
+                <div key={i} className="bg-accent rounded px-2 py-1.5 text-[10px]">
                   <span className="font-medium">{gap.areaSqKm} km²</span>
                   {gap.adjacentProvinces.length > 0 && (
                     <span className="text-muted-foreground">
-                      {" "}— near {gap.adjacentProvinces.join(", ")}
+                      {" "}
+                      — near {gap.adjacentProvinces.join(", ")}
                     </span>
                   )}
-                  {gap.autoFixable && (
-                    <span className="ml-1 text-green-600">(auto-fixable)</span>
-                  )}
+                  {gap.autoFixable && <span className="ml-1 text-green-600">(auto-fixable)</span>}
                 </div>
               ))}
               {report.gaps.length > 5 && (
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-muted-foreground text-[10px]">
                   +{report.gaps.length - 5} more gaps
                 </div>
               )}
@@ -123,17 +124,18 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 </span>
                 <button
                   onClick={importer.autoFixOverlaps}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-primary hover:bg-accent"
+                  className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium"
                 >
                   <Wrench className="h-3 w-3" />
                   Resolve overlaps
                 </button>
               </div>
               {report.overlaps.slice(0, 5).map((overlap, i) => (
-                <div key={i} className="rounded bg-accent px-2 py-1.5 text-[10px]">
+                <div key={i} className="bg-accent rounded px-2 py-1.5 text-[10px]">
                   <span className="font-medium">{overlap.areaSqKm} km²</span>
                   <span className="text-muted-foreground">
-                    {" "}— {overlap.provinces[0]} ∩ {overlap.provinces[1]}
+                    {" "}
+                    — {overlap.provinces[0]} ∩ {overlap.provinces[1]}
                   </span>
                 </div>
               ))}
@@ -145,10 +147,11 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             <div className="space-y-2">
               <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                {report.featureIssues.length} Feature Issue{report.featureIssues.length !== 1 ? "s" : ""}
+                {report.featureIssues.length} Feature Issue
+                {report.featureIssues.length !== 1 ? "s" : ""}
               </span>
               {report.featureIssues.slice(0, 5).map((issue, i) => (
-                <div key={i} className="rounded bg-accent px-2 py-1.5 text-[10px]">
+                <div key={i} className="bg-accent rounded px-2 py-1.5 text-[10px]">
                   <span className="font-medium">{issue.provinceName}:</span>{" "}
                   <span className="text-muted-foreground">{issue.issues.join("; ")}</span>
                 </div>
@@ -158,7 +161,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
 
           <button
             onClick={importer.runValidation}
-            className="w-full rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            className="border-border text-foreground hover:bg-accent w-full rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
           >
             Re-validate
           </button>

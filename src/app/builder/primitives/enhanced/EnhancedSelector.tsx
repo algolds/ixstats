@@ -110,7 +110,7 @@ export function EnhancedSelector({
           )}
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            {selectedOption?.icon && <selectedOption.icon className="h-4 w-4 flex-shrink-0" />}
+            {selectedOption?.icon && <selectedOption.icon className="h-4 w-4 shrink-0" />}
             <span
               className={cn(
                 "truncate",
@@ -167,7 +167,7 @@ export function EnhancedSelector({
                       option.value === value && "bg-[var(--primitive-background)]"
                     )}
                   >
-                    {option.icon && <option.icon className="h-4 w-4 flex-shrink-0" />}
+                    {option.icon && <option.icon className="h-4 w-4 shrink-0" />}
 
                     <div className="min-w-0 flex-1 text-left">
                       <div className="text-foreground truncate">{option.label}</div>
@@ -179,7 +179,7 @@ export function EnhancedSelector({
                     </div>
 
                     {option.value === value && (
-                      <Check className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
+                      <Check className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
                     )}
                   </motion.button>
                 ))}

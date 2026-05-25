@@ -136,13 +136,7 @@ const LandmarkIcon = forwardRef<LandmarkIconHandle, LandmarkIconProps>(
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Base line */}
-          <motion.line
-            x1="3"
-            y1="22"
-            x2="21"
-            y2="22"
-            variants={baseVariants}
-          />
+          <motion.line x1="3" y1="22" x2="21" y2="22" variants={baseVariants} />
           {/* Columns - rise from bottom */}
           <motion.line
             x1="6"
@@ -177,18 +171,9 @@ const LandmarkIcon = forwardRef<LandmarkIconHandle, LandmarkIconProps>(
             style={{ transformOrigin: "center bottom" }}
           />
           {/* Beam */}
-          <motion.line
-            x1="2"
-            y1="11"
-            x2="22"
-            y2="11"
-            variants={beamVariants}
-          />
+          <motion.line x1="2" y1="11" x2="22" y2="11" variants={beamVariants} />
           {/* Roof */}
-          <motion.polygon
-            points="12 2 20 10 4 10"
-            variants={roofVariants}
-          />
+          <motion.polygon points="12 2 20 10 4 10" variants={roofVariants} />
         </motion.svg>
       </div>
     );

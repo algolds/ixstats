@@ -27,21 +27,13 @@ import {
   calculateBBox,
   validateGeometry,
 } from "~/lib/border-editor";
-import type {
-  SharedVertexData,
-  FeatureVertexRef,
-} from "~/lib/shared-vertex-builder";
+import type { SharedVertexData, FeatureVertexRef } from "~/lib/shared-vertex-builder";
 
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
 
-export type BorderEditMode =
-  | "select"
-  | "vertex_edit"
-  | "freehand"
-  | "split"
-  | "merge";
+export type BorderEditMode = "select" | "vertex_edit" | "freehand" | "split" | "merge";
 
 export interface BorderEditorState {
   mode: BorderEditMode;
@@ -76,7 +68,9 @@ export interface BorderEditorActions {
   undo: () => void;
   redo: () => void;
   save: () => Promise<void>;
-  submitEdit: (applyDirectly?: boolean) => Promise<{ applied: boolean; editRequestId: string | null }>;
+  submitEdit: (
+    applyDirectly?: boolean
+  ) => Promise<{ applied: boolean; editRequestId: string | null }>;
   executeSplit: (nameA: string, nameB: string) => Promise<void>;
   executeMerge: (newName: string) => Promise<void>;
   reset: () => void;
@@ -156,38 +150,42 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     };
   }, [state.isDirty, state.sessionId, state.geometry]);
 
-  const loadFeature = useCallback((featureId: string) => {
-    setState((s) => ({ ...s, isLoading: true, error: null }));
-    startSession.mutate(
-      { featureId },
-      {
-        onSuccess: (data) => {
-          const geom = data.feature.geometry as Polygon | MultiPolygon;
-          setState((s) => ({
-            ...s,
-            featureId,
-            sessionId: data.session.id,
-            geometry: geom,
-            originalGeometry: geom,
-            neighbors: data.neighbors,
-            undoStackState: createUndoStack(),
-            selectedVertex: null,
-            splitLine: [],
-            mergeTargets: [],
-            isDirty: false,
-            isLoading: false,
-            error: null,
-            areaKm2: calculateArea(geom),
-            sharedVertices: (data as { sharedVertices?: SharedVertexData[] }).sharedVertices ?? [],
-            altitudeSnap: null,
-          }));
-        },
-        onError: (err) => {
-          setState((s) => ({ ...s, isLoading: false, error: err.message }));
-        },
-      }
-    );
-  }, [startSession]);
+  const loadFeature = useCallback(
+    (featureId: string) => {
+      setState((s) => ({ ...s, isLoading: true, error: null }));
+      startSession.mutate(
+        { featureId },
+        {
+          onSuccess: (data) => {
+            const geom = data.feature.geometry as Polygon | MultiPolygon;
+            setState((s) => ({
+              ...s,
+              featureId,
+              sessionId: data.session.id,
+              geometry: geom,
+              originalGeometry: geom,
+              neighbors: data.neighbors,
+              undoStackState: createUndoStack(),
+              selectedVertex: null,
+              splitLine: [],
+              mergeTargets: [],
+              isDirty: false,
+              isLoading: false,
+              error: null,
+              areaKm2: calculateArea(geom),
+              sharedVertices:
+                (data as { sharedVertices?: SharedVertexData[] }).sharedVertices ?? [],
+              altitudeSnap: null,
+            }));
+          },
+          onError: (err) => {
+            setState((s) => ({ ...s, isLoading: false, error: err.message }));
+          },
+        }
+      );
+    },
+    [startSession]
+  );
 
   const setMode = useCallback((mode: BorderEditMode) => {
     setState((s) => ({
@@ -200,10 +198,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   }, []);
 
   const updateGeometry = useCallback(
-    (
-      newGeom: Polygon | MultiPolygon,
-      action: Parameters<typeof pushUndo>[1]
-    ) => {
+    (newGeom: Polygon | MultiPolygon, action: Parameters<typeof pushUndo>[1]) => {
       setState((s) => {
         if (!s.geometry) return s;
         const newStack = pushUndo(s.undoStackState, action, s.geometry, newGeom);
@@ -235,11 +230,16 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         const nearestEdge = findNearestEdge(s.geometry, point);
         if (nearestEdge && nearestEdge.distance < 0.3) {
           const newGeom = addVertex(s.geometry, nearestEdge.ref, point);
-          const newStack = pushUndo(s.undoStackState, {
-            type: "add_vertex",
-            edge: nearestEdge.ref,
-            at: point,
-          }, s.geometry, newGeom);
+          const newStack = pushUndo(
+            s.undoStackState,
+            {
+              type: "add_vertex",
+              edge: nearestEdge.ref,
+              at: point,
+            },
+            s.geometry,
+            newGeom
+          );
           return {
             ...s,
             geometry: newGeom,
@@ -291,7 +291,11 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (beforeDrag === s.geometry) return s;
       const newStack = pushUndo(
         s.undoStackState,
-        { type: "move_vertex", ref: s.selectedVertex ?? { ringIndex: 0, vertexIndex: 0, coord: [0, 0] }, to: s.selectedVertex?.coord ?? [0, 0] },
+        {
+          type: "move_vertex",
+          ref: s.selectedVertex ?? { ringIndex: 0, vertexIndex: 0, coord: [0, 0] },
+          to: s.selectedVertex?.coord ?? [0, 0],
+        },
         beforeDrag,
         s.geometry
       );
@@ -361,65 +365,74 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, [state.sessionId, state.geometry, state.undoStackState, state.mode, saveDraft]);
 
-  const submitEditAction = useCallback(async (applyDirectly = false) => {
-    if (!state.featureId || !state.geometry) {
-      throw new Error("No feature loaded");
-    }
+  const submitEditAction = useCallback(
+    async (applyDirectly = false) => {
+      if (!state.featureId || !state.geometry) {
+        throw new Error("No feature loaded");
+      }
 
-    const validation = validateGeometry(state.geometry);
-    if (!validation.valid) {
-      throw new Error(`Invalid geometry: ${validation.errors.join(", ")}`);
-    }
+      const validation = validateGeometry(state.geometry);
+      if (!validation.valid) {
+        throw new Error(`Invalid geometry: ${validation.errors.join(", ")}`);
+      }
 
-    const result = await submitBorderEdit.mutateAsync({
-      featureId: state.featureId,
-      editSubtype: "vertex_edit",
-      proposedGeometry: state.geometry as unknown as Record<string, unknown>,
-      applyDirectly,
-    });
+      const result = await submitBorderEdit.mutateAsync({
+        featureId: state.featureId,
+        editSubtype: "vertex_edit",
+        proposedGeometry: state.geometry as unknown as Record<string, unknown>,
+        applyDirectly,
+      });
 
-    if (result.applied) {
+      if (result.applied) {
+        await utils.geo.getWorldMap.invalidate();
+        setState((s) => ({
+          ...s,
+          originalGeometry: s.geometry,
+          isDirty: false,
+          undoStackState: createUndoStack(),
+        }));
+      }
+
+      return result;
+    },
+    [state.featureId, state.geometry, submitBorderEdit, utils]
+  );
+
+  const executeSplitAction = useCallback(
+    async (nameA: string, nameB: string) => {
+      if (!state.featureId || state.splitLine.length < 2) {
+        throw new Error("Need a feature and at least 2 split line points");
+      }
+
+      await splitCountry.mutateAsync({
+        featureId: state.featureId,
+        splitLine: state.splitLine as [number, number][],
+        nameA,
+        nameB,
+      });
+
       await utils.geo.getWorldMap.invalidate();
-      setState((s) => ({
-        ...s,
-        originalGeometry: s.geometry,
-        isDirty: false,
-        undoStackState: createUndoStack(),
-      }));
-    }
+      setState(INITIAL_STATE);
+    },
+    [state.featureId, state.splitLine, splitCountry, utils]
+  );
 
-    return result;
-  }, [state.featureId, state.geometry, submitBorderEdit, utils]);
+  const executeMergeAction = useCallback(
+    async (newName: string) => {
+      if (!state.featureId || state.mergeTargets.length === 0) {
+        throw new Error("Select at least one neighbor to merge with");
+      }
 
-  const executeSplitAction = useCallback(async (nameA: string, nameB: string) => {
-    if (!state.featureId || state.splitLine.length < 2) {
-      throw new Error("Need a feature and at least 2 split line points");
-    }
+      await mergeCountries.mutateAsync({
+        featureIds: [state.featureId, ...state.mergeTargets],
+        newName,
+      });
 
-    await splitCountry.mutateAsync({
-      featureId: state.featureId,
-      splitLine: state.splitLine as [number, number][],
-      nameA,
-      nameB,
-    });
-
-    await utils.geo.getWorldMap.invalidate();
-    setState(INITIAL_STATE);
-  }, [state.featureId, state.splitLine, splitCountry, utils]);
-
-  const executeMergeAction = useCallback(async (newName: string) => {
-    if (!state.featureId || state.mergeTargets.length === 0) {
-      throw new Error("Select at least one neighbor to merge with");
-    }
-
-    await mergeCountries.mutateAsync({
-      featureIds: [state.featureId, ...state.mergeTargets],
-      newName,
-    });
-
-    await utils.geo.getWorldMap.invalidate();
-    setState(INITIAL_STATE);
-  }, [state.featureId, state.mergeTargets, mergeCountries, utils]);
+      await utils.geo.getWorldMap.invalidate();
+      setState(INITIAL_STATE);
+    },
+    [state.featureId, state.mergeTargets, mergeCountries, utils]
+  );
 
   const reset = useCallback(() => {
     setState(INITIAL_STATE);

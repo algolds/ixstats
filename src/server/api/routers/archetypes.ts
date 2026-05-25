@@ -84,10 +84,12 @@ export const archetypesRouter = createTRPCRouter({
   // Admin: Get all archetypes (for management)
   getAllArchetypes: protectedProcedure
     .input(
-      z.object({
-        era: z.string().optional(),
-        isActive: z.boolean().optional(),
-      }).optional()
+      z
+        .object({
+          era: z.string().optional(),
+          isActive: z.boolean().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       try {

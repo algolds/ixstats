@@ -76,7 +76,7 @@ export const SynergyDisplay = React.memo<SynergyDisplayProps>(
                             Complementary systems work together effectively
                           </p>
                         </div>
-                        <Badge className="flex-shrink-0 bg-green-600 text-white">+{score}%</Badge>
+                        <Badge className="shrink-0 bg-green-600 text-white">+{score}%</Badge>
                       </div>
                     </div>
                   );
@@ -111,7 +111,7 @@ export const SynergyDisplay = React.memo<SynergyDisplayProps>(
                             Incompatible systems reduce effectiveness
                           </p>
                         </div>
-                        <Badge variant="destructive" className="flex-shrink-0">
+                        <Badge variant="destructive" className="shrink-0">
                           -15%
                         </Badge>
                       </div>

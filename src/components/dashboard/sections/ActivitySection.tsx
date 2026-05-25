@@ -280,7 +280,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                     >
                       <div
                         className={cn(
-                          "mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
+                          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
                           config.bg,
                           config.text
                         )}
@@ -290,17 +290,14 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           {isCritical && (
-                            <Badge
-                              variant="destructive"
-                              className="flex-shrink-0 px-1 py-0 text-[8px]"
-                            >
+                            <Badge variant="destructive" className="shrink-0 px-1 py-0 text-[8px]">
                               BREAKING
                             </Badge>
                           )}
                           {isHigh && !isCritical && (
                             <Badge
                               variant="outline"
-                              className="flex-shrink-0 border-amber-500/30 px-1 py-0 text-[8px] text-amber-600"
+                              className="shrink-0 border-amber-500/30 px-1 py-0 text-[8px] text-amber-600"
                             >
                               ALERT
                             </Badge>
@@ -314,7 +311,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                             {item.text}
                           </span>
                           {item.url && (
-                            <ExternalLink className="text-muted-foreground h-3 w-3 flex-shrink-0" />
+                            <ExternalLink className="text-muted-foreground h-3 w-3 shrink-0" />
                           )}
                         </div>
                         <div className="text-muted-foreground mt-1 flex items-center gap-2 text-[10px]">
@@ -407,7 +404,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                           <div className="flex items-center gap-1.5">
                             <span className="truncate text-xs font-medium">{item.title}</span>
                             {item.url && (
-                              <ExternalLink className="text-muted-foreground h-2.5 w-2.5 flex-shrink-0" />
+                              <ExternalLink className="text-muted-foreground h-2.5 w-2.5 shrink-0" />
                             )}
                           </div>
                           {item.excerpt && (

@@ -1,6 +1,6 @@
 /**
  * Manual mock for ~/env module
- * 
+ *
  * This mock is used by Jest to avoid ESM import issues with @t3-oss/env-nextjs.
  * All tests that import modules using ~/env will automatically use this mock
  * when jest.mock("~/env") is called or via moduleNameMapper.

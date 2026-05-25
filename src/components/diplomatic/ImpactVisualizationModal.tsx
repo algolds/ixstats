@@ -181,7 +181,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-[--intel-silver]">
-                      <RiCheckLine className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                      <RiCheckLine className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
                       <span>{reason}</span>
                     </li>
                   ))}

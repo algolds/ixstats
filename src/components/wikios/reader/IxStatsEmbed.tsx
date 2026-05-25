@@ -41,9 +41,8 @@ export function IxStatsEmbed({ countryId, compact = false }: IxStatsEmbedProps) 
           {data.name}
         </Link>
         {" — "}
-        Pop: {formatNumber(data.population)} |
-        GDP/c: ${formatNumber(data.gdpPerCapita)} |
-        Tier: {data.economicTier}
+        Pop: {formatNumber(data.population)} | GDP/c: ${formatNumber(data.gdpPerCapita)} | Tier:{" "}
+        {data.economicTier}
         <span className="wikios-ixstats-year">({gameYear})</span>
       </span>
     );
@@ -56,10 +55,7 @@ export function IxStatsEmbed({ countryId, compact = false }: IxStatsEmbedProps) 
           <img src={data.flagUrl} alt="" className="wikios-ixstats-flag" loading="lazy" />
         )}
         <div>
-          <Link
-            href={withBasePath(`/countries/${countryId}`)}
-            className="wikios-ixstats-name"
-          >
+          <Link href={withBasePath(`/countries/${countryId}`)} className="wikios-ixstats-name">
             {data.name}
           </Link>
           <div className="wikios-ixstats-subtitle">

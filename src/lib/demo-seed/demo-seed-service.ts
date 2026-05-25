@@ -22,7 +22,9 @@ export class DemoSeedService {
     // Check for existing demo country
     const existing = await prisma.country.findFirst({ where: { isDemo: true } });
     if (existing) {
-      throw new Error(`Demo country already exists: ${existing.name} (${existing.id}). Destroy it first.`);
+      throw new Error(
+        `Demo country already exists: ${existing.name} (${existing.id}). Destroy it first.`
+      );
     }
 
     const source = await prisma.country.findUnique({
@@ -36,8 +38,13 @@ export class DemoSeedService {
 
     // Clone country (strip id, relations, timestamps)
     const {
-      id: _id, name, slug, createdAt: _ca, updatedAt: _ua,
-      governmentStructure: _gov, stabilityMetrics: _stab,
+      id: _id,
+      name,
+      slug,
+      createdAt: _ca,
+      updatedAt: _ua,
+      governmentStructure: _gov,
+      stabilityMetrics: _stab,
       ...countryFields
     } = source;
     const demoCountry = await prisma.country.create({
@@ -52,8 +59,13 @@ export class DemoSeedService {
 
     // Clone GovernmentStructure (or create synthetic fallback)
     if (source.governmentStructure) {
-      const { id: _gId, countryId: _cId, createdAt: _gCa, updatedAt: _gUa, ...govFields } =
-        source.governmentStructure;
+      const {
+        id: _gId,
+        countryId: _cId,
+        createdAt: _gCa,
+        updatedAt: _gUa,
+        ...govFields
+      } = source.governmentStructure;
       await prisma.governmentStructure.create({
         data: { ...govFields, countryId: demoCountry.id },
       });
@@ -80,8 +92,13 @@ export class DemoSeedService {
 
     // Clone InternalStabilityMetrics (or create synthetic fallback)
     if (source.stabilityMetrics) {
-      const { id: _sId, countryId: _sCId, createdAt: _sCa, updatedAt: _sUa, ...stabilityFields } =
-        source.stabilityMetrics;
+      const {
+        id: _sId,
+        countryId: _sCId,
+        createdAt: _sCa,
+        updatedAt: _sUa,
+        ...stabilityFields
+      } = source.stabilityMetrics;
       await prisma.internalStabilityMetrics.create({
         data: { ...stabilityFields, countryId: demoCountry.id },
       });
@@ -99,7 +116,7 @@ export class DemoSeedService {
     prisma: Prisma,
     demoCountryId: string,
     userId: string,
-    sourceCountryId: string,
+    sourceCountryId: string
   ): Promise<SeedStats> {
     // Look up the country name for template substitution
     const demoCountry = await prisma.country.findUnique({
@@ -112,7 +129,12 @@ export class DemoSeedService {
     const stats = emptySeedStats();
 
     // Phase 1: Economics (1:1 flat models)
-    stats.economics = await cloneSubs.cloneEconomics(prisma, sourceCountryId, demoCountryId, countryName);
+    stats.economics = await cloneSubs.cloneEconomics(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      countryName
+    );
 
     // Phase 2: Government tree
     stats.government = await cloneSubs.cloneGovernmentTree(prisma, sourceCountryId, demoCountryId);
@@ -130,10 +152,20 @@ export class DemoSeedService {
     stats.geography = await cloneSubs.cloneGeography(prisma, sourceCountryId, demoCountryId);
 
     // Phase 7: Meetings
-    stats.meetings = await cloneSubs.cloneOrSeedMeetings(prisma, sourceCountryId, demoCountryId, userId);
+    stats.meetings = await cloneSubs.cloneOrSeedMeetings(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      userId
+    );
 
     // Phase 8: Policies
-    stats.policies = await cloneSubs.cloneOrSeedPolicies(prisma, sourceCountryId, demoCountryId, userId);
+    stats.policies = await cloneSubs.cloneOrSeedPolicies(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      userId
+    );
 
     // Phase 9: Elections
     stats.elections = await cloneSubs.cloneOrSeedElections(prisma, sourceCountryId, demoCountryId);
@@ -142,16 +174,36 @@ export class DemoSeedService {
     stats.defense = await cloneSubs.cloneOrSeedDefense(prisma, sourceCountryId, demoCountryId);
 
     // Phase 11: Intelligence
-    stats.intelligence = await cloneSubs.cloneOrSeedIntelligence(prisma, sourceCountryId, demoCountryId);
+    stats.intelligence = await cloneSubs.cloneOrSeedIntelligence(
+      prisma,
+      sourceCountryId,
+      demoCountryId
+    );
 
     // Phase 12: National Issues
-    stats.nationalIssues = await cloneSubs.cloneOrSeedNationalIssues(prisma, sourceCountryId, demoCountryId, countryName);
+    stats.nationalIssues = await cloneSubs.cloneOrSeedNationalIssues(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      countryName
+    );
 
     // Phase 13: Diplomacy
-    stats.diplomacy = await cloneSubs.cloneOrSeedDiplomacy(prisma, sourceCountryId, demoCountryId, countryName);
+    stats.diplomacy = await cloneSubs.cloneOrSeedDiplomacy(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      countryName
+    );
 
     // Phase 14: Social
-    stats.social = await cloneSubs.cloneOrSeedSocial(prisma, sourceCountryId, demoCountryId, userId, countryName);
+    stats.social = await cloneSubs.cloneOrSeedSocial(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      userId,
+      countryName
+    );
 
     // Phase 15: History
     stats.history = await cloneSubs.cloneHistory(prisma, sourceCountryId, demoCountryId);
@@ -160,15 +212,22 @@ export class DemoSeedService {
     stats.crisisEvents = await cloneSubs.seedCrisisEvents(prisma, countryName);
 
     // Phase 17: Activity Feed
-    stats.activityFeed = await cloneSubs.cloneOrSeedActivityFeed(prisma, sourceCountryId, demoCountryId, userId);
+    stats.activityFeed = await cloneSubs.cloneOrSeedActivityFeed(
+      prisma,
+      sourceCountryId,
+      demoCountryId,
+      userId
+    );
 
     // Phase 18: Achievements
     stats.achievements = await fallbacks.seedAchievements(prisma, userId);
 
     // Phase 19: NPC Personality (ensure assigned — may already exist from Phase 1)
-    const existingNpc = await prisma.nPCPersonalityAssignment.findUnique({
-      where: { countryId: demoCountryId },
-    }).catch(() => null);
+    const existingNpc = await prisma.nPCPersonalityAssignment
+      .findUnique({
+        where: { countryId: demoCountryId },
+      })
+      .catch(() => null);
     if (!existingNpc) {
       stats.npcPersonality = await fallbacks.seedNPCPersonality(prisma, demoCountryId);
     }
@@ -192,23 +251,43 @@ export class DemoSeedService {
     });
 
     // Look up demo user for achievement counting
-    const demoUser = await prisma.user.findFirst({
-      where: { countryId: demoCountryId },
-      select: { clerkUserId: true },
-    }).catch(() => null);
+    const demoUser = await prisma.user
+      .findFirst({
+        where: { countryId: demoCountryId },
+        select: { clerkUserId: true },
+      })
+      .catch(() => null);
 
     const [
-      meetings, policies, parties, embassies, briefings,
-      branches, issues, social, demographics, taxSystem,
-      territories, borderSecurity, historicalData,
-      govDepartments, govComponents, econComponents, taxComponents,
-      securityThreats, vitalityHistory,
-      activityFeedCount, achievementCount, npcCount,
+      meetings,
+      policies,
+      parties,
+      embassies,
+      briefings,
+      branches,
+      issues,
+      social,
+      demographics,
+      taxSystem,
+      territories,
+      borderSecurity,
+      historicalData,
+      govDepartments,
+      govComponents,
+      econComponents,
+      taxComponents,
+      securityThreats,
+      vitalityHistory,
+      activityFeedCount,
+      achievementCount,
+      npcCount,
     ] = await Promise.all([
       prisma.cabinetMeeting.count({ where: { countryId: demoCountryId } }),
       prisma.policy.count({ where: { countryId: demoCountryId } }),
       prisma.politicalParty.count({ where: { countryId: demoCountryId } }),
-      prisma.embassy.count({ where: { OR: [{ hostCountryId: demoCountryId }, { guestCountryId: demoCountryId }] } }),
+      prisma.embassy.count({
+        where: { OR: [{ hostCountryId: demoCountryId }, { guestCountryId: demoCountryId }] },
+      }),
       prisma.intelligenceBriefing.count({ where: { countryId: demoCountryId } }),
       prisma.militaryBranch.count({ where: { countryId: demoCountryId } }),
       prisma.nationalIssue.count({ where: { countryId: demoCountryId } }),
@@ -312,17 +391,21 @@ export class DemoSeedService {
     await prisma.activityFeed.deleteMany({ where: { countryId: demoCountryId } });
 
     // User Achievements (keyed on userId, not countryId)
-    const demoUser = await prisma.user.findFirst({
-      where: { countryId: demoCountryId },
-      select: { clerkUserId: true },
-    }).catch(() => null);
+    const demoUser = await prisma.user
+      .findFirst({
+        where: { countryId: demoCountryId },
+        select: { clerkUserId: true },
+      })
+      .catch(() => null);
     if (demoUser?.clerkUserId) {
       await prisma.userAchievement.deleteMany({ where: { userId: demoUser.clerkUserId } });
     }
 
     // History models without explicit FK relations
     await prisma.vitalityHistory.deleteMany({ where: { countryId: demoCountryId } });
-    await (prisma as any).componentEffectivenessHistory?.deleteMany?.({ where: { countryId: demoCountryId } });
+    await (prisma as any).componentEffectivenessHistory?.deleteMany?.({
+      where: { countryId: demoCountryId },
+    });
 
     // Models WITH cascade FK are auto-deleted when Country is deleted:
     // GovernmentStructure, InternalStabilityMetrics, PoliticalParty, Legislature,

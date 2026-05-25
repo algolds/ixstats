@@ -187,7 +187,7 @@ export function PolicyDetailSheet({
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-start gap-2">
-            <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-indigo-500" />
+            <FileText className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
             <span className="line-clamp-2">
               {isLoading ? "Loading..." : (policy?.name ?? "Policy Not Found")}
             </span>
@@ -311,7 +311,7 @@ export function PolicyDetailSheet({
                           key={i}
                           className="text-muted-foreground flex items-start gap-2 text-xs"
                         >
-                          <CheckCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500" />
+                          <CheckCircle className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
                           {obj}
                         </li>
                       ))}

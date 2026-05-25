@@ -162,7 +162,7 @@ export function CountryHeader({
           <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-8">
             <div className="flex items-center gap-4 md:gap-6">
               {/* Flag */}
-              <div className="h-14 w-14 flex-shrink-0 md:h-16 md:w-16 lg:h-20 lg:w-20">
+              <div className="h-14 w-14 shrink-0 md:h-16 md:w-16 lg:h-20 lg:w-20">
                 <UnifiedCountryFlag
                   countryName={country.name}
                   size="xl"
@@ -266,7 +266,7 @@ export function CountryHeader({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-shrink-0 items-end gap-2">
+              <div className="flex shrink-0 items-end gap-2">
                 <Button
                   size="lg"
                   variant={isOwnCountry ? "default" : "outline"}
@@ -327,12 +327,12 @@ export function CountryHeader({
                           isActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
                         )}
                       >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <Icon className="h-4 w-4 shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium">{option.label}</p>
                           <p className="text-muted-foreground text-xs">{option.description}</p>
                         </div>
-                        {isActive && <Check className="text-primary h-4 w-4 flex-shrink-0" />}
+                        {isActive && <Check className="text-primary h-4 w-4 shrink-0" />}
                       </button>
                     );
                   })}

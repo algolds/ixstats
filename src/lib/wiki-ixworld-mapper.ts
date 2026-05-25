@@ -84,11 +84,7 @@ function levenshteinDistance(a: string, b: string): number {
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i]![j] = Math.min(
-        dp[i - 1]![j]! + 1,
-        dp[i]![j - 1]! + 1,
-        dp[i - 1]![j - 1]! + cost
-      );
+      dp[i]![j] = Math.min(dp[i - 1]![j]! + 1, dp[i]![j - 1]! + 1, dp[i - 1]![j - 1]! + cost);
     }
   }
 
@@ -116,22 +112,23 @@ export async function matchToIxWorld(
   try {
     // Query map features from database
     // Look for GeoFeature or MapPin models
-    const features = await (db as any).geoFeature?.findMany({
-      where: {
-        OR: [
-          { featureType: { in: ["country", "nation", "state", "territory"] } },
-          { name: { contains: countryName.substring(0, 3), mode: "insensitive" } },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        featureType: true,
-        centroidLon: true,
-        centroidLat: true,
-      },
-      take: 100,
-    }) ?? [];
+    const features =
+      (await (db as any).geoFeature?.findMany({
+        where: {
+          OR: [
+            { featureType: { in: ["country", "nation", "state", "territory"] } },
+            { name: { contains: countryName.substring(0, 3), mode: "insensitive" } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          featureType: true,
+          centroidLon: true,
+          centroidLat: true,
+        },
+        take: 100,
+      })) ?? [];
 
     for (const feature of features) {
       let confidence = 0;
@@ -151,7 +148,8 @@ export async function matchToIxWorld(
         );
 
         // Within 50km = strong coordinate match
-        const coordConfidence = distanceKm < 50 ? 0.9 : distanceKm < 200 ? 0.6 : distanceKm < 500 ? 0.3 : 0;
+        const coordConfidence =
+          distanceKm < 50 ? 0.9 : distanceKm < 200 ? 0.6 : distanceKm < 500 ? 0.3 : 0;
 
         if (nameSimilarity > 0.5 && coordConfidence > 0.3) {
           confidence = Math.min(1, nameSimilarity * 0.5 + coordConfidence * 0.5);
@@ -176,9 +174,7 @@ export async function matchToIxWorld(
           distanceKm,
           featureType: feature.featureType,
           coordinates:
-            feature.centroidLon != null
-              ? [feature.centroidLon, feature.centroidLat]
-              : undefined,
+            feature.centroidLon != null ? [feature.centroidLon, feature.centroidLat] : undefined,
         });
       }
     }

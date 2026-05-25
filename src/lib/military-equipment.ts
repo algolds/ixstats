@@ -174,8 +174,7 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 15240,
     acquisitionCost: 30000000,
     maintenanceCost: 2000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/c/c9/F-16_June_2008.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/c/c9/F-16_June_2008.jpg",
   },
 
   // Attack Aircraft
@@ -208,8 +207,7 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 15240,
     acquisitionCost: 2100000000,
     maintenanceCost: 60000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
   },
   B52_STRATOFORTRESS: {
     name: "B-52 Stratofortress",
@@ -240,8 +238,7 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 13716,
     acquisitionCost: 340000000,
     maintenanceCost: 15000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/6/67/C-17_test.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/67/C-17_test.jpg",
   },
   C130_HERCULES: {
     name: "C-130 Hercules",
@@ -255,8 +252,7 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 10060,
     acquisitionCost: 67000000,
     maintenanceCost: 3500000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/e/ec/C-130J_Super_Hercules.JPG",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ec/C-130J_Super_Hercules.JPG",
   },
 
   // Helicopters
@@ -272,8 +268,7 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 6400,
     acquisitionCost: 35000000,
     maintenanceCost: 2500000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
   },
   UH60_BLACKHAWK: {
     name: "UH-60 Black Hawk",
@@ -382,8 +377,7 @@ export const MILITARY_SHIPS = {
     depth: 365,
     acquisitionCost: 2000000000,
     maintenanceCost: 100000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/97/Ohio_class_submarine.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/9/97/Ohio_class_submarine.jpg",
   },
 
   // Frigates
@@ -431,8 +425,7 @@ export const MILITARY_VEHICLES = {
     armament: "120mm smoothbore cannon",
     acquisitionCost: 7500000,
     maintenanceCost: 450000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/6/6f/Leopard_2_A5_der_Bundeswehr.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Leopard_2_A5_der_Bundeswehr.jpg",
   },
   CHALLENGER_2: {
     name: "Challenger 2",
@@ -462,8 +455,7 @@ export const MILITARY_VEHICLES = {
     armament: "25mm autocannon",
     acquisitionCost: 4200000,
     maintenanceCost: 250000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/2/29/M2_Bradley.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/29/M2_Bradley.jpg",
   },
 
   // Armored Personnel Carriers
@@ -478,8 +470,7 @@ export const MILITARY_VEHICLES = {
     range: 531,
     acquisitionCost: 4900000,
     maintenanceCost: 300000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/8/84/M1126_ICV_Stryker.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/8/84/M1126_ICV_Stryker.jpg",
   },
 
   // Artillery
@@ -495,8 +486,7 @@ export const MILITARY_VEHICLES = {
     firingRange: 30000, // meters
     acquisitionCost: 2700000,
     maintenanceCost: 180000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/c/ce/Paladin-fort-benning-7.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Paladin-fort-benning-7.jpg",
   },
   HIMARS: {
     name: "HIMARS",
@@ -527,8 +517,7 @@ export const WEAPON_SYSTEMS = {
     altitude: 24400, // meters
     acquisitionCost: 1100000000, // per battery
     maintenanceCost: 50000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/f/f1/Patriot_missile_launch_b.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/f/f1/Patriot_missile_launch_b.jpg",
   },
   THAAD: {
     name: "THAAD",

@@ -111,7 +111,9 @@ export function useAmbientImage(
 
     try {
       const response = await fetch(
-        "https://api.unsplash.com/photos/random?query=" + encodeURIComponent(query) + "&orientation=landscape&content_filter=high",
+        "https://api.unsplash.com/photos/random?query=" +
+          encodeURIComponent(query) +
+          "&orientation=landscape&content_filter=high",
         {
           headers: {
             Authorization: "Client-ID " + accessKey,
@@ -183,7 +185,9 @@ export function usePreloadAmbientImages(themes: string[]): void {
 
         // Use fetch to get image URL, then preload
         fetch(
-          "https://api.unsplash.com/photos/random?query=" + encodeURIComponent(query) + "&orientation=landscape&content_filter=high",
+          "https://api.unsplash.com/photos/random?query=" +
+            encodeURIComponent(query) +
+            "&orientation=landscape&content_filter=high",
           {
             headers: {
               Authorization: "Client-ID " + accessKey,

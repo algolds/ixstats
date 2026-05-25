@@ -49,7 +49,9 @@ export function createVoronoiMesh(
       if (!poly || poly.length < 3) continue;
 
       // Compute centroid of Voronoi polygon
-      let cx = 0, cy = 0, area = 0;
+      let cx = 0,
+        cy = 0,
+        area = 0;
       for (let j = 0; j < poly.length - 1; j++) {
         const [x0, y0] = poly[j]!;
         const [x1, y1] = poly[j + 1]!;
@@ -60,8 +62,8 @@ export function createVoronoiMesh(
       }
       area /= 2;
       if (Math.abs(area) < 1e-10) continue;
-      cx /= (6 * area);
-      cy /= (6 * area);
+      cx /= 6 * area;
+      cy /= 6 * area;
 
       // Clamp to bounds
       cx = Math.max(-179.9, Math.min(179.9, cx));
@@ -105,8 +107,12 @@ export function createVoronoiMesh(
   for (let i = 0; i < n; i++) {
     const verts = vertices[i]!;
     for (const [x, y] of verts) {
-      if (Math.abs(x - (-180)) < 0.5 || Math.abs(x - 180) < 0.5 ||
-          Math.abs(y - (-90)) < 0.5 || Math.abs(y - 90) < 0.5) {
+      if (
+        Math.abs(x - -180) < 0.5 ||
+        Math.abs(x - 180) < 0.5 ||
+        Math.abs(y - -90) < 0.5 ||
+        Math.abs(y - 90) < 0.5
+      ) {
         boundary[i] = 1;
         break;
       }
@@ -158,10 +164,7 @@ export function createVoronoiMesh(
  * Points are denser near the poles to compensate for Mercator distortion
  * (so cells cover roughly equal geographic area).
  */
-function generateJitteredGrid(
-  targetCount: number,
-  rng: () => number
-): Float64Array {
+function generateJitteredGrid(targetCount: number, rng: () => number): Float64Array {
   // Calculate grid dimensions for roughly equal-area cells
   // Width spans 360°, height spans 180°
   const aspect = 2; // 360/180
@@ -180,7 +183,7 @@ function generateJitteredGrid(
     const lat = -90 + (r + 0.5) * dy;
     // Latitude density factor: cells at equator are wider in degrees,
     // so we can space them more; cells at poles need to be tighter
-    const latFactor = Math.max(0.3, Math.cos(lat * Math.PI / 180));
+    const latFactor = Math.max(0.3, Math.cos((lat * Math.PI) / 180));
 
     for (let c = 0; c < cols; c++) {
       const lng = -180 + (c + 0.5) * dx;
@@ -241,7 +244,7 @@ export function isWater(graph: PackedGraph, i: number): boolean {
  */
 export function cellAreaKm2(graph: PackedGraph, i: number): number {
   const lat = cellLat(graph, i);
-  const latRad = lat * Math.PI / 180;
+  const latRad = (lat * Math.PI) / 180;
   // Average cell size based on total cells and globe surface area
   const totalArea = 510_000_000; // Earth surface km²
   const avgArea = totalArea / graph.cells.n;

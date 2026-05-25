@@ -1,15 +1,14 @@
 import { z } from "zod";
-import { publicProcedure, rateLimitedPublicProcedure, cachedStaticProcedure } from "~/server/api/trpc";
+import {
+  publicProcedure,
+  rateLimitedPublicProcedure,
+  cachedStaticProcedure,
+} from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
-import { 
-  safelyIncludeRelations, 
-  prepareBaseCountryData, 
-  getGrowthRates,
-  stddev
-} from "./utils";
+import { safelyIncludeRelations, prepareBaseCountryData, getGrowthRates, stddev } from "./utils";
 
 export const economyProcedures = {
   getByIdWithEconomicData: rateLimitedPublicProcedure
@@ -99,7 +98,7 @@ export const economyProcedures = {
           stats: proj.newStats,
         });
       }
-      
+
       let historical = await ctx.db.historicalDataPoint.findMany({
         where: {
           countryId: country.id,
@@ -128,8 +127,12 @@ export const economyProcedures = {
             populationGrowthRate: hist.newStats.populationGrowthRate,
             gdpGrowthRate: hist.newStats.adjustedGdpGrowth,
             landArea: typeof hist.newStats.landArea === "number" ? hist.newStats.landArea : null,
-            populationDensity: typeof hist.newStats.populationDensity === "number" ? hist.newStats.populationDensity : null,
-            gdpDensity: typeof hist.newStats.gdpDensity === "number" ? hist.newStats.gdpDensity : null,
+            populationDensity:
+              typeof hist.newStats.populationDensity === "number"
+                ? hist.newStats.populationDensity
+                : null,
+            gdpDensity:
+              typeof hist.newStats.gdpDensity === "number" ? hist.newStats.gdpDensity : null,
           } as any);
         }
       }
@@ -149,7 +152,7 @@ export const economyProcedures = {
       if (avgGdpGrowth < 0) riskFlags.push("negative_gdp_per_capita_growth");
       if (popVolatility > 0.05) riskFlags.push("high_population_volatility");
       if (gdpVolatility > 0.05) riskFlags.push("high_gdp_per_capita_volatility");
-      
+
       let tierChangeProjection = null;
       const currentGDPPC = result.newStats.currentGdpPerCapita;
       const projectionsGDPPC = projections.map((p) => p.stats.currentGdpPerCapita);
@@ -242,9 +245,7 @@ export const economyProcedures = {
           vulnerabilities,
         },
         lastCalculated:
-          country.lastCalculated instanceof Date
-            ? country.lastCalculated.getTime()
-            : Date.now(),
+          country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : Date.now(),
       };
 
       const ownerClerkUserId = (country as any).users?.[0]?.clerkUserId ?? null;
@@ -260,7 +261,7 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
-        include: { 
+        include: {
           storytellerEffects: { where: { isActive: true } },
           nationalIdentity: true,
         },
@@ -502,4 +503,3 @@ export const economyProcedures = {
       }
     }),
 };
-

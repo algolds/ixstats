@@ -110,9 +110,7 @@ export const commonsRouter = createTRPCRouter({
 
       const images = parseImagePages(data);
       const nextOffset =
-        data?.continue?.gsroffset != null
-          ? (data.continue.gsroffset as number)
-          : null;
+        data?.continue?.gsroffset != null ? (data.continue.gsroffset as number) : null;
       const totalHits = data?.query?.searchinfo?.totalhits ?? null;
 
       return { images, nextOffset, totalHits };
@@ -145,9 +143,7 @@ export const commonsRouter = createTRPCRouter({
 
       const images = parseImagePages(data);
       const nextOffset =
-        data?.continue?.gsroffset != null
-          ? (data.continue.gsroffset as number)
-          : null;
+        data?.continue?.gsroffset != null ? (data.continue.gsroffset as number) : null;
       const totalHits = data?.query?.searchinfo?.totalhits ?? null;
 
       return { images, nextOffset, totalHits };
@@ -207,8 +203,8 @@ export const commonsRouter = createTRPCRouter({
         cmlimit: input.limit,
       });
 
-      const subcats: string[] = (data?.query?.categorymembers ?? []).map(
-        (m: any) => String(m.title).replace(/^Category:/, "")
+      const subcats: string[] = (data?.query?.categorymembers ?? []).map((m: any) =>
+        String(m.title).replace(/^Category:/, "")
       );
 
       return subcats;
@@ -224,9 +220,7 @@ export const commonsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const titles = input.categories
-        .map((c) => `Category:${c}`)
-        .join("|");
+      const titles = input.categories.map((c) => `Category:${c}`).join("|");
 
       const data = await commonsApiFetch({
         action: "query",
@@ -265,6 +259,8 @@ export const commonsRouter = createTRPCRouter({
         aclimit: input.limit,
       });
 
-      return (data?.query?.allcategories ?? []).map((c: any) => c["*"] ?? c.title ?? "") as string[];
+      return (data?.query?.allcategories ?? []).map(
+        (c: any) => c["*"] ?? c.title ?? ""
+      ) as string[];
     }),
 });

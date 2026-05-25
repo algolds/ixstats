@@ -2,7 +2,6 @@
 // Point of Interest Category Taxonomy for IxStats Map Editor
 // Icons from lucide-react, colors from Tailwind CSS palette
 
-
 /**
  * Defines the structure for a main Point of Interest category.
  */
@@ -138,17 +137,16 @@ export function getCategoryColor(category: POIMainCategoryKey): string {
 /**
  * Utility function to get subcategory icon name by category and subcategory keys
  */
-export function getSubcategoryIcon(
-  category: POIMainCategoryKey,
-  subcategory: string
-): string {
+export function getSubcategoryIcon(category: POIMainCategoryKey, subcategory: string): string {
   return poiTaxonomy[category]?.subcategories[subcategory]?.icon || "MapPin";
 }
 
 /**
  * Utility function to get all subcategories for a given main category
  */
-export function getSubcategories(category: POIMainCategoryKey): Array<POISubcategory & { key: string }> {
+export function getSubcategories(
+  category: POIMainCategoryKey
+): Array<POISubcategory & { key: string }> {
   const cat = poiTaxonomy[category];
   if (!cat) return [];
 

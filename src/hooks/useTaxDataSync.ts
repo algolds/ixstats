@@ -23,7 +23,6 @@ import type { TaxSystem } from "~/types/tax-system";
 // Dev-only logger to avoid noisy logs in production
 const devLog = (...args: any[]) => {
   if (process.env.NODE_ENV !== "production") {
-     
     console.log(...args);
   }
 };
@@ -170,7 +169,10 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       });
     } catch (error) {
       console.error("Failed to auto-populate from revenue sources:", error);
-      notify.error("Failed to auto-populate tax categories", error instanceof Error ? error.message : "Unknown error occurred");
+      notify.error(
+        "Failed to auto-populate tax categories",
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
     }
   }, [
     governmentData,

@@ -73,7 +73,9 @@ export class BudgetVaultCalculator {
       });
 
       if (!govStructure || govStructure.departments.length === 0) {
-        console.log(`[Budget Vault Calculator] No government structure found for ${countryId}, using default 1.0x`);
+        console.log(
+          `[Budget Vault Calculator] No government structure found for ${countryId}, using default 1.0x`
+        );
         return 1.0;
       }
 
@@ -88,9 +90,11 @@ export class BudgetVaultCalculator {
 
         // Get average vault multiplier from sub-budgets
         const subBudgets = department.subBudgets;
-        const avgMultiplier = subBudgets.length > 0
-          ? subBudgets.reduce((sum, sb) => sum + ((sb as any).vaultMultiplier || 1.0), 0) / subBudgets.length
-          : 1.0; // Default to neutral if no sub-budgets
+        const avgMultiplier =
+          subBudgets.length > 0
+            ? subBudgets.reduce((sum, sb) => sum + ((sb as any).vaultMultiplier || 1.0), 0) /
+              subBudgets.length
+            : 1.0; // Default to neutral if no sub-budgets
 
         const allocatedPercent = recentAllocation.allocatedPercent;
         const contribution = (allocatedPercent / 100) * avgMultiplier;
@@ -110,12 +114,15 @@ export class BudgetVaultCalculator {
 
       console.log(
         `[Budget Vault Calculator] Calculated multiplier for ${countryId}: ${finalMultiplier}x ` +
-        `(${totalAllocatedPercent.toFixed(1)}% allocated)`
+          `(${totalAllocatedPercent.toFixed(1)}% allocated)`
       );
 
       return finalMultiplier;
     } catch (error) {
-      console.error(`[Budget Vault Calculator] Error calculating multiplier for ${countryId}:`, error);
+      console.error(
+        `[Budget Vault Calculator] Error calculating multiplier for ${countryId}:`,
+        error
+      );
       return 1.0; // Default to neutral on error
     }
   }
@@ -138,7 +145,10 @@ export class BudgetVaultCalculator {
    * // ]
    * ```
    */
-  async getBudgetBreakdown(countryId: string, db: PrismaClient): Promise<BudgetMultiplierBreakdown[]> {
+  async getBudgetBreakdown(
+    countryId: string,
+    db: PrismaClient
+  ): Promise<BudgetMultiplierBreakdown[]> {
     try {
       const govStructure = await db.governmentStructure.findUnique({
         where: { countryId },
@@ -167,9 +177,11 @@ export class BudgetVaultCalculator {
         if (!recentAllocation) continue;
 
         const subBudgets = department.subBudgets;
-        const avgMultiplier = subBudgets.length > 0
-          ? subBudgets.reduce((sum, sb) => sum + ((sb as any).vaultMultiplier || 1.0), 0) / subBudgets.length
-          : 1.0;
+        const avgMultiplier =
+          subBudgets.length > 0
+            ? subBudgets.reduce((sum, sb) => sum + ((sb as any).vaultMultiplier || 1.0), 0) /
+              subBudgets.length
+            : 1.0;
 
         const allocatedPercent = recentAllocation.allocatedPercent;
         const contribution = (allocatedPercent / 100) * avgMultiplier;
@@ -215,7 +227,7 @@ export class BudgetVaultCalculator {
     } else if (multiplier >= 1.05) {
       return `Moderate economic focus (+${percentChange}% passive income)`;
     } else if (multiplier >= 0.95) {
-      return `Balanced budget (${percentChange >= 0 ? '+' : ''}${percentChange}% passive income)`;
+      return `Balanced budget (${percentChange >= 0 ? "+" : ""}${percentChange}% passive income)`;
     } else if (multiplier >= 0.8) {
       return `Heavy military/security spending (${percentChange}% passive income)`;
     } else {

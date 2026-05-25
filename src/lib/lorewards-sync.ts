@@ -8,7 +8,12 @@ import * as fs from "fs";
 import * as path from "path";
 import * as mysql from "mysql2/promise";
 import { db } from "~/server/db";
-import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "~/lib/lorewards-ool-parser";
+import {
+  parseOOLPage,
+  OOL_YEARS,
+  parseActiveMembers,
+  parseAnnualWinners,
+} from "~/lib/lorewards-ool-parser";
 
 // Direct MySQL for namespace 4 (Project/IxWiki) pages
 let oolPool: mysql.Pool | null = null;
@@ -239,7 +244,9 @@ export async function syncFromOOLPages(): Promise<number> {
         yearSynced++;
       }
 
-      console.log(`[Lorewards] Synced ${yearSynced} entries from OOL/${year} (${parsed.length} parsed)`);
+      console.log(
+        `[Lorewards] Synced ${yearSynced} entries from OOL/${year} (${parsed.length} parsed)`
+      );
       totalSynced += yearSynced;
     } catch (err) {
       console.error(`[Lorewards] Error syncing OOL/${year}:`, err);
@@ -262,14 +269,20 @@ export async function recomputeUserStats(username: string): Promise<void> {
     orderBy: { date: "asc" },
   });
 
-  let dailyWins = 0, dailyRunnerUps = 0, weeklyWins = 0, monthlyWins = 0;
+  let dailyWins = 0,
+    dailyRunnerUps = 0,
+    weeklyWins = 0,
+    monthlyWins = 0;
   let totalBytes = 0;
   let lastWinDate: string | null = null;
   const winDates: string[] = [];
 
   for (const e of entries) {
     if (e.winnerUser === username) {
-      if (e.type === "daily") { dailyWins++; winDates.push(e.date); }
+      if (e.type === "daily") {
+        dailyWins++;
+        winDates.push(e.date);
+      }
       if (e.type === "weekly") weeklyWins++;
       if (e.type === "monthly") monthlyWins++;
       totalBytes += e.winnerBytes ?? 0;
@@ -288,16 +301,28 @@ export async function recomputeUserStats(username: string): Promise<void> {
   await db.lorewardUserStats.upsert({
     where: { username },
     create: {
-      username, dailyWins, dailyRunnerUps, weeklyWins, monthlyWins,
-      currentStreak: current, longestStreak: longest,
-      totalScore: 0, totalBytes, lastWinDate,
+      username,
+      dailyWins,
+      dailyRunnerUps,
+      weeklyWins,
+      monthlyWins,
+      currentStreak: current,
+      longestStreak: longest,
+      totalScore: 0,
+      totalBytes,
+      lastWinDate,
     },
     update: {
-      dailyWins, dailyRunnerUps, weeklyWins, monthlyWins,
-      currentStreak: current, longestStreak: longest,
+      dailyWins,
+      dailyRunnerUps,
+      weeklyWins,
+      monthlyWins,
+      currentStreak: current,
+      longestStreak: longest,
       // Only update totalScore if it wasn't already set from the main OOL page
       ...(existing?.totalScore === 0 || !existing ? { totalScore: 0 } : {}),
-      totalBytes, lastWinDate,
+      totalBytes,
+      lastWinDate,
     },
   });
 }
@@ -378,7 +403,12 @@ export async function syncFromMainOOLPage(): Promise<number> {
 /**
  * Full sync: main OOL page → state file → yearly OOL pages → recompute stats.
  */
-export async function fullSync(): Promise<{ stateEntries: number; oolEntries: number; users: number; members: number }> {
+export async function fullSync(): Promise<{
+  stateEntries: number;
+  oolEntries: number;
+  users: number;
+  members: number;
+}> {
   const members = await syncFromMainOOLPage();
   const stateEntries = await syncFromStateFile();
   const oolEntries = await syncFromOOLPages();
@@ -416,7 +446,8 @@ function calculateStreaks(winDates: string[]): { current: number; longest: numbe
   // Current streak: count backwards from the last win date
   const today = new Date().toISOString().slice(0, 10);
   const lastDate = sorted[sorted.length - 1]!;
-  const daysSinceLast = (new Date(today).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24);
+  const daysSinceLast =
+    (new Date(today).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24);
 
   if (daysSinceLast > 1) {
     current = 0; // Streak broken

@@ -39,7 +39,7 @@ const thinkpagesAccountBaseSchema = z.object({
   postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
   politicalLean: z.enum(["left", "center", "right"]).default("center"),
   personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().url().optional(),
+  profileImageUrl: z.string().url().or(z.literal("")).optional().nullable(),
   isActive: z.boolean().default(true),
 });
 
@@ -445,7 +445,7 @@ export const thinkpagesRouter = createTRPCRouter({
       z.object({
         accountId: z.string(),
         verified: z.boolean().optional(),
-        profileImageUrl: z.string().url().optional(),
+        profileImageUrl: z.string().url().or(z.literal("")).optional().nullable(),
         postingFrequency: z.enum(["active", "moderate", "low"]).optional(),
         politicalLean: z.enum(["left", "center", "right"]).optional(),
         personality: z.enum(["serious", "casual", "satirical"]).optional(),
@@ -483,7 +483,7 @@ export const thinkpagesRouter = createTRPCRouter({
           postingFrequency: input.postingFrequency,
           politicalLean: input.politicalLean,
           personality: input.personality,
-          profileImageUrl: input.profileImageUrl,
+          profileImageUrl: input.profileImageUrl === "" ? null : input.profileImageUrl,
           isActive: input.isActive,
           accountType: input.accountType,
         },
@@ -584,7 +584,7 @@ export const thinkpagesRouter = createTRPCRouter({
         postingFrequency: input.postingFrequency,
         politicalLean: input.politicalLean,
         personality: input.personality,
-        profileImageUrl: input.profileImageUrl,
+        profileImageUrl: input.profileImageUrl || null,
       },
     });
 
@@ -613,20 +613,19 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Get current user's ThinkPages accounts
-  getMyAccounts: protectedProcedure
-    .query(async ({ ctx }) => {
-      const { db, auth } = ctx;
+  getMyAccounts: protectedProcedure.query(async ({ ctx }) => {
+    const { db, auth } = ctx;
 
-      const accounts = await db.thinkpagesAccount.findMany({
-        where: {
-          clerkUserId: auth.userId,
-          isActive: true,
-        },
-        orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
-      });
+    const accounts = await db.thinkpagesAccount.findMany({
+      where: {
+        clerkUserId: auth.userId,
+        isActive: true,
+      },
+      orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
+    });
 
-      return accounts;
-    }),
+    return accounts;
+  }),
 
   // Get Account Counts by Type - For Feed only
   getAccountCountsByType: publicProcedure
@@ -708,14 +707,26 @@ export const thinkpagesRouter = createTRPCRouter({
         parentPost: {
           include: {
             account: {
-              select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatar: true,
+                clerkUserId: true,
+              },
             },
           },
         },
         repostOf: {
           include: {
             account: {
-              select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatar: true,
+                clerkUserId: true,
+              },
             },
           },
         },
@@ -791,7 +802,13 @@ export const thinkpagesRouter = createTRPCRouter({
           id: true,
           accountId: true,
           account: {
-            select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true,
+              clerkUserId: true,
+            },
           },
         },
       });
@@ -1337,22 +1354,22 @@ export const thinkpagesRouter = createTRPCRouter({
         let baseline: Record<string, number> = {};
         try {
           if (post.reactionCounts) {
-            baseline = typeof post.reactionCounts === "string"
-              ? JSON.parse(post.reactionCounts)
-              : post.reactionCounts;
+            baseline =
+              typeof post.reactionCounts === "string"
+                ? JSON.parse(post.reactionCounts)
+                : post.reactionCounts;
           }
         } catch {
           // ignore
         }
-        return (post as any).reactions.reduce(
-          (acc: any, reaction: any) => {
-            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-            return acc;
-          },
-          baseline
-        );
+        return (post as any).reactions.reduce((acc: any, reaction: any) => {
+          acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+          return acc;
+        }, baseline);
       })(),
-      timestamp: post.isAutoGenerated ? post.ixTimeTimestamp.toISOString() : post.createdAt.toISOString(),
+      timestamp: post.isAutoGenerated
+        ? post.ixTimeTimestamp.toISOString()
+        : post.createdAt.toISOString(),
     }));
 
     return {
@@ -1467,7 +1484,9 @@ export const thinkpagesRouter = createTRPCRouter({
       return {
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        timestamp: post.isAutoGenerated ? post.ixTimeTimestamp.toISOString() : post.createdAt.toISOString(),
+        timestamp: post.isAutoGenerated
+          ? post.ixTimeTimestamp.toISOString()
+          : post.createdAt.toISOString(),
       };
     }),
 
@@ -1566,22 +1585,22 @@ export const thinkpagesRouter = createTRPCRouter({
           let baseline: Record<string, number> = {};
           try {
             if (post.reactionCounts) {
-              baseline = typeof post.reactionCounts === "string"
-                ? JSON.parse(post.reactionCounts)
-                : post.reactionCounts;
+              baseline =
+                typeof post.reactionCounts === "string"
+                  ? JSON.parse(post.reactionCounts)
+                  : post.reactionCounts;
             }
           } catch {
             // ignore
           }
-          return (post as any).reactions.reduce(
-            (acc: any, reaction: any) => {
-              acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-              return acc;
-            },
-            baseline
-          );
+          return (post as any).reactions.reduce((acc: any, reaction: any) => {
+            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+            return acc;
+          }, baseline);
         })(),
-        timestamp: post.isAutoGenerated ? post.ixTimeTimestamp.toISOString() : post.createdAt.toISOString(),
+        timestamp: post.isAutoGenerated
+          ? post.ixTimeTimestamp.toISOString()
+          : post.createdAt.toISOString(),
       }));
 
       return {
@@ -1631,15 +1650,16 @@ export const thinkpagesRouter = createTRPCRouter({
 
     // Batch-fetch all recent posts for all active users
     const allUserIds = allUsers.map((u: any) => u.id);
-    const allRecentPosts = allUserIds.length > 0
-      ? await db.thinkpagesPost.findMany({
-          where: {
-            accountId: { in: allUserIds },
-            ixTimeTimestamp: { gte: twentyFourHoursAgo },
-          },
-          include: { reactions: true },
-        })
-      : [];
+    const allRecentPosts =
+      allUserIds.length > 0
+        ? await db.thinkpagesPost.findMany({
+            where: {
+              accountId: { in: allUserIds },
+              ixTimeTimestamp: { gte: twentyFourHoursAgo },
+            },
+            include: { reactions: true },
+          })
+        : [];
 
     // Group posts by accountId for fast lookup
     const postsByAccount = new Map<string, typeof allRecentPosts>();
@@ -2836,7 +2856,9 @@ export const thinkpagesRouter = createTRPCRouter({
         participantIds: z.array(z.string().min(1)), // Now expects userIds (clerkUserIds)
         // Diplomatic conversation extensions
         conversationType: z.enum(["personal", "diplomatic", "official"]).optional(),
-        diplomaticClassification: z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"]).optional(),
+        diplomaticClassification: z
+          .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
+          .optional(),
         priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
         encrypted: z.boolean().optional(),
         channelType: z.enum(["BILATERAL", "MULTILATERAL", "EMERGENCY"]).optional(),
@@ -2965,7 +2987,9 @@ export const thinkpagesRouter = createTRPCRouter({
                   fromUserId: initiatorId,
                 },
               })
-              .catch((err: unknown) => { console.error("[ThinkPages] Background op failed:", (err as Error).message); });
+              .catch((err: unknown) => {
+                console.error("[ThinkPages] Background op failed:", (err as Error).message);
+              });
           }
         } catch (e) {
           console.warn("[ThinkShare] Failed to send conversation start notification:", e);
@@ -3101,13 +3125,16 @@ export const thinkpagesRouter = createTRPCRouter({
         const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
 
         // Fallback: diplomatic channels store countryId as userId — look up by country CUID
-        const unmatchedParticipantIds = Array.from(participantUserIds).filter((id) => !userMap.has(id));
-        const countryParticipantFallbacks = unmatchedParticipantIds.length > 0
-          ? await db.country.findMany({
-              where: { id: { in: unmatchedParticipantIds } },
-              select: { id: true, name: true, slug: true, flag: true },
-            })
-          : [];
+        const unmatchedParticipantIds = Array.from(participantUserIds).filter(
+          (id) => !userMap.has(id)
+        );
+        const countryParticipantFallbacks =
+          unmatchedParticipantIds.length > 0
+            ? await db.country.findMany({
+                where: { id: { in: unmatchedParticipantIds } },
+                select: { id: true, name: true, slug: true, flag: true },
+              })
+            : [];
         const countryParticipantMap = new Map(countryParticipantFallbacks.map((c) => [c.id, c]));
 
         return {
@@ -3127,14 +3154,14 @@ export const thinkpagesRouter = createTRPCRouter({
                       accountType: "country",
                     }
                   : c
-                  ? {
-                      id: p.userId,
-                      username: c.slug || "",
-                      displayName: c.name || "Unknown Country",
-                      profileImageUrl: c.flag || null,
-                      accountType: "country",
-                    }
-                  : null,
+                    ? {
+                        id: p.userId,
+                        username: c.slug || "",
+                        displayName: c.name || "Unknown Country",
+                        profileImageUrl: c.flag || null,
+                        accountType: "country",
+                      }
+                    : null,
               };
             });
 
@@ -3143,9 +3170,10 @@ export const thinkpagesRouter = createTRPCRouter({
             );
             const lastMessageRaw = conv.messages[0];
             const lastMessageUser = lastMessageRaw ? userMap.get(lastMessageRaw.userId) : null;
-            const lastMessageCountry = lastMessageRaw && !lastMessageUser
-              ? countryParticipantMap.get(lastMessageRaw.userId) ?? null
-              : null;
+            const lastMessageCountry =
+              lastMessageRaw && !lastMessageUser
+                ? (countryParticipantMap.get(lastMessageRaw.userId) ?? null)
+                : null;
             const lastMessage = lastMessageRaw
               ? {
                   ...lastMessageRaw,
@@ -3159,14 +3187,14 @@ export const thinkpagesRouter = createTRPCRouter({
                         accountType: "country",
                       }
                     : lastMessageCountry
-                    ? {
-                        id: lastMessageRaw.userId,
-                        username: lastMessageCountry.slug || "",
-                        displayName: lastMessageCountry.name || "Unknown Country",
-                        profileImageUrl: lastMessageCountry.flag || null,
-                        accountType: "country",
-                      }
-                    : null,
+                      ? {
+                          id: lastMessageRaw.userId,
+                          username: lastMessageCountry.slug || "",
+                          displayName: lastMessageCountry.name || "Unknown Country",
+                          profileImageUrl: lastMessageCountry.flag || null,
+                          accountType: "country",
+                        }
+                      : null,
                 }
               : undefined;
 
@@ -3294,12 +3322,13 @@ export const thinkpagesRouter = createTRPCRouter({
 
       // Fallback: diplomatic channels store countryId as userId — look up by country CUID
       const unmatchedIds = userIds.filter((id) => !accountMap.has(id));
-      const countryFallbacks = unmatchedIds.length > 0
-        ? await db.country.findMany({
-            where: { id: { in: unmatchedIds } },
-            select: { id: true, name: true, slug: true, flag: true },
-          })
-        : [];
+      const countryFallbacks =
+        unmatchedIds.length > 0
+          ? await db.country.findMany({
+              where: { id: { in: unmatchedIds } },
+              select: { id: true, name: true, slug: true, flag: true },
+            })
+          : [];
       const countryFallbackMap = new Map(countryFallbacks.map((c) => [c.id, c]));
 
       return {
@@ -3307,21 +3336,23 @@ export const thinkpagesRouter = createTRPCRouter({
           ...msg,
           account: (() => {
             const u = accountMap.get(msg.userId);
-            if (u) return {
-              id: u.clerkUserId,
-              username: u.country?.slug || "",
-              displayName: u.country?.name || "Unknown Country",
-              profileImageUrl: u.country?.flag || null,
-              accountType: "country",
-            };
+            if (u)
+              return {
+                id: u.clerkUserId,
+                username: u.country?.slug || "",
+                displayName: u.country?.name || "Unknown Country",
+                profileImageUrl: u.country?.flag || null,
+                accountType: "country",
+              };
             const c = countryFallbackMap.get(msg.userId);
-            if (c) return {
-              id: msg.userId,
-              username: c.slug || "",
-              displayName: c.name || "Unknown Country",
-              profileImageUrl: c.flag || null,
-              accountType: "country",
-            };
+            if (c)
+              return {
+                id: msg.userId,
+                username: c.slug || "",
+                displayName: c.name || "Unknown Country",
+                profileImageUrl: c.flag || null,
+                accountType: "country",
+              };
             return {
               id: msg.userId,
               username: "unknown",
@@ -3365,7 +3396,9 @@ export const thinkpagesRouter = createTRPCRouter({
           )
           .optional(),
         // Diplomatic messaging extensions
-        classification: z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"]).optional(),
+        classification: z
+          .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
+          .optional(),
         priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
         subject: z.string().optional(),
         signature: z.string().optional(),
@@ -3478,7 +3511,9 @@ export const thinkpagesRouter = createTRPCRouter({
                 fromUserId: input.userId,
               },
             })
-            .catch((err: unknown) => { console.error("[ThinkPages] Background op failed:", (err as Error).message); });
+            .catch((err: unknown) => {
+              console.error("[ThinkPages] Background op failed:", (err as Error).message);
+            });
         }
       } catch (e) {
         console.warn("[ThinkPages] Failed to create notifications (non-fatal):", e);

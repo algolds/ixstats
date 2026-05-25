@@ -1,16 +1,16 @@
 import React, { useState } from "react";
-import { 
-  Search, 
-  MoreVertical, 
-  Phone, 
-  Video, 
-  Info, 
-  UserPlus, 
-  Trash2, 
+import {
+  Search,
+  MoreVertical,
+  Phone,
+  Video,
+  Info,
+  UserPlus,
+  Trash2,
   Archive,
   BellOff,
   ChevronLeft,
-  X
+  X,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { ThinkShareConversation } from "~/types/thinkshare";
@@ -50,8 +50,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   const isGroup = conversation.type === "group";
   const participant = conversation.otherParticipants[0];
 
-  const participantName =
-    participant?.account?.displayName ?? conversation.name ?? "Unknown";
+  const participantName = participant?.account?.displayName ?? conversation.name ?? "Unknown";
   const participantAvatar = participant?.account?.profileImageUrl ?? null;
 
   const identity = participant
@@ -60,10 +59,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
   const isSelf = participant?.accountId === currentUserId;
   const displayTitle = isGroup
-    ? conversation.name ?? "Group Chat"
+    ? (conversation.name ?? "Group Chat")
     : isSelf
       ? `${identity?.displayName} (You)`
-      : identity?.displayName ?? "Select a conversation";
+      : (identity?.displayName ?? "Select a conversation");
 
   const memberCount = (conversation.otherParticipants?.length ?? 0) + 1;
   const currentStatus = participantStatus || "offline";
@@ -82,15 +81,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   };
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/60 px-4 backdrop-blur-md">
+    <header className="border-border/40 bg-background/60 flex h-16 shrink-0 items-center justify-between border-b px-4 backdrop-blur-md">
       <div className="flex min-w-0 items-center gap-3">
         {onBack && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={onBack}
-          >
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
         )}
@@ -98,11 +92,11 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
         {isSearchVisible ? (
           <div className="flex flex-1 items-center gap-2">
             <div className="relative w-full max-w-md">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
               <Input
                 autoFocus
                 placeholder="Search messages..."
-                className="h-9 pl-9 pr-8"
+                className="h-9 pr-8 pl-9"
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
@@ -112,7 +106,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                     setSearchQuery("");
                     onSearch?.("");
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -129,15 +123,19 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 <img
                   src={identity?.avatar || "/avatars/default.png"}
                   alt={displayTitle}
-                  className="h-10 w-10 rounded-full object-cover ring-1 ring-border"
+                  className="ring-border h-10 w-10 rounded-full object-cover ring-1"
                 />
                 {currentStatus !== "offline" && (
-                  <span 
+                  <span
                     className={cn(
-                      "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background",
-                      currentStatus === "online" ? "bg-emerald-500" : 
-                      currentStatus === "away" ? "bg-amber-500" :
-                      currentStatus === "busy" ? "bg-rose-500" : "bg-muted-foreground/50"
+                      "border-background absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2",
+                      currentStatus === "online"
+                        ? "bg-emerald-500"
+                        : currentStatus === "away"
+                          ? "bg-amber-500"
+                          : currentStatus === "busy"
+                            ? "bg-rose-500"
+                            : "bg-muted-foreground/50"
                     )}
                   />
                 )}
@@ -146,15 +144,11 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="truncate text-sm font-semibold text-foreground">
-                  {displayTitle}
-                </h3>
+                <h3 className="text-foreground truncate text-sm font-semibold">{displayTitle}</h3>
                 <MessagesIdentityBadge identity={identity} />
               </div>
-              <p className="text-[10px] capitalize text-muted-foreground">
-                {isGroup
-                  ? `${memberCount || 0} members`
-                  : currentStatus}
+              <p className="text-muted-foreground text-[10px] capitalize">
+                {isGroup ? `${memberCount || 0} members` : currentStatus}
               </p>
             </div>
           </>
@@ -172,9 +166,14 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
           <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
             <Video className="h-4 w-4" />
           </Button>
-          
+
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-muted-foreground")}>
+            <DropdownMenuTrigger
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "text-muted-foreground"
+              )}
+            >
               <MoreVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

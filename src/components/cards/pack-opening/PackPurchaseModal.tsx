@@ -136,7 +136,7 @@ export const PackPurchaseModal = React.memo<PackPurchaseModalProps>(
                 <div className={`relative bg-gradient-to-br ${gradientClass} p-4 sm:p-6 md:p-8`}>
                   <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
                     {/* Pack image */}
-                    <div className="relative h-32 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-white/10 to-white/5 sm:h-40 sm:w-32">
+                    <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-white/10 to-white/5 sm:h-40 sm:w-32">
                       {packArtwork ? (
                         <div
                           className="h-full w-full bg-cover bg-center"

@@ -100,7 +100,7 @@ function DashboardHero() {
     slug: newStats.slug ?? "",
   };
   return (
-    <div className="border-border/50 bg-card/80 overflow-hidden rounded-xl border shadow-sm backdrop-blur-lg">
+    <div className="glass-hierarchy-child overflow-hidden rounded-xl border border-border/40 shadow-sm">
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
@@ -139,11 +139,7 @@ function DashboardHero() {
               <div className="flex flex-col justify-between gap-3 md:col-span-2">
                 <div>
                   <div className="mb-2 flex items-center gap-2.5">
-                    <SimpleFlag
-                      countryName={stats.countryName}
-                      size="lg"
-                      className="flex-shrink-0"
-                    />
+                    <SimpleFlag countryName={stats.countryName} size="lg" className="shrink-0" />
                     <div>
                       <Link
                         href={createUrl(`/countries/${stats.slug}`)}
@@ -160,7 +156,7 @@ function DashboardHero() {
                         <TooltipTrigger asChild>
                           <Link
                             href={createUrl("/mycountry/intelligence")}
-                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center transition-opacity hover:opacity-80"
                           >
                             <HealthRing
                               value={activityRingsData.economicVitality || 0}
@@ -189,7 +185,7 @@ function DashboardHero() {
                         <TooltipTrigger asChild>
                           <Link
                             href={createUrl("/mycountry")}
-                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center transition-opacity hover:opacity-80"
                           >
                             <HealthRing
                               value={activityRingsData.populationWellbeing || 0}
@@ -218,7 +214,7 @@ function DashboardHero() {
                         <TooltipTrigger asChild>
                           <Link
                             href={createUrl("/mycountry/diplomacy")}
-                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center transition-opacity hover:opacity-80"
                           >
                             <HealthRing
                               value={activityRingsData.diplomaticStanding || 0}
@@ -249,7 +245,7 @@ function DashboardHero() {
                         <TooltipTrigger asChild>
                           <Link
                             href={createUrl("/mycountry/politics")}
-                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center transition-opacity hover:opacity-80"
                           >
                             <HealthRing
                               value={activityRingsData.governmentalEfficiency || 0}

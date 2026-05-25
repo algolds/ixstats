@@ -60,7 +60,8 @@ export class SyncHealthMonitor {
     errorMessage?: string;
     metadata?: Record<string, any>;
   }): Promise<void> {
-    const { season, status, cardsProcessed, cardsCreated, cardsUpdated, errorMessage, metadata } = params;
+    const { season, status, cardsProcessed, cardsCreated, cardsUpdated, errorMessage, metadata } =
+      params;
 
     try {
       // Create sync log entry
@@ -76,7 +77,7 @@ export class SyncHealthMonitor {
           cardsCreated,
           cardsUpdated,
           errors: errorMessage,
-          metadata: metadata ? metadata as Prisma.InputJsonValue : Prisma.JsonNull,
+          metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
           startedAt: new Date(),
           completedAt: status !== "IN_PROGRESS" ? new Date() : null,
         },
@@ -112,14 +113,15 @@ export class SyncHealthMonitor {
 
       // Calculate overall metrics
       const totalSyncs = recentLogs.length;
-      const successfulSyncs = recentLogs.filter(log => log.status === "SUCCESS").length;
-      const failedSyncs = recentLogs.filter(log => log.status === "FAILED").length;
+      const successfulSyncs = recentLogs.filter((log) => log.status === "SUCCESS").length;
+      const failedSyncs = recentLogs.filter((log) => log.status === "FAILED").length;
       const successRate = totalSyncs > 0 ? successfulSyncs / totalSyncs : 0;
       const errorRate = totalSyncs > 0 ? failedSyncs / totalSyncs : 0;
 
-      const avgCardsProcessed = recentLogs.length > 0
-        ? recentLogs.reduce((sum, log) => sum + (log.cardsProcessed ?? 0), 0) / recentLogs.length
-        : 0;
+      const avgCardsProcessed =
+        recentLogs.length > 0
+          ? recentLogs.reduce((sum, log) => sum + (log.cardsProcessed ?? 0), 0) / recentLogs.length
+          : 0;
 
       const lastSyncAt = recentLogs.length > 0 ? recentLogs[0]!.startedAt : null;
 
@@ -129,11 +131,11 @@ export class SyncHealthMonitor {
       });
 
       const bySeason: SeasonHealth[] = checkpoints.map((checkpoint: any) => {
-        const progress = checkpoint.totalCards > 0
-          ? (checkpoint.cardsProcessed / checkpoint.totalCards) * 100
-          : 0;
+        const progress =
+          checkpoint.totalCards > 0 ? (checkpoint.cardsProcessed / checkpoint.totalCards) * 100 : 0;
 
-        const isHealthy = checkpoint.status === "COMPLETED" ||
+        const isHealthy =
+          checkpoint.status === "COMPLETED" ||
           (checkpoint.status === "IN_PROGRESS" && checkpoint.errorCount < 10);
 
         return {
@@ -158,7 +160,7 @@ export class SyncHealthMonitor {
         take: 50,
       });
 
-      const recentErrors = errorLogs.map(log => ({
+      const recentErrors = errorLogs.map((log) => ({
         season: log.season ?? 0,
         error: log.errorMessage ?? "Unknown error",
         timestamp: log.startedAt,
@@ -169,12 +171,16 @@ export class SyncHealthMonitor {
       const alerts: string[] = [];
 
       if (errorRate > this.ERROR_RATE_THRESHOLD) {
-        alerts.push(`⚠️ High error rate detected: ${(errorRate * 100).toFixed(1)}% (threshold: ${this.ERROR_RATE_THRESHOLD * 100}%)`);
+        alerts.push(
+          `⚠️ High error rate detected: ${(errorRate * 100).toFixed(1)}% (threshold: ${this.ERROR_RATE_THRESHOLD * 100}%)`
+        );
       }
 
       for (const seasonHealth of bySeason) {
         if (!seasonHealth.isHealthy && seasonHealth.status !== "COMPLETED") {
-          alerts.push(`⚠️ Season ${seasonHealth.season} sync unhealthy: ${seasonHealth.errorCount} errors, ${seasonHealth.progress.toFixed(1)}% complete`);
+          alerts.push(
+            `⚠️ Season ${seasonHealth.season} sync unhealthy: ${seasonHealth.errorCount} errors, ${seasonHealth.progress.toFixed(1)}% complete`
+          );
         }
       }
 
@@ -322,7 +328,7 @@ export class SyncHealthMonitor {
           itemsFailed: 1,
           errorMessage: `Card ${cardId}: ${error}`,
           season,
-          metadata: context ? context as Prisma.InputJsonValue : Prisma.JsonNull,
+          metadata: context ? (context as Prisma.InputJsonValue) : Prisma.JsonNull,
           startedAt: new Date(),
           completedAt: new Date(),
         },

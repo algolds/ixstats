@@ -130,9 +130,10 @@ export function useMyCountryCompliance() {
         missingTaxes.push("Tax categories");
       } else {
         // Brackets are returned as taxSystem.brackets (keyed by category index)
-        const hasBrackets = taxSystem.brackets
-          && typeof taxSystem.brackets === "object"
-          && Object.values(taxSystem.brackets).some(
+        const hasBrackets =
+          taxSystem.brackets &&
+          typeof taxSystem.brackets === "object" &&
+          Object.values(taxSystem.brackets).some(
             (arr: any) => Array.isArray(arr) && arr.length > 0
           );
         if (!hasBrackets) {

@@ -149,7 +149,7 @@ export function ForeignPolicyCreatorSheet({
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-center gap-2">
-            <Scale className="h-5 w-5 flex-shrink-0 text-cyan-500" />
+            <Scale className="h-5 w-5 shrink-0 text-cyan-500" />
             Propose Foreign Policy
           </SheetTitle>
           <p className="text-muted-foreground text-sm">

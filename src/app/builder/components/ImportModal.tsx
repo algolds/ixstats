@@ -30,7 +30,7 @@ export function ImportModal({ open, onClose, onNavigate, onImportComplete }: Imp
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col overflow-hidden">
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
             Import from Wiki
           </DialogTitle>

@@ -30,9 +30,21 @@ interface InsightItem {
 }
 
 const SECTION_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  executive: { bg: "bg-amber-50/50 dark:bg-amber-950/20", border: "border-amber-500/20", text: "text-amber-700 dark:text-amber-300" },
-  diplomacy: { bg: "bg-cyan-50/50 dark:bg-cyan-950/20", border: "border-cyan-500/20", text: "text-cyan-700 dark:text-cyan-300" },
-  politics: { bg: "bg-indigo-50/50 dark:bg-indigo-950/20", border: "border-indigo-500/20", text: "text-indigo-700 dark:text-indigo-300" },
+  executive: {
+    bg: "bg-amber-50/50 dark:bg-amber-950/20",
+    border: "border-amber-500/20",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+  diplomacy: {
+    bg: "bg-cyan-50/50 dark:bg-cyan-950/20",
+    border: "border-cyan-500/20",
+    text: "text-cyan-700 dark:text-cyan-300",
+  },
+  politics: {
+    bg: "bg-indigo-50/50 dark:bg-indigo-950/20",
+    border: "border-indigo-500/20",
+    text: "text-indigo-700 dark:text-indigo-300",
+  },
 };
 
 /**
@@ -44,23 +56,23 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
   // Fetch data from all three pillars
   const { data: policies } = api.policies.getPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: relations } = api.diplomatic.getRelationships.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: parties } = api.elections.getParties.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: legislature } = api.elections.getLegislature.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: parliament } = api.elections.getCurrentParliament.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const effects = useMemo((): CrossPillarEffects | null => {
@@ -90,15 +102,19 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
       baseSupport: p.baseSupport ?? 10,
     }));
 
-    const seatSummary: SeatSummary[] = parliament?.seatSummary?.map((s: any) => ({
-      partyId: s.partyId || s.id || "",
-      partyName: s.partyName || s.name || "",
-      seats: s.seats || 0,
-      ideology: s.ideology,
-    })) ?? [];
+    const seatSummary: SeatSummary[] =
+      parliament?.seatSummary?.map((s: any) => ({
+        partyId: s.partyId || s.id || "",
+        partyName: s.partyName || s.name || "",
+        seats: s.seats || 0,
+        ideology: s.ideology,
+      })) ?? [];
 
     const legislatureData: LegislatureData | null = legislature
-      ? { totalSeats: legislature.totalSeats ?? 0, electoralSystem: (legislature as any).electoralSystem }
+      ? {
+          totalSeats: legislature.totalSeats ?? 0,
+          electoralSystem: (legislature as any).electoralSystem,
+        }
       : null;
 
     return computeAllCrossPillarEffects({
@@ -106,7 +122,7 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
       relations: relationData,
       parties: partyData,
       foreignPolicies: [], // TODO: wire to api.diplomatic.getActiveForeignPolicies when available
-      crises: [],          // TODO: wire to api.crisisEvents.getActive when available
+      crises: [], // TODO: wire to api.crisisEvents.getActive when available
       legislature: legislatureData,
       seatSummary,
       lastElectionResult: null, // TODO: wire when election results are available
@@ -149,14 +165,22 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
 
     if (section === "diplomacy") {
       // Show how executive policies affect diplomacy
-      const totalDiplomaticDelta = effects.diplomaticEffects.reduce((sum, e) => sum + e.strengthDelta, 0);
+      const totalDiplomaticDelta = effects.diplomaticEffects.reduce(
+        (sum, e) => sum + e.strengthDelta,
+        0
+      );
       const affectedRelations = effects.diplomaticEffects.length;
 
       if (affectedRelations > 0) {
         items.push({
           message: `${affectedRelations} relationship${affectedRelations > 1 ? "s" : ""} affected by executive policies`,
           delta: `${totalDiplomaticDelta > 0 ? "+" : ""}${Math.round(totalDiplomaticDelta)}% aggregate strength`,
-          severity: totalDiplomaticDelta > 0 ? "positive" : totalDiplomaticDelta < 0 ? "negative" : "neutral",
+          severity:
+            totalDiplomaticDelta > 0
+              ? "positive"
+              : totalDiplomaticDelta < 0
+                ? "negative"
+                : "neutral",
           targetSection: "executive",
         });
       }
@@ -164,9 +188,13 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
 
     if (section === "politics") {
       // Show how policies affect party support
-      const significantPartyEffects = effects.partyEffects.filter((e) => Math.abs(e.supportDelta) >= 1);
+      const significantPartyEffects = effects.partyEffects.filter(
+        (e) => Math.abs(e.supportDelta) >= 1
+      );
       if (significantPartyEffects.length > 0) {
-        const topEffect = significantPartyEffects.sort((a, b) => Math.abs(b.supportDelta) - Math.abs(a.supportDelta))[0]!;
+        const topEffect = significantPartyEffects.sort(
+          (a, b) => Math.abs(b.supportDelta) - Math.abs(a.supportDelta)
+        )[0]!;
         items.push({
           message: `${topEffect.partyName} is ${topEffect.stance === "support" ? "benefiting from" : "opposing"} executive policies`,
           delta: `${topEffect.supportDelta > 0 ? "+" : ""}${topEffect.supportDelta.toFixed(1)}% support shift`,
@@ -185,7 +213,7 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
   const colors = SECTION_COLORS[section] ?? SECTION_COLORS.executive;
 
   return (
-    <div className={`rounded-lg border ${colors.border} ${colors.bg} px-3 py-2 space-y-1.5`}>
+    <div className={`rounded-lg border ${colors.border} ${colors.bg} space-y-1.5 px-3 py-2`}>
       <div className="flex items-center gap-1.5">
         <Zap className={`h-3.5 w-3.5 ${colors.text}`} />
         <span className={`text-xs font-semibold ${colors.text}`}>Cross-Pillar Effects</span>
@@ -194,22 +222,22 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
         <button
           key={i}
           onClick={() => onNavigate?.(insight.targetSection)}
-          className="flex items-center justify-between gap-2 w-full text-left group hover:opacity-80 transition-opacity"
+          className="group flex w-full items-center justify-between gap-2 text-left transition-opacity hover:opacity-80"
         >
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
             {insight.severity === "positive" ? (
-              <TrendingUp className="h-3 w-3 text-green-500 flex-shrink-0" />
+              <TrendingUp className="h-3 w-3 shrink-0 text-green-500" />
             ) : insight.severity === "negative" ? (
-              <TrendingDown className="h-3 w-3 text-red-500 flex-shrink-0" />
+              <TrendingDown className="h-3 w-3 shrink-0 text-red-500" />
             ) : (
-              <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+              <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />
             )}
-            <span className="text-xs text-muted-foreground truncate">{insight.message}</span>
+            <span className="text-muted-foreground truncate text-xs">{insight.message}</span>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex shrink-0 items-center gap-1">
             <Badge
               variant="outline"
-              className={`text-[0.6rem] px-1 py-0 ${
+              className={`px-1 py-0 text-[0.6rem] ${
                 insight.severity === "positive"
                   ? "border-green-500/30 text-green-600 dark:text-green-400"
                   : insight.severity === "negative"
@@ -219,7 +247,7 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
             >
               {insight.delta}
             </Badge>
-            <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowRight className="text-muted-foreground h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         </button>
       ))}

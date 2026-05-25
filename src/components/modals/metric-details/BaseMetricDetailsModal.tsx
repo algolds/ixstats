@@ -20,12 +20,7 @@ import {
 } from "~/components/ui/select";
 import { RefreshCw, BarChart3, TrendingUp, Globe, Info, X } from "lucide-react";
 import { cn } from "~/lib/utils";
-import {
-  type TimeRange,
-  type ChartType,
-  TIME_RANGE_OPTIONS,
-  CHART_TYPE_OPTIONS,
-} from "./types";
+import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
 
 export interface MetricModalTab {
   id: string;
@@ -61,11 +56,7 @@ export interface BaseMetricDetailsModalProps {
   /** Show chart type selector */
   showChartType?: boolean;
   /** Render function for tab content */
-  children: (
-    activeTab: string,
-    timeRange: TimeRange,
-    chartType: ChartType
-  ) => React.ReactNode;
+  children: (activeTab: string, timeRange: TimeRange, chartType: ChartType) => React.ReactNode;
 }
 
 /**
@@ -170,21 +161,15 @@ export function BaseMetricDetailsModal({
             <Icon className={cn("h-5 w-5", iconColor)} />
             {title}
             {countryName && (
-              <span className="text-muted-foreground font-normal">
-                — {countryName}
-              </span>
+              <span className="text-muted-foreground font-normal">— {countryName}</span>
             )}
           </DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full mt-4"
-        >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4 w-full">
           {/* Tab List with Controls */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <TabsList className={cn("grid w-full sm:w-auto", `grid-cols-${tabs.length}`)}>
               {tabs.map((tab) => (
                 <TabsTrigger
@@ -202,11 +187,8 @@ export function BaseMetricDetailsModal({
             {activeTab === "trends" && (
               <div className="flex items-center gap-2">
                 {showTimeRange && (
-                  <Select
-                    value={timeRange}
-                    onValueChange={(v) => setTimeRange(v as TimeRange)}
-                  >
-                    <SelectTrigger className="w-28 h-8 text-xs">
+                  <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+                    <SelectTrigger className="h-8 w-28 text-xs">
                       <SelectValue placeholder="Time range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -220,11 +202,8 @@ export function BaseMetricDetailsModal({
                 )}
 
                 {showChartType && (
-                  <Select
-                    value={chartType}
-                    onValueChange={(v) => setChartType(v as ChartType)}
-                  >
-                    <SelectTrigger className="w-24 h-8 text-xs">
+                  <Select value={chartType} onValueChange={(v) => setChartType(v as ChartType)}>
+                    <SelectTrigger className="h-8 w-24 text-xs">
                       <SelectValue placeholder="Chart type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -245,9 +224,7 @@ export function BaseMetricDetailsModal({
                     disabled={isLoading}
                     className="h-8"
                   >
-                    <RefreshCw
-                      className={cn("h-3.5 w-3.5", isLoading && "animate-spin")}
-                    />
+                    <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
                   </Button>
                 )}
               </div>

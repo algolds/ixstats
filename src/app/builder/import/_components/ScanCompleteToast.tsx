@@ -92,7 +92,7 @@ export function ScanCompleteToast({
           <CardContent className="p-4">
             {/* Header */}
             <div className="mb-3 flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-semibold">LoreScanner Complete</h3>
                 <p className="text-muted-foreground mt-0.5 text-xs">
@@ -303,7 +303,7 @@ export function ScanCompleteToast({
                     {warnings.length > 0 && (
                       <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
                         <div className="flex items-start gap-2">
-                          <Info className="mt-0.5 h-3 w-3 flex-shrink-0 text-amber-500" />
+                          <Info className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
                           <div className="space-y-1 text-[11px] text-amber-700 dark:text-amber-400">
                             <p className="font-medium">
                               Note: Automated parsing may not be perfect.

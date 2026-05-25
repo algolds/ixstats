@@ -33,10 +33,7 @@ interface IssueCardProps {
   variant?: "compact" | "full";
 }
 
-const DOMAIN_CONFIG: Record<
-  string,
-  { icon: typeof TrendingUp; color: string; label: string }
-> = {
+const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; color: string; label: string }> = {
   economic: {
     icon: TrendingUp,
     color: "text-emerald-500",
@@ -91,10 +88,8 @@ const SEVERITY_BADGE: Record<string, string> = {
 function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
   const domainConfig = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domainConfig.icon;
-  const severityStyle =
-    SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.medium!;
-  const badgeStyle =
-    SEVERITY_BADGE[issue.severity] ?? SEVERITY_BADGE.medium!;
+  const severityStyle = SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.medium!;
+  const badgeStyle = SEVERITY_BADGE[issue.severity] ?? SEVERITY_BADGE.medium!;
 
   const hasDeadline = issue.deadlineIxTime != null;
   const currentIxTime = IxTime.getCurrentIxTime();
@@ -120,24 +115,22 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
   return (
     <button
       onClick={() => onView(issue.id)}
-      className={`group w-full text-left rounded-lg border-l-4 border border-white/10 p-3 transition-all hover:bg-white/5 hover:border-white/20 cursor-pointer ${severityStyle}`}
+      className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-all hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
     >
       <div className="flex items-start gap-3">
-        <div
-          className={`mt-0.5 rounded-full bg-white/10 p-1.5 ${domainConfig.color}`}
-        >
+        <div className={`mt-0.5 rounded-full bg-white/10 p-1.5 ${domainConfig.color}`}>
           <DomainIcon className="h-3.5 w-3.5" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-medium truncate group-hover:text-white transition-colors">
+          <div className="mb-1 flex items-center gap-2">
+            <h4 className="truncate text-sm font-medium transition-colors group-hover:text-white">
               {issue.title}
             </h4>
             {isNew && (
               <Badge
                 variant="outline"
-                className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0 shrink-0"
+                className="shrink-0 border-amber-500/30 bg-amber-500/20 px-1.5 py-0 text-[10px] text-amber-400"
               >
                 NEW
               </Badge>
@@ -145,33 +138,20 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
           </div>
 
           {variant === "full" && (
-            <p className="text-muted-foreground text-xs line-clamp-2 mb-2">
-              {issue.description}
-            </p>
+            <p className="text-muted-foreground mb-2 line-clamp-2 text-xs">{issue.description}</p>
           )}
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge
-              variant="outline"
-              className={`text-[10px] px-1.5 py-0 ${badgeStyle}`}
-            >
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${badgeStyle}`}>
               {issue.severity.toUpperCase()}
             </Badge>
-            <span
-              className={`text-[10px] ${domainConfig.color}`}
-            >
-              {domainConfig.label}
-            </span>
+            <span className={`text-[10px] ${domainConfig.color}`}>{domainConfig.label}</span>
 
             {hasDeadline && (
               <span
                 className={`flex items-center gap-1 text-[10px] ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
               >
-                {isUrgent ? (
-                  <Flame className="h-3 w-3" />
-                ) : (
-                  <Clock className="h-3 w-3" />
-                )}
+                {isUrgent ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                 {timeRemainingText}
               </span>
             )}
@@ -179,7 +159,7 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
         </div>
 
         {(issue.severity === "critical" || issue.severity === "CRITICAL") && (
-          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400 animate-pulse" />
+          <AlertTriangle className="h-4 w-4 shrink-0 animate-pulse text-red-400" />
         )}
       </div>
     </button>

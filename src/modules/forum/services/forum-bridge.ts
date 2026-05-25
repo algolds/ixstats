@@ -45,10 +45,7 @@ interface XFConversationMessagesResponse {
 // ─── Bridge Implementation ───────────────────────────────────────
 
 export const forumBridge: BridgeAdapter = {
-  async syncInbound(
-    userId: string,
-    db: PrismaClient
-  ): Promise<BridgeSyncResult> {
+  async syncInbound(userId: string, db: PrismaClient): Promise<BridgeSyncResult> {
     const result: BridgeSyncResult = {
       conversationsCreated: 0,
       conversationsUpdated: 0,
@@ -90,9 +87,7 @@ export const forumBridge: BridgeAdapter = {
           // Create new conversation
           conversation = await db.thinkshareConversation.create({
             data: {
-              type: xfConv.recipients && xfConv.recipients.length > 2
-                ? "group"
-                : "direct",
+              type: xfConv.recipients && xfConv.recipients.length > 2 ? "group" : "direct",
               name: xfConv.title,
               source: "forum",
               sourceId,
@@ -144,11 +139,10 @@ export const forumBridge: BridgeAdapter = {
         // Fetch messages for this conversation
         let xfMessages: XFConversationMessage[];
         try {
-          const msgResponse =
-            await xfFetchAsUser<XFConversationMessagesResponse>(
-              `/conversations/${xfConv.conversation_id}/messages`,
-              user.forumUserId
-            );
+          const msgResponse = await xfFetchAsUser<XFConversationMessagesResponse>(
+            `/conversations/${xfConv.conversation_id}/messages`,
+            user.forumUserId
+          );
           xfMessages = msgResponse?.messages ?? [];
         } catch {
           continue;
@@ -205,10 +199,7 @@ export const forumBridge: BridgeAdapter = {
         });
         result.conversationsUpdated++;
       } catch (err) {
-        console.error(
-          `Forum bridge: failed to sync conversation "${xfConv.title}":`,
-          err
-        );
+        console.error(`Forum bridge: failed to sync conversation "${xfConv.title}":`, err);
       }
     }
 

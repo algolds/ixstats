@@ -95,7 +95,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
                 key={policy.id}
                 className="bg-muted/30 flex items-center gap-2 rounded-md px-2.5 py-1.5"
               >
-                <FileText className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
+                <FileText className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                 <span className="min-w-0 flex-1 truncate text-sm">{policy.name}</span>
                 <span className="text-muted-foreground hidden text-[10px] capitalize sm:inline">
                   {policy.category}

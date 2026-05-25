@@ -7,7 +7,17 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { MapPin, Hexagon, Landmark, Trash2, Pencil, Crown, ChevronDown, BookMarked, Type } from "lucide-react";
+import {
+  MapPin,
+  Hexagon,
+  Landmark,
+  Trash2,
+  Pencil,
+  Crown,
+  ChevronDown,
+  BookMarked,
+  Type,
+} from "lucide-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
 
@@ -102,7 +112,7 @@ export const FeatureList = React.memo(function FeatureList({
     return (
       <div className="space-y-2 py-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-10 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="bg-muted h-10 animate-pulse rounded-lg" />
         ))}
       </div>
     );
@@ -110,13 +120,23 @@ export const FeatureList = React.memo(function FeatureList({
 
   if (features.length === 0) {
     return (
-      <div className="py-6 text-center text-xs text-muted-foreground">
+      <div className="text-muted-foreground py-6 text-center text-xs">
         <span className="hidden sm:inline">
-          No features yet. Use <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">C</kbd>{" "}
-          <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">R</kbd>{" "}
-          <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">P</kbd> to add features.
+          No features yet. Use{" "}
+          <kbd className="border-border bg-muted rounded border px-1 py-0.5 font-mono text-[10px]">
+            C
+          </kbd>{" "}
+          <kbd className="border-border bg-muted rounded border px-1 py-0.5 font-mono text-[10px]">
+            R
+          </kbd>{" "}
+          <kbd className="border-border bg-muted rounded border px-1 py-0.5 font-mono text-[10px]">
+            P
+          </kbd>{" "}
+          to add features.
         </span>
-        <span className="sm:hidden">No features yet. Use the toolbar to add cities, regions, or POIs.</span>
+        <span className="sm:hidden">
+          No features yet. Use the toolbar to add cities, regions, or POIs.
+        </span>
       </div>
     );
   }
@@ -146,121 +166,147 @@ export const FeatureList = React.memo(function FeatureList({
             {/* Collapsible group header */}
             <button
               onClick={() => toggleGroup(group.type)}
-              className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left transition-colors hover:bg-accent"
+              className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left transition-colors"
             >
               <ChevronDown
-                className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-150 ${
+                className={`text-muted-foreground h-3 w-3 shrink-0 transition-transform duration-150 ${
                   isExpanded ? "" : "-rotate-90"
                 }`}
               />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 {group.label}
               </span>
-              <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+              <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[10px] font-medium tabular-nums">
                 {group.items.length}
               </span>
             </button>
 
             {/* Feature items (collapsible, with truncation for large groups) */}
-            {isExpanded && (() => {
-              const isTruncated = group.items.length > TRUNCATE_THRESHOLD && !fullyExpandedGroups.has(group.type);
-              const visibleItems = isTruncated ? group.items.slice(0, TRUNCATE_SHOW) : group.items;
+            {isExpanded &&
+              (() => {
+                const isTruncated =
+                  group.items.length > TRUNCATE_THRESHOLD && !fullyExpandedGroups.has(group.type);
+                const visibleItems = isTruncated
+                  ? group.items.slice(0, TRUNCATE_SHOW)
+                  : group.items;
 
-              return (
-              <div className="space-y-0.5 pl-1">
-                {visibleItems.map((feature) => {
-                  const Icon = TYPE_ICONS[feature.type];
-                  const colorClass = TYPE_COLORS[feature.type];
-                  const isSelected = selectedFeature?.id === feature.id;
-                  const isMultiSelected = selectedIds?.has(feature.id) ?? false;
-                  const isCapital = feature.properties.isNationalCapital;
-                  const wikiTitle = feature.properties.wikiPageTitle as string | undefined;
+                return (
+                  <div className="space-y-0.5 pl-1">
+                    {visibleItems.map((feature) => {
+                      const Icon = TYPE_ICONS[feature.type];
+                      const colorClass = TYPE_COLORS[feature.type];
+                      const isSelected = selectedFeature?.id === feature.id;
+                      const isMultiSelected = selectedIds?.has(feature.id) ?? false;
+                      const isCapital = feature.properties.isNationalCapital;
+                      const wikiTitle = feature.properties.wikiPageTitle as string | undefined;
 
-                  const row = (
-                    <div
-                      key={feature.id}
-                      ref={isSelected ? selectedRef : undefined}
-                      className={`group flex items-center gap-1.5 rounded-lg px-2 py-2.5 sm:py-1.5 transition-colors ${
-                        isSelected
-                          ? "bg-primary/10 ring-1 ring-primary/30"
-                          : isMultiSelected
-                          ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
-                          : "hover:bg-accent active:bg-accent"
-                      }`}
-                    >
-                      <button
-                        onClick={(e) => {
-                          if (e.shiftKey && onToggleSelect) {
-                            onToggleSelect(feature.id);
-                          } else {
-                            onSelectFeature(feature);
-                          }
-                        }}
-                        className="flex flex-1 items-center gap-2 text-left min-w-0"
-                      >
-                        <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${colorClass}`} />
-                        <span className="truncate text-sm text-foreground">{feature.name}</span>
-                        {isCapital && (
-                          <span title="National Capital">
-                            <Crown className="h-3 w-3 flex-shrink-0 text-amber-500" />
-                          </span>
-                        )}
-                      </button>
-                      <div className={`flex items-center gap-0.5 transition-opacity ${isSelected ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100"}`}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onEditFeature(feature); }}
-                          className="rounded p-2 sm:p-1 text-muted-foreground transition-colors hover:bg-blue-100 hover:text-blue-600 active:bg-blue-100 active:text-blue-600 dark:hover:bg-blue-500/10 dark:active:bg-blue-500/10"
-                          title="Edit"
+                      const row = (
+                        <div
+                          key={feature.id}
+                          ref={isSelected ? selectedRef : undefined}
+                          className={`group flex items-center gap-1.5 rounded-lg px-2 py-2.5 transition-colors sm:py-1.5 ${
+                            isSelected
+                              ? "bg-primary/10 ring-primary/30 ring-1"
+                              : isMultiSelected
+                                ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
+                                : "hover:bg-accent active:bg-accent"
+                          }`}
                         >
-                          <Pencil className="h-4 w-4 sm:h-3 sm:w-3" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDeleteFeature(feature); }}
-                          className="rounded p-2 sm:p-1 text-muted-foreground transition-colors hover:bg-red-100 hover:text-red-600 active:bg-red-100 active:text-red-600 dark:hover:bg-red-500/10 dark:active:bg-red-500/10"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4 sm:h-3 sm:w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
+                          <button
+                            onClick={(e) => {
+                              if (e.shiftKey && onToggleSelect) {
+                                onToggleSelect(feature.id);
+                              } else {
+                                onSelectFeature(feature);
+                              }
+                            }}
+                            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                          >
+                            <Icon className={`h-3.5 w-3.5 shrink-0 ${colorClass}`} />
+                            <span className="text-foreground truncate text-sm">{feature.name}</span>
+                            {isCapital && (
+                              <span title="National Capital">
+                                <Crown className="h-3 w-3 shrink-0 text-amber-500" />
+                              </span>
+                            )}
+                          </button>
+                          <div
+                            className={`flex items-center gap-0.5 transition-opacity ${isSelected ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100"}`}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditFeature(feature);
+                              }}
+                              className="text-muted-foreground rounded p-2 transition-colors hover:bg-blue-100 hover:text-blue-600 active:bg-blue-100 active:text-blue-600 sm:p-1 dark:hover:bg-blue-500/10 dark:active:bg-blue-500/10"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4 sm:h-3 sm:w-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteFeature(feature);
+                              }}
+                              className="text-muted-foreground rounded p-2 transition-colors hover:bg-red-100 hover:text-red-600 active:bg-red-100 active:text-red-600 sm:p-1 dark:hover:bg-red-500/10 dark:active:bg-red-500/10"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4 sm:h-3 sm:w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
 
-                  return wikiTitle ? (
-                    <WikiPreviewTooltip key={feature.id} wikiTitle={wikiTitle}>
-                      {row}
-                    </WikiPreviewTooltip>
-                  ) : (
-                    row
-                  );
-                })}
-                {isTruncated && (
-                  <button
-                    onClick={() => setFullyExpandedGroups((prev) => {
-                      const next = new Set(prev);
-                      next.add(group.type);
-                      return next;
+                      return wikiTitle ? (
+                        <WikiPreviewTooltip key={feature.id} wikiTitle={wikiTitle}>
+                          {row}
+                        </WikiPreviewTooltip>
+                      ) : (
+                        row
+                      );
                     })}
-                    className="w-full rounded-md px-2 py-1.5 text-xs font-medium text-primary hover:bg-accent transition-colors"
-                  >
-                    Show all {group.items.length} {group.label.toLowerCase()}
-                  </button>
-                )}
-              </div>
-              );
-            })()}
+                    {isTruncated && (
+                      <button
+                        onClick={() =>
+                          setFullyExpandedGroups((prev) => {
+                            const next = new Set(prev);
+                            next.add(group.type);
+                            return next;
+                          })
+                        }
+                        className="text-primary hover:bg-accent w-full rounded-md px-2 py-1.5 text-xs font-medium transition-colors"
+                      >
+                        Show all {group.items.length} {group.label.toLowerCase()}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
           </div>
         );
       })}
 
       {/* Keyboard hints — desktop only */}
-      <div className="hidden sm:block border-t border-border pt-2 text-[10px] text-muted-foreground">
+      <div className="border-border text-muted-foreground hidden border-t pt-2 text-[10px] sm:block">
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 px-1">
-          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">⌫</kbd> Delete</span>
-          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">C</kbd> City</span>
-          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">R</kbd> Region</span>
-          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">P</kbd> POI</span>
-          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">S</kbd> Story</span>
-          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">L</kbd> Label</span>
+          <span>
+            <kbd className="border-border bg-muted rounded border px-1 font-mono">⌫</kbd> Delete
+          </span>
+          <span>
+            <kbd className="border-border bg-muted rounded border px-1 font-mono">C</kbd> City
+          </span>
+          <span>
+            <kbd className="border-border bg-muted rounded border px-1 font-mono">R</kbd> Region
+          </span>
+          <span>
+            <kbd className="border-border bg-muted rounded border px-1 font-mono">P</kbd> POI
+          </span>
+          <span>
+            <kbd className="border-border bg-muted rounded border px-1 font-mono">S</kbd> Story
+          </span>
+          <span>
+            <kbd className="border-border bg-muted rounded border px-1 font-mono">L</kbd> Label
+          </span>
         </div>
       </div>
     </div>

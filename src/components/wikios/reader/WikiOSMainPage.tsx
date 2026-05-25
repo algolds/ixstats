@@ -11,12 +11,7 @@ import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
 import { BookOpen, ExternalLink } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
@@ -75,21 +70,17 @@ function BlurbPromptModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col gap-0 p-0">
+      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
         {/* Header */}
         <DialogHeader className="border-b border-white/10 px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <BookOpen className="h-4 w-4 text-purple-400 shrink-0" />
-                <DialogTitle className="text-base font-semibold">
-                  {prompt.title}
-                </DialogTitle>
+              <div className="mb-1 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 shrink-0 text-purple-400" />
+                <DialogTitle className="text-base font-semibold">{prompt.title}</DialogTitle>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {prompt.question}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
+              <p className="text-muted-foreground text-sm leading-relaxed">{prompt.question}</p>
+              <div className="mt-2 flex items-center gap-2">
                 <Badge variant="secondary" className="text-[10px]">
                   {prompt._count.responses}{" "}
                   {prompt._count.responses === 1 ? "response" : "responses"}
@@ -100,9 +91,9 @@ function BlurbPromptModal({
         </DialogHeader>
 
         {/* Responses */}
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2.5">
+        <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-3">
           {responses.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-6">
+            <p className="text-muted-foreground py-6 text-center text-sm">
               No responses yet. Be the first!
             </p>
           )}
@@ -111,18 +102,12 @@ function BlurbPromptModal({
             <div
               key={r.id}
               className={`rounded-lg border p-3 ${
-                r.featured
-                  ? "border-amber-500/30 bg-amber-500/5"
-                  : "border-white/10"
+                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10"
               }`}
             >
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="mb-1.5 flex items-center gap-2">
                 {r.country?.flag && (
-                  <img
-                    src={r.country.flag}
-                    alt=""
-                    className="w-5 h-3.5 rounded-sm object-cover"
-                  />
+                  <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
                 )}
                 <span className="text-xs font-medium text-[var(--wikios-text)]">
                   {r.country?.name ?? "Unknown"}
@@ -130,20 +115,20 @@ function BlurbPromptModal({
                 {r.featured && (
                   <Badge
                     variant="outline"
-                    className="text-[9px] text-amber-400 border-amber-500/30 px-1 py-0"
+                    className="border-amber-500/30 px-1 py-0 text-[9px] text-amber-400"
                   >
                     Featured
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-[var(--wikios-text-muted)] whitespace-pre-wrap line-clamp-4">
+              <p className="line-clamp-4 text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
                 {r.content}
               </p>
             </div>
           ))}
 
           {hasNextPage && (
-            <div className="text-center py-1">
+            <div className="py-1 text-center">
               <Button
                 variant="ghost"
                 size="sm"
@@ -158,17 +143,17 @@ function BlurbPromptModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-white/10 px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-white/10 px-5 py-3">
           <Link
             href={withBasePath(`/blurbs/${prompt.slug}`)}
-            className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-purple-400 transition-colors hover:text-purple-300"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt
           </Link>
           <Link
             href={withBasePath("/blurbs")}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
           >
             All prompts →
           </Link>
@@ -183,7 +168,6 @@ function BlurbPromptModal({
 // ---------------------------------------------------------------------------
 
 export function WikiOSMainPage() {
-
   const [blurbModalOpen, setBlurbModalOpen] = useState(false);
 
   // Fetch Main_Page HTML to extract the featured article from it
@@ -205,16 +189,15 @@ export function WikiOSMainPage() {
   );
 
   // Fetch site stats
-  const { data: siteStats } = api.wikios.getSiteStats.useQuery(
-    undefined,
-    { staleTime: 5 * 60 * 1000 }
-  );
+  const { data: siteStats } = api.wikios.getSiteStats.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Fetch random active blurb prompt (cycles on each page load)
-  const { data: activePrompt } = api.blurbs.getRandomActivePrompt.useQuery(
-    undefined,
-    { staleTime: 60 * 1000, refetchOnWindowFocus: false }
-  );
+  const { data: activePrompt } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
   // Extract featured article from Main_Page contentHtml (server-transformed)
   const featuredArticleHtml = useMemo(() => {
@@ -274,7 +257,8 @@ export function WikiOSMainPage() {
             className="wikios-main-stat wikios-main-stat-blurb"
           >
             <span className="wikios-main-stat-badge">
-              Blurbs{activePrompt.featured && <span className="wikios-main-stat-featured">Featured</span>}
+              Blurbs
+              {activePrompt.featured && <span className="wikios-main-stat-featured">Featured</span>}
             </span>
             <span className="wikios-main-stat-value wikios-main-stat-ixtime">
               {activePrompt.title}
@@ -285,9 +269,7 @@ export function WikiOSMainPage() {
           </button>
         ) : (
           <div className="wikios-main-stat">
-            <span className="wikios-main-stat-value wikios-main-stat-ixtime">
-              0
-            </span>
+            <span className="wikios-main-stat-value wikios-main-stat-ixtime">0</span>
             <span className="wikios-main-stat-label">Blurbs</span>
           </div>
         )}
@@ -328,7 +310,10 @@ export function WikiOSMainPage() {
           <section className="wikios-main-section">
             <h2 className="wikios-main-section-title">
               Recent activity
-              <Link href={withBasePath("/w/special/recent-changes")} className="wikios-main-section-more">
+              <Link
+                href={withBasePath("/w/special/recent-changes")}
+                className="wikios-main-section-more"
+              >
                 View all →
               </Link>
             </h2>
@@ -337,7 +322,9 @@ export function WikiOSMainPage() {
                 {recentChanges.map((rc, idx) => (
                   <li key={idx} className="wikios-main-recent-item">
                     <Link
-                      href={withBasePath(`/w/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`)}
+                      href={withBasePath(
+                        `/w/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
+                      )}
                       className="wikios-main-recent-title"
                     >
                       {rc.title}
@@ -349,7 +336,7 @@ export function WikiOSMainPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-[var(--wikios-text-dim)] text-sm">Loading recent changes...</p>
+              <p className="text-sm text-[var(--wikios-text-dim)]">Loading recent changes...</p>
             )}
           </section>
         </div>
@@ -371,12 +358,7 @@ export function WikiOSMainPage() {
                   className="wikios-main-world-card glass-hierarchy-child"
                 >
                   {c.flagUrl && (
-                    <img
-                      src={c.flagUrl}
-                      alt=""
-                      className="wikios-main-world-flag"
-                      loading="lazy"
-                    />
+                    <img src={c.flagUrl} alt="" className="wikios-main-world-flag" loading="lazy" />
                   )}
                   <div className="wikios-main-world-info">
                     <span className="wikios-main-world-name">{c.name}</span>
@@ -389,7 +371,6 @@ export function WikiOSMainPage() {
             </div>
           </section>
         )}
-
       </div>
 
       {/* Blurb Prompt Modal */}

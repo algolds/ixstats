@@ -641,7 +641,7 @@ export function IxTimeVisualizer() {
                       <div className="mt-2 rounded-md border border-red-500/20 bg-red-500/5 p-2 text-xs text-red-500">
                         {simulationResults.criticalIssues.map((issue, idx) => (
                           <div key={idx} className="flex items-start gap-1.5">
-                            <XCircle className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                            <XCircle className="mt-0.5 h-3 w-3 shrink-0" />
                             {issue.details}
                           </div>
                         ))}

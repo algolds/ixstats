@@ -70,10 +70,7 @@ const DEFAULT_PARSE_OPTIONS: Required<RichTextParseOptions> = {
  * @param options Parsing options
  * @returns Cleaned rich text
  */
-export function parseWikiHtml(
-  html: string,
-  options: RichTextParseOptions = {}
-): string {
+export function parseWikiHtml(html: string, options: RichTextParseOptions = {}): string {
   const opts = { ...DEFAULT_PARSE_OPTIONS, ...options };
 
   if (!html) return "";
@@ -99,10 +96,7 @@ export function parseWikiHtml(
  * @param options Parsing options
  * @returns Cleaned rich text
  */
-export function parseWikitext(
-  wikitext: string,
-  options: RichTextParseOptions = {}
-): string {
+export function parseWikitext(wikitext: string, options: RichTextParseOptions = {}): string {
   const opts = { ...DEFAULT_PARSE_OPTIONS, ...options };
 
   if (!wikitext) return "";
@@ -137,35 +131,37 @@ export function parseWikitext(
  * Remove common MediaWiki HTML elements
  */
 function removeWikiElements(html: string): string {
-  return html
-    // Remove reference blocks
-    .replace(/<ol class="references">[\s\S]*?<\/ol>/gi, "")
-    .replace(/<div class="reflist">[\s\S]*?<\/div>/gi, "")
-    .replace(/<sup[^>]*class="reference"[^>]*>[\s\S]*?<\/sup>/gi, "")
+  return (
+    html
+      // Remove reference blocks
+      .replace(/<ol class="references">[\s\S]*?<\/ol>/gi, "")
+      .replace(/<div class="reflist">[\s\S]*?<\/div>/gi, "")
+      .replace(/<sup[^>]*class="reference"[^>]*>[\s\S]*?<\/sup>/gi, "")
 
-    // Remove infoboxes
-    .replace(/<table[^>]*class="infobox"[^>]*>[\s\S]*?<\/table>/gi, "")
+      // Remove infoboxes
+      .replace(/<table[^>]*class="infobox"[^>]*>[\s\S]*?<\/table>/gi, "")
 
-    // Remove navigation boxes
-    .replace(/<table[^>]*class="navbox"[^>]*>[\s\S]*?<\/table>/gi, "")
-    .replace(/<div[^>]*class="navbox"[^>]*>[\s\S]*?<\/div>/gi, "")
+      // Remove navigation boxes
+      .replace(/<table[^>]*class="navbox"[^>]*>[\s\S]*?<\/table>/gi, "")
+      .replace(/<div[^>]*class="navbox"[^>]*>[\s\S]*?<\/div>/gi, "")
 
-    // Remove edit sections
-    .replace(/<span class="mw-editsection">[\s\S]*?<\/span>/gi, "")
+      // Remove edit sections
+      .replace(/<span class="mw-editsection">[\s\S]*?<\/span>/gi, "")
 
-    // Remove hatnotes
-    .replace(/<div[^>]*class="hatnote"[^>]*>[\s\S]*?<\/div>/gi, "")
+      // Remove hatnotes
+      .replace(/<div[^>]*class="hatnote"[^>]*>[\s\S]*?<\/div>/gi, "")
 
-    // Remove thumbnails and figures
-    .replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, "")
-    .replace(/<div[^>]*class="thumb"[^>]*>[\s\S]*?<\/div>/gi, "")
+      // Remove thumbnails and figures
+      .replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, "")
+      .replace(/<div[^>]*class="thumb"[^>]*>[\s\S]*?<\/div>/gi, "")
 
-    // Remove scripts and styles
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      // Remove scripts and styles
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
 
-    // Remove comments
-    .replace(/<!--[\s\S]*?-->/g, "");
+      // Remove comments
+      .replace(/<!--[\s\S]*?-->/g, "")
+  );
 }
 
 /**
@@ -250,9 +246,7 @@ function removeReferences(text: string): string {
  * Remove file and image links
  */
 function removeFiles(text: string): string {
-  return text
-    .replace(/\[\[File:[^\]]*\]\]/gi, "")
-    .replace(/\[\[Image:[^\]]*\]\]/gi, "");
+  return text.replace(/\[\[File:[^\]]*\]\]/gi, "").replace(/\[\[Image:[^\]]*\]\]/gi, "");
 }
 
 /**
@@ -272,10 +266,7 @@ function removeComments(text: string): string {
 /**
  * Convert wikitext formatting to plain text
  */
-function wikitextToText(
-  text: string,
-  options: Required<RichTextParseOptions>
-): string {
+function wikitextToText(text: string, options: Required<RichTextParseOptions>): string {
   // Convert wikitext links [[Link|Text]] or [[Link]]
   text = text.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, "$2");
   text = text.replace(/\[\[([^\]]+)\]\]/g, "$1");
@@ -317,10 +308,7 @@ function wikitextToText(
 /**
  * Clean and format rich text
  */
-export function cleanRichText(
-  text: string,
-  options: RichTextParseOptions = {}
-): string {
+export function cleanRichText(text: string, options: RichTextParseOptions = {}): string {
   const opts = { ...DEFAULT_PARSE_OPTIONS, ...options };
 
   if (!text) return "";
@@ -436,7 +424,7 @@ export function extractFirstParagraph(content: string, maxLength = 300): string 
 
   // Fallback: use first chunk of text
   const lines = content.split("\n");
-  const firstParagraph = lines.find(line => line.trim().length > 50) || lines[0] || "";
+  const firstParagraph = lines.find((line) => line.trim().length > 50) || lines[0] || "";
 
   return cleanRichText(firstParagraph, { maxLength, sentenceCount: 2 });
 }
@@ -463,9 +451,7 @@ export function extractCardSummary(content: string, isHtml = true): string {
     sentenceCount: 3, // Aim for 2-3 sentences
   };
 
-  return isHtml
-    ? parseWikiHtml(content, options)
-    : parseWikitext(content, options);
+  return isHtml ? parseWikiHtml(content, options) : parseWikitext(content, options);
 }
 
 /**
@@ -508,10 +494,8 @@ export function batchParse(
   options: RichTextParseOptions = {},
   isHtml = true
 ): string[] {
-  return contents.map(content =>
-    isHtml
-      ? parseWikiHtml(content, options)
-      : parseWikitext(content, options)
+  return contents.map((content) =>
+    isHtml ? parseWikiHtml(content, options) : parseWikitext(content, options)
   );
 }
 

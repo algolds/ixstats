@@ -17,9 +17,7 @@ interface UseAuctionBidReturn {
 /**
  * Hook for placing bids and executing buyouts on auctions
  */
-export function useAuctionBid(options?: {
-  onSuccess?: () => void;
-}): UseAuctionBidReturn {
+export function useAuctionBid(options?: { onSuccess?: () => void }): UseAuctionBidReturn {
   const utils = api.useUtils();
 
   const bidMutation = api.cardMarket.placeBid.useMutation({
@@ -48,10 +46,8 @@ export function useAuctionBid(options?: {
   });
 
   return {
-    placeBid: (auctionId: string, amount: number) =>
-      bidMutation.mutate({ auctionId, amount }),
-    executeBuyout: (auctionId: string) =>
-      buyoutMutation.mutate({ auctionId }),
+    placeBid: (auctionId: string, amount: number) => bidMutation.mutate({ auctionId, amount }),
+    executeBuyout: (auctionId: string) => buyoutMutation.mutate({ auctionId }),
     isBidding: bidMutation.isPending,
     isBuyingOut: buyoutMutation.isPending,
     error: bidMutation.error?.message ?? buyoutMutation.error?.message ?? null,

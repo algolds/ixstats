@@ -148,7 +148,10 @@ export function extractDrainageNetwork(
 
     // Fall back to percentile logic if MIN_FLUX gives bad results
     if (mouthCount > maxRivers * 2 || mouthCount < 10) {
-      const landFlows = landCells.map(r => flow[r]!).filter(f => f > 1).sort((a, b) => a - b);
+      const landFlows = landCells
+        .map((r) => flow[r]!)
+        .filter((f) => f > 1)
+        .sort((a, b) => a - b);
       if (landFlows.length > 0) {
         const pctIdx = Math.floor(landFlows.length * 0.98);
         flowThreshold = landFlows[pctIdx]!;
@@ -259,13 +262,13 @@ export function extractDrainageNetwork(
     path.reverse();
 
     // Convert to GeoJSON coordinates
-    const coordinates: Position[] = path.map(idx => {
+    const coordinates: Position[] = path.map((idx) => {
       const x = idx % width;
       const y = (idx - x) / width;
       return [(x / width) * 360 - 180, 90 - (y / height) * 180];
     });
 
-    const maxFlowInPath = Math.max(...path.map(r => flow[r]!));
+    const maxFlowInPath = Math.max(...path.map((r) => flow[r]!));
 
     // Flux-based width
     const sourceWidth = Math.pow(maxFlowInPath, 0.9) / 500;

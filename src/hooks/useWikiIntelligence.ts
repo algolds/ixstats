@@ -159,8 +159,8 @@ export function useWikiIntelligence({
   const wikiSource = wikiSettings.wikiBaseUrls.custom?.includes("althistory")
     ? "althistory"
     : wikiSettings.enableIIWiki
-    ? "iiwiki"
-    : "ixwiki";
+      ? "iiwiki"
+      : "ixwiki";
 
   // tRPC query for fetching cached wiki profile data
   const {

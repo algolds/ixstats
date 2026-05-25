@@ -71,7 +71,10 @@ export const resourcesRouter = createTRPCRouter({
         where: { countryId: input.countryId },
       });
 
-      const byType: Record<string, { count: number; avgQuantity: number; avgQuality: number; avgExploited: number }> = {};
+      const byType: Record<
+        string,
+        { count: number; avgQuantity: number; avgQuality: number; avgExploited: number }
+      > = {};
 
       for (const r of resources) {
         if (!byType[r.resourceType]) {
@@ -105,9 +108,7 @@ export const resourcesRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string().optional() }).optional())
     .mutation(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: input?.countryId
-          ? { id: input.countryId }
-          : { geometry: { not: null } },
+        where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } },
         select: {
           id: true,
           name: true,
@@ -147,7 +148,8 @@ export const resourcesRouter = createTRPCRouter({
                 neighborCount: geoProfile.neighborCount,
                 totalRiverLengthKm: geoProfile.riverKm,
                 totalLakeAreaSqKm: geoProfile.lakeAreaSqKm,
-                areaKm2: country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 1000),
+                areaKm2:
+                  country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 1000),
               })
             : buildGeoProfile({
                 climateDistribution: [],

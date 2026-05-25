@@ -55,9 +55,9 @@ const IXWORLD_ALLOWED_PREFIXES = [
 // Check if Clerk is configured with valid keys
 const isClerkConfigured = Boolean(
   process.env.CLERK_SECRET_KEY &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-    process.env.CLERK_SECRET_KEY.startsWith("sk_") &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+  process.env.CLERK_SECRET_KEY.startsWith("sk_") &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
 );
 
 /**
@@ -100,9 +100,7 @@ function buildCSPTemplate(standalone: boolean): string {
   ];
 
   if (isDevelopment) {
-    directives.push(
-      `script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`
-    );
+    directives.push(`script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`);
   }
 
   return directives.join("; ");
@@ -200,9 +198,7 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
 
   // Everything else → redirect to main site using configured base path
   const fallbackHost = process.env.STANDALONE_FALLBACK_HOST || "https://ixwiki.com";
-  return NextResponse.redirect(
-    `${fallbackHost}${BASE_PATH || "/projects/ixstats"}${pathname}`
-  );
+  return NextResponse.redirect(`${fallbackHost}${BASE_PATH || "/projects/ixstats"}${pathname}`);
 }
 
 // If Clerk is not configured, use a simple middleware that doesn't handle auth

@@ -11,19 +11,15 @@ import type { Position, Polygon, MultiPolygon } from "geojson";
 import { createNoise, fractalNoise } from "./noise";
 import { noisyRing } from "./noisy-edges";
 import type { WorldProfile } from "./world-profile";
-import {
-  generateTectonicPlates,
-  tectonicInfluence,
-  type CollisionZone,
-} from "./tectonic-shapes";
+import { generateTectonicPlates, tectonicInfluence, type CollisionZone } from "./tectonic-shapes";
 import { extractGridOutline, douglasPeuckerSimplify } from "./grid-outline";
 
 export interface LandmassParams {
   seed: number;
-  gridResolution: number;     // 128-512
-  continentCount: number;     // 1-8
-  oceanPercentage: number;    // 0.4-0.8
-  terrainRoughness: number;   // 0-1
+  gridResolution: number; // 128-512
+  continentCount: number; // 1-8
+  oceanPercentage: number; // 0.4-0.8
+  terrainRoughness: number; // 0-1
   hasIcecaps: boolean;
   /** World profile for statistical guidance */
   profile?: WorldProfile;
@@ -39,8 +35,8 @@ export interface LandmassExtra {
 export interface HeightmapResult {
   width: number;
   height: number;
-  data: Float32Array;         // Normalized [0, 1]
-  seaLevel: number;           // Threshold for land vs ocean
+  data: Float32Array; // Normalized [0, 1]
+  seaLevel: number; // Threshold for land vs ocean
 }
 
 export interface LandmassResult {
@@ -87,11 +83,7 @@ export function generateHeightmap(
   if (useTectonics) {
     // Profile-guided: tectonic plates with Perlin-warped boundaries
     const tecResult = generateTectonicPlates(params, profile, similarity, rng);
-    tecInfluenceFn = tectonicInfluence(
-      tecResult.plates,
-      tecResult.collisions,
-      detailNoise
-    );
+    tecInfluenceFn = tectonicInfluence(tecResult.plates, tecResult.collisions, detailNoise);
     collisionZones = tecResult.collisions;
   } else {
     // Legacy: elliptical continent shapes (backward compatible)
@@ -126,10 +118,7 @@ export function generateHeightmap(
         const ry = -dx * sinA + dy * cosA;
         const dist = Math.sqrt((rx / c.rx) ** 2 + (ry / c.ry) ** 2);
         const influence = Math.max(0, 1 - dist);
-        continentInfluence = Math.max(
-          continentInfluence,
-          influence * influence
-        );
+        continentInfluence = Math.max(continentInfluence, influence * influence);
       }
 
       // Bridge bonus
@@ -146,8 +135,7 @@ export function generateHeightmap(
           const dj = Math.sqrt(dxj * dxj + dyj * dyj);
           const maxR = Math.max(ci.rx, ci.ry, cj.rx, cj.ry);
           if (di < maxR * 1.5 && dj < maxR * 1.5) {
-            const proximity =
-              (1 - di / (maxR * 1.5)) * (1 - dj / (maxR * 1.5));
+            const proximity = (1 - di / (maxR * 1.5)) * (1 - dj / (maxR * 1.5));
             bridgeBonus = Math.max(bridgeBonus, proximity * 0.3);
           }
         }
@@ -170,10 +158,7 @@ export function generateHeightmap(
       value = value * 0.55 + contInfluence * 0.45;
 
       // Detail noise
-      value +=
-        fractalNoise(detailNoise, nx * 12, ny * 12, 3, 2.0, 0.4) *
-        0.15 *
-        terrainRoughness;
+      value += fractalNoise(detailNoise, nx * 12, ny * 12, 3, 2.0, 0.4) * 0.15 * terrainRoughness;
 
       // Coastal noise enhancement (Patel technique)
       const coastalDetail =
@@ -294,7 +279,8 @@ export function extractLandPolygons(heightmap: HeightmapResult): LandmassResult 
       if (ring.length < 4) continue;
 
       // Ensure ring is closed
-      const first = ring[0]!, last = ring[ring.length - 1]!;
+      const first = ring[0]!,
+        last = ring[ring.length - 1]!;
       if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first);
 
       // Apply fractal subdivision to coastlines for natural appearance
@@ -336,23 +322,24 @@ export function simplifyPolygons(
   polygons: Array<{ geometry: Polygon | MultiPolygon; areaKm2: number }>,
   tolerance: number = 0.5
 ): Array<{ geometry: Polygon | MultiPolygon; areaKm2: number }> {
-  return polygons.map((p) => {
-    if (p.geometry.type === "Polygon") {
-      return {
-        ...p,
-        geometry: {
-          type: "Polygon" as const,
-          coordinates: p.geometry.coordinates.map((ring) =>
-            douglasPeucker(ring, tolerance)
-          ),
-        },
-      };
-    }
-    return p;
-  }).filter((p) => {
-    const coords = p.geometry.type === "Polygon" ? p.geometry.coordinates : p.geometry.coordinates[0];
-    return coords && coords[0] && coords[0].length >= 4;
-  });
+  return polygons
+    .map((p) => {
+      if (p.geometry.type === "Polygon") {
+        return {
+          ...p,
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: p.geometry.coordinates.map((ring) => douglasPeucker(ring, tolerance)),
+          },
+        };
+      }
+      return p;
+    })
+    .filter((p) => {
+      const coords =
+        p.geometry.type === "Polygon" ? p.geometry.coordinates : p.geometry.coordinates[0];
+      return coords && coords[0] && coords[0].length >= 4;
+    });
 }
 
 // ─── Internal Helpers ──────────────────────────────────────────
@@ -415,9 +402,13 @@ function perpendicularDistance(point: Position, lineStart: Position, lineEnd: Po
   const dx = lineEnd[0] - lineStart[0];
   const dy = lineEnd[1] - lineStart[1];
   const lenSq = dx * dx + dy * dy;
-  if (lenSq === 0) return Math.sqrt((point[0] - lineStart[0]) ** 2 + (point[1] - lineStart[1]) ** 2);
+  if (lenSq === 0)
+    return Math.sqrt((point[0] - lineStart[0]) ** 2 + (point[1] - lineStart[1]) ** 2);
 
-  const t = Math.max(0, Math.min(1, ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lenSq));
+  const t = Math.max(
+    0,
+    Math.min(1, ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lenSq)
+  );
   const projX = lineStart[0] + t * dx;
   const projY = lineStart[1] + t * dy;
   return Math.sqrt((point[0] - projX) ** 2 + (point[1] - projY) ** 2);

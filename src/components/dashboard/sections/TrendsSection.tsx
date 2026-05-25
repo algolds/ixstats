@@ -120,7 +120,7 @@ export function TrendsSection() {
                     <UnifiedCountryFlag
                       countryName={country.name}
                       size="sm"
-                      className="h-5 w-5 flex-shrink-0"
+                      className="h-5 w-5 shrink-0"
                     />
                     <span className="flex-1 truncate text-xs font-medium">{country.name}</span>
                     <span className="w-20 text-right text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -181,7 +181,7 @@ export function TrendsSection() {
                     <UnifiedCountryFlag
                       countryName={country.name}
                       size="sm"
-                      className="h-5 w-5 flex-shrink-0"
+                      className="h-5 w-5 shrink-0"
                     />
                     <span className="flex-1 truncate text-xs font-medium">{country.name}</span>
                     <span className="w-20 text-right text-xs font-semibold text-blue-600 dark:text-blue-400">

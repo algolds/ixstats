@@ -367,7 +367,12 @@ export function TaxBuilder({
               Manual mode
             </UIBadge>
           )}
-          <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} disabled={isReadOnly}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplates(true)}
+            disabled={isReadOnly}
+          >
             Use Template
           </Button>
           <Button
@@ -407,7 +412,9 @@ export function TaxBuilder({
                 >
                   <span className="text-base sm:text-lg">{step.icon}</span>
                   <span className="hidden font-medium sm:inline">{step.label}</span>
-                  {isCompleted && !stepHasErrors && <CheckCircle className="hidden h-4 w-4 sm:block" />}
+                  {isCompleted && !stepHasErrors && (
+                    <CheckCircle className="hidden h-4 w-4 sm:block" />
+                  )}
                   {stepHasErrors && <AlertTriangle className="hidden h-4 w-4 sm:block" />}
                 </button>
                 {index < steps.length - 1 && (

@@ -335,7 +335,7 @@ function PredictiveInsightCard({
           </div>
         </div>
 
-        <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+        <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
       </div>
 
       <AnimatePresence>

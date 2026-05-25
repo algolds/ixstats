@@ -29,7 +29,7 @@ interface ChoroplethOverlayProps {
 function interpolateColor(value: number, stops: [number, string][]): string {
   // Guard against non-numeric values
   if (value === null || value === undefined || isNaN(value)) return stops[0]![1];
-  
+
   if (value <= stops[0]![0]) return stops[0]![1];
   if (value >= stops[stops.length - 1]![0]) return stops[stops.length - 1]![1];
 
@@ -40,10 +40,16 @@ function interpolateColor(value: number, stops: [number, string][]): string {
       const t = (value - t0) / (t1 - t0);
       // Ensure t is a valid number
       const safeT = isNaN(t) ? 0 : t;
-      const r = Math.round(parseInt(c0.slice(1, 3), 16) * (1 - safeT) + parseInt(c1.slice(1, 3), 16) * safeT);
-      const g = Math.round(parseInt(c0.slice(3, 5), 16) * (1 - safeT) + parseInt(c1.slice(3, 5), 16) * safeT);
-      const b = Math.round(parseInt(c0.slice(5, 7), 16) * (1 - safeT) + parseInt(c1.slice(5, 7), 16) * safeT);
-      
+      const r = Math.round(
+        parseInt(c0.slice(1, 3), 16) * (1 - safeT) + parseInt(c1.slice(1, 3), 16) * safeT
+      );
+      const g = Math.round(
+        parseInt(c0.slice(3, 5), 16) * (1 - safeT) + parseInt(c1.slice(3, 5), 16) * safeT
+      );
+      const b = Math.round(
+        parseInt(c0.slice(5, 7), 16) * (1 - safeT) + parseInt(c1.slice(5, 7), 16) * safeT
+      );
+
       // Ensure r, g, b are valid numbers
       const safeR = isNaN(r) ? 0 : Math.max(0, Math.min(255, r));
       const safeG = isNaN(g) ? 0 : Math.max(0, Math.min(255, g));
@@ -57,18 +63,18 @@ function interpolateColor(value: number, stops: [number, string][]): string {
 
 const COLOR_SCALES: Record<ColorScale, [number, string][]> = {
   wealth: [
-    [0, "#94a3b8"],    // slate (poor)
+    [0, "#94a3b8"], // slate (poor)
     [0.25, "#6ee7b7"], // emerald
-    [0.5, "#34d399"],  // emerald
+    [0.5, "#34d399"], // emerald
     [0.75, "#fbbf24"], // amber
-    [1, "#f59e0b"],    // gold (wealthy)
+    [1, "#f59e0b"], // gold (wealthy)
   ],
   population: [
-    [0, "#e0f2fe"],    // sky-100 (sparse)
+    [0, "#e0f2fe"], // sky-100 (sparse)
     [0.25, "#7dd3fc"], // sky-300
-    [0.5, "#6366f1"],  // indigo
+    [0.5, "#6366f1"], // indigo
     [0.75, "#a855f7"], // purple
-    [1, "#ec4899"],    // pink (dense)
+    [1, "#ec4899"], // pink (dense)
   ],
   neutral: [
     [0, "#dbeafe"],
@@ -80,7 +86,12 @@ const COLOR_SCALES: Record<ColorScale, [number, string][]> = {
 const POLITICAL_LAYER_ID = "fill-political";
 const ORIGINAL_FILL_COLOR = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
 
-export function ChoroplethOverlay({ map, data, visible, colorScale = "neutral" }: ChoroplethOverlayProps) {
+export function ChoroplethOverlay({
+  map,
+  data,
+  visible,
+  colorScale = "neutral",
+}: ChoroplethOverlayProps) {
   const activeRef = useRef(false);
 
   useEffect(() => {
@@ -126,7 +137,9 @@ export function ChoroplethOverlay({ map, data, visible, colorScale = "neutral" }
         if (map.getLayer(POLITICAL_LAYER_ID)) {
           map.setPaintProperty(POLITICAL_LAYER_ID, "fill-color", ORIGINAL_FILL_COLOR as any);
         }
-      } catch { /* map may be destroyed */ }
+      } catch {
+        /* map may be destroyed */
+      }
       activeRef.current = false;
     };
   }, [map]);

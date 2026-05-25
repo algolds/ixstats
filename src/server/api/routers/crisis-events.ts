@@ -39,9 +39,7 @@ const CrisisEventSchema = z.object({
   affectedCountries: z.string().optional(), // JSON array of country IDs
   casualties: z.number().int().min(0).optional(),
   economicImpact: z.number().optional(), // Economic impact in billions
-  responseStatus: z
-    .enum(["pending", "in_progress", "resolved", "monitoring"])
-    .default("pending"),
+  responseStatus: z.enum(["pending", "in_progress", "resolved", "monitoring"]).default("pending"),
   description: z.string().max(2000).optional(),
   location: z.string().max(200).optional(),
   category: z
@@ -68,9 +66,7 @@ export const crisisEventsRouter = createTRPCRouter({
         type: z.string().optional(),
         category: z.enum(["economic", "diplomatic", "social", "governance", "security"]).optional(),
         countryId: z.string().optional(),
-        responseStatus: z
-          .enum(["pending", "in_progress", "resolved", "monitoring"])
-          .optional(),
+        responseStatus: z.enum(["pending", "in_progress", "resolved", "monitoring"]).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -359,7 +355,10 @@ export const crisisEventsRouter = createTRPCRouter({
             // Taking action: 5 IxC base
             creditReward = 5;
             rewardSource = "crisis_response_action";
-          } else if (event.responseStatus === "in_progress" && input.responseStatus === "resolved") {
+          } else if (
+            event.responseStatus === "in_progress" &&
+            input.responseStatus === "resolved"
+          ) {
             // Successful resolution: 10-20 IxC based on severity
             const severityBonus = {
               low: 10,
@@ -369,7 +368,10 @@ export const crisisEventsRouter = createTRPCRouter({
             };
             creditReward = severityBonus[event.severity as keyof typeof severityBonus] || 10;
             rewardSource = "crisis_response_success";
-          } else if (event.responseStatus === "in_progress" && input.responseStatus === "monitoring") {
+          } else if (
+            event.responseStatus === "in_progress" &&
+            input.responseStatus === "monitoring"
+          ) {
             // Contained/mitigated: 8 IxC neutral response
             creditReward = 8;
             rewardSource = "crisis_response_contained";

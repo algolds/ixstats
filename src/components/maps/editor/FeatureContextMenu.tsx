@@ -2,14 +2,7 @@
 
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import {
-  Pencil,
-  Copy,
-  Trash2,
-  MapPin,
-  ExternalLink,
-  BookOpen,
-} from "lucide-react";
+import { Pencil, Copy, Trash2, MapPin, ExternalLink, BookOpen } from "lucide-react";
 
 interface FeatureContextMenuProps {
   x: number;
@@ -50,7 +43,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     },
-    [onClose],
+    [onClose]
   );
 
   const handleClickOutside = useCallback(
@@ -60,7 +53,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
         onClose();
       }
     },
-    [onClose],
+    [onClose]
   );
 
   useEffect(() => {
@@ -143,6 +136,6 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
         </>
       )}
     </div>,
-    document.body,
+    document.body
   );
 });

@@ -102,15 +102,13 @@ export function generateTectonicPlates(
     // Area ~ r^2, so r ~ sqrt(fraction * totalLandArea)
     // In normalized space, the total "land budget" depends on ocean percentage
     const landBudget = 1 - params.oceanPercentage;
-    const baseRadius = Math.sqrt(sizeFractions[i]! * landBudget / Math.PI) * 1.8;
+    const baseRadius = Math.sqrt((sizeFractions[i]! * landBudget) / Math.PI) * 1.8;
 
     // Warp amplitude: controlled by similarity (high sim → closer to profile's complexity)
     const targetWarp = profile
       ? 0.25 + (profile.continent.coastlineComplexity.mean - 1.5) * 0.1
       : 0.3;
-    const warpAmplitude = similarity > 0
-      ? targetWarp * (0.7 + rng() * 0.6)
-      : 0.15 + rng() * 0.35;
+    const warpAmplitude = similarity > 0 ? targetWarp * (0.7 + rng() * 0.6) : 0.15 + rng() * 0.35;
 
     // Shelf extent: creates archipelago fringes
     const shelfExtent = 0.02 + rng() * 0.08;
@@ -170,10 +168,7 @@ export function tectonicInfluence(
       const dist = pointToPolylineDistNormalized(nx, ny, cz.boundary);
       if (dist < 0.08) {
         const proximity = 1 - dist / 0.08;
-        collisionBoost = Math.max(
-          collisionBoost,
-          proximity * proximity * cz.elevationBoost
-        );
+        collisionBoost = Math.max(collisionBoost, proximity * proximity * cz.elevationBoost);
       }
     }
 
@@ -216,8 +211,7 @@ function plateInfluence(plate: TectonicPlate, nx: number, ny: number): number {
     0.5
   );
 
-  const boundaryR =
-    plate.baseRadius * (1 + plate.warpAmplitude * (warp1 * 0.7 + warp2 * 0.3));
+  const boundaryR = plate.baseRadius * (1 + plate.warpAmplitude * (warp1 * 0.7 + warp2 * 0.3));
 
   // Main body influence: smooth falloff from center to boundary
   const normalizedDist = dist / Math.max(0.01, boundaryR);
@@ -232,19 +226,9 @@ function plateInfluence(plate: TectonicPlate, nx: number, ny: number): number {
     influence = 1 - t * t;
   } else if (normalizedDist < 1.0 + plate.shelfExtent / plate.baseRadius) {
     // Continental shelf: rapid falloff with noise for archipelago fringes
-    const shelfT =
-      (normalizedDist - 1.0) / (plate.shelfExtent / plate.baseRadius);
+    const shelfT = (normalizedDist - 1.0) / (plate.shelfExtent / plate.baseRadius);
     const shelfNoise =
-      fractalNoise(
-        plate.boundaryNoise,
-        nx * 20 + 50,
-        ny * 20 + 50,
-        3,
-        2.0,
-        0.5
-      ) *
-        0.5 +
-      0.5;
+      fractalNoise(plate.boundaryNoise, nx * 20 + 50, ny * 20 + 50, 3, 2.0, 0.5) * 0.5 + 0.5;
     influence = (1 - shelfT) * 0.3 * shelfNoise;
   } else {
     influence = 0;
@@ -335,11 +319,7 @@ function detectCollisionZones(
 /**
  * Distance from a point to a polyline (in normalized 0-1 space).
  */
-function pointToPolylineDistNormalized(
-  px: number,
-  py: number,
-  line: Position[]
-): number {
+function pointToPolylineDistNormalized(px: number, py: number, line: Position[]): number {
   let minDist = Infinity;
 
   for (let i = 0; i < line.length - 1; i++) {

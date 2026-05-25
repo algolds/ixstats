@@ -75,10 +75,7 @@ function clampField(field: string, value: number): number {
 // ==================== MODEL FIELD MAPPING ====================
 
 /** Maps targetModel values to their Prisma model name and lookup strategy */
-const MODEL_CONFIG: Record<
-  string,
-  { prismaModel: string; lookupField: string }
-> = {
+const MODEL_CONFIG: Record<string, { prismaModel: string; lookupField: string }> = {
   Country: { prismaModel: "country", lookupField: "id" },
   GovernmentStructure: {
     prismaModel: "governmentStructure",
@@ -152,9 +149,7 @@ export class NationalIssuesConsequences {
       // Parse response options
       let responseOptions: ResponseOptionTemplate[];
       try {
-        responseOptions = JSON.parse(
-          issue.responseOptions
-        ) as ResponseOptionTemplate[];
+        responseOptions = JSON.parse(issue.responseOptions) as ResponseOptionTemplate[];
       } catch {
         result.error = "Invalid response options";
         return result;
@@ -184,19 +179,13 @@ export class NationalIssuesConsequences {
               result.consequences.push(applied);
             }
           } catch (err) {
-            console.error(
-              `Failed to apply consequence for ${consequence.targetField}:`,
-              err
-            );
+            console.error(`Failed to apply consequence for ${consequence.targetField}:`, err);
           }
         }
       }
 
       // Calculate IxCredits reward
-      result.ixCreditsAwarded = this.calculateIxCredits(
-        issue,
-        isAutoResolve
-      );
+      result.ixCreditsAwarded = this.calculateIxCredits(issue, isAutoResolve);
 
       // Build consequence log
       result.consequenceLog = this.buildConsequenceLog(
@@ -221,15 +210,10 @@ export class NationalIssuesConsequences {
       });
 
       // Handle follow-up chain
-      if (
-        chosenOption.triggersFollowUp &&
-        chosenOption.triggersFollowUp.length > 0
-      ) {
+      if (chosenOption.triggersFollowUp && chosenOption.triggersFollowUp.length > 0) {
         for (const followUpSlug of chosenOption.triggersFollowUp) {
           try {
-            const followUpTemplate = await (
-              db as any
-            ).nationalIssueTemplate.findUnique({
+            const followUpTemplate = await (db as any).nationalIssueTemplate.findUnique({
               where: { slug: followUpSlug },
             });
             if (followUpTemplate) {
@@ -244,10 +228,7 @@ export class NationalIssuesConsequences {
               }
             }
           } catch (err) {
-            console.error(
-              `Failed to generate follow-up ${followUpSlug}:`,
-              err
-            );
+            console.error(`Failed to generate follow-up ${followUpSlug}:`, err);
           }
         }
 
@@ -283,8 +264,7 @@ export class NationalIssuesConsequences {
     const modelConfig = MODEL_CONFIG[consequence.targetModel];
     if (!modelConfig) return null;
 
-    const lookupValue =
-      consequence.targetModel === "Country" ? countryId : countryId;
+    const lookupValue = consequence.targetModel === "Country" ? countryId : countryId;
 
     // Read current value
     const record = await (db as any)[modelConfig.prismaModel].findUnique({
@@ -294,8 +274,7 @@ export class NationalIssuesConsequences {
 
     if (!record) return null;
 
-    const previousValue =
-      (record[consequence.targetField] as number) ?? 0;
+    const previousValue = (record[consequence.targetField] as number) ?? 0;
 
     // Calculate new value
     let newValue: number;
@@ -405,10 +384,7 @@ export class NationalIssuesConsequences {
   /**
    * Calculate IxCredits reward based on issue severity and resolution type.
    */
-  private static calculateIxCredits(
-    issue: any,
-    isAutoResolve: boolean
-  ): number {
+  private static calculateIxCredits(issue: any, isAutoResolve: boolean): number {
     if (isAutoResolve) return 0; // No reward for inaction
 
     const severityRewards: Record<string, number> = {

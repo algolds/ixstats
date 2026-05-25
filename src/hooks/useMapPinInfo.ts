@@ -9,10 +9,7 @@
 
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
-import {
-  queryPointClientSide,
-  type ClientPointQueryResult,
-} from "~/lib/map-point-query";
+import { queryPointClientSide, type ClientPointQueryResult } from "~/lib/map-point-query";
 import type { FeatureCollection } from "geojson";
 
 export interface PinPosition {
@@ -23,8 +20,7 @@ export interface PinPosition {
 export function useMapPinInfo() {
   const [pinPosition, setPinPosition] = useState<PinPosition | null>(null);
   const [isPinToolActive, setIsPinToolActive] = useState(false);
-  const [clientResult, setClientResult] =
-    useState<ClientPointQueryResult | null>(null);
+  const [clientResult, setClientResult] = useState<ClientPointQueryResult | null>(null);
 
   // Server-side enrichment query — only fires when pin is placed
   const serverQuery = api.geo.getPointInfo.useQuery(
@@ -33,11 +29,7 @@ export function useMapPinInfo() {
   );
 
   const dropPin = useCallback(
-    (
-      lng: number,
-      lat: number,
-      layers: Record<string, FeatureCollection | undefined>
-    ) => {
+    (lng: number, lat: number, layers: Record<string, FeatureCollection | undefined>) => {
       setPinPosition({ lng, lat });
       // Instant client-side lookup against loaded GeoJSON
       setClientResult(queryPointClientSide(lng, lat, layers));

@@ -141,7 +141,7 @@ function MobileSectionNavigator({
               variant="ghost"
               className="h-auto w-full justify-start p-3"
             >
-              <Icon className="mr-3 h-4 w-4 flex-shrink-0" />
+              <Icon className="mr-3 h-4 w-4 shrink-0" />
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">{section.title}</div>
                 <div className="text-foreground/60 text-xs">{section.purpose}</div>

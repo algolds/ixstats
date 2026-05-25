@@ -102,7 +102,7 @@ export function MetricCard({
               </div>
             )}
             <div className="flex-1">
-              <CardTitle className="text-xs leading-none font-medium flex items-center">
+              <CardTitle className="flex items-center text-xs leading-none font-medium">
                 {title}
                 {tooltip && <InlineHelpIcon content={tooltip} />}
               </CardTitle>

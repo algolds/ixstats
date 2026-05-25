@@ -33,10 +33,7 @@ export function useNationalIssuesToast(countryId: string | undefined) {
     }
 
     // Same counts — skip
-    if (
-      total === lastCountRef.current.total &&
-      urgent === lastCountRef.current.urgent
-    ) {
+    if (total === lastCountRef.current.total && urgent === lastCountRef.current.urgent) {
       return;
     }
 

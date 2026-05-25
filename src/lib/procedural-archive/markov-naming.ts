@@ -112,7 +112,8 @@ function joinWithLinkingVowel(base: string, suffix: string, rng: () => number): 
   for (let i = base.length - 1; i >= 0 && !isVowel(base[i]!); i--) tc++;
   let lc = 0;
   for (let i = 0; i < suffix.length && !isVowel(suffix[i]!); i++) lc++;
-  if (tc + lc >= 3) return base + LINKING_VOWELS[Math.floor(rng() * LINKING_VOWELS.length)]! + suffix;
+  if (tc + lc >= 3)
+    return base + LINKING_VOWELS[Math.floor(rng() * LINKING_VOWELS.length)]! + suffix;
   return base + suffix;
 }
 
@@ -147,7 +148,10 @@ export function buildLanguageFamily(
 
   const addT = (ctx: string, next: string) => {
     let m = transitions.get(ctx);
-    if (!m) { m = new Map(); transitions.set(ctx, m); }
+    if (!m) {
+      m = new Map();
+      transitions.set(ctx, m);
+    }
     m.set(next, (m.get(next) ?? 0) + 1);
   };
 
@@ -170,7 +174,10 @@ export function buildLanguageFamily(
   }
 
   return {
-    id, name, transitions, starters,
+    id,
+    name,
+    transitions,
+    starters,
     suffixes: options.suffixes ?? [],
     minLength: options.minLength ?? 4,
     maxLength: options.maxLength ?? 12,
@@ -272,8 +279,13 @@ export class MarkovNameGenerator {
     let lastType: "v" | "c" | null = null;
     for (const c of name) {
       const t = VOWELS.has(c) ? "v" : "c";
-      if (t === lastType) { run++; if (run >= 3) return false; }
-      else { run = 1; lastType = t; }
+      if (t === lastType) {
+        run++;
+        if (run >= 3) return false;
+      } else {
+        run = 1;
+        lastType = t;
+      }
     }
     return true;
   }
@@ -310,12 +322,22 @@ export class MarkovNameGenerator {
     return templates[Math.floor(this.rng() * templates.length)]!.replace("$N", root);
   }
 
-  generateRiverName(): string { return this.fromTemplate(this.family.riverTemplates); }
-  generateLakeName(): string { return this.fromTemplate(this.family.lakeTemplates); }
-  generateMountainName(): string { return this.fromTemplate(this.family.mountainTemplates); }
-  generateSeaName(): string { return this.fromTemplate(this.family.seaTemplates); }
+  generateRiverName(): string {
+    return this.fromTemplate(this.family.riverTemplates);
+  }
+  generateLakeName(): string {
+    return this.fromTemplate(this.family.lakeTemplates);
+  }
+  generateMountainName(): string {
+    return this.fromTemplate(this.family.mountainTemplates);
+  }
+  generateSeaName(): string {
+    return this.fromTemplate(this.family.seaTemplates);
+  }
 
-  getGenerated(): ReadonlySet<string> { return this.generated; }
+  getGenerated(): ReadonlySet<string> {
+    return this.generated;
+  }
 
   addExisting(names: Iterable<string>): void {
     for (const n of names) this.generated.add(n);
@@ -370,9 +392,10 @@ export class WorldNamingSystem {
       if (!fam) continue;
       for (const nb of neighbors.get(cur) ?? []) {
         if (!assignments.has(nb)) {
-          assignments.set(nb, this.rng() < 0.15
-            ? this.familyIds[Math.floor(this.rng() * fc)]!
-            : fam);
+          assignments.set(
+            nb,
+            this.rng() < 0.15 ? this.familyIds[Math.floor(this.rng() * fc)]! : fam
+          );
           queue.push(nb);
         }
       }
@@ -383,7 +406,11 @@ export class WorldNamingSystem {
     return assignments;
   }
 
-  private withGen(familyId: string, fallback: string, fn: (g: MarkovNameGenerator) => string): string {
+  private withGen(
+    familyId: string,
+    fallback: string,
+    fn: (g: MarkovNameGenerator) => string
+  ): string {
     const gen = this.generators.get(familyId);
     if (!gen) return `${fallback}${this.allNames.size}`;
     gen.addExisting(this.allNames);

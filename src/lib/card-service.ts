@@ -231,10 +231,7 @@ export async function getCard(db: PrismaClient, cardId: string) {
  * @param filters - Card filters
  * @returns Paginated card results
  */
-export async function getCards(
-  db: PrismaClient,
-  filters: CardFilters
-): Promise<PaginatedCards> {
+export async function getCards(db: PrismaClient, filters: CardFilters): Promise<PaginatedCards> {
   try {
     const limit = Math.min(filters.limit || 20, 100); // Cap at 100
     const offset = Math.max(filters.offset || 0, 0);
@@ -268,11 +265,7 @@ export async function getCards(
       db.card.count({ where }),
       db.card.findMany({
         where,
-        orderBy: [
-          { rarity: "desc" },
-          { marketValue: "desc" },
-          { createdAt: "desc" },
-        ],
+        orderBy: [{ rarity: "desc" }, { marketValue: "desc" }, { createdAt: "desc" }],
         take: limit,
         skip: offset,
       }),
@@ -479,10 +472,7 @@ export async function updateCardStats(db: PrismaClient, cardId: string) {
 
     // Calculate new stats from country data
     const newStats = {
-      economic: Math.min(
-        100,
-        Math.floor((country.currentGdpPerCapita || 0) / 1000)
-      ),
+      economic: Math.min(100, Math.floor((country.currentGdpPerCapita || 0) / 1000)),
       diplomatic: Math.min(100, 50), // TODO: Calculate from embassy count when available
       military: Math.min(100, 60), // TODO: Calculate from defense data when available
       social: Math.min(100, 55), // TODO: Calculate from ThinkPages data when available
@@ -606,10 +596,7 @@ export async function transferCard(
  * @param cardId - Card ID
  * @returns Market value
  */
-export async function getCardMarketValue(
-  db: PrismaClient,
-  cardId: string
-): Promise<number> {
+export async function getCardMarketValue(db: PrismaClient, cardId: string): Promise<number> {
   try {
     if (!cardId || cardId.trim().length === 0) {
       throw new TRPCError({
@@ -708,10 +695,7 @@ export async function awardAchievementCard(
     // Find user (handles both database id and clerk id)
     const user = await db.user.findFirst({
       where: {
-        OR: [
-          { id: userId },
-          { clerkUserId: userId },
-        ],
+        OR: [{ id: userId }, { clerkUserId: userId }],
       },
     });
 

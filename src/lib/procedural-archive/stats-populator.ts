@@ -18,7 +18,7 @@ export interface CountryGeoInput {
   id: string;
   name: string;
   areaKm2: number;
-  elevation: number;        // normalized 0-1
+  elevation: number; // normalized 0-1
   coastalPerimeter: number; // 0 = landlocked, 1 = fully coastal
   neighbors: string[];
   cultureTraits?: {
@@ -28,8 +28,8 @@ export interface CountryGeoInput {
     economy?: string;
     temperament?: string;
   };
-  habitability?: number;    // 0-1 from population generator
-  population?: number;      // from population generator
+  habitability?: number; // 0-1 from population generator
+  population?: number; // from population generator
 }
 
 export interface CountryStatsData {
@@ -161,7 +161,11 @@ const GOVERNMENT_TYPES = [
   "Direct Democracy",
 ];
 
-function assignGovernmentType(tier: string, traits: CountryGeoInput["cultureTraits"], rng: () => number): string {
+function assignGovernmentType(
+  tier: string,
+  traits: CountryGeoInput["cultureTraits"],
+  rng: () => number
+): string {
   const r = rng();
 
   // Higher tiers bias toward democratic governance
@@ -231,17 +235,27 @@ export function populateCountryStats(
     const growthRate = 0.01 + (6 - tierLevel) * 0.005 + (rng() - 0.5) * 0.01;
     const popGrowth = tierLevel <= 2 ? 0.002 + rng() * 0.005 : 0.01 + rng() * 0.015;
 
-    const stability = tierLevel <= 2
-      ? "Stable"
-      : tierLevel <= 3
-        ? (rng() < 0.7 ? "Stable" : "Moderate")
-        : (rng() < 0.4 ? "Moderate" : "Unstable");
+    const stability =
+      tierLevel <= 2
+        ? "Stable"
+        : tierLevel <= 3
+          ? rng() < 0.7
+            ? "Stable"
+            : "Moderate"
+          : rng() < 0.4
+            ? "Moderate"
+            : "Unstable";
 
-    const dipReputation = tierLevel <= 2
-      ? (rng() < 0.5 ? "Respected" : "Influential")
-      : tierLevel <= 3
-        ? "Neutral"
-        : (rng() < 0.5 ? "Neutral" : "Controversial");
+    const dipReputation =
+      tierLevel <= 2
+        ? rng() < 0.5
+          ? "Respected"
+          : "Influential"
+        : tierLevel <= 3
+          ? "Neutral"
+          : rng() < 0.5
+            ? "Neutral"
+            : "Controversial";
 
     return {
       id: country.id,

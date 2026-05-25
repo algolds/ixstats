@@ -30,13 +30,15 @@ type DetectedLink =
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string, rect: DOMRect): DetectedLink | null {
   // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /w/Title (WikiOS)
-  const ixMatch = href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/)
-    ?? href.match(/^\/wiki\/([^#?]+)/)
-    ?? href.match(/^\/w\/([^#?]+)/);
+  const ixMatch =
+    href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/) ??
+    href.match(/^\/wiki\/([^#?]+)/) ??
+    href.match(/^\/w\/([^#?]+)/);
   if (ixMatch) {
     const title = decodeURIComponent(ixMatch[1]!).replace(/_/g, " ");
     // Skip special pages that won't have useful previews
-    if (title.startsWith("Special:") || title.startsWith("File:") || title.startsWith("Category:")) return null;
+    if (title.startsWith("Special:") || title.startsWith("File:") || title.startsWith("Category:"))
+      return null;
     return { kind: "wiki", title, wiki: "ixwiki", x: clampX(rect), y: rect.bottom + 4 };
   }
 
@@ -44,7 +46,8 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
   const iiMatch = href.match(/(?:https?:\/\/)?iiwiki\.(?:com|us)\/wiki\/([^#?]+)/);
   if (iiMatch) {
     const title = decodeURIComponent(iiMatch[1]!).replace(/_/g, " ");
-    if (title.startsWith("Special:") || title.startsWith("File:") || title.startsWith("Category:")) return null;
+    if (title.startsWith("Special:") || title.startsWith("File:") || title.startsWith("Category:"))
+      return null;
     return { kind: "wiki", title, wiki: "iiwiki", x: clampX(rect), y: rect.bottom + 4 };
   }
 
@@ -61,7 +64,10 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
 }
 
 function clampX(rect: DOMRect): number {
-  return Math.min(Math.max(rect.left, 8), (typeof window !== "undefined" ? window.innerWidth : 1200) - 340);
+  return Math.min(
+    Math.max(rect.left, 8),
+    (typeof window !== "undefined" ? window.innerWidth : 1200) - 340
+  );
 }
 
 // ──────────────────────────────────────────────
@@ -147,21 +153,26 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
   return (
     <>
       {children}
-      {activeLink && typeof document !== "undefined" && createPortal(
-        <div
-          className="global-link-tooltip fixed z-[9999] w-80 rounded-xl border border-border bg-card p-3 shadow-xl animate-in fade-in-0 zoom-in-95 duration-150"
-          style={{ left: activeLink.x, top: activeLink.y }}
-          onMouseEnter={keepOpen}
-          onMouseLeave={() => { setActiveLink(null); activeElementRef.current = null; }}
-        >
-          {activeLink.kind === "wiki" ? (
-            <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
-          ) : (
-            <ForumTooltipBody threadId={activeLink.threadId} />
-          )}
-        </div>,
-        document.body
-      )}
+      {activeLink &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
+            style={{ left: activeLink.x, top: activeLink.y }}
+            onMouseEnter={keepOpen}
+            onMouseLeave={() => {
+              setActiveLink(null);
+              activeElementRef.current = null;
+            }}
+          >
+            {activeLink.kind === "wiki" ? (
+              <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
+            ) : (
+              <ForumTooltipBody threadId={activeLink.threadId} />
+            )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
@@ -171,10 +182,7 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
 // ──────────────────────────────────────────────
 
 function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
-  const { data: intro } = api.wiki.getIntro.useQuery(
-    { title, wiki },
-    { staleTime: 30 * 60_000 }
-  );
+  const { data: intro } = api.wiki.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
   const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
   const articleUrl = `${base}/wiki/${encodeURIComponent(title)}`;
@@ -183,17 +191,18 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="text-sm font-semibold text-foreground truncate">{title}</span>
-        <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+        <span className="text-foreground truncate text-sm font-semibold">{title}</span>
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
       {intro?.text ? (
-        <p className="text-xs leading-relaxed text-foreground/80 line-clamp-4">
-          {intro.text.substring(0, 300)}{intro.text.length > 300 ? "…" : ""}
+        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
+          {intro.text.substring(0, 300)}
+          {intro.text.length > 300 ? "…" : ""}
         </p>
       ) : (
-        <div className="h-10 animate-pulse rounded bg-muted" />
+        <div className="bg-muted h-10 animate-pulse rounded" />
       )}
       <a
         href={articleUrl}
@@ -224,9 +233,9 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-          <span className="text-sm font-medium text-foreground">Loading thread...</span>
+          <span className="text-foreground text-sm font-medium">Loading thread...</span>
         </div>
-        <div className="h-10 animate-pulse rounded bg-muted" />
+        <div className="bg-muted h-10 animate-pulse rounded" />
       </div>
     );
   }
@@ -235,7 +244,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-        <span className="text-sm font-semibold text-foreground truncate">{thread.title}</span>
+        <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
         <span className="inline-block rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
@@ -243,11 +252,12 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         </span>
       )}
       {thread.excerpt && (
-        <p className="text-xs leading-relaxed text-foreground/80 line-clamp-3">
-          {thread.excerpt.substring(0, 250)}{thread.excerpt.length > 250 ? "…" : ""}
+        <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+          {thread.excerpt.substring(0, 250)}
+          {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
         <span className="flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {thread.author}

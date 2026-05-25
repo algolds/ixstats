@@ -66,8 +66,8 @@ export function computeTectonicElevation(
 
   // Mark boundary cells from collision data
   for (const collision of collisions) {
-    const bt = collision.boundaryType === "convergent" ? 1
-      : collision.boundaryType === "divergent" ? 2 : 3;
+    const bt =
+      collision.boundaryType === "convergent" ? 1 : collision.boundaryType === "divergent" ? 2 : 3;
 
     for (const [bx, by] of collision.boundaryCells) {
       const idx = by * width + bx;
@@ -134,17 +134,26 @@ export function computeTectonicElevation(
   const distCoastline = bfsDistanceField(coastlineSeeds, [], width, height, seed + 12);
 
   // Distance from coast through land only (for interior uplift)
-  const distCoastLand = bfsDistanceField(coastlineSeeds, oceanSeeds.map(i => i), width, height, seed + 13);
+  const distCoastLand = bfsDistanceField(
+    coastlineSeeds,
+    oceanSeeds.map((i) => i),
+    width,
+    height,
+    seed + 13
+  );
 
   // ── Step 4: Compute elevation using distance-blend formula ──
 
   const elevation = new Float32Array(totalCells);
 
   // Normalize stress to 97th percentile
-  const stressValues = Array.from(stress).filter(v => v > 0.01).sort((a, b) => a - b);
-  const maxStress = stressValues.length > 0
-    ? stressValues[Math.min(stressValues.length - 1, Math.floor(stressValues.length * 0.97))]!
-    : 1;
+  const stressValues = Array.from(stress)
+    .filter((v) => v > 0.01)
+    .sort((a, b) => a - b);
+  const maxStress =
+    stressValues.length > 0
+      ? stressValues[Math.min(stressValues.length - 1, Math.floor(stressValues.length * 0.97))]!
+      : 1;
 
   const scaleFactor = Math.sqrt(totalCells / 100000);
   const interiorBand = Math.max(4, Math.round(16 * scaleFactor));
@@ -222,7 +231,14 @@ export function computeTectonicElevation(
     const nx = x / width;
     const ny = y / height;
     const noiseAmp = 0.08 + normalizedStress * 0.12;
-    const detail = fractalNoise(noise, nx * 8, ny * 8, 4 + Math.round(terrainRoughness * 2), 2.0, 0.5);
+    const detail = fractalNoise(
+      noise,
+      nx * 8,
+      ny * 8,
+      4 + Math.round(terrainRoughness * 2),
+      2.0,
+      0.5
+    );
     elev += detail * noiseAmp * terrainRoughness;
 
     // Ridge noise near mountains
@@ -239,7 +255,7 @@ export function computeTectonicElevation(
     }
 
     // Latitude factor (slight suppression at poles for more realistic distribution)
-    const latRad = ((y / height) - 0.5) * Math.PI;
+    const latRad = (y / height - 0.5) * Math.PI;
     const latFactor = 0.85 + 0.15 * Math.cos(latRad);
     elev *= latFactor;
 
@@ -252,7 +268,8 @@ export function computeTectonicElevation(
 
   // ── Step 6: Normalize land elevation to [0, 1] ──
 
-  let landMin = Infinity, landMax = -Infinity;
+  let landMin = Infinity,
+    landMax = -Infinity;
   for (let i = 0; i < totalCells; i++) {
     if (!isOcean[i]) {
       if (elevation[i]! < landMin) landMin = elevation[i]!;
@@ -430,7 +447,7 @@ function addHotspots(
 
       for (let dy = -radius; dy <= radius; dy++) {
         for (let dx = -radius; dx <= radius; dx++) {
-          const nx = ((wrappedX + dx) % width + width) % width;
+          const nx = (((wrappedX + dx) % width) + width) % width;
           const ny = py + dy;
           if (ny < 0 || ny >= height) continue;
 

@@ -10,9 +10,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  Layers, BarChart3, Tag, Ruler, MapPin, PenTool,
-} from "lucide-react";
+import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool } from "lucide-react";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/map-config";
 import type { OverlayVisibility } from "./IxWorldMap";
 
@@ -89,13 +87,15 @@ export function MapControls({
     setOpenPanel((prev) => (prev === panel ? null : panel));
   }, []);
 
-  const hasActiveAnalytics = overlayVisibility && (
-    overlayVisibility.wealth || overlayVisibility.population ||
-    overlayVisibility.diplomacy || overlayVisibility.crises
-  );
+  const hasActiveAnalytics =
+    overlayVisibility &&
+    (overlayVisibility.wealth ||
+      overlayVisibility.population ||
+      overlayVisibility.diplomacy ||
+      overlayVisibility.crises);
 
   return (
-    <div ref={containerRef} className="absolute left-3 top-16 z-10 sm:top-3">
+    <div ref={containerRef} className="absolute top-16 left-3 z-10 sm:top-3">
       {/* Icon button row */}
       <div className="flex items-center gap-1">
         {/* Layers */}
@@ -194,7 +194,7 @@ export function MapControls({
                       className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-black/10"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-[11px] text-foreground">{entry.label}</span>
+                    <span className="text-foreground text-[11px]">{entry.label}</span>
                   </div>
                 ))}
               </div>
@@ -239,23 +239,20 @@ function IconButton({
   variant?: "default" | "active-tool";
   onClick: () => void;
 }) {
-  const base = "relative flex items-center justify-center rounded-lg shadow-md transition-all duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
+  const base =
+    "relative flex items-center justify-center rounded-lg shadow-md transition-all duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
   const colors =
     variant === "active-tool"
       ? "bg-blue-500 text-white hover:bg-blue-600"
       : isActive
-      ? "bg-accent text-foreground"
-      : "bg-card text-muted-foreground hover:bg-accent hover:text-foreground";
+        ? "bg-accent text-foreground"
+        : "bg-card text-muted-foreground hover:bg-accent hover:text-foreground";
 
   return (
-    <button
-      onClick={onClick}
-      className={`${base} ${colors}`}
-      title={label}
-    >
+    <button onClick={onClick} className={`${base} ${colors}`} title={label}>
       {icon}
       {hasIndicator && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-blue-500 ring-1 ring-card" />
+        <span className="ring-card absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-1" />
       )}
     </button>
   );
@@ -263,7 +260,7 @@ function IconButton({
 
 function DropdownPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-1.5 w-48 animate-in fade-in slide-in-from-top-1 rounded-lg bg-card p-2 shadow-lg duration-150">
+    <div className="animate-in fade-in slide-in-from-top-1 bg-card mt-1.5 w-48 rounded-lg p-2 shadow-lg duration-150">
       {children}
     </div>
   );
@@ -271,8 +268,8 @@ function DropdownPanel({ children }: { children: React.ReactNode }) {
 
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="[&+&]:mt-1.5 [&+&]:border-t [&+&]:border-border [&+&]:pt-1.5">
-      <div className="px-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="[&+&]:border-border [&+&]:mt-1.5 [&+&]:border-t [&+&]:pt-1.5">
+      <div className="text-muted-foreground px-1.5 pb-0.5 text-[10px] font-semibold tracking-wider uppercase">
         {title}
       </div>
       {children}
@@ -290,14 +287,14 @@ function CheckboxRow({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1.5 sm:py-1 transition-colors hover:bg-accent">
+    <label className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded px-1.5 py-1.5 transition-colors sm:py-1">
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-3.5 w-3.5 rounded border-border text-blue-500 focus:ring-blue-500"
+        className="border-border h-3.5 w-3.5 rounded text-blue-500 focus:ring-blue-500"
       />
-      <span className="text-[12px] text-foreground">{label}</span>
+      <span className="text-foreground text-[12px]">{label}</span>
     </label>
   );
 }

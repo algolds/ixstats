@@ -6,9 +6,7 @@ import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
-import type {
-  IntelligenceUpdate,
-} from "./types";
+import type { IntelligenceUpdate } from "./types";
 
 export class IntelligenceWebSocketServer {
   private io: SocketIOServer;

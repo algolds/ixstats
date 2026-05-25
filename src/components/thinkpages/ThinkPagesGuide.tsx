@@ -61,7 +61,7 @@ export function ThinkPagesGuide() {
       content: (
         <div className="space-y-2 text-xs">
           <div className="flex items-start gap-2">
-            <Users className="mt-0.5 h-3 w-3 flex-shrink-0 text-orange-500 dark:text-orange-400" />
+            <Users className="mt-0.5 h-3 w-3 shrink-0 text-orange-500 dark:text-orange-400" />
             <div>
               <p className="text-foreground font-medium">ThinkTanks</p>
               <p className="text-muted-foreground">
@@ -70,7 +70,7 @@ export function ThinkPagesGuide() {
             </div>
           </div>
           <div className="flex items-start gap-2">
-            <MessageCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500 dark:text-green-400" />
+            <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-green-500 dark:text-green-400" />
             <div>
               <p className="text-foreground font-medium">ThinkShare</p>
               <p className="text-muted-foreground">
@@ -79,7 +79,7 @@ export function ThinkPagesGuide() {
             </div>
           </div>
           <div className="flex items-start gap-2">
-            <Zap className="mt-0.5 h-3 w-3 flex-shrink-0 text-yellow-500 dark:text-yellow-400" />
+            <Zap className="mt-0.5 h-3 w-3 shrink-0 text-yellow-500 dark:text-yellow-400" />
             <div>
               <p className="text-foreground font-medium">Live Intelligence</p>
               <p className="text-muted-foreground">Real-time economic data integration in posts</p>
@@ -96,25 +96,25 @@ export function ThinkPagesGuide() {
       content: (
         <div className="space-y-2 text-xs">
           <div className="flex items-start gap-2">
-            <Crown className="mt-0.5 h-3 w-3 flex-shrink-0 text-amber-500 dark:text-amber-400" />
+            <Crown className="mt-0.5 h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400" />
             <p className="text-muted-foreground">
               Government accounts are auto-verified and carry diplomatic weight
             </p>
           </div>
           <div className="flex items-start gap-2">
-            <Newspaper className="mt-0.5 h-3 w-3 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+            <Newspaper className="mt-0.5 h-3 w-3 shrink-0 text-blue-500 dark:text-blue-400" />
             <p className="text-muted-foreground">
               Media accounts can break news and influence public opinion
             </p>
           </div>
           <div className="flex items-start gap-2">
-            <Heart className="mt-0.5 h-3 w-3 flex-shrink-0 text-red-500 dark:text-red-400" />
+            <Heart className="mt-0.5 h-3 w-3 shrink-0 text-red-500 dark:text-red-400" />
             <p className="text-muted-foreground">
               Use reactions and hashtags to amplify your message's reach
             </p>
           </div>
           <div className="flex items-start gap-2">
-            <Shield className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500 dark:text-green-400" />
+            <Shield className="mt-0.5 h-3 w-3 shrink-0 text-green-500 dark:text-green-400" />
             <p className="text-muted-foreground">
               Private ThinkTanks require approval; public ones are open to all
             </p>
@@ -128,14 +128,11 @@ export function ThinkPagesGuide() {
     <Card className="glass-hierarchy-child overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
             <ThinkPagesIcon size={28} />
           </motion.div>
           <div>
-            <CardTitle className="text-sm font-bold text-foreground tracking-tight">
+            <CardTitle className="text-foreground text-sm font-bold tracking-tight">
               ThinkPages Guide
             </CardTitle>
             <p className="text-muted-foreground text-xs">Master the art of digital discourse</p>

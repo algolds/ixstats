@@ -26,11 +26,7 @@ import {
   Lightbulb,
   Target,
 } from "lucide-react";
-import {
-  type PolicyTemplate,
-  policyTaxonomy,
-  searchPolicyTemplates,
-} from "~/lib/policy-taxonomy";
+import { type PolicyTemplate, policyTaxonomy, searchPolicyTemplates } from "~/lib/policy-taxonomy";
 import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
@@ -212,15 +208,15 @@ export function PolicyTemplateSelector({
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <h4 className="font-medium">{template.name}</h4>
               {isSelectable && selectedTemplate?.id === template.id && (
-                <CheckCircle className="text-primary h-4 w-4 flex-shrink-0" />
+                <CheckCircle className="text-primary h-4 w-4 shrink-0" />
               )}
               <Badge
                 variant="outline"
-                className={cn("flex-shrink-0 text-xs", getPolicyTypeColor(template.policyType))}
+                className={cn("shrink-0 text-xs", getPolicyTypeColor(template.policyType))}
               >
                 {template.policyType}
               </Badge>
-              <Badge className={cn("flex-shrink-0 text-xs", getPriorityColor(template.priority))}>
+              <Badge className={cn("shrink-0 text-xs", getPriorityColor(template.priority))}>
                 {template.priority}
               </Badge>
             </div>
@@ -299,7 +295,7 @@ export function PolicyTemplateSelector({
           </div>
 
           {/* Navigation indicator */}
-          <div className="flex flex-shrink-0 flex-col items-end gap-2">
+          <div className="flex shrink-0 flex-col items-end gap-2">
             {hasChildren && (
               <div className="text-muted-foreground group-hover:text-primary flex items-center gap-1 text-xs transition-colors">
                 <span>
@@ -451,7 +447,7 @@ export function PolicyTemplateSelector({
         {selectedTemplate && (
           <div className="space-y-3 border-t pt-4">
             <div className="bg-primary/5 border-primary/20 flex items-start gap-3 rounded-lg border p-3">
-              <CheckCircle className="text-primary mt-0.5 h-5 w-5 flex-shrink-0" />
+              <CheckCircle className="text-primary mt-0.5 h-5 w-5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">Selected: {selectedTemplate.name}</p>
                 <p className="text-muted-foreground text-sm">{selectedTemplate.description}</p>

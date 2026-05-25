@@ -30,20 +30,16 @@ export function useNationalIssues(countryId: string | undefined) {
   );
 
   // Fetch single issue detail
-  const {
-    data: selectedIssue,
-    isLoading: isLoadingDetail,
-  } = api.nationalIssues.getIssue.useQuery(
+  const { data: selectedIssue, isLoading: isLoadingDetail } = api.nationalIssues.getIssue.useQuery(
     { id: selectedIssueId! },
     { enabled: !!selectedIssueId }
   );
 
   // Pending count for badges
-  const { data: countData, refetch: refetchCount } =
-    api.nationalIssues.getPendingCount.useQuery(
-      { countryId: countryId! },
-      { enabled: !!countryId, refetchInterval: 30000 }
-    );
+  const { data: countData, refetch: refetchCount } = api.nationalIssues.getPendingCount.useQuery(
+    { countryId: countryId! },
+    { enabled: !!countryId, refetchInterval: 30000 }
+  );
 
   // Mutations
   const respondMutation = api.nationalIssues.respond.useMutation({

@@ -122,11 +122,13 @@ export function useBulkFlags(
   const [error, setError] = useState<string | null>(null);
 
   // Fetch server-side cached flags via tRPC
-  const { data: serverFlags, isLoading: serverLoading } =
-    api.countries.flags.getAll.useQuery(undefined, {
+  const { data: serverFlags, isLoading: serverLoading } = api.countries.flags.getAll.useQuery(
+    undefined,
+    {
       staleTime: 1000 * 60 * 60, // 1 hour
       retry: 1,
-    });
+    }
+  );
 
   // Create a stable key for the country names to prevent unnecessary re-renders
   const countryNamesKey = useMemo(() => {

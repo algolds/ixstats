@@ -23,11 +23,10 @@ export function useMilitaryBranches({ countryId }: UseMilitaryBranchesOptions) {
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
 
   // --- Query ---
-  const { data: branches, refetch: refetchBranches } =
-    api.security.getMilitaryBranches.useQuery(
-      { countryId },
-      { enabled: !!countryId }
-    );
+  const { data: branches, refetch: refetchBranches } = api.security.getMilitaryBranches.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
 
   // --- Mutations ---
   const createBranch = api.security.createMilitaryBranch.useMutation({

@@ -32,7 +32,9 @@ export function useImageLightbox(containerRef: React.RefObject<HTMLElement | nul
       const img = target.closest("img") as HTMLImageElement | null;
       if (!img) return;
 
-      const link = img.closest("a.mw-file-description, a[href*='/wiki/File:'], a[href*='/w/File:']");
+      const link = img.closest(
+        "a.mw-file-description, a[href*='/wiki/File:'], a[href*='/w/File:']"
+      );
       if (!link) return;
 
       // Don't intercept infobox flag/coa images (too small to lightbox)
@@ -67,10 +69,7 @@ export function useImageLightbox(containerRef: React.RefObject<HTMLElement | nul
 
   if (!image) return null;
 
-  return createPortal(
-    <LightboxModal image={image} onClose={close} />,
-    document.body
-  );
+  return createPortal(<LightboxModal image={image} onClose={close} />, document.body);
 }
 
 // ---------------------------------------------------------------------------
@@ -89,7 +88,9 @@ function LightboxModal({ image, onClose }: { image: LightboxImage; onClose: () =
   // Prevent body scroll while open
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
   return (
@@ -108,7 +109,11 @@ function LightboxModal({ image, onClose }: { image: LightboxImage; onClose: () =
             </button>
             {image.fileUrl && (
               <a
-                href={image.fileUrl.startsWith("/") ? `https://ixwiki.com${image.fileUrl}` : image.fileUrl}
+                href={
+                  image.fileUrl.startsWith("/")
+                    ? `https://ixwiki.com${image.fileUrl}`
+                    : image.fileUrl
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="wikios-lightbox-btn"

@@ -4,11 +4,7 @@
  * Wraps the universal ExternalApiCache with MediaWiki-specific helpers
  */
 
-import {
-  externalApiCache,
-  type CacheMetadata,
-  CACHE_TTL,
-} from "./external-api-cache";
+import { externalApiCache, type CacheMetadata, CACHE_TTL } from "./external-api-cache";
 
 export interface WikiInfobox {
   rawWikitext: string;

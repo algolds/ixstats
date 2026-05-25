@@ -13,7 +13,12 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
-import type { Country, EconomicYearData, StorytellerEffect, EconomicModel } from "~/server/db/schema";
+import type {
+  Country,
+  EconomicYearData,
+  StorytellerEffect,
+  EconomicModel,
+} from "~/server/db/schema";
 import {
   type ModelParameters,
   type SectorData,

@@ -53,9 +53,7 @@ export function UnifiedComposerContainer({
             onCreateAccount={onCreateAccount || (() => {})}
             isOwner={isOwner}
             onPost={onPost}
-            placeholder={
-              repostData ? "Add a comment to your repost..." : "What's happening?"
-            }
+            placeholder={repostData ? "Add a comment to your repost..." : "What's happening?"}
             countryId={countryId}
             repostData={repostData}
           />

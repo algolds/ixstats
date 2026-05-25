@@ -120,7 +120,7 @@ export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepPro
             <ul className="text-muted-foreground space-y-3 text-sm">
               {benefits.map((benefit, index) => (
                 <li key={index} className="flex items-start">
-                  <div className="mt-1.5 mr-3 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
+                  <div className="mt-1.5 mr-3 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
                   <span>{benefit}</span>
                 </li>
               ))}

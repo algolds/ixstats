@@ -3,11 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import {
   getCard,
   getCards,
@@ -149,12 +145,7 @@ export const cardsRouter = createTRPCRouter({
           }
         }
 
-        const ownerships = await getUserCards(
-          ctx.db,
-          ctx.user.id,
-          input.sortBy,
-          filterRarity
-        );
+        const ownerships = await getUserCards(ctx.db, ctx.user.id, input.sortBy, filterRarity);
 
         return ownerships;
       } catch (error) {
@@ -214,8 +205,8 @@ export const cardsRouter = createTRPCRouter({
             input.sortBy === "rarity"
               ? { cards: { rarity: "desc" } }
               : input.sortBy === "value"
-              ? { cards: { marketValue: "desc" } }
-              : { acquiredAt: "desc" },
+                ? { cards: { marketValue: "desc" } }
+                : { acquiredAt: "desc" },
           take: input.limit,
         });
 
@@ -313,11 +304,7 @@ export const cardsRouter = createTRPCRouter({
             where: {
               countryId: input.countryId,
             },
-            orderBy: [
-              { season: "desc" },
-              { rarity: "desc" },
-              { createdAt: "desc" },
-            ],
+            orderBy: [{ season: "desc" }, { rarity: "desc" }, { createdAt: "desc" }],
             take: input.limit,
             skip: input.offset,
           }),
@@ -356,17 +343,9 @@ export const cardsRouter = createTRPCRouter({
         // Get featured cards (legendary, epic, or special type)
         const cards = await ctx.db.card.findMany({
           where: {
-            OR: [
-              { rarity: "LEGENDARY" },
-              { rarity: "EPIC" },
-              { cardType: "SPECIAL" },
-            ],
+            OR: [{ rarity: "LEGENDARY" }, { rarity: "EPIC" }, { cardType: "SPECIAL" }],
           },
-          orderBy: [
-            { rarity: "desc" },
-            { marketValue: "desc" },
-            { createdAt: "desc" },
-          ],
+          orderBy: [{ rarity: "desc" }, { marketValue: "desc" }, { createdAt: "desc" }],
           take: input.limit,
         });
 
@@ -426,12 +405,7 @@ export const cardsRouter = createTRPCRouter({
           });
         }
 
-        const result = await transferCard(
-          ctx.db,
-          ctx.user.id,
-          input.toUserId,
-          input.cardId
-        );
+        const result = await transferCard(ctx.db, ctx.user.id, input.toUserId, input.cardId);
 
         return result;
       } catch (error) {
@@ -588,12 +562,11 @@ export const cardsRouter = createTRPCRouter({
    * Get NS Library statistics
    * Accessible to all authenticated users
    */
-  getNSLibraryStats: protectedProcedure
-    .query(async ({ ctx }) => {
-      try {
-        const [totalCards, cardsByRegion, lastSync] = await Promise.all([
-          ctx.db.card.count({ where: { cardType: "NS_IMPORT" } }),
-          ctx.db.$queryRaw`
+  getNSLibraryStats: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const [totalCards, cardsByRegion, lastSync] = await Promise.all([
+        ctx.db.card.count({ where: { cardType: "NS_IMPORT" } }),
+        ctx.db.$queryRaw`
             SELECT stats->>'region' as region, COUNT(*)::int as count
             FROM cards
             WHERE "cardType" = 'NS_IMPORT' AND stats->>'region' IS NOT NULL AND stats->>'region' != ''
@@ -601,26 +574,28 @@ export const cardsRouter = createTRPCRouter({
             ORDER BY count DESC
             LIMIT 20
           ` as Promise<Array<{ region: string; count: number }>>,
-          ctx.db.syncLog.findFirst({
-            where: { syncType: { startsWith: "NS_" } },
-            orderBy: { startedAt: "desc" },
-            select: { startedAt: true, status: true, syncType: true },
-          }),
-        ]);
+        ctx.db.syncLog.findFirst({
+          where: { syncType: { startsWith: "NS_" } },
+          orderBy: { startedAt: "desc" },
+          select: { startedAt: true, status: true, syncType: true },
+        }),
+      ]);
 
-        return {
-          totalCards,
-          cardsByRegion: cardsByRegion ?? [],
-          lastSync: lastSync ? { at: lastSync.startedAt, status: lastSync.status, type: lastSync.syncType } : null,
-        };
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in getNSLibraryStats:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch NS library stats",
-        });
-      }
-    }),
+      return {
+        totalCards,
+        cardsByRegion: cardsByRegion ?? [],
+        lastSync: lastSync
+          ? { at: lastSync.startedAt, status: lastSync.status, type: lastSync.syncType }
+          : null,
+      };
+    } catch (error) {
+      console.error("[CARDS_ROUTER] Error in getNSLibraryStats:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch NS library stats",
+      });
+    }
+  }),
 
   /**
    * Get card market value
@@ -651,11 +626,13 @@ export const cardsRouter = createTRPCRouter({
   // ─── Collection CRUD ─────────────────────────────────────────────
 
   createCollection: protectedProcedure
-    .input(z.object({
-      name: z.string().min(1).max(100),
-      description: z.string().max(500).optional(),
-      isPublic: z.boolean().optional().default(false),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().max(500).optional(),
+        isPublic: z.boolean().optional().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
       const collection = await ctx.db.cardCollection.create({
@@ -669,15 +646,14 @@ export const cardsRouter = createTRPCRouter({
       return collection;
     }),
 
-  getMyCollections: protectedProcedure
-    .query(async ({ ctx }) => {
-      const userId = ctx.auth.userId;
-      return ctx.db.cardCollection.findMany({
-        where: { userId },
-        include: { _count: { select: { items: true } } },
-        orderBy: { createdAt: "desc" },
-      });
-    }),
+  getMyCollections: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.auth.userId;
+    return ctx.db.cardCollection.findMany({
+      where: { userId },
+      include: { _count: { select: { items: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
 
   getCollectionCards: protectedProcedure
     .input(z.object({ collectionId: z.string().min(1) }))
@@ -696,7 +672,11 @@ export const cardsRouter = createTRPCRouter({
           cardOwnership: {
             include: {
               cards: {
-                include: { country: { select: { id: true, name: true, continent: true, region: true, flag: true } } },
+                include: {
+                  country: {
+                    select: { id: true, name: true, continent: true, region: true, flag: true },
+                  },
+                },
               },
             },
           },
@@ -706,10 +686,12 @@ export const cardsRouter = createTRPCRouter({
     }),
 
   addToCollection: protectedProcedure
-    .input(z.object({
-      collectionId: z.string().min(1),
-      cardOwnershipId: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+        cardOwnershipId: z.string().min(1),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
       // Verify collection ownership
@@ -735,10 +717,12 @@ export const cardsRouter = createTRPCRouter({
     }),
 
   removeFromCollection: protectedProcedure
-    .input(z.object({
-      collectionId: z.string().min(1),
-      cardOwnershipId: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+        cardOwnershipId: z.string().min(1),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
       // Verify collection ownership
@@ -784,10 +768,12 @@ export const cardsRouter = createTRPCRouter({
    * Fetch wiki article excerpt on-demand for lore cards without stored fullExcerpt
    */
   getWikiArticleExcerpt: protectedProcedure
-    .input(z.object({
-      articleTitle: z.string().min(1),
-      wikiSource: z.enum(["ixwiki", "iiwiki"]),
-    }))
+    .input(
+      z.object({
+        articleTitle: z.string().min(1),
+        wikiSource: z.enum(["ixwiki", "iiwiki"]),
+      })
+    )
     .query(async ({ input }) => {
       const { getArticleIntro } = await import("~/lib/wiki-bridge");
       const result = await getArticleIntro(

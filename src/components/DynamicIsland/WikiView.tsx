@@ -129,7 +129,7 @@ export function WikiView({ onClose }: WikiViewProps) {
       {/* Search */}
       <div className="mb-3">
         <div className="border-border bg-accent/5 flex items-center gap-2 rounded-lg border px-3">
-          <Search className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+          <Search className="text-muted-foreground h-4 w-4 shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
@@ -167,7 +167,7 @@ export function WikiView({ onClose }: WikiViewProps) {
                 className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full flex-col rounded-md px-2 py-1.5 text-left transition-colors"
               >
                 <span className="flex items-center gap-2 text-sm">
-                  <BookOpen className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
+                  <BookOpen className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <span className="truncate font-medium">{result.title}</span>
                 </span>
                 {result.snippet && (

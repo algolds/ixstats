@@ -74,9 +74,7 @@ export function GlobalNotificationSystem({
   // Monitor notification changes for debugging
   useEffect(() => {
     if (isInitialized && notificationCount > 0) {
-      console.log(
-        `[GlobalNotificationSystem] ${notificationCount} total notifications`
-      );
+      console.log(`[GlobalNotificationSystem] ${notificationCount} total notifications`);
     }
   }, [notificationCount, isInitialized]);
 

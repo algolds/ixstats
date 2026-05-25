@@ -126,9 +126,10 @@ export async function fetchWikiIntro(
       return {
         extract: result.text,
         wikiSource: wiki,
-        wikiUrl: wiki === "ixwiki" 
-          ? `https://ixwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
-          : `https://iiwiki.us/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`,
+        wikiUrl:
+          wiki === "ixwiki"
+            ? `https://ixwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
+            : `https://iiwiki.us/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`,
       };
     }
   }

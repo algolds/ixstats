@@ -61,11 +61,15 @@ export function transformBBCode(
     (_m, size: string, content: string) => {
       const sizeNum = parseInt(size, 10);
       const cls =
-        sizeNum <= 2 ? "text-xs" :
-        sizeNum <= 4 ? "text-sm" :
-        sizeNum <= 5 ? "text-base" :
-        sizeNum <= 6 ? "text-lg" :
-        "text-xl";
+        sizeNum <= 2
+          ? "text-xs"
+          : sizeNum <= 4
+            ? "text-sm"
+            : sizeNum <= 5
+              ? "text-base"
+              : sizeNum <= 6
+                ? "text-lg"
+                : "text-xl";
       return `<span class="forum-size ${cls}">${content}</span>`;
     }
   );
@@ -82,31 +86,22 @@ export function transformBBCode(
   );
 
   // 5. URLs
-  html = html.replace(
-    /\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi,
-    (_m, url: string, text: string) => {
-      const href = rewriteForumUrl(unescapeHtml(url), forumBaseUrl);
-      return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
-    }
-  );
-  html = html.replace(
-    /\[url\]([\s\S]*?)\[\/url\]/gi,
-    (_m, url: string) => {
-      const href = rewriteForumUrl(unescapeHtml(url), forumBaseUrl);
-      return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
-    }
-  );
+  html = html.replace(/\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi, (_m, url: string, text: string) => {
+    const href = rewriteForumUrl(unescapeHtml(url), forumBaseUrl);
+    return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
+  });
+  html = html.replace(/\[url\]([\s\S]*?)\[\/url\]/gi, (_m, url: string) => {
+    const href = rewriteForumUrl(unescapeHtml(url), forumBaseUrl);
+    return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
+  });
 
   // 6. Images
-  html = html.replace(
-    /\[img\]([\s\S]*?)\[\/img\]/gi,
-    (_m, src: string) => {
-      const safeSrc = sanitizeUrl(unescapeHtml(src));
-      return safeSrc
-        ? `<img src="${escapeAttr(safeSrc)}" class="forum-img" loading="lazy" alt="" />`
-        : "";
-    }
-  );
+  html = html.replace(/\[img\]([\s\S]*?)\[\/img\]/gi, (_m, src: string) => {
+    const safeSrc = sanitizeUrl(unescapeHtml(src));
+    return safeSrc
+      ? `<img src="${escapeAttr(safeSrc)}" class="forum-img" loading="lazy" alt="" />`
+      : "";
+  });
 
   // 7. Quotes — extract quoted username, support nested quotes
   html = processQuotes(html, quotedUsers);
@@ -125,13 +120,10 @@ export function transformBBCode(
   html = processLists(html);
 
   // 10. Media embeds
-  html = html.replace(
-    /\[media=youtube\]([\s\S]*?)\[\/media\]/gi,
-    (_m, videoId: string) => {
-      const safeId = videoId.replace(/[^a-zA-Z0-9_-]/g, "");
-      return `<div class="forum-embed forum-embed-youtube"><iframe src="https://www.youtube-nocookie.com/embed/${safeId}" frameborder="0" allowfullscreen loading="lazy"></iframe></div>`;
-    }
-  );
+  html = html.replace(/\[media=youtube\]([\s\S]*?)\[\/media\]/gi, (_m, videoId: string) => {
+    const safeId = videoId.replace(/[^a-zA-Z0-9_-]/g, "");
+    return `<div class="forum-embed forum-embed-youtube"><iframe src="https://www.youtube-nocookie.com/embed/${safeId}" frameborder="0" allowfullscreen loading="lazy"></iframe></div>`;
+  });
 
   // 11. Spoilers
   html = html.replace(
@@ -153,31 +145,19 @@ export function transformBBCode(
   );
 
   // 13. Attachments
-  html = html.replace(
-    /\[attach(?:=full)?\](\d+)\[\/attach\]/gi,
-    (_m, attachId: string) => {
-      const id = parseInt(attachId, 10);
-      attachments.push({ id, inline: true });
-      return `<div class="forum-attachment" data-attachment-id="${id}"></div>`;
-    }
-  );
+  html = html.replace(/\[attach(?:=full)?\](\d+)\[\/attach\]/gi, (_m, attachId: string) => {
+    const id = parseInt(attachId, 10);
+    attachments.push({ id, inline: true });
+    return `<div class="forum-attachment" data-attachment-id="${id}"></div>`;
+  });
 
   // 14. Horizontal rule
   html = html.replace(/\[hr\]/gi, '<hr class="forum-hr" />');
 
   // 15. Alignment
-  html = html.replace(
-    /\[center\]([\s\S]*?)\[\/center\]/gi,
-    '<div class="text-center">$1</div>'
-  );
-  html = html.replace(
-    /\[left\]([\s\S]*?)\[\/left\]/gi,
-    '<div class="text-left">$1</div>'
-  );
-  html = html.replace(
-    /\[right\]([\s\S]*?)\[\/right\]/gi,
-    '<div class="text-right">$1</div>'
-  );
+  html = html.replace(/\[center\]([\s\S]*?)\[\/center\]/gi, '<div class="text-center">$1</div>');
+  html = html.replace(/\[left\]([\s\S]*?)\[\/left\]/gi, '<div class="text-left">$1</div>');
+  html = html.replace(/\[right\]([\s\S]*?)\[\/right\]/gi, '<div class="text-right">$1</div>');
 
   // 16. Headings (XenForo 2.x)
   html = html.replace(
@@ -249,30 +229,24 @@ function processLists(html: string): string {
   let result = html;
 
   // Ordered lists
-  result = result.replace(
-    /\[list=1\]([\s\S]*?)\[\/list\]/gi,
-    (_m, content: string) => {
-      const items = content
-        .split(/\[\*\]/)
-        .filter((s) => s.trim())
-        .map((s) => `<li>${s.trim()}</li>`)
-        .join("");
-      return `<ol class="forum-list forum-list-ordered">${items}</ol>`;
-    }
-  );
+  result = result.replace(/\[list=1\]([\s\S]*?)\[\/list\]/gi, (_m, content: string) => {
+    const items = content
+      .split(/\[\*\]/)
+      .filter((s) => s.trim())
+      .map((s) => `<li>${s.trim()}</li>`)
+      .join("");
+    return `<ol class="forum-list forum-list-ordered">${items}</ol>`;
+  });
 
   // Unordered lists
-  result = result.replace(
-    /\[list\]([\s\S]*?)\[\/list\]/gi,
-    (_m, content: string) => {
-      const items = content
-        .split(/\[\*\]/)
-        .filter((s) => s.trim())
-        .map((s) => `<li>${s.trim()}</li>`)
-        .join("");
-      return `<ul class="forum-list">${items}</ul>`;
-    }
-  );
+  result = result.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (_m, content: string) => {
+    const items = content
+      .split(/\[\*\]/)
+      .filter((s) => s.trim())
+      .map((s) => `<li>${s.trim()}</li>`)
+      .join("");
+    return `<ul class="forum-list">${items}</ul>`;
+  });
 
   return result;
 }

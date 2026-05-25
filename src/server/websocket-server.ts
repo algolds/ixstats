@@ -28,13 +28,11 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
 
   try {
     // Dynamic import to avoid bundling socket.io during build
-    const { IntelligenceWebSocketServer } = await import(
-      "~/lib/websocket/intelligence-websocket-server"
-    );
+    const { IntelligenceWebSocketServer } =
+      await import("~/lib/websocket/intelligence-websocket-server");
     const { IntelligenceBroadcastService } = await import("~/lib/intelligence-broadcast-service");
-    const { ThinkPagesWebSocketServer } = await import(
-      "~/lib/websocket/thinkpages-websocket-server"
-    );
+    const { ThinkPagesWebSocketServer } =
+      await import("~/lib/websocket/thinkpages-websocket-server");
 
     // Create WebSocket server
     wsServer = new IntelligenceWebSocketServer(httpServer);

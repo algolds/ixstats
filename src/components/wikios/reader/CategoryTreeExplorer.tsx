@@ -87,9 +87,7 @@ function CategoryNode({ title, fullTitle, depth }: CategoryNodeProps) {
             >
               <FileText size={12} className="wikios-tree-icon-page" />
               <Link
-                href={withBasePath(
-                  `/w/${encodeURIComponent(page.title.replace(/ /g, "_"))}`
-                )}
+                href={withBasePath(`/w/${encodeURIComponent(page.title.replace(/ /g, "_"))}`)}
                 className="wikios-tree-page-link"
               >
                 {page.title.replace(/_/g, " ")}
@@ -98,10 +96,7 @@ function CategoryNode({ title, fullTitle, depth }: CategoryNodeProps) {
           ))}
 
           {expanded && !treeQuery.isLoading && subcats.length === 0 && pages.length === 0 && (
-            <div
-              className="wikios-tree-empty"
-              style={{ marginLeft: (depth + 1) * 16 }}
-            >
+            <div className="wikios-tree-empty" style={{ marginLeft: (depth + 1) * 16 }}>
               Empty category
             </div>
           )}
@@ -129,17 +124,10 @@ export function CategoryTreeExplorer({ rootCategory, className }: CategoryTreeEx
         {rootCategory.replace(/_/g, " ")}
       </h3>
 
-      {treeQuery.isLoading && (
-        <div className="wikios-tree-loading">Loading category tree...</div>
-      )}
+      {treeQuery.isLoading && <div className="wikios-tree-loading">Loading category tree...</div>}
 
       {treeQuery.data?.subcategories.map((sc) => (
-        <CategoryNode
-          key={sc.fullTitle}
-          title={sc.title}
-          fullTitle={sc.fullTitle}
-          depth={0}
-        />
+        <CategoryNode key={sc.fullTitle} title={sc.title} fullTitle={sc.fullTitle} depth={0} />
       ))}
     </div>
   );

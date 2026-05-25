@@ -12,10 +12,7 @@ import { useMemo } from "react";
 import { api } from "~/trpc/react";
 
 export function useUserProfiles(userIds: string[]) {
-  const validIds = useMemo(
-    () => userIds.filter((id) => id && id.trim() !== ""),
-    [userIds]
-  );
+  const validIds = useMemo(() => userIds.filter((id) => id && id.trim() !== ""), [userIds]);
 
   const { data, isLoading, error } = api.users.getProfilesByIds.useQuery(
     { userIds: validIds },
@@ -30,10 +27,7 @@ export function useUserProfiles(userIds: string[]) {
     const map = new Map<string, string>();
     if (data) {
       for (const profile of data) {
-        map.set(
-          profile.userId,
-          profile.country?.name ?? `User ${profile.userId.substring(0, 8)}`
-        );
+        map.set(profile.userId, profile.country?.name ?? `User ${profile.userId.substring(0, 8)}`);
       }
     }
     return map;

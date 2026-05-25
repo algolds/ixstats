@@ -8,8 +8,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
 
-const apiBase =
-  process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
+const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
 const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -18,7 +17,17 @@ const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
 async function getUserWatchlistChanges(
   wikiUsername: string,
   limit = 20
-): Promise<{ title: string; user: string; timestamp: string; comment: string; type: string; newLen: number; oldLen: number }[]> {
+): Promise<
+  {
+    title: string;
+    user: string;
+    timestamp: string;
+    comment: string;
+    type: string;
+    newLen: number;
+    oldLen: number;
+  }[]
+> {
   try {
     // Get pages the user has edited, then check recent changes on those pages
     const params = new URLSearchParams({
@@ -79,10 +88,7 @@ async function getUserTalkPageMessages(
 // ─── Bridge Implementation ───────────────────────────────────────
 
 export const wikiTalkBridge: BridgeAdapter = {
-  async syncInbound(
-    userId: string,
-    db: PrismaClient
-  ): Promise<BridgeSyncResult> {
+  async syncInbound(userId: string, db: PrismaClient): Promise<BridgeSyncResult> {
     const result: BridgeSyncResult = {
       conversationsCreated: 0,
       conversationsUpdated: 0,

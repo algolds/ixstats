@@ -14,22 +14,31 @@ import * as fallbacks from "./seed-fallbacks";
 type Prisma = PrismaClient;
 
 // Allow dynamic model access for seed cloning (model names match Prisma keys)
-type PrismaDynamic = Record<string, { findMany: (args?: unknown) => Promise<unknown[]>; create: (args: { data: unknown }) => Promise<unknown> }>;
+type PrismaDynamic = Record<
+  string,
+  {
+    findMany: (args?: unknown) => Promise<unknown[]>;
+    create: (args: { data: unknown }) => Promise<unknown>;
+  }
+>;
 
 // ─── Phase 1: Economics (1:1 flat models) ──────────────────────────
 
 /** Map model name → fallback seeder function (takes prisma, countryId, [countryName]) */
-const ECONOMIC_FALLBACKS: Record<string, (p: Prisma, cid: string, name?: string) => Promise<number>> = {
-  demographics:        (p, c) => fallbacks.seedDemographics(p, c),
-  economicProfile:     (p, c) => fallbacks.seedEconomicProfile(p, c),
-  laborMarket:         (p, c) => fallbacks.seedLaborMarket(p, c),
-  fiscalSystem:        (p, c) => fallbacks.seedFiscalSystem(p, c),
-  incomeDistribution:  (p, c) => fallbacks.seedIncomeDistribution(p, c),
-  governmentBudget:    (p, c) => fallbacks.seedGovernmentBudget(p, c),
-  defenseBudget:       (p, c) => fallbacks.seedDefenseBudget(p, c),
-  securityAssessment:  (p, c) => fallbacks.seedSecurityAssessment(p, c),
+const ECONOMIC_FALLBACKS: Record<
+  string,
+  (p: Prisma, cid: string, name?: string) => Promise<number>
+> = {
+  demographics: (p, c) => fallbacks.seedDemographics(p, c),
+  economicProfile: (p, c) => fallbacks.seedEconomicProfile(p, c),
+  laborMarket: (p, c) => fallbacks.seedLaborMarket(p, c),
+  fiscalSystem: (p, c) => fallbacks.seedFiscalSystem(p, c),
+  incomeDistribution: (p, c) => fallbacks.seedIncomeDistribution(p, c),
+  governmentBudget: (p, c) => fallbacks.seedGovernmentBudget(p, c),
+  defenseBudget: (p, c) => fallbacks.seedDefenseBudget(p, c),
+  securityAssessment: (p, c) => fallbacks.seedSecurityAssessment(p, c),
   atomicEffectiveness: (p, c) => fallbacks.seedAtomicEffectiveness(p, c),
-  nationalIdentity:    (p, c, n) => fallbacks.seedNationalIdentity(p, c, n ?? "Demo Nation"),
+  nationalIdentity: (p, c, n) => fallbacks.seedNationalIdentity(p, c, n ?? "Demo Nation"),
 };
 
 const UNIQUE_ECONOMIC_MODELS = Object.keys(ECONOMIC_FALLBACKS);
@@ -38,14 +47,17 @@ export async function cloneEconomics(
   prisma: Prisma,
   sourceCountryId: string,
   demoCountryId: string,
-  countryName: string,
+  countryName: string
 ): Promise<number> {
   let count = 0;
 
   for (const modelName of UNIQUE_ECONOMIC_MODELS) {
     const { count: c } = await cloneUniqueRecord(
-      prisma, modelName, sourceCountryId, demoCountryId,
-      { extraStrip: ["geom_postgis"] },
+      prisma,
+      modelName,
+      sourceCountryId,
+      demoCountryId,
+      { extraStrip: ["geom_postgis"] }
     );
     if (c > 0) {
       count += c;
@@ -58,7 +70,10 @@ export async function cloneEconomics(
 
   // NPCPersonalityAssignment (1:1 @unique countryId)
   const { count: npcCount } = await cloneUniqueRecord(
-    prisma, "nPCPersonalityAssignment", sourceCountryId, demoCountryId,
+    prisma,
+    "nPCPersonalityAssignment",
+    sourceCountryId,
+    demoCountryId
   );
   if (npcCount > 0) {
     count += npcCount;
@@ -68,8 +83,11 @@ export async function cloneEconomics(
 
   // CardBackgroundImage (N records, compound unique [countryId, cardType])
   const { count: cardBgCount } = await cloneRecords(
-    prisma, "cardBackgroundImage", sourceCountryId, demoCountryId,
-    { extraStrip: ["uploadedAt"] },
+    prisma,
+    "cardBackgroundImage",
+    sourceCountryId,
+    demoCountryId,
+    { extraStrip: ["uploadedAt"] }
   );
   count += cardBgCount;
 
@@ -81,7 +99,7 @@ export async function cloneEconomics(
 export async function cloneGovernmentTree(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   let count = 0;
 
@@ -146,7 +164,7 @@ export async function cloneGovernmentTree(
     const data = stripRecord(official, demoGovId, {
       countryField: "governmentStructureId",
       transforms: {
-        departmentId: (val: string | null) => val ? (deptIdMap.get(val) ?? null) : null,
+        departmentId: (val: string | null) => (val ? (deptIdMap.get(val) ?? null) : null),
       },
     });
     await prisma.governmentOfficial.create({ data });
@@ -185,10 +203,9 @@ export async function cloneGovernmentTree(
   }
 
   // Clone RevenueSource
-  const { count: revCount } = await cloneRecords(
-    prisma, "revenueSource", sourceGovId, demoGovId,
-    { countryField: "governmentStructureId" },
-  );
+  const { count: revCount } = await cloneRecords(prisma, "revenueSource", sourceGovId, demoGovId, {
+    countryField: "governmentStructureId",
+  });
   count += revCount;
 
   return count;
@@ -199,7 +216,7 @@ export async function cloneGovernmentTree(
 export async function cloneComponents(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   let count = 0;
 
@@ -210,7 +227,9 @@ export async function cloneComponents(
 
   // If source has no components at all, use synthetic fallback
   if (sourceGovComps.length === 0) {
-    const econComps = await prisma.economicComponent.count({ where: { countryId: sourceCountryId } });
+    const econComps = await prisma.economicComponent.count({
+      where: { countryId: sourceCountryId },
+    });
     const taxComps = await prisma.taxComponent.count({ where: { countryId: sourceCountryId } });
     if (econComps === 0 && taxComps === 0) {
       return fallbacks.seedGovernmentComponents(prisma, demoCountryId);
@@ -246,19 +265,28 @@ export async function cloneComponents(
 
   // EconomicComponent (flat)
   const { count: econCount } = await cloneRecords(
-    prisma, "economicComponent", sourceCountryId, demoCountryId,
+    prisma,
+    "economicComponent",
+    sourceCountryId,
+    demoCountryId
   );
   count += econCount;
 
   // TaxComponent (flat)
   const { count: taxCount } = await cloneRecords(
-    prisma, "taxComponent", sourceCountryId, demoCountryId,
+    prisma,
+    "taxComponent",
+    sourceCountryId,
+    demoCountryId
   );
   count += taxCount;
 
   // CrossBuilderSynergy (flat clone, string fields are metadata)
   const { count: crossCount } = await cloneRecords(
-    prisma, "crossBuilderSynergy", sourceCountryId, demoCountryId,
+    prisma,
+    "crossBuilderSynergy",
+    sourceCountryId,
+    demoCountryId
   );
   count += crossCount;
 
@@ -275,7 +303,7 @@ export async function cloneComponents(
 export async function cloneTaxTree(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   let count = 0;
 
@@ -341,7 +369,9 @@ export async function cloneTaxTree(
     where: { taxSystemId: sourceTaxSystemId },
   });
   for (const exemption of sourceExemptions) {
-    const newCatId = exemption.categoryId ? (categoryIdMap.get(exemption.categoryId) ?? null) : null;
+    const newCatId = exemption.categoryId
+      ? (categoryIdMap.get(exemption.categoryId) ?? null)
+      : null;
     const data = stripRecord(exemption, "", {
       countryField: "___skip___",
       transforms: {
@@ -388,7 +418,9 @@ export async function cloneTaxTree(
   }
 
   // Post-clone check: if source had no categories or no brackets, seed them
-  const demoCategories = await prisma.taxCategory.count({ where: { taxSystemId: demoTaxSystemId } });
+  const demoCategories = await prisma.taxCategory.count({
+    where: { taxSystemId: demoTaxSystemId },
+  });
   if (demoCategories === 0) {
     // Delete the empty cloned TaxSystem and fall back to full synthetic seed
     await prisma.taxSystem.delete({ where: { id: demoTaxSystemId } });
@@ -406,16 +438,64 @@ export async function cloneTaxTree(
       if (cat.categoryType === "income") {
         await prisma.taxBracket.createMany({
           data: [
-            { taxSystemId: demoTaxSystemId, categoryId: cat.id, bracketName: "Lower Rate", minIncome: 0, maxIncome: 50000, rate: 10, marginalRate: true, isActive: true, priority: 10 },
-            { taxSystemId: demoTaxSystemId, categoryId: cat.id, bracketName: "Standard Rate", minIncome: 50001, maxIncome: 150000, rate: 22, marginalRate: true, isActive: true, priority: 20 },
-            { taxSystemId: demoTaxSystemId, categoryId: cat.id, bracketName: "Higher Rate", minIncome: 150001, maxIncome: 500000, rate: 32, marginalRate: true, isActive: true, priority: 30 },
-            { taxSystemId: demoTaxSystemId, categoryId: cat.id, bracketName: "Top Rate", minIncome: 500001, rate: 37, marginalRate: true, isActive: true, priority: 40 },
+            {
+              taxSystemId: demoTaxSystemId,
+              categoryId: cat.id,
+              bracketName: "Lower Rate",
+              minIncome: 0,
+              maxIncome: 50000,
+              rate: 10,
+              marginalRate: true,
+              isActive: true,
+              priority: 10,
+            },
+            {
+              taxSystemId: demoTaxSystemId,
+              categoryId: cat.id,
+              bracketName: "Standard Rate",
+              minIncome: 50001,
+              maxIncome: 150000,
+              rate: 22,
+              marginalRate: true,
+              isActive: true,
+              priority: 20,
+            },
+            {
+              taxSystemId: demoTaxSystemId,
+              categoryId: cat.id,
+              bracketName: "Higher Rate",
+              minIncome: 150001,
+              maxIncome: 500000,
+              rate: 32,
+              marginalRate: true,
+              isActive: true,
+              priority: 30,
+            },
+            {
+              taxSystemId: demoTaxSystemId,
+              categoryId: cat.id,
+              bracketName: "Top Rate",
+              minIncome: 500001,
+              rate: 37,
+              marginalRate: true,
+              isActive: true,
+              priority: 40,
+            },
           ],
         });
         count += 4;
       } else if (cat.categoryType === "corporate") {
         await prisma.taxBracket.create({
-          data: { taxSystemId: demoTaxSystemId, categoryId: cat.id, bracketName: "Standard Rate", minIncome: 0, rate: 21, marginalRate: false, isActive: true, priority: 10 },
+          data: {
+            taxSystemId: demoTaxSystemId,
+            categoryId: cat.id,
+            bracketName: "Standard Rate",
+            minIncome: 0,
+            rate: 21,
+            marginalRate: false,
+            isActive: true,
+            priority: 10,
+          },
         });
         count++;
       }
@@ -428,22 +508,73 @@ export async function cloneTaxTree(
   });
   if (demoDeductions === 0 && categoryIdMap.size > 0) {
     for (const [_sourceId, newCatId] of categoryIdMap) {
-      const cat = await prisma.taxCategory.findUnique({ where: { id: newCatId }, select: { categoryType: true } });
+      const cat = await prisma.taxCategory.findUnique({
+        where: { id: newCatId },
+        select: { categoryType: true },
+      });
       if (cat?.categoryType === "income") {
         await prisma.taxDeduction.createMany({
           data: [
-            { categoryId: newCatId, deductionName: "Charitable Donations", deductionType: "charitable", description: "Deduction for verified charitable contributions.", percentage: 100, isActive: true, priority: 10 },
-            { categoryId: newCatId, deductionName: "Mortgage Interest", deductionType: "housing", description: "Deduction for primary residence mortgage interest.", maximumAmount: 750000, isActive: true, priority: 20 },
-            { categoryId: newCatId, deductionName: "Medical Expenses", deductionType: "medical", description: "Deduction for out-of-pocket medical costs.", percentage: 100, isActive: true, priority: 30 },
-            { categoryId: newCatId, deductionName: "Education Expenses", deductionType: "education", description: "Deduction for qualifying tuition and materials.", maximumAmount: 10000, isActive: true, priority: 40 },
+            {
+              categoryId: newCatId,
+              deductionName: "Charitable Donations",
+              deductionType: "charitable",
+              description: "Deduction for verified charitable contributions.",
+              percentage: 100,
+              isActive: true,
+              priority: 10,
+            },
+            {
+              categoryId: newCatId,
+              deductionName: "Mortgage Interest",
+              deductionType: "housing",
+              description: "Deduction for primary residence mortgage interest.",
+              maximumAmount: 750000,
+              isActive: true,
+              priority: 20,
+            },
+            {
+              categoryId: newCatId,
+              deductionName: "Medical Expenses",
+              deductionType: "medical",
+              description: "Deduction for out-of-pocket medical costs.",
+              percentage: 100,
+              isActive: true,
+              priority: 30,
+            },
+            {
+              categoryId: newCatId,
+              deductionName: "Education Expenses",
+              deductionType: "education",
+              description: "Deduction for qualifying tuition and materials.",
+              maximumAmount: 10000,
+              isActive: true,
+              priority: 40,
+            },
           ],
         });
         count += 4;
       } else if (cat?.categoryType === "corporate") {
         await prisma.taxDeduction.createMany({
           data: [
-            { categoryId: newCatId, deductionName: "Business Expenses", deductionType: "operational", description: "Standard deduction for operating costs.", percentage: 100, isActive: true, priority: 10 },
-            { categoryId: newCatId, deductionName: "R&D Tax Credit", deductionType: "research", description: "Credit for qualifying R&D expenditures.", percentage: 20, isActive: true, priority: 20 },
+            {
+              categoryId: newCatId,
+              deductionName: "Business Expenses",
+              deductionType: "operational",
+              description: "Standard deduction for operating costs.",
+              percentage: 100,
+              isActive: true,
+              priority: 10,
+            },
+            {
+              categoryId: newCatId,
+              deductionName: "R&D Tax Credit",
+              deductionType: "research",
+              description: "Credit for qualifying R&D expenditures.",
+              percentage: 20,
+              isActive: true,
+              priority: 20,
+            },
           ],
         });
         count += 2;
@@ -459,7 +590,7 @@ export async function cloneTaxTree(
 export async function cloneSecurity(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   let count = 0;
 
@@ -532,15 +663,18 @@ export async function cloneSecurity(
 export async function cloneGeography(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   let count = 0;
   const geoStrip = ["geom_postgis"];
 
   // Territory (flat)
   const { count: terCount } = await cloneRecords(
-    prisma, "territory", sourceCountryId, demoCountryId,
-    { extraStrip: geoStrip },
+    prisma,
+    "territory",
+    sourceCountryId,
+    demoCountryId,
+    { extraStrip: geoStrip }
   );
   count += terCount;
 
@@ -598,7 +732,7 @@ export async function cloneOrSeedMeetings(
   prisma: Prisma,
   sourceCountryId: string,
   demoCountryId: string,
-  userId: string,
+  userId: string
 ): Promise<number> {
   // Check if source has meetings
   const sourceCount = await prisma.cabinetMeeting.count({
@@ -660,7 +794,7 @@ export async function cloneOrSeedPolicies(
   prisma: Prisma,
   sourceCountryId: string,
   demoCountryId: string,
-  userId: string,
+  userId: string
 ): Promise<number> {
   const sourceCount = await prisma.policy.count({
     where: { countryId: sourceCountryId },
@@ -710,7 +844,7 @@ export async function cloneOrSeedPolicies(
 export async function cloneOrSeedElections(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   const partyCount = await prisma.politicalParty.count({
     where: { countryId: sourceCountryId },
@@ -826,7 +960,7 @@ export async function cloneOrSeedElections(
 export async function cloneOrSeedDefense(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   const branchCount = await prisma.militaryBranch.count({
     where: { countryId: sourceCountryId },
@@ -863,13 +997,16 @@ export async function cloneOrSeedDefense(
 
   // Clone MilitaryOperation
   const { count: opsCount } = await cloneRecords(
-    prisma, "militaryOperation", sourceCountryId, demoCountryId,
+    prisma,
+    "militaryOperation",
+    sourceCountryId,
+    demoCountryId,
     {
       transforms: {
         // Null out JSON fields that reference asset IDs
         assetsDeployed: () => null,
       },
-    },
+    }
   );
   count += opsCount;
 
@@ -881,7 +1018,7 @@ export async function cloneOrSeedDefense(
 export async function cloneOrSeedIntelligence(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   const briefingCount = await prisma.intelligenceBriefing.count({
     where: { countryId: sourceCountryId },
@@ -917,14 +1054,20 @@ export async function cloneOrSeedIntelligence(
 
   // Clone IntelligenceAlert
   const { count: alertCount } = await cloneRecords(
-    prisma, "intelligenceAlert", sourceCountryId, demoCountryId,
+    prisma,
+    "intelligenceAlert",
+    sourceCountryId,
+    demoCountryId
   );
   count += alertCount;
 
   // Clone IntelligenceAlertThreshold
   try {
     const { count: threshCount } = await cloneRecords(
-      prisma, "intelligenceAlertThreshold", sourceCountryId, demoCountryId,
+      prisma,
+      "intelligenceAlertThreshold",
+      sourceCountryId,
+      demoCountryId
     );
     count += threshCount;
   } catch {
@@ -940,7 +1083,7 @@ export async function cloneOrSeedNationalIssues(
   prisma: Prisma,
   sourceCountryId: string,
   demoCountryId: string,
-  countryName: string,
+  countryName: string
 ): Promise<number> {
   const issueCount = await prisma.nationalIssue.count({
     where: { countryId: sourceCountryId },
@@ -984,7 +1127,7 @@ export async function cloneOrSeedDiplomacy(
   prisma: Prisma,
   sourceCountryId: string,
   demoCountryId: string,
-  countryName: string,
+  countryName: string
 ): Promise<number> {
   // Check if source has diplomatic relations
   const relCount = await prisma.diplomaticRelation.count({
@@ -1069,7 +1212,7 @@ export async function cloneOrSeedSocial(
   sourceCountryId: string,
   demoCountryId: string,
   userId: string,
-  countryName: string,
+  countryName: string
 ): Promise<number> {
   const accountCount = await prisma.thinkpagesAccount.count({
     where: { countryId: sourceCountryId },
@@ -1121,28 +1264,37 @@ export async function cloneOrSeedSocial(
 export async function cloneHistory(
   prisma: Prisma,
   sourceCountryId: string,
-  demoCountryId: string,
+  demoCountryId: string
 ): Promise<number> {
   let count = 0;
 
   // HistoricalDataPoint (last 90 records)
   const { count: histCount } = await cloneRecords(
-    prisma, "historicalDataPoint", sourceCountryId, demoCountryId,
-    { orderBy: { ixTimeTimestamp: "desc" }, take: 90 },
+    prisma,
+    "historicalDataPoint",
+    sourceCountryId,
+    demoCountryId,
+    { orderBy: { ixTimeTimestamp: "desc" }, take: 90 }
   );
   count += histCount;
 
   // VitalityHistory (last 30 records, no FK relation)
   const { count: vitalCount } = await cloneRecords(
-    prisma, "vitalityHistory", sourceCountryId, demoCountryId,
-    { orderBy: { timestamp: "desc" }, take: 30 },
+    prisma,
+    "vitalityHistory",
+    sourceCountryId,
+    demoCountryId,
+    { orderBy: { timestamp: "desc" }, take: 30 }
   );
   count += vitalCount;
 
   // ComponentEffectivenessHistory (last 30 records, no FK relation)
   const { count: compHistCount } = await cloneRecords(
-    prisma, "componentEffectivenessHistory", sourceCountryId, demoCountryId,
-    { orderBy: { timestamp: "desc" }, take: 30 },
+    prisma,
+    "componentEffectivenessHistory",
+    sourceCountryId,
+    demoCountryId,
+    { orderBy: { timestamp: "desc" }, take: 30 }
   );
   count += compHistCount;
 
@@ -1156,10 +1308,7 @@ export async function cloneHistory(
 
 // ─── Phase 16: Crisis Events (seed only, global model) ──────────
 
-export async function seedCrisisEvents(
-  prisma: Prisma,
-  countryName: string,
-): Promise<number> {
+export async function seedCrisisEvents(prisma: Prisma, countryName: string): Promise<number> {
   return fallbacks.seedCrisisEvents(prisma, countryName);
 }
 
@@ -1169,12 +1318,13 @@ export async function cloneOrSeedActivityFeed(
   prisma: Prisma,
   sourceCountryId: string,
   demoCountryId: string,
-  userId: string,
+  userId: string
 ): Promise<number> {
-  const { count } = await cloneRecords(
-    prisma, "activityFeed", sourceCountryId, demoCountryId,
-    { orderBy: { createdAt: "desc" }, take: 30, transforms: { userId: () => userId } },
-  );
+  const { count } = await cloneRecords(prisma, "activityFeed", sourceCountryId, demoCountryId, {
+    orderBy: { createdAt: "desc" },
+    take: 30,
+    transforms: { userId: () => userId },
+  });
   if (count > 0) return count;
 
   // Source had no activity feed → use synthetic fallback

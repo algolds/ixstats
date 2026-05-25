@@ -12,10 +12,7 @@
 
 import { makeRng } from "./rng";
 import { type PackedGraph, type WorldGenParams, WATER_THRESHOLD } from "./types";
-import {
-  ELEVATION_ZONES,
-  getZoneForNormalizedValue,
-} from "../elevation-config";
+import { ELEVATION_ZONES, getZoneForNormalizedValue } from "../elevation-config";
 
 // ──────────────────────────────────────────────
 // Public API
@@ -98,11 +95,7 @@ export function generateHeightmap(
  * Starts from a random cell, then greedily picks the cell farthest
  * from all already-selected centers (using squared-distance on coordinates).
  */
-function farthestPointSample(
-  graph: PackedGraph,
-  count: number,
-  rng: () => number
-): number[] {
+function farthestPointSample(graph: PackedGraph, count: number, rng: () => number): number[] {
   const { cells } = graph;
   const n = cells.n;
   const centers: number[] = [];
@@ -215,11 +208,7 @@ function getLandCandidates(hFloat: Float64Array, n: number): number[] {
  * Strategy: find the value at the `oceanPct` percentile. Linearly scale
  * so that value maps to 50 (just below threshold).
  */
-function normalizeForOcean(
-  hFloat: Float64Array,
-  n: number,
-  oceanPct: number
-): void {
+function normalizeForOcean(hFloat: Float64Array, n: number, oceanPct: number): void {
   // Sort a copy to find the percentile value
   const sorted = Float64Array.from(hFloat).sort();
   const idx = Math.floor(oceanPct * n);

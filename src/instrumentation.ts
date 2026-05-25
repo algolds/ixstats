@@ -25,9 +25,7 @@ export async function register() {
 
     try {
       // Dynamically import to avoid bundling issues
-      const { ProductionStartup } = await import(
-        "./lib/production-optimizations"
-      );
+      const { ProductionStartup } = await import("./lib/production-optimizations");
 
       // Initialize production optimizations (memory monitoring, slow query analysis)
       await ProductionStartup.initialize();
@@ -38,10 +36,7 @@ export async function register() {
         await ProductionStartup.warmupCaches();
       } catch (cacheError) {
         // Non-fatal: continue even if cache warm-up fails
-        console.warn(
-          "[Instrumentation] Cache warm-up failed (non-fatal):",
-          cacheError
-        );
+        console.warn("[Instrumentation] Cache warm-up failed (non-fatal):", cacheError);
       }
 
       // Warm up geo layer cache (pre-load all 7 map layers into memory)
@@ -54,9 +49,8 @@ export async function register() {
       }
 
       // Register process-level error handlers from a Node-only module.
-      const { registerNodeProcessErrorHandlers } = await import(
-        "./lib/node-process-error-handlers"
-      );
+      const { registerNodeProcessErrorHandlers } =
+        await import("./lib/node-process-error-handlers");
       registerNodeProcessErrorHandlers();
 
       console.log("[Instrumentation] Production optimizations initialized successfully");

@@ -58,9 +58,7 @@ export function RealmProvider({
   initialRealmInfo,
 }: RealmProviderProps) {
   const [realmId, setRealmIdState] = useState(initialRealmId);
-  const [realmInfo, setRealmInfo] = useState<RealmInfo | null>(
-    initialRealmInfo ?? null
-  );
+  const [realmInfo, setRealmInfo] = useState<RealmInfo | null>(initialRealmInfo ?? null);
 
   const isDefaultRealm = realmId === "default";
 
@@ -85,9 +83,7 @@ export function RealmProvider({
     [realmId, realmInfo, isDefaultRealm, setRealm, resetToDefault]
   );
 
-  return (
-    <RealmContext.Provider value={value}>{children}</RealmContext.Provider>
-  );
+  return <RealmContext.Provider value={value}>{children}</RealmContext.Provider>;
 }
 
 // ──────────────────────────────────────────────

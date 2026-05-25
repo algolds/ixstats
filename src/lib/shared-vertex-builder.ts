@@ -125,8 +125,7 @@ export function buildSharedVertexIndex(
           if (processed.has(otherGlobalKey)) continue;
 
           const dist = Math.sqrt(
-            Math.pow(coord[0] - otherCoord[0], 2) +
-              Math.pow(coord[1] - otherCoord[1], 2)
+            Math.pow(coord[0] - otherCoord[0], 2) + Math.pow(coord[1] - otherCoord[1], 2)
           );
 
           if (dist <= tolerance) {

@@ -112,7 +112,7 @@ export function KeyFindingsPanel({ countryId }: KeyFindingsPanelProps) {
                 <Card key={finding.id} className={`glass-hierarchy-child ${sevCfg.border} border`}>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-start gap-3">
-                      <div className={`rounded-lg p-2 ${catCfg.bgColor} flex-shrink-0`}>
+                      <div className={`rounded-lg p-2 ${catCfg.bgColor} shrink-0`}>
                         <CatIcon className={`h-4 w-4 ${catCfg.color}`} />
                       </div>
                       <div className="min-w-0 flex-1">

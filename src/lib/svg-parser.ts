@@ -32,9 +32,7 @@ const { parseSVG, makeAbsolute } = _require("svg-path-parser") as {
   parseSVG: (d: string) => SvgPathCommand[];
   makeAbsolute: (cmds: SvgPathCommand[]) => SvgPathCommand[];
 };
-import type {
-  SvgCoordinateConfig,
-} from "./svg-coordinate-config";
+import type { SvgCoordinateConfig } from "./svg-coordinate-config";
 import {
   createConfigFromBounds,
   createConfigFromCalibration,
@@ -172,7 +170,9 @@ export function parseSvgToGeoJson(
       if (!d) continue;
       try {
         const cmds = makeAbsolute(parseSVG(d));
-        let svgSumX = 0, svgSumY = 0, svgCount = 0;
+        let svgSumX = 0,
+          svgSumY = 0,
+          svgCount = 0;
         for (const cmd of cmds) {
           if (cmd.x !== undefined && cmd.y !== undefined) {
             svgSumX += cmd.x;
@@ -187,7 +187,9 @@ export function parseSvgToGeoJson(
           lng: ref[0],
           lat: ref[1],
         });
-      } catch { continue; }
+      } catch {
+        continue;
+      }
     }
 
     if (calibPoints.length >= 2) {
@@ -202,19 +204,26 @@ export function parseSvgToGeoJson(
     }
 
     if (!calibrated) {
-      log.push(`Calibration failed (${calibPoints.length} matches found, need 2+). Falling back to bounds mapping.`);
+      log.push(
+        `Calibration failed (${calibPoints.length} matches found, need 2+). Falling back to bounds mapping.`
+      );
     }
   }
 
   if (!calibrated && viewBox.width > 0 && viewBox.height > 0) {
-    coordConfig = createConfigFromBounds(viewBox.width, viewBox.height, {
-      minLng: -180,
-      maxLng: 180,
-      minLat: -90,
-      maxLat: 90,
-    }, { preserveAspectRatio: true });
+    coordConfig = createConfigFromBounds(
+      viewBox.width,
+      viewBox.height,
+      {
+        minLng: -180,
+        maxLng: 180,
+        minLat: -90,
+        maxLat: 90,
+      },
+      { preserveAspectRatio: true }
+    );
 
-    const effectiveLatRange = viewBox.height / (Math.max(viewBox.width / 360, viewBox.height / 180));
+    const effectiveLatRange = viewBox.height / Math.max(viewBox.width / 360, viewBox.height / 180);
     log.push(
       `Mapping viewBox (${viewBox.width}×${viewBox.height}) to WGS84 bounds (lat range: ±${(effectiveLatRange / 2).toFixed(1)}°)`
     );
@@ -232,10 +241,7 @@ export function parseSvgToGeoJson(
     if (g.parentNode !== svgRoot) continue;
 
     const gId = g.getAttribute("id") || "";
-    const gLabel =
-      g.getAttributeNS(INKSCAPE_NS, "label") ||
-      g.getAttribute("inkscape:label") ||
-      "";
+    const gLabel = g.getAttributeNS(INKSCAPE_NS, "label") || g.getAttribute("inkscape:label") || "";
 
     if (gId) layersFound.push(gId);
 
@@ -280,11 +286,15 @@ export function parseSvgToGeoJson(
             ng.getAttributeNS(INKSCAPE_NS, "label") ||
             ng.getAttribute("inkscape:label") ||
             ""
-          ).toLowerCase().replace(/-/g, "");
+          )
+            .toLowerCase()
+            .replace(/-/g, "");
           const targetNormFb = targetLayerId.toLowerCase().replace(/-/g, "");
           if (ngId === targetNormFb || ngLabel === targetNormFb) {
             targetGroup = ng;
-            log.push(`Found nested layer "${ng.getAttribute("id")}" inside group "${g.getAttribute("id")}"`);
+            log.push(
+              `Found nested layer "${ng.getAttribute("id")}" inside group "${g.getAttribute("id")}"`
+            );
             break;
           }
         }
@@ -324,7 +334,15 @@ export function parseSvgToGeoJson(
   // Build reference geometry lookup: use exact coordinates from reference GeoJSON
   // when available, instead of converting SVG coordinates (which introduces error).
   // The SVG is still used for feature discovery, colors, and names.
-  const refGeometryMap = new Map<string, { geometry: Polygon | MultiPolygon; centroid: [number, number]; bbox: [number, number, number, number]; area: number }>();
+  const refGeometryMap = new Map<
+    string,
+    {
+      geometry: Polygon | MultiPolygon;
+      centroid: [number, number];
+      bbox: [number, number, number, number];
+      area: number;
+    }
+  >();
   if (config.referenceGeoJson) {
     for (const feat of config.referenceGeoJson.features) {
       const fid = String(feat.properties?.id ?? feat.id ?? "");
@@ -344,7 +362,10 @@ export function parseSvgToGeoJson(
       if (allCoords.length === 0) continue;
       const cLng = allCoords.reduce((s, c) => s + c[0], 0) / allCoords.length;
       const cLat = allCoords.reduce((s, c) => s + c[1], 0) / allCoords.length;
-      let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+      let minLng = Infinity,
+        minLat = Infinity,
+        maxLng = -Infinity,
+        maxLat = -Infinity;
       for (const [lng, lat] of allCoords) {
         if (lng < minLng) minLng = lng;
         if (lng > maxLng) maxLng = lng;
@@ -352,9 +373,10 @@ export function parseSvgToGeoJson(
         if (lat > maxLat) maxLat = lat;
       }
       // Approximate area using the reference rings
-      const refRings = geom.type === "Polygon"
-        ? geom.coordinates as Position[][]
-        : (geom.coordinates as Position[][][]).flat();
+      const refRings =
+        geom.type === "Polygon"
+          ? (geom.coordinates as Position[][])
+          : (geom.coordinates as Position[][][]).flat();
       const area = calculateApproxArea(refRings as [number, number][][]);
       refGeometryMap.set(fid, {
         geometry: geom,
@@ -375,8 +397,7 @@ export function parseSvgToGeoJson(
   for (let i = 0; i < allPaths.length; i++) {
     const pathEl = allPaths[i]!;
 
-    const featureId =
-      pathEl.getAttribute("id") || `feature_${i}`;
+    const featureId = pathEl.getAttribute("id") || `feature_${i}`;
     const displayName =
       pathEl.getAttributeNS(INKSCAPE_NS, "label") ||
       pathEl.getAttribute("inkscape:label") ||
@@ -434,10 +455,7 @@ export function parseSvgToGeoJson(
       const wgs84Rings = rings.map((ring) =>
         ring.map(([x, y]): [number, number] => {
           const [lng, lat] = svgToWgs84(x!, y!, coordConfig);
-          return [
-            Math.max(-180, Math.min(180, lng)),
-            Math.max(-90, Math.min(90, lat)),
-          ];
+          return [Math.max(-180, Math.min(180, lng)), Math.max(-90, Math.min(90, lat))];
         })
       );
 
@@ -461,8 +479,7 @@ export function parseSvgToGeoJson(
       const closedRings = validRings.map((ring) => {
         if (
           ring.length > 0 &&
-          (ring[0]![0] !== ring[ring.length - 1]![0] ||
-            ring[0]![1] !== ring[ring.length - 1]![1])
+          (ring[0]![0] !== ring[ring.length - 1]![0] || ring[0]![1] !== ring[ring.length - 1]![1])
         ) {
           return [...ring, ring[0]!];
         }
@@ -483,9 +500,7 @@ export function parseSvgToGeoJson(
 
         if (outerRings.length === 0) {
           geometry = {
-            type: outerRings.length <= 1 && holeRings.length === 0
-              ? "Polygon"
-              : "MultiPolygon",
+            type: outerRings.length <= 1 && holeRings.length === 0 ? "Polygon" : "MultiPolygon",
             coordinates:
               closedRings.length === 1
                 ? [closedRings[0]!.slice().reverse()]
@@ -527,7 +542,9 @@ export function parseSvgToGeoJson(
 
   log.push(`Extracted ${features.length} features from ${allPaths.length} paths`);
   if (refUsedCount > 0) {
-    log.push(`Used reference geometry for ${refUsedCount} features (${features.length - refUsedCount} from SVG conversion)`);
+    log.push(
+      `Used reference geometry for ${refUsedCount} features (${features.length - refUsedCount} from SVG conversion)`
+    );
   }
 
   // Build FeatureCollection
@@ -706,10 +723,14 @@ export function pathCommandsToRings(
 // ──────────────────────────────────────────────
 
 export function cubicBezier(
-  x0: number, y0: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
-  x3: number, y3: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number,
   t: number
 ): [number, number] {
   const mt = 1 - t;
@@ -722,16 +743,16 @@ export function cubicBezier(
 }
 
 export function quadraticBezier(
-  x0: number, y0: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
   t: number
 ): [number, number] {
   const mt = 1 - t;
-  return [
-    mt * mt * x0 + 2 * mt * t * x1 + t * t * x2,
-    mt * mt * y0 + 2 * mt * t * y1 + t * t * y2,
-  ];
+  return [mt * mt * x0 + 2 * mt * t * x1 + t * t * x2, mt * mt * y0 + 2 * mt * t * y1 + t * t * y2];
 }
 
 // ──────────────────────────────────────────────
@@ -746,11 +767,15 @@ export function quadraticBezier(
  * straight line connecting start to end.
  */
 function adaptiveCubicSegments(
-  x0: number, y0: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
-  x3: number, y3: number,
-  maxSegments: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number,
+  maxSegments: number
 ): number {
   // Distance from control points to the line from (x0,y0) to (x3,y3)
   const dx = x3 - x0;
@@ -767,7 +792,7 @@ function adaptiveCubicSegments(
   const flatness = maxDev / lineLen;
 
   if (flatness < 0.01) return Math.max(2, Math.round(maxSegments * 0.25)); // very flat
-  if (flatness < 0.05) return Math.max(3, Math.round(maxSegments * 0.5));  // mostly flat
+  if (flatness < 0.05) return Math.max(3, Math.round(maxSegments * 0.5)); // mostly flat
   if (flatness < 0.15) return Math.max(4, Math.round(maxSegments * 0.75)); // moderate
   return maxSegments; // tight curve — use full segments
 }
@@ -776,10 +801,13 @@ function adaptiveCubicSegments(
  * Calculate adaptive segment count for a quadratic bezier.
  */
 function adaptiveQuadSegments(
-  x0: number, y0: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
-  maxSegments: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  maxSegments: number
 ): number {
   const dx = x2 - x0;
   const dy = y2 - y0;
@@ -915,9 +943,7 @@ export function calculateCentroid(rings: Position[][]): [number, number] {
 /**
  * Calculate bounding box [minLng, minLat, maxLng, maxLat].
  */
-export function calculateBoundingBox(
-  rings: Position[][]
-): [number, number, number, number] {
+export function calculateBoundingBox(rings: Position[][]): [number, number, number, number] {
   let minLng = Infinity;
   let minLat = Infinity;
   let maxLng = -Infinity;
@@ -954,8 +980,7 @@ export function calculateApproxArea(rings: Position[][]): number {
     for (let i = 0; i < ring.length - 1; i++) {
       const [x1, y1] = ring[i]!;
       const [x2, y2] = ring[i + 1]!;
-      area += (x1! * kmPerDegLng) * (y2! * kmPerDegLat) -
-              (x2! * kmPerDegLng) * (y1! * kmPerDegLat);
+      area += x1! * kmPerDegLng * (y2! * kmPerDegLat) - x2! * kmPerDegLng * (y1! * kmPerDegLat);
     }
     totalArea += Math.abs(area) / 2;
   }
@@ -982,7 +1007,10 @@ export function normalizeForMatching(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
-    .replace(/^(the|republic|kingdom|empire|federation|state|commonwealth|duchy|principality)(of)?/g, "")
+    .replace(
+      /^(the|republic|kingdom|empire|federation|state|commonwealth|duchy|principality)(of)?/g,
+      ""
+    )
     .trim();
 }
 
@@ -993,7 +1021,10 @@ export function matchFeaturesToCountries(
   features: ParsedFeature[],
   countries: Array<{ id: string; name: string; slug: string | null }>
 ): Map<string, { countryId: string; countryName: string; matchType: "exact" | "fuzzy" }> {
-  const matches = new Map<string, { countryId: string; countryName: string; matchType: "exact" | "fuzzy" }>();
+  const matches = new Map<
+    string,
+    { countryId: string; countryName: string; matchType: "exact" | "fuzzy" }
+  >();
 
   // Build lookup maps
   const countryByExactName = new Map<string, { id: string; name: string }>();
@@ -1160,20 +1191,26 @@ export function computeLayerDiff(
   const modified: FeatureDiffEntry[] = [];
   const removed: FeatureDiffEntry[] = [];
   const unchanged: FeatureDiffEntry[] = [];
-  const preservedLinkages: Array<{ featureId: string; countryId: string; countryName?: string }> = [];
+  const preservedLinkages: Array<{ featureId: string; countryId: string; countryName?: string }> =
+    [];
   let linkagesLost = 0;
 
   // Check incoming features against existing
   for (const incoming of incomingFeatures) {
     const existing = existingMap.get(incoming.featureId);
     if (!existing) {
-      added.push({ featureId: incoming.featureId, displayName: incoming.displayName, status: "added" });
+      added.push({
+        featureId: incoming.featureId,
+        displayName: incoming.displayName,
+        status: "added",
+      });
       continue;
     }
 
     // Feature exists — check for modifications via full JSON comparison
     const geometryChanged = JSON.stringify(incoming.geometry) !== JSON.stringify(existing.geometry);
-    const propertiesChanged = JSON.stringify(incoming.properties) !== JSON.stringify(existing.properties);
+    const propertiesChanged =
+      JSON.stringify(incoming.properties) !== JSON.stringify(existing.properties);
     const areaDelta = incoming.areaSqKm - (existing.areaSqKm ?? 0);
 
     if (geometryChanged || propertiesChanged) {
@@ -1273,9 +1310,7 @@ export function extractSvgMetadata(svgContent: string): {
 
     const gId = g.getAttribute("id") || "";
     const gLabel =
-      g.getAttributeNS(INKSCAPE_NS, "label") ||
-      g.getAttribute("inkscape:label") ||
-      gId;
+      g.getAttributeNS(INKSCAPE_NS, "label") || g.getAttribute("inkscape:label") || gId;
 
     // Count all descendant paths (not just direct children — Illustrator nests groups)
     const paths = g.getElementsByTagNameNS(SVG_NS, "path");

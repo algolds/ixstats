@@ -254,7 +254,7 @@ export const ActivityMarquee = memo(function ActivityMarquee({
             key={activity.id}
             className="marquee-item group flex min-w-0 items-center gap-2 rounded-lg border border-gray-200/50 bg-gray-50 px-3 py-2 whitespace-nowrap transition-colors hover:bg-gray-100 dark:border-gray-700/50 dark:bg-gray-800/70 dark:hover:bg-gray-700"
           >
-            <div className="group-hover:border-primary/20 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors dark:border-gray-700 dark:bg-gray-900">
+            <div className="group-hover:border-primary/20 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors dark:border-gray-700 dark:bg-gray-900">
               {getActivityIcon(activity)}
             </div>
 

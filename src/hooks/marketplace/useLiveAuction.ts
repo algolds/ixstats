@@ -28,14 +28,10 @@ interface UseLiveAuctionReturn {
  * Hook for subscribing to live auction updates
  * Manages WebSocket connection and state synchronization
  */
-export function useLiveAuction(
-  options: UseLiveAuctionOptions
-): UseLiveAuctionReturn {
+export function useLiveAuction(options: UseLiveAuctionOptions): UseLiveAuctionReturn {
   const { auctionId, initialAuction, autoConnect = true } = options;
 
-  const [auction, setAuction] = useState<AuctionListing | null>(
-    initialAuction || null
-  );
+  const [auction, setAuction] = useState<AuctionListing | null>(initialAuction || null);
   const [lastBid, setLastBid] = useState<Bid | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [connectionState, setConnectionState] = useState({
@@ -134,17 +130,13 @@ export function useLiveAuction(
     }
 
     // Subscribe to bid updates
-    unsubscribeBidRef.current = wsClient.current.subscribeToBid(
-      auctionId,
-      handleBidUpdate
-    );
+    unsubscribeBidRef.current = wsClient.current.subscribeToBid(auctionId, handleBidUpdate);
 
     // Subscribe to auction completion
-    unsubscribeCompleteRef.current =
-      wsClient.current.subscribeToAuctionComplete(
-        auctionId,
-        handleAuctionComplete
-      );
+    unsubscribeCompleteRef.current = wsClient.current.subscribeToAuctionComplete(
+      auctionId,
+      handleAuctionComplete
+    );
 
     console.log(`[useLiveAuction] Subscribed to auction ${auctionId}`);
 

@@ -31,11 +31,13 @@ export const wikiRouter = createTRPCRouter({
    * Uses direct MySQL for ixwiki (~30ms), HTTP API for iiwiki (~400ms).
    */
   searchPages: cachedPublicProcedure
-    .input(z.object({
-      query: z.string().min(1).max(200),
-      limit: z.number().min(1).max(50).default(10),
-      wiki: wikiSourceSchema,
-    }))
+    .input(
+      z.object({
+        query: z.string().min(1).max(200),
+        limit: z.number().min(1).max(50).default(10),
+        wiki: wikiSourceSchema,
+      })
+    )
     .query(async ({ input }) => {
       return searchPages(input.query, input.limit, input.wiki as WikiSource);
     }),
@@ -44,10 +46,12 @@ export const wikiRouter = createTRPCRouter({
    * Search with automatic fallback: ixwiki first, then iiwiki.
    */
   searchWithFallback: cachedPublicProcedure
-    .input(z.object({
-      query: z.string().min(1).max(200),
-      limit: z.number().min(1).max(50).default(10),
-    }))
+    .input(
+      z.object({
+        query: z.string().min(1).max(200),
+        limit: z.number().min(1).max(50).default(10),
+      })
+    )
     .query(async ({ input }) => {
       return searchWithFallback(input.query, input.limit);
     }),
@@ -57,10 +61,12 @@ export const wikiRouter = createTRPCRouter({
    * Parsed from wikitext — no PHP template processing.
    */
   getIntro: cachedPublicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      wiki: wikiSourceSchema,
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        wiki: wikiSourceSchema,
+      })
+    )
     .query(async ({ input }) => {
       return getArticleIntro(input.title, input.wiki as WikiSource);
     }),
@@ -69,10 +75,12 @@ export const wikiRouter = createTRPCRouter({
    * Get raw article wikitext.
    */
   getWikitext: cachedPublicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      wiki: wikiSourceSchema,
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        wiki: wikiSourceSchema,
+      })
+    )
     .query(async ({ input }) => {
       const article = await getArticleWikitext(input.title, input.wiki as WikiSource);
       if (!article) return null;
@@ -89,16 +97,18 @@ export const wikiRouter = createTRPCRouter({
    * Parse and return infobox fields from an article.
    */
   getInfobox: cachedPublicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      wiki: wikiSourceSchema,
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        wiki: wikiSourceSchema,
+      })
+    )
     .query(async ({ input }) => {
       const result = await getInfobox(input.title, input.wiki as WikiSource);
       if (!result) return null;
       return {
         templateName: result.templateName,
-        fields: result.fields.map(f => ({
+        fields: result.fields.map((f) => ({
           key: f.key,
           value: f.value,
         })),
@@ -109,10 +119,12 @@ export const wikiRouter = createTRPCRouter({
    * Get article section headings (TOC).
    */
   getSections: cachedPublicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      wiki: wikiSourceSchema,
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        wiki: wikiSourceSchema,
+      })
+    )
     .query(async ({ input }) => {
       return getPageSections(input.title, input.wiki as WikiSource);
     }),
@@ -121,10 +133,12 @@ export const wikiRouter = createTRPCRouter({
    * Get coordinates from article wikitext ({{coord}} template).
    */
   getCoordinates: cachedPublicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      wiki: wikiSourceSchema,
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        wiki: wikiSourceSchema,
+      })
+    )
     .query(async ({ input }) => {
       return getCoordinates(input.title, input.wiki as WikiSource);
     }),
@@ -133,9 +147,13 @@ export const wikiRouter = createTRPCRouter({
    * Get recent changes from IxWiki (direct MySQL).
    */
   getRecentChanges: cachedPublicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(20),
-    }).optional())
+    .input(
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(20),
+        })
+        .optional()
+    )
     .query(async ({ input }) => {
       return getRecentChanges(input?.limit ?? 20);
     }),
@@ -163,17 +181,14 @@ export const wikiRouter = createTRPCRouter({
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(
-          `${getXfApiUrl()}/threads/${input.threadId}/`,
-          {
-            headers: { "XF-Api-Key": apiKey },
-            signal: controller.signal,
-          }
-        );
+        const res = await fetch(`${getXfApiUrl()}/threads/${input.threadId}/`, {
+          headers: { "XF-Api-Key": apiKey },
+          signal: controller.signal,
+        });
         clearTimeout(timeoutId);
 
         if (!res.ok) return null;
-        const data = await res.json() as {
+        const data = (await res.json()) as {
           thread: {
             thread_id: number;
             title: string;
@@ -270,7 +285,12 @@ export const wikiRouter = createTRPCRouter({
         // Try local filesystem first (instant, no HTTP)
         const buffer = await fs.readFile(localPath);
         const ext = name.split(".").pop()?.toLowerCase() ?? "";
-        const mime = ext === "svg" ? "image/svg+xml" : ext === "png" ? "image/png" : "application/octet-stream";
+        const mime =
+          ext === "svg"
+            ? "image/svg+xml"
+            : ext === "png"
+              ? "image/png"
+              : "application/octet-stream";
 
         return {
           filename: name,
@@ -299,7 +319,9 @@ export const wikiRouter = createTRPCRouter({
             source: "http" as const,
           };
         } catch (e) {
-          throw new Error(`Failed to download ${name}: ${e instanceof Error ? e.message : "Unknown"}`);
+          throw new Error(
+            `Failed to download ${name}: ${e instanceof Error ? e.message : "Unknown"}`
+          );
         }
       }
     }),
@@ -386,10 +408,20 @@ export const wikiRouter = createTRPCRouter({
 
       // 1. Find administrative division-related sections
       const sectionKeywords = [
-        "administrative division", "provinces", "subdivisions",
-        "regions", "states", "departments", "counties",
-        "governorates", "oblasts", "prefectures", "cantons",
-        "territories", "districts", "municipalities",
+        "administrative division",
+        "provinces",
+        "subdivisions",
+        "regions",
+        "states",
+        "departments",
+        "counties",
+        "governorates",
+        "oblasts",
+        "prefectures",
+        "cantons",
+        "territories",
+        "districts",
+        "municipalities",
       ];
 
       const lines = wikitext.split("\n");
@@ -420,15 +452,43 @@ export const wikiRouter = createTRPCRouter({
 
       // 3. Score and rank map files by likelihood of being a province map
       const provinceKeywords = [
-        "province", "region", "admin", "division", "subdivision",
-        "territory", "state", "department", "district", "vector",
-        "political", "label",
+        "province",
+        "region",
+        "admin",
+        "division",
+        "subdivision",
+        "territory",
+        "state",
+        "department",
+        "district",
+        "vector",
+        "political",
+        "label",
       ];
       const negativeKeywords = [
-        "topo", "climate", "elevation", "terrain", "relief",
-        "satellite", "photo", "flag", "coat", "emblem", "seal",
-        "logo", "icon", "banner", "locator", "inset", "overview",
-        "highway", "hiway", "road", "rail", "city", "cities",
+        "topo",
+        "climate",
+        "elevation",
+        "terrain",
+        "relief",
+        "satellite",
+        "photo",
+        "flag",
+        "coat",
+        "emblem",
+        "seal",
+        "logo",
+        "icon",
+        "banner",
+        "locator",
+        "inset",
+        "overview",
+        "highway",
+        "hiway",
+        "road",
+        "rail",
+        "city",
+        "cities",
       ];
 
       type ScoredFile = { name: string; score: number };
@@ -457,13 +517,19 @@ export const wikiRouter = createTRPCRouter({
         .sort((a, b) => b.score - a.score);
 
       const mapFiles = scoredFiles.filter((f) => f.score > 0).map((f) => f.name);
-      const svgFiles = scoredFiles.filter((f) => f.score <= 0 && f.name.toLowerCase().endsWith(".svg")).map((f) => f.name);
+      const svgFiles = scoredFiles
+        .filter((f) => f.score <= 0 && f.name.toLowerCase().endsWith(".svg"))
+        .map((f) => f.name);
 
       // 4. Extract infobox data about divisions
       const infoboxData: Record<string, string> = {};
       const infoboxFields = [
-        "subdivisions", "admin_divisions", "provinces",
-        "regions", "states", "number_of_provinces",
+        "subdivisions",
+        "admin_divisions",
+        "provinces",
+        "regions",
+        "states",
+        "number_of_provinces",
       ];
       for (const field of infoboxFields) {
         const fieldMatch = wikitext.match(

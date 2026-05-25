@@ -30,10 +30,10 @@ import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 const EditorMap = dynamic(() => import("~/components/maps/editor/EditorMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center bg-muted">
+    <div className="bg-muted flex h-full items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/20 border-t-emerald-500" />
-        <p className="text-sm text-muted-foreground">Loading map editor...</p>
+        <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
+        <p className="text-muted-foreground text-sm">Loading map editor...</p>
       </div>
     </div>
   ),
@@ -45,9 +45,7 @@ interface EnhancedMapEditorContentProps {
   notifications?: Partial<Record<string, number>>;
 }
 
-export function EnhancedMapEditorContent({
-  onNavigate,
-}: EnhancedMapEditorContentProps) {
+export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorContentProps) {
   const { country, isLoading: countryLoading } = useCountryData();
   const mapRef = useRef<EditorMapRef>(null);
   const [sidePanel, setSidePanel] = useState<"none" | "features" | "properties">("none");
@@ -69,12 +67,7 @@ export function EnhancedMapEditorContent({
   }, []);
 
   // Fetch base world map layers for editor context
-  const { mapLayers: worldMapLayers } = useMapData([
-    "background",
-    "altitudes",
-    "rivers",
-    "lakes",
-  ]);
+  const { mapLayers: worldMapLayers } = useMapData(["background", "altitudes", "rivers", "lakes"]);
 
   // Auto-open properties panel when entering an add/edit mode
   const prevModeRef = useRef(editor.mode);
@@ -197,7 +190,7 @@ export function EnhancedMapEditorContent({
           break;
         case "f":
           e.preventDefault();
-          setSidePanel((v) => v === "features" ? "none" : "features");
+          setSidePanel((v) => (v === "features" ? "none" : "features"));
           break;
       }
     };
@@ -210,36 +203,32 @@ export function EnhancedMapEditorContent({
   }
 
   const showPropertyPanel =
-    sidePanel === "properties" &&
-    editor.mode !== "view" &&
-    editor.mode !== "import-provinces";
+    sidePanel === "properties" && editor.mode !== "view" && editor.mode !== "import-provinces";
   const showFeatureList = sidePanel === "features";
   const hasSidePanel = showPropertyPanel || showFeatureList;
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-background">
+    <div className="bg-background fixed inset-0 z-40 flex flex-col">
       {/* ── Top bar ── */}
-      <div className="flex h-11 flex-shrink-0 items-center gap-2 border-b border-border bg-card px-3">
+      <div className="border-border bg-card flex h-11 shrink-0 items-center gap-2 border-b px-3">
         {/* Left: back + country name */}
         <button
           onClick={() => onNavigate?.("overview")}
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-colors"
           title="Back to overview"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
 
-        <div className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+        <div className="text-muted-foreground hidden items-center gap-1.5 text-xs sm:flex">
           <Map className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="font-semibold text-foreground">
-            {country.name}
-          </span>
+          <span className="text-foreground font-semibold">{country.name}</span>
           <ChevronRight className="h-3 w-3" />
           <span>Editor</span>
         </div>
 
         {/* Center: tools */}
-        <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
+        <div className="bg-border mx-1 hidden h-5 w-px sm:block" />
         <MapEditorToolbar
           mode={editor.mode}
           onModeChange={editor.setMode}
@@ -249,7 +238,7 @@ export function EnhancedMapEditorContent({
         {/* Right: side panel toggles */}
         <div className="ml-auto flex items-center gap-0.5">
           <button
-            onClick={() => setSidePanel((v) => v === "features" ? "none" : "features")}
+            onClick={() => setSidePanel((v) => (v === "features" ? "none" : "features"))}
             className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
               showFeatureList
                 ? "bg-primary/10 text-primary"
@@ -260,7 +249,7 @@ export function EnhancedMapEditorContent({
             <List className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Features</span>
             {editor.allFeatures.length > 0 && (
-              <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+              <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[10px] font-medium tabular-nums">
                 {editor.allFeatures.length}
               </span>
             )}
@@ -273,35 +262,28 @@ export function EnhancedMapEditorContent({
         {/* Map area */}
         <div className="relative min-w-0 flex-1" data-map-container>
           {linkageLoading ? (
-            <div className="flex h-full items-center justify-center bg-muted">
+            <div className="bg-muted flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-                <p className="text-sm text-muted-foreground">
-                  Checking map linkage...
-                </p>
+                <p className="text-muted-foreground text-sm">Checking map linkage...</p>
               </div>
             </div>
           ) : !isLinked ? (
-            <div className="flex h-full items-center justify-center bg-muted">
+            <div className="bg-muted flex h-full items-center justify-center">
               <div className="text-center">
-                <AlertCircle className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
-                <p className="text-sm font-medium text-foreground">
-                  No map geometry linked
-                </p>
-                <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                  Your country needs to be linked to a map feature before you can
-                  use the editor. Contact an administrator to assign your
-                  country&apos;s territory.
+                <AlertCircle className="text-muted-foreground/30 mx-auto mb-3 h-10 w-10" />
+                <p className="text-foreground text-sm font-medium">No map geometry linked</p>
+                <p className="text-muted-foreground mt-1 max-w-xs text-xs">
+                  Your country needs to be linked to a map feature before you can use the editor.
+                  Contact an administrator to assign your country&apos;s territory.
                 </p>
               </div>
             </div>
           ) : geometryLoading ? (
-            <div className="flex h-full items-center justify-center bg-muted">
+            <div className="bg-muted flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-3">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/20 border-t-emerald-500" />
-                <p className="text-sm text-muted-foreground">
-                  Loading map geometry...
-                </p>
+                <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
+                <p className="text-muted-foreground text-sm">Loading map geometry...</p>
               </div>
             </div>
           ) : (
@@ -359,16 +341,16 @@ export function EnhancedMapEditorContent({
 
         {/* ── Right side panel ── */}
         {hasSidePanel && (
-          <div className="w-64 flex-shrink-0 overflow-y-auto border-l border-border bg-card lg:w-72">
+          <div className="border-border bg-card w-64 shrink-0 overflow-y-auto border-l lg:w-72">
             {showFeatureList && (
               <div className="p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                     Features
                   </span>
                   <button
                     onClick={() => setSidePanel("none")}
-                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>

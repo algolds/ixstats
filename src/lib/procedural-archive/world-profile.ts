@@ -63,7 +63,7 @@ export const IXWORLD_PROFILE: WorldProfile = {
   name: "IxWorld",
   continent: {
     count: 6,
-    sizeFractions: [0.28, 0.22, 0.19, 0.14, 0.10, 0.07],
+    sizeFractions: [0.28, 0.22, 0.19, 0.14, 0.1, 0.07],
     coastlineComplexity: { mean: 7.89, stddev: 3.52 }, // actual measured from GeoJSON
     aspectRatio: { mean: 1.6, stddev: 0.5 },
   },
@@ -78,10 +78,10 @@ export const IXWORLD_PROFILE: WorldProfile = {
     oceanPercentage: 0.65,
     terrainRoughness: 0.5,
     hasIcecaps: true,
-    riverDensity: 6.0,  // actual: ~1041 rivers across IxWorld land area
-    lakeDensity: 2.0,   // actual: ~350 lakes
+    riverDensity: 6.0, // actual: ~1041 rivers across IxWorld land area
+    lakeDensity: 2.0, // actual: ~350 lakes
     // Actual IxWorld elevation zone area fractions (measured from altitudes.geojson)
-    elevationProfile: [0.510, 0.266, 0.139, 0.062, 0.016, 0.006, 0.001, 0.0003, 0.00001],
+    elevationProfile: [0.51, 0.266, 0.139, 0.062, 0.016, 0.006, 0.001, 0.0003, 0.00001],
   },
 };
 
@@ -127,11 +127,7 @@ export function seededRandom(seed: number): () => number {
 /**
  * Sample from a normal distribution using Box-Muller transform.
  */
-export function sampleNormal(
-  rng: () => number,
-  mean: number,
-  stddev: number
-): number {
+export function sampleNormal(rng: () => number, mean: number, stddev: number): number {
   const u1 = Math.max(1e-10, rng());
   const u2 = rng();
   const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
@@ -142,11 +138,7 @@ export function sampleNormal(
  * Sample from a lognormal distribution.
  * Returns value in natural space (not log space).
  */
-export function sampleLognormal(
-  rng: () => number,
-  mu: number,
-  sigma: number
-): number {
+export function sampleLognormal(rng: () => number, mu: number, sigma: number): number {
   return Math.exp(sampleNormal(rng, mu, sigma));
 }
 
@@ -266,9 +258,12 @@ export function computeProfileSimilarity(
 ): number {
   // Score each dimension 0-1 based on how close to profile target
   const countScore =
-    1 - Math.min(1, Math.abs(stats.countryCount - profile.country.count.mean) / (profile.country.count.stddev * 3));
-  const giniScore =
-    1 - Math.min(1, Math.abs(stats.areaGini - profile.country.areaGini) / 0.3);
+    1 -
+    Math.min(
+      1,
+      Math.abs(stats.countryCount - profile.country.count.mean) / (profile.country.count.stddev * 3)
+    );
+  const giniScore = 1 - Math.min(1, Math.abs(stats.areaGini - profile.country.areaGini) / 0.3);
   const landlockScore =
     1 - Math.min(1, Math.abs(stats.landlockedRatio - profile.country.landlockedRatio) / 0.3);
   const neighborScore =

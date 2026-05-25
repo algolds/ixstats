@@ -673,7 +673,7 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
                             >
                               <div
                                 className={cn(
-                                  "mt-2 h-2 w-2 flex-shrink-0 rounded-full",
+                                  "mt-2 h-2 w-2 shrink-0 rounded-full",
                                   activity.importance === "high" && "bg-yellow-400",
                                   activity.importance === "medium" && "bg-blue-400",
                                   activity.importance === "low" && "bg-gray-400"

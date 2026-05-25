@@ -182,7 +182,7 @@ function CriticalAlertsSection({
               onClick={() => onAlertClick?.(alert)}
             >
               <div className="flex items-start gap-3">
-                <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <Icon className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2">
                     <h4 className="truncate text-sm font-medium">{alert.title}</h4>
@@ -193,7 +193,7 @@ function CriticalAlertsSection({
                     <div className="mt-2 text-xs font-medium text-amber-600">Action Required</div>
                   )}
                 </div>
-                <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
               </div>
             </motion.div>
           );
@@ -363,7 +363,7 @@ function QuickActionsSection({
                     <span className="text-green-600">{action.estimatedBenefit}</span>
                   </div>
                 </div>
-                <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
               </div>
             </motion.div>
           );
@@ -506,7 +506,7 @@ function DiplomaticRecommendations({ countryId }: { countryId: string }) {
             className="rounded-md border border-purple-200 bg-purple-50 p-2 text-xs dark:border-purple-800 dark:bg-purple-950/20"
           >
             <div className="flex items-start gap-2">
-              <Icon className="mt-0.5 h-3 w-3 flex-shrink-0 text-purple-600" />
+              <Icon className="mt-0.5 h-3 w-3 shrink-0 text-purple-600" />
               <div className="min-w-0 flex-1">
                 <p className="text-purple-900 dark:text-purple-100">{rec.text}</p>
               </div>

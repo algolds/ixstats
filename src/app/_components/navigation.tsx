@@ -1275,7 +1275,7 @@ export function Navigation() {
             </div>
             <button
               type="button"
-              className="border-border/60 bg-background/80 text-foreground inline-flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
+              className="border-border/60 bg-background/80 text-foreground inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-expanded={mobileMenuOpen}
               aria-controls="ixstats-mobile-navigation"
@@ -1328,7 +1328,7 @@ export function Navigation() {
                 </div>
                 <button
                   type="button"
-                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground min-h-[44px] min-w-[44px] flex-shrink-0 rounded-full border p-2 transition-colors"
+                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground min-h-[44px] min-w-[44px] shrink-0 rounded-full border p-2 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Close navigation menu"
                 >
@@ -1375,7 +1375,7 @@ export function Navigation() {
                             className="border-border/50 bg-card/60 rounded-2xl border px-3 py-3 shadow-sm"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="bg-primary/10 text-primary flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl">
+                              <span className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
                                 <Icon className="h-5 w-5" />
                               </span>
                               <div className="min-w-0 flex-1">
@@ -1397,7 +1397,7 @@ export function Navigation() {
                                     className="text-muted-foreground hover:border-border/60 hover:text-foreground flex min-h-[44px] items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
-                                    <span className="bg-muted/50 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg">
+                                    <span className="bg-muted/50 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                                       <SubIcon className="h-4 w-4" />
                                     </span>
                                     <span className="flex-1 break-words">{subItem.name}</span>
@@ -1421,7 +1421,7 @@ export function Navigation() {
                           }`}
                         >
                           <span
-                            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
                               current
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted/60 text-foreground"
@@ -1440,7 +1440,7 @@ export function Navigation() {
                             )}
                           </div>
                           {current && (
-                            <span className="text-primary flex-shrink-0 text-[10px] font-semibold tracking-wide uppercase sm:text-[11px]">
+                            <span className="text-primary shrink-0 text-[10px] font-semibold tracking-wide uppercase sm:text-[11px]">
                               Active
                             </span>
                           )}
@@ -1486,7 +1486,7 @@ export function Navigation() {
                             }`}
                           >
                             <span
-                              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                                 active ? "bg-primary text-primary-foreground" : "bg-muted/60"
                               }`}
                             >

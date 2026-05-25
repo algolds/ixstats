@@ -351,8 +351,8 @@ export function SystemLogs() {
                     <div key={log.id} className={`hover:bg-muted/50 p-4 ${levelConfig.bg}`}>
                       <div className="flex items-start gap-3">
                         <div className="flex min-w-0 items-center gap-2">
-                          <LevelIcon className={`h-4 w-4 ${levelConfig.color} flex-shrink-0`} />
-                          <Badge variant="outline" className="flex-shrink-0 text-xs">
+                          <LevelIcon className={`h-4 w-4 ${levelConfig.color} shrink-0`} />
+                          <Badge variant="outline" className="shrink-0 text-xs">
                             {log.level}
                           </Badge>
                         </div>

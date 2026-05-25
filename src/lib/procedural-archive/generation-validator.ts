@@ -132,8 +132,7 @@ export function findDegenerateCountries(countries: GeneratedCountry[]): string[]
       ids.push(c.id);
       continue;
     }
-    const coords =
-      c.geometry.type === "Polygon" ? c.geometry.coordinates[0] : null;
+    const coords = c.geometry.type === "Polygon" ? c.geometry.coordinates[0] : null;
     if (coords && coords.length < 4) {
       ids.push(c.id);
     }
@@ -159,7 +158,7 @@ export function findOrphanLandmasses(
     const coords =
       lm.geometry.type === "Polygon"
         ? lm.geometry.coordinates[0]!
-        : lm.geometry.coordinates[0]?.[0] ?? [];
+        : (lm.geometry.coordinates[0]?.[0] ?? []);
 
     if (coords.length < 3) continue;
 

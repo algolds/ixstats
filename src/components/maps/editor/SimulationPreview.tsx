@@ -70,8 +70,8 @@ export function SimulationPreview({ countryId, visible }: SimulationPreviewProps
   ];
 
   return (
-    <div className="border-t border-border bg-card/50 p-3">
-      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="border-border bg-card/50 border-t p-3">
+      <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
         <Activity className="h-3 w-3" />
         Geographic Profile
       </div>
@@ -82,7 +82,9 @@ export function SimulationPreview({ countryId, visible }: SimulationPreviewProps
           return (
             <div key={m.label} className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">{m.label}</span>
-              <span className={`font-medium tabular-nums ${isGood ? "text-emerald-600" : "text-amber-600"}`}>
+              <span
+                className={`font-medium tabular-nums ${isGood ? "text-emerald-600" : "text-amber-600"}`}
+              >
                 {m.format(m.value)}
               </span>
             </div>
@@ -92,14 +94,18 @@ export function SimulationPreview({ countryId, visible }: SimulationPreviewProps
 
       {/* Transport stats */}
       {transportStats && transportStats.totalRoutes > 0 && (
-        <div className="mt-2 border-t border-border pt-2">
+        <div className="border-border mt-2 border-t pt-2">
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground">Transport Routes</span>
-            <span className="font-medium tabular-nums text-foreground">{transportStats.totalRoutes}</span>
+            <span className="text-foreground font-medium tabular-nums">
+              {transportStats.totalRoutes}
+            </span>
           </div>
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground">Network Length</span>
-            <span className="font-medium tabular-nums text-foreground">{transportStats.totalKm.toLocaleString()} km</span>
+            <span className="text-foreground font-medium tabular-nums">
+              {transportStats.totalKm.toLocaleString()} km
+            </span>
           </div>
         </div>
       )}

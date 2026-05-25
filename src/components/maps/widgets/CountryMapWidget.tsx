@@ -41,10 +41,8 @@ export function CountryMapWidget({
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-foreground">
-            Territory Map
-          </span>
+          <Globe className="text-muted-foreground h-3.5 w-3.5" />
+          <span className="text-foreground text-xs font-medium">Territory Map</span>
         </div>
         <Badge
           variant="outline"
@@ -65,24 +63,17 @@ export function CountryMapWidget({
       />
 
       {/* Footer stats */}
-      <div className="flex items-center justify-between border-t border-border/50 px-3 py-1.5">
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-          {areaSqKm ? (
-            <span>{Math.round(areaSqKm).toLocaleString()} km²</span>
-          ) : null}
+      <div className="border-border/50 flex items-center justify-between border-t px-3 py-1.5">
+        <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
+          {areaSqKm ? <span>{Math.round(areaSqKm).toLocaleString()} km²</span> : null}
           {cities.length > 0 && (
             <span>
               {cities.length} {cities.length === 1 ? "city" : "cities"}
             </span>
           )}
-          {!areaSqKm && cities.length === 0 && hasGeometry && (
-            <span>{countryName}</span>
-          )}
+          {!areaSqKm && cities.length === 0 && hasGeometry && <span>{countryName}</span>}
         </div>
-        <a
-          href={mapUrl}
-          className="text-[10px] text-blue-500 hover:text-blue-600"
-        >
+        <a href={mapUrl} className="text-[10px] text-blue-500 hover:text-blue-600">
           Full map →
         </a>
       </div>

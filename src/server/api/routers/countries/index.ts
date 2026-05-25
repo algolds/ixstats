@@ -20,4 +20,3 @@ export const countriesRouter = createTRPCRouter({
   ...geographyProcedures,
   flags: flagsProcedures,
 });
-

@@ -30,7 +30,9 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
       body: JSON.stringify({ imageUrl }),
     });
 
-    console.log(`[ImageDownloadService] API response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`);
+    console.log(
+      `[ImageDownloadService] API response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`
+    );
 
     if (!response.ok) {
       // Try to parse error response
@@ -42,13 +44,17 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
         // Check if response is HTML (Cloudflare or server error page)
         if (contentType?.includes("text/html")) {
           const htmlText = await response.text();
-          console.error(`[ImageDownloadService] Received HTML error page: ${htmlText.substring(0, 500)}`);
+          console.error(
+            `[ImageDownloadService] Received HTML error page: ${htmlText.substring(0, 500)}`
+          );
 
           if (htmlText.toLowerCase().includes("cloudflare")) {
-            errorMessage = "The image source is protected by Cloudflare and cannot be downloaded. Please try a different image or source.";
+            errorMessage =
+              "The image source is protected by Cloudflare and cannot be downloaded. Please try a different image or source.";
             errorCode = "CLOUDFLARE_BLOCKED";
           } else {
-            errorMessage = "Server returned an error page instead of downloading the image. Please try again or use a different image.";
+            errorMessage =
+              "Server returned an error page instead of downloading the image. Please try again or use a different image.";
             errorCode = "SERVER_ERROR";
           }
         } else if (contentType?.includes("application/json")) {
@@ -60,7 +66,9 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
         } else {
           // Unknown content type
           const errorText = await response.text();
-          console.error(`[ImageDownloadService] Unexpected response: ${errorText.substring(0, 500)}`);
+          console.error(
+            `[ImageDownloadService] Unexpected response: ${errorText.substring(0, 500)}`
+          );
           errorMessage = `Unexpected response from download service: ${errorText.substring(0, 100)}`;
         }
       } catch (parseError) {
@@ -78,7 +86,9 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
     console.log(`[ImageDownloadService] API response:`, result);
 
     if (!result.success || !result.url) {
-      const error = new Error("Invalid response from download service - missing success flag or URL");
+      const error = new Error(
+        "Invalid response from download service - missing success flag or URL"
+      );
       (error as any).code = "INVALID_RESPONSE";
       (error as any).originalUrl = imageUrl;
       throw error;

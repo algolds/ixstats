@@ -2,7 +2,6 @@
 // EXPANDED MILITARY EQUIPMENT DATABASE - 250+ Items
 // Part 1: Aircraft (Fighters, Bombers, Attack, Transport, Helicopters)
 
-
 // ===========================
 // FIGHTER AIRCRAFT (50+)
 // ===========================
@@ -80,8 +79,7 @@ export const FIGHTERS_GENERATION_5 = {
     ceiling: 20000,
     acquisitionCost: 110000000,
     maintenanceCost: 5500000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/d/d8/J-20_at_Airshow_China_2016.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/d/d8/J-20_at_Airshow_China_2016.jpg",
   },
 } as const;
 
@@ -143,8 +141,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     ceiling: 15240,
     acquisitionCost: 64000000,
     maintenanceCost: 3200000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/c/c9/F-16_June_2008.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/c/c9/F-16_June_2008.jpg",
   },
   F18E_SUPER_HORNET: {
     name: "F/A-18E Super Hornet",
@@ -318,8 +315,7 @@ export const BOMBERS = {
     ceiling: 15240,
     acquisitionCost: 2100000000,
     maintenanceCost: 60000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
   },
   B52_STRATOFORTRESS: {
     name: "B-52 Stratofortress",
@@ -363,8 +359,7 @@ export const BOMBERS = {
     ceiling: 15000,
     acquisitionCost: 750000000,
     maintenanceCost: 35000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
   },
   TU160_BLACKJACK: {
     name: "Tupolev Tu-160",
@@ -427,8 +422,7 @@ export const TRANSPORT_AIRCRAFT = {
     ceiling: 13716,
     acquisitionCost: 340000000,
     maintenanceCost: 15000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/6/67/C-17_test.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/67/C-17_test.jpg",
   },
   C130J_HERCULES: {
     name: "C-130J Super Hercules",
@@ -442,8 +436,7 @@ export const TRANSPORT_AIRCRAFT = {
     ceiling: 10060,
     acquisitionCost: 75000000,
     maintenanceCost: 3800000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/e/ec/C-130J_Super_Hercules.JPG",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ec/C-130J_Super_Hercules.JPG",
   },
   C5M_GALAXY: {
     name: "C-5M Super Galaxy",
@@ -566,8 +559,7 @@ export const HELICOPTERS = {
     ceiling: 6400,
     acquisitionCost: 35000000,
     maintenanceCost: 2500000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
   },
   UH60M_BLACKHAWK: {
     name: "UH-60M Black Hawk",
@@ -776,8 +768,7 @@ export const HELICOPTERS = {
     ceiling: 6400,
     acquisitionCost: 20000000,
     maintenanceCost: 1800000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
   },
 } as const;
 
@@ -1016,8 +1007,7 @@ export const NAVAL_SHIPS = {
     depth: 365,
     acquisitionCost: 2000000000,
     maintenanceCost: 100000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/97/Ohio_class_submarine.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/9/97/Ohio_class_submarine.jpg",
   },
   ASTUTE_CLASS: {
     name: "Astute-class Submarine",
@@ -1167,8 +1157,7 @@ export const GROUND_VEHICLES = {
     armament: "120mm L55A1 smoothbore",
     acquisitionCost: 7500000,
     maintenanceCost: 450000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/6/6f/Leopard_2_A5_der_Bundeswehr.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Leopard_2_A5_der_Bundeswehr.jpg",
   },
   CHALLENGER_3: {
     name: "Challenger 3",
@@ -1296,8 +1285,7 @@ export const GROUND_VEHICLES = {
     armament: "25mm M242 Bushmaster",
     acquisitionCost: 4200000,
     maintenanceCost: 250000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/2/29/M2_Bradley.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/29/M2_Bradley.jpg",
   },
   PUMA_IFV: {
     name: "Puma IFV",
@@ -1372,8 +1360,7 @@ export const GROUND_VEHICLES = {
     range: 531,
     acquisitionCost: 4900000,
     maintenanceCost: 300000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/8/84/M1126_ICV_Stryker.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/8/84/M1126_ICV_Stryker.jpg",
   },
   BOXER_APC: {
     name: "Boxer APC",
@@ -1445,8 +1432,7 @@ export const GROUND_VEHICLES = {
     firingRange: 30000,
     acquisitionCost: 2700000,
     maintenanceCost: 180000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/c/ce/Paladin-fort-benning-7.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Paladin-fort-benning-7.jpg",
   },
   PZH_2000: {
     name: "PzH 2000",
@@ -1567,8 +1553,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     altitude: 24400,
     acquisitionCost: 1100000000,
     maintenanceCost: 50000000,
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/f/f1/Patriot_missile_launch_b.jpg",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/f/f1/Patriot_missile_launch_b.jpg",
   },
   THAAD_SYSTEM: {
     name: "THAAD",

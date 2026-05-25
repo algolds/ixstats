@@ -25,11 +25,11 @@ interface LogEntry {
 export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProps) {
   const { data: meetings } = api.meetings.getMeetings.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: policies } = api.policies.getPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const log = useMemo((): LogEntry[] => {
@@ -90,9 +90,7 @@ export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProp
     });
 
     // Sort by most recent first, take top 5
-    return entries
-      .sort((a, b) => b.time.getTime() - a.time.getTime())
-      .slice(0, 5);
+    return entries.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 5);
   }, [meetings, policies]);
 
   return (
@@ -102,22 +100,25 @@ export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProp
           <ScrollText className="h-3.5 w-3.5 text-amber-500" />
           <span className="text-xs font-semibold">Command Log</span>
         </div>
-        <Badge variant="outline" className="border-amber-500/30 px-1.5 py-0 text-[0.65rem] text-amber-600 dark:text-amber-400">
+        <Badge
+          variant="outline"
+          className="border-amber-500/30 px-1.5 py-0 text-[0.65rem] text-amber-600 dark:text-amber-400"
+        >
           {log.length}
         </Badge>
       </div>
       <div className="space-y-1.5">
         {log.length === 0 && (
-          <p className="text-[11px] text-muted-foreground text-center py-3">
+          <p className="text-muted-foreground py-3 text-center text-[11px]">
             No executive actions yet
           </p>
         )}
         {log.map((entry) => (
           <div key={entry.id} className="flex items-start gap-2 py-1">
-            <entry.icon className={`h-3 w-3 mt-0.5 flex-shrink-0 ${entry.iconColor}`} />
+            <entry.icon className={`mt-0.5 h-3 w-3 shrink-0 ${entry.iconColor}`} />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] leading-snug line-clamp-1">{entry.text}</p>
-              <span className="text-[10px] text-muted-foreground">{getTimeAgo(entry.time)}</span>
+              <p className="line-clamp-1 text-[11px] leading-snug">{entry.text}</p>
+              <span className="text-muted-foreground text-[10px]">{getTimeAgo(entry.time)}</span>
             </div>
           </div>
         ))}

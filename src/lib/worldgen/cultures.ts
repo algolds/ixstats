@@ -73,7 +73,8 @@ export function generateCultures(graph: PackedGraph, params: WorldGenParams): vo
       let i = 0;
       while (true) {
         let smallest = i;
-        const l = 2 * i + 1, r = 2 * i + 2;
+        const l = 2 * i + 1,
+          r = 2 * i + 2;
         if (l < heap.length && heap[l]![0] < heap[smallest]![0]) smallest = l;
         if (r < heap.length && heap[r]![0] < heap[smallest]![0]) smallest = r;
         if (smallest === i) break;
@@ -105,9 +106,7 @@ export function generateCultures(graph: PackedGraph, params: WorldGenParams): vo
       // Cost function: base distance + terrain penalties
       let edgeCost = 1;
       // Mountain penalty
-      const elevDiff = Math.abs(
-        (cells.h[nb]! as number) - (cells.h[cell]! as number)
-      );
+      const elevDiff = Math.abs((cells.h[nb]! as number) - (cells.h[cell]! as number));
       if (elevDiff > 30) edgeCost += 3;
       // Biome change penalty
       if (cells.b[nb] !== cells.b[cell]) edgeCost += 2;

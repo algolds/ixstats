@@ -103,7 +103,7 @@ export const ExecutiveItemCard = React.memo(function ExecutiveItemCard({
     >
       {/* Header row: icon + title + badges */}
       <div className="flex items-start gap-2.5">
-        <div className="mt-0.5 flex-shrink-0">
+        <div className="mt-0.5 shrink-0">
           <Icon className="text-muted-foreground h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
@@ -152,7 +152,7 @@ export const ExecutiveItemCard = React.memo(function ExecutiveItemCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 flex-shrink-0 px-2 text-xs"
+              className="h-6 shrink-0 px-2 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onAction(e);

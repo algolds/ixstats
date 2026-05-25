@@ -53,13 +53,7 @@ export interface IxnayIdStatus {
 
 // ─── Message Source (Phase 2 prep) ───────────────────────────────
 
-export type MessageSource =
-  | "thinkshare"
-  | "thinktank"
-  | "diplomatic"
-  | "wiki"
-  | "forum"
-  | "system";
+export type MessageSource = "thinkshare" | "thinktank" | "diplomatic" | "wiki" | "forum" | "system";
 
 // ─── Folder Classification ──────────────────────────────────────
 

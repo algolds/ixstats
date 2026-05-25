@@ -29,10 +29,7 @@ import {
   getEligibilityRules,
   checkArticleEligibility,
 } from "~/lib/wiki-eligibility-rules";
-import {
-  extractCardSummary,
-  validateParsedText,
-} from "~/lib/wiki-rich-text-parser";
+import { extractCardSummary, validateParsedText } from "~/lib/wiki-rich-text-parser";
 
 /**
  * Eligible article with preview data
@@ -109,7 +106,9 @@ export interface FetchOptions {
 /**
  * Default fetch options
  */
-const DEFAULT_FETCH_OPTIONS: Required<Omit<FetchOptions, "customRules" | "excludeTitles" | "includeCategories" | "excludeCategories">> = {
+const DEFAULT_FETCH_OPTIONS: Required<
+  Omit<FetchOptions, "customRules" | "excludeTitles" | "includeCategories" | "excludeCategories">
+> = {
   strictness: "default",
   includeImages: true,
   includeBacklinks: true,
@@ -174,12 +173,7 @@ export class WikiBatchFetcher {
 
       // Filter by category if specified
       if (options.includeCategories && options.includeCategories.length > 0) {
-        titles = await this.filterByCategories(
-          titles,
-          wikiSource,
-          options.includeCategories,
-          true
-        );
+        titles = await this.filterByCategories(titles, wikiSource, options.includeCategories, true);
       }
 
       // Exclude by category if specified
@@ -222,18 +216,14 @@ export class WikiBatchFetcher {
       const metadata = await this.fetchArticleMetadata(articleTitle, wikiSource, options);
       if (!metadata) return false;
 
-      const rules = options.customRules || getEligibilityRules(
-        wikiSource,
-        options.strictness || DEFAULT_FETCH_OPTIONS.strictness
-      );
+      const rules =
+        options.customRules ||
+        getEligibilityRules(wikiSource, options.strictness || DEFAULT_FETCH_OPTIONS.strictness);
 
       const result = checkArticleEligibility(metadata, rules);
       return result.eligible;
     } catch (error) {
-      console.error(
-        `[Wiki Batch Fetcher] Error validating "${articleTitle}":`,
-        error
-      );
+      console.error(`[Wiki Batch Fetcher] Error validating "${articleTitle}":`, error);
       return false;
     }
   }
@@ -256,10 +246,7 @@ export class WikiBatchFetcher {
     const errors: Array<{ title: string; error: string }> = [];
 
     const opts = { ...DEFAULT_FETCH_OPTIONS, ...options };
-    const rules = options.customRules || getEligibilityRules(
-      wikiSource,
-      opts.strictness
-    );
+    const rules = options.customRules || getEligibilityRules(wikiSource, opts.strictness);
 
     // Process in batches to avoid overwhelming the API
     const batchSize = opts.batchSize;
@@ -267,12 +254,11 @@ export class WikiBatchFetcher {
       const batch = titles.slice(i, i + batchSize);
 
       // Fetch metadata for each article in parallel
-      const metadataPromises = batch.map(title =>
-        this.fetchArticleMetadata(title, wikiSource, options)
-          .catch(error => {
-            errors.push({ title, error: error.message });
-            return null;
-          })
+      const metadataPromises = batch.map((title) =>
+        this.fetchArticleMetadata(title, wikiSource, options).catch((error) => {
+          errors.push({ title, error: error.message });
+          return null;
+        })
       );
 
       const metadataResults = await Promise.all(metadataPromises);
@@ -313,15 +299,13 @@ export class WikiBatchFetcher {
     articles.sort((a, b) => b.eligibility.score - a.eligibility.score);
 
     // Calculate statistics
-    const scores = articles.map(a => a.eligibility.score);
+    const scores = articles.map((a) => a.eligibility.score);
     const statistics = {
       requested: titles.length,
       fetched: titles.length - errors.length,
       eligible: articles.length,
       ineligible: titles.length - errors.length - articles.length,
-      averageScore: scores.length > 0
-        ? scores.reduce((sum, s) => sum + s, 0) / scores.length
-        : 0,
+      averageScore: scores.length > 0 ? scores.reduce((sum, s) => sum + s, 0) / scores.length : 0,
       highestScore: scores.length > 0 ? Math.max(...scores) : 0,
       lowestScore: scores.length > 0 ? Math.min(...scores) : 0,
       duration: Date.now() - startTime,
@@ -426,10 +410,7 @@ export class WikiBatchFetcher {
         text: content,
       };
     } catch (error) {
-      console.error(
-        `[Wiki Batch Fetcher] Error fetching metadata for "${title}":`,
-        error
-      );
+      console.error(`[Wiki Batch Fetcher] Error fetching metadata for "${title}":`, error);
       return null;
     }
   }
@@ -437,10 +418,7 @@ export class WikiBatchFetcher {
   /**
    * Fetch backlinks count for an article
    */
-  private async fetchBacklinksCount(
-    title: string,
-    wikiSource: WikiSource
-  ): Promise<number> {
+  private async fetchBacklinksCount(title: string, wikiSource: WikiSource): Promise<number> {
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -511,10 +489,7 @@ export class WikiBatchFetcher {
   /**
    * Generate preview text from article content
    */
-  private async generatePreview(
-    content: string,
-    wikiSource: WikiSource
-  ): Promise<string> {
+  private async generatePreview(content: string, wikiSource: WikiSource): Promise<string> {
     try {
       // Extract intro section (first paragraph)
       const preview = extractCardSummary(content, false);
@@ -532,10 +507,7 @@ export class WikiBatchFetcher {
   /**
    * Fetch image URL for an article
    */
-  private async fetchImageUrl(
-    title: string,
-    wikiSource: WikiSource
-  ): Promise<string | undefined> {
+  private async fetchImageUrl(title: string, wikiSource: WikiSource): Promise<string | undefined> {
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -606,9 +578,7 @@ export class WikiBatchFetcher {
             cat.title.replace(/^Category:/, "").toLowerCase()
           );
 
-          const hasCategory = categories.some(cat =>
-            pageCategories.includes(cat.toLowerCase())
-          );
+          const hasCategory = categories.some((cat) => pageCategories.includes(cat.toLowerCase()));
 
           if (include === hasCategory) {
             results.push(page.title);
@@ -626,7 +596,7 @@ export class WikiBatchFetcher {
    * Delay helper for rate limiting
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -674,8 +644,8 @@ export class WikiBatchFetcher {
 
     console.log(
       `[Wiki Batch Fetcher] Validation complete: ${result.statistics.eligible} eligible, ` +
-      `${result.statistics.ineligible} ineligible, ${result.errors.length} errors ` +
-      `(${result.statistics.duration}ms)`
+        `${result.statistics.ineligible} ineligible, ${result.errors.length} errors ` +
+        `(${result.statistics.duration}ms)`
     );
 
     return result;
@@ -719,9 +689,7 @@ export class WikiBatchFetcher {
     }
 
     // Sort by quality score and return top N
-    return allArticles
-      .sort((a, b) => b.eligibility.score - a.eligibility.score)
-      .slice(0, count);
+    return allArticles.sort((a, b) => b.eligibility.score - a.eligibility.score).slice(0, count);
   }
 }
 

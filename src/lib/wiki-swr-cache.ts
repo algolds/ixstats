@@ -18,9 +18,8 @@ const inflight = new Map<string, Promise<unknown>>();
 const MAX_ENTRIES = 500;
 
 function isExpired<T>(entry: SWREntry<T>): boolean {
-  const ttl = entry.data !== null && entry.data !== undefined
-    ? entry.positiveTTL
-    : entry.negativeTTL;
+  const ttl =
+    entry.data !== null && entry.data !== undefined ? entry.positiveTTL : entry.negativeTTL;
   return Date.now() - entry.cachedAt > ttl;
 }
 

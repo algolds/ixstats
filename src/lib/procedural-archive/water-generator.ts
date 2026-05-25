@@ -42,7 +42,7 @@ export function generateWater(params: WaterParams): WaterResult {
           featureId: `river-${i}`,
           displayName: generateRiverName(seed + i),
           type: "river",
-          fill: LAYER_CONFIGS.rivers.strokeColor ?? LAYER_CONFIGS.rivers.fillColor as string,
+          fill: LAYER_CONFIGS.rivers.strokeColor ?? (LAYER_CONFIGS.rivers.fillColor as string),
         },
       });
     }
@@ -178,7 +178,16 @@ function traceRiver(
     const candidates: Array<{ x: number; y: number; elev: number }> = [];
     const currentElev = data[key]!;
 
-    for (const [dx, dy] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) {
+    for (const [dx, dy] of [
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, -1],
+      [0, 1],
+      [1, -1],
+      [1, 0],
+      [1, 1],
+    ]) {
       const nx = cx + dx;
       const ny = cy + dy;
       if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
@@ -217,7 +226,7 @@ function detailRiverPath(
   width: number,
   height: number,
   noise: ReturnType<typeof createNoise>,
-  riverIdx: number,
+  riverIdx: number
 ): Position[] {
   if (path.length < 2) return [];
 
@@ -254,10 +263,7 @@ function detailRiverPath(
         const t = s / (SUBS + 1);
         const mx = fractalNoise(noise, (i + t) * 0.4 + rOff, s * 3.1, 2) * meanderAmp;
         const my = fractalNoise(noise, (i + t) * 0.4 + rOff, s * 3.1 + 50, 2) * meanderAmp * 0.6;
-        coords.push([
-          lng + dlng * t + mx,
-          lat + dlat * t + my,
-        ]);
+        coords.push([lng + dlng * t + mx, lat + dlat * t + my]);
       }
     }
   }
@@ -323,7 +329,12 @@ function generateLakes(heightmap: HeightmapResult, seed: number): Polygon[] {
 
     for (let i = 0; i < numPoints; i++) {
       const angle = (i / numPoints) * Math.PI * 2;
-      const jitter = fractalNoise(noise, Math.cos(angle) * 3 + lake.x, Math.sin(angle) * 3 + lake.y, 3);
+      const jitter = fractalNoise(
+        noise,
+        Math.cos(angle) * 3 + lake.x,
+        Math.sin(angle) * 3 + lake.y,
+        3
+      );
       let radius = baseRadius * (0.7 + jitter * 0.3);
 
       // Clamp radius so the point stays on land
@@ -335,29 +346,38 @@ function generateLakes(heightmap: HeightmapResult, seed: number): Polygon[] {
       if (px >= 0 && px < width && py >= 0 && py < height) {
         if (data[py * width + px]! < seaLevel) {
           // Shrink radius until on land (binary search)
-          let lo = 0, hi = radius;
+          let lo = 0,
+            hi = radius;
           for (let s = 0; s < 6; s++) {
             const mid = (lo + hi) / 2;
             const mx = Math.floor(((centerLng + Math.cos(angle) * mid + 180) / 360) * width);
-            const my = Math.floor(((90 - (centerLat + Math.sin(angle) * mid * 0.6)) / 180) * height);
-            if (mx >= 0 && mx < width && my >= 0 && my < height && data[my * width + mx]! >= seaLevel) {
+            const my = Math.floor(
+              ((90 - (centerLat + Math.sin(angle) * mid * 0.6)) / 180) * height
+            );
+            if (
+              mx >= 0 &&
+              mx < width &&
+              my >= 0 &&
+              my < height &&
+              data[my * width + mx]! >= seaLevel
+            ) {
               lo = mid;
             } else {
               hi = mid;
             }
           }
           radius = lo;
-          if (radius < 0.05) { oceanPoints++; continue; }
+          if (radius < 0.05) {
+            oceanPoints++;
+            continue;
+          }
         }
       } else {
         oceanPoints++;
         continue;
       }
 
-      ring.push([
-        centerLng + Math.cos(angle) * radius,
-        centerLat + Math.sin(angle) * radius * 0.6,
-      ]);
+      ring.push([centerLng + Math.cos(angle) * radius, centerLat + Math.sin(angle) * radius * 0.6]);
     }
 
     // Skip lakes where too many points are in ocean (relaxed for coastal lakes)
@@ -406,7 +426,18 @@ function perpDist(p: Position, a: Position, b: Position): number {
 
 function generateRiverName(seed: number): string {
   const rng = seededRandom(seed);
-  const prefixes = ["Great", "Blue", "White", "Green", "Red", "Silver", "Golden", "Dark", "Clear", "Long"];
+  const prefixes = [
+    "Great",
+    "Blue",
+    "White",
+    "Green",
+    "Red",
+    "Silver",
+    "Golden",
+    "Dark",
+    "Clear",
+    "Long",
+  ];
   const roots = ["water", "stream", "flow", "run", "brook", "bourne", "wye", "avon", "don", "ouse"];
   return `${prefixes[Math.floor(rng() * prefixes.length)]} ${roots[Math.floor(rng() * roots.length)]}`;
 }
@@ -414,6 +445,17 @@ function generateRiverName(seed: number): string {
 function generateLakeName(seed: number): string {
   const rng = seededRandom(seed);
   const prefixes = ["Lake", "Loch", "Lac", "Lago"];
-  const names = ["Mirror", "Crystal", "Shadow", "Echo", "Dawn", "Mist", "Frost", "Thunder", "Silent", "Azure"];
+  const names = [
+    "Mirror",
+    "Crystal",
+    "Shadow",
+    "Echo",
+    "Dawn",
+    "Mist",
+    "Frost",
+    "Thunder",
+    "Silent",
+    "Azure",
+  ];
   return `${prefixes[Math.floor(rng() * prefixes.length)]} ${names[Math.floor(rng() * names.length)]}`;
 }

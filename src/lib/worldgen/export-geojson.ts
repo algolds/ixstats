@@ -8,7 +8,14 @@
  * - Rivers: LineString features with fill color
  */
 
-import type { Feature, FeatureCollection, Polygon, MultiPolygon, LineString, Position } from "geojson";
+import type {
+  Feature,
+  FeatureCollection,
+  Polygon,
+  MultiPolygon,
+  LineString,
+  Position,
+} from "geojson";
 import type { PackedGraph } from "./types";
 import { isLand, cellLng, cellLat, cellAreaKm2 } from "./voronoi-mesh";
 import { ELEVATION_ZONES } from "../elevation-config";
@@ -77,19 +84,22 @@ function exportBackground(graph: PackedGraph): FeatureCollection {
 
   return {
     type: "FeatureCollection",
-    features: [{
-      type: "Feature",
-      id: "landmass",
-      geometry: polygons.length === 1
-        ? { type: "Polygon", coordinates: polygons[0]! } as Polygon
-        : { type: "MultiPolygon", coordinates: polygons } as MultiPolygon,
-      properties: {
+    features: [
+      {
+        type: "Feature",
         id: "landmass",
-        featureId: "landmass",
-        fill: "#e8e5da",
-        _fillColor: "#e8e5da",
+        geometry:
+          polygons.length === 1
+            ? ({ type: "Polygon", coordinates: polygons[0]! } as Polygon)
+            : ({ type: "MultiPolygon", coordinates: polygons } as MultiPolygon),
+        properties: {
+          id: "landmass",
+          featureId: "landmass",
+          fill: "#e8e5da",
+          _fillColor: "#e8e5da",
+        },
       },
-    }],
+    ],
   };
 }
 
@@ -126,9 +136,10 @@ function exportAltitudes(graph: PackedGraph): FeatureCollection {
       features.push({
         type: "Feature",
         id,
-        geometry: polygons.length === 1
-          ? { type: "Polygon", coordinates: polygons[0]! } as Polygon
-          : { type: "MultiPolygon", coordinates: polygons } as MultiPolygon,
+        geometry:
+          polygons.length === 1
+            ? ({ type: "Polygon", coordinates: polygons[0]! } as Polygon)
+            : ({ type: "MultiPolygon", coordinates: polygons } as MultiPolygon),
         properties: {
           id,
           featureId: id,
@@ -152,14 +163,32 @@ function exportClimate(graph: PackedGraph): FeatureCollection {
 
   // Import climate colors (lazy — avoid circular deps)
   const CLIMATE_COLORS: Record<number, string> = {
-    0: "#006400", 1: "#228B22", 2: "#C2B280", 3: "#EDC9AF",
-    4: "#2E8B57", 5: "#CC7722", 6: "#355E3B", 7: "#4682B4",
-    8: "#355E3B", 9: "#A8B8C8", 10: "#F0F8FF", 11: "#8B7D6B",
+    0: "#006400",
+    1: "#228B22",
+    2: "#C2B280",
+    3: "#EDC9AF",
+    4: "#2E8B57",
+    5: "#CC7722",
+    6: "#355E3B",
+    7: "#4682B4",
+    8: "#355E3B",
+    9: "#A8B8C8",
+    10: "#F0F8FF",
+    11: "#8B7D6B",
   };
   const CLIMATE_NAMES: Record<number, string> = {
-    0: "Ar", 1: "Aw", 2: "Bs", 3: "Bw",
-    4: "Cf", 5: "Cs", 6: "Do", 7: "Dc",
-    8: "E", 9: "Ft", 10: "Fi", 11: "H",
+    0: "Ar",
+    1: "Aw",
+    2: "Bs",
+    3: "Bw",
+    4: "Cf",
+    5: "Cs",
+    6: "Do",
+    7: "Dc",
+    8: "E",
+    9: "Ft",
+    10: "Fi",
+    11: "H",
   };
 
   // Group land cells by biome
@@ -188,9 +217,10 @@ function exportClimate(graph: PackedGraph): FeatureCollection {
       features.push({
         type: "Feature",
         id,
-        geometry: polygons.length === 1
-          ? { type: "Polygon", coordinates: polygons[0]! } as Polygon
-          : { type: "MultiPolygon", coordinates: polygons } as MultiPolygon,
+        geometry:
+          polygons.length === 1
+            ? ({ type: "Polygon", coordinates: polygons[0]! } as Polygon)
+            : ({ type: "MultiPolygon", coordinates: polygons } as MultiPolygon),
         properties: {
           id,
           featureId: id,
@@ -221,7 +251,8 @@ function exportPolitical(graph: PackedGraph): FeatureCollection {
     if (polygons.length === 0) continue;
 
     // Compute centroid
-    let clng = 0, clat = 0;
+    let clng = 0,
+      clat = 0;
     for (const ci of stateCells) {
       clng += cellLng(graph, ci);
       clat += cellLat(graph, ci);
@@ -236,9 +267,10 @@ function exportPolitical(graph: PackedGraph): FeatureCollection {
     features.push({
       type: "Feature",
       id: state.name,
-      geometry: polygons.length === 1
-        ? { type: "Polygon", coordinates: polygons[0]! } as Polygon
-        : { type: "MultiPolygon", coordinates: polygons } as MultiPolygon,
+      geometry:
+        polygons.length === 1
+          ? ({ type: "Polygon", coordinates: polygons[0]! } as Polygon)
+          : ({ type: "MultiPolygon", coordinates: polygons } as MultiPolygon),
       properties: {
         id: state.name,
         featureId: state.name,
@@ -307,9 +339,10 @@ function exportLakes(graph: PackedGraph): FeatureCollection {
     features.push({
       type: "Feature",
       id: `lake-${feature.id}`,
-      geometry: polygons.length === 1
-        ? { type: "Polygon", coordinates: polygons[0]! } as Polygon
-        : { type: "MultiPolygon", coordinates: polygons } as MultiPolygon,
+      geometry:
+        polygons.length === 1
+          ? ({ type: "Polygon", coordinates: polygons[0]! } as Polygon)
+          : ({ type: "MultiPolygon", coordinates: polygons } as MultiPolygon),
       properties: {
         id: `lake-${feature.id}`,
         featureId: `lake-${feature.id}`,
@@ -330,8 +363,10 @@ function exportIcecaps(graph: PackedGraph): FeatureCollection {
   // Ice cap cells: biome = 10 (Fi = Ice Cap) or temp < -20 at high latitude
   const iceCells: number[] = [];
   for (let i = 0; i < graph.cells.n; i++) {
-    if (graph.cells.b[i] === 10 || // Fi biome
-        (graph.cells.temp[i]! < -20 && Math.abs(cellLat(graph, i)) > 60)) {
+    if (
+      graph.cells.b[i] === 10 || // Fi biome
+      (graph.cells.temp[i]! < -20 && Math.abs(cellLat(graph, i)) > 60)
+    ) {
       iceCells.push(i);
     }
   }
@@ -353,9 +388,10 @@ function exportIcecaps(graph: PackedGraph): FeatureCollection {
     features.push({
       type: "Feature",
       id: `icecap-${gi}`,
-      geometry: polygons.length === 1
-        ? { type: "Polygon", coordinates: polygons[0]! } as Polygon
-        : { type: "MultiPolygon", coordinates: polygons } as MultiPolygon,
+      geometry:
+        polygons.length === 1
+          ? ({ type: "Polygon", coordinates: polygons[0]! } as Polygon)
+          : ({ type: "MultiPolygon", coordinates: polygons } as MultiPolygon),
       properties: {
         id: `icecap-${gi}`,
         featureId: `icecap-${gi}`,
@@ -415,10 +451,7 @@ function findContiguousGroups(graph: PackedGraph, cellSet: number[]): number[][]
  *
  * Returns array of polygon coordinate rings (each ring = Position[]).
  */
-function mergeCellsToPolygons(
-  graph: PackedGraph,
-  cellSet: number[]
-): Position[][][] {
+function mergeCellsToPolygons(graph: PackedGraph, cellSet: number[]): Position[][][] {
   const inSet = new Set(cellSet);
 
   // For each cell, emit its polygon edges. Track which edges are shared.
@@ -539,8 +572,10 @@ function chainEdgesIntoRings(edges: [Position, Position][]): Position[][] {
 // ──────────────────────────────────────────────
 
 function edgeKey(a: Position | [number, number], b: Position | [number, number]): string {
-  const ax = round4(a[0]!), ay = round4(a[1]!);
-  const bx = round4(b[0]!), by = round4(b[1]!);
+  const ax = round4(a[0]!),
+    ay = round4(a[1]!);
+  const bx = round4(b[0]!),
+    by = round4(b[1]!);
   // Sort so edge A-B and B-A have the same key
   if (ax < bx || (ax === bx && ay < by)) {
     return `${ax},${ay}|${bx},${by}`;

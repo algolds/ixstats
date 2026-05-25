@@ -22,7 +22,7 @@ export type RouteType = "land" | "shipping" | "river";
 export interface TradeRoute {
   id: string;
   from: string; // city ID
-  to: string;   // city ID
+  to: string; // city ID
   type: RouteType;
   path: Position[];
   cost: number;
@@ -59,9 +59,11 @@ function buildCostGrid(heightmap: HeightmapResult, biomeGrid?: BiomeGrid): Float
     if (elev <= seaLevel) {
       // Sea depth-dependent costs (Azgaar pattern)
       const depth = seaLevel - elev;
-      if (depth < 0.05) cost[i] = 1.8;      // Coastal waters
-      else if (depth < 0.15) cost[i] = 3;    // Shallow sea
-      else cost[i] = 6;                       // Deep ocean
+      if (depth < 0.05)
+        cost[i] = 1.8; // Coastal waters
+      else if (depth < 0.15)
+        cost[i] = 3; // Shallow sea
+      else cost[i] = 6; // Deep ocean
     } else if (biomeGrid && biomeGrid.data[i] !== 255) {
       // Biome-aware land cost (normalized to 1-100 range)
       const biomeIdx = biomeGrid.data[i]!;
@@ -136,7 +138,8 @@ function astar(
       let i = 0;
       while (true) {
         let s = i;
-        const l = 2 * i + 1, r = 2 * i + 2;
+        const l = 2 * i + 1,
+          r = 2 * i + 2;
         if (l < heap.length && heap[l]!.f < heap[s]!.f) s = l;
         if (r < heap.length && heap[r]!.f < heap[s]!.f) s = r;
         if (s === i) break;
@@ -177,7 +180,12 @@ function astar(
     const cy = Math.floor(current.idx / width);
 
     // 4-connected neighbors
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+    for (const [dx, dy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ] as const) {
       const nx = cx + dx;
       const ny = cy + dy;
       if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
@@ -274,7 +282,8 @@ export function generateTradeRoutes(params: TradeRouteGenParams): TradeRouteResu
     const oceanFraction = oceanCells / (oceanCells + landCells);
     let type: RouteType;
     if (oceanFraction > 0.5) type = "shipping";
-    else if (oceanFraction > 0.1) type = "river"; // Mixed coastal/river route
+    else if (oceanFraction > 0.1)
+      type = "river"; // Mixed coastal/river route
     else type = "land";
 
     // Approximate length in km (haversine approximation)
@@ -282,11 +291,13 @@ export function generateTradeRoutes(params: TradeRouteGenParams): TradeRouteResu
     for (let i = 1; i < coordinates.length; i++) {
       const [lng1, lat1] = coordinates[i - 1]!;
       const [lng2, lat2] = coordinates[i]!;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) ** 2;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) ** 2;
       lengthKm += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
@@ -303,9 +314,9 @@ export function generateTradeRoutes(params: TradeRouteGenParams): TradeRouteResu
 
   // Build GeoJSON
   const ROUTE_COLORS: Record<RouteType, string> = {
-    land: "#8B4513",     // brown
+    land: "#8B4513", // brown
     shipping: "#1E90FF", // blue
-    river: "#4682B4",    // steel blue
+    river: "#4682B4", // steel blue
   };
 
   const features: Feature[] = routes.map((route) => ({

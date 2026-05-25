@@ -55,7 +55,8 @@ const featureConfig = {
   defense: {
     icon: Shield,
     title: "Defense & Security Command",
-    description: "Full access to military operations, force management, and security infrastructure",
+    description:
+      "Full access to military operations, force management, and security infrastructure",
     features: [
       "Military force customization",
       "Active operations management",
@@ -121,7 +122,7 @@ export function PremiumGate({ feature, title, description, className = "" }: Pre
         <div className="space-y-3 text-left">
           {config.features.map((feature, index) => (
             <div key={index} className="flex items-center space-x-3">
-              <Star className="h-4 w-4 flex-shrink-0 text-yellow-400" />
+              <Star className="h-4 w-4 shrink-0 text-yellow-400" />
               <span className="text-white/90">{feature}</span>
             </div>
           ))}

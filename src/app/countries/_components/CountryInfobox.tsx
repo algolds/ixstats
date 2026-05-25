@@ -713,7 +713,7 @@ export function CountryInfobox({
 
                   return (
                     <div key={field.key} className="flex items-start text-sm">
-                      <Icon className="text-primary mt-0.5 mr-3 h-4 w-4 flex-shrink-0" />
+                      <Icon className="text-primary mt-0.5 mr-3 h-4 w-4 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <span className="text-muted-foreground mr-2 font-medium">
                           {field.label}:
@@ -863,7 +863,7 @@ export function CountryInfobox({
 
                 return (
                   <div key={field.key} className="flex items-start text-sm">
-                    <Icon className="text-primary mt-0.5 mr-3 h-4 w-4 flex-shrink-0" />
+                    <Icon className="text-primary mt-0.5 mr-3 h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <span className="text-muted-foreground mr-2 font-medium">{field.label}:</span>
                       <WikiHtmlContent

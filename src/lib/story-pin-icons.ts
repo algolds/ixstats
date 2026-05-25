@@ -28,20 +28,20 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 // ─── Category colors (aligned with wiki lore analysis) ───────────────────────
 
 export const STORY_PIN_COLORS: Record<string, string> = {
-  battle: "#dc2626",       // red — military conflicts
-  founding: "#2563eb",     // blue — nation origins
-  treaty: "#16a34a",       // green — diplomatic agreements
-  cultural: "#9333ea",     // purple — arts, cuisine, traditions
-  religious: "#ca8a04",    // gold — faith, churches, religious events
-  trade: "#ea580c",        // orange — commerce, companies, economy
-  naval: "#1e40af",        // dark blue — ships, maritime history
-  settlement: "#7c3aed",   // violet — city founding, settlement stories
-  government: "#475569",   // slate — political events, reforms, coups
-  biography: "#be185d",    // pink — notable people, leaders
-  linguistic: "#65a30d",   // lime — language origins, ethnic identity
-  upheaval: "#991b1b",     // dark red — revolutions, civil wars, collapses
-  natural: "#059669",      // teal — geographic/environmental
-  exploration: "#0891b2",  // cyan — discovery, expeditions
+  battle: "#dc2626", // red — military conflicts
+  founding: "#2563eb", // blue — nation origins
+  treaty: "#16a34a", // green — diplomatic agreements
+  cultural: "#9333ea", // purple — arts, cuisine, traditions
+  religious: "#ca8a04", // gold — faith, churches, religious events
+  trade: "#ea580c", // orange — commerce, companies, economy
+  naval: "#1e40af", // dark blue — ships, maritime history
+  settlement: "#7c3aed", // violet — city founding, settlement stories
+  government: "#475569", // slate — political events, reforms, coups
+  biography: "#be185d", // pink — notable people, leaders
+  linguistic: "#65a30d", // lime — language origins, ethnic identity
+  upheaval: "#991b1b", // dark red — revolutions, civil wars, collapses
+  natural: "#059669", // teal — geographic/environmental
+  exploration: "#0891b2", // cyan — discovery, expeditions
 };
 
 export const STORY_PIN_CATEGORIES = Object.keys(STORY_PIN_COLORS);
@@ -74,7 +74,12 @@ const drawBattle: ShapeDrawer = (ctx, cx, cy, r) => {
   ctx.stroke();
   // Blade tips
   ctx.fillStyle = ctx.strokeStyle;
-  for (const [dx, dy] of [[-s, -s], [s, -s], [s, s], [-s, s]]) {
+  for (const [dx, dy] of [
+    [-s, -s],
+    [s, -s],
+    [s, s],
+    [-s, s],
+  ]) {
     ctx.beginPath();
     ctx.arc(cx + dx, cy + dy, r * 0.08, 0, Math.PI * 2);
     ctx.fill();
@@ -232,10 +237,10 @@ const drawExploration: ShapeDrawer = (ctx, cx, cy, r) => {
   const s = r * 0.55;
   // 4 cardinal points as triangles
   const points: [number, number, number][] = [
-    [0, -1, s],        // N (longer)
-    [1, 0, s * 0.7],   // E
-    [0, 1, s * 0.7],   // S
-    [-1, 0, s * 0.7],  // W
+    [0, -1, s], // N (longer)
+    [1, 0, s * 0.7], // E
+    [0, 1, s * 0.7], // S
+    [-1, 0, s * 0.7], // W
   ];
   for (const [dx, dy, len] of points) {
     ctx.beginPath();
@@ -258,7 +263,14 @@ const drawDisaster: ShapeDrawer = (ctx, cx, cy, r) => {
   ctx.beginPath();
   // Main flame body
   ctx.moveTo(cx, cy - s);
-  ctx.bezierCurveTo(cx + s * 0.5, cy - s * 0.3, cx + s * 0.6, cy + s * 0.2, cx + s * 0.3, cy + s * 0.7);
+  ctx.bezierCurveTo(
+    cx + s * 0.5,
+    cy - s * 0.3,
+    cx + s * 0.6,
+    cy + s * 0.2,
+    cx + s * 0.3,
+    cy + s * 0.7
+  );
   ctx.quadraticCurveTo(cx + s * 0.1, cy + s * 0.9, cx, cy + s * 0.7);
   ctx.quadraticCurveTo(cx - s * 0.1, cy + s * 0.9, cx - s * 0.3, cy + s * 0.7);
   ctx.bezierCurveTo(cx - s * 0.6, cy + s * 0.2, cx - s * 0.5, cy - s * 0.3, cx, cy - s);
@@ -440,11 +452,7 @@ const SHAPE_DRAWERS: Record<string, ShapeDrawer> = {
  * Generate a single story pin icon as ImageData.
  * Structure: colored circle background → white border → category shape in white.
  */
-function createStoryPinIcon(
-  size: number,
-  category: string,
-  importance: number,
-): ImageData {
+function createStoryPinIcon(size: number, category: string, importance: number): ImageData {
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;

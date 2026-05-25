@@ -35,7 +35,7 @@ export function MyCountryComplianceModal({
     <Dialog open={isOpen} onOpenChange={(value) => !value && onDismiss?.()}>
       <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-h-[85vh] sm:max-w-3xl">
         <div className="flex h-full min-h-0 flex-col">
-          <DialogHeader className="flex-shrink-0 px-4 pt-4 text-left sm:px-6 sm:pt-6">
+          <DialogHeader className="shrink-0 px-4 pt-4 text-left sm:px-6 sm:pt-6">
             <DialogTitle className="flex items-center gap-2 text-xl font-semibold sm:text-2xl">
               <ClipboardList className="text-primary h-5 w-5 sm:h-6 sm:w-6" />
               Complete Your MyCountry Profile
@@ -92,7 +92,7 @@ export function MyCountryComplianceModal({
             </div>
           </ScrollArea>
 
-          <DialogFooter className="border-border/60 bg-muted/20 flex-shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4">
+          <DialogFooter className="border-border/60 bg-muted/20 shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
               {!allComplete ? (
                 <>

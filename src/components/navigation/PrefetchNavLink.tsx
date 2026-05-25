@@ -4,8 +4,7 @@ import React, { useRef, useEffect } from "react";
 import Link, { type LinkProps } from "next/link";
 
 interface PrefetchNavLinkProps
-  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps>,
-    LinkProps {
+  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps>, LinkProps {
   prefetchFn?: () => void | Promise<any>;
   children: React.ReactNode;
   delayMs?: number;
@@ -49,11 +48,7 @@ export function PrefetchNavLink({
   }, []);
 
   return (
-    <Link
-      {...props}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <Link {...props} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       {children}
     </Link>
   );

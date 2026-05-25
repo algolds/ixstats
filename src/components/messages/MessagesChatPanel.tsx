@@ -76,16 +76,16 @@ export function MessagesChatPanel({
   const sendMessage = api.messages.sendMessage.useMutation({
     onMutate: async (newMsg) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      
+
       // Cancel outgoing fetches so they don't overwrite our optimistic update
       await utils.messages.getConversationMessages.cancel(queryKey);
-      
+
       // Snapshot the previous value
       const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
-      
+
       // Optimistically add the message to the query cache
       const tempId = `temp-${Date.now()}`;
-      
+
       const senderAccount = {
         id: currentUserId,
         username: user?.username ?? "me",
@@ -129,7 +129,7 @@ export function MessagesChatPanel({
       if (context?.previousMessages) {
         utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
       }
-      
+
       let msg = "Failed to send message";
       if (error.message?.includes("conversation")) {
         msg = "Conversation not found or you're not a participant";
@@ -285,8 +285,7 @@ export function MessagesChatPanel({
         removeReaction.mutate({ messageId, reaction }),
       onEditMessage: (messageId: string, content: string) =>
         editMutation.mutate({ messageId, content }),
-      onDeleteMessage: (messageId: string) =>
-        deleteMutation.mutate({ messageId }),
+      onDeleteMessage: (messageId: string) => deleteMutation.mutate({ messageId }),
     }),
     [currentUserId, addReaction, removeReaction, editMutation, deleteMutation]
   );
@@ -317,10 +316,11 @@ export function MessagesChatPanel({
   const messages = useMemo(() => {
     const rawMessages = messagesData?.messages ?? [];
     if (!searchQuery) return rawMessages;
-    
-    return rawMessages.filter((msg: any) => 
-      msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      msg.account?.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+
+    return rawMessages.filter(
+      (msg: any) =>
+        msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.account?.displayName.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [messagesData?.messages, searchQuery]);
 
@@ -345,11 +345,11 @@ export function MessagesChatPanel({
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {searchQuery ? "No messages matching your search." : "No messages yet. Say hello!"}
             </p>
           </div>

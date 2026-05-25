@@ -27,7 +27,7 @@ export function StepNavigation({ steps, currentStep, onStepChange }: StepNavigat
         const isCompleted = index < currentStepIndex;
 
         return (
-          <div key={step.id} className="flex flex-shrink-0 items-center">
+          <div key={step.id} className="flex shrink-0 items-center">
             <button
               onClick={() => onStepChange(step.id)}
               className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
@@ -43,7 +43,7 @@ export function StepNavigation({ steps, currentStep, onStepChange }: StepNavigat
               {isCompleted && <CheckCircle className="h-4 w-4" />}
             </button>
             {index < steps.length - 1 && (
-              <ArrowRight className="text-muted-foreground mx-2 h-4 w-4 flex-shrink-0" />
+              <ArrowRight className="text-muted-foreground mx-2 h-4 w-4 shrink-0" />
             )}
           </div>
         );

@@ -12,7 +12,11 @@ import { Button } from "~/components/ui/button";
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { api } from "~/trpc/react";
 import { VaultSidebarLayout } from "./VaultSidebarLayout";
-import { getSectionFromPathname, getSubTabFromPathname, type VaultSection } from "./VaultSidebarNav";
+import {
+  getSectionFromPathname,
+  getSubTabFromPathname,
+  type VaultSection,
+} from "./VaultSidebarNav";
 import { withBasePath } from "~/lib/base-path";
 import { VaultDashboardSection } from "./sections/VaultDashboardSection";
 import { VaultCardsSection } from "./sections/VaultCardsSection";
@@ -33,8 +37,8 @@ function VaultRouterInner() {
   const { user } = useUser();
   const pathname = usePathname();
 
-  const [activeSection, setActiveSection] = useState<VaultSection>(
-    () => getSectionFromPathname(pathname)
+  const [activeSection, setActiveSection] = useState<VaultSection>(() =>
+    getSectionFromPathname(pathname)
   );
 
   // Resolve initial sub-tab from the URL so deep links land on the right tab
@@ -47,19 +51,23 @@ function VaultRouterInner() {
   );
 
   // Navigate to a section (instant client-side switch)
-  const handleNavigate = useCallback((section: VaultSection) => {
-    if (section === activeSection) return;
-    setActiveSection(section);
+  const handleNavigate = useCallback(
+    (section: VaultSection) => {
+      if (section === activeSection) return;
+      setActiveSection(section);
 
-    const href = section === "dashboard" ? "/vault" : `/vault/${section}`;
-    window.history.pushState(null, "", withBasePath(href));
+      const href = section === "dashboard" ? "/vault" : `/vault/${section}`;
+      window.history.pushState(null, "", withBasePath(href));
 
-    document.title = section === "dashboard"
-      ? "MyVault - IxStats"
-      : `${SECTION_TITLES[section]} - MyVault - IxStats`;
+      document.title =
+        section === "dashboard"
+          ? "MyVault - IxStats"
+          : `${SECTION_TITLES[section]} - MyVault - IxStats`;
 
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [activeSection]);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    },
+    [activeSection]
+  );
 
   // Handle browser back/forward
   useEffect(() => {
@@ -74,23 +82,24 @@ function VaultRouterInner() {
 
   // Set initial page title
   useEffect(() => {
-    document.title = activeSection === "dashboard"
-      ? "MyVault - IxStats"
-      : `${SECTION_TITLES[activeSection]} - MyVault - IxStats`;
+    document.title =
+      activeSection === "dashboard"
+        ? "MyVault - IxStats"
+        : `${SECTION_TITLES[activeSection]} - MyVault - IxStats`;
   }, [activeSection]);
 
   // Hero section with vault branding + IxCredits balance
   const heroSection = (
-    <div className="glass-hierarchy-child flex items-center justify-between rounded-xl border border-border px-4 py-3 sm:px-6 sm:py-4">
+    <div className="glass-hierarchy-child border-border flex items-center justify-between rounded-xl border px-4 py-3 sm:px-6 sm:py-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md shadow-purple-500/30">
           <Coins className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-foreground sm:text-xl">
+          <h1 className="text-foreground text-lg font-bold sm:text-xl">
             {SECTION_TITLES[activeSection]}
           </h1>
-          <p className="text-xs text-muted-foreground">IxCards Collection System</p>
+          <p className="text-muted-foreground text-xs">IxCards Collection System</p>
         </div>
       </div>
 
@@ -102,9 +111,9 @@ function VaultRouterInner() {
           <NumberFlow
             value={balanceData?.credits ?? 0}
             format="default"
-            className="text-base font-bold tabular-nums text-amber-500 sm:text-lg"
+            className="text-base font-bold text-amber-500 tabular-nums sm:text-lg"
           />
-          <span className="hidden text-xs text-muted-foreground sm:inline">IxC</span>
+          <span className="text-muted-foreground hidden text-xs sm:inline">IxC</span>
         </div>
       </div>
     </div>

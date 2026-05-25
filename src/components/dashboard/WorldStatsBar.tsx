@@ -75,7 +75,7 @@ export function WorldStatsBar({ globalStats }: WorldStatsBarProps) {
           return (
             <div key={stat.key} className="flex items-center gap-2.5">
               <div
-                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${colors.bg}`}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${colors.bg}`}
               >
                 <Icon className={`h-4 w-4 ${colors.text}`} />
               </div>

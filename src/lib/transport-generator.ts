@@ -52,17 +52,44 @@ export interface GenerationInput {
 
 // ── Terrain cost functions ─────────────────────────────────────────
 
-const ROUTE_CONFIGS: Record<RouteType, {
-  maxElevation: number;
-  maxGrade: number;  // percent
-  waterCost: number; // multiplier (Infinity = impassable)
-  elevationCostFactor: number;
-  baseSpeed: number; // km/h
-}> = {
-  rail: { maxElevation: 2000, maxGrade: 3, waterCost: Infinity, elevationCostFactor: 5, baseSpeed: 120 },
-  highway: { maxElevation: 3000, maxGrade: 8, waterCost: Infinity, elevationCostFactor: 3, baseSpeed: 100 },
-  road: { maxElevation: 4500, maxGrade: 15, waterCost: Infinity, elevationCostFactor: 1.5, baseSpeed: 60 },
-  shipping_lane: { maxElevation: 0, maxGrade: 0, waterCost: 0.5, elevationCostFactor: 0, baseSpeed: 30 },
+const ROUTE_CONFIGS: Record<
+  RouteType,
+  {
+    maxElevation: number;
+    maxGrade: number; // percent
+    waterCost: number; // multiplier (Infinity = impassable)
+    elevationCostFactor: number;
+    baseSpeed: number; // km/h
+  }
+> = {
+  rail: {
+    maxElevation: 2000,
+    maxGrade: 3,
+    waterCost: Infinity,
+    elevationCostFactor: 5,
+    baseSpeed: 120,
+  },
+  highway: {
+    maxElevation: 3000,
+    maxGrade: 8,
+    waterCost: Infinity,
+    elevationCostFactor: 3,
+    baseSpeed: 100,
+  },
+  road: {
+    maxElevation: 4500,
+    maxGrade: 15,
+    waterCost: Infinity,
+    elevationCostFactor: 1.5,
+    baseSpeed: 60,
+  },
+  shipping_lane: {
+    maxElevation: 0,
+    maxGrade: 0,
+    waterCost: 0.5,
+    elevationCostFactor: 0,
+    baseSpeed: 30,
+  },
   canal: { maxElevation: 500, maxGrade: 0.1, waterCost: 1, elevationCostFactor: 10, baseSpeed: 15 },
 };
 
@@ -71,11 +98,7 @@ const ROUTE_CONFIGS: Record<RouteType, {
  * Returns Infinity if impassable.
  */
 /** Terrain traversal cost for A* pathfinding (used by future grid-based pathfinder) */
-export function terrainCost(
-  elevation: number,
-  isWater: boolean,
-  routeType: RouteType
-): number {
+export function terrainCost(elevation: number, isWater: boolean, routeType: RouteType): number {
   const config = ROUTE_CONFIGS[routeType];
 
   if (routeType === "shipping_lane") {
@@ -139,22 +162,43 @@ function deflectForTerrain(
     const [lng, lat] = coords[i]!;
 
     // Get grid cell
-    const gridX = Math.floor(((lng - _bbox[0]) / (_bbox[2] - _bbox[0])) * (_elevationGrid[0]?.length ?? 1));
+    const gridX = Math.floor(
+      ((lng - _bbox[0]) / (_bbox[2] - _bbox[0])) * (_elevationGrid[0]?.length ?? 1)
+    );
     const gridY = Math.floor(((lat - _bbox[1]) / (_bbox[3] - _bbox[1])) * _elevationGrid.length);
 
-    if (gridY >= 0 && gridY < _elevationGrid.length && gridX >= 0 && gridX < (_elevationGrid[0]?.length ?? 0)) {
+    if (
+      gridY >= 0 &&
+      gridY < _elevationGrid.length &&
+      gridX >= 0 &&
+      gridX < (_elevationGrid[0]?.length ?? 0)
+    ) {
       const centerElev = _elevationGrid[gridY]![gridX] ?? 0;
 
       // Check 4 neighbors for lower elevation
-      const offsets = [[0.1, 0], [-0.1, 0], [0, 0.1], [0, -0.1]] as const;
+      const offsets = [
+        [0.1, 0],
+        [-0.1, 0],
+        [0, 0.1],
+        [0, -0.1],
+      ] as const;
       let bestLng = lng;
       let bestLat = lat;
       let bestElev = centerElev;
 
       for (const [dlng, dlat] of offsets) {
-        const nx = Math.floor((((lng + dlng) - _bbox[0]) / (_bbox[2] - _bbox[0])) * (_elevationGrid[0]?.length ?? 1));
-        const ny = Math.floor((((lat + dlat) - _bbox[1]) / (_bbox[3] - _bbox[1])) * _elevationGrid.length);
-        if (ny >= 0 && ny < _elevationGrid.length && nx >= 0 && nx < (_elevationGrid[0]?.length ?? 0)) {
+        const nx = Math.floor(
+          ((lng + dlng - _bbox[0]) / (_bbox[2] - _bbox[0])) * (_elevationGrid[0]?.length ?? 1)
+        );
+        const ny = Math.floor(
+          ((lat + dlat - _bbox[1]) / (_bbox[3] - _bbox[1])) * _elevationGrid.length
+        );
+        if (
+          ny >= 0 &&
+          ny < _elevationGrid.length &&
+          nx >= 0 &&
+          nx < (_elevationGrid[0]?.length ?? 0)
+        ) {
           const nElev = _elevationGrid[ny]![nx] ?? 0;
           if (nElev < bestElev) {
             bestElev = nElev;
@@ -284,7 +328,12 @@ export function generateTransportNetwork(
       coords = deflectForTerrain(coords, elevationGrid, gridResolution, countryBbox, routeType);
 
       // Compute terrain difficulty from elevation variance along route
-      const difficulty = computeTerrainDifficulty(coords, elevationGrid, gridResolution, countryBbox);
+      const difficulty = computeTerrainDifficulty(
+        coords,
+        elevationGrid,
+        gridResolution,
+        countryBbox
+      );
 
       routes.push({
         routeType,
@@ -351,11 +400,18 @@ function computeTerrainDifficulty(
 
   for (let i = 0; i < coords.length; i++) {
     const [lng, lat] = coords[i]!;
-    const gridX = Math.floor(((lng - bbox[0]) / (bbox[2] - bbox[0])) * (elevationGrid[0]?.length ?? 1));
+    const gridX = Math.floor(
+      ((lng - bbox[0]) / (bbox[2] - bbox[0])) * (elevationGrid[0]?.length ?? 1)
+    );
     const gridY = Math.floor(((lat - bbox[1]) / (bbox[3] - bbox[1])) * elevationGrid.length);
 
     let elev = 0;
-    if (gridY >= 0 && gridY < elevationGrid.length && gridX >= 0 && gridX < (elevationGrid[0]?.length ?? 0)) {
+    if (
+      gridY >= 0 &&
+      gridY < elevationGrid.length &&
+      gridX >= 0 &&
+      gridX < (elevationGrid[0]?.length ?? 0)
+    ) {
       elev = elevationGrid[gridY]![gridX] ?? 0;
     }
 

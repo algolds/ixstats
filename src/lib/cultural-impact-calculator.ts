@@ -18,10 +18,7 @@ import {
   type TransitionContext,
 } from "./diplomatic-markov-engine";
 import type { CulturalScenarioType } from "./cultural-scenario-generator";
-import {
-  DiplomaticChoiceTracker,
-  type DiplomaticChoice,
-} from "./diplomatic-choice-tracker";
+import { DiplomaticChoiceTracker, type DiplomaticChoice } from "./diplomatic-choice-tracker";
 
 // ============================================================================
 // TYPE DEFINITIONS

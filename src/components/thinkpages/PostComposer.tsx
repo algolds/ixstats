@@ -74,10 +74,11 @@ export function PostComposer({
   const [showVisibilityMenu, setShowVisibilityMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(!!replyTo);
   const [mentionQuery, setMentionQuery] = useState("");
-  const { data: mentionResults, isLoading: isLoadingMentions } = api.thinkpages.searchUsers.useQuery(
-    { query: mentionQuery },
-    { enabled: mentionQuery.length >= 1 }
-  );
+  const { data: mentionResults, isLoading: isLoadingMentions } =
+    api.thinkpages.searchUsers.useQuery(
+      { query: mentionQuery },
+      { enabled: mentionQuery.length >= 1 }
+    );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const createPostMutation = api.thinkpages.createPost.useMutation();

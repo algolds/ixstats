@@ -14,12 +14,14 @@ const MyCountryTabSystem = dynamic(
 );
 import { api } from "~/trpc/react";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
-import { VaultWidget } from "./VaultWidget";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 const CountryMapWidget = dynamic(
-  () => import("~/components/maps/widgets/CountryMapWidget").then((m) => ({ default: m.CountryMapWidget })),
-  { ssr: false, loading: () => <div className="h-48 animate-pulse rounded-xl bg-muted" /> }
+  () =>
+    import("~/components/maps/widgets/CountryMapWidget").then((m) => ({
+      default: m.CountryMapWidget,
+    })),
+  { ssr: false, loading: () => <div className="bg-muted h-48 animate-pulse rounded-xl" /> }
 );
 
 interface EnhancedMyCountryContentProps {
@@ -53,7 +55,11 @@ export function EnhancedMyCountryContent({
           country={{
             id: country.id,
             name: country.name,
-            currentTotalGdp: (country as any).currentTotalGdp ?? (country.currentPopulation && country.currentGdpPerCapita ? country.currentPopulation * country.currentGdpPerCapita : 0),
+            currentTotalGdp:
+              (country as any).currentTotalGdp ??
+              (country.currentPopulation && country.currentGdpPerCapita
+                ? country.currentPopulation * country.currentGdpPerCapita
+                : 0),
             currentPopulation: country.currentPopulation,
             adjustedGdpGrowth: country.adjustedGdpGrowth,
             currentGdpPerCapita: country.currentGdpPerCapita,
@@ -69,25 +75,24 @@ export function EnhancedMyCountryContent({
           healthRings={healthRings}
         />
       }
-      sidebarExtra={variant === "unified" ? (
-        <>
-          <VaultWidget />
-          <CountryMapWidget
-            countryId={country.id}
-            countryName={country.name}
-            borderColor="border-amber-500/15"
-            fullMapUrl={`/maps?country=${country.id}`}
-          />
-        </>
-      ) : undefined}
+      sidebarExtra={
+        variant === "unified" ? (
+          <>
+            <CountryMapWidget
+              countryId={country.id}
+              countryName={country.name}
+              borderColor="border-amber-500/15"
+              fullMapUrl={`/maps?country=${country.id}`}
+            />
+          </>
+        ) : undefined
+      }
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}
     >
       {/* Gameplay Pillar Cards — the command center hub */}
-      {onNavigate && (
-        <PillarCards countryId={country.id} onNavigate={onNavigate} />
-      )}
+      {onNavigate && <PillarCards countryId={country.id} onNavigate={onNavigate} />}
 
       {/* Economy & Government tabs (slimmed down from original 6-tab system) */}
       <div id="tabs">

@@ -140,7 +140,7 @@ export const ToastBanner = React.memo(function ToastBanner({ toast, onDismiss }:
         {/* Content */}
         <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
           {/* Icon */}
-          <div className={`mt-0.5 flex-shrink-0 rounded-lg p-1.5 ${ICON_BG_COLORS[toast.type]}`}>
+          <div className={`mt-0.5 shrink-0 rounded-lg p-1.5 ${ICON_BG_COLORS[toast.type]}`}>
             <Icon className={`h-4 w-4 ${ICON_COLORS[toast.type]}`} />
           </div>
 
@@ -185,7 +185,7 @@ export const ToastBanner = React.memo(function ToastBanner({ toast, onDismiss }:
               e.stopPropagation();
               onDismiss(toast.id);
             }}
-            className="text-muted-foreground/50 hover:bg-foreground/10 hover:text-muted-foreground mt-0.5 flex-shrink-0 rounded-full p-1 transition-colors"
+            className="text-muted-foreground/50 hover:bg-foreground/10 hover:text-muted-foreground mt-0.5 shrink-0 rounded-full p-1 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>

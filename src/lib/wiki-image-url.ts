@@ -21,7 +21,10 @@ export function resolveImageUrl(
 ): string | undefined {
   if (!filename) return undefined;
 
-  let cleanName = filename.split("|")[0]!.replace(/^(File|Image|file|image):/i, "").trim();
+  let cleanName = filename
+    .split("|")[0]!
+    .replace(/^(File|Image|file|image):/i, "")
+    .trim();
   if (!cleanName) return undefined;
 
   if (/^https?:\/\//i.test(cleanName) || cleanName.startsWith("//")) {
@@ -29,13 +32,19 @@ export function resolveImageUrl(
   }
 
   if (wikiSource === "ixwiki") {
-    return withBasePath(`/api/ixwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`);
+    return withBasePath(
+      `/api/ixwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+    );
   }
   if (wikiSource === "iiwiki") {
-    return withBasePath(`/api/iiwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`);
+    return withBasePath(
+      `/api/iiwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+    );
   }
   if (wikiSource === "althistory") {
-    return withBasePath(`/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`);
+    return withBasePath(
+      `/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+    );
   }
   return getImageUrl(cleanName);
 }

@@ -26,10 +26,7 @@ const { parseSVG, makeAbsolute } = _require("svg-path-parser") as {
  * Convert any SVG shape element to coordinate rings.
  * Returns empty array for unsupported/degenerate elements.
  */
-export function elementToRings(
-  el: Element,
-  bezierSegments: number = 8
-): [number, number][][] {
+export function elementToRings(el: Element, bezierSegments: number = 8): [number, number][][] {
   const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
 
   switch (tag) {
@@ -71,7 +68,10 @@ function pathToRings(el: Element, bezierSegments: number): [number, number][][] 
 function parsePoints(pointsAttr: string): [number, number][] {
   const coords: [number, number][] = [];
   // Points can be separated by whitespace and/or commas: "x1,y1 x2,y2" or "x1 y1 x2 y2"
-  const nums = pointsAttr.trim().split(/[\s,]+/).map(Number);
+  const nums = pointsAttr
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
   for (let i = 0; i + 1 < nums.length; i += 2) {
     const x = nums[i]!;
     const y = nums[i + 1]!;
@@ -128,13 +128,15 @@ export function rectToRings(el: Element): [number, number][][] {
   if (w <= 0 || h <= 0) return [];
 
   // Ignore rx/ry for simplicity — treat rounded rects as sharp corners
-  return [[
-    [x, y],
-    [x + w, y],
-    [x + w, y + h],
-    [x, y + h],
-    [x, y], // close
-  ]];
+  return [
+    [
+      [x, y],
+      [x + w, y],
+      [x + w, y + h],
+      [x, y + h],
+      [x, y], // close
+    ],
+  ];
 }
 
 /** Approximate a <circle> as a polygon with N segments. */
@@ -173,6 +175,4 @@ export function ellipseToRings(el: Element, segments: number = 32): [number, num
 }
 
 /** Set of SVG shape element tag names we can convert. */
-export const SHAPE_TAGS = new Set([
-  "path", "polygon", "polyline", "rect", "circle", "ellipse",
-]);
+export const SHAPE_TAGS = new Set(["path", "polygon", "polyline", "rect", "circle", "ellipse"]);

@@ -14,12 +14,12 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
-import {
-  LAYER_CONFIGS,
-  MAP_LAYER_TYPES,
-  type MapLayerType,
-} from "~/lib/map-config";
-import type { MapLayerData, MapOverlayFeatures, CapitalsGeoJson } from "~/components/maps/core/IxWorldMap";
+import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/map-config";
+import type {
+  MapLayerData,
+  MapOverlayFeatures,
+  CapitalsGeoJson,
+} from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
 import { getCachedMapLayers, setCachedMapLayers } from "~/lib/map-idb-cache";
 import { LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
@@ -35,9 +35,7 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 
 // Climate is NOT prefetched — lazy-loaded when user toggles the layer.
 // This cuts ~2MB from the initial bundle (climate = 2.12MB uncompressed).
-const ALL_PREFETCH_LAYERS: MapLayerType[] = [
-  ...DEFAULT_VISIBLE,
-];
+const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
 
 export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
@@ -77,12 +75,15 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
   } = api.geo.getMapBundle.useQuery(
     {
       layers: allRequestedLayers,
-      zoom: zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
+      zoom:
+        zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
     },
     {
       ...MAP_QUERY_OPTIONS,
-      placeholderData: idbData ? { worldMap: idbData, features: undefined, capitals: undefined } as any : undefined,
-    },
+      placeholderData: idbData
+        ? ({ worldMap: idbData, features: undefined, capitals: undefined } as any)
+        : undefined,
+    }
   );
 
   // Persist world map layers to IndexedDB
@@ -104,19 +105,14 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     return Object.entries(effectiveWorldMap)
       .filter(
         ([type]) =>
-          MAP_LAYER_TYPES.includes(type as MapLayerType) &&
-          LAYER_CONFIGS[type as MapLayerType]
+          MAP_LAYER_TYPES.includes(type as MapLayerType) && LAYER_CONFIGS[type as MapLayerType]
       )
       .map(([type, data]) => ({
         type: type as MapLayerType,
         data: data as FeatureCollection,
         visible: visibleLayers.has(type as MapLayerType),
       }))
-      .sort(
-        (a, b) =>
-          (LAYER_CONFIGS[a.type]?.zIndex ?? 0) -
-          (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
-      );
+      .sort((a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0));
   }, [effectiveWorldMap, visibleLayers]);
 
   // Extract overlay features

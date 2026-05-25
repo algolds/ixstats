@@ -362,7 +362,7 @@ function CompactViewComponent({
                   className="flex max-w-[160px] cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
                   title="Open wiki mode"
                 >
-                  <BookOpen className="h-2.5 w-2.5 flex-shrink-0 text-blue-400 opacity-70" />
+                  <BookOpen className="h-2.5 w-2.5 shrink-0 text-blue-400 opacity-70" />
                   <span className="text-foreground/80 truncate text-[10px] font-medium">
                     {articleTitle}
                   </span>
@@ -461,15 +461,13 @@ function CompactViewComponent({
                           className="flex max-w-[220px] cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
                           title="Open wiki mode (Tab)"
                         >
-                          <BookOpen className="h-3 w-3 flex-shrink-0 text-blue-400 opacity-70" />
+                          <BookOpen className="h-3 w-3 shrink-0 text-blue-400 opacity-70" />
                           <span className="di-wiki-title">
                             <span className="di-wiki-title-text">{articleTitle}</span>
                           </span>
                           {activeSectionName && (
                             <>
-                              <span className="text-foreground/25 flex-shrink-0 text-[10px]">
-                                ›
-                              </span>
+                              <span className="text-foreground/25 shrink-0 text-[10px]">›</span>
                               <span className="text-foreground/50 max-w-[80px] truncate text-[10px]">
                                 {activeSectionName}
                               </span>
@@ -930,7 +928,7 @@ function WikiProfileButton({ onSwitchMode }: { onSwitchMode: (mode: any) => void
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10">
-        <BookOpen className="h-3 w-3 flex-shrink-0 text-blue-400 opacity-70" />
+        <BookOpen className="h-3 w-3 shrink-0 text-blue-400 opacity-70" />
         <span className="text-foreground/80 text-xs font-medium">WikiOS</span>
       </PopoverTrigger>
       <PopoverContent

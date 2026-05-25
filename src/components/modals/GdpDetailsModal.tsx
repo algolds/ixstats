@@ -33,7 +33,10 @@ import {
   Legend,
 } from "recharts";
 import { format, subMonths } from "date-fns";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./metric-details/BaseMetricDetailsModal";
+import {
+  BaseMetricDetailsModal,
+  type MetricModalTab,
+} from "./metric-details/BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./metric-details/types";
 
 interface GdpDetailsModalProps {
@@ -59,12 +62,7 @@ const TABS: MetricModalTab[] = [
  * - Comparison: Global benchmarking and tier analysis
  * - Details: GDP stability analysis and projections
  */
-export function GdpDetailsModal({
-  isOpen,
-  onClose,
-  countryId,
-  countryName,
-}: GdpDetailsModalProps) {
+export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: GdpDetailsModalProps) {
   // Fetch country economic data
   const {
     data: countryData,
@@ -77,14 +75,13 @@ export function GdpDetailsModal({
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery(
-      { countryId },
-      { enabled: !!countryId && isOpen }
-    );
+    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
-  const { data: globalStats, isLoading: globalLoading } =
-    api.countries.getGlobalStats.useQuery(undefined, { enabled: isOpen });
+  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    { enabled: isOpen }
+  );
 
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
@@ -103,8 +100,7 @@ export function GdpDetailsModal({
     };
 
     const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate =
-      monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
+    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
 
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
@@ -223,11 +219,7 @@ export function GdpDetailsModal({
     }).format(value);
   };
 
-  const renderTabContent = (
-    activeTab: string,
-    timeRange: TimeRange,
-    chartType: ChartType
-  ) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
@@ -539,14 +531,11 @@ export function GdpDetailsModal({
             </Card>
             <Card>
               <CardContent className="rounded-lg bg-green-50 p-6 text-center dark:bg-green-950/20">
-                <div className="mb-1 text-lg font-semibold text-green-600">
-                  Economic Tier Rank
-                </div>
+                <div className="mb-1 text-lg font-semibold text-green-600">Economic Tier Rank</div>
                 <div className="text-2xl font-bold">
                   {tierInfo?.allTiers
-                    ? tierInfo.allTiers.findIndex(
-                        (t) => t.name === countryData?.economicTier
-                      ) + 1 || 0
+                    ? tierInfo.allTiers.findIndex((t) => t.name === countryData?.economicTier) +
+                        1 || 0
                     : 0}
                   /7
                 </div>
@@ -629,8 +618,7 @@ export function GdpDetailsModal({
                         const nextTier = tierInfo.allTiers[currentIndex + 1];
 
                         if (nextTier) {
-                          const needed =
-                            nextTier.min - (countryData?.currentGdpPerCapita || 0);
+                          const needed = nextTier.min - (countryData?.currentGdpPerCapita || 0);
                           return (
                             <>
                               <div className="mb-2 flex items-center justify-between">
@@ -732,9 +720,9 @@ export function GdpDetailsModal({
             <Alert>
               <TrendingUp className="h-4 w-4" />
               <AlertDescription>
-                Advanced GDP projection models are available through the Predictive Models
-                feature in the premium analytics suite. These include multi-scenario forecasting
-                with confidence intervals based on historical patterns and economic indicators.
+                Advanced GDP projection models are available through the Predictive Models feature
+                in the premium analytics suite. These include multi-scenario forecasting with
+                confidence intervals based on historical patterns and economic indicators.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -743,9 +731,9 @@ export function GdpDetailsModal({
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Economic tier classifications are based on GDP per capita and determine growth
-            rate caps in the IxStats system. Higher tiers indicate more mature economies with
-            typically lower but more stable growth rates.
+            Economic tier classifications are based on GDP per capita and determine growth rate caps
+            in the IxStats system. Higher tiers indicate more mature economies with typically lower
+            but more stable growth rates.
           </AlertDescription>
         </Alert>
       </div>

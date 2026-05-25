@@ -57,11 +57,7 @@ export function CommonsResultsGrid({
               className={`wikios-commons-card ${isSelected ? "wikios-commons-card--selected" : ""}`}
             >
               <div className="wikios-commons-card-thumb">
-                <img
-                  src={img.thumbUrl}
-                  alt={cleanTitle}
-                  loading="lazy"
-                />
+                <img src={img.thumbUrl} alt={cleanTitle} loading="lazy" />
                 <div className="wikios-commons-card-overlay">
                   <ZoomIn className="h-5 w-5" />
                 </div>
@@ -77,9 +73,7 @@ export function CommonsResultsGrid({
         })}
       </div>
 
-      {isLoading && (
-        <div className="wikios-commons-loading">Loading images...</div>
-      )}
+      {isLoading && <div className="wikios-commons-loading">Loading images...</div>}
 
       {hasMore && !isLoading && (
         <div className="wikios-commons-loadmore">

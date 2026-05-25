@@ -199,10 +199,7 @@ export async function syncUserToForum(userId: string): Promise<boolean> {
     ]);
 
     const totalCards = ownedCards.reduce((sum, o) => sum + o.quantity, 0);
-    const vaultValue = ownedCards.reduce(
-      (sum, o) => sum + o.quantity * o.card.marketValue,
-      0
-    );
+    const vaultValue = ownedCards.reduce((sum, o) => sum + o.quantity * o.card.marketValue, 0);
 
     const fields: Record<string, string> = {
       ixstats_cards_owned: String(totalCards),

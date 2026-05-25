@@ -159,7 +159,10 @@ function cleanWikiValue(raw: string): string {
   s = s.replace(/'{2,3}/g, "");
   // Iterate to strip nested templates from innermost out
   let prev;
-  do { prev = s; s = s.replace(/\{\{[^{}]*\}\}/g, ''); } while (s !== prev);
+  do {
+    prev = s;
+    s = s.replace(/\{\{[^{}]*\}\}/g, "");
+  } while (s !== prev);
   s = s.replace(/<[^>]+>/g, "");
   s = s.replace(/&\w+;/g, " ");
   s = s.replace(/\s+/g, " ").trim();
@@ -175,7 +178,11 @@ function processSwitcher(value: string): string {
   if (first.startsWith("File:") || first.startsWith("Image:") || first.startsWith("file:")) {
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed.startsWith("File:") && !trimmed.startsWith("Image:") && !trimmed.startsWith("file:")) {
+      if (
+        !trimmed.startsWith("File:") &&
+        !trimmed.startsWith("Image:") &&
+        !trimmed.startsWith("file:")
+      ) {
         return cleanWikiValue(trimmed);
       }
     }
@@ -186,8 +193,14 @@ function processSwitcher(value: string): string {
 
 function processConvert(value: string): string {
   return value
-    .replace(/\{\{convert\|([^|]+)\|([^|]+)[\|]?[^}]*\}\}/g, (_m, num, unit) => `${num.trim()} ${unit.trim()}`)
-    .replace(/\{\{convert\|([^|]+)\|([^}]+)\}\}/g, (_m, num, unit) => `${num.trim()} ${unit.trim()}`);
+    .replace(
+      /\{\{convert\|([^|]+)\|([^|]+)[\|]?[^}]*\}\}/g,
+      (_m, num, unit) => `${num.trim()} ${unit.trim()}`
+    )
+    .replace(
+      /\{\{convert\|([^|]+)\|([^}]+)\}\}/g,
+      (_m, num, unit) => `${num.trim()} ${unit.trim()}`
+    );
 }
 
 function processFlag(value: string): string {
@@ -302,7 +315,10 @@ function processList(value: string): string {
 
 function processCompose(value: string): string {
   return value.replace(/\{\{compose\|([\s\S]*?)\}\}/g, (_match, content) => {
-    return splitByPipe(content).map(p => cleanWikiValue(p.trim())).filter(Boolean).join(", ");
+    return splitByPipe(content)
+      .map((p) => cleanWikiValue(p.trim()))
+      .filter(Boolean)
+      .join(", ");
   });
 }
 
@@ -330,13 +346,17 @@ function processTemplates(value: string): string {
   result = processCompose(result);
   // Iterate to strip nested templates from innermost out
   let prevTemplate;
-  do { prevTemplate = result; result = result.replace(/\{\{[^{}]*\}\}/g, ''); } while (result !== prevTemplate);
+  do {
+    prevTemplate = result;
+    result = result.replace(/\{\{[^{}]*\}\}/g, "");
+  } while (result !== prevTemplate);
   result = processRefs(result);
   result = processSmall(result);
   result = processBr(result);
   result = processWikilinks(result);
   result = result.replace(/'{2,3}/g, "");
-  result = result.replace(/&\w+;/g, " ")
+  result = result
+    .replace(/&\w+;/g, " ")
     .replace(/\s+/g, " ")
     .replace(/\s*,\s*,/g, ",")
     .replace(/,\s*$/, "")
@@ -462,18 +482,32 @@ const FIELD_ALIASES: Record<string, keyof UnifiedInfoboxData> = {
 };
 
 const NUMERIC_FIELDS = new Set([
-  "population", "population_estimate", "population_census",
-  "area_km2", "GDP_nominal", "GDP_PPP",
-  "GDP_nominal_per_capita", "GDP_PPP_per_capita",
-  "life_expectancy", "literacy_rate", "urbanization",
+  "population",
+  "population_estimate",
+  "population_census",
+  "area_km2",
+  "GDP_nominal",
+  "GDP_PPP",
+  "GDP_nominal_per_capita",
+  "GDP_PPP_per_capita",
+  "life_expectancy",
+  "literacy_rate",
+  "urbanization",
 ]);
 
 // Also track lowercase versions since FIELD_ALIASES values are case-sensitive
 const NUMERIC_FIELDS_LOWER = new Set([
-  "population", "population_estimate", "population_census",
-  "area_km2", "gdp_nominal", "gdp_ppp",
-  "gdp_nominal_per_capita", "gdp_ppp_per_capita",
-  "life_expectancy", "literacy_rate", "urbanization",
+  "population",
+  "population_estimate",
+  "population_census",
+  "area_km2",
+  "gdp_nominal",
+  "gdp_ppp",
+  "gdp_nominal_per_capita",
+  "gdp_ppp_per_capita",
+  "life_expectancy",
+  "literacy_rate",
+  "urbanization",
 ]);
 
 // ─── Image/File Extraction Helpers ──────────────────────────────────────────
@@ -549,13 +583,13 @@ export function parseInfoboxWithTemplates(
   for (const field of parsed.fields) {
     const rawKey = field.key;
     const unifiedKey = FIELD_ALIASES[rawKey.toLowerCase().replace(/[\s-]/g, "_")];
-    
+
     // Determine if it is an image field
     const isImageField = unifiedKey && IMAGE_FIELDS.has(unifiedKey);
-    const processedValue = isImageField 
+    const processedValue = isImageField
       ? extractFilename(field.rawValue)
       : processTemplates(field.rawValue);
-      
+
     if (!processedValue) continue;
 
     rawInfobox[rawKey] = processedValue;
@@ -580,9 +614,20 @@ export function parseInfoboxWithTemplates(
 
   if (!result.head_of_state && result.leader_title1 && result.leader_name1) {
     const title = (result.leader_title1 || "").toLowerCase();
-    if (title.includes("president") || title.includes("monarch") || title.includes("king") || title.includes("queen") || title.includes("emperor") || title.includes("sultan")) {
+    if (
+      title.includes("president") ||
+      title.includes("monarch") ||
+      title.includes("king") ||
+      title.includes("queen") ||
+      title.includes("emperor") ||
+      title.includes("sultan")
+    ) {
       result.head_of_state = result.leader_name1;
-    } else if (title.includes("prime minister") || title.includes("chancellor") || title.includes("premier")) {
+    } else if (
+      title.includes("prime minister") ||
+      title.includes("chancellor") ||
+      title.includes("premier")
+    ) {
       result.head_of_government = result.leader_name1;
     } else {
       result.head_of_state = result.leader_name1;

@@ -33,7 +33,7 @@ export function HeroMetrics({ metrics, className = "" }: HeroMetricsProps) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
-          className="flex flex-col items-center px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10"
+          className="flex flex-col items-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 backdrop-blur-md"
         >
           <div className="flex items-baseline gap-1">
             {metric.prefix && (
@@ -56,11 +56,9 @@ export function HeroMetrics({ metrics, className = "" }: HeroMetricsProps) {
             )}
           </div>
 
-          <div className="flex items-center gap-1 mt-0.5">
+          <div className="mt-0.5 flex items-center gap-1">
             <span className="text-xs text-white/60">{metric.label}</span>
-            {metric.trend !== undefined && (
-              <TrendIndicator value={metric.trend} />
-            )}
+            {metric.trend !== undefined && <TrendIndicator value={metric.trend} />}
           </div>
         </motion.div>
       ))}
@@ -122,11 +120,7 @@ export function HeroMetricsCompact({
       <span className="text-white/30">|</span>
       <span className="flex items-center gap-1">
         <span className="text-white/50">Pop:</span>
-        <NumberFlow
-          value={population}
-          format={{ notation: "compact" }}
-          className="font-medium"
-        />
+        <NumberFlow value={population} format={{ notation: "compact" }} className="font-medium" />
       </span>
       <span className="text-white/30">|</span>
       <span className="flex items-center gap-1">

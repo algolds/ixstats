@@ -114,7 +114,8 @@ async function resolveFlagFromCommons(countryName: string): Promise<string | nul
   const resp = await fetch(url, {
     signal: AbortSignal.timeout(10000),
     headers: {
-      "User-Agent": "IxStats/1.0 (https://ixwiki.com/projects/ixstats; for Wikimedia Commons API access for flag images used in nation-building game)",
+      "User-Agent":
+        "IxStats/1.0 (https://ixwiki.com/projects/ixstats; for Wikimedia Commons API access for flag images used in nation-building game)",
     },
   });
   if (!resp.ok) return null;
@@ -134,9 +135,7 @@ async function resolveFlagFromCommons(countryName: string): Promise<string | nul
  * Uses persistent disk cache + in-memory cache.
  * Only hits Wikimedia Commons for uncached entries.
  */
-export async function resolveFlags(
-  countryNames: string[]
-): Promise<Record<string, string | null>> {
+export async function resolveFlags(countryNames: string[]): Promise<Record<string, string | null>> {
   const cache = await loadCache();
   const results: Record<string, string | null> = {};
   const toResolve: string[] = [];
@@ -336,12 +335,12 @@ if (typeof window === "undefined") {
  */
 export async function getAllCachedFlags(): Promise<Record<string, string | null>> {
   const cache = await loadCache();
-  
+
   // If cache is empty, trigger background resolution
   if (Object.keys(cache).length === 0) {
     resolveFlags(ALL_COUNTRIES).catch(() => {});
   }
-  
+
   const result: Record<string, string | null> = {};
   for (const [key, entry] of Object.entries(cache)) {
     result[key] = entry.url;

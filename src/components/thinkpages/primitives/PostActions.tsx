@@ -79,9 +79,7 @@ const updateReactionsInCacheData = (
 
     // Retain original type of reactionCounts (string vs object)
     const serializedReactionCounts =
-      typeof post.reactionCounts === "string"
-        ? JSON.stringify(reactionCounts)
-        : reactionCounts;
+      typeof post.reactionCounts === "string" ? JSON.stringify(reactionCounts) : reactionCounts;
 
     const likeCount = reactionCounts.like ?? 0;
 
@@ -322,7 +320,13 @@ export function PostActions({
       // 3. Apply optimistic updates in cache
       const updateCache = (key: any[]) => {
         queryClient.setQueriesData({ queryKey: key }, (old: any) =>
-          updateReactionsInCacheData(old, variables.postId, variables.accountId, variables.reactionType, false)
+          updateReactionsInCacheData(
+            old,
+            variables.postId,
+            variables.accountId,
+            variables.reactionType,
+            false
+          )
         );
       };
 
@@ -336,7 +340,14 @@ export function PostActions({
       queryClient.setQueriesData(
         { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
         (old: any) =>
-          updatePostReactionsList(old, variables.postId, variables.accountId, variables.reactionType, false, activeAccount)
+          updatePostReactionsList(
+            old,
+            variables.postId,
+            variables.accountId,
+            variables.reactionType,
+            false,
+            activeAccount
+          )
       );
 
       return { queriesToBackup };
@@ -375,8 +386,12 @@ export function PostActions({
       void queryClient.invalidateQueries({ queryKey: followingFeedKey, refetchType: "none" });
 
       // Active refetch of specific post and its reactions since they are cheap
-      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }) });
-      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) });
+      void queryClient.invalidateQueries({
+        queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }),
+      });
     },
   });
 
@@ -428,7 +443,14 @@ export function PostActions({
       queryClient.setQueriesData(
         { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
         (old: any) =>
-          updatePostReactionsList(old, variables.postId, variables.accountId, "", true, activeAccount)
+          updatePostReactionsList(
+            old,
+            variables.postId,
+            variables.accountId,
+            "",
+            true,
+            activeAccount
+          )
       );
 
       return { queriesToBackup };
@@ -459,8 +481,12 @@ export function PostActions({
       void queryClient.invalidateQueries({ queryKey: followingFeedKey, refetchType: "none" });
 
       // Active refetch of specific post and its reactions since they are cheap
-      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }) });
-      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) });
+      void queryClient.invalidateQueries({
+        queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }),
+      });
     },
   });
 
@@ -734,7 +760,7 @@ export function PostActions({
               "group flex items-center gap-1 transition-colors",
               isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500",
               !currentUserAccountId && "cursor-not-allowed opacity-50",
-              showReactionPopup && "ring-opacity-50 ring-2 ring-blue-500"
+              showReactionPopup && "ring-2 ring-blue-500/50"
             )}
             title={
               currentUserAccountId

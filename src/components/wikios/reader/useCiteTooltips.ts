@@ -18,43 +18,46 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const show = useCallback((el: HTMLElement) => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
+  const show = useCallback(
+    (el: HTMLElement) => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
 
-    // Get the cite_note id from the href
-    const anchor = el.closest("a") as HTMLAnchorElement | null;
-    if (!anchor) return;
+      // Get the cite_note id from the href
+      const anchor = el.closest("a") as HTMLAnchorElement | null;
+      if (!anchor) return;
 
-    const href = anchor.getAttribute("href") ?? "";
-    const match = href.match(/#(cite_note-.+)/);
-    if (!match) return;
+      const href = anchor.getAttribute("href") ?? "";
+      const match = href.match(/#(cite_note-.+)/);
+      if (!match) return;
 
-    const noteId = match[1];
-    const container = contentRef.current;
-    if (!container) return;
+      const noteId = match[1];
+      const container = contentRef.current;
+      if (!container) return;
 
-    // Find the footnote element in the page
-    const noteEl = container.querySelector(`#${CSS.escape(noteId)}`);
-    if (!noteEl) return;
+      // Find the footnote element in the page
+      const noteEl = container.querySelector(`#${CSS.escape(noteId)}`);
+      if (!noteEl) return;
 
-    // Extract the reference text (skip the backlink)
-    const clone = noteEl.cloneNode(true) as HTMLElement;
-    // Remove backlinks (↑ arrows)
-    clone.querySelectorAll(".mw-cite-backlink").forEach((el) => el.remove());
-    const html = clone.innerHTML.trim();
-    if (!html) return;
+      // Extract the reference text (skip the backlink)
+      const clone = noteEl.cloneNode(true) as HTMLElement;
+      // Remove backlinks (↑ arrows)
+      clone.querySelectorAll(".mw-cite-backlink").forEach((el) => el.remove());
+      const html = clone.innerHTML.trim();
+      if (!html) return;
 
-    // Position tooltip above the reference link
-    const rect = anchor.getBoundingClientRect();
-    setTooltip({
-      html,
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
-  }, [contentRef]);
+      // Position tooltip above the reference link
+      const rect = anchor.getBoundingClientRect();
+      setTooltip({
+        html,
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      });
+    },
+    [contentRef]
+  );
 
   const hide = useCallback(() => {
     hideTimeoutRef.current = setTimeout(() => setTooltip(null), 150);

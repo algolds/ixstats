@@ -76,7 +76,7 @@ export function PolicyAdvisor({ tips, maxTips = 3, activeSection }: PolicyAdviso
                 className={cn("rounded-lg border p-3", getTipColor(tip.type))}
               >
                 <div className="flex items-start gap-2">
-                  <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <h4 className="mb-1 text-sm font-medium">{tip.title}</h4>
                     <p className="mb-2 text-xs opacity-90">{tip.description}</p>

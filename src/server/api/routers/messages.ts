@@ -8,11 +8,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { validateNoXSS } from "~/lib/sanitize-html";
 import { notificationAPI } from "~/lib/notification-api";
@@ -31,10 +27,7 @@ type UserAccount = {
 };
 
 /** Batch-resolve userIds to display accounts. Single query instead of N+1. */
-async function batchResolveUsers(
-  userIds: string[],
-  db: any
-): Promise<Map<string, UserAccount>> {
+async function batchResolveUsers(userIds: string[], db: any): Promise<Map<string, UserAccount>> {
   const map = new Map<string, UserAccount>();
   if (userIds.length === 0) return map;
 
@@ -91,9 +84,7 @@ async function batchResolveUsers(
 
   // 2. Resolve forum:* IDs — try by forumUserId (numeric) or forumUsername
   if (forumKeys.length > 0) {
-    const numericIds = forumKeys
-      .map((f) => parseInt(f.raw, 10))
-      .filter((n) => !isNaN(n));
+    const numericIds = forumKeys.map((f) => parseInt(f.raw, 10)).filter((n) => !isNaN(n));
     const nameKeys = forumKeys.filter((f) => isNaN(parseInt(f.raw, 10)));
 
     // Try numeric forumUserId lookup
@@ -226,14 +217,13 @@ export const messagesRouter = createTRPCRouter({
       };
 
       // Fire-and-forget bridge sync for folders that need it (non-blocking)
-      if (
-        (folder === "inbox" || folder === "discussions") &&
-        input.userId
-      ) {
+      if ((folder === "inbox" || folder === "discussions") && input.userId) {
         Promise.allSettled([
           wikiTalkBridge.syncInbound(input.userId, ctx.db),
           forumBridge.syncInbound(input.userId, ctx.db),
-        ]).catch((err: unknown) => { console.error("[Messages] Background op failed:", (err as Error).message); });
+        ]).catch((err: unknown) => {
+          console.error("[Messages] Background op failed:", (err as Error).message);
+        });
       }
 
       switch (folder) {
@@ -242,25 +232,16 @@ export const messagesRouter = createTRPCRouter({
         case "personal":
           baseWhere.source = "thinkshare";
           baseWhere.type = "direct";
-          baseWhere.OR = [
-            { conversationType: null },
-            { conversationType: "personal" },
-          ];
+          baseWhere.OR = [{ conversationType: null }, { conversationType: "personal" }];
           break;
         case "diplomatic":
-          baseWhere.OR = [
-            { source: "diplomatic" },
-            { conversationType: "diplomatic" },
-          ];
+          baseWhere.OR = [{ source: "diplomatic" }, { conversationType: "diplomatic" }];
           break;
         case "discussions":
           baseWhere.source = { in: ["wiki", "forum"] };
           break;
         case "groups":
-          baseWhere.OR = [
-            { source: "thinktank" },
-            { type: "group", source: "thinkshare" },
-          ];
+          baseWhere.OR = [{ source: "thinktank" }, { type: "group", source: "thinkshare" }];
           break;
         case "system":
           baseWhere.OR = [
@@ -351,7 +332,7 @@ export const messagesRouter = createTRPCRouter({
 
         const lastMessage = conv.messages[0];
         const lastMessageAccount = lastMessage
-          ? userMap.get(lastMessage.userId) ?? { ...defaultAccount, id: lastMessage.userId }
+          ? (userMap.get(lastMessage.userId) ?? { ...defaultAccount, id: lastMessage.userId })
           : null;
 
         return {
@@ -383,10 +364,7 @@ export const messagesRouter = createTRPCRouter({
       });
 
       // For inbox folder, filter to only unread
-      const result =
-        folder === "inbox"
-          ? enriched.filter((c) => c.unreadCount > 0)
-          : enriched;
+      const result = folder === "inbox" ? enriched.filter((c) => c.unreadCount > 0) : enriched;
 
       const hasMore = conversations.length > limit;
       const nextCursor = hasMore ? conversations[limit - 1]?.id : undefined;
@@ -429,9 +407,7 @@ export const messagesRouter = createTRPCRouter({
       }
 
       const convIds = participations.map((p) => p.conversationId);
-      const readMap = new Map(
-        participations.map((p) => [p.conversationId, p.lastReadAt])
-      );
+      const readMap = new Map(participations.map((p) => [p.conversationId, p.lastReadAt]));
 
       // Fetch all conversations with source info
       const conversations = await ctx.db.thinkshareConversation.findMany({
@@ -524,9 +500,7 @@ export const messagesRouter = createTRPCRouter({
       const messages = await ctx.db.thinkshareMessage.findMany({
         where: { conversationId: input.conversationId },
         take: input.limit + 1,
-        ...(input.cursor
-          ? { skip: 1, cursor: { id: input.cursor } }
-          : {}),
+        ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
         orderBy: { ixTimeTimestamp: "desc" },
         include: {
           replyTo: true,
@@ -555,13 +529,25 @@ export const messagesRouter = createTRPCRouter({
         };
 
         let reactions: Record<string, number> = {};
-        try { reactions = msg.reactions ? JSON.parse(msg.reactions) : {}; } catch { /* empty */ }
+        try {
+          reactions = msg.reactions ? JSON.parse(msg.reactions) : {};
+        } catch {
+          /* empty */
+        }
 
         let mentions: string[] = [];
-        try { mentions = msg.mentions ? JSON.parse(msg.mentions) : []; } catch { /* empty */ }
+        try {
+          mentions = msg.mentions ? JSON.parse(msg.mentions) : [];
+        } catch {
+          /* empty */
+        }
 
         let attachments: any[] = [];
-        try { attachments = msg.attachments ? JSON.parse(msg.attachments) : []; } catch { /* empty */ }
+        try {
+          attachments = msg.attachments ? JSON.parse(msg.attachments) : [];
+        } catch {
+          /* empty */
+        }
 
         return {
           id: msg.id,
@@ -575,9 +561,7 @@ export const messagesRouter = createTRPCRouter({
           reactions,
           mentions,
           attachments,
-          replyTo: msg.replyTo
-            ? { ...msg.replyTo, account: { displayName: "..." } }
-            : undefined,
+          replyTo: msg.replyTo ? { ...msg.replyTo, account: { displayName: "..." } } : undefined,
           readReceipts: msg.readReceipts.map((r) => ({
             id: r.id,
             accountId: r.userId,
@@ -591,9 +575,7 @@ export const messagesRouter = createTRPCRouter({
       });
 
       const hasMore = messages.length > input.limit;
-      const nextCursor = hasMore
-        ? messages[input.limit - 1]?.id
-        : undefined;
+      const nextCursor = hasMore ? messages[input.limit - 1]?.id : undefined;
 
       return { messages: enriched, nextCursor };
     }),
@@ -607,9 +589,7 @@ export const messagesRouter = createTRPCRouter({
         conversationId: z.string(),
         userId: z.string(),
         content: z.string().min(1),
-        messageType: z
-          .enum(["text", "image", "file", "system"])
-          .default("text"),
+        messageType: z.enum(["text", "image", "file", "system"]).default("text"),
         replyToId: z.string().optional(),
         mentions: z.array(z.string()).optional(),
         attachments: z
@@ -624,17 +604,9 @@ export const messagesRouter = createTRPCRouter({
           .optional(),
         // Diplomatic extensions
         classification: z
-          .enum([
-            "PUBLIC",
-            "RESTRICTED",
-            "CONFIDENTIAL",
-            "SECRET",
-            "TOP_SECRET",
-          ])
+          .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
           .optional(),
-        priority: z
-          .enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"])
-          .optional(),
+        priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
         subject: z.string().optional(),
       })
     )
@@ -672,9 +644,7 @@ export const messagesRouter = createTRPCRouter({
           replyToId: input.replyToId,
           reactions: "{}",
           mentions: input.mentions ? JSON.stringify(input.mentions) : "[]",
-          attachments: input.attachments
-            ? JSON.stringify(input.attachments)
-            : "[]",
+          attachments: input.attachments ? JSON.stringify(input.attachments) : "[]",
           source: conversation?.source ?? "thinkshare",
           classification: input.classification,
           priority: input.priority,
@@ -730,14 +700,13 @@ export const messagesRouter = createTRPCRouter({
       }
 
       // Notify other participants
-      const otherParticipants =
-        await ctx.db.conversationParticipant.findMany({
-          where: {
-            conversationId: input.conversationId,
-            userId: { not: input.userId },
-            isActive: true,
-          },
-        });
+      const otherParticipants = await ctx.db.conversationParticipant.findMany({
+        where: {
+          conversationId: input.conversationId,
+          userId: { not: input.userId },
+          isActive: true,
+        },
+      });
 
       for (const p of otherParticipants) {
         try {
@@ -766,25 +735,13 @@ export const messagesRouter = createTRPCRouter({
         participantIds: z.array(z.string().min(1)),
         source: MessageSourceSchema.optional().default("thinkshare"),
         name: z.string().optional(),
-        conversationType: z
-          .enum(["personal", "diplomatic", "official"])
-          .optional(),
+        conversationType: z.enum(["personal", "diplomatic", "official"]).optional(),
         diplomaticClassification: z
-          .enum([
-            "PUBLIC",
-            "RESTRICTED",
-            "CONFIDENTIAL",
-            "SECRET",
-            "TOP_SECRET",
-          ])
+          .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
           .optional(),
-        priority: z
-          .enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"])
-          .optional(),
+        priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
         encrypted: z.boolean().optional(),
-        channelType: z
-          .enum(["BILATERAL", "MULTILATERAL", "EMERGENCY"])
-          .optional(),
+        channelType: z.enum(["BILATERAL", "MULTILATERAL", "EMERGENCY"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -792,27 +749,24 @@ export const messagesRouter = createTRPCRouter({
 
       // Check for existing direct conversation between same participants
       if (participantIds.length <= 2 && source === "thinkshare") {
-        const existingConvs =
-          await ctx.db.thinkshareConversation.findMany({
-            where: {
-              type: "direct",
-              source: "thinkshare",
-              isActive: true,
-              participants: {
-                every: {
-                  userId: { in: participantIds },
-                  isActive: true,
-                },
+        const existingConvs = await ctx.db.thinkshareConversation.findMany({
+          where: {
+            type: "direct",
+            source: "thinkshare",
+            isActive: true,
+            participants: {
+              every: {
+                userId: { in: participantIds },
+                isActive: true,
               },
             },
-            include: {
-              participants: { where: { isActive: true } },
-            },
-          });
+          },
+          include: {
+            participants: { where: { isActive: true } },
+          },
+        });
 
-        const existing = existingConvs.find(
-          (c) => c.participants.length === participantIds.length
-        );
+        const existing = existingConvs.find((c) => c.participants.length === participantIds.length);
         if (existing) return existing;
       }
 
@@ -883,12 +837,8 @@ export const messagesRouter = createTRPCRouter({
           },
           select: { thinkshareMessageId: true },
         });
-        const existingIds = new Set(
-          existing.map((e) => e.thinkshareMessageId)
-        );
-        const newIds = input.messageIds.filter(
-          (id) => !existingIds.has(id)
-        );
+        const existingIds = new Set(existing.map((e) => e.thinkshareMessageId));
+        const newIds = input.messageIds.filter((id) => !existingIds.has(id));
 
         if (newIds.length > 0) {
           await ctx.db.messageReadReceipt.createMany({
@@ -964,7 +914,9 @@ export const messagesRouter = createTRPCRouter({
       let reactions: Record<string, number> = {};
       try {
         reactions = msg.reactions ? JSON.parse(msg.reactions) : {};
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
 
       reactions[input.reaction] = (reactions[input.reaction] ?? 0) + 1;
 
@@ -996,7 +948,9 @@ export const messagesRouter = createTRPCRouter({
       let reactions: Record<string, number> = {};
       try {
         reactions = msg.reactions ? JSON.parse(msg.reactions) : {};
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
 
       if (reactions[input.reaction]) {
         reactions[input.reaction]--;

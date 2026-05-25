@@ -20,18 +20,13 @@ interface FeatureInput {
 }
 
 /** Haversine distance in km between two [lng, lat] points. */
-function haversineKm(
-  a: [number, number],
-  b: [number, number],
-): number {
+function haversineKm(a: [number, number], b: [number, number]): number {
   const R = 6371;
   const dLat = ((b[1] - a[1]) * Math.PI) / 180;
   const dLng = ((b[0] - a[0]) * Math.PI) / 180;
   const s =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((a[1] * Math.PI) / 180) *
-      Math.cos((b[1] * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((a[1] * Math.PI) / 180) * Math.cos((b[1] * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
 
@@ -51,7 +46,7 @@ function polygonCentroid(coords: number[][]): [number, number] {
 export function getSuggestedPlacements(
   mode: string,
   features: FeatureInput[],
-  countryBbox?: [number, number, number, number],
+  countryBbox?: [number, number, number, number]
 ): PlacementSuggestion[] {
   const suggestions: PlacementSuggestion[] = [];
 
@@ -65,7 +60,7 @@ export function getSuggestedPlacements(
       if (!sub.geometry?.coordinates?.[0]) continue;
       const centroid = polygonCentroid(sub.geometry.coordinates[0]);
       const hasCityNearby = cities.some(
-        (c) => c.coordinates && haversineKm(c.coordinates, centroid) < 50,
+        (c) => c.coordinates && haversineKm(c.coordinates, centroid) < 50
       );
       if (!hasCityNearby) {
         suggestions.push({
@@ -84,7 +79,7 @@ export function getSuggestedPlacements(
     for (const cap of capitals) {
       if (!cap.coordinates) continue;
       const hasPoiNearby = pois.some(
-        (p) => p.coordinates && haversineKm(p.coordinates, cap.coordinates!) < 30,
+        (p) => p.coordinates && haversineKm(p.coordinates, cap.coordinates!) < 30
       );
       if (!hasPoiNearby) {
         suggestions.push({
@@ -100,7 +95,7 @@ export function getSuggestedPlacements(
       if (!sub.geometry?.coordinates?.[0]) continue;
       const centroid = polygonCentroid(sub.geometry.coordinates[0]);
       const hasPoiNearby = pois.some(
-        (p) => p.coordinates && haversineKm(p.coordinates, centroid) < 30,
+        (p) => p.coordinates && haversineKm(p.coordinates, centroid) < 30
       );
       if (!hasPoiNearby) {
         suggestions.push({

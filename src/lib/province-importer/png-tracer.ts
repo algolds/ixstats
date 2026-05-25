@@ -60,8 +60,10 @@ export function traceProvincesFromPng(
       if (simplified.length < 4) continue;
 
       // Close the ring
-      if (simplified[0]![0] !== simplified[simplified.length - 1]![0] ||
-          simplified[0]![1] !== simplified[simplified.length - 1]![1]) {
+      if (
+        simplified[0]![0] !== simplified[simplified.length - 1]![0] ||
+        simplified[0]![1] !== simplified[simplified.length - 1]![1]
+      ) {
         simplified.push([...simplified[0]!]);
       }
 
@@ -87,22 +89,25 @@ export function traceProvincesFromPng(
  * Convert traced regions to ProvinceFeatures.
  * Coordinates remain in pixel space — alignment engine handles the transform.
  */
-export function tracedRegionsToProvinces(
-  regions: TracedRegion[]
-): ProvinceFeature[] {
+export function tracedRegionsToProvinces(regions: TracedRegion[]): ProvinceFeature[] {
   return regions.map((region, i) => {
     const coords = region.boundary.map((p) => [p[0]!, p[1]!] as [number, number]);
 
     // Calculate centroid
-    let cx = 0, cy = 0;
+    let cx = 0,
+      cy = 0;
     for (const [x, y] of coords) {
-      cx += x; cy += y;
+      cx += x;
+      cy += y;
     }
     cx /= coords.length;
     cy /= coords.length;
 
     // Calculate bbox
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     for (const [x, y] of coords) {
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
@@ -223,11 +228,7 @@ function createBinaryMask(
  * After tracing one contour, marks those pixels as visited and continues
  * scanning for additional disconnected regions of the same color.
  */
-function traceAllBoundaries(
-  mask: Uint8Array,
-  width: number,
-  height: number
-): [number, number][][] {
+function traceAllBoundaries(mask: Uint8Array, width: number, height: number): [number, number][][] {
   const results: [number, number][][] = [];
   // Work on a copy so we can mark visited pixels
   const workMask = new Uint8Array(mask);
@@ -281,13 +282,10 @@ const MAX_TRACE_STEPS = 50000;
  * Trace the outer boundary of a binary mask using Moore neighborhood tracing.
  * Returns an array of [x, y] boundary pixel coordinates.
  */
-function traceBoundary(
-  mask: Uint8Array,
-  width: number,
-  height: number
-): [number, number][] {
+function traceBoundary(mask: Uint8Array, width: number, height: number): [number, number][] {
   // Find starting pixel (first set pixel scanning left-to-right, top-to-bottom)
-  let startX = -1, startY = -1;
+  let startX = -1,
+    startY = -1;
   for (let y = 0; y < height && startX < 0; y++) {
     for (let x = 0; x < width; x++) {
       if (mask[y * width + x]) {
@@ -303,11 +301,18 @@ function traceBoundary(
   // Moore neighborhood tracing
   const boundary: [number, number][] = [];
   const directions: [number, number][] = [
-    [0, -1], [1, -1], [1, 0], [1, 1],
-    [0, 1], [-1, 1], [-1, 0], [-1, -1],
+    [0, -1],
+    [1, -1],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+    [-1, 1],
+    [-1, 0],
+    [-1, -1],
   ];
 
-  let x = startX, y = startY;
+  let x = startX,
+    y = startY;
   let dir = 7; // Start by looking left-up
 
   for (let step = 0; step < MAX_TRACE_STEPS; step++) {
@@ -356,10 +361,7 @@ function shoelaceArea(points: [number, number][]): number {
 // Douglas-Peucker Simplification
 // ──────────────────────────────────────────────
 
-function douglasPeucker(
-  points: [number, number][],
-  tolerance: number
-): [number, number][] {
+function douglasPeucker(points: [number, number][], tolerance: number): [number, number][] {
   if (points.length <= 2) return [...points];
 
   // Find the point farthest from the line between first and last
@@ -438,8 +440,12 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 function colorDistance(
-  r1: number, g1: number, b1: number,
-  r2: number, g2: number, b2: number
+  r1: number,
+  g1: number,
+  b1: number,
+  r2: number,
+  g2: number,
+  b2: number
 ): number {
   return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
 }

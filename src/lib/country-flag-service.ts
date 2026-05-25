@@ -429,7 +429,9 @@ class CountryFlagService {
         if (countryName in resolved) {
           return (resolved[countryName] || null) as string | null;
         }
-        const key = Object.keys(resolved).find((k) => k.toLowerCase() === countryName.toLowerCase());
+        const key = Object.keys(resolved).find(
+          (k) => k.toLowerCase() === countryName.toLowerCase()
+        );
         if (key) {
           return (resolved[key] || null) as string | null;
         }

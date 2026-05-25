@@ -10,8 +10,7 @@ const STANDALONE_HOSTNAME = "maps.ixwiki.com";
 
 /** Server-side: check the incoming request hostname. */
 export function isStandaloneRequest(headers: Headers): boolean {
-  const host =
-    headers.get("x-forwarded-host") || headers.get("host") || "";
+  const host = headers.get("x-forwarded-host") || headers.get("host") || "";
   return host.startsWith(STANDALONE_HOSTNAME);
 }
 

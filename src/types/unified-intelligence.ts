@@ -9,10 +9,7 @@
  */
 
 import type { ComponentType } from "@prisma/client";
-import type {
-  EncryptedMessage,
-  KeySecurityStatus,
-} from "./diplomatic-encryption";
+import type { EncryptedMessage, KeySecurityStatus } from "./diplomatic-encryption";
 
 // ============================================================================
 // BASE TYPES AND ENUMS

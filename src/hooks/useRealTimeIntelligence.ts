@@ -75,10 +75,11 @@ export function useRealTimeIntelligence(
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
     const protocol = window.location.protocol === "https:" ? "https" : "http";
     const host = window.location.host;
-    
-    const url = process.env.NODE_ENV === "production"
-      ? `${protocol}://${host}`
-      : `http://localhost:${wsPort}`;
+
+    const url =
+      process.env.NODE_ENV === "production"
+        ? `${protocol}://${host}`
+        : `http://localhost:${wsPort}`;
 
     socketRef.current = io(url, {
       transports: ["websocket", "polling"],
@@ -94,8 +95,8 @@ export function useRealTimeIntelligence(
 
       if (socketRef.current) {
         socketRef.current.emit("authenticate", { userId: user.id, countryId });
-        
-        subscriptions.forEach(channel => {
+
+        subscriptions.forEach((channel) => {
           if (channel === "all" || channel === "global") {
             socketRef.current?.emit("subscribe:global");
           } else {
@@ -160,7 +161,7 @@ export function useRealTimeIntelligence(
 
   const subscribe = useCallback((channels: string[]) => {
     if (socketRef.current?.connected) {
-      channels.forEach(channel => {
+      channels.forEach((channel) => {
         if (channel === "all" || channel === "global") {
           socketRef.current?.emit("subscribe:global");
         } else {
@@ -172,7 +173,7 @@ export function useRealTimeIntelligence(
 
   const unsubscribe = useCallback((channels: string[]) => {
     if (socketRef.current?.connected) {
-      channels.forEach(channel => {
+      channels.forEach((channel) => {
         socketRef.current?.emit("unsubscribe", channel);
       });
     }

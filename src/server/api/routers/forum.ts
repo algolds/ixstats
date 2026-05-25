@@ -100,7 +100,8 @@ async function requireForumUser(userId: string): Promise<number> {
 
   throw new TRPCError({
     code: "PRECONDITION_FAILED",
-    message: "You must link your forum account first. Go to Profile → IxnayID to connect your accounts.",
+    message:
+      "You must link your forum account first. Go to Profile → IxnayID to connect your accounts.",
   });
 }
 
@@ -269,44 +270,23 @@ function rewriteXFHtml(html: string): string {
   // --- Image handling ---
 
   // Add referrerpolicy to prevent hotlink blocking (same pattern as WikiOS)
-  result = result.replace(
-    /<img(?![^>]*referrerpolicy)/g,
-    '<img referrerpolicy="no-referrer"'
-  );
+  result = result.replace(/<img(?![^>]*referrerpolicy)/g, '<img referrerpolicy="no-referrer"');
 
   // Add lazy loading to images that don't have it
-  result = result.replace(
-    /<img(?![^>]*loading=)/g,
-    '<img loading="lazy"'
-  );
+  result = result.replace(/<img(?![^>]*loading=)/g, '<img loading="lazy"');
 
   // Add decoding="async" for better rendering
-  result = result.replace(
-    /<img(?![^>]*decoding=)/g,
-    '<img decoding="async"'
-  );
+  result = result.replace(/<img(?![^>]*decoding=)/g, '<img decoding="async"');
 
   // Add forum-img class for proper styling (responsive max-width)
-  result = result.replace(
-    /<img(?![^>]*class="[^"]*forum-img)/g,
-    '<img class="forum-img"'
-  );
+  result = result.replace(/<img(?![^>]*class="[^"]*forum-img)/g, '<img class="forum-img"');
 
   // XenForo wraps attachment images in <a> — make the images clickable/expandable
   // Fix attachment URLs that use relative paths
-  result = result.replace(
-    /src="\/data\//g,
-    'src="https://forum.ixwiki.com/data/'
-  );
-  result = result.replace(
-    /srcset="\/data\//g,
-    'srcset="https://forum.ixwiki.com/data/'
-  );
+  result = result.replace(/src="\/data\//g, 'src="https://forum.ixwiki.com/data/');
+  result = result.replace(/srcset="\/data\//g, 'srcset="https://forum.ixwiki.com/data/');
   // Fix srcset entries that have relative paths after commas
-  result = result.replace(
-    /srcset="([^"]*?)\/data\//g,
-    'srcset="$1https://forum.ixwiki.com/data/'
-  );
+  result = result.replace(/srcset="([^"]*?)\/data\//g, 'srcset="$1https://forum.ixwiki.com/data/');
 
   // --- Element class enhancements ---
   result = result.replace(/<blockquote(?![^>]*class)/g, '<blockquote class="forum-quote"');
@@ -337,7 +317,6 @@ function normalizeNode(n: XFForum): ForumNode {
 // ---------------------------------------------------------------------------
 
 export const forumRouter = createTRPCRouter({
-
   // =========================================================================
   // READ ENDPOINTS
   // =========================================================================
@@ -348,7 +327,9 @@ export const forumRouter = createTRPCRouter({
   getRecentThreads: publicProcedure
     .input(
       z.object({
-        order: z.enum(["last_post_date", "post_date", "reply_count", "view_count"]).default("last_post_date"),
+        order: z
+          .enum(["last_post_date", "post_date", "reply_count", "view_count"])
+          .default("last_post_date"),
         limit: z.number().min(1).max(50).default(25),
         page: z.number().min(1).default(1),
       })
@@ -372,10 +353,8 @@ export const forumRouter = createTRPCRouter({
    * Get all forums (categories and sub-forums).
    */
   getForums: publicProcedure.query(async () => {
-    const data = await cachedFetch(
-      cacheKey("forums"),
-      "forums",
-      () => xfFetch<XFForumsResponse>("/nodes/")
+    const data = await cachedFetch(cacheKey("forums"), "forums", () =>
+      xfFetch<XFForumsResponse>("/nodes/")
     );
 
     if (!data?.nodes) return { forums: [] };
@@ -396,7 +375,9 @@ export const forumRouter = createTRPCRouter({
       z.object({
         forumId: z.number(),
         page: z.number().min(1).default(1),
-        order: z.enum(["last_post_date", "post_date", "reply_count", "view_count"]).default("last_post_date"),
+        order: z
+          .enum(["last_post_date", "post_date", "reply_count", "view_count"])
+          .default("last_post_date"),
       })
     )
     .query(async ({ input }) => {
@@ -460,47 +441,43 @@ export const forumRouter = createTRPCRouter({
   /**
    * Get a single post.
    */
-  getPost: publicProcedure
-    .input(z.object({ postId: z.number() }))
-    .query(async ({ input }) => {
-      const key = cacheKey("post", input.postId);
-      const data = await cachedFetch(key, "post", () =>
-        xfFetch<{ post: XFPost }>(`/posts/${input.postId}/`)
-      );
+  getPost: publicProcedure.input(z.object({ postId: z.number() })).query(async ({ input }) => {
+    const key = cacheKey("post", input.postId);
+    const data = await cachedFetch(key, "post", () =>
+      xfFetch<{ post: XFPost }>(`/posts/${input.postId}/`)
+    );
 
-      return data?.post ? normalizePost(data.post) : null;
-    }),
+    return data?.post ? normalizePost(data.post) : null;
+  }),
 
   /**
    * Get a member's profile.
    */
-  getMember: publicProcedure
-    .input(z.object({ userId: z.number() }))
-    .query(async ({ input }) => {
-      const key = cacheKey("member", input.userId);
-      const data = await cachedFetch(key, "member", () =>
-        xfFetch<{ user: XFUser }>(`/users/${input.userId}/`)
-      );
+  getMember: publicProcedure.input(z.object({ userId: z.number() })).query(async ({ input }) => {
+    const key = cacheKey("member", input.userId);
+    const data = await cachedFetch(key, "member", () =>
+      xfFetch<{ user: XFUser }>(`/users/${input.userId}/`)
+    );
 
-      if (!data?.user) return null;
+    if (!data?.user) return null;
 
-      const u = data.user;
-      return {
-        userId: u.user_id,
-        username: u.username,
-        userTitle: u.user_title,
-        messageCount: u.message_count,
-        reactionScore: u.reaction_score,
-        trophyPoints: u.trophy_points,
-        registerDate: u.register_date,
-        lastActivity: u.last_activity,
-        isStaff: u.is_staff,
-        avatarUrl: u.avatar_urls?.l ?? u.avatar_urls?.m ?? null,
-        location: u.location ?? null,
-        about: u.about ? transformBBCode(u.about).contentHtml : null,
-        customFields: u.custom_fields ?? null,
-      };
-    }),
+    const u = data.user;
+    return {
+      userId: u.user_id,
+      username: u.username,
+      userTitle: u.user_title,
+      messageCount: u.message_count,
+      reactionScore: u.reaction_score,
+      trophyPoints: u.trophy_points,
+      registerDate: u.register_date,
+      lastActivity: u.last_activity,
+      isStaff: u.is_staff,
+      avatarUrl: u.avatar_urls?.l ?? u.avatar_urls?.m ?? null,
+      location: u.location ?? null,
+      about: u.about ? transformBBCode(u.about).contentHtml : null,
+      customFields: u.custom_fields ?? null,
+    };
+  }),
 
   /**
    * Search forum threads and posts.
@@ -538,7 +515,8 @@ export const forumRouter = createTRPCRouter({
         results: (results?.results ?? []).map((r) => ({
           type: r.content_type as "thread" | "post",
           id: r.content_id,
-          thread: r.content_type === "thread" ? normalizeThread(r.content as unknown as XFThread) : null,
+          thread:
+            r.content_type === "thread" ? normalizeThread(r.content as unknown as XFThread) : null,
           post: r.content_type === "post" ? normalizePost(r.content as unknown as XFPost) : null,
         })),
         pagination: results?.pagination ?? null,
@@ -657,10 +635,12 @@ export const forumRouter = createTRPCRouter({
         select: { stashId: true },
       });
 
-      const stashedIn = items.map((item) => {
-        const stash = userStashes.find((s) => s.id === item.stashId);
-        return stash ? { id: stash.id, name: stash.name, color: stash.color } : null;
-      }).filter(Boolean);
+      const stashedIn = items
+        .map((item) => {
+          const stash = userStashes.find((s) => s.id === item.stashId);
+          return stash ? { id: stash.id, name: stash.name, color: stash.color } : null;
+        })
+        .filter(Boolean);
 
       return {
         stashed: stashedIn.length > 0,
@@ -944,17 +924,9 @@ export const forumRouter = createTRPCRouter({
       const xfUserId = await requireForumUser(ctx.user.id);
 
       if (input.threadId) {
-        await xfPostAsUser(
-          `/threads/${input.threadId}/mark-read`,
-          {},
-          xfUserId
-        );
+        await xfPostAsUser(`/threads/${input.threadId}/mark-read`, {}, xfUserId);
       } else if (input.forumId) {
-        await xfPostAsUser(
-          `/forums/${input.forumId}/mark-read`,
-          {},
-          xfUserId
-        );
+        await xfPostAsUser(`/forums/${input.forumId}/mark-read`, {}, xfUserId);
       }
 
       return { success: true };
@@ -1174,7 +1146,9 @@ export const forumRouter = createTRPCRouter({
             lastSynced: user.lastForumSync ?? null,
           };
         }
-      } catch { /* non-critical */ }
+      } catch {
+        /* non-critical */
+      }
     }
 
     return {

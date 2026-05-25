@@ -190,9 +190,7 @@ export async function validateGeometryValid(
 
   try {
     const geoJson = JSON.stringify(geometry);
-    const result = await db.$queryRawUnsafe<
-      Array<{ is_valid: boolean; reason: string }>
-    >(
+    const result = await db.$queryRawUnsafe<Array<{ is_valid: boolean; reason: string }>>(
       `SELECT
          ST_IsValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) as is_valid,
          ST_IsValidReason(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) as reason`,
@@ -268,10 +266,7 @@ export async function checkPointCollision(
       ? [countryId, lng, lat, excludeId, toleranceDegrees]
       : [countryId, lng, lat, toleranceDegrees];
 
-    const result = await db.$queryRawUnsafe<Array<{ id: string; name: string }>>(
-      query,
-      ...params
-    );
+    const result = await db.$queryRawUnsafe<Array<{ id: string; name: string }>>(query, ...params);
 
     if (result.length > 0) {
       const label = table === "city" ? "city" : "point of interest";
@@ -334,24 +329,24 @@ export async function checkNameUniqueness(
       select: { id: true, name: true },
     });
   } else if (featureType === "storyPin") {
-    existing = await db.storyPin.findFirst({
+    existing = (await db.storyPin.findFirst({
       where: {
         countryId,
         title: { equals: normalizedName, mode: "insensitive" },
         ...(excludeId ? { id: { not: excludeId } } : {}),
       },
       select: { id: true, title: true },
-    }) as { id: string; name: string } | null;
+    })) as { id: string; name: string } | null;
     if (existing) existing.name = (existing as any).title;
   } else if (featureType === "mapLabel") {
-    existing = await db.mapLabel.findFirst({
+    existing = (await db.mapLabel.findFirst({
       where: {
         countryId,
         text: { equals: normalizedName, mode: "insensitive" },
         ...(excludeId ? { id: { not: excludeId } } : {}),
       },
       select: { id: true, text: true },
-    }) as { id: string; name: string } | null;
+    })) as { id: string; name: string } | null;
     if (existing) existing.name = (existing as any).text;
   }
 
@@ -384,11 +379,7 @@ function extractAllPositions(geometry: Geometry): [number, number][] {
   const positions: [number, number][] = [];
   function scan(coords: unknown): void {
     if (!Array.isArray(coords)) return;
-    if (
-      coords.length >= 2 &&
-      typeof coords[0] === "number" &&
-      typeof coords[1] === "number"
-    ) {
+    if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
       positions.push([coords[0] as number, coords[1] as number]);
       return;
     }
@@ -413,9 +404,7 @@ export interface GeometryValidationError {
  * Validate basic GeoJSON geometry structure (rings closed, min vertices, etc.).
  * Returns an array of errors (empty if valid).
  */
-export function validateGeometryStructure(
-  geometry: Geometry
-): GeometryValidationError[] {
+export function validateGeometryStructure(geometry: Geometry): GeometryValidationError[] {
   const errors: GeometryValidationError[] = [];
 
   if (!geometry.type) {

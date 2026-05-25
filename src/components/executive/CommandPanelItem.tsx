@@ -78,7 +78,7 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
       }
     >
       {/* Accent dot */}
-      <div className="mt-1.5 flex-shrink-0">
+      <div className="mt-1.5 shrink-0">
         <div className={cn("h-2 w-2 rounded-full", dotClass, pulse && "animate-pulse")} />
       </div>
 
@@ -90,7 +90,7 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
             <Badge
               key={i}
               variant="secondary"
-              className={cn("flex-shrink-0 px-1 py-0 text-[8px] leading-tight", badge.colorClass)}
+              className={cn("shrink-0 px-1 py-0 text-[8px] leading-tight", badge.colorClass)}
             >
               {badge.label}
             </Badge>
@@ -105,7 +105,7 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
       {trailingText && (
         <span
           className={cn(
-            "mt-0.5 flex-shrink-0 text-[10px] font-medium",
+            "mt-0.5 shrink-0 text-[10px] font-medium",
             trailingColor ?? "text-muted-foreground"
           )}
         >

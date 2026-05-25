@@ -11,11 +11,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { vaultService } from "~/lib/vault-service";
 import { type CardType } from "@prisma/client";
@@ -166,10 +162,7 @@ export const craftingRouter = createTRPCRouter({
             ],
           }),
         },
-        orderBy: [
-          { resultRarity: "desc" },
-          { name: "asc" },
-        ],
+        orderBy: [{ resultRarity: "desc" }, { name: "asc" }],
       });
 
       // Check unlock status and completion for each recipe

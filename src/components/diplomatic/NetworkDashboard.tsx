@@ -340,7 +340,7 @@ export default function NetworkDashboard({ countryId, countryName }: NetworkDash
                 <div className="space-y-2">
                   {networkData.competitiveAdvantages.map((advantage, idx) => (
                     <div key={idx} className="flex items-start gap-2 rounded-lg bg-white/5 p-3">
-                      <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400" />
+                      <div className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                       <p className="text-sm text-white/80">{advantage}</p>
                     </div>
                   ))}

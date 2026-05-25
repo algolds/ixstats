@@ -155,68 +155,69 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         // Parallelize all independent queries for 3-6x performance improvement
-        const [country, vitalitySnapshots, alerts, briefings, recentMeetings, activePolicies] = await Promise.all([
-          // Get country data
-          ctx.db.country.findUnique({
-            where: { id: input.countryId },
-            include: {
-              governmentStructure: true,
-              economicModel: true,
-              taxSystem: true,
-            },
-          }),
-          // Get latest vitality snapshots
-          ctx.db.vitalitySnapshot.findMany({
-            where: { countryId: input.countryId },
-            orderBy: { calculatedAt: "desc" },
-            take: 4, // One for each major area
-          }),
-          // Get active intelligence alerts
-          ctx.db.intelligenceAlert.findMany({
-            where: {
-              countryId: input.countryId,
-              isActive: true,
-              isResolved: false,
-            },
-            orderBy: [{ severity: "desc" }, { detectedAt: "desc" }],
-            take: 10,
-          }),
-          // Get active intelligence briefings
-          ctx.db.intelligenceBriefing.findMany({
-            where: {
-              countryId: input.countryId,
-              isActive: true,
-            },
-            include: {
-              recommendations: {
-                where: { isActive: true, isImplemented: false },
-                take: 5,
+        const [country, vitalitySnapshots, alerts, briefings, recentMeetings, activePolicies] =
+          await Promise.all([
+            // Get country data
+            ctx.db.country.findUnique({
+              where: { id: input.countryId },
+              include: {
+                governmentStructure: true,
+                economicModel: true,
+                taxSystem: true,
               },
-            },
-            orderBy: [{ priority: "desc" }, { generatedAt: "desc" }],
-            take: 5,
-          }),
-          // Get recent cabinet meetings
-          ctx.db.cabinetMeeting.findMany({
-            where: { countryId: input.countryId },
-            orderBy: { scheduledDate: "desc" },
-            take: 5,
-            include: {
-              decisions: {
-                where: { implementationStatus: { in: ["pending", "in_progress"] } },
+            }),
+            // Get latest vitality snapshots
+            ctx.db.vitalitySnapshot.findMany({
+              where: { countryId: input.countryId },
+              orderBy: { calculatedAt: "desc" },
+              take: 4, // One for each major area
+            }),
+            // Get active intelligence alerts
+            ctx.db.intelligenceAlert.findMany({
+              where: {
+                countryId: input.countryId,
+                isActive: true,
+                isResolved: false,
               },
-            },
-          }),
-          // Get active policies
-          ctx.db.policy.findMany({
-            where: {
-              countryId: input.countryId,
-              status: "active",
-            },
-            orderBy: { effectiveDate: "desc" },
-            take: 10,
-          }),
-        ]);
+              orderBy: [{ severity: "desc" }, { detectedAt: "desc" }],
+              take: 10,
+            }),
+            // Get active intelligence briefings
+            ctx.db.intelligenceBriefing.findMany({
+              where: {
+                countryId: input.countryId,
+                isActive: true,
+              },
+              include: {
+                recommendations: {
+                  where: { isActive: true, isImplemented: false },
+                  take: 5,
+                },
+              },
+              orderBy: [{ priority: "desc" }, { generatedAt: "desc" }],
+              take: 5,
+            }),
+            // Get recent cabinet meetings
+            ctx.db.cabinetMeeting.findMany({
+              where: { countryId: input.countryId },
+              orderBy: { scheduledDate: "desc" },
+              take: 5,
+              include: {
+                decisions: {
+                  where: { implementationStatus: { in: ["pending", "in_progress"] } },
+                },
+              },
+            }),
+            // Get active policies
+            ctx.db.policy.findMany({
+              where: {
+                countryId: input.countryId,
+                status: "active",
+              },
+              orderBy: { effectiveDate: "desc" },
+              take: 10,
+            }),
+          ]);
 
         if (!country) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
@@ -2164,7 +2165,10 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 
         const categoryPolicies = policies
           .map((p) => ({ id: p.id, ...JSON.parse(p.value) }))
-          .filter((p: Record<string, unknown>) => p.category === input.category && p.status === "implemented");
+          .filter(
+            (p: Record<string, unknown>) =>
+              p.category === input.category && p.status === "implemented"
+          );
 
         // Get policy effects for this country's economic model
         let policyEffects: any[] = [];
@@ -2982,7 +2986,12 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
       // --- Economic findings ---
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { currentTotalGdp: true, adjustedGdpGrowth: true, currentPopulation: true, name: true },
+        select: {
+          currentTotalGdp: true,
+          adjustedGdpGrowth: true,
+          currentPopulation: true,
+          name: true,
+        },
       });
 
       if (country) {
@@ -2993,9 +3002,10 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
           category: "economic",
           severity,
           title: gdpGrowth >= 0 ? "GDP Growth Positive" : "GDP Growth Declining",
-          description: gdpGrowth >= 0
-            ? `The economy is growing at ${gdpGrowth.toFixed(2)}% annually. Current GDP stands at $${((country.currentTotalGdp ?? 0) / 1e9).toFixed(1)}B.`
-            : `The economy is contracting at ${gdpGrowth.toFixed(2)}%. Fiscal intervention may be required.`,
+          description:
+            gdpGrowth >= 0
+              ? `The economy is growing at ${gdpGrowth.toFixed(2)}% annually. Current GDP stands at $${((country.currentTotalGdp ?? 0) / 1e9).toFixed(1)}B.`
+              : `The economy is contracting at ${gdpGrowth.toFixed(2)}%. Fiscal intervention may be required.`,
           metric: { value: gdpGrowth, change: gdpGrowth, unit: "% growth" },
           timestamp: now.toISOString(),
         });
@@ -3016,12 +3026,14 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
           id: "security-alerts",
           category: "security",
           severity: criticalCount > 0 ? "critical" : highCount > 0 ? "warning" : "info",
-          title: criticalCount > 0
-            ? `${criticalCount} Critical Alert${criticalCount > 1 ? "s" : ""} Active`
-            : `${totalAlerts} Active Alert${totalAlerts > 1 ? "s" : ""}`,
-          description: criticalCount > 0
-            ? `There are ${criticalCount} critical and ${highCount} high-severity alerts requiring immediate attention.`
-            : `${totalAlerts} intelligence alert${totalAlerts > 1 ? "s" : ""} currently being monitored, ${highCount} at high severity.`,
+          title:
+            criticalCount > 0
+              ? `${criticalCount} Critical Alert${criticalCount > 1 ? "s" : ""} Active`
+              : `${totalAlerts} Active Alert${totalAlerts > 1 ? "s" : ""}`,
+          description:
+            criticalCount > 0
+              ? `There are ${criticalCount} critical and ${highCount} high-severity alerts requiring immediate attention.`
+              : `${totalAlerts} intelligence alert${totalAlerts > 1 ? "s" : ""} currently being monitored, ${highCount} at high severity.`,
           metric: { value: totalAlerts, change: 0, unit: "alerts" },
           timestamp: now.toISOString(),
         });
@@ -3044,12 +3056,14 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
         id: "network-embassies",
         category: "network",
         severity: activeEmbassies === 0 ? "warning" : "info",
-        title: activeEmbassies === 0
-          ? "No Active Embassies"
-          : `Embassy Network: ${activeEmbassies} Active`,
-        description: activeEmbassies === 0
-          ? "Your nation has no active embassies. Establishing diplomatic presence abroad improves trade and relations."
-          : `Your diplomatic network spans ${activeEmbassies} active embassies.${recentEmbassies > 0 ? ` ${recentEmbassies} established in the past week.` : ""}`,
+        title:
+          activeEmbassies === 0
+            ? "No Active Embassies"
+            : `Embassy Network: ${activeEmbassies} Active`,
+        description:
+          activeEmbassies === 0
+            ? "Your nation has no active embassies. Establishing diplomatic presence abroad improves trade and relations."
+            : `Your diplomatic network spans ${activeEmbassies} active embassies.${recentEmbassies > 0 ? ` ${recentEmbassies} established in the past week.` : ""}`,
         metric: { value: activeEmbassies, change: recentEmbassies, unit: "embassies" },
         timestamp: now.toISOString(),
       });
@@ -3061,14 +3075,14 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
       });
 
       if (relations.length > 0) {
-        const avgStrength = relations.reduce((s, r) => s + (r.strength ?? 50), 0) / relations.length;
+        const avgStrength =
+          relations.reduce((s, r) => s + (r.strength ?? 50), 0) / relations.length;
         findings.push({
           id: "diplomatic-relations",
           category: "diplomatic",
           severity: avgStrength < 30 ? "warning" : "info",
-          title: avgStrength < 30
-            ? "Diplomatic Relations Under Strain"
-            : "Diplomatic Relations Stable",
+          title:
+            avgStrength < 30 ? "Diplomatic Relations Under Strain" : "Diplomatic Relations Stable",
           description: `Average relationship strength is ${avgStrength.toFixed(0)}% across ${relations.length} bilateral relations.${avgStrength < 30 ? " Consider diplomatic outreach to improve ties." : ""}`,
           metric: { value: Math.round(avgStrength), change: 0, unit: "% avg" },
           timestamp: now.toISOString(),
@@ -3205,7 +3219,10 @@ function calculateStandardDeviation(values: number[]) {
 /**
  * Generate AI-powered recommendations based on country data
  */
-function generateAIRecommendations(country: Record<string, unknown>, recentData: Record<string, unknown>[]) {
+function generateAIRecommendations(
+  country: Record<string, unknown>,
+  recentData: Record<string, unknown>[]
+) {
   const recommendations = [];
 
   if (country.currentGdpPerCapita && country.currentGdpPerCapita < 25000) {
@@ -3245,7 +3262,11 @@ function generateAIRecommendations(country: Record<string, unknown>, recentData:
 /**
  * Generate predictive economic models
  */
-function generatePredictiveModels(country: Record<string, unknown>, historicalData: Record<string, unknown>[], input: Record<string, unknown>) {
+function generatePredictiveModels(
+  country: Record<string, unknown>,
+  historicalData: Record<string, unknown>[],
+  input: Record<string, unknown>
+) {
   const timeframePeriods = {
     "6_months": 6,
     "1_year": 12,

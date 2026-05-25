@@ -35,10 +35,26 @@ import {
 
 import { lazy, Suspense } from "react";
 
-const ChoroplethOverlay = lazy(() => import("~/components/maps/overlays/ChoroplethOverlay").then(m => ({ default: m.ChoroplethOverlay })));
-const RiskHeatmapOverlay = lazy(() => import("~/components/maps/overlays/RiskHeatmapOverlay").then(m => ({ default: m.RiskHeatmapOverlay })));
-const GeopoliticalOverlay = lazy(() => import("~/components/maps/overlays/GeopoliticalOverlay").then(m => ({ default: m.GeopoliticalOverlay })));
-const TransportOverlay = lazy(() => import("~/components/maps/overlays/TransportOverlay").then(m => ({ default: m.TransportOverlay })));
+const ChoroplethOverlay = lazy(() =>
+  import("~/components/maps/overlays/ChoroplethOverlay").then((m) => ({
+    default: m.ChoroplethOverlay,
+  }))
+);
+const RiskHeatmapOverlay = lazy(() =>
+  import("~/components/maps/overlays/RiskHeatmapOverlay").then((m) => ({
+    default: m.RiskHeatmapOverlay,
+  }))
+);
+const GeopoliticalOverlay = lazy(() =>
+  import("~/components/maps/overlays/GeopoliticalOverlay").then((m) => ({
+    default: m.GeopoliticalOverlay,
+  }))
+);
+const TransportOverlay = lazy(() =>
+  import("~/components/maps/overlays/TransportOverlay").then((m) => ({
+    default: m.TransportOverlay,
+  }))
+);
 import { registerStoryPinIcons } from "~/lib/story-pin-icons";
 
 // MapLibre types imported dynamically since the module requires browser APIs
@@ -52,15 +68,28 @@ const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
 function escHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
-
 
 /** Area thresholds for progressive feature loading based on zoom */
 const PROGRESSIVE_THRESHOLDS: Record<string, [number, number][]> = {
   // [zoom, minAreaSqKm] — features below threshold are hidden
-  rivers: [[0, 3000], [3, 1000], [5, 200], [6, 0]],
-  lakes:  [[0, 5000], [3, 1000], [5, 200], [6, 0]],
+  rivers: [
+    [0, 3000],
+    [3, 1000],
+    [5, 200],
+    [6, 0],
+  ],
+  lakes: [
+    [0, 5000],
+    [3, 1000],
+    [5, 200],
+    [6, 0],
+  ],
 };
 
 /** Get the minimum area for a layer type at a given zoom level */
@@ -161,7 +190,16 @@ export interface MapOverlayFeatures {
 
 /** Which overlays are visible */
 export type OverlayVisibility = Record<
-  "cities" | "pois" | "subdivisions" | "wealth" | "population" | "diplomacy" | "crises" | "transport" | "storyPins" | "mapLabels",
+  | "cities"
+  | "pois"
+  | "subdivisions"
+  | "wealth"
+  | "population"
+  | "diplomacy"
+  | "crises"
+  | "transport"
+  | "storyPins"
+  | "mapLabels",
   boolean
 >;
 
@@ -198,8 +236,12 @@ export interface IxWorldMapProps {
   onZoomChange?: (zoom: number) => void;
   /** GeoJSON data for visualization overlays */
   overlayData?: {
-    wealth?: import("geojson").FeatureCollection & { metadata?: { minVal: number; maxVal: number } };
-    population?: import("geojson").FeatureCollection & { metadata?: { minVal: number; maxVal: number } };
+    wealth?: import("geojson").FeatureCollection & {
+      metadata?: { minVal: number; maxVal: number };
+    };
+    population?: import("geojson").FeatureCollection & {
+      metadata?: { minVal: number; maxVal: number };
+    };
     diplomacy?: {
       relations: import("geojson").FeatureCollection;
       conflicts: import("geojson").FeatureCollection;
@@ -216,10 +258,7 @@ export interface IxWorldMapProps {
 
 export interface IxWorldMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void;
-  fitBounds: (
-    bounds: [[number, number], [number, number]],
-    padding?: number
-  ) => void;
+  fitBounds: (bounds: [[number, number], [number, number]], padding?: number) => void;
   getMap: () => MapLibreMap | null;
 }
 
@@ -258,8 +297,8 @@ function createStarImage(size: number, fillColor: string, strokeColor: string): 
   return ctx.getImageData(0, 0, size, size);
 }
 
-const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
-  function IxWorldMap(
+const IxWorldMap = memo(
+  forwardRef<IxWorldMapRef, IxWorldMapProps>(function IxWorldMap(
     {
       layers,
       capitals,
@@ -304,10 +343,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       flyTo: (lng: number, lat: number, zoom = 4) => {
         mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 });
       },
-      fitBounds: (
-        bounds: [[number, number], [number, number]],
-        padding = 50
-      ) => {
+      fitBounds: (bounds: [[number, number], [number, number]], padding = 50) => {
         mapRef.current?.fitBounds(bounds, { padding, duration: 1500 });
       },
       getMap: () => mapRef.current,
@@ -319,7 +355,9 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
       const baseFeatures = labelFeaturesRef.current;
       if (!baseFeatures || baseFeatures.features.length === 0) return;
-      const source = map.getSource("source-country-labels") as { setData: (data: unknown) => void } | undefined;
+      const source = map.getSource("source-country-labels") as
+        | { setData: (data: unknown) => void }
+        | undefined;
       if (!source) return;
 
       const center = map.getCenter();
@@ -329,7 +367,8 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       const bounds = map.getBounds();
       const visibleLngSpan = bounds.getEast() - bounds.getWest();
       const visibleLatSpan = bounds.getNorth() - bounds.getSouth();
-      const viewRadius = Math.sqrt(visibleLngSpan * visibleLngSpan + visibleLatSpan * visibleLatSpan) / 2;
+      const viewRadius =
+        Math.sqrt(visibleLngSpan * visibleLngSpan + visibleLatSpan * visibleLatSpan) / 2;
 
       const updated: FeatureCollection = {
         ...baseFeatures,
@@ -404,7 +443,9 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       async function initMap() {
         try {
           const mod = await import("maplibre-gl");
-          const maplibregl = ("Map" in mod ? mod : (mod as Record<string, unknown>).default) as typeof mod;
+          const maplibregl = (
+            "Map" in mod ? mod : (mod as Record<string, unknown>).default
+          ) as typeof mod;
 
           if (cancelled || !containerRef.current) return;
 
@@ -427,10 +468,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             touchPitch: false,
           });
 
-          map.addControl(
-            new maplibregl.AttributionControl({ compact: true }),
-            "bottom-right"
-          );
+          map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
           // NavigationControl removed — zoom via scroll/pinch/keyboard.
           // Editor has its own compact zoom control in EditorMap.
@@ -467,8 +505,28 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               data: {
                 type: "FeatureCollection",
                 features: [
-                  { type: "Feature", properties: { label: "Equator" }, geometry: { type: "LineString", coordinates: [[-180, 0], [180, 0]] } },
-                  { type: "Feature", properties: { label: "Prime Meridian" }, geometry: { type: "LineString", coordinates: [[56.1842, -90], [56.1842, 90]] } },
+                  {
+                    type: "Feature",
+                    properties: { label: "Equator" },
+                    geometry: {
+                      type: "LineString",
+                      coordinates: [
+                        [-180, 0],
+                        [180, 0],
+                      ],
+                    },
+                  },
+                  {
+                    type: "Feature",
+                    properties: { label: "Prime Meridian" },
+                    geometry: {
+                      type: "LineString",
+                      coordinates: [
+                        [56.1842, -90],
+                        [56.1842, 90],
+                      ],
+                    },
+                  },
                 ],
               },
             });
@@ -476,7 +534,11 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               id: "graticule-lines",
               type: "line",
               source: "graticule",
-              paint: { "line-color": "rgba(0,0,0,0.12)", "line-width": 0.8, "line-dasharray": [6, 4] } as maplibregl.LineLayerSpecification["paint"],
+              paint: {
+                "line-color": "rgba(0,0,0,0.12)",
+                "line-width": 0.8,
+                "line-dasharray": [6, 4],
+              } as maplibregl.LineLayerSpecification["paint"],
             });
 
             // Ocean & sea name labels
@@ -500,13 +562,24 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 "text-field": ["get", "name"] as unknown as string,
                 "text-font": [...MAP_SYMBOL_FONTS.regular],
                 "text-size": [
-                  "interpolate", ["linear"], ["zoom"],
-                  0.5, ["match", ["get", "rank"], "major", 14, "medium", 10, 8],
-                  3,   ["match", ["get", "rank"], "major", 20, "medium", 14, 11],
-                  6,   ["match", ["get", "rank"], "major", 26, "medium", 18, 14],
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  0.5,
+                  ["match", ["get", "rank"], "major", 14, "medium", 10, 8],
+                  3,
+                  ["match", ["get", "rank"], "major", 20, "medium", 14, 11],
+                  6,
+                  ["match", ["get", "rank"], "major", 26, "medium", 18, 14],
                 ] as unknown as number,
                 "text-letter-spacing": [
-                  "match", ["get", "rank"], "major", 0.2, "medium", 0.1, 0.05,
+                  "match",
+                  ["get", "rank"],
+                  "major",
+                  0.2,
+                  "medium",
+                  0.1,
+                  0.05,
                 ] as unknown as number,
                 "text-allow-overlap": false,
                 "text-max-width": 12,
@@ -514,15 +587,19 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               },
               paint: {
                 "text-color": [
-                  "match", ["get", "rank"],
-                  "major", "#1a5276",
-                  "medium", "#2874a6",
+                  "match",
+                  ["get", "rank"],
+                  "major",
+                  "#1a5276",
+                  "medium",
+                  "#2874a6",
                   "#3498db",
                 ] as unknown as string,
                 "text-halo-color": "rgba(179, 205, 224, 0.6)",
                 "text-halo-width": 1,
                 "text-opacity": [
-                  "step", ["zoom"],
+                  "step",
+                  ["zoom"],
                   ["match", ["get", "rank"], "major", 0.8, 0],
                   1.5,
                   ["match", ["get", "rank"], "major", 0.9, "medium", 0.7, 0],
@@ -575,9 +652,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
       // Sort layers by zIndex
       const sortedLayers = [...layers].sort(
-        (a, b) =>
-          (LAYER_CONFIGS[a.type]?.zIndex ?? 0) -
-          (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
+        (a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
       );
 
       for (const layer of sortedLayers) {
@@ -617,9 +692,13 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 paint: {
                   "line-color": config.strokeColor ?? "#7cb5d2",
                   "line-width": [
-                    "interpolate", ["linear"], ["zoom"],
-                    0, config.strokeWidth ?? 1,
-                    6, (config.strokeWidth ?? 1) * 3,
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    0,
+                    config.strokeWidth ?? 1,
+                    6,
+                    (config.strokeWidth ?? 1) * 3,
                   ],
                   "line-opacity": layer.visible ? 0.7 : 0,
                 } as maplibregl.LineLayerSpecification["paint"],
@@ -637,11 +716,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               };
 
               if (config.fillColor === "from-property") {
-                fillPaint["fill-color"] = [
-                  "coalesce",
-                  ["get", "_fillColor"],
-                  "#e8e5da",
-                ];
+                fillPaint["fill-color"] = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
               } else {
                 fillPaint["fill-color"] = config.fillColor;
               }
@@ -719,7 +794,9 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             // Handle country_labels layer: update source-country-labels
             if (layer.type === "country_labels") {
               labelFeaturesRef.current = layer.data;
-              const existingLabelSource = map.getSource("source-country-labels") as maplibregl.GeoJSONSource | undefined;
+              const existingLabelSource = map.getSource("source-country-labels") as
+                | maplibregl.GeoJSONSource
+                | undefined;
               if (existingLabelSource) {
                 existingLabelSource.setData(layer.data as unknown as GeoJSON.GeoJSON);
                 updateDistanceFade();
@@ -739,10 +816,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                     "text-field": ["get", "_displayName"] as unknown as string,
                     "text-font": [...MAP_SYMBOL_FONTS.regular],
                     "text-size": [
-                      "interpolate", ["linear"], ["zoom"],
-                      1.5, 10,
-                      3, 12,
-                      5, 14,
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      1.5,
+                      10,
+                      3,
+                      12,
+                      5,
+                      14,
                     ] as unknown as number,
                     "text-allow-overlap": false,
                     "text-ignore-placement": false,
@@ -763,7 +845,11 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               }
               // Ensure visibility is synced
               if (map.getLayer("country-name-labels")) {
-                map.setLayoutProperty("country-name-labels", "visibility", layer.visible ? "visible" : "none");
+                map.setLayoutProperty(
+                  "country-name-labels",
+                  "visibility",
+                  layer.visible ? "visible" : "none"
+                );
               }
               continue;
             }
@@ -781,30 +867,19 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               fillLayerId,
               "fill-opacity",
               layer.visible
-                ? [
-                    "case",
-                    ["boolean", ["feature-state", "hover"], false],
-                    0.6,
-                    config.fillOpacity,
-                  ]
+                ? ["case", ["boolean", ["feature-state", "hover"], false], 0.6, config.fillOpacity]
                 : 0
             );
           } else if (layer.type === "altitudes") {
             // When political layer is off, boost altitude opacity for vivid topo colors
-            const politicalVisible = sortedLayers.some(
-              (l) => l.type === "political" && l.visible
-            );
+            const politicalVisible = sortedLayers.some((l) => l.type === "political" && l.visible);
             map.setPaintProperty(
               fillLayerId,
               "fill-opacity",
               layer.visible ? (politicalVisible ? config.fillOpacity : 1.0) : 0
             );
           } else if (config.type === "line") {
-            map.setPaintProperty(
-              fillLayerId,
-              "line-opacity",
-              layer.visible ? 0.7 : 0
-            );
+            map.setPaintProperty(fillLayerId, "line-opacity", layer.visible ? 0.7 : 0);
           } else {
             map.setPaintProperty(
               fillLayerId,
@@ -815,11 +890,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         }
         const strokeLayer = map.getLayer(strokeLayerId);
         if (strokeLayer) {
-          map.setPaintProperty(
-            strokeLayerId,
-            "line-opacity",
-            layer.visible ? 0.8 : 0
-          );
+          map.setPaintProperty(strokeLayerId, "line-opacity", layer.visible ? 0.8 : 0);
         }
 
         // Sovereignty layers follow political visibility
@@ -831,7 +902,11 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             map.setPaintProperty("sovereignty-labels", "text-opacity", layer.visible ? 1 : 0);
           }
           if (map.getLayer("country-name-labels")) {
-            map.setPaintProperty("country-name-labels", "text-opacity", layer.visible ? COUNTRY_LABEL_OPACITY as unknown as number : 0);
+            map.setPaintProperty(
+              "country-name-labels",
+              "text-opacity",
+              layer.visible ? (COUNTRY_LABEL_OPACITY as unknown as number) : 0
+            );
           }
         }
       }
@@ -853,7 +928,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         map.setPaintProperty(fillLayerId, "fill-opacity", [
           "case",
           ["==", ["get", propKey], geographyFilter.value],
-          0.6,  // Full opacity for matching countries
+          0.6, // Full opacity for matching countries
           0.08, // Dimmed for non-matching
         ]);
         // Dim country labels for non-matching countries
@@ -875,7 +950,11 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         ]);
         // Restore normal country label opacity
         if (map.getLayer("country-name-labels")) {
-          map.setPaintProperty("country-name-labels", "text-opacity", COUNTRY_LABEL_OPACITY as unknown as number);
+          map.setPaintProperty(
+            "country-name-labels",
+            "text-opacity",
+            COUNTRY_LABEL_OPACITY as unknown as number
+          );
         }
       }
     }, [geographyFilter, isLoaded, layers]);
@@ -922,7 +1001,10 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         if (existing) {
           (existing as maplibregl.GeoJSONSource).setData(capitals as unknown as GeoJSON.GeoJSON);
         } else {
-          map.addSource(sourceId, { type: "geojson", data: capitals as unknown as GeoJSON.GeoJSON });
+          map.addSource(sourceId, {
+            type: "geojson",
+            data: capitals as unknown as GeoJSON.GeoJSON,
+          });
 
           // Star icon layer
           map.addLayer({
@@ -932,19 +1014,28 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             layout: {
               "icon-image": "capital-star",
               "icon-size": [
-                "interpolate", ["linear"], ["zoom"],
-                2, 0.45,
-                5, 0.7,
-                8, 0.9,
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                2,
+                0.45,
+                5,
+                0.7,
+                8,
+                0.9,
               ] as unknown as number,
               "icon-allow-overlap": true,
               "icon-ignore-placement": true,
             },
             paint: {
               "icon-opacity": [
-                "interpolate", ["linear"], ["zoom"],
-                3, 0.7,
-                4, 1,
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                3,
+                0.7,
+                4,
+                1,
               ] as unknown as number,
             },
             minzoom: 3,
@@ -957,11 +1048,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             source: sourceId,
             layout: {
               "text-field": ["get", "name"] as unknown as string,
-              "text-size": [
-                "interpolate", ["linear"], ["zoom"],
-                4, 10,
-                8, 13,
-              ] as unknown as number,
+              "text-size": ["interpolate", ["linear"], ["zoom"], 4, 10, 8, 13] as unknown as number,
               "text-offset": [0, 1.2],
               "text-anchor": "top",
               "text-allow-overlap": false,
@@ -994,9 +1081,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
       try {
         if (map.getSource(subSource)) {
-          (map.getSource(subSource) as maplibregl.GeoJSONSource).setData(overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON);
+          (map.getSource(subSource) as maplibregl.GeoJSONSource).setData(
+            overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON
+          );
         } else {
-          map.addSource(subSource, { type: "geojson", data: overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON, generateId: true });
+          map.addSource(subSource, {
+            type: "geojson",
+            data: overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON,
+            generateId: true,
+          });
           map.addLayer({
             id: subFillId,
             type: "fill",
@@ -1004,9 +1097,13 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             paint: {
               "fill-color": "#a78bfa",
               "fill-opacity": [
-                "interpolate", ["linear"], ["zoom"],
-                4, ["case", ["boolean", ["feature-state", "hover"], false], 0.15, 0.04],
-                7, ["case", ["boolean", ["feature-state", "hover"], false], 0.25, 0.1],
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4,
+                ["case", ["boolean", ["feature-state", "hover"], false], 0.15, 0.04],
+                7,
+                ["case", ["boolean", ["feature-state", "hover"], false], 0.25, 0.1],
               ] as unknown as number,
             },
             minzoom: 4,
@@ -1018,16 +1115,25 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             paint: {
               "line-color": "#7c3aed",
               "line-width": [
-                "interpolate", ["linear"], ["zoom"],
-                4, ["case", ["boolean", ["feature-state", "hover"], false], 1.5, 0.6],
-                8, ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 1.4],
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4,
+                ["case", ["boolean", ["feature-state", "hover"], false], 1.5, 0.6],
+                8,
+                ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 1.4],
               ] as unknown as number,
               "line-dasharray": [3, 2] as unknown as number[],
               "line-opacity": [
-                "interpolate", ["linear"], ["zoom"],
-                4, 0.5,
-                6, 0.8,
-                8, 1.0,
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4,
+                0.5,
+                6,
+                0.8,
+                8,
+                1.0,
               ] as unknown as number,
             },
             minzoom: 4,
@@ -1038,13 +1144,24 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             source: subSource,
             layout: {
               "text-field": ["get", "name"] as unknown as string,
-              "text-size": ["interpolate", ["linear"], ["zoom"], 4, 8, 7, 11, 10, 14] as unknown as number,
+              "text-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4,
+                8,
+                7,
+                11,
+                10,
+                14,
+              ] as unknown as number,
               "text-allow-overlap": false,
               "text-optional": true,
               "text-padding": 8 as unknown as number,
               "text-font": [...MAP_SYMBOL_FONTS.regular],
               // Larger regions show labels first via area-based priority
-              "symbol-sort-key": ["case",
+              "symbol-sort-key": [
+                "case",
                 ["has", "areaSqKm"],
                 ["-", ["get", "areaSqKm"]],
                 0,
@@ -1055,10 +1172,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-halo-color": "#fff",
               "text-halo-width": 1.5,
               "text-opacity": [
-                "interpolate", ["linear"], ["zoom"],
-                4, 0,
-                5, 0.7,
-                7, 1,
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4,
+                0,
+                5,
+                0.7,
+                7,
+                1,
               ] as unknown as number,
             },
             minzoom: 4.5,
@@ -1076,24 +1198,26 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       // Filter out capitals (already shown as gold stars)
       const nonCapitalCities: FeatureCollection = {
         ...overlayFeatures.cities,
-        features: overlayFeatures.cities.features.filter(
-          (f) => !f.properties?.isCapital
-        ),
+        features: overlayFeatures.cities.features.filter((f) => !f.properties?.isCapital),
       };
 
       try {
         const enableCityClustering = nonCapitalCities.features.length > 50;
         if (map.getSource(citySource)) {
-          (map.getSource(citySource) as maplibregl.GeoJSONSource).setData(nonCapitalCities as unknown as GeoJSON.GeoJSON);
+          (map.getSource(citySource) as maplibregl.GeoJSONSource).setData(
+            nonCapitalCities as unknown as GeoJSON.GeoJSON
+          );
         } else {
           map.addSource(citySource, {
             type: "geojson",
             data: nonCapitalCities as unknown as GeoJSON.GeoJSON,
-            ...(enableCityClustering ? {
-              cluster: true,
-              clusterMaxZoom: 8,
-              clusterRadius: 40,
-            } : {}),
+            ...(enableCityClustering
+              ? {
+                  cluster: true,
+                  clusterMaxZoom: 8,
+                  clusterRadius: 40,
+                }
+              : {}),
           });
 
           if (enableCityClustering) {
@@ -1104,8 +1228,24 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               source: citySource,
               filter: ["has", "point_count"],
               paint: {
-                "circle-radius": ["step", ["get", "point_count"], 12, 10, 16, 50, 22] as unknown as number,
-                "circle-color": ["step", ["get", "point_count"], "#93c5fd", 10, "#3b82f6", 50, "#1e40af"] as unknown as string,
+                "circle-radius": [
+                  "step",
+                  ["get", "point_count"],
+                  12,
+                  10,
+                  16,
+                  50,
+                  22,
+                ] as unknown as number,
+                "circle-color": [
+                  "step",
+                  ["get", "point_count"],
+                  "#93c5fd",
+                  10,
+                  "#3b82f6",
+                  50,
+                  "#1e40af",
+                ] as unknown as string,
                 "circle-stroke-color": "#fff",
                 "circle-stroke-width": 1.5,
               },
@@ -1134,9 +1274,13 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             ...(enableCityClustering ? { filter: ["!", ["has", "point_count"]] } : {}),
             paint: {
               "circle-radius": [
-                "interpolate", ["linear"], ["zoom"],
-                4, ["case", ["==", ["get", "cityType"], "major"], 4.5, 3],
-                8, ["case", ["==", ["get", "cityType"], "major"], 8, 6],
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4,
+                ["case", ["==", ["get", "cityType"], "major"], 4.5, 3],
+                8,
+                ["case", ["==", ["get", "cityType"], "major"], 8, 6],
               ] as unknown as number,
               "circle-color": "#3b82f6",
               "circle-stroke-color": "#fff",
@@ -1158,7 +1302,8 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-optional": true,
               "text-font": [...MAP_SYMBOL_FONTS.regular],
               // Priority by population — larger cities get labels first
-              "symbol-sort-key": ["case",
+              "symbol-sort-key": [
+                "case",
                 ["has", "population"],
                 ["-", ["get", "population"]],
                 0,
@@ -1180,16 +1325,20 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       try {
         const enablePoiClustering = overlayFeatures.pois.features.length > 30;
         if (map.getSource(poiSource)) {
-          (map.getSource(poiSource) as maplibregl.GeoJSONSource).setData(overlayFeatures.pois as unknown as GeoJSON.GeoJSON);
+          (map.getSource(poiSource) as maplibregl.GeoJSONSource).setData(
+            overlayFeatures.pois as unknown as GeoJSON.GeoJSON
+          );
         } else {
           map.addSource(poiSource, {
             type: "geojson",
             data: overlayFeatures.pois as unknown as GeoJSON.GeoJSON,
-            ...(enablePoiClustering ? {
-              cluster: true,
-              clusterMaxZoom: 10,
-              clusterRadius: 35,
-            } : {}),
+            ...(enablePoiClustering
+              ? {
+                  cluster: true,
+                  clusterMaxZoom: 10,
+                  clusterRadius: 35,
+                }
+              : {}),
           });
 
           if (enablePoiClustering) {
@@ -1199,8 +1348,24 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               source: poiSource,
               filter: ["has", "point_count"],
               paint: {
-                "circle-radius": ["step", ["get", "point_count"], 10, 5, 14, 20, 18] as unknown as number,
-                "circle-color": ["step", ["get", "point_count"], "#fcd34d", 5, "#f59e0b", 20, "#d97706"] as unknown as string,
+                "circle-radius": [
+                  "step",
+                  ["get", "point_count"],
+                  10,
+                  5,
+                  14,
+                  20,
+                  18,
+                ] as unknown as number,
+                "circle-color": [
+                  "step",
+                  ["get", "point_count"],
+                  "#fcd34d",
+                  5,
+                  "#f59e0b",
+                  20,
+                  "#d97706",
+                ] as unknown as string,
                 "circle-stroke-color": "#fff",
                 "circle-stroke-width": 1,
               },
@@ -1211,7 +1376,11 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               type: "symbol",
               source: poiSource,
               filter: ["has", "point_count"],
-              layout: { "text-field": "{point_count_abbreviated}", "text-size": 10, "text-font": [...MAP_SYMBOL_FONTS.regular] },
+              layout: {
+                "text-field": "{point_count_abbreviated}",
+                "text-size": 10,
+                "text-font": [...MAP_SYMBOL_FONTS.regular],
+              },
               paint: { "text-color": "#78350f" },
               minzoom: 5,
             });
@@ -1223,7 +1392,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             source: poiSource,
             ...(enablePoiClustering ? { filter: ["!", ["has", "point_count"]] } : {}),
             paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 10, 5] as unknown as number,
+              "circle-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                6,
+                2.5,
+                10,
+                5,
+              ] as unknown as number,
               "circle-color": "#f59e0b",
               "circle-stroke-color": "#fff",
               "circle-stroke-width": 1,
@@ -1267,9 +1444,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
           // Category color expression for fallback/glow/labels
           const SP_COLORS: Record<string, string> = {
-            battle: "#dc2626", founding: "#2563eb", treaty: "#16a34a",
-            cultural: "#9333ea", religious: "#ca8a04", natural: "#059669",
-            trade: "#ea580c", exploration: "#0891b2", disaster: "#6b7280",
+            battle: "#dc2626",
+            founding: "#2563eb",
+            treaty: "#16a34a",
+            cultural: "#9333ea",
+            religious: "#ca8a04",
+            natural: "#059669",
+            trade: "#ea580c",
+            exploration: "#0891b2",
+            disaster: "#6b7280",
           };
           const colorExpr: unknown[] = ["match", ["get", "category"]];
           for (const [cat, color] of Object.entries(SP_COLORS)) {
@@ -1297,7 +1480,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               source: spSource,
               filter: ["has", "point_count"],
               paint: {
-                "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 30, 28] as unknown as number,
+                "circle-radius": [
+                  "step",
+                  ["get", "point_count"],
+                  16,
+                  10,
+                  22,
+                  30,
+                  28,
+                ] as unknown as number,
                 "circle-color": "#7c3aed",
                 "circle-stroke-color": "#fff",
                 "circle-stroke-width": 2,
@@ -1330,13 +1521,23 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               filter: ["all", ["!", ["has", "point_count"]], [">=", ["get", "importance"], 1]],
               paint: {
                 "circle-radius": [
-                  "interpolate", ["linear"], ["zoom"],
-                  4, ["case", [">=", ["get", "importance"], 2], 18, 14],
-                  8, ["case", [">=", ["get", "importance"], 2], 28, 22],
-                  12, ["case", [">=", ["get", "importance"], 2], 36, 28],
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  4,
+                  ["case", [">=", ["get", "importance"], 2], 18, 14],
+                  8,
+                  ["case", [">=", ["get", "importance"], 2], 28, 22],
+                  12,
+                  ["case", [">=", ["get", "importance"], 2], 36, 28],
                 ] as unknown as number,
                 "circle-color": colorExpr as unknown as string,
-                "circle-opacity": ["case", [">=", ["get", "importance"], 2], 0.25, 0.15] as unknown as number,
+                "circle-opacity": [
+                  "case",
+                  [">=", ["get", "importance"], 2],
+                  0.25,
+                  0.15,
+                ] as unknown as number,
                 "circle-blur": 0.6,
               },
               minzoom: 3,
@@ -1357,10 +1558,15 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                   ["to-string", ["coalesce", ["get", "importance"], 0]],
                 ] as unknown as string,
                 "icon-size": [
-                  "interpolate", ["linear"], ["zoom"],
-                  3, 0.5,
-                  6, 0.75,
-                  10, 1,
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  3,
+                  0.5,
+                  6,
+                  0.75,
+                  10,
+                  1,
                 ] as unknown as number,
                 "icon-allow-overlap": true,
                 "icon-anchor": "center" as const,
@@ -1377,8 +1583,13 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               layout: {
                 "text-field": ["get", "title"] as unknown as string,
                 "text-size": [
-                  "interpolate", ["linear"], ["zoom"],
-                  5, 8, 10, 11,
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  5,
+                  8,
+                  10,
+                  11,
                 ] as unknown as number,
                 "text-offset": [0, 1.8],
                 "text-anchor": "top" as const,
@@ -1462,17 +1673,28 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
       const overlayLayers: Record<string, string[]> = {
         cities: [
-          "overlay-cities-circle", "overlay-cities-label",
-          "overlay-cities-circle-cluster", "overlay-cities-circle-cluster-count",
+          "overlay-cities-circle",
+          "overlay-cities-label",
+          "overlay-cities-circle-cluster",
+          "overlay-cities-circle-cluster-count",
         ],
         pois: [
-          "overlay-pois-circle", "overlay-pois-label",
-          "overlay-pois-circle-cluster", "overlay-pois-circle-cluster-count",
+          "overlay-pois-circle",
+          "overlay-pois-label",
+          "overlay-pois-circle-cluster",
+          "overlay-pois-circle-cluster-count",
         ],
-        subdivisions: ["overlay-subdivisions-fill", "overlay-subdivisions-stroke", "overlay-subdivisions-label"],
+        subdivisions: [
+          "overlay-subdivisions-fill",
+          "overlay-subdivisions-stroke",
+          "overlay-subdivisions-label",
+        ],
         storyPins: [
-          "story-pins-icon", "story-pins-glow", "story-pins-label",
-          "story-pins-cluster", "story-pins-cluster-count",
+          "story-pins-icon",
+          "story-pins-glow",
+          "story-pins-label",
+          "story-pins-cluster",
+          "story-pins-cluster-count",
         ],
         mapLabels: ["custom-map-labels"],
       };
@@ -1511,24 +1733,27 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
     }, [labelsVisible, isLoaded]);
 
     // Check if a screen point is outside the visible globe disc (globe projection only)
-    const isOutsideGlobe = useCallback((map: maplibregl.Map, point: { x: number; y: number }): boolean => {
-      if (map.getZoom() >= 4) return false; // fully mercator, no globe clipping needed
-      const canvas = map.getCanvas();
-      const cx = canvas.clientWidth / 2;
-      const cy = canvas.clientHeight / 2;
-      const dx = point.x - cx;
-      const dy = point.y - cy;
-      const cursorDistSq = dx * dx + dy * dy;
-      // Estimate globe radius: project a point 88° from center along meridian
-      const center = map.getCenter();
-      let edgeLat = center.lat - 88;
-      if (edgeLat < -90) edgeLat = center.lat + 88;
-      const edgeScreen = map.project({ lng: center.lng, lat: edgeLat });
-      const rx = edgeScreen.x - cx;
-      const ry = edgeScreen.y - cy;
-      const radiusSq = rx * rx + ry * ry;
-      return radiusSq > 0 && cursorDistSq > radiusSq;
-    }, []);
+    const isOutsideGlobe = useCallback(
+      (map: maplibregl.Map, point: { x: number; y: number }): boolean => {
+        if (map.getZoom() >= 4) return false; // fully mercator, no globe clipping needed
+        const canvas = map.getCanvas();
+        const cx = canvas.clientWidth / 2;
+        const cy = canvas.clientHeight / 2;
+        const dx = point.x - cx;
+        const dy = point.y - cy;
+        const cursorDistSq = dx * dx + dy * dy;
+        // Estimate globe radius: project a point 88° from center along meridian
+        const center = map.getCenter();
+        let edgeLat = center.lat - 88;
+        if (edgeLat < -90) edgeLat = center.lat + 88;
+        const edgeScreen = map.project({ lng: center.lng, lat: edgeLat });
+        const rx = edgeScreen.x - cx;
+        const ry = edgeScreen.y - cy;
+        const radiusSq = rx * rx + ry * ry;
+        return radiusSq > 0 && cursorDistSq > radiusSq;
+      },
+      []
+    );
 
     // Handle country hover + overlay feature tooltips
     const handleMouseMove = useCallback(
@@ -1549,7 +1774,10 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
           // Hide tooltip and clear subdivision hover
           if (tooltipPopupRef.current?.isOpen()) tooltipPopupRef.current.remove();
           hoveredOverlayIdRef.current = null;
-          if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+          if (
+            hoveredSubdivisionIdRef.current !== null &&
+            map.getSource("source-overlay-subdivisions")
+          ) {
             map.setFeatureState(
               { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
               { hover: false }
@@ -1585,7 +1813,10 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
           const isSubHover = layerId === "overlay-subdivisions-fill";
           const subId = isSubHover ? (overlayHit.id as number) : null;
           if (hoveredSubdivisionIdRef.current !== subId) {
-            if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+            if (
+              hoveredSubdivisionIdRef.current !== null &&
+              map.getSource("source-overlay-subdivisions")
+            ) {
               map.setFeatureState(
                 { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
                 { hover: false }
@@ -1607,9 +1838,12 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             // Build label with type hint
             let typeHint = "";
             if (layerId === "capitals-star") typeHint = "Capital";
-            else if (layerId === "overlay-cities-circle") typeHint = props.cityType ? String(props.cityType) : "City";
-            else if (layerId === "overlay-pois-circle") typeHint = props.category ? String(props.category) : "POI";
-            else if (layerId === "overlay-subdivisions-fill") typeHint = props.type ? String(props.type) : "Region";
+            else if (layerId === "overlay-cities-circle")
+              typeHint = props.cityType ? String(props.cityType) : "City";
+            else if (layerId === "overlay-pois-circle")
+              typeHint = props.category ? String(props.category) : "POI";
+            else if (layerId === "overlay-subdivisions-fill")
+              typeHint = props.type ? String(props.type) : "Region";
             else if (layerId === "story-pins-icon") typeHint = "Story Pin";
 
             const safeName = escHtml(name);
@@ -1634,7 +1868,10 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             hoveredOverlayIdRef.current = null;
             tooltipPopupRef.current?.remove();
           }
-          if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+          if (
+            hoveredSubdivisionIdRef.current !== null &&
+            map.getSource("source-overlay-subdivisions")
+          ) {
             map.setFeatureState(
               { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
               { hover: false }
@@ -1661,10 +1898,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
           const featureId = feature.id as number;
           hoveredFeatureIdRef.current = featureId;
 
-          map.setFeatureState(
-            { source: "source-political", id: featureId },
-            { hover: true }
-          );
+          map.setFeatureState({ source: "source-political", id: featureId }, { hover: true });
 
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 
@@ -1739,11 +1973,12 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               countryName: String(props.countryName ?? ""),
               countrySlug: props.countrySlug ? String(props.countrySlug) : null,
               coordinates: coords,
-              ...(featureType !== "poi" && featureType !== "storyPin" && {
-                cityType: props.cityType ? String(props.cityType) : undefined,
-                population: props.population != null ? Number(props.population) : null,
-                isCapital: featureType === "capital" || !!props.isCapital,
-              }),
+              ...(featureType !== "poi" &&
+                featureType !== "storyPin" && {
+                  cityType: props.cityType ? String(props.cityType) : undefined,
+                  population: props.population != null ? Number(props.population) : null,
+                  isCapital: featureType === "capital" || !!props.isCapital,
+                }),
               ...(featureType === "poi" && {
                 category: props.category ? String(props.category) : undefined,
                 icon: props.icon ? String(props.icon) : null,
@@ -1801,7 +2036,10 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       const handleMouseLeave = () => {
         tooltipPopupRef.current?.remove();
         hoveredOverlayIdRef.current = null;
-        if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+        if (
+          hoveredSubdivisionIdRef.current !== null &&
+          map.getSource("source-overlay-subdivisions")
+        ) {
           map.setFeatureState(
             { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
             { hover: false }
@@ -1832,12 +2070,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             source: "source-political",
             paint: {
               "fill-color": INTERACTION_COLORS.selected,
-              "fill-opacity": [
-                "case",
-                ["boolean", ["feature-state", "selected"], false],
-                0.4,
-                0,
-              ],
+              "fill-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.4, 0],
             },
           });
           map.addLayer({
@@ -1846,12 +2079,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             source: "source-political",
             paint: {
               "line-color": INTERACTION_COLORS.selectedStroke,
-              "line-width": [
-                "case",
-                ["boolean", ["feature-state", "selected"], false],
-                3,
-                0,
-              ],
+              "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0],
             },
           });
         }
@@ -1861,10 +2089,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       const political = layers.find((l) => l.type === "political");
       if (political) {
         for (let i = 0; i < political.data.features.length; i++) {
-          map.setFeatureState(
-            { source: "source-political", id: i },
-            { selected: false }
-          );
+          map.setFeatureState({ source: "source-political", id: i }, { selected: false });
         }
 
         // Set selected state
@@ -1873,10 +2098,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
             (f) => (f.properties?._id || f.properties?.id) === selectedCountryId
           );
           if (idx >= 0) {
-            map.setFeatureState(
-              { source: "source-political", id: idx },
-              { selected: true }
-            );
+            map.setFeatureState({ source: "source-political", id: idx }, { selected: true });
           }
         }
       }
@@ -1884,20 +2106,24 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
     return (
       <div className={`absolute inset-0 ${className}`} style={{ position: "absolute", inset: 0 }}>
-        <div ref={containerRef} className="touch-none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+        <div
+          ref={containerRef}
+          className="touch-none"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        />
         {debugError && (
           <div className="absolute inset-0 flex items-center justify-center bg-red-50 p-4">
             <div className="max-w-lg rounded-lg bg-white p-4 shadow-lg">
               <p className="font-bold text-red-600">MapLibre import debug:</p>
-              <pre className="mt-2 whitespace-pre-wrap text-xs text-foreground">{debugError}</pre>
+              <pre className="text-foreground mt-2 text-xs whitespace-pre-wrap">{debugError}</pre>
             </div>
           </div>
         )}
         {!isLoaded && !debugError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+          <div className="bg-muted absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/20 border-t-blue-500" />
-              <p className="text-sm text-muted-foreground">Loading map...</p>
+              <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-blue-500" />
+              <p className="text-muted-foreground text-sm">Loading map...</p>
             </div>
           </div>
         )}
@@ -1953,7 +2179,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         </Suspense>
       </div>
     );
-  }
-));
+  })
+);
 
 export default IxWorldMap;

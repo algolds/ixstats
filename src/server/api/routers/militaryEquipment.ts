@@ -422,7 +422,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -554,7 +556,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -626,7 +630,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -696,7 +702,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -724,7 +732,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
       try {
         const manufacturer = await ctx.db.defenseManufacturer.create({
           data: {
-            key: input.name.toLowerCase().replace(/\s+/g, '-'),
+            key: input.name.toLowerCase().replace(/\s+/g, "-"),
             name: input.name,
             country: input.country,
             specialty: input.specialty || "",
@@ -770,7 +778,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -860,7 +870,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -912,9 +924,15 @@ export const militaryEquipmentRouter = createTRPCRouter({
         },
       });
 
-      const manufacturerUsageMap = new Map<string, { totalUsage: number; equipmentCount: number }>();
+      const manufacturerUsageMap = new Map<
+        string,
+        { totalUsage: number; equipmentCount: number }
+      >();
       equipmentWithManufacturers.forEach((eq) => {
-        const existing = manufacturerUsageMap.get(eq.manufacturer) || { totalUsage: 0, equipmentCount: 0 };
+        const existing = manufacturerUsageMap.get(eq.manufacturer) || {
+          totalUsage: 0,
+          equipmentCount: 0,
+        };
         manufacturerUsageMap.set(eq.manufacturer, {
           totalUsage: existing.totalUsage + eq.usageCount,
           equipmentCount: existing.equipmentCount + 1,
@@ -1044,9 +1062,8 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const { resolveEquipmentImage } = await import(
-          "~/server/services/wikimedia-equipment-image-resolver"
-        );
+        const { resolveEquipmentImage } =
+          await import("~/server/services/wikimedia-equipment-image-resolver");
 
         const result = await resolveEquipmentImage(input.equipmentId);
 
@@ -1081,9 +1098,8 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const { batchResolveImages } = await import(
-          "~/server/services/wikimedia-equipment-image-resolver"
-        );
+        const { batchResolveImages } =
+          await import("~/server/services/wikimedia-equipment-image-resolver");
 
         console.log(
           `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} batch resolving ${input.equipmentIds.length} images...`
@@ -1140,7 +1156,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
+          .catch((err: unknown) => {
+            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -1156,9 +1174,8 @@ export const militaryEquipmentRouter = createTRPCRouter({
    */
   getImageCacheStats: publicProcedure.query(async ({ ctx }) => {
     try {
-      const { getImageCacheStats } = await import(
-        "~/server/services/wikimedia-equipment-image-resolver"
-      );
+      const { getImageCacheStats } =
+        await import("~/server/services/wikimedia-equipment-image-resolver");
 
       const stats = await getImageCacheStats();
 

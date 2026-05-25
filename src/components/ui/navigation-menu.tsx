@@ -137,8 +137,9 @@ function NavigationMenuPortal({
   return <NavigationMenuPrimitive.Portal data-slot="navigation-menu-portal" {...props} />;
 }
 
-interface NavigationMenuViewportProps
-  extends React.ComponentProps<typeof NavigationMenuPrimitive.Viewport> {
+interface NavigationMenuViewportProps extends React.ComponentProps<
+  typeof NavigationMenuPrimitive.Viewport
+> {
   contentProps?: Omit<React.ComponentProps<typeof NavigationMenuPrimitive.Positioner>, "render">;
 }
 

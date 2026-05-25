@@ -126,11 +126,11 @@ export function VaultStatusIndicator({
       )}
 
       {/* Status Label and Progress Bar */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         {showLabel && (
           <p
             className={cn(
-              "font-bold uppercase tracking-wide",
+              "font-bold tracking-wide uppercase",
               sizeConfig.fontSize,
               config.textColor
             )}
@@ -140,12 +140,9 @@ export function VaultStatusIndicator({
         )}
 
         {/* Progress bar */}
-        <div className={cn("mt-1 rounded-full bg-black/60 overflow-hidden", sizeConfig.barHeight)}>
+        <div className={cn("mt-1 overflow-hidden rounded-full bg-black/60", sizeConfig.barHeight)}>
           <motion.div
-            className={cn(
-              "h-full rounded-full bg-gradient-to-r",
-              config.gradient
-            )}
+            className={cn("h-full rounded-full bg-gradient-to-r", config.gradient)}
             initial={{ width: 0 }}
             animate={{ width: `${securityLevel}%` }}
             transition={{
@@ -245,7 +242,7 @@ export function VaultStatusIndicatorCompact({
   return (
     <motion.div
       className={cn(
-        "flex items-center gap-2 rounded-full px-3 py-1.5 border",
+        "flex items-center gap-2 rounded-full border px-3 py-1.5",
         config.bgColor,
         config.borderColor,
         className
@@ -254,9 +251,7 @@ export function VaultStatusIndicatorCompact({
       whileTap={{ scale: 0.95 }}
     >
       <StatusIcon className={cn("h-3.5 w-3.5", config.color)} />
-      <span className={cn("text-xs font-black tabular-nums", config.color)}>
-        {securityLevel}%
-      </span>
+      <span className={cn("text-xs font-black tabular-nums", config.color)}>{securityLevel}%</span>
     </motion.div>
   );
 }

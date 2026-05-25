@@ -1431,9 +1431,8 @@ export const quickActionsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       // Import the policy recommender
-      const { getPolicyRecommendations, getPolicyRecommendationsByType } = await import(
-        "~/lib/policy-recommender"
-      );
+      const { getPolicyRecommendations, getPolicyRecommendationsByType } =
+        await import("~/lib/policy-recommender");
 
       // Get country data
       const country = await ctx.db.country.findUnique({

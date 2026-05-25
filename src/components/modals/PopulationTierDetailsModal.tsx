@@ -499,7 +499,7 @@ export function PopulationTierDetailsModal({
                 <div className="space-y-3">
                   {currentTierInfo.current.benefits.map((benefit, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" />
+                      <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-green-500" />
                       <span className="text-sm">{benefit}</span>
                     </div>
                   ))}
@@ -541,7 +541,7 @@ export function PopulationTierDetailsModal({
                 <div className="space-y-3">
                   {currentTierInfo.current.challenges.map((challenge, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                      <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-red-500" />
                       <span className="text-sm">{challenge}</span>
                     </div>
                   ))}

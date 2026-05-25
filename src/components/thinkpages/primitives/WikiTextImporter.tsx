@@ -98,7 +98,7 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="flex h-[90vh] max-w-5xl flex-col p-0">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-2">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-orange-500" />
             Import Wiki-Text
@@ -114,7 +114,7 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
           onValueChange={(v) => setActiveTab(v as any)}
           className="flex flex-1 flex-col overflow-hidden px-6 pb-6"
         >
-          <TabsList className="mb-4 grid w-full flex-shrink-0 grid-cols-3">
+          <TabsList className="mb-4 grid w-full shrink-0 grid-cols-3">
             <TabsTrigger value="input" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Input
@@ -135,7 +135,7 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
 
           <div className="flex-1 overflow-hidden">
             <TabsContent value="input" className="mt-0 flex h-full flex-col">
-              <Alert className="mb-4 flex-shrink-0">
+              <Alert className="mb-4 shrink-0">
                 <Sparkles className="h-4 w-4" />
                 <AlertDescription>
                   <strong>Supported syntax:</strong> Headings, bold, italic, lists, links, images,
@@ -147,7 +147,7 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
               </Alert>
 
               <div className="mb-4 flex min-h-0 flex-1 flex-col">
-                <Label htmlFor="wikitext" className="mb-2 flex-shrink-0">
+                <Label htmlFor="wikitext" className="mb-2 shrink-0">
                   Wiki-Text
                 </Label>
                 <ScrollArea className="flex-1 rounded-md border">
@@ -179,7 +179,7 @@ This is '''bold''' and ''italic'' text.
                 </ScrollArea>
               </div>
 
-              <div className="flex flex-shrink-0 gap-2">
+              <div className="flex shrink-0 gap-2">
                 <Button
                   onClick={handleParse}
                   className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"
@@ -194,7 +194,7 @@ This is '''bold''' and ''italic'' text.
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0 flex h-full flex-col">
-              <Alert className="mb-4 flex-shrink-0">
+              <Alert className="mb-4 shrink-0">
                 <Check className="h-4 w-4" />
                 <AlertDescription>
                   Preview your converted content below. Click "Import to Document" to add it.
@@ -209,7 +209,7 @@ This is '''bold''' and ''italic'' text.
                 />
               </ScrollArea>
 
-              <div className="flex flex-shrink-0 gap-2">
+              <div className="flex shrink-0 gap-2">
                 <Button
                   onClick={handleImport}
                   className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"
@@ -293,7 +293,7 @@ This is '''bold''' and ''italic'' text.
                 </div>
               </ScrollArea>
 
-              <div className="flex flex-shrink-0 gap-2">
+              <div className="flex shrink-0 gap-2">
                 <Button
                   onClick={handleImport}
                   className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"

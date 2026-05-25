@@ -35,7 +35,9 @@ interface ToastQueueState {
 }
 
 interface ToastQueueActions {
-  enqueue: (item: Omit<ToastQueueItem, "id" | "timestamp" | "duration"> & { duration?: number }) => string;
+  enqueue: (
+    item: Omit<ToastQueueItem, "id" | "timestamp" | "duration"> & { duration?: number }
+  ) => string;
   dismiss: (id: string) => void;
   dismissAll: () => void;
   pauseAutoDismiss: (id: string) => void;
@@ -136,4 +138,3 @@ if (typeof window !== "undefined") {
 }
 
 export default useToastQueueStore;
-

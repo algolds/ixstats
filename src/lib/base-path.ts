@@ -4,10 +4,10 @@
  */
 
 // Get the base path from environment or use empty string for root deployment
-export const BASE_PATH = 
-  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true" 
-    ? "" 
-    : (process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "");
+export const BASE_PATH =
+  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true"
+    ? ""
+    : process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
 
 /**
  * Prepends the BASE_PATH to a given path

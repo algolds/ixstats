@@ -54,8 +54,7 @@ interface MapPinInfoPanelProps {
 
 function formatCoord(value: number, type: "lat" | "lng"): string {
   const abs = Math.abs(value);
-  const dir =
-    type === "lat" ? (value >= 0 ? "N" : "S") : value >= 0 ? "E" : "W";
+  const dir = type === "lat" ? (value >= 0 ? "N" : "S") : value >= 0 ? "E" : "W";
   return `${abs.toFixed(4)}${dir}`;
 }
 
@@ -74,26 +73,24 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-2.5 py-2">
-      <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md bg-muted">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      <div className="bg-muted mt-0.5 flex h-6 w-6 items-center justify-center rounded-md">
+        <Icon className="text-muted-foreground h-3.5 w-3.5" />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="min-w-0 flex-1">
+        <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           {label}
         </div>
         {loading ? (
-          <div className="mt-0.5 h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="bg-muted mt-0.5 h-4 w-24 animate-pulse rounded" />
         ) : (
           <div className="flex items-center gap-1.5">
             {color && (
               <span
-                className="inline-block h-3 w-3 rounded-sm border border-border"
+                className="border-border inline-block h-3 w-3 rounded-sm border"
                 style={{ backgroundColor: color.slice(0, 7) }}
               />
             )}
-            <span className="text-sm font-medium text-foreground">
-              {value ?? "Unknown"}
-            </span>
+            <span className="text-foreground text-sm font-medium">{value ?? "Unknown"}</span>
           </div>
         )}
       </div>
@@ -115,10 +112,7 @@ export default function MapPinInfoPanel({
 
   // Derive elevation zone from fill color if metadata not available
   const altFill = (altClient?.fill as string) ?? null;
-  const derivedZone = useMemo(
-    () => (altFill ? getZoneByColor(altFill) : null),
-    [altFill]
-  );
+  const derivedZone = useMemo(() => (altFill ? getZoneByColor(altFill) : null), [altFill]);
 
   const elevZoneName =
     serverResult?.elevation?.zoneName ??
@@ -129,15 +123,11 @@ export default function MapPinInfoPanel({
     serverResult?.elevation?.elevationLabel ??
     (altClient?.elevationLabel as string) ??
     (derivedZone ? `${derivedZone.elevationMin}-${derivedZone.elevationMax}m` : null);
-  const elevColor =
-    serverResult?.elevation?.color ?? altFill ?? null;
+  const elevColor = serverResult?.elevation?.color ?? altFill ?? null;
 
   const climateName =
-    serverResult?.climate?.climateName ??
-    (climClient?.climateName as string) ??
-    null;
-  const climateColor =
-    serverResult?.climate?.color ?? (climClient?.fill as string) ?? null;
+    serverResult?.climate?.climateName ?? (climClient?.climateName as string) ?? null;
+  const climateColor = serverResult?.climate?.color ?? (climClient?.fill as string) ?? null;
 
   const countryName =
     serverResult?.country?.name ??
@@ -152,39 +142,32 @@ export default function MapPinInfoPanel({
   const panelContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-2.5">
+      <div className="border-border/50 flex items-center justify-between border-b px-4 py-2.5">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-blue-500" />
-          <span className="text-xs font-semibold text-foreground">
-            Pin Info
-          </span>
+          <span className="text-foreground text-xs font-semibold">Pin Info</span>
         </div>
         <button
           onClick={onClose}
-          className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Coordinates */}
-      <div className="border-b border-border/50 px-4 py-2">
-        <div className="font-mono text-xs text-muted-foreground">
-          {formatCoord(pinPosition.lat, "lat")},{" "}
-          {formatCoord(pinPosition.lng, "lng")}
+      <div className="border-border/50 border-b px-4 py-2">
+        <div className="text-muted-foreground font-mono text-xs">
+          {formatCoord(pinPosition.lat, "lat")}, {formatCoord(pinPosition.lng, "lng")}
         </div>
       </div>
 
       {/* Info Rows */}
-      <div className="divide-y divide-border/30 px-4">
+      <div className="divide-border/30 divide-y px-4">
         <InfoRow
           icon={Mountain}
           label="Elevation"
-          value={
-            elevZoneName
-              ? `${elevZoneName}${elevLabel ? ` (${elevLabel})` : ""}`
-              : null
-          }
+          value={elevZoneName ? `${elevZoneName}${elevLabel ? ` (${elevLabel})` : ""}` : null}
           color={elevColor}
           loading={isServerLoading && !elevZoneName}
         />
@@ -213,9 +196,7 @@ export default function MapPinInfoPanel({
 
       {/* Footer */}
       <div className="px-4 py-2 text-center">
-        <span className="text-[10px] text-muted-foreground/40">
-          Tap map to update pin
-        </span>
+        <span className="text-muted-foreground/40 text-[10px]">Tap map to update pin</span>
       </div>
     </>
   );
@@ -223,7 +204,7 @@ export default function MapPinInfoPanel({
   return (
     <>
       {/* Desktop: top-right card */}
-      <div className="absolute right-3 top-3 z-20 hidden w-72 rounded-xl border border-border bg-card/95 shadow-lg backdrop-blur-sm sm:block">
+      <div className="border-border bg-card/95 absolute top-3 right-3 z-20 hidden w-72 rounded-xl border shadow-lg backdrop-blur-sm sm:block">
         {panelContent}
       </div>
 
@@ -232,9 +213,9 @@ export default function MapPinInfoPanel({
         className="absolute inset-x-0 bottom-0 z-20 sm:hidden"
         style={{ animation: "slideInUp 0.25s ease-out" }}
       >
-        <div className="rounded-t-2xl bg-card shadow-xl" style={{ maxHeight: "50vh" }}>
-          <div className="flex justify-center pb-1 pt-2">
-            <div className="h-1 w-8 rounded-full bg-border" />
+        <div className="bg-card rounded-t-2xl shadow-xl" style={{ maxHeight: "50vh" }}>
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="bg-border h-1 w-8 rounded-full" />
           </div>
           {panelContent}
         </div>
@@ -242,8 +223,12 @@ export default function MapPinInfoPanel({
 
       <style jsx>{`
         @keyframes slideInUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
         }
       `}</style>
     </>

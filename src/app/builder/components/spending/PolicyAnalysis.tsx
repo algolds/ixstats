@@ -482,7 +482,7 @@ export function PolicyAnalysis({
                     key={index}
                     className="flex items-start gap-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3"
                   >
-                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-500" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" />
                     <p className="text-sm text-orange-700 dark:text-orange-400">{conflict}</p>
                   </div>
                 ))}

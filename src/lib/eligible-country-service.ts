@@ -110,7 +110,9 @@ async function ensureCacheDir(): Promise<void> {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
-async function readCacheFile(site: "iiwiki" | "althistory"): Promise<EligibleCountryResult[] | null> {
+async function readCacheFile(
+  site: "iiwiki" | "althistory"
+): Promise<EligibleCountryResult[] | null> {
   try {
     const filePath = getCacheFilePath(site);
     const content = await fsPromises.readFile(filePath, "utf-8");
@@ -121,7 +123,10 @@ async function readCacheFile(site: "iiwiki" | "althistory"): Promise<EligibleCou
   }
 }
 
-async function writeCacheFile(site: "iiwiki" | "althistory", countries: EligibleCountryResult[]): Promise<void> {
+async function writeCacheFile(
+  site: "iiwiki" | "althistory",
+  countries: EligibleCountryResult[]
+): Promise<void> {
   try {
     await ensureCacheDir();
     const filePath = getCacheFilePath(site);
@@ -191,7 +196,9 @@ async function fetchCategoryMembers(
     );
 
     if (!result.success || !result.value) {
-      console.warn(`[EligibleCountries] Failed to fetch category members for ${category} on ${site}`);
+      console.warn(
+        `[EligibleCountries] Failed to fetch category members for ${category} on ${site}`
+      );
       break;
     }
 
@@ -381,7 +388,7 @@ async function resolveImageUrls(
 
       if (!response.ok) continue;
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         query?: { pages?: Record<string, { title?: string; imageinfo?: Array<{ url: string }> }> };
       };
 
@@ -391,12 +398,19 @@ async function resolveImageUrls(
         if (directUrl) {
           const urlFilename = directUrl.split("/").pop() ?? "";
           if (urlFilename) {
-            const normalizedUrlFile = decodeURIComponent(urlFilename).toLowerCase().replace(/_/g, " ").trim();
+            const normalizedUrlFile = decodeURIComponent(urlFilename)
+              .toLowerCase()
+              .replace(/_/g, " ")
+              .trim();
             urlMap.set(normalizedUrlFile, directUrl);
           }
 
           if (page.title) {
-            const cleanTitle = page.title.replace(/^(File|Image):/i, "").toLowerCase().replace(/_/g, " ").trim();
+            const cleanTitle = page.title
+              .replace(/^(File|Image):/i, "")
+              .toLowerCase()
+              .replace(/_/g, " ")
+              .trim();
             urlMap.set(cleanTitle, directUrl);
           }
         }
@@ -428,7 +442,9 @@ async function processPage(
     const completeness = calculateCompleteness(parsed);
     if (completeness.score < 80) return null;
 
-    const flagFilename = (parsed.image_flag || parsed.flag || "").replace(/^(File|Image):/i, "").trim();
+    const flagFilename = (parsed.image_flag || parsed.flag || "")
+      .replace(/^(File|Image):/i, "")
+      .trim();
 
     return {
       result: {
@@ -469,7 +485,9 @@ async function processPage(
 // Fetch and process all pages for a site
 // ──────────────────────────────────────────────
 
-async function fetchEligibleCountriesRaw(site: "iiwiki" | "althistory"): Promise<EligibleCountryResult[]> {
+async function fetchEligibleCountriesRaw(
+  site: "iiwiki" | "althistory"
+): Promise<EligibleCountryResult[]> {
   console.log(`[EligibleCountries] Scanning ${site}...`);
 
   const pageTitles = await getAllPageTitles(site);
@@ -484,9 +502,7 @@ async function fetchEligibleCountriesRaw(site: "iiwiki" | "althistory"): Promise
 
   for (let i = 0; i < pageTitles.length; i += BATCH_SIZE) {
     const batch = pageTitles.slice(i, i + BATCH_SIZE);
-    const results = await Promise.allSettled(
-      batch.map((title) => processPage(title, site))
-    );
+    const results = await Promise.allSettled(batch.map((title) => processPage(title, site)));
 
     for (const result of results) {
       if (result.status === "fulfilled" && result.value) {
@@ -505,7 +521,9 @@ async function fetchEligibleCountriesRaw(site: "iiwiki" | "althistory"): Promise
         result.flagUrl = `/api/iiwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
       } else {
         const lookupKey = flagFilename.toLowerCase().replace(/_/g, " ").trim();
-        result.flagUrl = urlMap.get(lookupKey) || `/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
+        result.flagUrl =
+          urlMap.get(lookupKey) ||
+          `/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
       }
     }
     return result;
@@ -513,7 +531,9 @@ async function fetchEligibleCountriesRaw(site: "iiwiki" | "althistory"): Promise
 
   finalResults.sort(() => Math.random() - 0.5);
 
-  console.log(`[EligibleCountries] Found ${finalResults.length} eligible of ${pageTitles.length} pages on ${site}`);
+  console.log(
+    `[EligibleCountries] Found ${finalResults.length} eligible of ${pageTitles.length} pages on ${site}`
+  );
 
   return finalResults;
 }
@@ -548,14 +568,16 @@ export async function getEligibleCountries(
     }
 
     if (age < TWENTY_FOUR_HOURS_MS) {
-      const refreshPromise = fetchEligibleCountriesRaw(site).then(async (data) => {
-        await writeCacheFile(site, data);
-        memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
-        return data;
-      }).catch(async () => {
-        memoryCache.set(site, { data: cached.data, cachedAt: new Date(), refreshPromise: null });
-        return cached.data;
-      });
+      const refreshPromise = fetchEligibleCountriesRaw(site)
+        .then(async (data) => {
+          await writeCacheFile(site, data);
+          memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
+          return data;
+        })
+        .catch(async () => {
+          memoryCache.set(site, { data: cached.data, cachedAt: new Date(), refreshPromise: null });
+          return cached.data;
+        });
 
       memoryCache.set(site, { ...cached, refreshPromise });
       return cached.data;
@@ -564,14 +586,16 @@ export async function getEligibleCountries(
 
   const fileCached = await readCacheFile(site);
   if (fileCached) {
-    const refreshPromise = fetchEligibleCountriesRaw(site).then(async (data) => {
-      await writeCacheFile(site, data);
-      memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
-      return data;
-    }).catch(async () => {
-      memoryCache.set(site, { data: fileCached, cachedAt: new Date(), refreshPromise: null });
-      return fileCached;
-    });
+    const refreshPromise = fetchEligibleCountriesRaw(site)
+      .then(async (data) => {
+        await writeCacheFile(site, data);
+        memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
+        return data;
+      })
+      .catch(async () => {
+        memoryCache.set(site, { data: fileCached, cachedAt: new Date(), refreshPromise: null });
+        return fileCached;
+      });
 
     memoryCache.set(site, { data: fileCached, cachedAt: new Date(), refreshPromise });
     return fileCached;

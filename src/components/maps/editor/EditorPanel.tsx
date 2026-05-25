@@ -14,10 +14,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  ChevronRight, ChevronLeft,
-  Settings2, Layers, List, BookOpen, Search,
-} from "lucide-react";
+import { ChevronRight, ChevronLeft, Settings2, Layers, List, BookOpen, Search } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
 
@@ -73,30 +70,35 @@ export function EditorPanel({
   const [panelWidth, setPanelWidth] = useState(() => {
     if (typeof window === "undefined") return PANEL_DEFAULT_W;
     const stored = localStorage.getItem(PANEL_STORAGE_KEY);
-    return stored ? Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, parseInt(stored))) : PANEL_DEFAULT_W;
+    return stored
+      ? Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, parseInt(stored)))
+      : PANEL_DEFAULT_W;
   });
   const isDragging = useRef(false);
 
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    const startX = e.clientX;
-    const startW = panelWidth;
-    const onMove = (me: MouseEvent) => {
-      if (!isDragging.current) return;
-      const delta = startX - me.clientX; // dragging left = wider
-      const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
-      setPanelWidth(newW);
-    };
-    const onUp = () => {
-      isDragging.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-      localStorage.setItem(PANEL_STORAGE_KEY, String(panelWidth));
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  }, [panelWidth]);
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isDragging.current = true;
+      const startX = e.clientX;
+      const startW = panelWidth;
+      const onMove = (me: MouseEvent) => {
+        if (!isDragging.current) return;
+        const delta = startX - me.clientX; // dragging left = wider
+        const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
+        setPanelWidth(newW);
+      };
+      const onUp = () => {
+        isDragging.current = false;
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        localStorage.setItem(PANEL_STORAGE_KEY, String(panelWidth));
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [panelWidth]
+  );
 
   // Auto-switch tabs based on mode (unless user manually overrode)
   useEffect(() => {
@@ -121,10 +123,13 @@ export function EditorPanel({
       <div className="relative flex">
         <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
         {!collapsed && (
-          <div className="flex h-full flex-col border-l border-border bg-card" style={{ width: panelWidth }}>
+          <div
+            className="border-border bg-card flex h-full flex-col border-l"
+            style={{ width: panelWidth }}
+          >
             {/* Resize handle */}
             <div
-              className="absolute left-0 top-0 z-20 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+              className="hover:bg-primary/30 active:bg-primary/50 absolute top-0 left-0 z-20 h-full w-1 cursor-col-resize transition-colors"
               onMouseDown={handleResizeStart}
             />
             {importWizardContent}
@@ -139,14 +144,17 @@ export function EditorPanel({
       <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
 
       {!collapsed && (
-        <div className="flex h-full flex-col border-l border-border bg-card" style={{ width: panelWidth }}>
+        <div
+          className="border-border bg-card flex h-full flex-col border-l"
+          style={{ width: panelWidth }}
+        >
           {/* Resize handle */}
           <div
-            className="absolute left-0 top-0 z-20 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+            className="hover:bg-primary/30 active:bg-primary/50 absolute top-0 left-0 z-20 h-full w-1 cursor-col-resize transition-colors"
             onMouseDown={handleResizeStart}
           />
           {/* Tab bar — compact 32px height */}
-          <div className="flex h-8 shrink-0 border-b border-border bg-muted/30">
+          <div className="border-border bg-muted/30 flex h-8 shrink-0 border-b">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -155,14 +163,14 @@ export function EditorPanel({
                   onClick={() => handleTabClick(tab.id)}
                   className={`flex flex-1 items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
                     isActive
-                      ? "border-b-2 border-primary bg-card text-foreground"
+                      ? "border-primary bg-card text-foreground border-b-2"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   }`}
                 >
                   <tab.Icon className="h-3 w-3" />
                   <span className="hidden sm:inline">{tab.label}</span>
                   {tab.id === "features" && featureCount !== undefined && featureCount > 0 && (
-                    <span className="rounded-full bg-muted px-1 text-[9px] tabular-nums">
+                    <span className="bg-muted rounded-full px-1 text-[9px] tabular-nums">
                       {featureCount}
                     </span>
                   )}
@@ -174,13 +182,11 @@ export function EditorPanel({
           {/* Tab content — fills remaining space with crossfade */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <div key={activeTab} style={{ animation: "editorTabFadeIn 150ms ease" }}>
-              {activeTab === "properties" && (
-                <div className="px-3 py-3">{propertiesContent}</div>
-              )}
+              {activeTab === "properties" && <div className="px-3 py-3">{propertiesContent}</div>}
               {activeTab === "layers" && (
                 <div className="flex min-h-0 flex-1 flex-col">
                   {layersContent ?? (
-                    <div className="flex flex-1 items-center justify-center px-3 py-8 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Layers panel coming soon
                     </div>
                   )}
@@ -194,7 +200,7 @@ export function EditorPanel({
               {activeTab === "wiki" && (
                 <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                   {wikiContent ?? (
-                    <div className="flex flex-1 items-center justify-center px-3 py-8 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Wiki scanner coming soon
                     </div>
                   )}
@@ -205,8 +211,12 @@ export function EditorPanel({
 
           <style jsx>{`
             @keyframes editorTabFadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
             }
           `}</style>
         </div>
@@ -217,24 +227,14 @@ export function EditorPanel({
 
 // ── Sub-components ──────────────────────────────────────────────────
 
-function CollapseToggle({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
+function CollapseToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   return (
     <button
       onClick={onToggle}
-      className="absolute -left-3 top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center rounded-l-md bg-card border border-r-0 border-border text-muted-foreground hover:text-foreground transition-colors"
+      className="bg-card border-border text-muted-foreground hover:text-foreground absolute top-1/2 -left-3 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 transition-colors"
       title={collapsed ? "Show panel" : "Hide panel"}
     >
-      {collapsed ? (
-        <ChevronLeft className="h-3 w-3" />
-      ) : (
-        <ChevronRight className="h-3 w-3" />
-      )}
+      {collapsed ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
     </button>
   );
 }
@@ -252,13 +252,13 @@ export function FeatureSearchFilter({
 }) {
   return (
     <div className="relative mb-2">
-      <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+      <Search className="text-muted-foreground absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Filter features..."
-        className="w-full rounded-md border border-border bg-background py-1 pl-7 pr-2 text-xs outline-none focus:ring-1 focus:ring-primary"
+        className="border-border bg-background focus:ring-primary w-full rounded-md border py-1 pr-2 pl-7 text-xs outline-none focus:ring-1"
       />
     </div>
   );

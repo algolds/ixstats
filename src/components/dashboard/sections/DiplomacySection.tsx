@@ -139,7 +139,7 @@ export function DiplomacySection() {
                       <div className="flex items-start gap-2.5">
                         <div
                           className={cn(
-                            "mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
+                            "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
                             severity.bg
                           )}
                         >
@@ -221,10 +221,10 @@ export function DiplomacySection() {
                     <UnifiedCountryFlag
                       countryName={entry.countryName}
                       size="sm"
-                      className="h-5 w-5 flex-shrink-0"
+                      className="h-5 w-5 shrink-0"
                     />
                     <span className="flex-1 truncate text-xs font-medium">{entry.countryName}</span>
-                    <div className="flex flex-shrink-0 items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <span className="text-foreground text-[11px] font-semibold">
                         {Math.round(entry.totalInfluence).toLocaleString()}
                       </span>

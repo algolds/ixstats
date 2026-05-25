@@ -2,12 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
-import {
-  Users,
-  RefreshCw,
-  Loader2,
-  Rss,
-} from "lucide-react";
+import { Users, RefreshCw, Loader2, Rss } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { ThinkpagesPost } from "./ThinkpagesPost";
@@ -30,8 +25,6 @@ interface ThinkpagesSocialPlatformProps {
   profileMode?: boolean;
   countryOwnerClerkUserId?: string;
 }
-
-
 
 export function ThinkpagesSocialPlatform({
   countryId,
@@ -70,13 +63,13 @@ export function ThinkpagesSocialPlatform({
 
   const displayFeed = profileMode ? userFeedQuery.data : feedQuery.data;
   const isLoadingDisplayFeed = profileMode ? userFeedQuery.isLoading : feedQuery.isLoading;
-  const isFetchingNextPage = profileMode ? userFeedQuery.isFetchingNextPage : feedQuery.isFetchingNextPage;
+  const isFetchingNextPage = profileMode
+    ? userFeedQuery.isFetchingNextPage
+    : feedQuery.isFetchingNextPage;
   const hasNextPage = profileMode ? userFeedQuery.hasNextPage : feedQuery.hasNextPage;
   const fetchNextPage = profileMode ? userFeedQuery.fetchNextPage : feedQuery.fetchNextPage;
 
   const utils = api.useUtils();
-
-
 
   const refetchDisplayFeed = useCallback(() => {
     if (profileMode) {
@@ -93,12 +86,9 @@ export function ThinkpagesSocialPlatform({
   const totalPosts = filteredPosts.length;
 
   // Shared post action handlers
-  const handleLike = useCallback(
-    (_postId: string) => {
-      // Handled globally by PostActions
-    },
-    [],
-  );
+  const handleLike = useCallback((_postId: string) => {
+    // Handled globally by PostActions
+  }, []);
 
   const handleRepost = useCallback(
     (postId: string) => {
@@ -112,7 +102,7 @@ export function ThinkpagesSocialPlatform({
         notify.error("Please select an account first");
       }
     },
-    [selectedAccount, filteredPosts],
+    [selectedAccount, filteredPosts]
   );
 
   const handleReply = useCallback(
@@ -121,7 +111,7 @@ export function ThinkpagesSocialPlatform({
         notify.error("Please select an account first");
       }
     },
-    [selectedAccount],
+    [selectedAccount]
   );
 
   const handleShare = useCallback((_postId: string) => {
@@ -137,12 +127,9 @@ export function ThinkpagesSocialPlatform({
     }
   }, []);
 
-  const handleReaction = useCallback(
-    (_postId: string, _reactionType: string) => {
-      // Handled globally by PostActions
-    },
-    [],
-  );
+  const handleReaction = useCallback((_postId: string, _reactionType: string) => {
+    // Handled globally by PostActions
+  }, []);
 
   // Render post item with stagger animation
   const renderPost = useCallback(
@@ -173,10 +160,19 @@ export function ThinkpagesSocialPlatform({
       </motion.div>
     ),
     [
-      selectedAccount?.id, accounts, countryId, isOwner,
-      onAccountSelect, onAccountSettings, onCreateAccount,
-      handleLike, handleRepost, handleReply, handleShare, handleReaction,
-    ],
+      selectedAccount?.id,
+      accounts,
+      countryId,
+      isOwner,
+      onAccountSelect,
+      onAccountSettings,
+      onCreateAccount,
+      handleLike,
+      handleRepost,
+      handleReply,
+      handleShare,
+      handleReaction,
+    ]
   );
 
   return (
@@ -238,7 +234,7 @@ export function ThinkpagesSocialPlatform({
           {isOwner && totalPosts === 0 && (
             <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-4 md:p-6">
               <div className="flex gap-3">
-                <Rss className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-400" />
+                <Rss className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
                 <div className="flex-1">
                   <h4 className="mb-1 font-semibold">Get started with ThinkPages</h4>
                   <p className="text-muted-foreground mb-3 text-sm">
@@ -304,8 +300,8 @@ export function ThinkpagesSocialPlatform({
               <Users className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
               <h3 className="mb-2 text-lg font-semibold">No Owner Found</h3>
               <p className="text-muted-foreground">
-                This country hasn&apos;t been claimed yet. Once claimed, ThinkPages posts will appear
-                here.
+                This country hasn&apos;t been claimed yet. Once claimed, ThinkPages posts will
+                appear here.
               </p>
             </CardContent>
           </Card>
@@ -323,11 +319,7 @@ export function ThinkpagesSocialPlatform({
                 void fetchNextPage();
               }
             }}
-            itemContent={(index, post) => (
-              <div className="pb-3">
-                {renderPost(post, index)}
-              </div>
-            )}
+            itemContent={(index, post) => <div className="pb-3">{renderPost(post, index)}</div>}
             components={{
               Footer: () => (
                 <>

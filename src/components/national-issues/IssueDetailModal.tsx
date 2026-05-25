@@ -18,12 +18,7 @@ import {
   AlertTriangle,
   X,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { IxTime } from "~/lib/ixtime";
@@ -98,9 +93,7 @@ function IssueDetailModalInner({
   isResponding,
   countryId,
 }: IssueDetailModalProps) {
-  const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(
-    null
-  );
+  const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
   const [localOutcome, setLocalOutcome] = useState<string | null>(null);
   const [localCredits, setLocalCredits] = useState(0);
@@ -117,7 +110,11 @@ function IssueDetailModalInner({
 
       // Find the selected option for its outcome text
       let options: ResponseOption[] = [];
-      try { options = JSON.parse(issue.responseOptions) as ResponseOption[]; } catch { /* */ }
+      try {
+        options = JSON.parse(issue.responseOptions) as ResponseOption[];
+      } catch {
+        /* */
+      }
       const selected = options.find((o) => o.id === optionId);
 
       // Save locally
@@ -138,7 +135,11 @@ function IssueDetailModalInner({
 
       // Also try server if handler provided
       if (onRespond) {
-        try { await onRespond(issue.id, optionId); } catch { /* local save is primary */ }
+        try {
+          await onRespond(issue.id, optionId);
+        } catch {
+          /* local save is primary */
+        }
       }
     },
     [issue, onRespond, countryId, saveAction]
@@ -184,24 +185,21 @@ function IssueDetailModalInner({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2 mb-1">
-            <DomainIcon className="h-5 w-5 text-muted-foreground" />
-            <Badge
-              variant="outline"
-              className="text-xs"
-            >
+          <div className="mb-1 flex items-center gap-2">
+            <DomainIcon className="text-muted-foreground h-5 w-5" />
+            <Badge variant="outline" className="text-xs">
               {domain.label}
             </Badge>
             <Badge
               variant="outline"
               className={`text-xs ${
                 issue.severity === "critical" || issue.severity === "CRITICAL"
-                  ? "bg-red-500/20 text-red-400 border-red-500/30"
+                  ? "border-red-500/30 bg-red-500/20 text-red-400"
                   : issue.severity === "high" || issue.severity === "HIGH"
-                    ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                    : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                    ? "border-amber-500/30 bg-amber-500/20 text-amber-400"
+                    : "border-blue-500/30 bg-blue-500/20 text-blue-400"
               }`}
             >
               {issue.severity.toUpperCase()}
@@ -210,12 +208,14 @@ function IssueDetailModalInner({
               <span
                 className={`flex items-center gap-1 text-xs ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
               >
-                {isUrgent ? (
-                  <Flame className="h-3.5 w-3.5" />
-                ) : (
-                  <Clock className="h-3.5 w-3.5" />
-                )}
-                <IxTimeDate date={new Date()} ixTime={issue.deadlineIxTime!} format="relative" accentColor="amber" className="border-none" />
+                {isUrgent ? <Flame className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                <IxTimeDate
+                  date={new Date()}
+                  ixTime={issue.deadlineIxTime!}
+                  format="relative"
+                  accentColor="amber"
+                  className="border-none"
+                />
                 <span className="ml-0.5">({timeRemainingText})</span>
               </span>
             )}
@@ -224,12 +224,10 @@ function IssueDetailModalInner({
         </DialogHeader>
 
         {/* Narrative */}
-        <div className="space-y-3 mt-2">
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {issue.description}
-          </p>
+        <div className="mt-2 space-y-3">
+          <p className="text-muted-foreground text-sm leading-relaxed">{issue.description}</p>
           {issue.longDescription && (
-            <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line border-l-2 border-white/10 pl-3">
+            <div className="text-muted-foreground border-l-2 border-white/10 pl-3 text-sm leading-relaxed whitespace-pre-line">
               {issue.longDescription}
             </div>
           )}
@@ -238,20 +236,21 @@ function IssueDetailModalInner({
         {/* Outcome Display (after response) */}
         {(isResolved || showOutcome) && (issue.consequenceLog || localOutcome) && (
           <div className="mt-4 rounded-lg border border-green-500/20 bg-green-500/5 p-4">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-400" />
               <span className="text-sm font-medium text-green-400">
-                {issue.status === "auto_resolved"
-                  ? "Auto-Resolved"
-                  : "Decision Made"}
+                {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
               </span>
               {(issue.ixCreditsAwarded > 0 || localCredits > 0) && (
-                <Badge variant="outline" className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-400"
+                >
                   +{issue.ixCreditsAwarded || localCredits} IxC
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground whitespace-pre-line">
+            <p className="text-muted-foreground text-sm whitespace-pre-line">
               {issue.consequenceLog || localOutcome}
             </p>
           </div>
@@ -260,7 +259,7 @@ function IssueDetailModalInner({
         {/* Response Options (only if not resolved) */}
         {!isResolved && !showOutcome && (
           <div className="mt-4 space-y-3">
-            <h3 className="text-sm font-medium flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-medium">
               <AlertTriangle className="h-4 w-4 text-amber-400" />
               Your Response
             </h3>
@@ -279,12 +278,8 @@ function IssueDetailModalInner({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium mb-1">
-                        {option.label}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {option.description}
-                      </p>
+                      <h4 className="mb-1 text-sm font-medium">{option.label}</h4>
+                      <p className="text-muted-foreground mb-2 text-xs">{option.description}</p>
 
                       {/* Effect previews */}
                       <div className="flex flex-wrap gap-2">
@@ -323,14 +318,14 @@ function IssueDetailModalInner({
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs h-7 px-2"
+                            className="h-7 px-2 text-xs"
                             onClick={() => setConfirmingOptionId(null)}
                           >
                             <X className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
-                            className="text-xs h-7 px-3 bg-amber-600 hover:bg-amber-700"
+                            className="h-7 bg-amber-600 px-3 text-xs hover:bg-amber-700"
                             onClick={() => handleRespond(option.id)}
                             disabled={isResponding ?? false}
                           >
@@ -341,7 +336,7 @@ function IssueDetailModalInner({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-xs h-7"
+                          className="h-7 text-xs"
                           onClick={() => setConfirmingOptionId(option.id)}
                         >
                           Choose
@@ -373,16 +368,10 @@ function EffectBadge({
   if (isNumeric && value != null) {
     const isPositive = value > 0;
     const Icon = isPositive ? ArrowUp : value < 0 ? ArrowDown : Minus;
-    const color = isPositive
-      ? "text-green-400"
-      : value < 0
-        ? "text-red-400"
-        : "text-slate-400";
+    const color = isPositive ? "text-green-400" : value < 0 ? "text-red-400" : "text-slate-400";
 
     return (
-      <span
-        className={`inline-flex items-center gap-0.5 text-[10px] ${color}`}
-      >
+      <span className={`inline-flex items-center gap-0.5 text-[10px] ${color}`}>
         <Icon className="h-2.5 w-2.5" />
         {label} {value > 0 ? "+" : ""}
         {value}
@@ -395,9 +384,7 @@ function EffectBadge({
     const Icon = config.icon;
 
     return (
-      <span
-        className={`inline-flex items-center gap-0.5 text-[10px] ${config.color}`}
-      >
+      <span className={`inline-flex items-center gap-0.5 text-[10px] ${config.color}`}>
         <Icon className="h-2.5 w-2.5" />
         {label}
       </span>

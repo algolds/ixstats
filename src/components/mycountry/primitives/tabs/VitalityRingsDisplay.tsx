@@ -84,7 +84,7 @@ const layoutConfig = {
 
 /**
  * VitalityRingsDisplay - Apple Watch-style health rings for national vitality metrics
- * 
+ *
  * Displays circular progress rings showing various national health indicators
  * with smooth animations and interactive tooltips.
  */
@@ -103,9 +103,8 @@ export function VitalityRingsDisplay({
   const layoutClass = layoutConfig[layout];
 
   // Calculate overall score
-  const overallScore = rings.length > 0
-    ? rings.reduce((sum, r) => sum + r.value, 0) / rings.length
-    : 0;
+  const overallScore =
+    rings.length > 0 ? rings.reduce((sum, r) => sum + r.value, 0) / rings.length : 0;
 
   // Get overall status color based on score
   const getOverallStatusColor = (score: number) => {
@@ -142,7 +141,7 @@ export function VitalityRingsDisplay({
         <CardHeader className="pb-2">
           {title && (
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Activity className="h-5 w-5 text-primary" />
+              <Activity className="text-primary h-5 w-5" />
               {title}
             </CardTitle>
           )}
@@ -154,11 +153,7 @@ export function VitalityRingsDisplay({
           {rings.map((ring) => {
             const IconComponent = ring.icon;
             return (
-              <ItemWrapper
-                key={ring.id}
-                className="flex flex-col items-center"
-                {...itemProps}
-              >
+              <ItemWrapper key={ring.id} className="flex flex-col items-center" {...itemProps}>
                 <div className="relative">
                   <HealthRing
                     value={ring.value}
@@ -172,8 +167,10 @@ export function VitalityRingsDisplay({
                   />
                   {IconComponent && (
                     <div
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ marginTop: size === "sm" ? "18px" : size === "lg" ? "30px" : "24px" }}
+                      className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        marginTop: size === "sm" ? "18px" : size === "lg" ? "30px" : "24px",
+                      }}
                     >
                       <IconComponent
                         className="opacity-60"
@@ -185,9 +182,9 @@ export function VitalityRingsDisplay({
                 </div>
                 {showLabels && (
                   <div className="mt-2 text-center">
-                    <p className="text-xs font-medium text-foreground">{ring.label}</p>
+                    <p className="text-foreground text-xs font-medium">{ring.label}</p>
                     {ring.description && size !== "sm" && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5 max-w-[100px]">
+                      <p className="text-muted-foreground mt-0.5 max-w-[100px] text-[10px]">
                         {ring.description}
                       </p>
                     )}
@@ -201,17 +198,15 @@ export function VitalityRingsDisplay({
         {/* Overall Score Section */}
         {showOverallScore && (
           <motion.div
-            className="mt-4 pt-4 border-t border-border/50"
+            className="border-border/50 mt-4 border-t pt-4"
             initial={animate ? { opacity: 0, y: 10 } : undefined}
             animate={animate ? { opacity: 1, y: 0 } : undefined}
             transition={{ delay: 0.3, duration: 0.4 }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-semibold text-sm">Overall National Health</h4>
-                <p className="text-muted-foreground text-xs">
-                  Average of all vitality indicators
-                </p>
+                <h4 className="text-sm font-semibold">Overall National Health</h4>
+                <p className="text-muted-foreground text-xs">Average of all vitality indicators</p>
               </div>
               <div className="text-right">
                 <span className={cn("text-2xl font-bold", getOverallStatusColor(overallScore))}>

@@ -4,10 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useUser } from "~/context/auth-context";
 import { IntelligenceWebSocketClient } from "~/lib/websocket/intelligence-websocket-client";
-import type {
-  IntelligenceUpdate,
-  IntelligenceWebSocketHookOptions,
-} from "~/lib/websocket/types";
+import type { IntelligenceUpdate, IntelligenceWebSocketHookOptions } from "~/lib/websocket/types";
 
 interface UseIntelligenceWebSocketReturn {
   // Connection state

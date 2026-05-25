@@ -198,7 +198,9 @@ export const npcPersonalitiesRouter = createTRPCRouter({
 
       return {
         tone: tone || "Professional and measured",
-        culturalProfile: personality.culturalProfile ? JSON.parse(personality.culturalProfile) : null,
+        culturalProfile: personality.culturalProfile
+          ? JSON.parse(personality.culturalProfile)
+          : null,
       };
     }),
 
@@ -519,11 +521,15 @@ export const npcPersonalitiesRouter = createTRPCRouter({
 function parsePersonalityJSON(personality: any) {
   return {
     ...personality,
-    traitDescriptions: personality.traitDescriptions ? JSON.parse(personality.traitDescriptions) : {},
+    traitDescriptions: personality.traitDescriptions
+      ? JSON.parse(personality.traitDescriptions)
+      : {},
     culturalProfile: personality.culturalProfile ? JSON.parse(personality.culturalProfile) : null,
     toneMatrix: personality.toneMatrix ? JSON.parse(personality.toneMatrix) : {},
     responsePatterns: personality.responsePatterns ? JSON.parse(personality.responsePatterns) : [],
-    scenarioResponses: personality.scenarioResponses ? JSON.parse(personality.scenarioResponses) : {},
+    scenarioResponses: personality.scenarioResponses
+      ? JSON.parse(personality.scenarioResponses)
+      : {},
     eventModifiers: personality.eventModifiers ? JSON.parse(personality.eventModifiers) : {},
   };
 }

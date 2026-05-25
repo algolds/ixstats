@@ -77,7 +77,15 @@ export function ExecutiveNotificationProvider({ children }: ExecutiveNotificatio
       markAsRead,
       markAllAsRead,
     }),
-    [notifications, unreadCount, isExecutiveMode, setNotifications, setExecutiveMode, markAsRead, markAllAsRead]
+    [
+      notifications,
+      unreadCount,
+      isExecutiveMode,
+      setNotifications,
+      setExecutiveMode,
+      markAsRead,
+      markAllAsRead,
+    ]
   );
 
   return (

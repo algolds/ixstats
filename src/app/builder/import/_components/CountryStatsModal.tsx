@@ -82,7 +82,7 @@ const StatField = ({
   if (!value) return null;
   return (
     <div className="border-border/50 bg-muted/20 flex items-center gap-3 rounded-lg border p-3">
-      <Icon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+      <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-muted-foreground text-xs">{label}</p>
         <p className="truncate text-sm font-medium">{value}</p>
@@ -231,7 +231,7 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header with flag */}
-          <div className="relative h-36 flex-shrink-0 overflow-hidden">
+          <div className="relative h-36 shrink-0 overflow-hidden">
             {showFlag ? (
               <img
                 src={country.flagUrl}
@@ -265,7 +265,7 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
           </div>
 
           {/* Quick stats row */}
-          <div className="flex-shrink-0 px-5 pt-4">
+          <div className="shrink-0 px-5 pt-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <StatField icon={MapPin} label="Capital" value={country.capital} />
               <StatField icon={Building2} label="Government" value={country.governmentType} />
@@ -352,7 +352,7 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
           </div>
 
           {/* Actions */}
-          <div className="flex flex-shrink-0 gap-2 px-5 pt-2 pb-5">
+          <div className="flex shrink-0 gap-2 px-5 pt-2 pb-5">
             <Button variant="outline" onClick={onClose} className="flex-1">
               Close
             </Button>

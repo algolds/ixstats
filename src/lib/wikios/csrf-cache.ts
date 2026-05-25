@@ -25,7 +25,7 @@ function mergeCookies(current: string[], newHeaders: string[]): string[] {
       const eqIdx = cleanCookie.indexOf("=");
       if (eqIdx !== -1) {
         const name = cleanCookie.substring(0, eqIdx + 1);
-        const idx = merged.findIndex(c => c.startsWith(name));
+        const idx = merged.findIndex((c) => c.startsWith(name));
         if (idx !== -1) {
           merged[idx] = cleanCookie;
         } else {
@@ -126,11 +126,14 @@ export async function getUserSessionAndToken(ctx: {
   }
 
   const cookieHeader = ctx.headers.get("cookie") || "";
-  
+
   // Dev & System Owner fallback to bot session if no MediaWiki session cookies are passed
   const isDev = env.NODE_ENV === "development";
   const isOwner = ctx.auth?.userId && isSystemOwner(ctx.auth.userId);
-  const hasMWCookie = cookieHeader.includes("session") || cookieHeader.includes("UserID") || cookieHeader.includes("UserName");
+  const hasMWCookie =
+    cookieHeader.includes("session") ||
+    cookieHeader.includes("UserID") ||
+    cookieHeader.includes("UserName");
 
   if (isDev && isOwner && !hasMWCookie) {
     console.log(`[WikiOS] Dev owner fallback to bot password session for Heku@WikiOS...`);
@@ -150,7 +153,7 @@ export async function getUserSessionAndToken(ctx: {
   }
 
   const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-  
+
   try {
     // Fetch user's own CSRF token using their forwarded cookies
     const res = await fetch(`${apiBase}?action=query&meta=tokens&type=csrf&format=json`, {
@@ -158,7 +161,7 @@ export async function getUserSessionAndToken(ctx: {
     });
     const data = (await res.json()) as any;
     const csrfToken = data.query?.tokens?.csrftoken;
-    
+
     // MediaWiki returns "+\\" for anonymous or unauthenticated sessions
     if (!csrfToken || csrfToken === "+\\") {
       throw new TRPCError({
@@ -168,7 +171,10 @@ export async function getUserSessionAndToken(ctx: {
     }
 
     // Split cookies into array of individual cookies to match the expected format
-    const cookies = cookieHeader.split(";").map(c => c.trim()).filter(Boolean);
+    const cookies = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .filter(Boolean);
     return { cookies, csrfToken };
   } catch (error) {
     if (error instanceof TRPCError) throw error;

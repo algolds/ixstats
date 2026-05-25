@@ -1,10 +1,10 @@
 /**
  * Development Memory Configuration
- * 
+ *
  * Centralized configuration for memory-sensitive settings that differ between
  * development and production environments. This helps prevent OOM crashes
  * on memory-constrained development servers.
- * 
+ *
  * Server Context:
  * - Total RAM: 7.2GB
  * - Dev heap limit: 4GB (via NODE_OPTIONS)
@@ -136,7 +136,9 @@ export function logMemoryConfig(): void {
   console.log(`[MemoryConfig] tRPC cache size: ${memoryConfig.trpc.maxCacheSize}`);
   console.log(`[MemoryConfig] Intelligence cache size: ${memoryConfig.intelligence.maxCacheSize}`);
   console.log(`[MemoryConfig] Query default limit: ${memoryConfig.query.defaultLimit}`);
-  
+
   const stats = getMemoryStats();
-  console.log(`[MemoryConfig] Current heap: ${stats.heapUsedMB.toFixed(1)}MB / ${stats.heapTotalMB.toFixed(1)}MB (${(stats.usagePercent * 100).toFixed(1)}%)`);
+  console.log(
+    `[MemoryConfig] Current heap: ${stats.heapUsedMB.toFixed(1)}MB / ${stats.heapTotalMB.toFixed(1)}MB (${(stats.usagePercent * 100).toFixed(1)}%)`
+  );
 }

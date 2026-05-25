@@ -16,23 +16,20 @@ const MAP_CACHE = { staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 } as const;
 export function useCountryMapEmbed(countryId: string | null | undefined) {
   const enabled = !!countryId;
 
-  const { data: geoData, isLoading: geoLoading } =
-    api.geo.getCountryGeometry.useQuery(
-      { countryId: countryId! },
-      { enabled, ...MAP_CACHE }
-    );
+  const { data: geoData, isLoading: geoLoading } = api.geo.getCountryGeometry.useQuery(
+    { countryId: countryId! },
+    { enabled, ...MAP_CACHE }
+  );
 
-  const { data: neighbors, isLoading: neighborsLoading } =
-    api.geo.getNeighbors.useQuery(
-      { countryId: countryId! },
-      { enabled, ...MAP_CACHE }
-    );
+  const { data: neighbors, isLoading: neighborsLoading } = api.geo.getNeighbors.useQuery(
+    { countryId: countryId! },
+    { enabled, ...MAP_CACHE }
+  );
 
-  const { data: features, isLoading: featuresLoading } =
-    api.geo.getCountryFeatures.useQuery(
-      { countryId: countryId! },
-      { enabled, ...MAP_CACHE }
-    );
+  const { data: features, isLoading: featuresLoading } = api.geo.getCountryFeatures.useQuery(
+    { countryId: countryId! },
+    { enabled, ...MAP_CACHE }
+  );
 
   // Fetch world political layer for neighbor rendering (shared cache with main map)
   const { data: worldMap } = api.geo.getWorldMap.useQuery(
@@ -64,7 +61,9 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       neighbors: neighbors ?? [],
 
       // World political layer for greyed-out neighbor rendering
-      worldPolitical: (worldMap as Record<string, unknown>)?.political as import("geojson").FeatureCollection | undefined,
+      worldPolitical: (worldMap as Record<string, unknown>)?.political as
+        | import("geojson").FeatureCollection
+        | undefined,
 
       // State
       isLoading: geoLoading || neighborsLoading || featuresLoading,

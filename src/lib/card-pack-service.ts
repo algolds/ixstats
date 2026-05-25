@@ -101,7 +101,9 @@ export async function createPack(
   if (!validatePackOdds(odds)) {
     throw new Error(
       "Pack odds validation failed: odds must sum to 100%. " +
-        `Current sum: ${Object.values(odds).reduce((a, b) => a + b, 0).toFixed(2)}%`
+        `Current sum: ${Object.values(odds)
+          .reduce((a, b) => a + b, 0)
+          .toFixed(2)}%`
     );
   }
 
@@ -131,11 +133,7 @@ export async function createPack(
  * Purchase pack with IxCredits deduction
  * Returns UserPack record
  */
-export async function purchasePack(
-  db: PrismaClient,
-  userId: string,
-  packId: string
-) {
+export async function purchasePack(db: PrismaClient, userId: string, packId: string) {
   return db.$transaction(async (tx) => {
     // 1. Get pack details
     const pack = await tx.cardPack.findUnique({
@@ -166,9 +164,7 @@ export async function purchasePack(
       });
 
       if (userPurchaseCount >= pack.purchaseLimit) {
-        throw new Error(
-          `Purchase limit reached: ${pack.purchaseLimit} pack(s) per user`
-        );
+        throw new Error(`Purchase limit reached: ${pack.purchaseLimit} pack(s) per user`);
       }
     }
 
@@ -272,11 +268,7 @@ export function generatePackCards(pack: {
  * Open pack and generate card ownership records
  * Returns array of cards pulled from pack
  */
-export async function openPack(
-  db: PrismaClient,
-  userId: string,
-  userPackId: string
-) {
+export async function openPack(db: PrismaClient, userId: string, userPackId: string) {
   return db.$transaction(async (tx) => {
     // 1. Get UserPack with pack details
     const userPack = await tx.userPack.findUnique({
@@ -323,9 +315,7 @@ export async function openPack(
       const cardCount = await tx.card.count({ where });
 
       if (cardCount === 0) {
-        throw new Error(
-          `No cards found for rarity: ${rarity} with pack filters`
-        );
+        throw new Error(`No cards found for rarity: ${rarity} with pack filters`);
       }
 
       // Random offset for variety
@@ -346,7 +336,7 @@ export async function openPack(
       // 6. Create CardOwnership record
       const maxSerial = await tx.cardOwnership.findFirst({
         where: { cardId: card.id },
-        orderBy: { serialNumber: 'desc' },
+        orderBy: { serialNumber: "desc" },
         select: { serialNumber: true },
       });
       const nextSerial = (maxSerial?.serialNumber || 0) + 1;
@@ -395,11 +385,7 @@ export async function getAvailablePacks(db: PrismaClient) {
 /**
  * Get user's packs (default: unopened only)
  */
-export async function getUserPacks(
-  db: PrismaClient,
-  userId: string,
-  isOpened?: boolean
-) {
+export async function getUserPacks(db: PrismaClient, userId: string, isOpened?: boolean) {
   return db.userPack.findMany({
     where: {
       userId,

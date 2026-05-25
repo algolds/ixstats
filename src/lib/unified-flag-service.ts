@@ -422,7 +422,10 @@ class UnifiedFlagService {
         }
         return null;
       } catch (e) {
-        console.warn("[UnifiedFlagService] Client-side fetch via API route failed, falling back:", e);
+        console.warn(
+          "[UnifiedFlagService] Client-side fetch via API route failed, falling back:",
+          e
+        );
         return null;
       }
     }
@@ -630,7 +633,8 @@ class UnifiedFlagService {
       const response = await fetch(batchUrl, {
         signal: AbortSignal.timeout(8000), // Slightly longer timeout for batch request
         headers: {
-          "User-Agent": "IxStats/2.0 (https://ixwiki.com/projects/ixstats; contact@ixwiki.com) NextJS-Server",
+          "User-Agent":
+            "IxStats/2.0 (https://ixwiki.com/projects/ixstats; contact@ixwiki.com) NextJS-Server",
         },
       });
 

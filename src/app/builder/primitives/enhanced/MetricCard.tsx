@@ -73,7 +73,7 @@ export function MetricCard({
           {Icon && (
             <motion.div
               whileHover={{ scale: 1.1 }}
-              className="flex-shrink-0 rounded-lg p-2"
+              className="shrink-0 rounded-lg p-2"
               style={{ backgroundColor: colors.background }}
             >
               <Icon className="h-5 w-5" style={{ color: colors.primary }} />
@@ -94,7 +94,7 @@ export function MetricCard({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             {getTrendIcon()}
           </motion.div>

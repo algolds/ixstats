@@ -100,9 +100,7 @@ export class SoundService {
         sfxVolume: Number(parsed.sfxVolume) || DEFAULT_SETTINGS.sfxVolume,
         musicVolume: Number(parsed.musicVolume) || DEFAULT_SETTINGS.musicVolume,
         enabled: Boolean(parsed.enabled ?? DEFAULT_SETTINGS.enabled),
-        mutedSounds: new Set(
-          Array.isArray(parsed.mutedSounds) ? parsed.mutedSounds : []
-        ),
+        mutedSounds: new Set(Array.isArray(parsed.mutedSounds) ? parsed.mutedSounds : []),
       };
     } catch (error) {
       console.warn("[SoundService] Failed to load settings:", error);
@@ -139,30 +137,28 @@ export class SoundService {
 
     try {
       // Preload all sound files
-      const preloadPromises = Object.entries(SOUND_PATHS).map(
-        async ([key, path]) => {
-          try {
-            const audio = new Audio(path);
-            audio.preload = "auto";
-            audio.volume = 0; // Silent preload
+      const preloadPromises = Object.entries(SOUND_PATHS).map(async ([key, path]) => {
+        try {
+          const audio = new Audio(path);
+          audio.preload = "auto";
+          audio.volume = 0; // Silent preload
 
-            // Wait for audio to be loadable
-            await new Promise<void>((resolve, reject) => {
-              audio.addEventListener("canplaythrough", () => resolve(), {
-                once: true,
-              });
-              audio.addEventListener("error", (e) => reject(e), { once: true });
-
-              // Timeout after 5 seconds
-              setTimeout(() => resolve(), 5000);
+          // Wait for audio to be loadable
+          await new Promise<void>((resolve, reject) => {
+            audio.addEventListener("canplaythrough", () => resolve(), {
+              once: true,
             });
+            audio.addEventListener("error", (e) => reject(e), { once: true });
 
-            this.audioContext.set(key, audio);
-          } catch (error) {
-            console.warn(`[SoundService] Failed to preload ${key}:`, error);
-          }
+            // Timeout after 5 seconds
+            setTimeout(() => resolve(), 5000);
+          });
+
+          this.audioContext.set(key, audio);
+        } catch (error) {
+          console.warn(`[SoundService] Failed to preload ${key}:`, error);
         }
-      );
+      });
 
       await Promise.allSettled(preloadPromises);
       this.initialized = true;

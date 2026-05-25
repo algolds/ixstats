@@ -7,10 +7,7 @@ type GetAllCountriesOutput = RouterOutputs["countries"]["getAll"];
  * Unifies caching across multiple pages and components to avoid redundant calls.
  */
 export function useAllCountriesData<TData = GetAllCountriesOutput>(
-  options?: Omit<
-    Parameters<typeof api.countries.getAll.useQuery>[1],
-    "select"
-  > & {
+  options?: Omit<Parameters<typeof api.countries.getAll.useQuery>[1], "select"> & {
     select?: (data: GetAllCountriesOutput) => TData;
   }
 ) {
@@ -22,9 +19,8 @@ export function useAllCountriesData<TData = GetAllCountriesOutput>(
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 60 * 60 * 1000,   // 60 minutes
+      gcTime: 60 * 60 * 1000, // 60 minutes
       ...options,
     }
   );
 }
-

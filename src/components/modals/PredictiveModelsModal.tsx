@@ -34,14 +34,7 @@ import {
   ComposedChart,
   Legend,
 } from "recharts";
-import {
-  AlertTriangle,
-  CheckCircle,
-  Target,
-  Brain,
-  ChevronRight,
-  Info,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle, Target, Brain, ChevronRight, Info } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 
 interface PredictiveModelsModalProps {

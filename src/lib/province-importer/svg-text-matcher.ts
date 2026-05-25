@@ -30,10 +30,7 @@ export interface TextLabel {
  * @param svgRoot - The SVG root element or target layer
  * @param stopAt - Ancestor to stop transform accumulation at (usually SVG root)
  */
-export function extractAllTextLabels(
-  svgRoot: Element,
-  stopAt?: Element
-): TextLabel[] {
+export function extractAllTextLabels(svgRoot: Element, stopAt?: Element): TextLabel[] {
   const transformRoot = stopAt ?? svgRoot;
   const labels: TextLabel[] = [];
   const textEls = svgRoot.getElementsByTagNameNS(SVG_NS, "text");
@@ -51,7 +48,8 @@ export function extractAllTextLabels(
       // Concatenate all tspan children into a single label.
       // Multi-line text labels (e.g. "São" + "Paulo") should produce "São Paulo".
       const parts: string[] = [];
-      let firstX = NaN, firstY = NaN;
+      let firstX = NaN,
+        firstY = NaN;
 
       for (let j = 0; j < tspans.length; j++) {
         const tspan = tspans[j]!;
@@ -141,9 +139,7 @@ export function matchLabelsToProvinces(
     for (let pi = 0; pi < provinces.length; pi++) {
       const prov = provinces[pi]!;
       const [minX, minY, maxX, maxY] = prov.bbox;
-      const inBbox =
-        label.x >= minX && label.x <= maxX &&
-        label.y >= minY && label.y <= maxY;
+      const inBbox = label.x >= minX && label.x <= maxX && label.y >= minY && label.y <= maxY;
       const c = prov.centroid;
       const dist = Math.hypot(label.x - c[0], label.y - c[1]);
 

@@ -12,10 +12,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import type { PrismaClient } from "@prisma/client";
 
 /**
@@ -95,9 +92,7 @@ interface PortfolioPerformance {
 /**
  * Calculate GDP correlation coefficient (Pearson's r)
  */
-function calculateCorrelation(
-  dataPoints: Array<{ x: number; y: number }>
-): number {
+function calculateCorrelation(dataPoints: Array<{ x: number; y: number }>): number {
   if (dataPoints.length < 2) return 0;
 
   const n = dataPoints.length;
@@ -108,9 +103,7 @@ function calculateCorrelation(
   const sumY2 = dataPoints.reduce((sum, p) => sum + p.y * p.y, 0);
 
   const numerator = n * sumXY - sumX * sumY;
-  const denominator = Math.sqrt(
-    (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
-  );
+  const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
 
   if (denominator === 0) return 0;
   return numerator / denominator;
@@ -240,7 +233,7 @@ export const cardAnalyticsRouter = createTRPCRouter({
 
           // Generate realistic fluctuation
           const randomVariation = (Math.random() - 0.5) * 0.1; // ±5%
-          const trendGrowth = (input.days - i) / input.days * 0.05; // 5% growth trend
+          const trendGrowth = ((input.days - i) / input.days) * 0.05; // 5% growth trend
           const value = baseValue * (1 - trendGrowth + randomVariation);
 
           // Mock GDP data (would come from historical table)
@@ -404,7 +397,7 @@ export const cardAnalyticsRouter = createTRPCRouter({
 
         const activities: MarketActivity[] = auctions.map((auction) => {
           const isCompleted = auction.status === "COMPLETED";
-          const price = isCompleted ? (auction.finalPrice || 0) : auction.currentBid;
+          const price = isCompleted ? auction.finalPrice || 0 : auction.currentBid;
           const type = isCompleted
             ? auction.finalPrice === auction.buyoutPrice
               ? ("BUYOUT" as const)
@@ -471,10 +464,7 @@ export const cardAnalyticsRouter = createTRPCRouter({
         });
 
         const totalCards = ownedCards.reduce((sum, o) => sum + o.quantity, 0);
-        const totalValue = ownedCards.reduce(
-          (sum, o) => sum + o.cards.marketValue * o.quantity,
-          0
-        );
+        const totalValue = ownedCards.reduce((sum, o) => sum + o.cards.marketValue * o.quantity, 0);
 
         // Find top performer
         let topPerformer: PortfolioPerformance["topPerformer"] = null;
@@ -484,8 +474,7 @@ export const cardAnalyticsRouter = createTRPCRouter({
           const acquisitionPrice = owned.lastSalePrice || 0;
           const currentValue = owned.cards.marketValue;
           const gain = currentValue - acquisitionPrice;
-          const gainPercent =
-            acquisitionPrice > 0 ? (gain / acquisitionPrice) * 100 : 0;
+          const gainPercent = acquisitionPrice > 0 ? (gain / acquisitionPrice) * 100 : 0;
 
           if (gain > maxGain) {
             maxGain = gain;

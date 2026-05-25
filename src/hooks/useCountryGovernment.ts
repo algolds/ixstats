@@ -17,9 +17,9 @@ import type { GovernmentDepartment, BudgetAllocationInput } from "~/types/govern
 
 // Standard staleTime constants (in milliseconds)
 export const STALE_TIME = {
-  FREQUENT: 30_000,    // 30 seconds - budget years, allocations
-  STANDARD: 60_000,    // 60 seconds - departments, components
-  STABLE: 300_000,     // 5 minutes - structure, synergies
+  FREQUENT: 30_000, // 30 seconds - budget years, allocations
+  STANDARD: 60_000, // 60 seconds - departments, components
+  STABLE: 300_000, // 5 minutes - structure, synergies
 } as const;
 
 interface UseCountryGovernmentOptions {
@@ -41,16 +41,16 @@ interface UseCountryGovernmentReturn {
   structure: any | null;
   budgetAllocations: BudgetAllocationInput[];
   revenueSources: any[];
-  
+
   // Query states
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
-  
+
   // Refetch functions
   refetchDepartments: () => Promise<void>;
   refetchStructure: () => Promise<void>;
-  
+
   // Computed
   totalBudget: number;
   departmentCount: number;

@@ -304,7 +304,10 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const dailyDividend = await vaultService.calculatePassiveIncome(input.countryId, ctx.db as any);
+        const dailyDividend = await vaultService.calculatePassiveIncome(
+          input.countryId,
+          ctx.db as any
+        );
 
         return {
           countryId: input.countryId,
@@ -414,7 +417,17 @@ export const vaultRouter = createTRPCRouter({
         let vault = await ctx.db.myVault.findUnique({ where: { userId: input.targetUserId } });
         if (!vault) {
           vault = await ctx.db.myVault.create({
-            data: { userId: input.targetUserId, credits: 0, lifetimeEarned: 0, lifetimeSpent: 0, todayEarned: 0, lastDailyReset: new Date(), loginStreak: 0, vaultLevel: 1, vaultXp: 0 },
+            data: {
+              userId: input.targetUserId,
+              credits: 0,
+              lifetimeEarned: 0,
+              lifetimeSpent: 0,
+              todayEarned: 0,
+              lastDailyReset: new Date(),
+              loginStreak: 0,
+              vaultLevel: 1,
+              vaultXp: 0,
+            },
           });
         }
 
@@ -424,8 +437,8 @@ export const vaultRouter = createTRPCRouter({
 
         return { success: true, newStreak };
       } catch (error) {
-        console.error('[Vault Router] Error adjusting streak:', error);
-        throw new Error('Failed to adjust user streak');
+        console.error("[Vault Router] Error adjusting streak:", error);
+        throw new Error("Failed to adjust user streak");
       }
     }),
 
@@ -451,10 +464,14 @@ export const vaultRouter = createTRPCRouter({
           input.type as VaultTransactionType | undefined
         );
 
-        return { transactions, count: transactions.length, hasMore: transactions.length === input.limit };
+        return {
+          transactions,
+          count: transactions.length,
+          hasMore: transactions.length === input.limit,
+        };
       } catch (error) {
-        console.error('[Vault Router] Error listing user transactions:', error);
-        throw new Error('Failed to list user transactions');
+        console.error("[Vault Router] Error listing user transactions:", error);
+        throw new Error("Failed to list user transactions");
       }
     }),
 
@@ -491,7 +508,10 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db as any);
+        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
+          input.countryId,
+          ctx.db as any
+        );
         const description = budgetVaultCalculator.getMultiplierDescription(multiplier);
 
         return {
@@ -518,8 +538,14 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(input.countryId, ctx.db as any);
-        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db as any);
+        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(
+          input.countryId,
+          ctx.db as any
+        );
+        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
+          input.countryId,
+          ctx.db as any
+        );
 
         return {
           countryId: input.countryId,
@@ -546,7 +572,10 @@ export const vaultRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(100).optional().default(20),
         offset: z.number().min(0).optional().default(0),
-        sortBy: z.enum(["newest", "mostValuable", "mostCards", "topRated"]).optional().default("newest"),
+        sortBy: z
+          .enum(["newest", "mostValuable", "mostCards", "topRated"])
+          .optional()
+          .default("newest"),
       })
     )
     .query(async ({ ctx, input }) => {

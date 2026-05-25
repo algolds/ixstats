@@ -1,9 +1,6 @@
 // src/services/AtomicEffectivenessService.ts
 import { type PrismaClient } from "@prisma/client";
-import {
-  ComponentType,
-  type AtomicEffectiveness,
-} from "@prisma/client";
+import { ComponentType, type AtomicEffectiveness } from "@prisma/client";
 
 interface ComponentEffectiveness {
   type: ComponentType;

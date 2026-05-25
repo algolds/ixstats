@@ -71,8 +71,12 @@ export function transformArticleHtml(
 
   return {
     contentHtml: processed,
-    infoboxHtml: infoboxHtml ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath) : null,
-    noticesHtml: noticesHtml ? transformLinks(transformImages(noticesHtml, wikiSource), basePath) : null,
+    infoboxHtml: infoboxHtml
+      ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath)
+      : null,
+    noticesHtml: noticesHtml
+      ? transformLinks(transformImages(noticesHtml, wikiSource), basePath)
+      : null,
     toc,
     images,
   };
@@ -121,7 +125,8 @@ function extractNotices(html: string): { noticesHtml: string | null; remainingHt
   }
 
   // Extract message boxes / notice divs
-  const noticePattern = /<div[^>]*class="[^"]*(?:messagebox|notice|banner-notice|mw-message-box)[^"]*"[^>]*>[\s\S]*?<\/div>/gi;
+  const noticePattern =
+    /<div[^>]*class="[^"]*(?:messagebox|notice|banner-notice|mw-message-box)[^"]*"[^>]*>[\s\S]*?<\/div>/gi;
   while ((match = noticePattern.exec(searchArea)) !== null) {
     notices.push(match[0]);
   }
@@ -246,16 +251,17 @@ function transformLinks(html: string, basePath: string): string {
   // 1. Transform /wiki/Title links to /w/Title (with basePath)
   //    Special: and File: links stay pointing to MediaWiki with noreferrer
   //    to avoid Cloudflare hotlink blocking
-  let result = html.replace(
-    /href="\/wiki\/([^"]*?)"/g,
-    (_match, path: string) => {
-      if (path.startsWith("Special:") || path.startsWith("Special%3A") ||
-          path.startsWith("File:") || path.startsWith("File%3A")) {
-        return `href="${origin}/wiki/${path}" rel="noreferrer"`;
-      }
-      return `href="${basePath}/w/${path}"`;
+  let result = html.replace(/href="\/wiki\/([^"]*?)"/g, (_match, path: string) => {
+    if (
+      path.startsWith("Special:") ||
+      path.startsWith("Special%3A") ||
+      path.startsWith("File:") ||
+      path.startsWith("File%3A")
+    ) {
+      return `href="${origin}/wiki/${path}" rel="noreferrer"`;
     }
-  );
+    return `href="${basePath}/w/${path}"`;
+  });
 
   // 2. Transform red links with noreferrer
   result = result.replace(
@@ -264,10 +270,7 @@ function transformLinks(html: string, basePath: string): string {
   );
 
   // 3. Add wikios-redlink class to links with class="new" (MediaWiki red links)
-  result = result.replace(
-    /class="new"/g,
-    'class="new wikios-redlink"'
-  );
+  result = result.replace(/class="new"/g, 'class="new wikios-redlink"');
 
   return result;
 }
@@ -296,15 +299,12 @@ function transformImages(
       .replace(/src="\/images\//g, `src="${origin}/images/`)
       .replace(/src="\/data\//g, `src="${origin}/data/`)
       .replace(/src="\/load\.php/g, `src="${origin}/load.php`)
-      .replace(
-        /srcset="([^"]*)"/g,
-        (_match, srcset: string) => {
-          const transformed = srcset
-            .replace(/\/images\//g, `${origin}/images/`)
-            .replace(/\/data\//g, `${origin}/data/`);
-          return `srcset="${transformed}"`;
-        }
-      );
+      .replace(/srcset="([^"]*)"/g, (_match, srcset: string) => {
+        const transformed = srcset
+          .replace(/\/images\//g, `${origin}/images/`)
+          .replace(/\/data\//g, `${origin}/data/`);
+        return `srcset="${transformed}"`;
+      });
   } else {
     // For iiwiki and althistory, map relative /images/ to proxy
     result = result
@@ -312,10 +312,7 @@ function transformImages(
       .replace(/src="\/data\//g, `src="${proxyBase}/data/`)
       .replace(/src="\/load\.php/g, `src="${origin}/load.php`) // load.php remains original
       // Also map full URL paths if they are in the HTML
-      .replace(
-        /src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//g,
-        `src="${proxyBase}/images/`
-      )
+      .replace(/src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//g, `src="${proxyBase}/images/`)
       .replace(
         /src="https?:\/\/(?:www\.)?iiwiki\.com\/wiki\/Special:FilePath\//g,
         `src="${proxyBase}/wiki/Special:FilePath/`
@@ -324,16 +321,13 @@ function transformImages(
         /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//g,
         `src="${proxyBase}/wiki/Special:FilePath/`
       )
-      .replace(
-        /srcset="([^"]*)"/g,
-        (_match, srcset: string) => {
-          const transformed = srcset
-            .replace(/\/images\//g, `${proxyBase}/images/`)
-            .replace(/\/data\//g, `${proxyBase}/data/`)
-            .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//g, `${proxyBase}/images/`);
-          return `srcset="${transformed}"`;
-        }
-      );
+      .replace(/srcset="([^"]*)"/g, (_match, srcset: string) => {
+        const transformed = srcset
+          .replace(/\/images\//g, `${proxyBase}/images/`)
+          .replace(/\/data\//g, `${proxyBase}/data/`)
+          .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//g, `${proxyBase}/images/`);
+        return `srcset="${transformed}"`;
+      });
   }
 
   // 2. Transform url() references in inline CSS (background-image, etc.)
@@ -355,45 +349,31 @@ function transformImages(
   }
 
   // 3. Transform href for stylesheets (/load.php)
-  result = result.replace(
-    /href="\/load\.php/g,
-    `href="${origin}/load.php`
-  );
+  result = result.replace(/href="\/load\.php/g, `href="${origin}/load.php`);
 
   // 4. Add lazy loading to all images
-  result = result.replace(
-    /<img(?![^>]*loading=)/g,
-    '<img loading="lazy"'
-  );
+  result = result.replace(/<img(?![^>]*loading=)/g, '<img loading="lazy"');
 
   // 5. Add decoding="async" for better rendering performance
-  result = result.replace(
-    /<img(?![^>]*decoding=)/g,
-    '<img decoding="async"'
-  );
+  result = result.replace(/<img(?![^>]*decoding=)/g, '<img decoding="async"');
 
   // 6. Add referrerpolicy="no-referrer" to prevent Cloudflare hotlink blocking
   // Without this, browsers send Referer: http://localhost:3000 which triggers 403
-  result = result.replace(
-    /<img(?![^>]*referrerpolicy=)/g,
-    '<img referrerpolicy="no-referrer"'
-  );
+  result = result.replace(/<img(?![^>]*referrerpolicy=)/g, '<img referrerpolicy="no-referrer"');
 
   return result;
 }
 
 function styleEditSectionLinks(html: string): string {
   // Add WikiOS class to edit section links for styling control
-  return html.replace(
-    /class="mw-editsection"/g,
-    'class="mw-editsection wikios-edit-section"'
-  );
+  return html.replace(/class="mw-editsection"/g, 'class="mw-editsection wikios-edit-section"');
 }
 
 function extractImageUrls(html: string): string[] {
   const urls: string[] = [];
   // Match images from ixwiki.com/images/ AND upload.wikimedia.org (Commons)
-  const imgRegex = /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/g;
+  const imgRegex =
+    /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/g;
   let match;
   while ((match = imgRegex.exec(html)) !== null) {
     urls.push(match[1]!);

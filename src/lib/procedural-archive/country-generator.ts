@@ -56,7 +56,7 @@ export interface CountryResult {
 
 /** Exported mesh for cross-stage reuse */
 export interface VoronoiMesh {
-  points: Float64Array;  // flat [x0,y0, x1,y1, ...]
+  points: Float64Array; // flat [x0,y0, x1,y1, ...]
   cellCount: number;
   /** For each cell, the country index it belongs to (-1 = ocean) */
   cellCountry: Int32Array;
@@ -104,7 +104,6 @@ export function generateCountries(params: CountryGenParams): CountryResult {
     // Legacy: uniform Poisson disk sampling
     seedPoints = poissonDiskOnLand(heightmap, targetCells, rng, bounds);
   }
-
 
   if (seedPoints.length < 3) {
     return { countries: [], featureCollection: emptyFC(), mesh: null };
@@ -174,7 +173,12 @@ export function generateCountries(params: CountryGenParams): CountryResult {
   if (useWeighted && weightedSeeds) {
     // Profile-guided: budget-limited expansion for power-law sizes
     cellCountry = expandWithBudgets(
-      points, cellCount, cellIsLand, weightedSeeds, delaunay, heightmap
+      points,
+      cellCount,
+      cellIsLand,
+      weightedSeeds,
+      delaunay,
+      heightmap
     );
     // Derive capitals: for each seed, find its nearest Voronoi cell
     for (let si = 0; si < weightedSeeds.length; si++) {
@@ -185,9 +189,7 @@ export function generateCountries(params: CountryGenParams): CountryResult {
     // Legacy: uniform expansion
     const actualCountries = Math.min(targetCountries, landCellCount);
     const capitalArr = pickCapitals(points, cellIsLand, actualCountries, heightmap, rng);
-    cellCountry = expandTerritories(
-      points, cellCount, cellIsLand, capitalArr, delaunay, heightmap
-    );
+    cellCountry = expandTerritories(points, cellCount, cellIsLand, capitalArr, delaunay, heightmap);
     for (let ci = 0; ci < capitalArr.length; ci++) {
       capitals.set(ci, capitalArr[ci]!);
     }
@@ -246,8 +248,8 @@ export function generateCountries(params: CountryGenParams): CountryResult {
 
   for (let ry = 0; ry < rasterH; ry++) {
     for (let rx = 0; rx < rasterW; rx++) {
-      const lng = bxMin + (rx + 0.5) / rasterW * bxRange;
-      const lat = byMin + (ry + 0.5) / rasterH * byRange;
+      const lng = bxMin + ((rx + 0.5) / rasterW) * bxRange;
+      const lat = byMin + ((ry + 0.5) / rasterH) * byRange;
 
       // Only rasterize on land
       if (!isOnLand(lng, lat, heightmap)) continue;
@@ -298,7 +300,8 @@ export function generateCountries(params: CountryGenParams): CountryResult {
     if (ring.length < 4) continue;
 
     // Ensure ring is closed
-    const f = ring[0]!, l = ring[ring.length - 1]!;
+    const f = ring[0]!,
+      l = ring[ring.length - 1]!;
     if (f[0] !== l[0] || f[1] !== l[1]) ring.push(f);
 
     // Apply noisy edges for organic borders
@@ -324,14 +327,21 @@ export function generateCountries(params: CountryGenParams): CountryResult {
 
     // Coastal perimeter: fraction of raster boundary cells touching ocean/edge
     // (Voronoi-based detection fails because all seed points are on land)
-    let coastPixels = 0, borderPixels = 0;
+    let coastPixels = 0,
+      borderPixels = 0;
     for (let ry = 0; ry < rasterH; ry++) {
       for (let rx = 0; rx < rasterW; rx++) {
         if (rasterGrid[ry * rasterW + rx] !== countryIdx) continue;
         // Check 4 neighbors for ocean adjacency
         let onBorder = false;
-        for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
-          const nx = rx + dx, ny = ry + dy;
+        for (const [dx, dy] of [
+          [0, -1],
+          [0, 1],
+          [-1, 0],
+          [1, 0],
+        ] as const) {
+          const nx = rx + dx,
+            ny = ry + dy;
           if (nx < 0 || nx >= rasterW || ny < 0 || ny >= rasterH) {
             onBorder = true; // Edge of grid
             continue;
@@ -355,9 +365,7 @@ export function generateCountries(params: CountryGenParams): CountryResult {
       areaKm2,
       elevation,
       coastalPerimeter: borderPixels > 0 ? coastPixels / (borderPixels * 4) : 0,
-      neighbors: neighbors
-        ? [...neighbors].map((n) => `gen-country-${n}`)
-        : [],
+      neighbors: neighbors ? [...neighbors].map((n) => `gen-country-${n}`) : [],
     });
   }
 
@@ -402,7 +410,8 @@ function poissonDiskOnLand(
       if ((heightmap.data[y * heightmap.width + x] ?? 0) >= heightmap.seaLevel) landPixels++;
     }
   }
-  const totalSampled = Math.ceil(heightmap.height / sampleStep) * Math.ceil(heightmap.width / sampleStep);
+  const totalSampled =
+    Math.ceil(heightmap.height / sampleStep) * Math.ceil(heightmap.width / sampleStep);
   const landFraction = Math.max(0.1, landPixels / totalSampled);
 
   // Scale distance by land fraction — points only go on land, so effective area is smaller
@@ -440,7 +449,10 @@ function poissonDiskOnLand(
         for (const idx of cellPoints) {
           const dx = lng - points[idx]![0];
           const dy = lat - points[idx]![1];
-          if (dx * dx + dy * dy < minDistSq) { tooClose = true; break; }
+          if (dx * dx + dy * dy < minDistSq) {
+            tooClose = true;
+            break;
+          }
         }
       }
     }
@@ -491,9 +503,7 @@ function pickCapitals(
 
   // Pick capitals with minimum spacing
   const capitals: number[] = [];
-  const minCapDist = Math.sqrt(
-    (360 * 170) / targetCountries
-  ) * 0.4;
+  const minCapDist = Math.sqrt((360 * 170) / targetCountries) * 0.4;
 
   for (const { cell } of scores) {
     if (capitals.length >= targetCountries) break;
@@ -627,10 +637,14 @@ function isOnLand(lng: number, lat: number, hm: HeightmapResult): boolean {
 }
 
 function polygonCentroid(poly: number[][]): [number, number] {
-  let cx = 0, cy = 0, area = 0;
+  let cx = 0,
+    cy = 0,
+    area = 0;
   for (let i = 0, j = poly.length - 2; i < poly.length - 1; j = i++) {
-    const xi = poly[i]![0], yi = poly[i]![1];
-    const xj = poly[j]![0], yj = poly[j]![1];
+    const xi = poly[i]![0],
+      yi = poly[i]![1];
+    const xj = poly[j]![0],
+      yj = poly[j]![1];
     const cross = xi * yj - xj * yi;
     area += cross;
     cx += (xi + xj) * cross;
@@ -639,8 +653,12 @@ function polygonCentroid(poly: number[][]): [number, number] {
   area /= 2;
   if (Math.abs(area) < 1e-10) {
     // Degenerate polygon — simple average
-    let sx = 0, sy = 0;
-    for (let i = 0; i < poly.length - 1; i++) { sx += poly[i]![0]; sy += poly[i]![1]; }
+    let sx = 0,
+      sy = 0;
+    for (let i = 0; i < poly.length - 1; i++) {
+      sx += poly[i]![0];
+      sy += poly[i]![1];
+    }
     return [sx / (poly.length - 1), sy / (poly.length - 1)];
   }
   return [cx / (6 * area), cy / (6 * area)];
@@ -659,7 +677,36 @@ function shoelaceArea(ring: Position[]): number {
  */
 function createNameGenerator(seed: number): () => string {
   const rng = seededRandom(seed);
-  const onsets = ["", "b", "br", "c", "ch", "d", "f", "g", "gr", "h", "j", "k", "kr", "l", "m", "n", "p", "pr", "r", "s", "sh", "st", "t", "th", "tr", "v", "w", "z"];
+  const onsets = [
+    "",
+    "b",
+    "br",
+    "c",
+    "ch",
+    "d",
+    "f",
+    "g",
+    "gr",
+    "h",
+    "j",
+    "k",
+    "kr",
+    "l",
+    "m",
+    "n",
+    "p",
+    "pr",
+    "r",
+    "s",
+    "sh",
+    "st",
+    "t",
+    "th",
+    "tr",
+    "v",
+    "w",
+    "z",
+  ];
   const nuclei = ["a", "e", "i", "o", "u", "ai", "ei", "ou", "au", "ea", "ia", "io"];
   const codas = ["", "d", "k", "l", "m", "n", "nd", "ng", "r", "s", "sh", "st", "t", "th", "x"];
 

@@ -163,7 +163,8 @@ export const COMMEMORATIVE_CARD_DEFINITIONS = [
   {
     id: "card-achievement-first-nation",
     title: "First Steps",
-    description: "Commemorates your first nation claim on IxStats. Every journey begins with a single step.",
+    description:
+      "Commemorates your first nation claim on IxStats. Every journey begins with a single step.",
     artwork: "/cards/achievements/first-nation.png",
     rarity: "RARE",
     cardType: "SPECIAL",
@@ -180,7 +181,8 @@ export const COMMEMORATIVE_CARD_DEFINITIONS = [
   {
     id: "card-achievement-veteran",
     title: "Veteran's Honor",
-    description: "One full year of dedication to IxStats. Your commitment has shaped the platform's history.",
+    description:
+      "One full year of dedication to IxStats. Your commitment has shaped the platform's history.",
     artwork: "/cards/achievements/veteran.png",
     rarity: "EPIC",
     cardType: "SPECIAL",
@@ -214,7 +216,8 @@ export const COMMEMORATIVE_CARD_DEFINITIONS = [
   {
     id: "card-achievement-economic-titan",
     title: "Economic Titan",
-    description: "$100 billion GDP achieved. Your nation stands among the world's economic powerhouses.",
+    description:
+      "$100 billion GDP achieved. Your nation stands among the world's economic powerhouses.",
     artwork: "/cards/achievements/economic-titan.png",
     rarity: "EPIC",
     cardType: "SPECIAL",
@@ -333,7 +336,8 @@ export const COMMEMORATIVE_CARD_DEFINITIONS = [
   {
     id: "card-achievement-military-superpower",
     title: "Military Superpower",
-    description: "5M military personnel! Your armed forces are a force to be reckoned with globally.",
+    description:
+      "5M military personnel! Your armed forces are a force to be reckoned with globally.",
     artwork: "/cards/achievements/military-superpower.png",
     rarity: "LEGENDARY",
     cardType: "SPECIAL",

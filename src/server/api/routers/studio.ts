@@ -24,7 +24,11 @@ export const studioRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().min(1).max(100),
-        slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+        slug: z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[a-z0-9-]+$/),
         description: z.string().max(1000).optional(),
         seed: z.number().int().optional(),
         generationParams: z.record(z.unknown()).optional(),
@@ -125,28 +129,26 @@ export const studioRouter = createTRPCRouter({
     }),
 
   /** Get a specific realm */
-  getRealm: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const realm = await ctx.db.realm.findUnique({
-        where: { id: input.id },
-        include: {
-          worldConfig: true,
-          _count: { select: { countries: true } },
-        },
-      });
+  getRealm: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const realm = await ctx.db.realm.findUnique({
+      where: { id: input.id },
+      include: {
+        worldConfig: true,
+        _count: { select: { countries: true } },
+      },
+    });
 
-      if (!realm) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-      }
+    if (!realm) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+    }
 
-      // Only owner can view private realms
-      if (realm.visibility === "private" && realm.ownerId !== ctx.userId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
-      }
+    // Only owner can view private realms
+    if (realm.visibility === "private" && realm.ownerId !== ctx.userId) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+    }
 
-      return realm;
-    }),
+    return realm;
+  }),
 
   /** Update realm metadata */
   updateRealm: protectedProcedure
@@ -420,19 +422,21 @@ export const studioRouter = createTRPCRouter({
       }
 
       // Extract political features and create countries
-      const political = input.layers.political as {
-        features?: Array<{
-          id?: string;
-          properties?: {
-            displayName?: string;
-            featureId?: string;
-            areaKm2?: number;
-            fill?: string;
-            coastalPerimeter?: number;
-          };
-          geometry?: unknown;
-        }>;
-      } | undefined;
+      const political = input.layers.political as
+        | {
+            features?: Array<{
+              id?: string;
+              properties?: {
+                displayName?: string;
+                featureId?: string;
+                areaKm2?: number;
+                fill?: string;
+                coastalPerimeter?: number;
+              };
+              geometry?: unknown;
+            }>;
+          }
+        | undefined;
 
       if (!political?.features?.length) {
         throw new TRPCError({

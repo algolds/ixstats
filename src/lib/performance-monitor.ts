@@ -114,9 +114,7 @@ class PerformanceMonitor {
     max: number;
     p95: number;
   } {
-    const filtered = name
-      ? this.metrics.filter((m) => m.name === name)
-      : this.metrics;
+    const filtered = name ? this.metrics.filter((m) => m.name === name) : this.metrics;
 
     if (filtered.length === 0) {
       return { count: 0, avg: 0, min: 0, max: 0, p95: 0 };
@@ -270,7 +268,12 @@ export default perfMonitorInstance;
 /**
  * Helper: Monitor a tile request
  */
-export function monitorTileRequest(layer: string, z: number, x: number, y: number): {
+export function monitorTileRequest(
+  layer: string,
+  z: number,
+  x: number,
+  y: number
+): {
   end: (cacheStatus: string) => void;
 } {
   const name = `tile:${layer}:${z}`;
@@ -286,7 +289,10 @@ export function monitorTileRequest(layer: string, z: number, x: number, y: numbe
 /**
  * Helper: Monitor a tRPC query
  */
-export function monitorTRPCQuery(path: string, input?: unknown): {
+export function monitorTRPCQuery(
+  path: string,
+  input?: unknown
+): {
   end: () => void;
 } {
   const name = `trpc:${path}`;

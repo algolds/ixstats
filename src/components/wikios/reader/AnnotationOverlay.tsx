@@ -40,7 +40,7 @@ export function useAnnotationOverlay(
   contentRef: RefObject<HTMLDivElement | null>,
   pageTitle: string,
   isAuthenticated: boolean,
-  isStashed: boolean,
+  isStashed: boolean
 ) {
   const [annotationsOn, setAnnotationsOn] = useState(false);
   const [toolbar, setToolbar] = useState<SelectionToolbarState | null>(null);
@@ -111,7 +111,9 @@ export function useAnnotationOverlay(
       applyHighlight(container, ann, (id) => setActiveAnnotation(id));
     }
 
-    return () => { if (container) clearHighlights(container); };
+    return () => {
+      if (container) clearHighlights(container);
+    };
   }, [annotations, annotationsOn, contentRef]);
 
   // Listen for text selection — stable handler, no toolbar in deps
@@ -176,45 +178,55 @@ export function useAnnotationOverlay(
   }, [toolbar, itemId, commentInput, selectedColor, addMutation]);
 
   // Toggle button
-  const toggleButton = isAuthenticated && isStashed ? (
-    <button
-      onClick={() => { setAnnotationsOn((v) => !v); closeToolbar(); setActiveAnnotation(null); }}
-      className={cn("wikios-toolbar-action", annotationsOn && "wikios-toolbar-action-active")}
-      title={annotationsOn ? "Turn off markup mode" : "Turn on markup mode"}
-    >
-      <Highlighter size={13} />
-      <span>Markup</span>
-    </button>
-  ) : null;
+  const toggleButton =
+    isAuthenticated && isStashed ? (
+      <button
+        onClick={() => {
+          setAnnotationsOn((v) => !v);
+          closeToolbar();
+          setActiveAnnotation(null);
+        }}
+        className={cn("wikios-toolbar-action", annotationsOn && "wikios-toolbar-action-active")}
+        title={annotationsOn ? "Turn off markup mode" : "Turn on markup mode"}
+      >
+        <Highlighter size={13} />
+        <span>Markup</span>
+      </button>
+    ) : null;
 
   // Selection toolbar portal — stays until explicitly closed
-  const toolbarPortal = toolbar ? createPortal(
-    <AnnotationToolbarUI
-      ref={toolbarRef}
-      x={toolbar.x}
-      y={toolbar.y}
-      selectedText={toolbar.text}
-      commentInput={commentInput}
-      onCommentChange={setCommentInput}
-      selectedColor={selectedColor}
-      onColorChange={setSelectedColor}
-      onSave={handleSave}
-      onClose={closeToolbar}
-      isSaving={addMutation.isPending}
-    />,
-    document.body
-  ) : null;
+  const toolbarPortal = toolbar
+    ? createPortal(
+        <AnnotationToolbarUI
+          ref={toolbarRef}
+          x={toolbar.x}
+          y={toolbar.y}
+          selectedText={toolbar.text}
+          commentInput={commentInput}
+          onCommentChange={setCommentInput}
+          selectedColor={selectedColor}
+          onColorChange={setSelectedColor}
+          onSave={handleSave}
+          onClose={closeToolbar}
+          isSaving={addMutation.isPending}
+        />,
+        document.body
+      )
+    : null;
 
   // Active annotation popover portal
-  const annotationPopover = activeAnnotation && annotations.find((a) => a.id === activeAnnotation) ? createPortal(
-    <AnnotationPopover
-      annotation={annotations.find((a) => a.id === activeAnnotation)!}
-      onClose={() => setActiveAnnotation(null)}
-      onDelete={() => deleteMutation.mutate({ id: activeAnnotation })}
-      isDeleting={deleteMutation.isPending}
-    />,
-    document.body
-  ) : null;
+  const annotationPopover =
+    activeAnnotation && annotations.find((a) => a.id === activeAnnotation)
+      ? createPortal(
+          <AnnotationPopover
+            annotation={annotations.find((a) => a.id === activeAnnotation)!}
+            onClose={() => setActiveAnnotation(null)}
+            onDelete={() => deleteMutation.mutate({ id: activeAnnotation })}
+            isDeleting={deleteMutation.isPending}
+          />,
+          document.body
+        )
+      : null;
 
   return { toggleButton, toolbarPortal, annotationPopover, annotationsOn };
 }
@@ -224,18 +236,21 @@ export function useAnnotationOverlay(
 // ---------------------------------------------------------------------------
 import { forwardRef } from "react";
 
-const AnnotationToolbarUI = forwardRef<HTMLDivElement, {
-  x: number;
-  y: number;
-  selectedText: string;
-  commentInput: string;
-  onCommentChange: (v: string) => void;
-  selectedColor: string;
-  onColorChange: (c: string) => void;
-  onSave: () => void;
-  onClose: () => void;
-  isSaving: boolean;
-}>(function AnnotationToolbarUI(props, ref) {
+const AnnotationToolbarUI = forwardRef<
+  HTMLDivElement,
+  {
+    x: number;
+    y: number;
+    selectedText: string;
+    commentInput: string;
+    onCommentChange: (v: string) => void;
+    selectedColor: string;
+    onColorChange: (c: string) => void;
+    onSave: () => void;
+    onClose: () => void;
+    isSaving: boolean;
+  }
+>(function AnnotationToolbarUI(props, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input on mount
@@ -256,14 +271,18 @@ const AnnotationToolbarUI = forwardRef<HTMLDivElement, {
       onClick={(e) => e.stopPropagation()}
     >
       <div className="wikios-annotation-toolbar-preview">
-        &ldquo;{props.selectedText.slice(0, 60)}{props.selectedText.length > 60 ? "..." : ""}&rdquo;
+        &ldquo;{props.selectedText.slice(0, 60)}
+        {props.selectedText.length > 60 ? "..." : ""}&rdquo;
       </div>
       <div className="wikios-annotation-toolbar-colors">
         {HIGHLIGHT_COLORS.map((c) => (
           <button
             key={c}
             onClick={() => props.onColorChange(c)}
-            className={cn("wikios-annotation-color-btn", props.selectedColor === c && "wikios-annotation-color-active")}
+            className={cn(
+              "wikios-annotation-color-btn",
+              props.selectedColor === c && "wikios-annotation-color-active"
+            )}
             style={{ background: c }}
           />
         ))}
@@ -300,7 +319,10 @@ const AnnotationToolbarUI = forwardRef<HTMLDivElement, {
 // Annotation Popover
 // ---------------------------------------------------------------------------
 function AnnotationPopover({
-  annotation, onClose, onDelete, isDeleting,
+  annotation,
+  onClose,
+  onDelete,
+  isDeleting,
 }: {
   annotation: AnnotationData;
   onClose: () => void;
@@ -330,7 +352,8 @@ function AnnotationPopover({
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="wikios-annotation-popover-text">
-        &ldquo;{annotation.selectedText.slice(0, 120)}{annotation.selectedText.length > 120 ? "..." : ""}&rdquo;
+        &ldquo;{annotation.selectedText.slice(0, 120)}
+        {annotation.selectedText.length > 120 ? "..." : ""}&rdquo;
       </div>
       {annotation.comment && (
         <div className="wikios-annotation-popover-comment">
@@ -339,7 +362,11 @@ function AnnotationPopover({
         </div>
       )}
       <div className="wikios-annotation-popover-actions">
-        <button onClick={onDelete} className="wikios-annotation-popover-delete" disabled={isDeleting}>
+        <button
+          onClick={onDelete}
+          className="wikios-annotation-popover-delete"
+          disabled={isDeleting}
+        >
           <Trash2 size={11} />
           {isDeleting ? "Removing..." : "Remove"}
         </button>
@@ -390,7 +417,7 @@ function buildSelector(node: Node, container: HTMLElement): string {
 function applyHighlight(
   container: HTMLElement,
   annotation: AnnotationData,
-  onClick: (id: string) => void,
+  onClick: (id: string) => void
 ) {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   const searchText = annotation.selectedText;

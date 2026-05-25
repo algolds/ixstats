@@ -106,7 +106,9 @@ async function fetchWithFallback(
   return await apiFallback(parsedUrl, msgKey);
 }
 
-async function directFetch(url: string): Promise<{ buffer: ArrayBuffer; contentType: string } | null> {
+async function directFetch(
+  url: string
+): Promise<{ buffer: ArrayBuffer; contentType: string } | null> {
   try {
     const response = await fetch(url, {
       headers: {

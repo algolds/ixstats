@@ -19,9 +19,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
-import {
-  ATOMIC_ECONOMIC_COMPONENTS,
-} from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 // ============================================================================
 // Type Definitions
@@ -357,7 +355,7 @@ export const economicComponentsRouter = createTRPCRouter({
         if (!existing) {
           console.warn(
             `[economicComponents] Component ${input.componentType} not found in database for usage tracking. ` +
-            `User: ${ctx.auth?.userId || "anonymous"}, Action: incrementUsage`
+              `User: ${ctx.auth?.userId || "anonymous"}, Action: incrementUsage`
           );
 
           // Non-critical operation - return success with fallback
@@ -385,15 +383,12 @@ export const economicComponentsRouter = createTRPCRouter({
           newUsageCount: updated.usageCount,
         };
       } catch (error) {
-        console.error(
-          `[economicComponents] Error incrementing usage for ${input.componentType}:`,
-          {
-            error: error instanceof Error ? error.message : String(error),
-            userId: ctx.auth?.userId || "anonymous",
-            componentType: input.componentType,
-            stack: error instanceof Error ? error.stack : undefined,
-          }
-        );
+        console.error(`[economicComponents] Error incrementing usage for ${input.componentType}:`, {
+          error: error instanceof Error ? error.message : String(error),
+          userId: ctx.auth?.userId || "anonymous",
+          componentType: input.componentType,
+          stack: error instanceof Error ? error.stack : undefined,
+        });
 
         // Non-critical operation - return success even on failure
         return {

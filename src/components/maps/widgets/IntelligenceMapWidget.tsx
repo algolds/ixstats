@@ -55,11 +55,10 @@ export function IntelligenceMapWidget({
     hasGeometry,
   } = useCountryMapEmbed(countryId);
 
-  const { data: relations, isLoading: relationsLoading } =
-    api.diplomatic.getRelationships.useQuery(
-      { countryId },
-      { enabled: !!countryId, staleTime: 5 * 60_000 }
-    );
+  const { data: relations, isLoading: relationsLoading } = api.diplomatic.getRelationships.useQuery(
+    { countryId },
+    { enabled: !!countryId, staleTime: 5 * 60_000 }
+  );
 
   const isLoading = geoLoading || relationsLoading;
 
@@ -90,9 +89,7 @@ export function IntelligenceMapWidget({
     const baseStyle = buildBaseStyle() as maplibregl.StyleSpecification;
     delete (baseStyle as Record<string, unknown>).projection;
 
-    const initialCenter: [number, number] = centroid
-      ? [centroid.lng, centroid.lat]
-      : [10, 5];
+    const initialCenter: [number, number] = centroid ? [centroid.lng, centroid.lat] : [10, 5];
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -175,11 +172,13 @@ export function IntelligenceMapWidget({
         type: "geojson",
         data: {
           type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            properties: {},
-            geometry: geometry as GeoJSON.Geometry,
-          }],
+          features: [
+            {
+              type: "Feature",
+              properties: {},
+              geometry: geometry as GeoJSON.Geometry,
+            },
+          ],
         },
       });
 
@@ -213,7 +212,10 @@ export function IntelligenceMapWidget({
       // Fit to bounds
       if (bbox) {
         map.fitBounds(
-          [[bbox.minLng, bbox.minLat], [bbox.maxLng, bbox.maxLat]],
+          [
+            [bbox.minLng, bbox.minLat],
+            [bbox.maxLng, bbox.maxLat],
+          ],
           { padding: 50, maxZoom: 8, duration: 0 }
         );
       }
@@ -237,15 +239,17 @@ export function IntelligenceMapWidget({
 
   if (isLoading) {
     return (
-      <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-indigo-500/15 ${className}`}>
+      <div
+        className={`glass-hierarchy-child overflow-hidden rounded-xl border border-indigo-500/15 ${className}`}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Brain className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Geopolitical Intel</span>
+            <Brain className="text-muted-foreground h-3.5 w-3.5" />
+            <span className="text-foreground text-xs font-medium">Geopolitical Intel</span>
           </div>
         </div>
-        <div className="flex h-48 items-center justify-center bg-muted">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="bg-muted flex h-48 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       </div>
     );
@@ -253,37 +257,47 @@ export function IntelligenceMapWidget({
 
   if (!hasGeometry) {
     return (
-      <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-indigo-500/15 ${className}`}>
+      <div
+        className={`glass-hierarchy-child overflow-hidden rounded-xl border border-indigo-500/15 ${className}`}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Brain className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Geopolitical Intel</span>
+            <Brain className="text-muted-foreground h-3.5 w-3.5" />
+            <span className="text-foreground text-xs font-medium">Geopolitical Intel</span>
           </div>
         </div>
-        <div className="flex h-48 flex-col items-center justify-center gap-2 bg-muted">
-          <MapPin className="h-6 w-6 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">No map data available</span>
+        <div className="bg-muted flex h-48 flex-col items-center justify-center gap-2">
+          <MapPin className="text-muted-foreground h-6 w-6" />
+          <span className="text-muted-foreground text-xs">No map data available</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-indigo-500/15 ${className}`}>
+    <div
+      className={`glass-hierarchy-child overflow-hidden rounded-xl border border-indigo-500/15 ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Brain className="h-3.5 w-3.5 text-indigo-500" />
-          <span className="text-xs font-medium text-foreground">Geopolitical Intel</span>
+          <span className="text-foreground text-xs font-medium">Geopolitical Intel</span>
         </div>
         <div className="flex items-center gap-1">
           {allyCount > 0 && (
-            <Badge variant="outline" className="h-4 border-green-500/30 px-1.5 text-[9px] text-green-500">
+            <Badge
+              variant="outline"
+              className="h-4 border-green-500/30 px-1.5 text-[9px] text-green-500"
+            >
               {allyCount} ALLY
             </Badge>
           )}
           {hostileCount > 0 && (
-            <Badge variant="outline" className="h-4 border-red-500/30 px-1.5 text-[9px] text-red-500">
+            <Badge
+              variant="outline"
+              className="h-4 border-red-500/30 px-1.5 text-[9px] text-red-500"
+            >
               {hostileCount} HOSTILE
             </Badge>
           )}
@@ -294,16 +308,16 @@ export function IntelligenceMapWidget({
       <div className="relative h-48">
         <div ref={containerRef} className="absolute inset-0" />
         {!mapReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="bg-muted absolute inset-0 flex items-center justify-center">
+            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
           </div>
         )}
       </div>
 
       {/* Legend + Footer */}
-      <div className="border-t border-border/50 px-3 py-1.5">
+      <div className="border-border/50 border-t px-3 py-1.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-[9px] text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2.5 text-[9px]">
             <span className="flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
               Ally

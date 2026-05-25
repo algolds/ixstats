@@ -5,8 +5,16 @@ import type { POIFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const POI_CATEGORIES = [
-  "landmark", "historical", "natural", "religious", "military", "cultural",
-  "economic", "educational", "monument", "ruins",
+  "landmark",
+  "historical",
+  "natural",
+  "religious",
+  "military",
+  "cultural",
+  "economic",
+  "educational",
+  "monument",
+  "ruins",
 ];
 
 const POI_ICONS = [

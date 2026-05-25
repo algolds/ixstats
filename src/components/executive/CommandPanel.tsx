@@ -101,7 +101,7 @@ export const CommandPanel = React.memo(function CommandPanel({
       {/* Gradient header */}
       <div className={cn("px-3.5 py-3", theme.headerBg)}>
         <div className="flex items-center gap-2.5">
-          <div className={cn("flex-shrink-0 rounded-lg p-1.5", theme.iconBg)}>
+          <div className={cn("shrink-0 rounded-lg p-1.5", theme.iconBg)}>
             <Icon size={14} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">

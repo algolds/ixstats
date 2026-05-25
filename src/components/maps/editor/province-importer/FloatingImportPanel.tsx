@@ -129,7 +129,7 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
 
   return (
     <div
-      className="absolute z-20 flex flex-col overflow-hidden rounded-xl bg-card/95 shadow-xl ring-1 ring-border backdrop-blur-sm"
+      className="bg-card/95 ring-border absolute z-20 flex flex-col overflow-hidden rounded-xl shadow-xl ring-1 backdrop-blur-sm"
       style={{
         left: pos.x,
         top: pos.y,
@@ -142,11 +142,11 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         onPointerDown={onDragStart}
         onPointerMove={onDragMove}
         onPointerUp={onDragEnd}
-        className={`flex h-2.5 flex-shrink-0 cursor-grab items-center justify-center bg-muted/50 ${
+        className={`bg-muted/50 flex h-2.5 shrink-0 cursor-grab items-center justify-center ${
           dragging ? "cursor-grabbing" : ""
         }`}
       >
-        <GripVertical className="h-3 w-3 rotate-90 text-muted-foreground/50" />
+        <GripVertical className="text-muted-foreground/50 h-3 w-3 rotate-90" />
       </div>
 
       {/* Content */}
@@ -157,10 +157,10 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         onPointerDown={onResizeStart}
         onPointerMove={onResizeMove}
         onPointerUp={onResizeEnd}
-        className="absolute bottom-0 right-0 h-4 w-4 cursor-nwse-resize"
+        className="absolute right-0 bottom-0 h-4 w-4 cursor-nwse-resize"
       >
         <svg
-          className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 text-muted-foreground/40"
+          className="text-muted-foreground/40 absolute right-0.5 bottom-0.5 h-2.5 w-2.5"
           viewBox="0 0 10 10"
         >
           <path d="M9 1L1 9M9 5L5 9M9 9L9 9" stroke="currentColor" strokeWidth="1.5" />

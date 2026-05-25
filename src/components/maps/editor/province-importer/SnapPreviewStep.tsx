@@ -12,10 +12,7 @@ interface SnapPreviewStepProps {
 /** Count total vertices across all rings in a geometry */
 function countVertices(geometry: Polygon | MultiPolygon | null | undefined): number {
   if (!geometry) return 0;
-  const coords =
-    geometry.type === "Polygon"
-      ? geometry.coordinates
-      : geometry.coordinates.flat();
+  const coords = geometry.type === "Polygon" ? geometry.coordinates : geometry.coordinates.flat();
   return coords.reduce((sum: number, ring: Position[]) => sum + ring.length, 0);
 }
 
@@ -41,16 +38,16 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-foreground">Snap & Simplify</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Snap edges to the country border, simplify vertices to the minimum needed,
-          and align shared borders between neighboring provinces.
+        <h3 className="text-foreground text-sm font-medium">Snap & Simplify</h3>
+        <p className="text-muted-foreground mt-1 text-xs">
+          Snap edges to the country border, simplify vertices to the minimum needed, and align
+          shared borders between neighboring provinces.
         </p>
       </div>
 
       {/* Snap Tolerance */}
       <div className="space-y-2">
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <label className="text-muted-foreground flex items-center gap-2 text-xs">
           <Magnet className="h-3 w-3" /> Border Snap Tolerance
         </label>
         <input
@@ -62,7 +59,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
           onChange={(e) => importer.setSnapTolerance(parseFloat(e.target.value))}
           className="w-full"
         />
-        <div className="flex justify-between text-[10px] text-muted-foreground">
+        <div className="text-muted-foreground flex justify-between text-[10px]">
           <span>Tight (1km)</span>
           <span className="font-mono">{importer.snapTolerance.toFixed(2)}°</span>
           <span>Loose (220km)</span>
@@ -71,7 +68,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
 
       {/* Simplify Tolerance */}
       <div className="space-y-2">
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <label className="text-muted-foreground flex items-center gap-2 text-xs">
           <Minimize2 className="h-3 w-3" /> Vertex Reduction
         </label>
         <input
@@ -83,7 +80,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
           onChange={(e) => importer.setSimplifyTolerance(parseFloat(e.target.value))}
           className="w-full"
         />
-        <div className="flex justify-between text-[10px] text-muted-foreground">
+        <div className="text-muted-foreground flex justify-between text-[10px]">
           <span>More detail</span>
           <span className="font-mono">{importer.simplifyTolerance.toFixed(3)}°</span>
           <span>Fewer points</span>
@@ -92,7 +89,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
 
       {/* Vertex count stats */}
       {vertexStats.before > 0 && (
-        <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+        <div className="border-border bg-muted/30 rounded-lg border px-3 py-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Original vertices</span>
             <span className="font-medium tabular-nums">{vertexStats.before.toLocaleString()}</span>
@@ -104,7 +101,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
           {vertexStats.reduction > 0 && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Reduction</span>
-              <span className="font-medium tabular-nums text-emerald-600">
+              <span className="font-medium text-emerald-600 tabular-nums">
                 {vertexStats.reduction}%
               </span>
             </div>
@@ -115,13 +112,13 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
       <button
         onClick={importer.applySnapping}
         disabled={!importer.countryBorder}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
       >
         <Magnet className="h-3.5 w-3.5" />
         Apply Snap & Simplify
       </button>
 
-      <div className="text-[10px] text-muted-foreground">
+      <div className="text-muted-foreground text-[10px]">
         Snapping aligns edges to the country border. Simplification reduces vertices while
         preserving shape. Neighbor alignment ensures no gaps between adjacent provinces.
       </div>

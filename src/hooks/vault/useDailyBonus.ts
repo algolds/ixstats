@@ -18,7 +18,10 @@ export function useDailyBonus() {
 
   const claimMutation = api.vault.claimDailyBonus.useMutation({
     onSuccess: (data) => {
-      notify.success(`Daily bonus claimed! +${data.bonus} IxCredits`, `Login streak: ${data.streak} ${data.streak === 1 ? "day" : "days"}`);
+      notify.success(
+        `Daily bonus claimed! +${data.bonus} IxCredits`,
+        `Login streak: ${data.streak} ${data.streak === 1 ? "day" : "days"}`
+      );
     },
     onError: (error) => {
       notify.error(error.message || "Failed to claim daily bonus");

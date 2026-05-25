@@ -39,24 +39,12 @@ export const DraggableCardBody = ({
     mass: 0.5,
   };
 
-  const rotateX = useSpring(
-    useTransform(mouseY, [-300, 300], [25, -25]),
-    springConfig,
-  );
-  const rotateY = useSpring(
-    useTransform(mouseX, [-300, 300], [-25, 25]),
-    springConfig,
-  );
+  const rotateX = useSpring(useTransform(mouseY, [-300, 300], [25, -25]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-300, 300], [-25, 25]), springConfig);
 
-  const opacity = useSpring(
-    useTransform(mouseX, [-300, 0, 300], [0.8, 1, 0.8]),
-    springConfig,
-  );
+  const opacity = useSpring(useTransform(mouseX, [-300, 0, 300], [0.8, 1, 0.8]), springConfig);
 
-  const glareOpacity = useSpring(
-    useTransform(mouseX, [-300, 0, 300], [0.2, 0, 0.2]),
-    springConfig,
-  );
+  const glareOpacity = useSpring(useTransform(mouseX, [-300, 0, 300], [0.2, 0, 0.2]), springConfig);
 
   useEffect(() => {
     // Update constraints when component mounts or window resizes
@@ -84,13 +72,12 @@ export const DraggableCardBody = ({
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { clientX, clientY } = e;
-    const { width, height, left, top } =
-      cardRef.current?.getBoundingClientRect() ?? {
-        width: 0,
-        height: 0,
-        left: 0,
-        top: 0,
-      };
+    const { width, height, left, top } = cardRef.current?.getBoundingClientRect() ?? {
+      width: 0,
+      height: 0,
+      left: 0,
+      top: 0,
+    };
     const centerX = left + width / 2;
     const centerY = top + height / 2;
     const deltaX = clientX - centerX;
@@ -127,8 +114,7 @@ export const DraggableCardBody = ({
         const currentVelocityY = velocityY.get();
 
         const velocityMagnitude = Math.sqrt(
-          currentVelocityX * currentVelocityX +
-            currentVelocityY * currentVelocityY,
+          currentVelocityX * currentVelocityX + currentVelocityY * currentVelocityY
         );
         const bounce = Math.min(0.8, velocityMagnitude / 1000);
 
@@ -164,7 +150,7 @@ export const DraggableCardBody = ({
       onMouseLeave={handleMouseLeave}
       className={cn(
         "relative min-h-96 w-80 overflow-hidden rounded-md bg-neutral-100 p-6 shadow-2xl transform-3d dark:bg-neutral-900",
-        className,
+        className
       )}
     >
       {children}
@@ -185,7 +171,5 @@ export const DraggableCardContainer = ({
   className?: string;
   children?: React.ReactNode;
 }) => {
-  return (
-    <div className={cn("[perspective:3000px]", className)}>{children}</div>
-  );
+  return <div className={cn("[perspective:3000px]", className)}>{children}</div>;
 };

@@ -20,18 +20,18 @@ import { getNeighbors4 } from "./plate-simulation";
 
 /** Trewartha climate classification codes */
 export type IxWorldClimate =
-  | "Ar"   // Tropical Wet
-  | "Aw"   // Tropical Wet-And-Dry
-  | "Bw"   // Desert or Arid
-  | "Bs"   // Steppe or Semiarid
-  | "Cs"   // Subtropical Dry Summer
-  | "Cf"   // Subtropical Humid
-  | "Do"   // Temperate Oceanic
-  | "Dc"   // Temperate Continental
-  | "E"    // Boreal
-  | "Ft"   // Tundra
-  | "Fi"   // Ice Cap
-  | "H";   // Highland
+  | "Ar" // Tropical Wet
+  | "Aw" // Tropical Wet-And-Dry
+  | "Bw" // Desert or Arid
+  | "Bs" // Steppe or Semiarid
+  | "Cs" // Subtropical Dry Summer
+  | "Cf" // Subtropical Humid
+  | "Do" // Temperate Oceanic
+  | "Dc" // Temperate Continental
+  | "E" // Boreal
+  | "Ft" // Tundra
+  | "Fi" // Ice Cap
+  | "H"; // Highland
 
 export interface ClimateResult {
   /** Temperature in degrees C per cell */
@@ -48,18 +48,18 @@ export interface ClimateResult {
 
 /** Mapping from index to Trewartha climate type */
 export const CLIMATE_TYPES: IxWorldClimate[] = [
-  "Ar",   // 0  — Tropical Wet
-  "Aw",   // 1  — Tropical Wet-And-Dry
-  "Bw",   // 2  — Desert or Arid
-  "Bs",   // 3  — Steppe or Semiarid
-  "Cs",   // 4  — Subtropical Dry Summer
-  "Cf",   // 5  — Subtropical Humid
-  "Do",   // 6  — Temperate Oceanic
-  "Dc",   // 7  — Temperate Continental
-  "E",    // 8  — Boreal
-  "Ft",   // 9  — Tundra
-  "Fi",   // 10 — Ice Cap
-  "H",    // 11 — Highland
+  "Ar", // 0  — Tropical Wet
+  "Aw", // 1  — Tropical Wet-And-Dry
+  "Bw", // 2  — Desert or Arid
+  "Bs", // 3  — Steppe or Semiarid
+  "Cs", // 4  — Subtropical Dry Summer
+  "Cf", // 5  — Subtropical Humid
+  "Do", // 6  — Temperate Oceanic
+  "Dc", // 7  — Temperate Continental
+  "E", // 8  — Boreal
+  "Ft", // 9  — Tundra
+  "Fi", // 10 — Ice Cap
+  "H", // 11 — Highland
 ];
 
 /** Human-readable names for each Trewartha type */
@@ -119,17 +119,36 @@ export function computeClimate(
 
   // Step 4: Precipitation
   const precipitation = computePrecipitation(
-    elevation, isOcean, windE, windN, continentality, width, height, seed
+    elevation,
+    isOcean,
+    windE,
+    windN,
+    continentality,
+    width,
+    height,
+    seed
   );
 
   // Step 5: Temperature
   const temperature = computeTemperature(
-    elevation, isOcean, continentality, currentWarmth, width, height, noise
+    elevation,
+    isOcean,
+    continentality,
+    currentWarmth,
+    width,
+    height,
+    noise
   );
 
   // Step 6: Classify climate (Trewartha)
   const climateType = classifyClimate(
-    temperature, precipitation, elevation, isOcean, continentality, width, height
+    temperature,
+    precipitation,
+    elevation,
+    isOcean,
+    continentality,
+    width,
+    height
   );
 
   return { temperature, precipitation, climateType, windE, windN };
@@ -137,11 +156,7 @@ export function computeClimate(
 
 // ─── Continentality ──────────────────────────────────────────
 
-function computeContinentality(
-  isOcean: Uint8Array,
-  width: number,
-  height: number
-): Float32Array {
+function computeContinentality(isOcean: Uint8Array, width: number, height: number): Float32Array {
   const N = width * height;
   const dist = new Float32Array(N).fill(Infinity);
 
@@ -323,7 +338,7 @@ function computePrecipitation(
       }
 
       // Continental dryness: interior is drier
-      p *= (1 - continentality[idx]! * 0.5);
+      p *= 1 - continentality[idx]! * 0.5;
 
       // Orographic effect: windward uplift increases precip, leeward decreases
       const h = elevation[idx]!;
@@ -331,7 +346,7 @@ function computePrecipitation(
       const wn = windN[idx]!;
 
       // Check upwind elevation gradient
-      const upwindX = ((x - Math.sign(we) + width) % width);
+      const upwindX = (x - Math.sign(we) + width) % width;
       const upwindY = Math.max(0, Math.min(height - 1, y - Math.sign(wn)));
       const upwindIdx = upwindY * width + upwindX;
       const upwindH = elevation[upwindIdx]!;
@@ -350,7 +365,7 @@ function computePrecipitation(
       }
 
       // Noise variation
-      p += fractalNoise(noise, x / width * 6, y / height * 6, 3, 2.0, 0.5) * 0.15;
+      p += fractalNoise(noise, (x / width) * 6, (y / height) * 6, 3, 2.0, 0.5) * 0.15;
 
       precip[idx] = Math.max(0, Math.min(1, p));
     }
@@ -423,7 +438,7 @@ function computeTemperature(
       }
 
       // Add small noise for variation
-      t += fractalNoise(noise, x / width * 4, y / height * 4, 2, 2.0, 0.5) * 2;
+      t += fractalNoise(noise, (x / width) * 4, (y / height) * 4, 2, 2.0, 0.5) * 2;
 
       temp[idx] = t;
     }

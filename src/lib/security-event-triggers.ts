@@ -154,7 +154,8 @@ export const THRESHOLD_TRIGGERS: ThresholdTrigger[] = [
     type: "threshold",
     name: "Political Crisis",
     description: "Trust in government has collapsed",
-    condition: (ctx) => ctx.stability.trustInGovernment < 30 || ctx.politics.politicalStability < 35,
+    condition: (ctx) =>
+      ctx.stability.trustInGovernment < 30 || ctx.politics.politicalStability < 35,
     eventTypes: ["civil_unrest", "insurgency"],
     multiplier: 1.8,
   },
@@ -241,8 +242,7 @@ export async function isOnCooldown(
   // Global cooldown: No events in last MIN_EVENT_COOLDOWN days
   if (recentEvents.length > 0) {
     const lastEvent = recentEvents[0]!;
-    const hoursSinceLastEvent =
-      (now.getTime() - lastEvent.createdAt.getTime()) / (1000 * 60 * 60);
+    const hoursSinceLastEvent = (now.getTime() - lastEvent.createdAt.getTime()) / (1000 * 60 * 60);
 
     if (hoursSinceLastEvent < TRIGGER_CONFIG.MIN_EVENT_COOLDOWN * 24) {
       return true; // Still on cooldown
@@ -321,8 +321,7 @@ export function evaluateTriggers(context: SecurityEventContext): {
 
   // Base probability check
   const baseRoll = Math.random();
-  const shouldGenerate =
-    baseRoll < TRIGGER_CONFIG.BASE_CHECK_PROBABILITY * totalMultiplier;
+  const shouldGenerate = baseRoll < TRIGGER_CONFIG.BASE_CHECK_PROBABILITY * totalMultiplier;
 
   const triggeredNames = [
     ...triggeredThresholds.map((t) => t.name),

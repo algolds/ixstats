@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { prepareWithSegments, layoutWithLines, type PreparedTextWithSegments } from "@chenglou/pretext";
+import {
+  prepareWithSegments,
+  layoutWithLines,
+  type PreparedTextWithSegments,
+} from "@chenglou/pretext";
 import { cn } from "~/lib/utils";
 
 interface PreTextProps {
@@ -93,10 +97,7 @@ export function PreText({
 
   // Render the precomputed text lines using standard block layout to keep dimensions stable
   return (
-    <div
-      ref={containerRef}
-      className={cn("w-full select-text", className)}
-    >
+    <div ref={containerRef} className={cn("w-full select-text", className)}>
       {layoutResult ? (
         layoutResult.lines.map((line, index) => (
           <div

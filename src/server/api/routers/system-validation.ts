@@ -10,7 +10,12 @@ export const systemValidationRouter = createTRPCRouter({
   // 1. Database connectivity and model counts
   checkDatabase: adminProcedure.query(async ({ ctx }) => {
     const startTime = Date.now();
-    const checks: { name: string; status: "pass" | "warn" | "fail"; details: string; count?: number }[] = [];
+    const checks: {
+      name: string;
+      status: "pass" | "warn" | "fail";
+      details: string;
+      count?: number;
+    }[] = [];
 
     try {
       await ctx.db.$queryRaw`SELECT 1`;
@@ -196,7 +201,12 @@ export const systemValidationRouter = createTRPCRouter({
   // 5. Subsystem health (MyCountry, Builder, ThinkPages, Vault, etc.)
   checkSubsystems: adminProcedure.query(async ({ ctx }) => {
     const startTime = Date.now();
-    const checks: { name: string; status: "pass" | "warn" | "fail"; details: string; count?: number }[] = [];
+    const checks: {
+      name: string;
+      status: "pass" | "warn" | "fail";
+      details: string;
+      count?: number;
+    }[] = [];
 
     // ThinkPages
     const [postCount, accountCount] = await Promise.all([
@@ -216,7 +226,10 @@ export const systemValidationRouter = createTRPCRouter({
     checks.push({
       name: "ThinkPages Orphaned Replies",
       status: orphanedReplies === 0 ? "pass" : "warn",
-      details: orphanedReplies === 0 ? "No orphaned replies" : `${orphanedReplies} orphaned replies detected`,
+      details:
+        orphanedReplies === 0
+          ? "No orphaned replies"
+          : `${orphanedReplies} orphaned replies detected`,
     });
 
     // Vault / Cards
@@ -275,20 +288,68 @@ export const systemValidationRouter = createTRPCRouter({
     const checks: { name: string; status: "pass" | "warn" | "fail"; details: string }[] = [];
 
     const expectedRouters = [
-      "countries", "admin", "users", "system", "roles", "intelligence",
-      "intelligenceBriefing", "unifiedIntelligence", "meetings", "notifications",
-      "mycountry", "policies", "diplomaticIntelligence", "diplomatic",
-      "thinkpages", "archetypes", "economicArchetypes", "activities",
-      "enhancedEconomics", "government", "atomicGovernment", "atomicEconomic",
-      "atomicTax", "unifiedAtomic", "formulas", "quickActions", "scheduledChanges",
-      "taxSystem", "wikiImporter", "wikiCache", "security", "achievements",
-      "userLogging", "customTypes", "economics", "nationalIdentity", "cache",
-      "governmentComponents", "economicComponents", "militaryEquipment",
-      "smallArmsEquipment", "diplomaticScenarios", "npcPersonalities",
-      "crisisEvents", "historical", "cardPacks", "vault", "cards", "loreCards",
-      "nsImport", "cardMarket", "cardAnalytics", "autosaveHistory",
-      "autosaveMonitoring", "crafting", "trading", "cardImages", "elections",
-      "forum", "nationalIssues", "demoMode", "systemValidation",
+      "countries",
+      "admin",
+      "users",
+      "system",
+      "roles",
+      "intelligence",
+      "intelligenceBriefing",
+      "unifiedIntelligence",
+      "meetings",
+      "notifications",
+      "mycountry",
+      "policies",
+      "diplomaticIntelligence",
+      "diplomatic",
+      "thinkpages",
+      "archetypes",
+      "economicArchetypes",
+      "activities",
+      "enhancedEconomics",
+      "government",
+      "atomicGovernment",
+      "atomicEconomic",
+      "atomicTax",
+      "unifiedAtomic",
+      "formulas",
+      "quickActions",
+      "scheduledChanges",
+      "taxSystem",
+      "wikiImporter",
+      "wikiCache",
+      "security",
+      "achievements",
+      "userLogging",
+      "customTypes",
+      "economics",
+      "nationalIdentity",
+      "cache",
+      "governmentComponents",
+      "economicComponents",
+      "militaryEquipment",
+      "smallArmsEquipment",
+      "diplomaticScenarios",
+      "npcPersonalities",
+      "crisisEvents",
+      "historical",
+      "cardPacks",
+      "vault",
+      "cards",
+      "loreCards",
+      "nsImport",
+      "cardMarket",
+      "cardAnalytics",
+      "autosaveHistory",
+      "autosaveMonitoring",
+      "crafting",
+      "trading",
+      "cardImages",
+      "elections",
+      "forum",
+      "nationalIssues",
+      "demoMode",
+      "systemValidation",
     ];
 
     checks.push({
@@ -297,7 +358,16 @@ export const systemValidationRouter = createTRPCRouter({
       details: `${expectedRouters.length} routers expected in appRouter`,
     });
 
-    const criticalRouters = ["countries", "admin", "users", "mycountry", "diplomatic", "vault", "thinkpages", "security"];
+    const criticalRouters = [
+      "countries",
+      "admin",
+      "users",
+      "mycountry",
+      "diplomatic",
+      "vault",
+      "thinkpages",
+      "security",
+    ];
     for (const routerName of criticalRouters) {
       checks.push({
         name: `Router: ${routerName}`,

@@ -53,9 +53,9 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
         ))}
       </select>
       <div className="space-y-1.5">
-        <label className="flex items-center justify-between text-xs text-foreground/80">
+        <label className="text-foreground/80 flex items-center justify-between text-xs">
           <span>Font Size</span>
-          <span className="tabular-nums text-muted-foreground">{form.fontSize}px</span>
+          <span className="text-muted-foreground tabular-nums">{form.fontSize}px</span>
         </label>
         <input
           type="range"
@@ -67,19 +67,19 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
         />
       </div>
       <div className="flex items-center gap-2">
-        <label className="text-xs text-foreground/80">Color</label>
+        <label className="text-foreground/80 text-xs">Color</label>
         <input
           type="color"
           value={form.color}
           onChange={(e) => onChange({ ...form, color: e.target.value })}
-          className="h-7 w-10 cursor-pointer rounded border border-border bg-background"
+          className="border-border bg-background h-7 w-10 cursor-pointer rounded border"
         />
-        <span className="text-xs text-muted-foreground">{form.color}</span>
+        <span className="text-muted-foreground text-xs">{form.color}</span>
       </div>
       <div className="space-y-1.5">
-        <label className="flex items-center justify-between text-xs text-foreground/80">
+        <label className="text-foreground/80 flex items-center justify-between text-xs">
           <span>Rotation</span>
-          <span className="tabular-nums text-muted-foreground">{form.rotation}&deg;</span>
+          <span className="text-muted-foreground tabular-nums">{form.rotation}&deg;</span>
         </label>
         <input
           type="range"
@@ -91,9 +91,11 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
         />
       </div>
       <div className="space-y-1.5">
-        <label className="flex items-center justify-between text-xs text-foreground/80">
+        <label className="text-foreground/80 flex items-center justify-between text-xs">
           <span>Letter Spacing</span>
-          <span className="tabular-nums text-muted-foreground">{form.letterSpacing.toFixed(2)}</span>
+          <span className="text-muted-foreground tabular-nums">
+            {form.letterSpacing.toFixed(2)}
+          </span>
         </label>
         <input
           type="range"
@@ -105,21 +107,19 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
           className="w-full"
         />
       </div>
-      <label className="flex items-center gap-2 text-sm text-foreground/80">
+      <label className="text-foreground/80 flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           checked={form.fontWeight === "bold"}
-          onChange={(e) =>
-            onChange({ ...form, fontWeight: e.target.checked ? "bold" : "normal" })
-          }
-          className="rounded border-border text-primary focus:ring-primary"
+          onChange={(e) => onChange({ ...form, fontWeight: e.target.checked ? "bold" : "normal" })}
+          className="border-border text-primary focus:ring-primary rounded"
         />
         Bold
       </label>
       <div className="space-y-1.5">
-        <label className="flex items-center justify-between text-xs text-foreground/80">
+        <label className="text-foreground/80 flex items-center justify-between text-xs">
           <span>Opacity</span>
-          <span className="tabular-nums text-muted-foreground">{form.opacity.toFixed(1)}</span>
+          <span className="text-muted-foreground tabular-nums">{form.opacity.toFixed(1)}</span>
         </label>
         <input
           type="range"

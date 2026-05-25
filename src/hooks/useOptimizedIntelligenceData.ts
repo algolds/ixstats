@@ -332,7 +332,7 @@ export function useQueryPerformanceMetrics() {
 /**
  * Hook to preload intelligence data for improved perceived performance
  * Useful for prefetching data before user navigation
- * 
+ *
  * Note: This is a hook because it uses useMemo and api.useUtils() internally.
  * Must be called at the top level of a React component.
  */
@@ -359,4 +359,3 @@ export function usePreloadIntelligenceData(countryId: string) {
     [countryId, queryClient]
   );
 }
-

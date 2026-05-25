@@ -27,7 +27,12 @@ import type {
 // ──────────────────────────────────────────────
 
 export const IDENTITY_MATRIX: AffineMatrix = {
-  a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0,
+  a: 1,
+  b: 0,
+  c: 0,
+  d: 1,
+  tx: 0,
+  ty: 0,
 };
 
 // ──────────────────────────────────────────────
@@ -41,9 +46,7 @@ export const IDENTITY_MATRIX: AffineMatrix = {
  * For < 3 points, computes a similarity transform (translate + uniform scale + rotation).
  * For >= 3 points, computes a full affine (includes shear).
  */
-export function computeAffineFromReferencePoints(
-  points: ReferencePoint[]
-): AlignmentResult {
+export function computeAffineFromReferencePoints(points: ReferencePoint[]): AlignmentResult {
   if (points.length < 2) {
     return { matrix: IDENTITY_MATRIX, rmse: Infinity, matchCount: 0 };
   }
@@ -66,18 +69,35 @@ export function computeAffineFromReferencePoints(
   //   a*sx + b*sy + tx = target_x
   //   c*sx + d*sy + ty = target_y
 
-  let sumSx = 0, sumSy = 0, sumTx = 0, sumTy = 0;
-  let sumSxSx = 0, sumSxSy = 0, sumSySy = 0;
-  let sumSxTx = 0, sumSyTx = 0, sumSxTy = 0, sumSyTy = 0;
+  let sumSx = 0,
+    sumSy = 0,
+    sumTx = 0,
+    sumTy = 0;
+  let sumSxSx = 0,
+    sumSxSy = 0,
+    sumSySy = 0;
+  let sumSxTx = 0,
+    sumSyTx = 0,
+    sumSxTy = 0,
+    sumSyTy = 0;
 
   for (const p of points) {
-    const sx = p.source[0]!, sy = p.source[1]!;
-    const tx = p.target[0]!, ty = p.target[1]!;
+    const sx = p.source[0]!,
+      sy = p.source[1]!;
+    const tx = p.target[0]!,
+      ty = p.target[1]!;
 
-    sumSx += sx; sumSy += sy; sumTx += tx; sumTy += ty;
-    sumSxSx += sx * sx; sumSxSy += sx * sy; sumSySy += sy * sy;
-    sumSxTx += sx * tx; sumSyTx += sy * tx;
-    sumSxTy += sx * ty; sumSyTy += sy * ty;
+    sumSx += sx;
+    sumSy += sy;
+    sumTx += tx;
+    sumTy += ty;
+    sumSxSx += sx * sx;
+    sumSxSy += sx * sy;
+    sumSySy += sy * sy;
+    sumSxTx += sx * tx;
+    sumSyTx += sy * tx;
+    sumSxTy += sx * ty;
+    sumSyTy += sy * ty;
   }
 
   // Solve the 3x3 system for X-axis: [sumSxSx, sumSxSy, sumSx; sumSxSy, sumSySy, sumSy; sumSx, sumSy, n] * [a, b, tx]' = [sumSxTx, sumSyTx, sumTx]'
@@ -103,8 +123,12 @@ export function computeAffineFromReferencePoints(
   }
 
   const matrix: AffineMatrix = {
-    a: solX[0]!, b: solX[1]!, tx: solX[2]!,
-    c: solY[0]!, d: solY[1]!, ty: solY[2]!,
+    a: solX[0]!,
+    b: solX[1]!,
+    tx: solX[2]!,
+    c: solY[0]!,
+    d: solY[1]!,
+    ty: solY[2]!,
   };
 
   const rmse = computeRMSE(points, matrix);
@@ -332,9 +356,7 @@ export function extractAllBorderRings(countryBorder: Polygon | MultiPolygon): Po
     const ring = countryBorder.coordinates[0];
     return ring && ring.length > 0 ? [ring] : [];
   }
-  return countryBorder.coordinates
-    .map((poly) => poly[0] ?? [])
-    .filter((r) => r.length > 0);
+  return countryBorder.coordinates.map((poly) => poly[0] ?? []).filter((r) => r.length > 0);
 }
 
 /**
@@ -350,12 +372,11 @@ export function findNearestBorderRing(
 
   // Compute centroid of the geometry
   const firstRing =
-    geometry.type === "Polygon"
-      ? geometry.coordinates[0]
-      : geometry.coordinates[0]?.[0];
+    geometry.type === "Polygon" ? geometry.coordinates[0] : geometry.coordinates[0]?.[0];
   if (!firstRing || firstRing.length === 0) return rings[0] ?? [];
 
-  let cx = 0, cy = 0;
+  let cx = 0,
+    cy = 0;
   for (const pt of firstRing) {
     cx += pt[0]!;
     cy += pt[1]!;
@@ -425,9 +446,7 @@ export function snapProvincesToBorder(
 
   return provinces.map((province) => {
     if (!province.included) return province;
-    const geometry = snapGeometryToBorder(
-      province.geometry, borderEdges, borderRing, tolerance
-    );
+    const geometry = snapGeometryToBorder(province.geometry, borderEdges, borderRing, tolerance);
     return { ...province, geometry };
   });
 }
@@ -502,7 +521,7 @@ function snapAndConformRing(
   const result: Position[] = [];
   const n = snapInfos.length;
   // Skip the last vertex if it's the closure point (will re-close at end)
-  const ringLen = (n > 1 && coordsEqual(ring[0]!, ring[n - 1]!)) ? n - 1 : n;
+  const ringLen = n > 1 && coordsEqual(ring[0]!, ring[n - 1]!) ? n - 1 : n;
 
   for (let i = 0; i < ringLen; i++) {
     const curr = snapInfos[i]!;
@@ -514,9 +533,12 @@ function snapAndConformRing(
     // If both current and next are snapped to the border, insert border path between them
     if (curr.snapped && next.snapped && curr.edgeIndex >= 0 && next.edgeIndex >= 0) {
       const borderPts = getBorderPathBetween(
-        curr.edgeIndex, curr.t,
-        next.edgeIndex, next.t,
-        borderRing, borderEdges.length
+        curr.edgeIndex,
+        curr.t,
+        next.edgeIndex,
+        next.t,
+        borderRing,
+        borderEdges.length
       );
       // Insert intermediate border vertices (skip first and last — they're curr/next)
       for (const bp of borderPts) {
@@ -563,7 +585,7 @@ function getBorderPathBetween(
   if (ringLen <= 0) return [];
 
   // Calculate forward and backward distances (in edge count)
-  const forwardDist = ((endEdge - startEdge) + totalEdges) % totalEdges;
+  const forwardDist = (endEdge - startEdge + totalEdges) % totalEdges;
   const backwardDist = totalEdges - forwardDist;
 
   // Cap to avoid inserting excessive vertices for nearly-complete border walks
@@ -581,7 +603,7 @@ function getBorderPathBetween(
   } else if (backwardDist <= maxInsert) {
     // Walk backward: collect vertices from startEdge back to endEdge+1 (inclusive)
     for (let step = 0; step < backwardDist; step++) {
-      const vertIdx = ((startEdge - step) + ringLen) % ringLen;
+      const vertIdx = (startEdge - step + ringLen) % ringLen;
       pts.push(borderRing[vertIdx]!);
     }
   }
@@ -599,10 +621,7 @@ function coordsEqual(a: Position, b: Position): boolean {
 // Internal Helpers
 // ──────────────────────────────────────────────
 
-function computeSimilarityTransform(
-  source: Position[],
-  target: Position[]
-): AffineMatrix {
+function computeSimilarityTransform(source: Position[], target: Position[]): AffineMatrix {
   const n = source.length;
   if (n === 0) return IDENTITY_MATRIX;
 
@@ -613,7 +632,9 @@ function computeSimilarityTransform(
   const tgtCy = target.reduce((s, p) => s + p[1]!, 0) / n;
 
   // Compute rotation + scale via least-squares
-  let sumSxTx = 0, sumSxTy = 0, sumSxSx = 0;
+  let sumSxTx = 0,
+    sumSxTy = 0,
+    sumSxSx = 0;
   for (let i = 0; i < n; i++) {
     const sx = source[i]![0]! - srcCx;
     const sy = source[i]![1]! - srcCy;
@@ -654,7 +675,10 @@ function computeRMSE(points: ReferencePoint[], matrix: AffineMatrix): number {
 
 function computeBBoxAlignment(source: Position[], target: Position[]): AffineMatrix {
   // Compute bounding boxes
-  let srcMinX = Infinity, srcMinY = Infinity, srcMaxX = -Infinity, srcMaxY = -Infinity;
+  let srcMinX = Infinity,
+    srcMinY = Infinity,
+    srcMaxX = -Infinity,
+    srcMaxY = -Infinity;
   for (const p of source) {
     if (p[0]! < srcMinX) srcMinX = p[0]!;
     if (p[0]! > srcMaxX) srcMaxX = p[0]!;
@@ -662,7 +686,10 @@ function computeBBoxAlignment(source: Position[], target: Position[]): AffineMat
     if (p[1]! > srcMaxY) srcMaxY = p[1]!;
   }
 
-  let tgtMinX = Infinity, tgtMinY = Infinity, tgtMaxX = -Infinity, tgtMaxY = -Infinity;
+  let tgtMinX = Infinity,
+    tgtMinY = Infinity,
+    tgtMaxX = -Infinity,
+    tgtMaxY = -Infinity;
   for (const p of target) {
     if (p[0]! < tgtMinX) tgtMinX = p[0]!;
     if (p[0]! > tgtMaxX) tgtMaxX = p[0]!;
@@ -700,9 +727,8 @@ function extractOuterBoundaryVertices(provinces: ProvinceFeature[]): Position[] 
   const all: Position[] = [];
   for (const p of provinces) {
     if (!p.included) continue;
-    const rings = p.geometry.type === "Polygon"
-      ? p.geometry.coordinates
-      : p.geometry.coordinates.flat();
+    const rings =
+      p.geometry.type === "Polygon" ? p.geometry.coordinates : p.geometry.coordinates.flat();
     // Only use outer rings (first ring of each polygon)
     if (p.geometry.type === "Polygon") {
       if (rings[0]) all.push(...rings[0]);
@@ -789,17 +815,20 @@ function solve3x3(A: number[][], b: number[]): number[] | null {
   const x0 =
     (b[0]! * (A[1]![1]! * A[2]![2]! - A[1]![2]! * A[2]![1]!) -
       A[0]![1]! * (b[1]! * A[2]![2]! - A[1]![2]! * b[2]!) +
-      A[0]![2]! * (b[1]! * A[2]![1]! - A[1]![1]! * b[2]!)) / det;
+      A[0]![2]! * (b[1]! * A[2]![1]! - A[1]![1]! * b[2]!)) /
+    det;
 
   const x1 =
     (A[0]![0]! * (b[1]! * A[2]![2]! - A[1]![2]! * b[2]!) -
       b[0]! * (A[1]![0]! * A[2]![2]! - A[1]![2]! * A[2]![0]!) +
-      A[0]![2]! * (A[1]![0]! * b[2]! - b[1]! * A[2]![0]!)) / det;
+      A[0]![2]! * (A[1]![0]! * b[2]! - b[1]! * A[2]![0]!)) /
+    det;
 
   const x2 =
     (A[0]![0]! * (A[1]![1]! * b[2]! - b[1]! * A[2]![1]!) -
       A[0]![1]! * (A[1]![0]! * b[2]! - b[1]! * A[2]![0]!) +
-      b[0]! * (A[1]![0]! * A[2]![1]! - A[1]![1]! * A[2]![0]!)) / det;
+      b[0]! * (A[1]![0]! * A[2]![1]! - A[1]![1]! * A[2]![0]!)) /
+    det;
 
   return [x0, x1, x2];
 }

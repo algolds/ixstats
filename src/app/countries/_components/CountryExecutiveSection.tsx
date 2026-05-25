@@ -368,7 +368,7 @@ export function CountryExecutiveSection({
                   className="h-auto w-full justify-start px-3 py-2 text-left transition-all duration-200 hover:scale-105"
                   size="sm"
                 >
-                  <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <Calendar className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">Schedule Meeting</span>
                 </Button>
               </CabinetMeetingModal>
@@ -378,7 +378,7 @@ export function CountryExecutiveSection({
                 size="sm"
                 onClick={() => (window.location.href = "/mycountry/executive")}
               >
-                <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
+                <FileText className="mr-2 h-4 w-4 shrink-0" />
                 <span className="truncate">Create Policy</span>
               </Button>
               <Button
@@ -387,7 +387,7 @@ export function CountryExecutiveSection({
                 size="sm"
                 onClick={() => setShowDefenseModal(true)}
               >
-                <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
+                <Shield className="mr-2 h-4 w-4 shrink-0" />
                 <span className="truncate">Defense & Security</span>
               </Button>
               <Button
@@ -396,7 +396,7 @@ export function CountryExecutiveSection({
                 size="sm"
                 onClick={() => window.open("/eci", "_blank")}
               >
-                <Target className="mr-2 h-4 w-4 flex-shrink-0" />
+                <Target className="mr-2 h-4 w-4 shrink-0" />
                 <span className="truncate">Strategic Plan</span>
               </Button>
               <TrendRiskAnalyticsModal countryId={countryId}>
@@ -405,7 +405,7 @@ export function CountryExecutiveSection({
                   className="h-auto w-full justify-start px-3 py-2 text-left transition-all duration-200 hover:scale-105"
                   size="sm"
                 >
-                  <TrendingUp className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <TrendingUp className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">Analytics</span>
                 </Button>
               </TrendRiskAnalyticsModal>

@@ -207,7 +207,7 @@ export function GlassTooltip({
 
             {warning && (
               <div className="flex items-start gap-2 rounded border border-red-400/30 bg-red-500/20 p-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                 <div className="text-xs text-red-200">{warning}</div>
               </div>
             )}

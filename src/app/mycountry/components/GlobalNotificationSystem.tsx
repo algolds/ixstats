@@ -226,7 +226,7 @@ export function NotificationCard({
       className={`relative rounded-lg border p-4 backdrop-blur-md transition-all duration-200 ${theme.bg} ${theme.glow} ${compact ? "p-3" : "p-4"} `}
     >
       <div className="flex items-start gap-3">
-        <div className={`flex-shrink-0 rounded-lg p-2 ${theme.icon}`}>
+        <div className={`shrink-0 rounded-lg p-2 ${theme.icon}`}>
           <Icon className={compact ? "h-4 w-4" : "h-5 w-5"} />
         </div>
 
@@ -253,7 +253,7 @@ export function NotificationCard({
 
             <button
               onClick={() => onRemove(notification.id)}
-              className="text-muted-foreground hover:text-foreground flex-shrink-0 rounded p-1 transition-colors"
+              className="text-muted-foreground hover:text-foreground shrink-0 rounded p-1 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>

@@ -23,9 +23,7 @@ interface MergeDialogProps {
 
 type SplitMergeDialogProps = SplitDialogProps | MergeDialogProps;
 
-export const SplitMergeDialog = React.memo(function SplitMergeDialog(
-  props: SplitMergeDialogProps
-) {
+export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: SplitMergeDialogProps) {
   const [nameA, setNameA] = useState("");
   const [nameB, setNameB] = useState("");
   const [newName, setNewName] = useState("");
@@ -44,8 +42,8 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-xl">
+    <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+      <div className="border-border bg-card w-full max-w-md rounded-xl border p-5 shadow-xl">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -54,13 +52,13 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(
             ) : (
               <Merge className="h-5 w-5 text-blue-400" />
             )}
-            <h3 className="text-lg font-semibold text-foreground">
+            <h3 className="text-foreground text-lg font-semibold">
               {props.type === "split" ? "Split Country" : "Merge Countries"}
             </h3>
           </div>
           <button
             onClick={props.onCancel}
-            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
           >
             <X className="h-5 w-5" />
           </button>
@@ -69,11 +67,12 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(
         <form onSubmit={handleSubmit}>
           {props.type === "split" ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Splitting <span className="font-medium text-foreground">{props.featureName}</span> into two new countries.
+              <p className="text-muted-foreground text-sm">
+                Splitting <span className="text-foreground font-medium">{props.featureName}</span>{" "}
+                into two new countries.
               </p>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   First country name
                 </label>
                 <Input
@@ -84,7 +83,7 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Second country name
                 </label>
                 <Input
@@ -96,15 +95,13 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Merging{" "}
-                <span className="font-medium text-foreground">
-                  {props.featureNames.join(", ")}
-                </span>{" "}
+                <span className="text-foreground font-medium">{props.featureNames.join(", ")}</span>{" "}
                 into a single country.
               </p>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   New country name
                 </label>
                 <Input
@@ -131,9 +128,7 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(
               type="submit"
               disabled={
                 props.isLoading ||
-                (props.type === "split"
-                  ? !nameA.trim() || !nameB.trim()
-                  : !newName.trim())
+                (props.type === "split" ? !nameA.trim() || !nameB.trim() : !newName.trim())
               }
             >
               {props.isLoading ? (

@@ -20,7 +20,10 @@ import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 
 /** Map section ids to their animated icon counterparts */
-const ANIMATED_NAV_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ANIMATED_NAV_ICONS: Record<
+  string,
+  React.ComponentType<{ size?: number; className?: string }>
+> = {
   overview: LayoutDashboardIcon,
   executive: CrownIcon,
   diplomacy: UsersIcon,
@@ -31,7 +34,17 @@ const ANIMATED_NAV_ICONS: Record<string, React.ComponentType<{ size?: number; cl
 };
 
 /** Renders the animated icon for a section when available, falling back to the lucide icon */
-function NavIcon({ id, fallback: Fallback, className, size = 16 }: { id: string; fallback: LucideIcon; className?: string; size?: number }) {
+function NavIcon({
+  id,
+  fallback: Fallback,
+  className,
+  size = 16,
+}: {
+  id: string;
+  fallback: LucideIcon;
+  className?: string;
+  size?: number;
+}) {
   const Animated = ANIMATED_NAV_ICONS[id];
   if (Animated) return <Animated size={size} className={className} />;
   return <Fallback className={cn("h-4 w-4", className)} />;
@@ -39,7 +52,14 @@ function NavIcon({ id, fallback: Fallback, className, size = 16 }: { id: string;
 
 const PREMIUM_GATED_SECTIONS: Set<MyCountrySection> = new Set(["intelligence", "defense"]);
 
-export type MyCountrySection = "overview" | "executive" | "diplomacy" | "intelligence" | "defense" | "politics" | "map-editor";
+export type MyCountrySection =
+  | "overview"
+  | "executive"
+  | "diplomacy"
+  | "intelligence"
+  | "defense"
+  | "politics"
+  | "map-editor";
 
 export const NAV_ITEMS: {
   id: MyCountrySection;
@@ -125,7 +145,12 @@ interface MyCountrySidebarNavProps {
   notifications?: Partial<Record<string, number>>;
 }
 
-export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desktop", notifications }: MyCountrySidebarNavProps) {
+export function MyCountrySidebarNav({
+  activeSection,
+  onNavigate,
+  variant = "desktop",
+  notifications,
+}: MyCountrySidebarNavProps) {
   const pathname = usePathname();
   const activeId = activeSection ?? getSectionFromPathname(pathname);
   const isControlled = !!onNavigate;
@@ -145,7 +170,7 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border bg-card/60 p-1.5 backdrop-blur-md">
+      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {visibleItems.map((item) => {
             const isActive = item.id === activeId;
@@ -156,24 +181,34 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
               "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             );
             const dot = noteCount > 0 && !isActive && (
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
+              <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
             );
 
             return isControlled ? (
-              <button key={item.id} onClick={() => onNavigate(item.id)} className={cls} aria-current={isActive ? "page" : undefined}>
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={cls}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
-                {isLocked && <Lock className="h-3 w-3 flex-shrink-0 text-yellow-400/70" />}
+                {isLocked && <Lock className="h-3 w-3 shrink-0 text-yellow-400/70" />}
                 {dot}
               </button>
             ) : (
-              <Link key={item.id} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
+              <Link
+                key={item.id}
+                href={item.href}
+                className={cls}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
-                {isLocked && <Lock className="h-3 w-3 flex-shrink-0 text-yellow-400/70" />}
+                {isLocked && <Lock className="h-3 w-3 shrink-0 text-yellow-400/70" />}
                 {dot}
               </Link>
             );
@@ -186,7 +221,7 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
   /* ── Expanded desktop: icon + label sidebar ── */
   if (variant === "expanded") {
     return (
-      <nav className="flex w-full flex-col gap-1 rounded-xl border border-border bg-card/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-card/40">
+      <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
         {visibleItems.map((item) => {
           const isActive = item.id === activeId;
           const noteCount = notifications?.[item.id] ?? 0;
@@ -195,29 +230,41 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
             "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200",
             isActive
               ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           );
           const badge = noteCount > 0 && (
-            <span className={cn(
-              "ml-auto inline-flex items-center justify-center rounded-full text-[9px] font-bold leading-none min-w-[16px] h-4 px-1",
-              isActive ? "bg-white/25 text-white" : "bg-amber-500 text-white",
-            )}>
+            <span
+              className={cn(
+                "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] leading-none font-bold",
+                isActive ? "bg-white/25 text-white" : "bg-amber-500 text-white"
+              )}
+            >
               {noteCount}
             </span>
           );
 
           return isControlled ? (
-            <button key={item.id} onClick={() => onNavigate(item.id)} className={cls} aria-current={isActive ? "page" : undefined}>
-              <NavIcon id={item.id} fallback={item.icon} size={16} className="flex-shrink-0" />
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className={cls}
+              aria-current={isActive ? "page" : undefined}
+            >
+              <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
               <span className="truncate">{item.title}</span>
-              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-yellow-400/70" />}
+              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-yellow-400/70" />}
               {!isLocked && badge}
             </button>
           ) : (
-            <Link key={item.id} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
-              <NavIcon id={item.id} fallback={item.icon} size={16} className="flex-shrink-0" />
+            <Link
+              key={item.id}
+              href={item.href}
+              className={cls}
+              aria-current={isActive ? "page" : undefined}
+            >
+              <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
               <span className="truncate">{item.title}</span>
-              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-yellow-400/70" />}
+              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-yellow-400/70" />}
               {!isLocked && badge}
             </Link>
           );
@@ -228,7 +275,7 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
 
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
-    <nav className="flex flex-col gap-1.5 rounded-xl border border-border bg-card/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-card/40">
+    <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
       {visibleItems.map((item) => {
         const isActive = item.id === activeId;
         const noteCount = notifications?.[item.id] ?? 0;
@@ -240,24 +287,31 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
               "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <NavIcon id={item.id} fallback={item.icon} size={18} className={cn("transition-transform duration-150", !isActive && "group-hover/tip:scale-110")} />
+            <NavIcon
+              id={item.id}
+              fallback={item.icon}
+              size={18}
+              className={cn(
+                "transition-transform duration-150",
+                !isActive && "group-hover/tip:scale-110"
+              )}
+            />
             {isLocked && (
-              <Lock className="absolute -bottom-0.5 -right-0.5 h-3 w-3 text-yellow-400 drop-shadow" />
+              <Lock className="absolute -right-0.5 -bottom-0.5 h-3 w-3 text-yellow-400 drop-shadow" />
             )}
             {noteCount > 0 && !isActive && !isLocked && (
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
+              <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
             )}
 
             {/* Tooltip — appears to the right */}
-            <span
-              className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100"
-            >
-              {item.title}{isLocked ? " (Premium)" : ""}
+            <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100">
+              {item.title}
+              {isLocked ? " (Premium)" : ""}
               {/* Arrow */}
-              <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-popover" />
+              <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
             </span>
           </div>
         );
@@ -266,7 +320,7 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label={item.title}
             aria-current={isActive ? "page" : undefined}
           >
@@ -276,7 +330,7 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
           <Link
             key={item.id}
             href={item.href}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label={item.title}
             aria-current={isActive ? "page" : undefined}
           >

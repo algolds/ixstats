@@ -42,9 +42,8 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            All borders must conform to the country shape. The following
-            subdivisions were adjusted:
+          <p className="text-muted-foreground text-xs">
+            All borders must conform to the country shape. The following subdivisions were adjusted:
           </p>
 
           <div className="max-h-[200px] overflow-y-auto rounded-lg border border-amber-500/30 bg-amber-500/5">
@@ -53,22 +52,22 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
                 key={name}
                 className="flex items-center gap-2 border-b border-amber-500/10 px-3 py-2 last:border-0"
               >
-                <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                <span className="text-sm text-foreground">{name}</span>
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span className="text-foreground text-sm">{name}</span>
               </div>
             ))}
           </div>
 
-          <p className="text-[11px] text-muted-foreground">
-            These borders may need manual adjustment for accuracy. You can edit
-            individual subdivisions after import to refine their shapes.
+          <p className="text-muted-foreground text-[11px]">
+            These borders may need manual adjustment for accuracy. You can edit individual
+            subdivisions after import to refine their shapes.
           </p>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
           <button
             onClick={onClose}
-            className="rounded-lg bg-card px-4 py-2 text-sm font-medium text-foreground ring-1 ring-border hover:bg-accent"
+            className="bg-card text-foreground ring-border hover:bg-accent rounded-lg px-4 py-2 text-sm font-medium ring-1"
           >
             Review Manually
           </button>

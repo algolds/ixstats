@@ -64,17 +64,14 @@ export function useMetricDetailsModal() {
    * @param countryId - The country ID to fetch data for
    * @param metricId - Optional specific metric identifier
    */
-  const openModal = useCallback(
-    (metricType: MetricType, countryId: string, metricId?: string) => {
-      setState({
-        isOpen: true,
-        metricType,
-        metricId: metricId || null,
-        countryId,
-      });
-    },
-    []
-  );
+  const openModal = useCallback((metricType: MetricType, countryId: string, metricId?: string) => {
+    setState({
+      isOpen: true,
+      metricType,
+      metricId: metricId || null,
+      countryId,
+    });
+  }, []);
 
   /**
    * Close the currently open modal
@@ -110,7 +107,9 @@ export function useMetricDetailsModal() {
 /**
  * Helper to determine which modal component to render based on metric type
  */
-export function getModalTypeForMetric(metricType: MetricType): "gdp" | "population" | "labor" | "government" | "demographics" {
+export function getModalTypeForMetric(
+  metricType: MetricType
+): "gdp" | "population" | "labor" | "government" | "demographics" {
   switch (metricType) {
     case "gdp":
     case "gdp-per-capita":

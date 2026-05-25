@@ -18,13 +18,8 @@ import {
   type CumulativeEffects,
 } from "./diplomatic-choice-tracker";
 import { IxTime } from "./ixtime";
-import {
-  CulturalScenarioGenerator,
-  type ScenarioContext,
-} from "./cultural-scenario-generator";
-import {
-  type RelationshipState as MarkovRelationshipState,
-} from "./diplomatic-markov-engine";
+import { CulturalScenarioGenerator, type ScenarioContext } from "./cultural-scenario-generator";
+import { type RelationshipState as MarkovRelationshipState } from "./diplomatic-markov-engine";
 
 // ==================== TYPES ====================
 

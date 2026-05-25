@@ -45,7 +45,10 @@ export interface SectorBreakdownCardProps {
 }
 
 // Format currency value with null safety
-function formatCurrency(value: number | undefined | null, notation: "compact" | "standard" = "compact"): string {
+function formatCurrency(
+  value: number | undefined | null,
+  notation: "compact" | "standard" = "compact"
+): string {
   if (value == null || !isFinite(value)) return "$0";
   return value.toLocaleString("en-US", {
     style: "currency",
@@ -111,7 +114,7 @@ function getColorClasses(color: string) {
       border: "border-red-200 dark:border-red-700/40",
     },
   };
-  
+
   return colorMap[color] || colorMap.blue;
 }
 
@@ -140,19 +143,14 @@ const SectorGridItemImage = React.memo(function SectorGridItemImage({
     <AnimatePresence>
       <motion.div
         key={imageUrl}
-        className="absolute inset-0 z-0 rounded-xl overflow-hidden"
+        className="absolute inset-0 z-0 overflow-hidden rounded-xl"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.5 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageUrl}
-          alt=""
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+        <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/40" />
       </motion.div>
     </AnimatePresence>
@@ -192,7 +190,7 @@ export function SectorBreakdownCard({
   // Trend icon component
   const TrendIcon = ({ trend, value }: { trend?: "up" | "down" | "stable"; value?: number }) => {
     if (!trend) return null;
-    
+
     const icons = {
       up: TrendingUp,
       down: TrendingDown,
@@ -203,12 +201,17 @@ export function SectorBreakdownCard({
       down: "text-red-500",
       stable: "text-gray-500",
     };
-    
+
     const Icon = icons[trend];
     return (
       <div className={cn("flex items-center gap-1 text-xs", colors[trend])}>
         <Icon className="h-3 w-3" />
-        {value !== undefined && <span>{value > 0 ? "+" : ""}{value.toFixed(1)}%</span>}
+        {value !== undefined && (
+          <span>
+            {value > 0 ? "+" : ""}
+            {value.toFixed(1)}%
+          </span>
+        )}
       </div>
     );
   };
@@ -222,9 +225,7 @@ export function SectorBreakdownCard({
       <CardContent>
         <Wrapper
           className={cn(
-            layout === "grid"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2"
-              : "space-y-2"
+            layout === "grid" ? "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" : "space-y-2"
           )}
           {...wrapperProps}
         >
@@ -245,25 +246,49 @@ export function SectorBreakdownCard({
                       "border"
                     )}
                   >
-                    {hasImage && (
-                      <SectorGridItemImage imageKeyword={sector.imageKeyword!} />
-                    )}
+                    {hasImage && <SectorGridItemImage imageKeyword={sector.imageKeyword!} />}
                     <div className={cn("relative", hasImage ? "z-[1]" : "")}>
                       {IconComponent && (
-                        <IconComponent className={cn("h-6 w-6 mx-auto mb-2", hasImage ? "text-white" : colors.text)} />
+                        <IconComponent
+                          className={cn(
+                            "mx-auto mb-2 h-6 w-6",
+                            hasImage ? "text-white" : colors.text
+                          )}
+                        />
                       )}
                       {sector.value > 0 && (
-                        <div className={cn("text-lg font-bold", hasImage ? "text-white" : colors.text)}>
-                          {valueAsPeople ? formatPeopleCount(sector.value) : formatCurrency(sector.value)}
+                        <div
+                          className={cn("text-lg font-bold", hasImage ? "text-white" : colors.text)}
+                        >
+                          {valueAsPeople
+                            ? formatPeopleCount(sector.value)
+                            : formatCurrency(sector.value)}
                         </div>
                       )}
-                      <div className={cn("mt-1 text-xs", hasImage ? "text-white/80" : "text-muted-foreground")}>{sector.name}</div>
+                      <div
+                        className={cn(
+                          "mt-1 text-xs",
+                          hasImage ? "text-white/80" : "text-muted-foreground"
+                        )}
+                      >
+                        {sector.name}
+                      </div>
                       {sector.description && (
-                        <div className={cn("text-xs opacity-70", hasImage ? "text-white/60" : "text-muted-foreground")}>
+                        <div
+                          className={cn(
+                            "text-xs opacity-70",
+                            hasImage ? "text-white/60" : "text-muted-foreground"
+                          )}
+                        >
                           ({sector.description})
                         </div>
                       )}
-                      <div className={cn("mt-2 text-sm font-medium", hasImage ? "text-white" : colors.text)}>
+                      <div
+                        className={cn(
+                          "mt-2 text-sm font-medium",
+                          hasImage ? "text-white" : colors.text
+                        )}
+                      >
                         {sector.percentage.toFixed(1)}%
                       </div>
                       {showTrends && sector.trend && (
@@ -283,9 +308,7 @@ export function SectorBreakdownCard({
                 <div className="group">
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {IconComponent && (
-                        <IconComponent className={cn("h-4 w-4", colors.text)} />
-                      )}
+                      {IconComponent && <IconComponent className={cn("h-4 w-4", colors.text)} />}
                       <span className="text-sm font-medium">{sector.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -296,7 +319,9 @@ export function SectorBreakdownCard({
                         <>
                           <span className="text-muted-foreground text-sm">•</span>
                           <span className={cn("text-sm font-medium", colors.text)}>
-                            {valueAsPeople ? formatPeopleCount(sector.value) : formatCurrency(sector.value)}
+                            {valueAsPeople
+                              ? formatPeopleCount(sector.value)
+                              : formatCurrency(sector.value)}
                           </span>
                         </>
                       )}
@@ -306,7 +331,7 @@ export function SectorBreakdownCard({
                     </div>
                   </div>
                   {showProgressBars && (
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="bg-muted h-2 overflow-hidden rounded-full">
                       <motion.div
                         className={cn("h-full rounded-full", colors.progress)}
                         initial={animate ? { width: 0 } : undefined}
@@ -322,9 +347,11 @@ export function SectorBreakdownCard({
         </Wrapper>
 
         {totalValue !== undefined && (
-          <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Total</span>
-            <span className="text-lg font-bold">{valueAsPeople ? formatPeopleCount(totalValue) : formatCurrency(totalValue)}</span>
+          <div className="border-border/50 mt-3 flex items-center justify-between border-t pt-3">
+            <span className="text-muted-foreground text-sm font-medium">Total</span>
+            <span className="text-lg font-bold">
+              {valueAsPeople ? formatPeopleCount(totalValue) : formatCurrency(totalValue)}
+            </span>
           </div>
         )}
       </CardContent>
@@ -343,23 +370,18 @@ export function QuickSectorGrid({
   className?: string;
 }) {
   return (
-    <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-3", className)}>
+    <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
       {sectors.map((sector) => {
         const colors = getColorClasses(sector.color);
         return (
           <div
             key={sector.id}
-            className={cn(
-              "rounded-lg p-3 text-center",
-              colors.bg,
-              colors.border,
-              "border"
-            )}
+            className={cn("rounded-lg p-3 text-center", colors.bg, colors.border, "border")}
           >
             <div className={cn("text-xl font-bold", colors.text)}>
               {formatCurrency(sector.value)}
             </div>
-            <div className="text-muted-foreground text-xs mt-1">{sector.name}</div>
+            <div className="text-muted-foreground mt-1 text-xs">{sector.name}</div>
             <Badge variant="outline" className={cn("mt-1 text-xs", colors.text)}>
               {sector.percentage.toFixed(1)}%
             </Badge>

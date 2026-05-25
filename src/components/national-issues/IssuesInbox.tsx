@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useCallback, memo } from "react";
-import {
-  Bell,
-  AlertTriangle,
-  History,
-  Inbox,
-  Flame,
-  CheckCircle,
-} from "lucide-react";
+import { Bell, AlertTriangle, History, Inbox, Flame, CheckCircle } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNationalIssues } from "~/hooks/useNationalIssues";
@@ -24,11 +17,7 @@ interface IssuesInboxProps {
 
 type InboxTab = "active" | "urgent" | "history";
 
-function IssuesInboxInner({
-  countryId,
-  maxVisible,
-  variant = "full",
-}: IssuesInboxProps) {
+function IssuesInboxInner({ countryId, maxVisible, variant = "full" }: IssuesInboxProps) {
   const [activeTab, setActiveTab] = useState<InboxTab>("active");
 
   const {
@@ -45,19 +34,11 @@ function IssuesInboxInner({
     closeIssue,
   } = useNationalIssues(countryId);
 
-  const urgentIssues = activeIssues.filter(
-    (i) => i.deadlineIxTime != null
-  );
+  const urgentIssues = activeIssues.filter((i) => i.deadlineIxTime != null);
 
-  const displayActive = maxVisible
-    ? activeIssues.slice(0, maxVisible)
-    : activeIssues;
-  const displayUrgent = maxVisible
-    ? urgentIssues.slice(0, maxVisible)
-    : urgentIssues;
-  const displayHistory = maxVisible
-    ? historyIssues.slice(0, maxVisible)
-    : historyIssues;
+  const displayActive = maxVisible ? activeIssues.slice(0, maxVisible) : activeIssues;
+  const displayUrgent = maxVisible ? urgentIssues.slice(0, maxVisible) : urgentIssues;
+  const displayHistory = maxVisible ? historyIssues.slice(0, maxVisible) : historyIssues;
 
   const handleRespond = useCallback(
     async (issueId: string, optionId: string) => {
@@ -77,7 +58,7 @@ function IssuesInboxInner({
           {pendingCount > 0 && (
             <Badge
               variant="outline"
-              className={`text-xs ${urgentCount > 0 ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"}`}
+              className={`text-xs ${urgentCount > 0 ? "border-red-500/30 bg-red-500/20 text-red-400" : "border-amber-500/30 bg-amber-500/20 text-amber-400"}`}
             >
               {pendingCount}
             </Badge>
@@ -85,25 +66,16 @@ function IssuesInboxInner({
         </div>
 
         {isLoadingActive ? (
-          <div className="text-xs text-muted-foreground py-3 text-center">
-            Loading issues...
-          </div>
+          <div className="text-muted-foreground py-3 text-center text-xs">Loading issues...</div>
         ) : displayActive.length === 0 ? (
-          <div className="text-xs text-muted-foreground py-3 text-center">
-            No pending issues
-          </div>
+          <div className="text-muted-foreground py-3 text-center text-xs">No pending issues</div>
         ) : (
           <div className="space-y-1.5">
             {displayActive.map((issue) => (
-              <IssueCard
-                key={issue.id}
-                issue={issue}
-                onView={openIssue}
-                variant="compact"
-              />
+              <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="compact" />
             ))}
             {activeIssues.length > (maxVisible ?? Infinity) && (
-              <p className="text-xs text-muted-foreground text-center pt-1">
+              <p className="text-muted-foreground pt-1 text-center text-xs">
                 +{activeIssues.length - (maxVisible ?? 0)} more issues
               </p>
             )}
@@ -132,51 +104,46 @@ function IssuesInboxInner({
           </div>
           <div>
             <h2 className="text-base font-semibold">National Issues</h2>
-            <p className="text-xs text-muted-foreground">
-              Decisions requiring your attention
-            </p>
+            <p className="text-muted-foreground text-xs">Decisions requiring your attention</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {urgentCount > 0 && (
-            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
-              <Flame className="h-3 w-3 mr-1" />
+            <Badge className="border-red-500/30 bg-red-500/20 text-xs text-red-400">
+              <Flame className="mr-1 h-3 w-3" />
               {urgentCount} Urgent
             </Badge>
           )}
           <Badge
             variant="outline"
-            className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs"
+            className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-400"
           >
             {pendingCount} Pending
           </Badge>
         </div>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as InboxTab)}
-      >
-        <TabsList className="grid w-full grid-cols-3 h-8">
-          <TabsTrigger value="active" className="text-xs gap-1">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as InboxTab)}>
+        <TabsList className="grid h-8 w-full grid-cols-3">
+          <TabsTrigger value="active" className="gap-1 text-xs">
             <Inbox className="h-3 w-3" />
             Active
             {pendingCount > 0 && (
-              <Badge variant="secondary" className="h-4 text-[10px] px-1">
+              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                 {pendingCount}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="urgent" className="text-xs gap-1">
+          <TabsTrigger value="urgent" className="gap-1 text-xs">
             <AlertTriangle className="h-3 w-3" />
             Crises
             {urgentCount > 0 && (
-              <Badge variant="destructive" className="h-4 text-[10px] px-1">
+              <Badge variant="destructive" className="h-4 px-1 text-[10px]">
                 {urgentCount}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="history" className="text-xs gap-1">
+          <TabsTrigger value="history" className="gap-1 text-xs">
             <History className="h-3 w-3" />
             History
           </TabsTrigger>
@@ -194,12 +161,7 @@ function IssuesInboxInner({
           ) : (
             <div className="space-y-2">
               {displayActive.map((issue) => (
-                <IssueCard
-                  key={issue.id}
-                  issue={issue}
-                  onView={openIssue}
-                  variant="full"
-                />
+                <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="full" />
               ))}
             </div>
           )}
@@ -215,12 +177,7 @@ function IssuesInboxInner({
           ) : (
             <div className="space-y-2">
               {displayUrgent.map((issue) => (
-                <IssueCard
-                  key={issue.id}
-                  issue={issue}
-                  onView={openIssue}
-                  variant="full"
-                />
+                <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="full" />
               ))}
             </div>
           )}
@@ -229,19 +186,14 @@ function IssuesInboxInner({
         <TabsContent value="history" className="mt-3">
           {displayHistory.length === 0 ? (
             <EmptyState
-              icon={<History className="h-8 w-8 text-muted-foreground/30" />}
+              icon={<History className="text-muted-foreground/30 h-8 w-8" />}
               title="No history yet"
               description="Your past decisions will appear here."
             />
           ) : (
             <div className="space-y-2">
               {displayHistory.map((issue) => (
-                <IssueCard
-                  key={issue.id}
-                  issue={issue}
-                  onView={openIssue}
-                  variant="full"
-                />
+                <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="full" />
               ))}
             </div>
           )}
@@ -263,10 +215,7 @@ function LoadingState() {
   return (
     <div className="space-y-2">
       {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="animate-pulse rounded-lg border border-white/10 p-3"
-        >
+        <div key={i} className="animate-pulse rounded-lg border border-white/10 p-3">
           <div className="flex items-start gap-3">
             <div className="h-7 w-7 rounded-full bg-white/10" />
             <div className="flex-1 space-y-2">
@@ -293,7 +242,7 @@ function EmptyState({
     <div className="flex flex-col items-center justify-center py-8 text-center">
       {icon}
       <h3 className="mt-3 text-sm font-medium">{title}</h3>
-      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground mt-1 text-xs">{description}</p>
     </div>
   );
 }

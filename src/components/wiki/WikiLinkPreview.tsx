@@ -28,11 +28,7 @@ interface WikiLinkPreviewProps {
   children: React.ReactNode;
 }
 
-export function WikiLinkPreview({
-  title,
-  wiki = "ixwiki",
-  children,
-}: WikiLinkPreviewProps) {
+export function WikiLinkPreview({ title, wiki = "ixwiki", children }: WikiLinkPreviewProps) {
   // Prefetch intro for instant tooltip via global provider
   const utils = api.useUtils();
   useEffect(() => {
@@ -52,10 +48,7 @@ interface ForumLinkPreviewProps {
   children: React.ReactNode;
 }
 
-export function ForumLinkPreview({
-  threadId,
-  children,
-}: ForumLinkPreviewProps) {
+export function ForumLinkPreview({ threadId, children }: ForumLinkPreviewProps) {
   // Prefetch thread data for instant tooltip via global provider
   const utils = api.useUtils();
   useEffect(() => {
@@ -77,17 +70,8 @@ interface WikiHtmlContentProps {
   as?: "div" | "p" | "span";
 }
 
-export function WikiHtmlContent({
-  html,
-  className = "",
-  as: Tag = "div",
-}: WikiHtmlContentProps) {
-  return (
-    <Tag
-      className={className}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
+export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
+  return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // Re-export for backward compat

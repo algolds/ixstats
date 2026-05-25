@@ -21,8 +21,10 @@ function PopoverPortal({ ...props }: React.ComponentProps<typeof PopoverPrimitiv
   return <PopoverPrimitive.Portal data-slot="popover-portal" {...props} />;
 }
 
-interface PopoverContentProps
-  extends Omit<React.ComponentProps<typeof PopoverPrimitive.Positioner>, "render"> {}
+interface PopoverContentProps extends Omit<
+  React.ComponentProps<typeof PopoverPrimitive.Positioner>,
+  "render"
+> {}
 
 function PopoverContent({ className, sideOffset = 4, children, ...props }: PopoverContentProps) {
   return (

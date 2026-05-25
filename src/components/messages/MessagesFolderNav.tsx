@@ -115,11 +115,11 @@ export function MessagesFolderNav({
               key={folder.id}
               onClick={() => onNavigate(folder.id)}
               className={cn(
-                "group/tip relative flex items-center gap-3 rounded-lg outline-none transition-all duration-200",
+                "group/tip relative flex items-center gap-3 rounded-lg transition-all duration-200 outline-none",
                 expanded ? "px-3 py-2" : "justify-center p-2",
                 isActive
                   ? cn("border", folder.activeGlow)
-                  : "border border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
               )}
               aria-label={folder.title}
               aria-current={isActive ? "page" : undefined}
@@ -128,7 +128,7 @@ export function MessagesFolderNav({
               {!expanded && isActive && (
                 <div
                   className={cn(
-                    "absolute -left-[5px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full",
+                    "absolute top-1/2 -left-[5px] h-5 w-[3px] -translate-y-1/2 rounded-full",
                     folder.gradient.replace("text-", "bg-")
                   )}
                 />
@@ -138,15 +138,13 @@ export function MessagesFolderNav({
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] transition-all duration-150",
-                    isActive
-                      ? folder.gradient
-                      : "group-hover/tip:scale-110"
+                    isActive ? folder.gradient : "group-hover/tip:scale-110"
                   )}
                 />
 
                 {/* Unread badge */}
                 {count > 0 && !expanded && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm">
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm">
                     {count > 99 ? "99+" : count}
                   </span>
                 )}
@@ -157,7 +155,7 @@ export function MessagesFolderNav({
                 <span
                   className={cn(
                     "min-w-0 flex-1 truncate text-left text-sm",
-                    isActive ? "font-semibold text-foreground" : "font-medium"
+                    isActive ? "text-foreground font-semibold" : "font-medium"
                   )}
                 >
                   {folder.title}
@@ -173,10 +171,10 @@ export function MessagesFolderNav({
 
               {/* Tooltip (collapsed mode only) */}
               {!expanded && (
-                <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+                <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
                   {folder.title}
                   {count > 0 && ` (${count})`}
-                  <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
+                  <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
                 </span>
               )}
             </button>
@@ -188,19 +186,17 @@ export function MessagesFolderNav({
       <div className="flex flex-col gap-0.5 p-1.5">
         <button
           className={cn(
-            "group/tip relative flex items-center gap-3 rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
+            "group/tip text-muted-foreground hover:bg-muted/60 hover:text-foreground relative flex items-center gap-3 rounded-lg transition-colors",
             expanded ? "px-3 py-2" : "justify-center p-2"
           )}
           aria-label="Settings"
         >
           <Settings className="h-[18px] w-[18px] shrink-0 transition-transform duration-150 group-hover/tip:scale-110" />
-          {expanded && (
-            <span className="min-w-0 truncate text-sm font-medium">Settings</span>
-          )}
+          {expanded && <span className="min-w-0 truncate text-sm font-medium">Settings</span>}
           {!expanded && (
-            <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
               Settings
-              <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
+              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
             </span>
           )}
         </button>
@@ -209,7 +205,7 @@ export function MessagesFolderNav({
         <button
           onClick={onToggleExpanded}
           className={cn(
-            "group/tip relative flex items-center gap-3 rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
+            "group/tip text-muted-foreground hover:bg-muted/60 hover:text-foreground relative flex items-center gap-3 rounded-lg transition-colors",
             expanded ? "px-3 py-2" : "justify-center p-2"
           )}
           aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
@@ -219,13 +215,11 @@ export function MessagesFolderNav({
           ) : (
             <PanelLeftOpen className="h-[18px] w-[18px] shrink-0" />
           )}
-          {expanded && (
-            <span className="min-w-0 truncate text-sm font-medium">Collapse</span>
-          )}
+          {expanded && <span className="min-w-0 truncate text-sm font-medium">Collapse</span>}
           {!expanded && (
-            <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
               Expand
-              <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
+              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
             </span>
           )}
         </button>

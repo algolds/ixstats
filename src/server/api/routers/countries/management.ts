@@ -18,12 +18,8 @@ import {
 export const managementProcedures = {
   // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
   triggerEconomicNarrative: adminProcedure.mutation(async ({ ctx }) => {
-    console.log(
-      `[AUDIT] Economic narrative triggered by admin userId=${ctx.auth?.userId}`
-    );
-    const { detectEconomicMilestoneAndTriggerNarrative } = await import(
-      "~/lib/auto-post-service"
-    );
+    console.log(`[AUDIT] Economic narrative triggered by admin userId=${ctx.auth?.userId}`);
+    const { detectEconomicMilestoneAndTriggerNarrative } = await import("~/lib/auto-post-service");
     await detectEconomicMilestoneAndTriggerNarrative();
     return { success: true, message: "Economic narrative triggered" };
   }),
@@ -84,7 +80,7 @@ export const managementProcedures = {
     )
     .query(async ({ ctx, input }) => {
       const sinceWindow = new Date(Date.now() - input.windowHours * 60 * 60 * 1000);
-      
+
       const [
         country,
         crisisEvents,
@@ -152,13 +148,13 @@ export const managementProcedures = {
         }),
       ]);
 
-      return { 
-        country, 
-        crisisEvents, 
-        diplomaticEvents, 
-        embassyMissions, 
-        cabinetMeetings, 
-        securityThreats 
+      return {
+        country,
+        crisisEvents,
+        diplomaticEvents,
+        embassyMissions,
+        cabinetMeetings,
+        securityThreats,
       };
     }),
 
@@ -247,10 +243,12 @@ export const managementProcedures = {
                 lifeExpectancy: z.number().optional(),
                 literacyRate: z.number().min(0).max(100).optional(),
                 populationGrowthRate: z.number().optional(),
-                urbanRuralSplit: z.object({
-                  urban: z.number(),
-                  rural: z.number(),
-                }).optional(),
+                urbanRuralSplit: z
+                  .object({
+                    urban: z.number(),
+                    rural: z.number(),
+                  })
+                  .optional(),
                 ageDistribution: z.array(z.any()).optional(),
                 educationLevels: z.array(z.any()).optional(),
               })
@@ -264,12 +262,15 @@ export const managementProcedures = {
                 economicClasses: z.array(z.any()).optional(),
               })
               .optional(),
-            governmentSpending: z.object({
-              totalSpending: z.number().optional(),
-              spendingGDPPercent: z.number().optional(),
-              spendingPerCapita: z.number().optional(),
-              spendingCategories: z.array(z.any()).optional(),
-            }).passthrough().optional(),
+            governmentSpending: z
+              .object({
+                totalSpending: z.number().optional(),
+                spendingGDPPercent: z.number().optional(),
+                spendingPerCapita: z.number().optional(),
+                spendingCategories: z.array(z.any()).optional(),
+              })
+              .passthrough()
+              .optional(),
             nationalIdentity: z
               .object({
                 countryName: z.string().optional(),
@@ -341,19 +342,21 @@ export const managementProcedures = {
       });
 
       if (userWithCountry?.country) {
-        console.log(`[createCountry] User ${userId} already has country: ${userWithCountry.country.name}`);
+        console.log(
+          `[createCountry] User ${userId} already has country: ${userWithCountry.country.name}`
+        );
         return userWithCountry.country;
       }
 
       if (userWithCountry && !userWithCountry.roleId) {
         const defaultRole = await ctx.db.role.findFirst({
-          where: { name: 'user' }
+          where: { name: "user" },
         });
 
         if (defaultRole) {
           await ctx.db.user.update({
             where: { clerkUserId: userId },
-            data: { roleId: defaultRole.id }
+            data: { roleId: defaultRole.id },
           });
         }
       }
@@ -389,8 +392,10 @@ export const managementProcedures = {
       const nationalIdentity = (econ.nationalIdentity || {}) as any;
       const geography = (econ.geography || {}) as any;
 
-      const population = coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
-      const gdpPerCapita = coreIndicators.gdpPerCapita || foundationData?.baselineGdpPerCapita || 25000;
+      const population =
+        coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
+      const gdpPerCapita =
+        coreIndicators.gdpPerCapita || foundationData?.baselineGdpPerCapita || 25000;
       const nominalGDP = coreIndicators.nominalGDP || population * gdpPerCapita;
       const totalGdp = population * gdpPerCapita;
 
@@ -410,7 +415,10 @@ export const managementProcedures = {
               slug: slug,
               continent: geography.continent || foundationData?.continent || "Unknown",
               region: geography.region || foundationData?.region || "Unknown",
-              governmentType: nationalIdentity.governmentType || input.governmentStructure?.governmentType || "Republic",
+              governmentType:
+                nationalIdentity.governmentType ||
+                input.governmentStructure?.governmentType ||
+                "Republic",
               religion: nationalIdentity.nationalReligion || "Secular",
               leader: nationalIdentity.leader || "Unknown",
               flag: econ.flagUrl || foundationData?.flag || undefined,
@@ -440,10 +448,15 @@ export const managementProcedures = {
               totalWorkforce: laborEmployment.totalWorkforce || Math.round(population * 0.65),
               averageWorkweekHours: laborEmployment.averageWorkweekHours || 40,
               minimumWage: laborEmployment.minimumWage || Math.round(gdpPerCapita * 0.02),
-              averageAnnualIncome: laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
-              taxRevenueGDPPercent: fiscalSystem.taxRevenueGDPPercent || (input.taxSystemData as any)?.totalTaxRate || 20,
+              averageAnnualIncome:
+                laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
+              taxRevenueGDPPercent:
+                fiscalSystem.taxRevenueGDPPercent ||
+                (input.taxSystemData as any)?.totalTaxRate ||
+                20,
               governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || nominalGDP * 0.2,
-              taxRevenuePerCapita: fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.2) / population,
+              taxRevenuePerCapita:
+                fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.2) / population,
               governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 22,
               budgetDeficitSurplus: fiscalSystem.budgetDeficitSurplus || 0,
               internalDebtGDPPercent: fiscalSystem.internalDebtGDPPercent || 45,
@@ -457,12 +470,15 @@ export const managementProcedures = {
               socialMobilityIndex: incomeWealth.socialMobilityIndex || 60,
               totalGovernmentSpending: governmentSpending.totalSpending || nominalGDP * 0.22,
               spendingGDPPercent: governmentSpending.spendingGDPPercent || 22,
-              spendingPerCapita: governmentSpending.spendingPerCapita || (nominalGDP * 0.22) / population,
+              spendingPerCapita:
+                governmentSpending.spendingPerCapita || (nominalGDP * 0.22) / population,
               lifeExpectancy: demographics.lifeExpectancy || 78.5,
               urbanPopulationPercent: demographics.urbanRuralSplit?.urban || 65,
               ruralPopulationPercent: demographics.urbanRuralSplit?.rural || 35,
               literacyRate: demographics.literacyRate || 95,
-              populationDensity: foundationData?.landArea ? population / foundationData.landArea : undefined,
+              populationDensity: foundationData?.landArea
+                ? population / foundationData.landArea
+                : undefined,
               gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
               lastCalculated: new Date(),
             },
@@ -674,7 +690,9 @@ export const managementProcedures = {
               populationGrowthRate: demographics.populationGrowthRate || 0.5,
               gdpGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
               landArea: foundationData?.landArea || 100000,
-              populationDensity: foundationData?.landArea ? population / foundationData.landArea : undefined,
+              populationDensity: foundationData?.landArea
+                ? population / foundationData.landArea
+                : undefined,
               gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
             },
           });
@@ -725,11 +743,17 @@ export const managementProcedures = {
             for (const synergy of synergies) {
               if (synergy.synergyType === "CONFLICTING") conflictPenalty += 15;
               else if (synergy.synergyType === "ADDITIVE") totalSynergyBonus += 10;
-              else if (synergy.synergyType === "MULTIPLICATIVE") totalSynergyBonus += synergy.effectMultiplier * 10;
+              else if (synergy.synergyType === "MULTIPLICATIVE")
+                totalSynergyBonus += synergy.effectMultiplier * 10;
             }
 
-            const baseEffectiveness = componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / (componentRecords.length || 1);
-            const governmentEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty));
+            const baseEffectiveness =
+              componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
+              (componentRecords.length || 1);
+            const governmentEffectiveness = Math.max(
+              0,
+              Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty)
+            );
 
             await tx.governmentStructure.update({
               where: { countryId: country.id },
@@ -739,7 +763,10 @@ export const managementProcedures = {
 
           if (input.economyBuilderState) {
             const economyState = input.economyBuilderState;
-            if (economyState.selectedAtomicComponents && economyState.selectedAtomicComponents.length > 0) {
+            if (
+              economyState.selectedAtomicComponents &&
+              economyState.selectedAtomicComponents.length > 0
+            ) {
               for (const componentType of economyState.selectedAtomicComponents) {
                 await tx.economicComponent.create({
                   data: {
@@ -757,7 +784,9 @@ export const managementProcedures = {
             await tx.economicProfile.create({
               data: {
                 countryId: country.id,
-                sectorBreakdown: economyState.structure ? JSON.stringify(economyState.structure) : undefined,
+                sectorBreakdown: economyState.structure
+                  ? JSON.stringify(economyState.structure)
+                  : undefined,
               },
             });
           }
@@ -772,9 +801,10 @@ export const managementProcedures = {
 
         return result;
       } catch (error) {
-        console.error('[createCountry] Transaction failed:', error);
-        throw new Error(`Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error("[createCountry] Transaction failed:", error);
+        throw new Error(
+          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 };
-

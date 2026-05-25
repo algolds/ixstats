@@ -41,8 +41,14 @@ const QuickActionCard = React.memo(({ action, index }: { action: QuickAction; in
   const y = useMotionValue(0);
 
   // Spring animation for smooth tilt
-  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [10, -10]), { stiffness: 200, damping: 15 });
-  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), { stiffness: 200, damping: 15 });
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [10, -10]), {
+    stiffness: 200,
+    damping: 15,
+  });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), {
+    stiffness: 200,
+    damping: 15,
+  });
 
   // State for particle burst effect
   const [particles, setParticles] = useState<{ id: number; x: number; y: number }[]>([]);
@@ -107,20 +113,20 @@ const QuickActionCard = React.memo(({ action, index }: { action: QuickAction; in
           whileTap={{ scale: 0.95 }}
           className="relative"
         >
-          <Card className="glass-hierarchy-child group relative h-full cursor-pointer overflow-hidden transition-all duration-300 vault-glow-holographic">
+          <Card className="glass-hierarchy-child group vault-glow-holographic relative h-full cursor-pointer overflow-hidden transition-all duration-300">
             {/* Badge indicator with pulse animation */}
             {hasBadge && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute right-3 top-3 z-10"
+                className="absolute top-3 right-3 z-10"
               >
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                   className={cn(
                     "flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold text-white",
-                    badgeColor === "gold" && "bg-gold-500 shadow-lg shadow-gold-500/30",
+                    badgeColor === "gold" && "bg-gold-500 shadow-gold-500/30 shadow-lg",
                     badgeColor === "purple" && "bg-purple-500 shadow-lg shadow-purple-500/30",
                     badgeColor === "blue" && "bg-blue-500 shadow-lg shadow-blue-500/30",
                     badgeColor === "green" && "bg-green-500 shadow-lg shadow-green-500/30"
@@ -146,18 +152,22 @@ const QuickActionCard = React.memo(({ action, index }: { action: QuickAction; in
               animate={{ opacity: isHovering ? 1 : 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" style={{ backgroundSize: "200% 100%" }} />
+              <div
+                className="animate-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                style={{ backgroundSize: "200% 100%" }}
+              />
             </motion.div>
 
             {/* Particle burst effect */}
             {particles.map((particle, i) => (
               <motion.div
                 key={particle.id}
-                className="absolute w-2 h-2 rounded-full"
+                className="absolute h-2 w-2 rounded-full"
                 style={{
                   left: particle.x,
                   top: particle.y,
-                  background: "linear-gradient(135deg, var(--vault-purple-start), var(--vault-gold-start))",
+                  background:
+                    "linear-gradient(135deg, var(--vault-purple-start), var(--vault-gold-start))",
                 }}
                 initial={{ scale: 1, opacity: 1 }}
                 animate={{
@@ -170,20 +180,27 @@ const QuickActionCard = React.memo(({ action, index }: { action: QuickAction; in
               />
             ))}
 
-            <div className="relative flex flex-col items-center gap-4 p-6 sm:p-8 text-center" style={{ transform: "translateZ(20px)" }}>
+            <div
+              className="relative flex flex-col items-center gap-4 p-6 text-center sm:p-8"
+              style={{ transform: "translateZ(20px)" }}
+            >
               {/* Icon with 3D depth and glow */}
               <div className="relative">
                 <motion.div
                   className="absolute inset-0 rounded-full blur-xl"
                   animate={{
                     background: isHovering
-                      ? ["rgba(147, 51, 234, 0.3)", "rgba(255, 215, 0, 0.3)", "rgba(147, 51, 234, 0.3)"]
+                      ? [
+                          "rgba(147, 51, 234, 0.3)",
+                          "rgba(255, 215, 0, 0.3)",
+                          "rgba(147, 51, 234, 0.3)",
+                        ]
                       : "rgba(147, 51, 234, 0.2)",
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
                 <motion.div
-                  className="relative rounded-full p-5 bg-purple-500/10"
+                  className="relative rounded-full bg-purple-500/10 p-5"
                   style={{
                     transform: "translateZ(30px)",
                   }}
@@ -196,13 +213,15 @@ const QuickActionCard = React.memo(({ action, index }: { action: QuickAction; in
 
               {/* Text content */}
               <motion.div className="space-y-1" style={{ transform: "translateZ(25px)" }}>
-                <h3 className="text-xl font-bold text-purple-300">
-                  {action.label}
-                </h3>
+                <h3 className="text-xl font-bold text-purple-300">{action.label}</h3>
                 {action.description && (
                   <motion.p
-                    className="text-sm text-muted-foreground"
-                    animate={{ color: isHovering ? "hsl(var(--foreground) / 0.7)" : "hsl(var(--muted-foreground))" }}
+                    className="text-muted-foreground text-sm"
+                    animate={{
+                      color: isHovering
+                        ? "hsl(var(--foreground) / 0.7)"
+                        : "hsl(var(--muted-foreground))",
+                    }}
                   >
                     {action.description}
                   </motion.p>
@@ -212,9 +231,10 @@ const QuickActionCard = React.memo(({ action, index }: { action: QuickAction; in
 
             {/* Bottom shine effect */}
             <motion.div
-              className="absolute bottom-0 left-0 right-0 h-px"
+              className="absolute right-0 bottom-0 left-0 h-px"
               style={{
-                background: "linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.5), rgba(255, 215, 0, 0.5), transparent)",
+                background:
+                  "linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.5), rgba(255, 215, 0, 0.5), transparent)",
               }}
               animate={{ opacity: isHovering ? [0.3, 0.7, 0.3] : 0 }}
               transition={{ duration: 1.5, repeat: Infinity }}

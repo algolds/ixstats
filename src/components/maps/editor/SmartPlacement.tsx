@@ -99,14 +99,14 @@ export function SmartPlacement(props: SmartPlacementProps) {
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+      <div className="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
         <Lightbulb className="h-3 w-3" />
         Suggestions
       </div>
       {suggestions.map((s, i) => {
         const Icon = s.icon;
         return (
-          <div key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+          <div key={i} className="text-muted-foreground flex items-start gap-1.5 text-[11px]">
             <Icon className={`mt-0.5 h-3 w-3 shrink-0 ${s.color}`} />
             <span>{s.text}</span>
           </div>

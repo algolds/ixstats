@@ -205,17 +205,17 @@ export function PolicyBadgeGrid({
               className={cn(
                 "cursor-help transition-all hover:scale-105",
                 policy.enabled
-                  ? cn("bg-gradient-to-r", catConfig.color, "text-white border-0")
+                  ? cn("bg-gradient-to-r", catConfig.color, "border-0 text-white")
                   : "opacity-50"
               )}
             >
-              <IconComponent className="h-3 w-3 mr-1" />
+              <IconComponent className="mr-1 h-3 w-3" />
               {policy.label}
             </Badge>
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-medium">{policy.label}</p>
-            <p className="text-xs text-muted-foreground">{policy.description}</p>
+            <p className="text-muted-foreground text-xs">{policy.description}</p>
           </TooltipContent>
         </Tooltip>
       );
@@ -224,7 +224,7 @@ export function PolicyBadgeGrid({
     return (
       <div
         className={cn(
-          "flex items-center gap-3 p-3 rounded-lg border transition-all",
+          "flex items-center gap-3 rounded-lg border p-3 transition-all",
           policy.enabled
             ? cn(catConfig.bgColor, catConfig.borderColor, "hover:scale-[1.02]")
             : "bg-muted/30 border-muted opacity-60"
@@ -232,29 +232,24 @@ export function PolicyBadgeGrid({
       >
         <div
           className={cn(
-            "p-2 rounded-lg",
-            policy.enabled
-              ? cn("bg-gradient-to-br", catConfig.color)
-              : "bg-muted"
+            "rounded-lg p-2",
+            policy.enabled ? cn("bg-gradient-to-br", catConfig.color) : "bg-muted"
           )}
         >
           <IconComponent
-            className={cn(
-              "h-4 w-4",
-              policy.enabled ? "text-white" : "text-muted-foreground"
-            )}
+            className={cn("h-4 w-4", policy.enabled ? "text-white" : "text-muted-foreground")}
           />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className={cn("text-sm font-medium truncate", policy.enabled && catConfig.textColor)}>
+        <div className="min-w-0 flex-1">
+          <p className={cn("truncate text-sm font-medium", policy.enabled && catConfig.textColor)}>
             {policy.label}
           </p>
-          <p className="text-xs text-muted-foreground truncate">{policy.description}</p>
+          <p className="text-muted-foreground truncate text-xs">{policy.description}</p>
         </div>
         {policy.enabled ? (
-          <Check className={cn("h-4 w-4 flex-shrink-0", catConfig.textColor)} />
+          <Check className={cn("h-4 w-4 shrink-0", catConfig.textColor)} />
         ) : (
-          <X className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <X className="text-muted-foreground h-4 w-4 shrink-0" />
         )}
       </div>
     );
@@ -284,7 +279,7 @@ export function PolicyBadgeGrid({
               const CatIcon = catConfig.icon;
               return (
                 <div key={category}>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="mb-2 flex items-center gap-2">
                     <CatIcon className={cn("h-4 w-4", catConfig.textColor)} />
                     <span className={cn("text-sm font-semibold", catConfig.textColor)}>
                       {catConfig.label}
@@ -293,10 +288,7 @@ export function PolicyBadgeGrid({
                       {categoryPolicies.length}
                     </Badge>
                   </div>
-                  <Wrapper
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-                    {...wrapperProps}
-                  >
+                  <Wrapper className="grid grid-cols-1 gap-2 sm:grid-cols-2" {...wrapperProps}>
                     {categoryPolicies.map((policy) => (
                       <ItemWrapper key={policy.id} {...itemProps}>
                         <PolicyBadgeItem policy={policy} />
@@ -306,22 +298,19 @@ export function PolicyBadgeGrid({
                 </div>
               );
             })}
-            
+
             {disabledPolicies.length > 0 && (
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-semibold text-muted-foreground">
+                <div className="mb-2 flex items-center gap-2">
+                  <AlertCircle className="text-muted-foreground h-4 w-4" />
+                  <span className="text-muted-foreground text-sm font-semibold">
                     Not Implemented
                   </span>
                   <Badge variant="outline" className="text-xs">
                     {disabledPolicies.length}
                   </Badge>
                 </div>
-                <Wrapper
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-                  {...wrapperProps}
-                >
+                <Wrapper className="grid grid-cols-1 gap-2 sm:grid-cols-2" {...wrapperProps}>
                   {disabledPolicies.map((policy) => (
                     <ItemWrapper key={policy.id} {...itemProps}>
                       <PolicyBadgeItem policy={policy} />
@@ -332,10 +321,7 @@ export function PolicyBadgeGrid({
             )}
           </div>
         ) : (
-          <Wrapper
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-            {...wrapperProps}
-          >
+          <Wrapper className="grid grid-cols-1 gap-2 sm:grid-cols-2" {...wrapperProps}>
             {policies.map((policy) => (
               <ItemWrapper key={policy.id} {...itemProps}>
                 <PolicyBadgeItem policy={policy} />
@@ -345,14 +331,14 @@ export function PolicyBadgeGrid({
         )}
 
         {/* Summary stats */}
-        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-sm">
+        <div className="border-border/50 mt-4 flex items-center justify-between border-t pt-4 text-sm">
           <span className="text-muted-foreground">
             {enabledPolicies.length} of {policies.length} policies active
           </span>
           <div className="flex items-center gap-1">
-            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="bg-muted h-2 w-24 overflow-hidden rounded-full">
               <motion.div
-                className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
                 initial={animate ? { width: 0 } : undefined}
                 animate={{ width: `${(enabledPolicies.length / policies.length) * 100}%` }}
                 transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1], delay: 0.3 }}
@@ -371,7 +357,9 @@ export function PolicyBadgeGrid({
 /**
  * Helper function to create policy badges from spending data
  */
-export function createPoliciesFromSpending(spendingData: Record<string, boolean | unknown>): PolicyBadge[] {
+export function createPoliciesFromSpending(
+  spendingData: Record<string, boolean | unknown>
+): PolicyBadge[] {
   return defaultPolicies.map((policy) => ({
     ...policy,
     enabled: Boolean(spendingData[policy.key]),

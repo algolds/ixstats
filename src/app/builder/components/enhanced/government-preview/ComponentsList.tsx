@@ -53,7 +53,7 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
                     animate={{ opacity: 1, scale: 1 }}
                     className="bg-muted/50 border-muted hover:border-primary/30 flex items-start gap-3 rounded-lg border p-4 transition-colors"
                   >
-                    <div className="bg-primary/10 flex-shrink-0 rounded-lg p-2">
+                    <div className="bg-primary/10 shrink-0 rounded-lg p-2">
                       <Crown className="text-primary h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">

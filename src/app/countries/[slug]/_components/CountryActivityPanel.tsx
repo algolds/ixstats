@@ -314,7 +314,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               <CardContent className="space-y-4 pt-6">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex animate-pulse items-start gap-3">
-                    <div className="bg-muted mt-2 h-2 w-2 flex-shrink-0 rounded-full"></div>
+                    <div className="bg-muted mt-2 h-2 w-2 shrink-0 rounded-full"></div>
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-3 w-1/2" />
@@ -335,7 +335,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                     }`}
                   >
                     <div
-                      className={`mt-2 h-2 w-2 flex-shrink-0 rounded-full ${getItemDotColor(item.type, item.source)}`}
+                      className={`mt-2 h-2 w-2 shrink-0 rounded-full ${getItemDotColor(item.type, item.source)}`}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
@@ -467,7 +467,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                     key={milestone.id}
                     className="flex items-start gap-2 rounded-lg border border-yellow-200/50 bg-yellow-50/50 p-2 dark:border-yellow-900/30 dark:bg-yellow-900/10"
                   >
-                    <Trophy className="mt-0.5 h-3 w-3 flex-shrink-0 text-yellow-500" />
+                    <Trophy className="mt-0.5 h-3 w-3 shrink-0 text-yellow-500" />
                     <div className="min-w-0">
                       <p className="truncate text-xs font-medium">{milestone.title}</p>
                       <p className="text-muted-foreground line-clamp-1 text-xs">

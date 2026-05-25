@@ -81,7 +81,7 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <div
-                      className={`rounded p-1.5 bg-${component.color}-100 dark:bg-${component.color}-900/20 flex-shrink-0`}
+                      className={`rounded p-1.5 bg-${component.color}-100 dark:bg-${component.color}-900/20 shrink-0`}
                     >
                       <Icon
                         className={`h-4 w-4 text-${component.color}-600 dark:text-${component.color}-400`}
@@ -95,7 +95,7 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
                         {component.category}
                       </p>
                     </div>
-                    <Badge variant="outline" className="flex-shrink-0 text-xs">
+                    <Badge variant="outline" className="shrink-0 text-xs">
                       {component.effectiveness}%
                     </Badge>
                   </div>

@@ -232,16 +232,22 @@ async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange
 async function ixwikiGetHistory(
   title: string,
   limit: number = 50,
-  offset?: number,
+  offset?: number
 ): Promise<{
   revisions: Array<{
-    revid: number; parentid: number | null; timestamp: string;
-    user: string; comment: string; size: number; minor: boolean;
+    revid: number;
+    parentid: number | null;
+    timestamp: string;
+    user: string;
+    comment: string;
+    size: number;
+    minor: boolean;
   }>;
   hasMore: boolean;
 }> {
   const cacheKey = `history:${title}:${limit}:${offset ?? 0}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetHistory> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetHistory> extends Promise<infer T> ? T : never>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -307,16 +313,24 @@ async function ixwikiGetHistory(
 async function ixwikiGetUserContribs(
   username: string,
   limit: number = 50,
-  offset?: number,
+  offset?: number
 ): Promise<{
   contribs: Array<{
-    revid: number; title: string; timestamp: string;
-    comment: string; size: number; minor: boolean; isNew: boolean;
+    revid: number;
+    title: string;
+    timestamp: string;
+    comment: string;
+    size: number;
+    minor: boolean;
+    isNew: boolean;
   }>;
   hasMore: boolean;
 }> {
   const cacheKey = `usercontribs:${username}:${limit}:${offset ?? 0}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetUserContribs> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetUserContribs> extends Promise<infer T> ? T : never>(
+      cacheKey
+    );
   if (cached) return cached;
 
   try {
@@ -371,11 +385,15 @@ async function ixwikiGetUserContribs(
  * Replaces api.php?action=query&list=users (~300ms → ~20ms).
  */
 async function ixwikiGetUserInfo(username: string): Promise<{
-  exists: boolean; username: string; editCount: number;
-  registration: string | null; groups: string[];
+  exists: boolean;
+  username: string;
+  editCount: number;
+  registration: string | null;
+  groups: string[];
 }> {
   const cacheKey = `userinfo:${username}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetUserInfo> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetUserInfo> extends Promise<infer T> ? T : never>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -408,7 +426,9 @@ async function ixwikiGetUserInfo(username: string): Promise<{
       exists: true,
       username: String(user.user_name),
       editCount: (user.user_editcount as number) ?? 0,
-      registration: user.user_registration ? formatMWTimestamp(String(user.user_registration)) : null,
+      registration: user.user_registration
+        ? formatMWTimestamp(String(user.user_registration))
+        : null,
       groups,
     };
 
@@ -427,10 +447,11 @@ async function ixwikiGetUserInfo(username: string): Promise<{
 async function ixwikiGetBacklinks(
   title: string,
   limit: number = 50,
-  offset?: number,
+  offset?: number
 ): Promise<{ links: Array<{ title: string; ns: number }>; hasMore: boolean }> {
   const cacheKey = `backlinks:${title}:${limit}:${offset ?? 0}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetBacklinks> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetBacklinks> extends Promise<infer T> ? T : never>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -481,14 +502,17 @@ async function ixwikiGetBacklinks(
 async function ixwikiGetCategoryMembers(
   category: string,
   limit: number = 50,
-  type?: "page" | "subcat" | "file",
+  type?: "page" | "subcat" | "file"
 ): Promise<{
   members: Array<{ title: string; ns: number; isSubcategory: boolean }>;
   hasMore: boolean;
 }> {
   const catName = category.replace(/^Category:/, "").replace(/ /g, "_");
   const cacheKey = `catmembers:${catName}:${limit}:${type ?? "all"}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetCategoryMembers> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetCategoryMembers> extends Promise<infer T> ? T : never>(
+      cacheKey
+    );
   if (cached) return cached;
 
   try {
@@ -540,11 +564,16 @@ async function ixwikiGetCategoryMembers(
  * Replaces api.php?action=query&meta=siteinfo (~200ms → ~5ms).
  */
 async function ixwikiGetSiteStats(): Promise<{
-  pages: number; articles: number; edits: number;
-  images: number; users: number; activeUsers: number;
+  pages: number;
+  articles: number;
+  edits: number;
+  images: number;
+  users: number;
+  activeUsers: number;
 }> {
   const cacheKey = "sitestats";
-  const cached = cacheGet<ReturnType<typeof ixwikiGetSiteStats> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetSiteStats> extends Promise<infer T> ? T : never>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -654,7 +683,9 @@ async function ixwikiResolveRedirect(title: string): Promise<string> {
  * Replaces api.php?action=query&revids=X&prop=revisions&rvprop=content (~400ms → ~40ms).
  */
 async function ixwikiGetRevisionWikitext(revid: number): Promise<{
-  wikitext: string; title: string; timestamp: string;
+  wikitext: string;
+  title: string;
+  timestamp: string;
 } | null> {
   const cacheKey = `revwikitext:${revid}`;
   const cached = cacheGet<{ wikitext: string; title: string; timestamp: string }>(cacheKey);
@@ -693,7 +724,8 @@ async function ixwikiGetRevisionWikitext(revid: number): Promise<{
  * Replaces api.php?action=query&prop=revisions&rvprop=ids|timestamp (~300ms → ~10ms).
  */
 async function ixwikiGetCurrentRevMeta(title: string): Promise<{
-  revid: number; timestamp: string;
+  revid: number;
+  timestamp: string;
 } | null> {
   const cacheKey = `revmeta:${title}`;
   const cached = cacheGet<{ revid: number; timestamp: string }>(cacheKey);
@@ -727,8 +759,12 @@ async function ixwikiGetCurrentRevMeta(title: string): Promise<{
  * Get wikitext from a specific namespace (not just main namespace 0).
  * Used for Talk pages (namespace 1), Templates (namespace 10), etc.
  */
-async function ixwikiGetNamespacedWikitext(title: string, namespace: number): Promise<{
-  wikitext: string; title: string;
+async function ixwikiGetNamespacedWikitext(
+  title: string,
+  namespace: number
+): Promise<{
+  wikitext: string;
+  title: string;
 } | null> {
   const cacheKey = `ns-wikitext:${namespace}:${title}`;
   const cached = cacheGet<{ wikitext: string; title: string }>(cacheKey);
@@ -796,16 +832,23 @@ async function ixwikiFullTextSearch(
   query: string,
   limit: number = 20,
   offset: number = 0,
-  namespace?: number,
+  namespace?: number
 ): Promise<{
   results: Array<{
-    title: string; namespace: number; snippet: string;
-    size: number; wordCount: number; timestamp: string;
+    title: string;
+    namespace: number;
+    snippet: string;
+    size: number;
+    wordCount: number;
+    timestamp: string;
   }>;
   totalHits: number;
 }> {
   const cacheKey = `ftsearch:${query}:${limit}:${offset}:${namespace ?? "all"}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiFullTextSearch> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiFullTextSearch> extends Promise<infer T> ? T : never>(
+      cacheKey
+    );
   if (cached) return cached;
 
   try {
@@ -848,7 +891,10 @@ async function ixwikiFullTextSearch(
       let snippetStart = 0;
       for (const term of queryTerms) {
         const idx = lowerText.indexOf(term);
-        if (idx >= 0) { snippetStart = Math.max(0, idx - 60); break; }
+        if (idx >= 0) {
+          snippetStart = Math.max(0, idx - 60);
+          break;
+        }
       }
       let snippet = textPreview.substring(snippetStart, snippetStart + 200);
       // Highlight query terms
@@ -883,7 +929,9 @@ async function ixwikiFullTextSearch(
  * Get parent categories for a page directly from MySQL.
  * Replaces api.php?action=query&prop=categories (~400ms → ~20ms).
  */
-async function ixwikiGetParentCategories(title: string): Promise<Array<{ title: string; fullTitle: string }>> {
+async function ixwikiGetParentCategories(
+  title: string
+): Promise<Array<{ title: string; fullTitle: string }>> {
   const cacheKey = `parentcats:${title}`;
   const cached = cacheGet<Array<{ title: string; fullTitle: string }>>(cacheKey);
   if (cached) return cached;
@@ -937,12 +985,18 @@ async function ixwikiGetParentCategories(title: string): Promise<Array<{ title: 
  * Replaces multiple API calls in getCategoryTree (~1500ms → ~50ms).
  */
 async function ixwikiGetCategoryInfo(categoryName: string): Promise<{
-  title: string; totalPages: number; totalSubcats: number; totalFiles: number;
+  title: string;
+  totalPages: number;
+  totalSubcats: number;
+  totalFiles: number;
   subcategories: Array<{ title: string; fullTitle: string }>;
 }> {
   const catName = categoryName.replace(/^Category:/, "").replace(/ /g, "_");
   const cacheKey = `catinfo:${catName}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetCategoryInfo> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetCategoryInfo> extends Promise<infer T> ? T : never>(
+      cacheKey
+    );
   if (cached) return cached;
 
   try {
@@ -983,7 +1037,13 @@ async function ixwikiGetCategoryInfo(categoryName: string): Promise<{
     return result;
   } catch (err) {
     console.error("[WikiBridge] MySQL category info error:", err);
-    return { title: catName.replace(/_/g, " "), totalPages: 0, totalSubcats: 0, totalFiles: 0, subcategories: [] };
+    return {
+      title: catName.replace(/_/g, " "),
+      totalPages: 0,
+      totalSubcats: 0,
+      totalFiles: 0,
+      subcategories: [],
+    };
   }
 }
 
@@ -1016,9 +1076,13 @@ async function ixwikiGetPageProps(pageId: number): Promise<Record<string, string
 /**
  * Get page protection status directly from MySQL.
  */
-async function ixwikiGetPageProtection(title: string): Promise<Array<{
-  type: string; level: string; expiry: string | null;
-}>> {
+async function ixwikiGetPageProtection(title: string): Promise<
+  Array<{
+    type: string;
+    level: string;
+    expiry: string | null;
+  }>
+> {
   const cacheKey = `protection:${title}`;
   const cached = cacheGet<Array<{ type: string; level: string; expiry: string | null }>>(cacheKey);
   if (cached) return cached;
@@ -1050,11 +1114,18 @@ async function ixwikiGetPageProtection(title: string): Promise<Array<{
  * Replaces api.php?action=query&prop=imageinfo (~400ms → ~20ms).
  */
 async function ixwikiGetImageMeta(filename: string): Promise<{
-  name: string; width: number; height: number; size: number;
-  mimeType: string; timestamp: string; url: string; thumbUrl: string;
+  name: string;
+  width: number;
+  height: number;
+  size: number;
+  mimeType: string;
+  timestamp: string;
+  url: string;
+  thumbUrl: string;
 } | null> {
   const cacheKey = `imgmeta:${filename}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetImageMeta> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetImageMeta> extends Promise<infer T> ? T : never>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -1101,13 +1172,21 @@ async function ixwikiGetImageMeta(filename: string): Promise<{
  */
 async function ixwikiGetPageLog(
   title: string,
-  limit: number = 50,
-): Promise<Array<{
-  id: number; type: string; action: string; timestamp: string;
-  user: string; comment: string; params: string;
-}>> {
+  limit: number = 50
+): Promise<
+  Array<{
+    id: number;
+    type: string;
+    action: string;
+    timestamp: string;
+    user: string;
+    comment: string;
+    params: string;
+  }>
+> {
   const cacheKey = `pagelog:${title}:${limit}`;
-  const cached = cacheGet<ReturnType<typeof ixwikiGetPageLog> extends Promise<infer T> ? T : never>(cacheKey);
+  const cached =
+    cacheGet<ReturnType<typeof ixwikiGetPageLog> extends Promise<infer T> ? T : never>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -1165,30 +1244,35 @@ const USER_AGENT = "IxStats-Builder";
  * Returns null on persistent failures instead of throwing.
  */
 async function fetchExternalWiki(url: string, retries = 2): Promise<Response | null> {
-  const result = await withRetrySafe(async (signal) => {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": USER_AGENT,
-        "Api-User-Agent": USER_AGENT,
-        "Accept": "application/json, text/html, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-      signal,
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response;
-  }, {
-    maxAttempts: retries + 1,
-    strategy: "linear",
-    baseDelayMs: 2000,
-    timeoutMs: 20000,
-    retryIf: (err) => err.message.includes("HTTP 403"),
-    onRetry: (attempt, err) => {
-      console.warn(`[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt}/${retries + 1}`);
+  const result = await withRetrySafe(
+    async (signal) => {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": USER_AGENT,
+          "Api-User-Agent": USER_AGENT,
+          Accept: "application/json, text/html, */*",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        signal,
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response;
     },
-  });
+    {
+      maxAttempts: retries + 1,
+      strategy: "linear",
+      baseDelayMs: 2000,
+      timeoutMs: 20000,
+      retryIf: (err) => err.message.includes("HTTP 403"),
+      onRetry: (attempt, err) => {
+        console.warn(
+          `[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt}/${retries + 1}`
+        );
+      },
+    }
+  );
 
   if (!result.success) {
     console.warn(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, result.error.message);
@@ -1224,13 +1308,24 @@ async function iiwikiApiCall(params: Record<string, string>): Promise<unknown | 
 
 async function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
   try {
-    const data = await iiwikiApiCall({
+    const data = (await iiwikiApiCall({
       action: "query",
       titles: title,
       prop: "revisions",
       rvprop: "content",
       rvslots: "main",
-    }) as { query?: { pages?: Record<string, { pageid?: number; title?: string; revisions?: Array<{ slots?: { main?: { "*"?: string } } }> }> } } | null;
+    })) as {
+      query?: {
+        pages?: Record<
+          string,
+          {
+            pageid?: number;
+            title?: string;
+            revisions?: Array<{ slots?: { main?: { "*"?: string } } }>;
+          }
+        >;
+      };
+    } | null;
 
     if (!data) return null;
     const pages = data.query?.pages;
@@ -1293,13 +1388,24 @@ async function althistoryApiCall(params: Record<string, string>): Promise<unknow
 
 async function althistoryGetWikitext(title: string): Promise<WikiArticle | null> {
   try {
-    const data = await althistoryApiCall({
+    const data = (await althistoryApiCall({
       action: "query",
       titles: title,
       prop: "revisions",
       rvprop: "content",
       rvslots: "main",
-    }) as { query?: { pages?: Record<string, { pageid?: number; title?: string; revisions?: Array<{ slots?: { main?: { "*"?: string } } }> }> } } | null;
+    })) as {
+      query?: {
+        pages?: Record<
+          string,
+          {
+            pageid?: number;
+            title?: string;
+            revisions?: Array<{ slots?: { main?: { "*"?: string } } }>;
+          }
+        >;
+      };
+    } | null;
 
     if (!data) return null;
     const pages = data.query?.pages;
@@ -1468,7 +1574,11 @@ export async function getBacklinks(title: string, limit?: number, offset?: numbe
 /**
  * Get category members via direct MySQL.
  */
-export async function getCategoryMembers(category: string, limit?: number, type?: "page" | "subcat" | "file") {
+export async function getCategoryMembers(
+  category: string,
+  limit?: number,
+  type?: "page" | "subcat" | "file"
+) {
   return ixwikiGetCategoryMembers(category, limit, type);
 }
 
@@ -1524,7 +1634,12 @@ export async function searchTemplates(query: string, limit?: number) {
 /**
  * Full-text search via MySQL searchindex table.
  */
-export async function fullTextSearch(query: string, limit?: number, offset?: number, namespace?: number) {
+export async function fullTextSearch(
+  query: string,
+  limit?: number,
+  offset?: number,
+  namespace?: number
+) {
   return ixwikiFullTextSearch(query, limit, offset, namespace);
 }
 
@@ -1597,9 +1712,18 @@ export async function getPageImages(
     thumbWidth?: number;
     limit?: number;
   }
-): Promise<Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> | null> {
+): Promise<Array<{
+  title: string;
+  url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
+}> | null> {
   const cacheKey = `pageimages:${title}`;
-  const cached = cacheGet<Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }>>(cacheKey);
+  const cached =
+    cacheGet<
+      Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }>
+    >(cacheKey);
   if (cached) return cached;
 
   const sources = [
@@ -1619,8 +1743,10 @@ export async function getPageImages(
         { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
       );
       if (!listRes.ok) continue;
-      const listData = await listRes.json() as {
-        query?: { pages?: Record<string, { missing?: boolean; images?: Array<{ title: string }> }> };
+      const listData = (await listRes.json()) as {
+        query?: {
+          pages?: Record<string, { missing?: boolean; images?: Array<{ title: string }> }>;
+        };
       };
       const pages = listData?.query?.pages;
       if (!pages) continue;
@@ -1639,16 +1765,34 @@ export async function getPageImages(
         { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
       );
       if (!infoRes.ok) continue;
-      const infoData = await infoRes.json() as {
-        query?: { pages?: Record<string, {
-          title?: string; missing?: boolean;
-          imageinfo?: Array<{ url: string; thumburl?: string; width: number; height: number; mime?: string }>;
-        }> };
+      const infoData = (await infoRes.json()) as {
+        query?: {
+          pages?: Record<
+            string,
+            {
+              title?: string;
+              missing?: boolean;
+              imageinfo?: Array<{
+                url: string;
+                thumburl?: string;
+                width: number;
+                height: number;
+                mime?: string;
+              }>;
+            }
+          >;
+        };
       };
       const infoPages = infoData?.query?.pages;
       if (!infoPages) continue;
 
-      const images: Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> = [];
+      const images: Array<{
+        title: string;
+        url: string;
+        thumbUrl: string;
+        width: number;
+        height: number;
+      }> = [];
       for (const p of Object.values(infoPages)) {
         if (p?.missing || !p?.imageinfo?.[0]) continue;
         const info = p.imageinfo[0];
@@ -1697,7 +1841,8 @@ export async function searchWithFallback(
 function extractIntroFromWikitext(wikitext: string): string {
   // Remove everything from first heading onward
   const headingIndex = wikitext.search(/^==[^=]/m);
-  const intro = headingIndex > 0 ? wikitext.substring(0, headingIndex) : wikitext.substring(0, 2000);
+  const intro =
+    headingIndex > 0 ? wikitext.substring(0, headingIndex) : wikitext.substring(0, 2000);
 
   return cleanWikiMarkup(intro);
 }
@@ -1768,7 +1913,8 @@ export async function ixwikiGetCategoryTree(): Promise<
   Array<{ name: string; subcategories: string[]; pageCount: number }>
 > {
   const cacheKey = "category_tree";
-  const cached = cacheGet<Array<{ name: string; subcategories: string[]; pageCount: number }>>(cacheKey);
+  const cached =
+    cacheGet<Array<{ name: string; subcategories: string[]; pageCount: number }>>(cacheKey);
   if (cached) return cached;
 
   try {

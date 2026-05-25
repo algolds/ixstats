@@ -120,18 +120,21 @@ const DISCORD_EMOJI_REACTIONS = [
   { name: "pog", url: "https://cdn.discordapp.com/emojis/739969522139209748.png" },
 ];
 
-function getDiscordEmojiUrl(reactionType: string, apiEmojis?: Array<{ name: string; url: string }>): string | null {
+function getDiscordEmojiUrl(
+  reactionType: string,
+  apiEmojis?: Array<{ name: string; url: string }>
+): string | null {
   if (!reactionType.startsWith("discord:")) return null;
-  
+
   // Handle new format: discord:name:id
   const parts = reactionType.split(":");
   const emojiName = parts[1] || "";
   const emojiId = parts[2] || "";
-  
+
   if (emojiId) {
     return `https://cdn.discordapp.com/emojis/${emojiId}.png`;
   }
-  
+
   // Fallback for legacy formats
   const hardcoded = DISCORD_EMOJI_REACTIONS.find((e) => e.name === emojiName);
   if (hardcoded) return hardcoded.url;
@@ -151,7 +154,10 @@ interface BlurbMeta {
   cleanContent: string;
 }
 
-function parseBlurbMeta(post: { hashtags?: string[] | string | null; content?: string }): BlurbMeta {
+function parseBlurbMeta(post: {
+  hashtags?: string[] | string | null;
+  content?: string;
+}): BlurbMeta {
   const content = post.content ?? "";
 
   // Check hashtags for "blurb" marker
@@ -159,7 +165,11 @@ function parseBlurbMeta(post: { hashtags?: string[] | string | null; content?: s
   if (Array.isArray(post.hashtags)) {
     hashtags = post.hashtags;
   } else if (typeof post.hashtags === "string") {
-    try { hashtags = JSON.parse(post.hashtags); } catch { /* ignore */ }
+    try {
+      hashtags = JSON.parse(post.hashtags);
+    } catch {
+      /* ignore */
+    }
   }
 
   if (!hashtags.includes("blurb")) {
@@ -442,9 +452,10 @@ const ThinkpagesPostComponent = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "glass-hierarchy-child transition-all duration-300 hover:glass-hierarchy-interactive hover:bg-white/5 dark:hover:bg-white/5 shadow-sm",
+        "glass-hierarchy-child hover:glass-hierarchy-interactive shadow-sm transition-all duration-300 hover:bg-white/5 dark:hover:bg-white/5",
         compact ? "p-3" : "p-4",
-        post.pinned && "border-amber-500/30 bg-amber-500/5 dark:border-amber-500/20 dark:bg-amber-500/5"
+        post.pinned &&
+          "border-amber-500/30 bg-amber-500/5 dark:border-amber-500/20 dark:bg-amber-500/5"
       )}
     >
       {post.pinned && (
@@ -498,13 +509,11 @@ const ThinkpagesPostComponent = ({
       {blurbMeta.isBlurb && (
         <div className="mb-3 flex items-center gap-2 text-sm text-purple-400">
           <BookOpen className="h-4 w-4" />
-          <span className="font-medium">
-            {blurbMeta.promptTitle ?? "Topic Tuesday"}
-          </span>
+          <span className="font-medium">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
             <Link
               href={withBasePath(`/blurbs/${blurbMeta.promptSlug}`)}
-              className="text-purple-400/70 hover:text-purple-300 transition-colors"
+              className="text-purple-400/70 transition-colors hover:text-purple-300"
             >
               View prompt →
             </Link>
@@ -513,7 +522,7 @@ const ThinkpagesPostComponent = ({
       )}
 
       <div className="flex gap-3">
-        <button onClick={() => onAccountClick?.(post.account.id)} className="flex-shrink-0">
+        <button onClick={() => onAccountClick?.(post.account.id)} className="shrink-0">
           <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
             <AvatarImage src={post.account.profileImageUrl} />
             <AvatarFallback
@@ -538,13 +547,19 @@ const ThinkpagesPostComponent = ({
             </button>
 
             {post.account.verified && (
-              <span className="inline-flex items-center justify-center h-4 w-4 text-sm leading-none" title="Verified">
+              <span
+                className="inline-flex h-4 w-4 items-center justify-center text-sm leading-none"
+                title="Verified"
+              >
                 ✅
               </span>
             )}
 
             {post.account.bio?.startsWith("Former Nation") && (
-              <Badge variant="secondary" className="bg-gray-500/20 text-xs text-gray-400 border-gray-500/30">
+              <Badge
+                variant="secondary"
+                className="border-gray-500/30 bg-gray-500/20 text-xs text-gray-400"
+              >
                 Former Nation
               </Badge>
             )}
@@ -595,7 +610,7 @@ const ThinkpagesPostComponent = ({
                 {repostMediaAttachments && repostMediaAttachments.length > 0 && (
                   <div
                     className={cn(
-                      "mt-2 overflow-hidden rounded-lg border border-border/50 dark:border-white/10 shadow-sm",
+                      "border-border/50 mt-2 overflow-hidden rounded-lg border shadow-sm dark:border-white/10",
                       repostMediaAttachments.length === 1 && "max-w-md",
                       repostMediaAttachments.length > 1 && "grid grid-cols-2 gap-0.5"
                     )}
@@ -606,8 +621,8 @@ const ThinkpagesPostComponent = ({
                         <div
                           key={media.id || index}
                           className={cn(
-                            "bg-neutral-900/40 relative overflow-hidden flex items-center justify-center",
-                            isSingle && "w-full max-h-[220px] aspect-[16/10]",
+                            "relative flex items-center justify-center overflow-hidden bg-neutral-900/40",
+                            isSingle && "aspect-[16/10] max-h-[220px] w-full",
                             repostMediaAttachments.length === 2 && "aspect-square",
                             repostMediaAttachments.length === 3 && index === 0
                               ? "col-span-2 aspect-[16/10]"
@@ -631,9 +646,7 @@ const ThinkpagesPostComponent = ({
                 )}
               </Card>
             ) : (
-              <WikiHtmlContent
-                html={formatThinkpagesContentForDisplay(cleanPostContent)}
-              />
+              <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanPostContent)} />
             )}
           </div>
 
@@ -641,7 +654,7 @@ const ThinkpagesPostComponent = ({
           {mediaAttachments && mediaAttachments.length > 0 && (
             <div
               className={cn(
-                "mt-3 overflow-hidden rounded-xl border border-border/50 dark:border-white/10 shadow-md",
+                "border-border/50 mt-3 overflow-hidden rounded-xl border shadow-md dark:border-white/10",
                 mediaAttachments.length === 1 && "max-w-xl",
                 mediaAttachments.length > 1 && "grid grid-cols-2 gap-1"
               )}
@@ -652,8 +665,8 @@ const ThinkpagesPostComponent = ({
                   <div
                     key={media.id || index}
                     className={cn(
-                      "bg-neutral-900/40 relative overflow-hidden flex items-center justify-center",
-                      isSingle && "w-full max-h-[360px] aspect-[16/10]",
+                      "relative flex items-center justify-center overflow-hidden bg-neutral-900/40",
+                      isSingle && "aspect-[16/10] max-h-[360px] w-full",
                       mediaAttachments.length === 2 && "aspect-square",
                       mediaAttachments.length === 3 && index === 0
                         ? "col-span-2 aspect-[16/10]"
@@ -679,9 +692,13 @@ const ThinkpagesPostComponent = ({
           {(() => {
             const content = post.content ?? "";
             const matchedLink = (() => {
-              const wikiMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i);
+              const wikiMatch = content.match(
+                /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
+              );
               if (wikiMatch) return wikiMatch[0];
-              const forumMatch = content.match(/(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i);
+              const forumMatch = content.match(
+                /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
+              );
               if (forumMatch) return forumMatch[0];
               return null;
             })();
@@ -751,30 +768,38 @@ const ThinkpagesPostComponent = ({
                 if (!hasVisible) return null;
 
                 return (
-                  <div className="mb-2 flex flex-wrap items-center gap-1.5 w-full">
+                  <div className="mb-2 flex w-full flex-wrap items-center gap-1.5">
                     {Object.entries(reactionCounts).map(([type, count]) => {
                       if ((count as number) <= 0) return null;
-                      
+
                       const discordUrl = getDiscordEmojiUrl(type, apiDiscordEmojis);
-                      const isDiscordImported = 
-                        !!post.discordMsgId || 
-                        !!post.content?.includes("[DiscordMsg:") || 
-                        Object.keys(reactionCounts).some(k => k.startsWith("discord:"));
+                      const isDiscordImported =
+                        !!post.discordMsgId ||
+                        !!post.content?.includes("[DiscordMsg:") ||
+                        Object.keys(reactionCounts).some((k) => k.startsWith("discord:"));
 
                       const pillContent = (
                         <div
                           className={cn(
-                            "flex items-center gap-1 rounded-full bg-muted/50 border border-border/50 dark:bg-white/5 dark:border-white/10 px-2 py-0.5 text-xs text-muted-foreground transition-all duration-200 shadow-xs hover:scale-[1.03]",
-                            isDiscordImported 
-                              ? "cursor-help" 
-                              : "cursor-pointer hover:bg-muted dark:hover:bg-white/10 hover:border-border dark:hover:border-white/20"
+                            "bg-muted/50 border-border/50 text-muted-foreground flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-all duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5",
+                            isDiscordImported
+                              ? "cursor-help"
+                              : "hover:bg-muted hover:border-border cursor-pointer dark:hover:border-white/20 dark:hover:bg-white/10"
                           )}
-                          onClick={isDiscordImported ? undefined : () => setShowReactionsDialog(true)}
+                          onClick={
+                            isDiscordImported ? undefined : () => setShowReactionsDialog(true)
+                          }
                         >
                           {discordUrl ? (
-                            <img src={discordUrl} alt={type.split(":")[1] || type} className="h-3.5 w-3.5 object-contain" />
+                            <img
+                              src={discordUrl}
+                              alt={type.split(":")[1] || type}
+                              className="h-3.5 w-3.5 object-contain"
+                            />
                           ) : REACTION_ICONS[type] ? (
-                            React.createElement(REACTION_ICONS[type]!, { className: "h-3.5 w-3.5 text-purple-400" })
+                            React.createElement(REACTION_ICONS[type]!, {
+                              className: "h-3.5 w-3.5 text-purple-400",
+                            })
                           ) : (
                             <span className="text-sm">{type}</span>
                           )}
@@ -785,22 +810,17 @@ const ThinkpagesPostComponent = ({
                       if (isDiscordImported) {
                         return (
                           <Tooltip key={type}>
-                            <TooltipTrigger asChild>
-                              {pillContent}
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs max-w-[240px]">
+                            <TooltipTrigger asChild>{pillContent}</TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[240px] text-xs">
                               These reactions were synchronized directly from our official{" "}
-                              <span className="text-[#5865F2] font-semibold">#ixtwitter</span> Discord channel!
+                              <span className="font-semibold text-[#5865F2]">#ixtwitter</span>{" "}
+                              Discord channel!
                             </TooltipContent>
                           </Tooltip>
                         );
                       }
 
-                      return (
-                        <div key={type}>
-                          {pillContent}
-                        </div>
-                      );
+                      return <div key={type}>{pillContent}</div>;
                     })}
                   </div>
                 );
@@ -824,7 +844,9 @@ const ThinkpagesPostComponent = ({
             isLiked={post.reactions?.some(
               (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
             )}
-            isReposted={post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false}
+            isReposted={
+              post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false
+            }
             likeCount={post.likeCount}
             repostCount={post.repostCount}
             replyCount={post.replyCount}
@@ -1193,8 +1215,12 @@ ThinkpagesPost.displayName = "ThinkpagesPost";
 // ──────────────────────────────────────────────
 
 function PostInlineLinkPreview({ url }: { url: string }) {
-  const wikiMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i);
-  const forumMatch = url.match(/(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i);
+  const wikiMatch = url.match(
+    /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
+  );
+  const forumMatch = url.match(
+    /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
+  );
 
   if (wikiMatch) {
     const domain = wikiMatch[1] || "ixwiki.com";
@@ -1213,7 +1239,15 @@ function PostInlineLinkPreview({ url }: { url: string }) {
   return null;
 }
 
-function WikiInlinePreview({ title, wiki, url }: { title: string; wiki: "ixwiki" | "iiwiki"; url: string }) {
+function WikiInlinePreview({
+  title,
+  wiki,
+  url,
+}: {
+  title: string;
+  wiki: "ixwiki" | "iiwiki";
+  url: string;
+}) {
   const { data: intro, isLoading } = api.wiki.getIntro.useQuery(
     { title, wiki },
     { staleTime: 10 * 60_000 }
@@ -1222,8 +1256,8 @@ function WikiInlinePreview({ title, wiki, url }: { title: string; wiki: "ixwiki"
   if (isLoading) {
     return (
       <div className="glass-hierarchy-child mt-3 animate-pulse p-3.5">
-        <div className="h-4 w-1/3 rounded bg-muted/50 dark:bg-white/10 mb-2" />
-        <div className="h-3 w-2/3 rounded bg-muted/30 dark:bg-white/5" />
+        <div className="bg-muted/50 mb-2 h-4 w-1/3 rounded dark:bg-white/10" />
+        <div className="bg-muted/30 h-3 w-2/3 rounded dark:bg-white/5" />
       </div>
     );
   }
@@ -1235,24 +1269,25 @@ function WikiInlinePreview({ title, wiki, url }: { title: string; wiki: "ixwiki"
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="glass-hierarchy-child group mt-3 block p-3.5 transition-all duration-300 hover:glass-hierarchy-interactive hover:-translate-y-0.5"
+      className="glass-hierarchy-child group hover:glass-hierarchy-interactive mt-3 block p-3.5 transition-all duration-300 hover:-translate-y-0.5"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500">
           <BookOpen className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-sm text-foreground truncate group-hover:text-amber-400 transition-colors">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-amber-400">
               {title}
             </span>
-            <Badge variant="outline" className="text-[9px] shrink-0 border-amber-500/30 text-amber-400 bg-amber-500/5">
+            <Badge
+              variant="outline"
+              className="shrink-0 border-amber-500/30 bg-amber-500/5 text-[9px] text-amber-400"
+            >
               {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
             </Badge>
           </div>
-          <p className="text-xs leading-relaxed text-muted-foreground line-clamp-3">
-            {intro.text}
-          </p>
+          <p className="text-muted-foreground line-clamp-3 text-xs leading-relaxed">{intro.text}</p>
           <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-amber-500/80">
             <span>Read full article</span>
             <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
@@ -1272,8 +1307,8 @@ function ForumInlinePreview({ threadId, url }: { threadId: number; url: string }
   if (isLoading) {
     return (
       <div className="glass-hierarchy-child mt-3 animate-pulse p-3.5">
-        <div className="h-4 w-1/3 rounded bg-muted/50 dark:bg-white/10 mb-2" />
-        <div className="h-3 w-2/3 rounded bg-muted/30 dark:bg-white/5" />
+        <div className="bg-muted/50 mb-2 h-4 w-1/3 rounded dark:bg-white/10" />
+        <div className="bg-muted/30 h-3 w-2/3 rounded dark:bg-white/5" />
       </div>
     );
   }
@@ -1285,30 +1320,33 @@ function ForumInlinePreview({ threadId, url }: { threadId: number; url: string }
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="glass-hierarchy-child group mt-3 block p-3.5 transition-all duration-300 hover:glass-hierarchy-interactive hover:-translate-y-0.5"
+      className="glass-hierarchy-child group hover:glass-hierarchy-interactive mt-3 block p-3.5 transition-all duration-300 hover:-translate-y-0.5"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-500">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/20 bg-violet-500/10 text-violet-500">
           <MessageSquare className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-sm text-foreground truncate group-hover:text-violet-400 transition-colors">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-violet-400">
               {thread.title}
             </span>
             {thread.forumName && (
-              <Badge variant="outline" className="text-[9px] shrink-0 border-violet-500/30 text-violet-400 bg-violet-500/5">
+              <Badge
+                variant="outline"
+                className="shrink-0 border-violet-500/30 bg-violet-500/5 text-[9px] text-violet-400"
+              >
                 {thread.forumName}
               </Badge>
             )}
           </div>
           {thread.excerpt && (
-            <p className="text-xs leading-relaxed text-muted-foreground line-clamp-3">
+            <p className="text-muted-foreground line-clamp-3 text-xs leading-relaxed">
               {thread.excerpt}
             </p>
           )}
           <div className="mt-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
               {thread.author && (
                 <span className="flex items-center gap-0.5">
                   <Users className="h-2.5 w-2.5" />

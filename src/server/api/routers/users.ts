@@ -1283,19 +1283,23 @@ export const usersRouter = createTRPCRouter({
   getPreferences: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.auth.userId;
     const prefs = await ctx.db.userPreferences.findUnique({ where: { userId } });
-    return prefs ?? {
-      wikiAutoScan: true,
-      wikiSourcePriority: "ixwiki",
-      wikiDisplayMode: "inline",
-    };
+    return (
+      prefs ?? {
+        wikiAutoScan: true,
+        wikiSourcePriority: "ixwiki",
+        wikiDisplayMode: "inline",
+      }
+    );
   }),
 
   updateWikiPreferences: protectedProcedure
-    .input(z.object({
-      wikiAutoScan: z.boolean().optional(),
-      wikiSourcePriority: z.enum(["ixwiki", "iiwiki", "both"]).optional(),
-      wikiDisplayMode: z.enum(["inline", "sidebar", "hidden"]).optional(),
-    }))
+    .input(
+      z.object({
+        wikiAutoScan: z.boolean().optional(),
+        wikiSourcePriority: z.enum(["ixwiki", "iiwiki", "both"]).optional(),
+        wikiDisplayMode: z.enum(["inline", "sidebar", "hidden"]).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
       return ctx.db.userPreferences.upsert({

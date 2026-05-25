@@ -21,7 +21,6 @@ import type {
   DeliveryMethod,
 } from "~/types/unified-notifications";
 
-
 import { generateSafeKey } from "~/app/mycountry/utils/keyValidation";
 import {
   calculateEnhancedPriority,
@@ -197,7 +196,11 @@ export const useNotificationStore = create<NotificationStore>()(
 
         // Apply enhanced priority calculation
         try {
-          const enhancedPriority = calculateEnhancedPriority(notification, state.notifications, state.userPreferences);
+          const enhancedPriority = calculateEnhancedPriority(
+            notification,
+            state.notifications,
+            state.userPreferences
+          );
           notification.priority = enhancedPriority.finalPriority;
           notification.relevanceScore = enhancedPriority.relevanceScore;
         } catch (error) {

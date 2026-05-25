@@ -101,7 +101,7 @@ export function TestResultCard({
               <ul className="space-y-1">
                 {result.errors.map((error, index) => (
                   <li key={index} className="flex items-start space-x-2">
-                    <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                    <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                     <span className="text-sm text-red-600">{error}</span>
                   </li>
                 ))}
@@ -115,7 +115,7 @@ export function TestResultCard({
               <ul className="space-y-1">
                 {result.warnings.map((warning, index) => (
                   <li key={index} className="flex items-start space-x-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
                     <span className="text-sm text-orange-600">{warning}</span>
                   </li>
                 ))}

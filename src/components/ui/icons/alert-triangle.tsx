@@ -42,85 +42,84 @@ const EXCLAMATION_VARIANTS: Variants = {
   },
 };
 
-const AlertTriangleIcon = forwardRef<
-  AlertTriangleIconHandle,
-  AlertTriangleIconProps
->(({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
-  const controls = useAnimation();
-  const isControlledRef = useRef(false);
+const AlertTriangleIcon = forwardRef<AlertTriangleIconHandle, AlertTriangleIconProps>(
+  ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
+    const controls = useAnimation();
+    const isControlledRef = useRef(false);
 
-  useImperativeHandle(ref, () => {
-    isControlledRef.current = true;
+    useImperativeHandle(ref, () => {
+      isControlledRef.current = true;
 
-    return {
-      startAnimation: () => controls.start("animate"),
-      stopAnimation: () => controls.start("normal"),
-    };
-  });
+      return {
+        startAnimation: () => controls.start("animate"),
+        stopAnimation: () => controls.start("normal"),
+      };
+    });
 
-  const handleMouseEnter = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isControlledRef.current) {
-        onMouseEnter?.(e);
-      } else {
-        controls.start("animate");
-      }
-    },
-    [controls, onMouseEnter]
-  );
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseEnter?.(e);
+        } else {
+          controls.start("animate");
+        }
+      },
+      [controls, onMouseEnter]
+    );
 
-  const handleMouseLeave = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isControlledRef.current) {
-        onMouseLeave?.(e);
-      } else {
-        controls.start("normal");
-      }
-    },
-    [controls, onMouseLeave]
-  );
+    const handleMouseLeave = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseLeave?.(e);
+        } else {
+          controls.start("normal");
+        }
+      },
+      [controls, onMouseLeave]
+    );
 
-  return (
-    <div
-      className={cn(className)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      {...props}
-    >
-      <motion.svg
-        animate={controls}
-        fill="none"
-        height={size}
-        initial="normal"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        variants={TRIANGLE_VARIANTS}
-        viewBox="0 0 24 24"
-        width={size}
-        xmlns="http://www.w3.org/2000/svg"
+    return (
+      <div
+        className={cn(className)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        {...props}
       >
-        {/* Triangle */}
-        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-        {/* Exclamation line */}
-        <motion.path
+        <motion.svg
           animate={controls}
-          d="M12 9v4"
+          fill="none"
+          height={size}
           initial="normal"
-          variants={EXCLAMATION_VARIANTS}
-        />
-        {/* Exclamation dot */}
-        <motion.path
-          animate={controls}
-          d="M12 17h.01"
-          initial="normal"
-          variants={EXCLAMATION_VARIANTS}
-        />
-      </motion.svg>
-    </div>
-  );
-});
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          variants={TRIANGLE_VARIANTS}
+          viewBox="0 0 24 24"
+          width={size}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Triangle */}
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          {/* Exclamation line */}
+          <motion.path
+            animate={controls}
+            d="M12 9v4"
+            initial="normal"
+            variants={EXCLAMATION_VARIANTS}
+          />
+          {/* Exclamation dot */}
+          <motion.path
+            animate={controls}
+            d="M12 17h.01"
+            initial="normal"
+            variants={EXCLAMATION_VARIANTS}
+          />
+        </motion.svg>
+      </div>
+    );
+  }
+);
 
 AlertTriangleIcon.displayName = "AlertTriangleIcon";
 

@@ -46,21 +46,21 @@ export function ForeignPolicyPanel({ countryId }: ForeignPolicyPanelProps) {
       <div className="grid grid-cols-3 gap-2">
         <div className="glass-hierarchy-child rounded-lg p-2.5">
           <div className="flex items-center gap-1.5">
-            <Ban className="h-3.5 w-3.5 flex-shrink-0 text-red-600" />
+            <Ban className="h-3.5 w-3.5 shrink-0 text-red-600" />
             <span className="text-muted-foreground text-xs font-medium">Active Policies</span>
           </div>
           <div className="mt-0.5 text-lg font-bold">{stats.active}</div>
         </div>
         <div className="glass-hierarchy-child rounded-lg p-2.5">
           <div className="flex items-center gap-1.5">
-            <Scale className="h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
+            <Scale className="h-3.5 w-3.5 shrink-0 text-amber-600" />
             <span className="text-muted-foreground text-xs font-medium">Proposed</span>
           </div>
           <div className="mt-0.5 text-lg font-bold">{stats.proposed}</div>
         </div>
         <div className="glass-hierarchy-child rounded-lg p-2.5">
           <div className="flex items-center gap-1.5">
-            <ArrowRightLeft className="h-3.5 w-3.5 flex-shrink-0 text-cyan-600" />
+            <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-cyan-600" />
             <span className="text-muted-foreground text-xs font-medium">Trade Partners</span>
           </div>
           <div className="mt-0.5 text-lg font-bold">{stats.tradePartners}</div>

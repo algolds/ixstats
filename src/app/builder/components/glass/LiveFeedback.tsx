@@ -206,12 +206,12 @@ export function LiveFeedback({
                     className="bg-card/50 border-border flex min-h-[44px] items-center justify-between rounded-lg border p-2.5"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <Icon className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
+                      <Icon className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span className="text-foreground truncate text-xs font-medium">
                         {metric.label}
                       </span>
                     </div>
-                    <div className="flex flex-shrink-0 items-center gap-1.5">
+                    <div className="flex shrink-0 items-center gap-1.5">
                       <NumberFlowDisplay
                         value={metric.value}
                         format={
@@ -228,9 +228,9 @@ export function LiveFeedback({
                       />
                       <div className="flex items-center gap-0.5">
                         {metric.trend === "up" ? (
-                          <TrendingUp className="h-2.5 w-2.5 flex-shrink-0 text-green-400" />
+                          <TrendingUp className="h-2.5 w-2.5 shrink-0 text-green-400" />
                         ) : metric.trend === "down" ? (
-                          <TrendingDown className="h-2.5 w-2.5 flex-shrink-0 text-red-400" />
+                          <TrendingDown className="h-2.5 w-2.5 shrink-0 text-red-400" />
                         ) : null}
                         <NumberFlowDisplay
                           value={metric.change}
@@ -289,7 +289,7 @@ export function LiveFeedback({
                       className={cn("rounded-lg border p-3", getTipColor(tip.type))}
                     >
                       <div className="flex items-start gap-2">
-                        <Icon className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                        <Icon className="mt-0.5 h-3 w-3 shrink-0" />
                         <div>
                           <h5 className="mb-1 text-xs font-medium">{tip.title}</h5>
                           <p className="text-xs opacity-75">{tip.impact}</p>

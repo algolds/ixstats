@@ -79,110 +79,109 @@ const RECT4_VARIANTS: Variants = {
   },
 };
 
-const LayoutDashboardIcon = forwardRef<
-  LayoutDashboardIconHandle,
-  LayoutDashboardIconProps
->(({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
-  const controls = useAnimation();
-  const isControlledRef = useRef(false);
+const LayoutDashboardIcon = forwardRef<LayoutDashboardIconHandle, LayoutDashboardIconProps>(
+  ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
+    const controls = useAnimation();
+    const isControlledRef = useRef(false);
 
-  useImperativeHandle(ref, () => {
-    isControlledRef.current = true;
+    useImperativeHandle(ref, () => {
+      isControlledRef.current = true;
 
-    return {
-      startAnimation: () => controls.start("animate"),
-      stopAnimation: () => controls.start("normal"),
-    };
-  });
+      return {
+        startAnimation: () => controls.start("animate"),
+        stopAnimation: () => controls.start("normal"),
+      };
+    });
 
-  const handleMouseEnter = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isControlledRef.current) {
-        onMouseEnter?.(e);
-      } else {
-        controls.start("animate");
-      }
-    },
-    [controls, onMouseEnter]
-  );
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseEnter?.(e);
+        } else {
+          controls.start("animate");
+        }
+      },
+      [controls, onMouseEnter]
+    );
 
-  const handleMouseLeave = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isControlledRef.current) {
-        onMouseLeave?.(e);
-      } else {
-        controls.start("normal");
-      }
-    },
-    [controls, onMouseLeave]
-  );
+    const handleMouseLeave = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseLeave?.(e);
+        } else {
+          controls.start("normal");
+        }
+      },
+      [controls, onMouseLeave]
+    );
 
-  return (
-    <div
-      className={cn(className)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      {...props}
-    >
-      <svg
-        fill="none"
-        height={size}
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-        width={size}
-        xmlns="http://www.w3.org/2000/svg"
+    return (
+      <div
+        className={cn(className)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        {...props}
       >
-        <motion.rect
-          animate={controls}
-          height="9"
-          initial="normal"
-          rx="1"
-          style={{ originX: "6.5px", originY: "7.5px" }}
-          variants={RECT1_VARIANTS}
-          width="7"
-          x="3"
-          y="3"
-        />
-        <motion.rect
-          animate={controls}
-          height="5"
-          initial="normal"
-          rx="1"
-          style={{ originX: "17.5px", originY: "5.5px" }}
-          variants={RECT2_VARIANTS}
-          width="7"
-          x="14"
-          y="3"
-        />
-        <motion.rect
-          animate={controls}
-          height="9"
-          initial="normal"
-          rx="1"
-          style={{ originX: "17.5px", originY: "16.5px" }}
-          variants={RECT3_VARIANTS}
-          width="7"
-          x="14"
-          y="12"
-        />
-        <motion.rect
-          animate={controls}
-          height="5"
-          initial="normal"
-          rx="1"
-          style={{ originX: "6.5px", originY: "18.5px" }}
-          variants={RECT4_VARIANTS}
-          width="7"
-          x="3"
-          y="16"
-        />
-      </svg>
-    </div>
-  );
-});
+        <svg
+          fill="none"
+          height={size}
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+          width={size}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <motion.rect
+            animate={controls}
+            height="9"
+            initial="normal"
+            rx="1"
+            style={{ originX: "6.5px", originY: "7.5px" }}
+            variants={RECT1_VARIANTS}
+            width="7"
+            x="3"
+            y="3"
+          />
+          <motion.rect
+            animate={controls}
+            height="5"
+            initial="normal"
+            rx="1"
+            style={{ originX: "17.5px", originY: "5.5px" }}
+            variants={RECT2_VARIANTS}
+            width="7"
+            x="14"
+            y="3"
+          />
+          <motion.rect
+            animate={controls}
+            height="9"
+            initial="normal"
+            rx="1"
+            style={{ originX: "17.5px", originY: "16.5px" }}
+            variants={RECT3_VARIANTS}
+            width="7"
+            x="14"
+            y="12"
+          />
+          <motion.rect
+            animate={controls}
+            height="5"
+            initial="normal"
+            rx="1"
+            style={{ originX: "6.5px", originY: "18.5px" }}
+            variants={RECT4_VARIANTS}
+            width="7"
+            x="3"
+            y="16"
+          />
+        </svg>
+      </div>
+    );
+  }
+);
 
 LayoutDashboardIcon.displayName = "LayoutDashboardIcon";
 

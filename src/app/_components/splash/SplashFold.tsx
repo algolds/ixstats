@@ -211,7 +211,7 @@ export function SplashFold() {
                   return (
                     <Card
                       key={`${component.id}-${idx}`}
-                      className="glass-hierarchy-child border-border hover:bg-muted/30 w-80 flex-shrink-0 border transition-colors"
+                      className="glass-hierarchy-child border-border hover:bg-muted/30 w-80 shrink-0 border transition-colors"
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">

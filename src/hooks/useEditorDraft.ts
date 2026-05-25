@@ -71,7 +71,7 @@ export function useEditorDraft(countryId: string) {
         }
       }, SAVE_DEBOUNCE_MS);
     },
-    [countryId],
+    [countryId]
   );
 
   const restoreDraft = useCallback((): DraftState | null => {

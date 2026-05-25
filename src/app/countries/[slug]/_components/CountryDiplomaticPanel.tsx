@@ -230,7 +230,7 @@ export function CountryDiplomaticPanel({
                           size="sm"
                           flagUrl={relation.targetCountryFlag}
                           rounded
-                          className="h-8 w-8 flex-shrink-0"
+                          className="h-8 w-8 shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
@@ -327,7 +327,7 @@ export function CountryDiplomaticPanel({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <Building2 className="h-4 w-4 flex-shrink-0 text-cyan-500" />
+                        <Building2 className="h-4 w-4 shrink-0 text-cyan-500" />
                         <span className="truncate text-sm font-semibold">
                           {(
                             embassy.country ||
@@ -412,7 +412,7 @@ export function CountryDiplomaticPanel({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 flex-shrink-0 text-purple-500" />
+                      <Users className="h-4 w-4 shrink-0 text-purple-500" />
                       <span className="text-sm font-semibold">{alliance.name || "Alliance"}</span>
                     </div>
                     <Badge

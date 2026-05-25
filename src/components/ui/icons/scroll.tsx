@@ -109,10 +109,7 @@ const ScrollIcon = forwardRef<ScrollIconHandle, ScrollIconProps>(
             d="M10 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1 2 2h7a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2Z"
             variants={mainPathVariants}
           />
-          <motion.path
-            d="M22 17v2a2 2 0 0 1-2 2h-2"
-            variants={tailPathVariants}
-          />
+          <motion.path d="M22 17v2a2 2 0 0 1-2 2h-2" variants={tailPathVariants} />
         </motion.svg>
       </div>
     );

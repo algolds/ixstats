@@ -36,7 +36,7 @@ const MODE_LABELS: Record<EditorMode, { label: string; hint: string }> = {
   "edit-poi": { label: "Edit POI", hint: "Modify properties in the panel" },
   "import-provinces": { label: "Import", hint: "Follow the import wizard" },
   "add-route": { label: "Route", hint: "Generate or draw transport routes" },
-  "paint": { label: "Paint", hint: "Click regions to view stats, use panel to switch map modes" },
+  paint: { label: "Paint", hint: "Click regions to view stats, use panel to switch map modes" },
 };
 
 function formatCoord(value: number, posLabel: string, negLabel: string): string {
@@ -55,7 +55,7 @@ export function EditorStatusBar({
   const modeInfo = MODE_LABELS[mode] ?? MODE_LABELS.view;
 
   return (
-    <div className="flex h-7 items-center border-t border-border bg-card px-2 text-[11px] text-muted-foreground">
+    <div className="border-border bg-card text-muted-foreground flex h-7 items-center border-t px-2 text-[11px]">
       {/* Coordinates */}
       <div className="flex min-w-[140px] items-center gap-1 font-mono">
         {cursorCoords ? (
@@ -70,11 +70,11 @@ export function EditorStatusBar({
       </div>
 
       {/* Separator */}
-      <div className="mx-2 h-3 w-px bg-border" />
+      <div className="bg-border mx-2 h-3 w-px" />
 
       {/* Altitude + Climate */}
       <div className="hidden min-w-[120px] items-center gap-1.5 sm:flex">
-        <Mountain className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+        <Mountain className="text-muted-foreground/60 h-3 w-3 shrink-0" />
         {terrainInfo?.elevation ? (
           <span className="truncate">{terrainInfo.elevation}</span>
         ) : (
@@ -89,22 +89,20 @@ export function EditorStatusBar({
       </div>
 
       {/* Separator */}
-      <div className="mx-2 hidden h-3 w-px bg-border sm:block" />
+      <div className="bg-border mx-2 hidden h-3 w-px sm:block" />
 
       {/* Mode + hint (takes remaining space) */}
       <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
-        <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+        <span className="bg-primary/10 text-primary shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold">
           {modeInfo.label}
         </span>
-        <span className="hidden truncate text-muted-foreground/70 sm:inline">
-          {modeInfo.hint}
-        </span>
+        <span className="text-muted-foreground/70 hidden truncate sm:inline">{modeInfo.hint}</span>
       </div>
 
       {/* Feature count */}
       {featureCount !== undefined && (
         <>
-          <div className="mx-2 h-3 w-px bg-border" />
+          <div className="bg-border mx-2 h-3 w-px" />
           <span className="tabular-nums">{featureCount} features</span>
         </>
       )}
@@ -112,7 +110,7 @@ export function EditorStatusBar({
       {/* Zoom */}
       {zoom !== undefined && (
         <>
-          <div className="mx-2 h-3 w-px bg-border" />
+          <div className="bg-border mx-2 h-3 w-px" />
           <span className="font-mono tabular-nums">z{zoom.toFixed(1)}</span>
         </>
       )}

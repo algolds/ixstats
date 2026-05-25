@@ -161,18 +161,15 @@ export function useDiplomaticAnalytics({ countryId }: { countryId: string }) {
   const influenceDistribution = useMemo<InfluenceEntry[]>(() => {
     if (!relationships) return [];
 
-    const distribution = relationships.reduce(
-      (acc: Record<string, InfluenceEntry>, rel) => {
-        const status = rel.relationship || "neutral";
-        if (!acc[status]) {
-          acc[status] = { name: status, value: 0, count: 0 };
-        }
-        acc[status].value += rel.strength;
-        acc[status].count += 1;
-        return acc;
-      },
-      {},
-    );
+    const distribution = relationships.reduce((acc: Record<string, InfluenceEntry>, rel) => {
+      const status = rel.relationship || "neutral";
+      if (!acc[status]) {
+        acc[status] = { name: status, value: 0, count: 0 };
+      }
+      acc[status].value += rel.strength;
+      acc[status].count += 1;
+      return acc;
+    }, {});
 
     return Object.values(distribution);
   }, [relationships]);
@@ -202,7 +199,7 @@ export function useDiplomaticAnalytics({ countryId }: { countryId: string }) {
     return {
       relationshipsCount: relationships.length,
       avgStrength: Math.round(
-        relationships.reduce((sum, r) => sum + r.strength, 0) / relationships.length,
+        relationships.reduce((sum, r) => sum + r.strength, 0) / relationships.length
       ),
       embassiesCount: embassies?.length || 0,
       recentActivityCount: recentChanges?.length || 0,

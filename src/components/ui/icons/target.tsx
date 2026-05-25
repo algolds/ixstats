@@ -134,24 +134,9 @@ const TargetIcon = forwardRef<TargetIconHandle, TargetIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.circle
-            cx="12"
-            cy="12"
-            r="10"
-            variants={outerVariants}
-          />
-          <motion.circle
-            cx="12"
-            cy="12"
-            r="6"
-            variants={middleVariants}
-          />
-          <motion.circle
-            cx="12"
-            cy="12"
-            r="2"
-            variants={innerVariants}
-          />
+          <motion.circle cx="12" cy="12" r="10" variants={outerVariants} />
+          <motion.circle cx="12" cy="12" r="6" variants={middleVariants} />
+          <motion.circle cx="12" cy="12" r="2" variants={innerVariants} />
         </motion.svg>
       </div>
     );

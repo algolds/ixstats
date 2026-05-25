@@ -130,7 +130,8 @@ export function buildAuthorityConfig(
   }
 
   return {
-    defaultAuthority: (worldConfigData["_default"] as AuthoritySource) ?? IXWORLD_AUTHORITY.defaultAuthority,
+    defaultAuthority:
+      (worldConfigData["_default"] as AuthoritySource) ?? IXWORLD_AUTHORITY.defaultAuthority,
     fields,
   };
 }

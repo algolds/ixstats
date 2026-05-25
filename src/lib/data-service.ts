@@ -3,11 +3,7 @@
 
 import { IxStatsCalculator } from "./calculations";
 import { IxTime } from "./ixtime";
-import type {
-  BaseCountryData,
-  CountryStats,
-  IxStatsConfig,
-} from "../types/ixstats";
+import type { BaseCountryData, CountryStats, IxStatsConfig } from "../types/ixstats";
 import { parseRosterFile as parseRosterFileFromParser } from "./data-parser";
 import { getDefaultEconomicConfig, getDefaultIxStatsConfig } from "./config-service";
 import { exportCountriesToExcel as exportToExcelUtil } from "./excel-exporter";

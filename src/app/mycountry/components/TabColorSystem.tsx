@@ -347,7 +347,7 @@ export function TabIndicator({
     <button
       onClick={onClick}
       className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 ${
-        isActive ? "ring-opacity-50 shadow-lg ring-2" : "hover:scale-105 hover:shadow-md"
+        isActive ? "shadow-lg ring-2 ring-white/50" : "hover:scale-105 hover:shadow-md"
       } ${className} `}
       style={{
         backgroundColor: isActive ? tabTheme.colors.background : "rgba(255, 255, 255, 0.05)",

@@ -105,19 +105,11 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
       {/* Results */}
       {!selectedTemplate && query.length >= 2 && (
         <div className="wikios-ti-results">
-          {searchQuery.isLoading && (
-            <div className="wikios-ti-loading">Searching...</div>
-          )}
+          {searchQuery.isLoading && <div className="wikios-ti-loading">Searching...</div>}
           {searchQuery.data?.templates.map((t) => (
-            <button
-              key={t.name}
-              onClick={() => handleSelect(t.name)}
-              className="wikios-ti-result"
-            >
+            <button key={t.name} onClick={() => handleSelect(t.name)} className="wikios-ti-result">
               <div className="wikios-ti-result-name">{t.name}</div>
-              {t.description && (
-                <div className="wikios-ti-result-desc">{t.description}</div>
-              )}
+              {t.description && <div className="wikios-ti-result-desc">{t.description}</div>}
               {t.category && (
                 <span className={cn("wikios-ti-badge", `wikios-ti-badge-${t.category}`)}>
                   {t.category}
@@ -134,10 +126,7 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
       {/* Parameter Form */}
       {selectedTemplate && (
         <div className="wikios-ti-form">
-          <button
-            onClick={() => setSelectedTemplate(null)}
-            className="wikios-ti-back"
-          >
+          <button onClick={() => setSelectedTemplate(null)} className="wikios-ti-back">
             <ChevronRight size={14} className="rotate-180" />
             <span>Back to search</span>
           </button>
@@ -145,15 +134,11 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
           <div className="wikios-ti-form-header">
             <h4 className="wikios-ti-template-name">{selectedTemplate}</h4>
             {templateData.data?.description && (
-              <p className="wikios-ti-template-desc">
-                {templateData.data.description}
-              </p>
+              <p className="wikios-ti-template-desc">{templateData.data.description}</p>
             )}
           </div>
 
-          {templateData.isLoading && (
-            <div className="wikios-ti-loading">Loading parameters...</div>
-          )}
+          {templateData.isLoading && <div className="wikios-ti-loading">Loading parameters...</div>}
 
           {paramOrder.length > 0 && (
             <div className="wikios-ti-params">
@@ -164,9 +149,7 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
                   <div key={key} className="wikios-ti-param">
                     <label className="wikios-ti-param-label">
                       {param.label ?? key}
-                      {param.required && (
-                        <span className="wikios-ti-required">*</span>
-                      )}
+                      {param.required && <span className="wikios-ti-required">*</span>}
                     </label>
                     {param.description && (
                       <div className="wikios-ti-param-desc">{param.description}</div>
@@ -191,10 +174,7 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
           )}
 
           {/* Preview toggle */}
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="wikios-ti-preview-toggle"
-          >
+          <button onClick={() => setShowPreview(!showPreview)} className="wikios-ti-preview-toggle">
             <Eye size={14} />
             <span>{showPreview ? "Hide Preview" : "Show Preview"}</span>
             {showPreview ? <ChevronDown size={14} /> : <ChevronRight size={14} />}

@@ -123,10 +123,10 @@ export function CountryListCard({
           }}
         />
       )}
-      <div className="country-card-content relative z-20 min-h-0 flex-grow p-3">
+      <div className="country-card-content relative z-20 min-h-0 grow p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <div className="relative h-6 w-8 flex-shrink-0">
+            <div className="relative h-6 w-8 shrink-0">
               {flagLoading && (
                 <div className="bg-muted border-border h-6 w-8 animate-pulse rounded" />
               )}
@@ -162,7 +162,7 @@ export function CountryListCard({
               )}
             </div>
           </div>
-          <div className="flex flex-shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <Button
               variant="outline"
               size="icon"

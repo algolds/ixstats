@@ -436,7 +436,8 @@ export const SECURITY_EVENT_CATALOG: SecurityEventType[] = [
     type: "espionage",
     severity: "high",
     name: "Foreign Spy Ring Discovered",
-    description: "Intelligence services uncover extensive espionage operation stealing military secrets",
+    description:
+      "Intelligence services uncover extensive espionage operation stealing military secrets",
     actorArchetype: "FOREIGN_AGENT",
     requiredConditions: {},
     effects: {
@@ -464,7 +465,7 @@ export const SECURITY_EVENT_CATALOG: SecurityEventType[] = [
       economicImpact: -20000000,
       casualtyRange: [2, 20],
     },
-    baseProbability: 0.10,
+    baseProbability: 0.1,
   },
 
   // BORDER INCIDENTS
@@ -500,25 +501,46 @@ export function calculateEventProbability(
   // Check required conditions
   const { requiredConditions } = event;
 
-  if (requiredConditions.minStability && context.stability.stabilityScore < requiredConditions.minStability) {
+  if (
+    requiredConditions.minStability &&
+    context.stability.stabilityScore < requiredConditions.minStability
+  ) {
     return 0; // Condition not met
   }
-  if (requiredConditions.maxStability && context.stability.stabilityScore > requiredConditions.maxStability) {
+  if (
+    requiredConditions.maxStability &&
+    context.stability.stabilityScore > requiredConditions.maxStability
+  ) {
     return 0;
   }
-  if (requiredConditions.minMilitaryReadiness && context.military.averageReadiness < requiredConditions.minMilitaryReadiness) {
+  if (
+    requiredConditions.minMilitaryReadiness &&
+    context.military.averageReadiness < requiredConditions.minMilitaryReadiness
+  ) {
     return 0;
   }
-  if (requiredConditions.maxMilitaryReadiness && context.military.averageReadiness > requiredConditions.maxMilitaryReadiness) {
+  if (
+    requiredConditions.maxMilitaryReadiness &&
+    context.military.averageReadiness > requiredConditions.maxMilitaryReadiness
+  ) {
     return 0;
   }
-  if (requiredConditions.minCrimeRate && context.stability.crimeRate < requiredConditions.minCrimeRate) {
+  if (
+    requiredConditions.minCrimeRate &&
+    context.stability.crimeRate < requiredConditions.minCrimeRate
+  ) {
     return 0;
   }
-  if (requiredConditions.minEthnicTension && context.stability.ethnicTension < requiredConditions.minEthnicTension) {
+  if (
+    requiredConditions.minEthnicTension &&
+    context.stability.ethnicTension < requiredConditions.minEthnicTension
+  ) {
     return 0;
   }
-  if (requiredConditions.minPolarization && context.politics.polarization < requiredConditions.minPolarization) {
+  if (
+    requiredConditions.minPolarization &&
+    context.politics.polarization < requiredConditions.minPolarization
+  ) {
     return 0;
   }
 
@@ -533,7 +555,7 @@ export function calculateEventProbability(
 
   probability *= stabilityMultiplier * 0.35;
   probability *= militaryMultiplier * 0.25;
-  probability *= economicMultiplier * 0.20;
+  probability *= economicMultiplier * 0.2;
   probability *= politicalMultiplier * 0.15;
   probability *= eventFatigue * 0.05;
 
@@ -632,12 +654,7 @@ function generateThreatActorName(archetype: string): string {
       "People's Independence Front",
       "Regional Defense Force",
     ],
-    ORGANIZED_CRIME: [
-      "The Syndicate",
-      "Northern Cartel",
-      "Shadow Network",
-      "The Organization",
-    ],
+    ORGANIZED_CRIME: ["The Syndicate", "Northern Cartel", "Shadow Network", "The Organization"],
     POLITICAL_EXTREMISTS: [
       "Revolutionary Action Front",
       "People's Resistance Movement",

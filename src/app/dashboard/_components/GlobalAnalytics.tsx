@@ -86,7 +86,7 @@ function TierDetailsPopover({ open, anchorEl, onClose, tier, countries }: TierDe
             Countries in the {tier} economic tier.
           </div>
         </div>
-        <div className="flex-grow scrollbar-thin overflow-y-auto pr-2">
+        <div className="grow scrollbar-thin overflow-y-auto pr-2">
           <div className="grid gap-3">
             {tierCountries.map((c, i) => (
               <div

@@ -46,17 +46,14 @@ export interface DiplomaticEventSubscription {
 
 export class DiplomaticWebSocket {
   private ws: WebSocket | null = null;
-  private reconnect = withReconnect(
-    () => this.connect(),
-    {
-      maxAttempts: 5,
-      strategy: "exponential",
-      baseDelayMs: 1000,
-      onAttempt: (attempt, delayMs) => {
-        console.log(`Attempting to reconnect in ${delayMs}ms (attempt ${attempt}/5)`);
-      },
-    }
-  );
+  private reconnect = withReconnect(() => this.connect(), {
+    maxAttempts: 5,
+    strategy: "exponential",
+    baseDelayMs: 1000,
+    onAttempt: (attempt, delayMs) => {
+      console.log(`Attempting to reconnect in ${delayMs}ms (attempt ${attempt}/5)`);
+    },
+  });
   private pingInterval: NodeJS.Timeout | null = null;
   private subscriptions = new Set<string>();
   private messageQueue: any[] = [];

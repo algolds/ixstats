@@ -162,21 +162,29 @@ export async function convertPngToSvg(
       let pathData: string;
       try {
         // Optional native dependency — use eval to hide from Webpack static analysis
-        const potrace = eval('require')("potrace") as {
-          trace: (buf: Buffer, opts: Record<string, unknown>, cb: (err: Error | null, svg: string) => void) => void;
+        const potrace = eval("require")("potrace") as {
+          trace: (
+            buf: Buffer,
+            opts: Record<string, unknown>,
+            cb: (err: Error | null, svg: string) => void
+          ) => void;
         };
         pathData = await new Promise<string>((resolve, reject) => {
-          potrace.trace(mask, {
-            turdSize: config.minRegionSize ?? 10,
-            optTolerance: config.smoothing ?? 0.2,
-          }, (err: Error | null, svg: string) => {
-            if (err) reject(err);
-            else {
-              // Extract path d attribute from potrace SVG output
-              const match = svg.match(/d="([^"]+)"/);
-              resolve(match?.[1] ?? "");
+          potrace.trace(
+            mask,
+            {
+              turdSize: config.minRegionSize ?? 10,
+              optTolerance: config.smoothing ?? 0.2,
+            },
+            (err: Error | null, svg: string) => {
+              if (err) reject(err);
+              else {
+                // Extract path d attribute from potrace SVG output
+                const match = svg.match(/d="([^"]+)"/);
+                resolve(match?.[1] ?? "");
+              }
             }
-          });
+          );
         });
       } catch {
         log.push(`WARNING: potrace not available for ${entry.hex}, skipping`);
@@ -191,7 +199,9 @@ export async function convertPngToSvg(
         log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
       }
     } catch (err) {
-      log.push(`ERROR processing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`);
+      log.push(
+        `ERROR processing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 
@@ -289,7 +299,9 @@ export async function extractProvincesFromPng(
   // ── Step 2: Classify pixels ──
   // 1 = land, 0 = boundary or ocean
   const mask = new Uint8Array(N);
-  let nLand = 0, nBound = 0, nOcean = 0;
+  let nLand = 0,
+    nBound = 0,
+    nOcean = 0;
 
   for (let i = 0; i < N; i++) {
     const r = data[i * 3]!;
@@ -298,7 +310,8 @@ export async function extractProvincesFromPng(
     const brightness = 0.299 * r + 0.587 * g + 0.114 * b; // perceptual luminance
 
     // Ocean: convert to HSL, check blue hue range (180-260) with minimum saturation
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const max = Math.max(r, g, b),
+      min = Math.min(r, g, b);
     const sat = max === 0 ? 0 : (max - min) / max;
     let hue = 0;
     if (max !== min) {
@@ -396,7 +409,9 @@ export async function extractProvincesFromPng(
   // Sort by size descending
   validLabels.sort((a, b) => (sizes.get(b) ?? 0) - (sizes.get(a) ?? 0));
 
-  log.push(`Found ${nextLabel - 1} components, ${validLabels.length} above ${minRegion}px threshold`);
+  log.push(
+    `Found ${nextLabel - 1} components, ${validLabels.length} above ${minRegion}px threshold`
+  );
 
   // ── Step 5 & 6: Trace contour + simplify for each component ──
   const palette = generatePalette(validLabels.length);
@@ -428,10 +443,15 @@ export async function extractProvincesFromPng(
     }
 
     // Compute centroid & bbox
-    let cx = 0, cy = 0;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let cx = 0,
+      cy = 0;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     for (const [px, py] of simplified) {
-      cx += px; cy += py;
+      cx += px;
+      cy += py;
       if (px < minX) minX = px;
       if (px > maxX) maxX = px;
       if (py < minY) minY = py;
@@ -470,21 +490,34 @@ export async function extractProvincesFromPng(
 /** Moore neighborhood contour tracing */
 function traceContour(mask: Uint8Array, width: number, height: number): [number, number][] {
   // Find start pixel (first set pixel, left→right, top→bottom)
-  let startX = -1, startY = -1;
+  let startX = -1,
+    startY = -1;
   for (let y = 0; y < height && startX < 0; y++) {
     for (let x = 0; x < width; x++) {
-      if (mask[y * width + x]) { startX = x; startY = y; break; }
+      if (mask[y * width + x]) {
+        startX = x;
+        startY = y;
+        break;
+      }
     }
   }
   if (startX < 0) return [];
 
   const dirs: [number, number][] = [
-    [0, -1], [1, -1], [1, 0], [1, 1],
-    [0, 1], [-1, 1], [-1, 0], [-1, -1],
+    [0, -1],
+    [1, -1],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+    [-1, 1],
+    [-1, 0],
+    [-1, -1],
   ];
 
   const boundary: [number, number][] = [];
-  let x = startX, y = startY, dir = 2; // east — we "entered" from the west (scan left→right)
+  let x = startX,
+    y = startY,
+    dir = 2; // east — we "entered" from the west (scan left→right)
   const maxSteps = Math.min(width * height, 500_000); // safety cap
 
   for (let step = 0; step < maxSteps; step++) {
@@ -494,9 +527,14 @@ function traceContour(mask: Uint8Array, width: number, height: number): [number,
     for (let i = 0; i < 8; i++) {
       const checkDir = (dir + 5 + i) % 8;
       const [dx, dy] = dirs[checkDir]!;
-      const nx = x + dx, ny = y + dy;
+      const nx = x + dx,
+        ny = y + dy;
       if (nx >= 0 && nx < width && ny >= 0 && ny < height && mask[ny * width + nx]) {
-        x = nx; y = ny; dir = checkDir; found = true; break;
+        x = nx;
+        y = ny;
+        dir = checkDir;
+        found = true;
+        break;
       }
     }
 
@@ -511,12 +549,17 @@ function traceContour(mask: Uint8Array, width: number, height: number): [number,
 function douglasPeuckerSimplify(points: [number, number][], tolerance: number): [number, number][] {
   if (points.length <= 2) return [...points];
 
-  let maxDist = 0, maxIdx = 0;
-  const first = points[0]!, last = points[points.length - 1]!;
+  let maxDist = 0,
+    maxIdx = 0;
+  const first = points[0]!,
+    last = points[points.length - 1]!;
 
   for (let i = 1; i < points.length - 1; i++) {
     const dist = ptLineDist(points[i]!, first, last);
-    if (dist > maxDist) { maxDist = dist; maxIdx = i; }
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIdx = i;
+    }
   }
 
   if (maxDist > tolerance) {
@@ -529,7 +572,8 @@ function douglasPeuckerSimplify(points: [number, number][], tolerance: number): 
 }
 
 function ptLineDist(p: [number, number], a: [number, number], b: [number, number]): number {
-  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const dx = b[0] - a[0],
+    dy = b[1] - a[1];
   const lenSq = dx * dx + dy * dy;
   if (lenSq === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
   const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / lenSq));
@@ -549,12 +593,15 @@ function generatePalette(n: number): string[] {
 }
 
 function hslToHex(h: number, s: number, l: number): string {
-  s /= 100; l /= 100;
+  s /= 100;
+  l /= 100;
   const a = s * Math.min(l, 1 - l);
   const f = (n: number) => {
     const k = (n + h / 30) % 12;
     const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color).toString(16).padStart(2, "0");
+    return Math.round(255 * color)
+      .toString(16)
+      .padStart(2, "0");
   };
   return `#${f(0)}${f(8)}${f(4)}`;
 }

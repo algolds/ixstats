@@ -23,7 +23,12 @@ interface GeopoliticalOverlayProps {
   visible: boolean;
 }
 
-export function GeopoliticalOverlay({ map, relations, conflicts, visible }: GeopoliticalOverlayProps) {
+export function GeopoliticalOverlay({
+  map,
+  relations,
+  conflicts,
+  visible,
+}: GeopoliticalOverlayProps) {
   useEffect(() => {
     if (!map || !map.isStyleLoaded()) return;
 
@@ -42,12 +47,7 @@ export function GeopoliticalOverlay({ map, relations, conflicts, visible }: Geop
         source: RELATIONS_SOURCE,
         paint: {
           "line-color": ["get", "color"],
-          "line-width": [
-            "interpolate", ["linear"], ["get", "strength"],
-            0, 0.5,
-            50, 2,
-            100, 4,
-          ],
+          "line-width": ["interpolate", ["linear"], ["get", "strength"], 0, 0.5, 50, 2, 100, 4],
           "line-opacity": 0.5,
           "line-dasharray": [4, 2],
         },
@@ -93,7 +93,9 @@ export function GeopoliticalOverlay({ map, relations, conflicts, visible }: Geop
         if (map.getLayer(RELATIONS_LAYER)) map.removeLayer(RELATIONS_LAYER);
         if (map.getSource(CONFLICTS_SOURCE)) map.removeSource(CONFLICTS_SOURCE);
         if (map.getSource(RELATIONS_SOURCE)) map.removeSource(RELATIONS_SOURCE);
-      } catch { /* map may be destroyed */ }
+      } catch {
+        /* map may be destroyed */
+      }
     };
   }, [map]);
 

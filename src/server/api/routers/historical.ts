@@ -90,8 +90,7 @@ export const historicalRouter = createTRPCRouter({
 
         return history.map((h) => ({
           date: h.timestamp,
-          targetCountry:
-            h.country1Id === input.countryId ? h.country2Id : h.country1Id,
+          targetCountry: h.country1Id === input.countryId ? h.country2Id : h.country1Id,
           strength: h.strength,
           relationship: h.relationship,
           tradeVolume: h.tradeVolume,
@@ -109,8 +108,7 @@ export const historicalRouter = createTRPCRouter({
 
         return history.map((h) => ({
           date: h.timestamp,
-          targetCountry:
-            h.country1Id === input.countryId ? h.country2Id : h.country1Id,
+          targetCountry: h.country1Id === input.countryId ? h.country2Id : h.country1Id,
           strength: h.strength,
           relationship: h.relationship,
           tradeVolume: h.tradeVolume,
@@ -153,8 +151,7 @@ export const historicalRouter = createTRPCRouter({
             totalStrength: 0,
           };
         }
-        const targetCountry =
-          rel.country1Id === input.countryId ? rel.country2Id : rel.country1Id;
+        const targetCountry = rel.country1Id === input.countryId ? rel.country2Id : rel.country1Id;
         acc[dateKey!].relationships.add(targetCountry);
         acc[dateKey!].totalStrength += rel.strength;
         return acc;
@@ -496,9 +493,7 @@ export const historicalRouter = createTRPCRouter({
       // Correlate changes with outcomes
       const impacts = componentChanges.map((change) => {
         // Find closest historical data point
-        const dataPoint = historicalData.find(
-          (h) => h.ixTimeTimestamp >= change.timestamp
-        );
+        const dataPoint = historicalData.find((h) => h.ixTimeTimestamp >= change.timestamp);
 
         return {
           date: change.timestamp,
@@ -610,8 +605,7 @@ export const historicalRouter = createTRPCRouter({
       const populations = historical.map((h) => h.population);
       const gdps = historical.map((h) => h.totalGdp);
 
-      const avgGdpGrowth =
-        gdpGrowthRates.reduce((a, b) => a + b, 0) / gdpGrowthRates.length;
+      const avgGdpGrowth = gdpGrowthRates.reduce((a, b) => a + b, 0) / gdpGrowthRates.length;
       const maxGdpGrowth = Math.max(...gdpGrowthRates);
       const minGdpGrowth = Math.min(...gdpGrowthRates);
 

@@ -289,7 +289,7 @@ export function CountryAtGlance({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {country.nationalIdentity.officialName && (
                     <div className="flex items-start space-x-3">
-                      <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Building className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Official Name</p>
                         <p className="text-sm font-medium">
@@ -300,7 +300,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.governmentType && (
                     <div className="flex items-start space-x-3">
-                      <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Crown className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Government Type</p>
                         <p className="text-sm font-medium">
@@ -311,7 +311,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.capitalCity && (
                     <div className="flex items-start space-x-3">
-                      <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Capital</p>
                         <p className="text-sm font-medium">
@@ -322,7 +322,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.largestCity && (
                     <div className="flex items-start space-x-3">
-                      <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Largest City</p>
                         <p className="text-sm font-medium">
@@ -333,7 +333,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.demonym && (
                     <div className="flex items-start space-x-3">
-                      <Users className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Users className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Demonym</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.demonym}</p>
@@ -342,7 +342,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.officialLanguages && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Official Languages</p>
                         <p className="text-sm font-medium">
@@ -353,7 +353,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.nationalLanguage && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">National Language</p>
                         <p className="text-sm font-medium">
@@ -364,7 +364,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.currency && (
                     <div className="flex items-start space-x-3">
-                      <DollarSign className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <DollarSign className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Currency</p>
                         <p className="text-sm font-medium">
@@ -377,7 +377,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.nationalDay && (
                     <div className="flex items-start space-x-3">
-                      <Calendar className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Calendar className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">National Day</p>
                         <p className="text-sm font-medium">
@@ -388,7 +388,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.motto && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
-                      <Flag className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Flag className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">National Motto</p>
                         <p className="text-sm font-medium italic">
@@ -406,7 +406,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.nationalAnthem && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
-                      <Music className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Music className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">National Anthem</p>
                         <p className="text-sm font-medium">
@@ -417,7 +417,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.nationalSport && (
                     <div className="flex items-start space-x-3">
-                      <Activity className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Activity className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">National Sport</p>
                         <p className="text-sm font-medium">
@@ -428,7 +428,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.callingCode && (
                     <div className="flex items-start space-x-3">
-                      <Phone className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Phone className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Calling Code</p>
                         <p className="text-sm font-medium">
@@ -439,7 +439,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.internetTLD && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Internet TLD</p>
                         <p className="text-sm font-medium">
@@ -450,7 +450,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.isoCode && (
                     <div className="flex items-start space-x-3">
-                      <Hash className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Hash className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">ISO Code</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.isoCode}</p>
@@ -459,7 +459,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.timeZone && (
                     <div className="flex items-start space-x-3">
-                      <Clock className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Clock className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Time Zone</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.timeZone}</p>
@@ -468,7 +468,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.drivingSide && (
                     <div className="flex items-start space-x-3">
-                      <Car className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Car className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Driving Side</p>
                         <p className="text-sm font-medium capitalize">
@@ -479,7 +479,7 @@ export function CountryAtGlance({
                   )}
                   {country.nationalIdentity.weekStartDay && (
                     <div className="flex items-start space-x-3">
-                      <Calendar className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Calendar className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Week Starts On</p>
                         <p className="text-sm font-medium capitalize">
@@ -491,7 +491,7 @@ export function CountryAtGlance({
                   {country.nationalIdentity.coordinatesLatitude &&
                     country.nationalIdentity.coordinatesLongitude && (
                       <div className="flex items-start space-x-3 sm:col-span-2">
-                        <LocateFixed className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                        <LocateFixed className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                         <div className="min-w-0">
                           <p className="text-muted-foreground text-sm">Coordinates</p>
                           <p className="text-sm font-medium">
@@ -503,7 +503,7 @@ export function CountryAtGlance({
                     )}
                   {country.nationalIdentity.emergencyNumber && (
                     <div className="flex items-start space-x-3">
-                      <Phone className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <Phone className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-muted-foreground text-sm">Emergency Number</p>
                         <p className="text-sm font-medium">
@@ -527,7 +527,7 @@ export function CountryAtGlance({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {(governmentStructure?.governmentName || country.nationalIdentity?.officialName) && (
                 <div className="flex items-start space-x-3">
-                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Government Name</p>
                     <p className="text-sm font-medium">
@@ -541,7 +541,7 @@ export function CountryAtGlance({
                 country.governmentType ||
                 country.nationalIdentity?.governmentType) && (
                 <div className="flex items-start space-x-3">
-                  <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Crown className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Government Type</p>
                     <p className="text-sm font-medium">
@@ -554,7 +554,7 @@ export function CountryAtGlance({
               )}
               {(governmentStructure?.headOfState || (country as any)?.leader) && (
                 <div className="flex items-start space-x-3">
-                  <Users className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Users className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Head of State</p>
                     <p className="text-sm font-medium">
@@ -565,7 +565,7 @@ export function CountryAtGlance({
               )}
               {governmentStructure?.headOfGovernment && (
                 <div className="flex items-start space-x-3">
-                  <Users className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Users className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Head of Government</p>
                     <p className="text-sm font-medium">{governmentStructure.headOfGovernment}</p>
@@ -574,7 +574,7 @@ export function CountryAtGlance({
               )}
               {country.nationalIdentity?.capitalCity && (
                 <div className="flex items-start space-x-3">
-                  <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Capital</p>
                     <p className="text-sm font-medium">{country.nationalIdentity.capitalCity}</p>
@@ -583,7 +583,7 @@ export function CountryAtGlance({
               )}
               {(country as any)?.religion && (
                 <div className="flex items-start space-x-3">
-                  <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Crown className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Religion</p>
                     <p className="text-sm font-medium">{(country as any).religion}</p>
@@ -592,7 +592,7 @@ export function CountryAtGlance({
               )}
               {country.nationalIdentity?.currency && (
                 <div className="flex items-start space-x-3">
-                  <DollarSign className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <DollarSign className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Currency</p>
                     <p className="text-sm font-medium">
@@ -605,7 +605,7 @@ export function CountryAtGlance({
               )}
               {governmentStructure?.legislatureName && (
                 <div className="flex items-start space-x-3">
-                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Legislature</p>
                     <p className="text-sm font-medium">{governmentStructure.legislatureName}</p>
@@ -614,7 +614,7 @@ export function CountryAtGlance({
               )}
               {governmentStructure?.executiveName && (
                 <div className="flex items-start space-x-3">
-                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Executive</p>
                     <p className="text-sm font-medium">{governmentStructure.executiveName}</p>
@@ -623,7 +623,7 @@ export function CountryAtGlance({
               )}
               {governmentStructure?.judicialName && (
                 <div className="flex items-start space-x-3">
-                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Judiciary</p>
                     <p className="text-sm font-medium">{governmentStructure.judicialName}</p>
@@ -632,7 +632,7 @@ export function CountryAtGlance({
               )}
               {typeof governmentStructure?.totalBudget === "number" && (
                 <div className="flex items-start space-x-3">
-                  <TrendingUp className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <TrendingUp className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Total Budget</p>
                     <p className="text-sm font-medium">

@@ -27,7 +27,7 @@ import { WikiSearch } from "./WikiSearch";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -230,8 +230,13 @@ export function AccountCreationModal({
     if (!validateForm()) return;
 
     try {
-      const newAccount = await createAccountMutation.mutateAsync({
+      const submitData = {
         ...formData,
+        profileImageUrl: formData.profileImageUrl || undefined,
+      };
+
+      const newAccount = await createAccountMutation.mutateAsync({
+        ...submitData,
         countryId,
       });
       notify.success("Account created successfully!");
@@ -258,18 +263,20 @@ export function AccountCreationModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative mx-2 sm:mx-4 flex max-h-[90vh] w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl flex-col"
+            className="relative mx-2 flex max-h-[90vh] w-full max-w-[95vw] flex-col sm:mx-4 sm:max-w-xl md:max-w-2xl"
           >
             <div className="flex flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="rounded-lg bg-blue-500/20 p-1.5 sm:p-2">
-                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                    <Sparkles className="h-5 w-5 text-blue-400 sm:h-6 sm:w-6" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white">Create Thinkpages Account</h3>
-                    <p className="text-xs sm:text-sm text-neutral-400">
+                    <h3 className="text-base font-bold text-white sm:text-lg">
+                      Create Thinkpages Account
+                    </h3>
+                    <p className="text-xs text-neutral-400 sm:text-sm">
                       {countryName} • {accountsRemaining} slots remaining
                     </p>
                   </div>
@@ -284,12 +291,12 @@ export function AccountCreationModal({
               </div>
 
               {!canCreateMoreAccounts && (
-                <div className="m-3 sm:m-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 sm:p-4">
+                <div className="m-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3 sm:m-4 sm:p-4">
                   <div className="flex items-center gap-2 text-red-400">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="text-xs sm:text-sm font-medium">Account Limit Reached</span>
+                    <span className="text-xs font-medium sm:text-sm">Account Limit Reached</span>
                   </div>
-                  <p className="mt-1 pl-6 sm:pl-7 text-[10px] sm:text-xs text-red-300">
+                  <p className="mt-1 pl-6 text-[10px] text-red-300 sm:pl-7 sm:text-xs">
                     You have reached the maximum of {maxAccounts} accounts. Delete an existing
                     account to create a new one.
                   </p>
@@ -307,7 +314,9 @@ export function AccountCreationModal({
                       exit={{ opacity: 0, x: -30 }}
                       className="space-y-4"
                     >
-                      <h3 className="text-base sm:text-lg font-semibold text-white">Choose Account Type</h3>
+                      <h3 className="text-base font-semibold text-white sm:text-lg">
+                        Choose Account Type
+                      </h3>
                       <div className="grid gap-3 sm:gap-4">
                         {Object.entries(ACCOUNT_TYPES).map(([type, config]) => {
                           const Icon = config.icon;
@@ -329,7 +338,7 @@ export function AccountCreationModal({
                               }
                               disabled={!canCreateThisType || isLoadingAccountCountsByType}
                               className={cn(
-                                "flex w-full items-start gap-2 sm:gap-4 rounded-lg border-2 p-3 sm:p-4 text-left transition-all",
+                                "flex w-full items-start gap-2 rounded-lg border-2 p-3 text-left transition-all sm:gap-4 sm:p-4",
                                 isSelected
                                   ? "border-blue-500 bg-blue-500/10"
                                   : "border-neutral-700 hover:border-blue-400 hover:bg-blue-500/5",
@@ -347,25 +356,27 @@ export function AccountCreationModal({
                               </div>
                               <div className="flex-1">
                                 <div className="mb-1 flex flex-wrap items-center gap-1 sm:gap-2">
-                                  <h4 className="text-sm sm:text-base font-semibold text-white">{config.label}</h4>
-                                  <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] sm:text-xs text-neutral-300">
+                                  <h4 className="text-sm font-semibold text-white sm:text-base">
+                                    {config.label}
+                                  </h4>
+                                  <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300 sm:text-xs">
                                     Max {config.maxAccounts}
                                   </span>
                                   {type === "government" && (
-                                    <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] sm:text-xs text-blue-400">
+                                    <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-400 sm:text-xs">
                                       Auto-Verified
                                     </span>
                                   )}
                                 </div>
-                                <p className="mb-2 text-xs sm:text-sm text-neutral-400">
+                                <p className="mb-2 text-xs text-neutral-400 sm:text-sm">
                                   {config.description}
                                 </p>
-                                <p className="text-[10px] sm:text-xs text-neutral-500">
+                                <p className="text-[10px] text-neutral-500 sm:text-xs">
                                   {canCreateThisType
                                     ? `Remaining: ${typeAccountsRemaining} / ${config.maxAccounts}`
                                     : `Limit Reached: ${config.maxAccounts} / ${config.maxAccounts}`}
                                 </p>
-                                <p className="text-[10px] sm:text-xs text-neutral-500">
+                                <p className="text-[10px] text-neutral-500 sm:text-xs">
                                   Examples: {config.examples.join(", ")}
                                 </p>
                               </div>
@@ -390,15 +401,17 @@ export function AccountCreationModal({
                       <div className="flex items-center gap-2 sm:gap-3">
                         <button
                           onClick={() => setStep("type")}
-                          className="rounded-full p-1.5 sm:p-2 text-neutral-300 transition-colors hover:bg-white/10"
+                          className="rounded-full p-1.5 text-neutral-300 transition-colors hover:bg-white/10 sm:p-2"
                         >
                           <ArrowLeft className="h-4 w-4" />
                         </button>
-                        <h3 className="text-base sm:text-lg font-semibold text-white">Account Details</h3>
+                        <h3 className="text-base font-semibold text-white sm:text-lg">
+                          Account Details
+                        </h3>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                         <div>
-                          <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
+                          <label className="mb-2 block text-xs font-medium text-neutral-300 sm:text-sm">
                             First Name
                           </label>
                           <input
@@ -409,16 +422,18 @@ export function AccountCreationModal({
                             }
                             placeholder="Enter first name"
                             className={cn(
-                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500",
+                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-white focus:border-blue-500 focus:ring-blue-500 sm:px-4 sm:py-3 sm:text-sm",
                               errors.firstName && "border-red-500"
                             )}
                           />
                           {errors.firstName && (
-                            <p className="mt-1 text-[10px] sm:text-xs text-red-400">{errors.firstName}</p>
+                            <p className="mt-1 text-[10px] text-red-400 sm:text-xs">
+                              {errors.firstName}
+                            </p>
                           )}
                         </div>
                         <div>
-                          <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
+                          <label className="mb-2 block text-xs font-medium text-neutral-300 sm:text-sm">
                             Last Name
                           </label>
                           <input
@@ -429,21 +444,23 @@ export function AccountCreationModal({
                             }
                             placeholder="Enter last name"
                             className={cn(
-                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500",
+                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-white focus:border-blue-500 focus:ring-blue-500 sm:px-4 sm:py-3 sm:text-sm",
                               errors.lastName && "border-red-500"
                             )}
                           />
                           {errors.lastName && (
-                            <p className="mt-1 text-[10px] sm:text-xs text-red-400">{errors.lastName}</p>
+                            <p className="mt-1 text-[10px] text-red-400 sm:text-xs">
+                              {errors.lastName}
+                            </p>
                           )}
                         </div>
                       </div>
                       <div>
-                        <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
+                        <label className="mb-2 block text-xs font-medium text-neutral-300 sm:text-sm">
                           Username
                         </label>
                         <div className="relative">
-                          <span className="absolute inset-y-0 left-2 sm:left-3 flex items-center text-xs sm:text-sm text-neutral-500">
+                          <span className="absolute inset-y-0 left-2 flex items-center text-xs text-neutral-500 sm:left-3 sm:text-sm">
                             @
                           </span>
                           <input
@@ -452,7 +469,7 @@ export function AccountCreationModal({
                             onChange={(e) => handleUsernameChange(e.target.value)}
                             placeholder="username"
                             className={cn(
-                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 pl-6 sm:pl-8 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500",
+                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 py-2 pl-6 text-xs text-white focus:border-blue-500 focus:ring-blue-500 sm:px-4 sm:py-3 sm:pl-8 sm:text-sm",
                               errors.username && "border-red-500",
                               isUsernameAvailable && "border-green-500"
                             )}
@@ -519,7 +536,7 @@ export function AccountCreationModal({
                           Profile Picture
                         </label>
                         <div className="flex items-center gap-4">
-                          <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full border border-neutral-700">
+                          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-neutral-700">
                             {formData.profileImageUrl ? (
                               <img
                                 src={formData.profileImageUrl}
@@ -631,7 +648,7 @@ export function AccountCreationModal({
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                         <div>
                           <label className="mb-2 block text-sm font-medium text-neutral-300">
                             Posting Frequency
@@ -690,12 +707,12 @@ export function AccountCreationModal({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end border-t border-white/10 px-4 sm:px-6 py-3 sm:py-4">
-                <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex items-center justify-end border-t border-white/10 px-4 py-3 sm:px-6 sm:py-4">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-neutral-700 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-neutral-600 disabled:pointer-events-none disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-neutral-700 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-600 disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-sm"
                   >
                     Cancel
                   </button>
@@ -704,7 +721,7 @@ export function AccountCreationModal({
                       type="button"
                       onClick={() => setStep("details")}
                       disabled={!canCreateMoreAccounts}
-                      className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-sm"
                     >
                       Continue
                     </button>
@@ -718,7 +735,7 @@ export function AccountCreationModal({
                         isCheckingUsername ||
                         createAccountMutation.isPending
                       }
-                      className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-sm"
                     >
                       {createAccountMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

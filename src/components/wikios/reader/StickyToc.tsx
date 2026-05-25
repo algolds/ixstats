@@ -14,10 +14,7 @@ export function StickyToc({ entries }: StickyTocProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const visibleEntries = useMemo(
-    () => entries.filter((e) => e.level <= 3),
-    [entries]
-  );
+  const visibleEntries = useMemo(() => entries.filter((e) => e.level <= 3), [entries]);
 
   // Scroll spy — vanilla DOM, runs once after mount
   useEffect(() => {
@@ -42,7 +39,11 @@ export function StickyToc({ entries }: StickyTocProps) {
   if (collapsed) {
     return (
       <div className="wikios-sticky-toc wikios-sticky-toc--collapsed">
-        <button onClick={() => setCollapsed(false)} className="wikios-sticky-toc-toggle" type="button">
+        <button
+          onClick={() => setCollapsed(false)}
+          className="wikios-sticky-toc-toggle"
+          type="button"
+        >
           <PanelRightOpen className="h-4 w-4" />
         </button>
       </div>
@@ -53,7 +54,11 @@ export function StickyToc({ entries }: StickyTocProps) {
     <nav className="wikios-sticky-toc">
       <div className="wikios-sticky-toc-header">
         <span>On this page</span>
-        <button onClick={() => setCollapsed(true)} className="wikios-sticky-toc-toggle" type="button">
+        <button
+          onClick={() => setCollapsed(true)}
+          className="wikios-sticky-toc-toggle"
+          type="button"
+        >
           <PanelRightClose className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -63,7 +68,7 @@ export function StickyToc({ entries }: StickyTocProps) {
           <a
             key={item.id}
             href={`#${item.id}`}
-            className={`wikios-sticky-toc-item${activeId === item.id ? " wikios-sticky-toc-item--active" : ""}`}
+            className={`wikios-sticky-toc-item${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
             style={{ paddingLeft: `${(item.level - 2) * 12 + 12}px` }}
           >
             <span className="wikios-sticky-toc-text">{item.text}</span>

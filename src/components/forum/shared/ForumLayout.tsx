@@ -214,7 +214,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
               "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
             )}
           >
-            <Search className="h-3.5 w-3.5 flex-shrink-0" />
+            <Search className="h-3.5 w-3.5 shrink-0" />
             <span className="whitespace-nowrap">Search</span>
           </button>
           {contextualItems.map((item) => (
@@ -336,7 +336,7 @@ function MobilePill({ item, isActive }: { item: ForumNavItem; isActive: boolean 
           : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
       )}
     >
-      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+      <Icon className="h-3.5 w-3.5 shrink-0" />
       <span className="whitespace-nowrap">{item.title}</span>
     </Link>
   );

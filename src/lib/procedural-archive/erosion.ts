@@ -41,8 +41,8 @@ export function applyErosion(
   if (intensity <= 0) return;
 
   // Scale iterations by intensity
-  const hydraulicIters = Math.round(3 + intensity * 2);  // 3-5
-  const thermalIters = Math.round(2 + intensity * 1);    // 2-3
+  const hydraulicIters = Math.round(3 + intensity * 2); // 3-5
+  const thermalIters = Math.round(2 + intensity * 1); // 2-3
   const glacialIters = intensity > 0.3 ? Math.round(intensity * 2) : 0; // 0-2
 
   // Stage 1: Priority-flood pit resolution
@@ -59,8 +59,14 @@ export function applyErosion(
 
   // Stage 4-6: Composite erosion (interleaved)
   erodeComposite(
-    elevation, isOcean, width, height, seed,
-    hydraulicIters, thermalIters, glacialIters,
+    elevation,
+    isOcean,
+    width,
+    height,
+    seed,
+    hydraulicIters,
+    thermalIters,
+    glacialIters,
     intensity
   );
 
@@ -87,7 +93,9 @@ class MinHeap {
     this.keys = keys;
   }
 
-  get size(): number { return this.data.length; }
+  get size(): number {
+    return this.data.length;
+  }
 
   push(cell: number): void {
     this.data.push(cell);
@@ -95,7 +103,9 @@ class MinHeap {
     while (i > 0) {
       const parent = (i - 1) >> 1;
       if (this.keys[this.data[i]!]! >= this.keys[this.data[parent]!]!) break;
-      const tmp = this.data[i]!; this.data[i] = this.data[parent]!; this.data[parent] = tmp;
+      const tmp = this.data[i]!;
+      this.data[i] = this.data[parent]!;
+      this.data[parent] = tmp;
       i = parent;
     }
   }
@@ -109,11 +119,14 @@ class MinHeap {
       const n = this.data.length;
       for (;;) {
         let smallest = i;
-        const l = 2 * i + 1, r = 2 * i + 2;
+        const l = 2 * i + 1,
+          r = 2 * i + 2;
         if (l < n && this.keys[this.data[l]!]! < this.keys[this.data[smallest]!]!) smallest = l;
         if (r < n && this.keys[this.data[r]!]! < this.keys[this.data[smallest]!]!) smallest = r;
         if (smallest === i) break;
-        const tmp = this.data[i]!; this.data[i] = this.data[smallest]!; this.data[smallest] = tmp;
+        const tmp = this.data[i]!;
+        this.data[i] = this.data[smallest]!;
+        this.data[smallest] = tmp;
         i = smallest;
       }
     }
@@ -139,7 +152,7 @@ function priorityFloodCarve(
   const cellNoise = (r: number) => {
     let h = (r * 2654435761) >>> 0;
     h = (((h >>> 16) ^ h) * 0x45d9f3b) >>> 0;
-    return (h >>> 0) / 0xffffffff * 0.01;
+    return ((h >>> 0) / 0xffffffff) * 0.01;
   };
 
   const surface = new Float32Array(elevation);
@@ -156,7 +169,10 @@ function priorityFloodCarve(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx = y * width + x;
-      if (isOcean[idx]) { visited[idx] = 1; continue; }
+      if (isOcean[idx]) {
+        visited[idx] = 1;
+        continue;
+      }
 
       const neighbors = getNeighbors4(x, y, width, height);
       for (const n of neighbors) {
@@ -341,7 +357,10 @@ function bilateralSmooth(
       if (isOcean[idx]) continue;
       const neighbors = getNeighbors4(x, y, width, height);
       for (const n of neighbors) {
-        if (isOcean[n]) { locked[idx] = 1; break; }
+        if (isOcean[n]) {
+          locked[idx] = 1;
+          break;
+        }
       }
     }
   }
@@ -350,10 +369,14 @@ function bilateralSmooth(
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
-        if (isOcean[idx] || locked[idx]) { tmp[idx] = elevation[idx]!; continue; }
+        if (isOcean[idx] || locked[idx]) {
+          tmp[idx] = elevation[idx]!;
+          continue;
+        }
 
         const h = elevation[idx]!;
-        let wSum = 0, hSum = 0;
+        let wSum = 0,
+          hSum = 0;
         const neighbors = getNeighbors4(x, y, width, height);
 
         for (const n of neighbors) {
@@ -410,9 +433,9 @@ function erodeComposite(
   const flow = new Float32Array(N);
 
   // Hydraulic erosion parameters
-  const K = 0.005 * intensity;  // Erosion coefficient
-  const m = 0.5;                // Area exponent
-  const dt = 0.5;               // Timestep
+  const K = 0.005 * intensity; // Erosion coefficient
+  const m = 0.5; // Area exponent
+  const dt = 0.5; // Timestep
 
   // Thermal parameters
   const talusSlope = 0.04 / intensity; // Maximum stable slope
@@ -428,7 +451,7 @@ function erodeComposite(
     for (let i = 0; i < N; i++) {
       if (isOcean[i]) continue;
       const y = Math.floor(i / width);
-      const latRad = Math.abs(((y / height) - 0.5) * Math.PI);
+      const latRad = Math.abs((y / height - 0.5) * Math.PI);
       const latFactor = smoothstep(latRad, Math.PI / 4, Math.PI / 2);
       const elevFactor = smoothstep(elevation[i]!, 0.5, 0.9);
       glacIdx[i] = Math.max(latFactor, elevFactor * 0.3) * glacialStrength;
@@ -447,11 +470,15 @@ function erodeComposite(
         const x = r % width;
         const y = (r - x) / width;
         const h = elevation[r]!;
-        let bestNb = -1, bestDrop = 0;
+        let bestNb = -1,
+          bestDrop = 0;
         const neighbors = getNeighbors4(x, y, width, height);
         for (const nb of neighbors) {
           const drop = h - elevation[nb]!;
-          if (drop > bestDrop) { bestDrop = drop; bestNb = nb; }
+          if (drop > bestDrop) {
+            bestDrop = drop;
+            bestNb = nb;
+          }
         }
         drainTarget[r] = bestNb;
       }
@@ -535,11 +562,15 @@ function erodeComposite(
         const x = r % width;
         const y = (r - x) / width;
         const h = elevation[r]!;
-        let bestNb = -1, bestDrop = 0;
+        let bestNb = -1,
+          bestDrop = 0;
         const neighbors = getNeighbors4(x, y, width, height);
         for (const nb of neighbors) {
           const drop = h - elevation[nb]!;
-          if (drop > bestDrop) { bestDrop = drop; bestNb = nb; }
+          if (drop > bestDrop) {
+            bestDrop = drop;
+            bestNb = nb;
+          }
         }
         iceTarget[r] = bestNb;
       }
@@ -658,7 +689,8 @@ function smoothstep(x: number, edge0: number, edge1: number): number {
 }
 
 function normalizeLandElevation(elevation: Float32Array, isOcean: Uint8Array): void {
-  let min = Infinity, max = -Infinity;
+  let min = Infinity,
+    max = -Infinity;
   for (let i = 0; i < elevation.length; i++) {
     if (!isOcean[i]) {
       if (elevation[i]! < min) min = elevation[i]!;

@@ -17,10 +17,10 @@ function IssueCountBadgeInner({ countryId, className }: IssueCountBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none ${
+      className={`inline-flex items-center justify-center rounded-full text-[10px] leading-none font-bold ${
         isUrgent
-          ? "bg-red-500 text-white min-w-[16px] h-4 px-1"
-          : "bg-amber-500 text-white min-w-[16px] h-4 px-1"
+          ? "h-4 min-w-[16px] bg-red-500 px-1 text-white"
+          : "h-4 min-w-[16px] bg-amber-500 px-1 text-white"
       } ${className ?? ""}`}
     >
       {total}

@@ -18,10 +18,7 @@ interface MiniWorldMapProps {
   height?: string;
 }
 
-export function MiniWorldMap({
-  className = "",
-  height = "h-64",
-}: MiniWorldMapProps) {
+export function MiniWorldMap({ className = "", height = "h-64" }: MiniWorldMapProps) {
   const router = useRouter();
 
   const handleCountrySelect = useCallback(
@@ -34,14 +31,13 @@ export function MiniWorldMap({
   );
 
   return (
-    <div className={`overflow-hidden rounded-xl border border-border bg-card shadow-sm ${className}`}>
+    <div
+      className={`border-border bg-card overflow-hidden rounded-xl border shadow-sm ${className}`}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
-        <h3 className="text-sm font-medium text-foreground">World Map</h3>
-        <a
-          href={"/maps"}
-          className="text-xs text-blue-500 hover:text-blue-600"
-        >
+      <div className="border-border/50 flex items-center justify-between border-b px-4 py-2">
+        <h3 className="text-foreground text-sm font-medium">World Map</h3>
+        <a href={"/maps"} className="text-xs text-blue-500 hover:text-blue-600">
           Open full map
         </a>
       </div>

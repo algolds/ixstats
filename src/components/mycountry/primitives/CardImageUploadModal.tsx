@@ -3,16 +3,10 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { 
-  Loader2, 
-  Check, 
-  Image as ImageIcon,
-  Trash2,
-  Sparkles,
-} from "lucide-react";
+import { Loader2, Check, Image as ImageIcon, Trash2, Sparkles } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -23,15 +17,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { 
-  getCardImagePreset, 
-  type CardImageType 
-} from "~/lib/card-image-presets";
+import { getCardImagePreset, type CardImageType } from "~/lib/card-image-presets";
 import { cn } from "~/lib/utils";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -201,14 +192,14 @@ export function CardImageUploadModal({
     try {
       // Download external images to local storage
       let finalUrl = selectedImage;
-      
+
       if (selectedImage.startsWith("https://images.unsplash.com")) {
         const response = await fetch("/api/download/external-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            url: selectedImage, 
-            filename: `card-${cardType}-${Date.now()}.jpg` 
+          body: JSON.stringify({
+            url: selectedImage,
+            filename: `card-${cardType}-${Date.now()}.jpg`,
           }),
         });
 
@@ -235,7 +226,7 @@ export function CardImageUploadModal({
   // Reset to default
   const handleReset = async () => {
     if (!currentImageUrl) return;
-    
+
     try {
       await deleteMutation.mutateAsync({ countryId, cardType });
     } catch (error) {
@@ -254,15 +245,13 @@ export function CardImageUploadModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
               {preset.label} Background
             </DialogTitle>
-            <DialogDescription>
-              {preset.description}
-            </DialogDescription>
+            <DialogDescription>{preset.description}</DialogDescription>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "presets" | "search")}>
@@ -278,21 +267,21 @@ export function CardImageUploadModal({
             </TabsList>
 
             {/* Preset Images Tab */}
-            <TabsContent value="presets" className="space-y-4 mt-4">
-              <p className="text-sm text-muted-foreground">
+            <TabsContent value="presets" className="mt-4 space-y-4">
+              <p className="text-muted-foreground text-sm">
                 Select a curated image for your {preset.label.toLowerCase()} card
               </p>
-              
+
               {/* Preset Images Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {presetImages.map((imageUrl, idx) => (
                   <motion.div
                     key={idx}
                     className={cn(
-                      "relative aspect-video cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
+                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
                       selectedImage === imageUrl
-                        ? "border-primary ring-2 ring-primary/50"
-                        : "border-transparent hover:border-primary/50"
+                        ? "border-primary ring-primary/50 ring-2"
+                        : "hover:border-primary/50 border-transparent"
                     )}
                     whileHover={{ scale: 1.02 }}
                     onClick={() => setSelectedImage(imageUrl)}
@@ -304,8 +293,8 @@ export function CardImageUploadModal({
                       className="h-full w-full object-cover"
                     />
                     {selectedImage === imageUrl && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                        <Check className="h-8 w-8 text-primary drop-shadow-lg" />
+                      <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
+                        <Check className="text-primary h-8 w-8 drop-shadow-lg" />
                       </div>
                     )}
                   </motion.div>
@@ -314,35 +303,35 @@ export function CardImageUploadModal({
             </TabsContent>
 
             {/* Image Repository Tab */}
-            <TabsContent value="search" className="space-y-4 mt-4">
-              <p className="text-sm text-muted-foreground">
+            <TabsContent value="search" className="mt-4 space-y-4">
+              <p className="text-muted-foreground text-sm">
                 Search from Unsplash, Wiki Commons, IxWiki, or upload your own
               </p>
-              
+
               {/* Selected Image Preview */}
               {selectedImage && !presetImages.includes(selectedImage) && (
-                <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-primary">
+                <div className="border-primary relative aspect-video overflow-hidden rounded-lg border-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedImage}
                     alt="Selected image"
                     className="h-full w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                    <Check className="h-8 w-8 text-primary drop-shadow-lg" />
+                  <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
+                    <Check className="text-primary h-8 w-8 drop-shadow-lg" />
                   </div>
                 </div>
               )}
 
-              <Button 
-                variant="outline" 
-                className="w-full h-24 border-dashed"
+              <Button
+                variant="outline"
+                className="h-24 w-full border-dashed"
                 onClick={() => setIsMediaModalOpen(true)}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  <ImageIcon className="text-muted-foreground h-8 w-8" />
                   <span>Open Image Repository</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     Unsplash, Wiki Commons, IxWiki, or Upload
                   </span>
                 </div>
@@ -350,7 +339,7 @@ export function CardImageUploadModal({
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="flex justify-between items-center gap-2 mt-4">
+          <DialogFooter className="mt-4 flex items-center justify-between gap-2">
             <div>
               {currentImageUrl && (
                 <Button
@@ -373,7 +362,7 @@ export function CardImageUploadModal({
               <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleSave}
                 disabled={!selectedImage || isSaving || upsertMutation.isPending}
               >

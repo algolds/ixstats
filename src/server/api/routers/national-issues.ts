@@ -107,14 +107,7 @@ const TemplateCreateSchema = z.object({
     "environmental",
   ]),
   category: z
-    .enum([
-      "economic",
-      "diplomatic",
-      "social",
-      "governance",
-      "security",
-      "infrastructure",
-    ])
+    .enum(["economic", "diplomatic", "social", "governance", "security", "infrastructure"])
     .default("governance"),
   tags: z.string().optional(),
   baseSeverity: z.enum(["critical", "high", "medium", "low"]).default("medium"),
@@ -165,10 +158,7 @@ export const nationalIssuesRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       // Trigger evaluation if stale
-      const shouldEval = await NationalIssuesEngine.shouldEvaluate(
-        input.countryId,
-        ctx.db
-      );
+      const shouldEval = await NationalIssuesEngine.shouldEvaluate(input.countryId, ctx.db);
       if (shouldEval) {
         // Run evaluation in background - don't block the query
         NationalIssuesEngine.evaluateCountry(
@@ -223,30 +213,28 @@ export const nationalIssuesRouter = createTRPCRouter({
   /**
    * Get a single issue with full detail.
    */
-  getIssue: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const issue = await ctx.db.nationalIssue.findUnique({
-        where: { id: input.id },
-        include: {
-          template: {
-            select: { slug: true, tags: true, domain: true },
-          },
-          consequences: {
-            orderBy: { appliedAt: "asc" },
-          },
+  getIssue: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const issue = await ctx.db.nationalIssue.findUnique({
+      where: { id: input.id },
+      include: {
+        template: {
+          select: { slug: true, tags: true, domain: true },
         },
+        consequences: {
+          orderBy: { appliedAt: "asc" },
+        },
+      },
+    });
+
+    if (!issue) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Issue not found",
       });
+    }
 
-      if (!issue) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Issue not found",
-        });
-      }
-
-      return issue;
-    }),
+    return issue;
+  }),
 
   /**
    * Mark an issue as viewed.
@@ -319,7 +307,9 @@ export const nationalIssuesRouter = createTRPCRouter({
             metadata: { issueId: input.issueId, domain: issue.domain },
           });
         }
-      } catch (e) { console.warn("[Notifications] nationalIssues.respond:", e); }
+      } catch (e) {
+        console.warn("[Notifications] nationalIssues.respond:", e);
+      }
 
       return result;
     }),
@@ -492,93 +482,87 @@ export const nationalIssuesRouter = createTRPCRouter({
   /**
    * Get a single template.
    */
-  getTemplate: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const template = await ctx.db.nationalIssueTemplate.findUnique({
-        where: { id: input.id },
-        include: {
-          _count: { select: { instances: true } },
-        },
+  getTemplate: adminProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const template = await ctx.db.nationalIssueTemplate.findUnique({
+      where: { id: input.id },
+      include: {
+        _count: { select: { instances: true } },
+      },
+    });
+
+    if (!template) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Template not found",
       });
+    }
 
-      if (!template) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Template not found",
-        });
-      }
-
-      return template;
-    }),
+    return template;
+  }),
 
   /**
    * Create a new template.
    */
-  createTemplate: adminProcedure
-    .input(TemplateCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Validate JSON fields
+  createTemplate: adminProcedure.input(TemplateCreateSchema).mutation(async ({ ctx, input }) => {
+    // Validate JSON fields
+    try {
+      JSON.parse(input.triggerConditions);
+    } catch {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Invalid triggerConditions JSON",
+      });
+    }
+    try {
+      JSON.parse(input.responseOptions);
+    } catch {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Invalid responseOptions JSON",
+      });
+    }
+
+    return ctx.db.nationalIssueTemplate.create({
+      data: {
+        ...input,
+        authorId: ctx.userId,
+      },
+    });
+  }),
+
+  /**
+   * Update a template.
+   */
+  updateTemplate: adminProcedure.input(TemplateUpdateSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input;
+
+    // Validate JSON fields if provided
+    if (data.triggerConditions) {
       try {
-        JSON.parse(input.triggerConditions);
+        JSON.parse(data.triggerConditions);
       } catch {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Invalid triggerConditions JSON",
         });
       }
+    }
+    if (data.responseOptions) {
       try {
-        JSON.parse(input.responseOptions);
+        JSON.parse(data.responseOptions);
       } catch {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Invalid responseOptions JSON",
         });
       }
+    }
 
-      return ctx.db.nationalIssueTemplate.create({
-        data: {
-          ...input,
-          authorId: ctx.userId,
-        },
-      });
-    }),
-
-  /**
-   * Update a template.
-   */
-  updateTemplate: adminProcedure
-    .input(TemplateUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-
-      // Validate JSON fields if provided
-      if (data.triggerConditions) {
-        try {
-          JSON.parse(data.triggerConditions);
-        } catch {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Invalid triggerConditions JSON",
-          });
-        }
-      }
-      if (data.responseOptions) {
-        try {
-          JSON.parse(data.responseOptions);
-        } catch {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Invalid responseOptions JSON",
-          });
-        }
-      }
-
-      return ctx.db.nationalIssueTemplate.update({
-        where: { id },
-        data,
-      });
-    }),
+    return ctx.db.nationalIssueTemplate.update({
+      where: { id },
+      data,
+    });
+  }),
 
   /**
    * Delete a template.
@@ -624,10 +608,7 @@ export const nationalIssuesRouter = createTRPCRouter({
         });
       }
 
-      const snapshot = await NationalIssuesEngine.buildCountrySnapshot(
-        input.countryId,
-        ctx.db
-      );
+      const snapshot = await NationalIssuesEngine.buildCountrySnapshot(input.countryId, ctx.db);
       if (!snapshot) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -639,28 +620,19 @@ export const nationalIssuesRouter = createTRPCRouter({
       let triggersPassed = false;
       try {
         const conditions = JSON.parse(template.triggerConditions);
-        triggersPassed = NationalIssuesEngine.evaluateCondition(
-          conditions,
-          snapshot
-        );
+        triggersPassed = NationalIssuesEngine.evaluateCondition(conditions, snapshot);
       } catch {
         triggersPassed = false;
       }
 
       // Render with substitution
-      const renderedTitle = NationalIssuesEngine.substituteVariables(
-        template.title,
-        snapshot
-      );
+      const renderedTitle = NationalIssuesEngine.substituteVariables(template.title, snapshot);
       const renderedDescription = NationalIssuesEngine.substituteVariables(
         template.description,
         snapshot
       );
       const renderedLongDescription = template.longDescription
-        ? NationalIssuesEngine.substituteVariables(
-            template.longDescription,
-            snapshot
-          )
+        ? NationalIssuesEngine.substituteVariables(template.longDescription, snapshot)
         : null;
 
       let renderedOptions: any[] = [];
@@ -669,14 +641,8 @@ export const nationalIssuesRouter = createTRPCRouter({
         renderedOptions = options.map((opt: any) => ({
           ...opt,
           label: NationalIssuesEngine.substituteVariables(opt.label, snapshot),
-          description: NationalIssuesEngine.substituteVariables(
-            opt.description,
-            snapshot
-          ),
-          outcomeText: NationalIssuesEngine.substituteVariables(
-            opt.outcomeText,
-            snapshot
-          ),
+          description: NationalIssuesEngine.substituteVariables(opt.description, snapshot),
+          outcomeText: NationalIssuesEngine.substituteVariables(opt.outcomeText, snapshot),
         }));
       } catch {
         // Skip rendering on parse error
@@ -778,16 +744,11 @@ export const nationalIssuesRouter = createTRPCRouter({
         take: 200,
       });
 
-      const totalIssuesGenerated = logs.reduce(
-        (sum, l) => sum + l.issuesGenerated,
-        0
-      );
+      const totalIssuesGenerated = logs.reduce((sum, l) => sum + l.issuesGenerated, 0);
       const totalEvaluations = logs.length;
       const avgExecutionTime =
         logs.length > 0
-          ? Math.round(
-              logs.reduce((sum, l) => sum + l.executionTimeMs, 0) / logs.length
-            )
+          ? Math.round(logs.reduce((sum, l) => sum + l.executionTimeMs, 0) / logs.length)
           : 0;
 
       // Template usage stats
@@ -891,9 +852,9 @@ export const nationalIssuesRouter = createTRPCRouter({
         return anyRecent[Math.floor(Math.random() * anyRecent.length)]!;
       };
 
-      const picked = (await Promise.all(pickCountries.map((cid) => pickRandomIssueForCountry(cid)))).filter(
-        (x): x is NonNullable<typeof x> => x != null
-      );
+      const picked = (
+        await Promise.all(pickCountries.map((cid) => pickRandomIssueForCountry(cid)))
+      ).filter((x): x is NonNullable<typeof x> => x != null);
 
       let issues = picked;
 

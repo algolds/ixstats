@@ -16,31 +16,34 @@ export function useMyCountryNotifications(countryId: string | undefined): Sectio
   // Executive: pending national issues
   const { data: issueCount } = api.nationalIssues.getPendingCount.useQuery(
     { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 },
+    { enabled, refetchInterval: 60_000 }
   );
 
   // Diplomacy: active missions
   const { data: missions } = api.diplomatic.getActiveMissions.useQuery(
     { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 },
+    { enabled, refetchInterval: 60_000 }
   );
 
   // Intelligence: critical alerts
   const { data: intelOverview } = api.unifiedIntelligence.getOverview.useQuery(
     { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 },
+    { enabled, refetchInterval: 60_000 }
   );
 
   // Defense: active threats
   const { data: securityData } = api.security.getSecurityAssessment.useQuery(
     { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 },
+    { enabled, refetchInterval: 60_000 }
   );
 
-  return useMemo((): SectionNotifications => ({
-    executive: issueCount?.total ?? 0,
-    diplomacy: missions?.length ?? 0,
-    intelligence: intelOverview?.alerts?.critical ?? 0,
-    defense: (securityData as any)?.activeThreatCount ?? 0,
-  }), [issueCount, missions, intelOverview, securityData]);
+  return useMemo(
+    (): SectionNotifications => ({
+      executive: issueCount?.total ?? 0,
+      diplomacy: missions?.length ?? 0,
+      intelligence: intelOverview?.alerts?.critical ?? 0,
+      defense: (securityData as any)?.activeThreatCount ?? 0,
+    }),
+    [issueCount, missions, intelOverview, securityData]
+  );
 }

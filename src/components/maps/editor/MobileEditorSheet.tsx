@@ -53,9 +53,7 @@ export function MobileEditorSheet({
   const startYRef = useRef(0);
   const [dragDelta, setDragDelta] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState<MobileTab>(
-    isEditMode ? "properties" : "features"
-  );
+  const [activeTab, setActiveTab] = useState<MobileTab>(isEditMode ? "properties" : "features");
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -94,13 +92,11 @@ export function MobileEditorSheet({
         className="absolute inset-x-0 bottom-0"
         style={{
           animation:
-            dragDelta === 0 && !isDragging
-              ? "editorSheetSlideUp 0.25s ease-out"
-              : undefined,
+            dragDelta === 0 && !isDragging ? "editorSheetSlideUp 0.25s ease-out" : undefined,
         }}
       >
         <div
-          className="rounded-t-2xl bg-card shadow-xl"
+          className="bg-card rounded-t-2xl shadow-xl"
           style={{
             maxHeight,
             transform: dragDelta > 0 ? `translateY(${dragDelta}px)` : undefined,
@@ -110,16 +106,16 @@ export function MobileEditorSheet({
         >
           {/* Drag handle */}
           <div
-            className="flex cursor-grab justify-center pb-1 pt-3 active:cursor-grabbing"
+            className="flex cursor-grab justify-center pt-3 pb-1 active:cursor-grabbing"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="h-1 w-10 rounded-full bg-border" />
+            <div className="bg-border h-1 w-10 rounded-full" />
           </div>
 
           {/* Mini tab bar */}
-          <div className="flex h-9 shrink-0 border-b border-border mx-3">
+          <div className="border-border mx-3 flex h-9 shrink-0 border-b">
             {MOBILE_TABS.map((tab) => {
               // Only show Properties when in add/edit mode
               if (tab.id === "properties" && !isEditMode) return null;
@@ -130,9 +126,7 @@ export function MobileEditorSheet({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex flex-1 items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
-                    isActive
-                      ? "border-b-2 border-primary text-foreground"
-                      : "text-muted-foreground"
+                    isActive ? "border-primary text-foreground border-b-2" : "text-muted-foreground"
                   }`}
                 >
                   <tab.Icon className="h-3.5 w-3.5" />
@@ -144,8 +138,8 @@ export function MobileEditorSheet({
 
           {/* Title bar (only for properties tab) */}
           {title && activeTab === "properties" && (
-            <div className="px-4 pb-2 pt-2">
-              <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+            <div className="px-4 pt-2 pb-2">
+              <h3 className="text-foreground text-sm font-semibold">{title}</h3>
             </div>
           )}
 
@@ -155,20 +149,18 @@ export function MobileEditorSheet({
             style={{ maxHeight: `calc(${maxHeight} - 5rem)` }}
           >
             {activeTab === "properties" && children}
-            {activeTab === "features" && (
-              featureListContent ?? (
-                <div className="py-6 text-center text-xs text-muted-foreground">
+            {activeTab === "features" &&
+              (featureListContent ?? (
+                <div className="text-muted-foreground py-6 text-center text-xs">
                   No features content available
                 </div>
-              )
-            )}
-            {activeTab === "wiki" && (
-              wikiContent ?? (
-                <div className="py-6 text-center text-xs text-muted-foreground">
+              ))}
+            {activeTab === "wiki" &&
+              (wikiContent ?? (
+                <div className="text-muted-foreground py-6 text-center text-xs">
                   Wiki scanner coming soon
                 </div>
-              )
-            )}
+              ))}
           </div>
         </div>
       </div>

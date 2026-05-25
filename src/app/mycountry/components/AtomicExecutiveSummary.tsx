@@ -357,8 +357,8 @@ export function AtomicExecutiveSummary({
                     key={alert.id}
                     className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:bg-red-950/20"
                   >
-                    <AlertTriangle className="h-4 w-4 flex-shrink-0 text-red-600" />
-                    <div className="min-w-0 flex-grow">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-red-600" />
+                    <div className="min-w-0 grow">
                       <div className="text-sm font-medium text-red-800">{alert.message}</div>
                       <div className="mt-1 text-xs text-red-600">
                         {alert.source} • {new Date(alert.timestamp).toLocaleString()}

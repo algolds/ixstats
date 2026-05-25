@@ -118,14 +118,20 @@ export function AccountIndicator({
 
           {/* Verified Badge */}
           {account.verified && (
-            <span className="inline-flex items-center justify-center text-sm leading-none flex-shrink-0" title="Verified">
+            <span
+              className="inline-flex shrink-0 items-center justify-center text-sm leading-none"
+              title="Verified"
+            >
               ✅
             </span>
           )}
 
           {/* Former Nation Badge */}
           {(account as any).bio?.startsWith("Former Nation") && (
-            <Badge variant="secondary" className="border-gray-500/30 bg-gray-500/20 text-xs text-gray-400 flex-shrink-0">
+            <Badge
+              variant="secondary"
+              className="shrink-0 border-gray-500/30 bg-gray-500/20 text-xs text-gray-400"
+            >
               Former Nation
             </Badge>
           )}

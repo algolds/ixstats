@@ -307,9 +307,7 @@ export function calculateCentroid(geometry: Polygon | MultiPolygon): Position {
 }
 
 /** Calculate bounding box [minLng, minLat, maxLng, maxLat]. */
-export function calculateBBox(
-  geometry: Polygon | MultiPolygon
-): [number, number, number, number] {
+export function calculateBBox(geometry: Polygon | MultiPolygon): [number, number, number, number] {
   const rings = getAllRings(geometry);
   let minLng = Infinity,
     minLat = Infinity,
@@ -329,9 +327,10 @@ export function calculateBBox(
 }
 
 /** Validate geometry: check ring closure, minimum vertices, etc. */
-export function validateGeometry(
-  geometry: Polygon | MultiPolygon
-): { valid: boolean; errors: string[] } {
+export function validateGeometry(geometry: Polygon | MultiPolygon): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
   const rings = getAllRings(geometry);
 
@@ -524,10 +523,8 @@ export function mergeGeometries(
   a: Polygon | MultiPolygon,
   b: Polygon | MultiPolygon
 ): MultiPolygon {
-  const aPolygons =
-    a.type === "Polygon" ? [a.coordinates] : a.coordinates;
-  const bPolygons =
-    b.type === "Polygon" ? [b.coordinates] : b.coordinates;
+  const aPolygons = a.type === "Polygon" ? [a.coordinates] : a.coordinates;
+  const bPolygons = b.type === "Polygon" ? [b.coordinates] : b.coordinates;
 
   return {
     type: "MultiPolygon",
@@ -563,20 +560,13 @@ function shoelaceArea(ring: Position[]): number {
 }
 
 /** Project a point onto a line segment, returning the closest point on the segment. */
-function projectPointToSegment(
-  p: Position,
-  a: Position,
-  b: Position
-): Position {
+function projectPointToSegment(p: Position, a: Position, b: Position): Position {
   const dx = b[0]! - a[0]!;
   const dy = b[1]! - a[1]!;
   const lenSq = dx * dx + dy * dy;
   if (lenSq < 1e-20) return a;
 
-  const t = Math.max(
-    0,
-    Math.min(1, ((p[0]! - a[0]!) * dx + (p[1]! - a[1]!) * dy) / lenSq)
-  );
+  const t = Math.max(0, Math.min(1, ((p[0]! - a[0]!) * dx + (p[1]! - a[1]!) * dy) / lenSq));
   return [a[0]! + t * dx, a[1]! + t * dy];
 }
 
@@ -608,11 +598,7 @@ function segmentIntersection(
 }
 
 /** Get the split line points between two t-values. */
-function getSplitLineSegment(
-  splitLine: Position[],
-  tStart: number,
-  tEnd: number
-): Position[] {
+function getSplitLineSegment(splitLine: Position[], tStart: number, tEnd: number): Position[] {
   const points: Position[] = [];
   const start = Math.ceil(Math.min(tStart, tEnd));
   const end = Math.floor(Math.max(tStart, tEnd));
@@ -656,16 +642,14 @@ export function pointInGeometry(point: Position, geometry: Polygon | MultiPolygo
 }
 
 /** If point is outside geometry, project it to the nearest point on the outer border. */
-export function clampToGeometry(
-  point: Position,
-  geometry: Polygon | MultiPolygon
-): Position {
+export function clampToGeometry(point: Position, geometry: Polygon | MultiPolygon): Position {
   if (pointInGeometry(point, geometry)) return point;
 
   // Find nearest point on any outer ring edge
-  const outerRings: Position[][] = geometry.type === "Polygon"
-    ? [geometry.coordinates[0]!]
-    : geometry.coordinates.map((p) => p[0]!);
+  const outerRings: Position[][] =
+    geometry.type === "Polygon"
+      ? [geometry.coordinates[0]!]
+      : geometry.coordinates.map((p) => p[0]!);
 
   let bestDist = Infinity;
   let bestPoint: Position = point;
@@ -687,9 +671,11 @@ export function clampToGeometry(
 function rayCast(x: number, y: number, ring: Position[]): boolean {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i]![0]!, yi = ring[i]![1]!;
-    const xj = ring[j]![0]!, yj = ring[j]![1]!;
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+    const xi = ring[i]![0]!,
+      yi = ring[i]![1]!;
+    const xj = ring[j]![0]!,
+      yj = ring[j]![1]!;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
       inside = !inside;
     }
   }
@@ -763,7 +749,8 @@ export function simplifyGeometry(
   // When neighbors are provided, use topology-preserving simplification
   if (neighbors && neighbors.length > 0) {
     try {
-      const { simplifySingleProvince } = require("~/lib/province-importer/topo-simplify") as typeof import("~/lib/province-importer/topo-simplify");
+      const { simplifySingleProvince } =
+        require("~/lib/province-importer/topo-simplify") as typeof import("~/lib/province-importer/topo-simplify");
       const target = { type: "Feature" as const, properties: {}, geometry };
       const neighborFeatures = neighbors.map((n) => ({
         type: "Feature" as const,
@@ -847,7 +834,7 @@ export function snapToNeighborBorders(
   geometry: Polygon | MultiPolygon,
   neighbors: Array<{ id: string; geometry: Polygon | MultiPolygon }>,
   countryBorder: Polygon | MultiPolygon,
-  snapTolerance: number = 0.02, // ~2.2km at equator
+  snapTolerance: number = 0.02 // ~2.2km at equator
 ): Polygon | MultiPolygon {
   if (neighbors.length === 0) return geometry;
 
@@ -863,22 +850,25 @@ export function snapToNeighborBorders(
 
       // Snap current vertex to nearest neighbor or country border
       const snappedVertex = snapPointToNeighborOrBorder(
-        vertex, neighbors, countryBorder, snapTolerance
+        vertex,
+        neighbors,
+        countryBorder,
+        snapTolerance
       );
       newRing.push(snappedVertex.position);
 
       // Check if current and next vertex both snap to the same neighbor
       const snappedNext = snapPointToNeighborOrBorder(
-        nextVertex, neighbors, countryBorder, snapTolerance
+        nextVertex,
+        neighbors,
+        countryBorder,
+        snapTolerance
       );
 
-      if (
-        snappedVertex.neighborId &&
-        snappedVertex.neighborId === snappedNext.neighborId
-      ) {
+      if (snappedVertex.neighborId && snappedVertex.neighborId === snappedNext.neighborId) {
         // Both vertices snap to the same neighbor — insert intermediate
         // vertices along that neighbor's border to fill the gap
-        const neighbor = neighbors.find(n => n.id === snappedVertex.neighborId);
+        const neighbor = neighbors.find((n) => n.id === snappedVertex.neighborId);
         if (neighbor) {
           const intermediates = getIntermediateVertices(
             snappedVertex.position,
@@ -931,7 +921,7 @@ function snapPointToNeighborOrBorder(
   point: Position,
   neighbors: Array<{ id: string; geometry: Polygon | MultiPolygon }>,
   countryBorder: Polygon | MultiPolygon,
-  tolerance: number,
+  tolerance: number
 ): SnapResult {
   let bestDist = Infinity;
   let bestPos: Position = point;
@@ -981,7 +971,7 @@ function getIntermediateVertices(
   start: Position,
   end: Position,
   geometry: Polygon | MultiPolygon,
-  minSegmentLength: number,
+  minSegmentLength: number
 ): Position[] {
   const rings = getAllRings(geometry);
   const intermediates: Position[] = [];
@@ -1001,11 +991,17 @@ function getIntermediateVertices(
     for (let i = 0; i < ring.length - 1; i++) {
       const proj = projectPointToSegment(start, ring[i]!, ring[i + 1]!);
       const d = distanceDeg(start, proj);
-      if (d < startDist) { startDist = d; startIdx = i; }
+      if (d < startDist) {
+        startDist = d;
+        startIdx = i;
+      }
 
       const proj2 = projectPointToSegment(end, ring[i]!, ring[i + 1]!);
       const d2 = distanceDeg(end, proj2);
-      if (d2 < endDist) { endDist = d2; endIdx = i; }
+      if (d2 < endDist) {
+        endDist = d2;
+        endIdx = i;
+      }
     }
 
     const totalDist = startDist + endDist;
@@ -1051,7 +1047,7 @@ function getIntermediateVertices(
  */
 export function sanitizeRegionShape(
   geometry: Polygon | MultiPolygon,
-  countryBorder: Polygon | MultiPolygon,
+  countryBorder: Polygon | MultiPolygon
 ): { geometry: Polygon | MultiPolygon; issues: string[] } {
   const issues: string[] = [];
   const rings = getAllRings(geometry);

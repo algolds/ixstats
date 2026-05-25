@@ -93,9 +93,7 @@ export class HistoricalDataCollectionService {
     const ixTimeNow = IxTime.getCurrentIxTime();
     const timestamp = new Date(ixTimeNow); // IxTime returns a timestamp number
 
-    console.log(
-      `[HistoricalData] Starting collection at ${timestamp.toISOString()}`
-    );
+    console.log(`[HistoricalData] Starting collection at ${timestamp.toISOString()}`);
 
     try {
       // Get all countries
@@ -201,19 +199,22 @@ export class HistoricalDataCollectionService {
     ]);
 
     // Collect component effectiveness history for each country
-    await this.collectComponentHistory(countries.map((c) => c.id), timestamp);
+    await this.collectComponentHistory(
+      countries.map((c) => c.id),
+      timestamp
+    );
 
     // Collect diplomatic relationship history for each country
-    await this.collectDiplomaticHistory(countries.map((c) => c.id), timestamp);
+    await this.collectDiplomaticHistory(
+      countries.map((c) => c.id),
+      timestamp
+    );
   }
 
   /**
    * Collect component effectiveness snapshots
    */
-  private async collectComponentHistory(
-    countryIds: string[],
-    timestamp: Date
-  ): Promise<void> {
+  private async collectComponentHistory(countryIds: string[], timestamp: Date): Promise<void> {
     const components = await db.governmentComponent.findMany({
       where: {
         countryId: { in: countryIds },
@@ -245,16 +246,10 @@ export class HistoricalDataCollectionService {
   /**
    * Collect diplomatic relationship snapshots
    */
-  private async collectDiplomaticHistory(
-    countryIds: string[],
-    timestamp: Date
-  ): Promise<void> {
+  private async collectDiplomaticHistory(countryIds: string[], timestamp: Date): Promise<void> {
     const relationships = await db.diplomaticRelation.findMany({
       where: {
-        OR: [
-          { country1: { in: countryIds } },
-          { country2: { in: countryIds } },
-        ],
+        OR: [{ country1: { in: countryIds } }, { country2: { in: countryIds } }],
       },
       select: {
         country1: true,
@@ -293,9 +288,7 @@ export class HistoricalDataCollectionService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - this.config.retentionDays);
 
-    console.log(
-      `[HistoricalData] Cleaning up data older than ${this.config.retentionDays} days`
-    );
+    console.log(`[HistoricalData] Cleaning up data older than ${this.config.retentionDays} days`);
 
     await Promise.all([
       db.historicalDataPoint.deleteMany({

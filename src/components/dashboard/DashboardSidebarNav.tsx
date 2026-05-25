@@ -106,7 +106,7 @@ export function DashboardSidebarNav({
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </button>
             ) : (
@@ -116,7 +116,7 @@ export function DashboardSidebarNav({
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </Link>
             );
@@ -140,7 +140,7 @@ export function DashboardSidebarNav({
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           >
-            <NavIcon id={item.id} fallback={item.icon} size={16} className="flex-shrink-0" />
+            <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
             <span className="truncate text-xs font-medium">{item.title}</span>
           </div>
         );

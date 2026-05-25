@@ -1,24 +1,45 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { IxTime } from "~/lib/ixtime";
 import { formatTimeAgo } from "~/lib/time-utils";
 
 type ThemeAccent = "amber" | "cyan" | "indigo" | "red" | "green" | "purple";
 
-const ACCENT_STYLES: Record<ThemeAccent, { label: string; border: string; tooltipBorder: string }> = {
-  amber:  { label: "text-amber-600 dark:text-amber-400",   border: "border-amber-500/40",  tooltipBorder: "border-amber-500/20" },
-  cyan:   { label: "text-cyan-600 dark:text-cyan-400",     border: "border-cyan-500/40",    tooltipBorder: "border-cyan-500/20" },
-  indigo: { label: "text-indigo-600 dark:text-indigo-400", border: "border-indigo-500/40",  tooltipBorder: "border-indigo-500/20" },
-  red:    { label: "text-red-600 dark:text-red-400",       border: "border-red-500/40",     tooltipBorder: "border-red-500/20" },
-  green:  { label: "text-green-600 dark:text-green-400",   border: "border-green-500/40",   tooltipBorder: "border-green-500/20" },
-  purple: { label: "text-purple-600 dark:text-purple-400", border: "border-purple-500/40",  tooltipBorder: "border-purple-500/20" },
-};
+const ACCENT_STYLES: Record<ThemeAccent, { label: string; border: string; tooltipBorder: string }> =
+  {
+    amber: {
+      label: "text-amber-600 dark:text-amber-400",
+      border: "border-amber-500/40",
+      tooltipBorder: "border-amber-500/20",
+    },
+    cyan: {
+      label: "text-cyan-600 dark:text-cyan-400",
+      border: "border-cyan-500/40",
+      tooltipBorder: "border-cyan-500/20",
+    },
+    indigo: {
+      label: "text-indigo-600 dark:text-indigo-400",
+      border: "border-indigo-500/40",
+      tooltipBorder: "border-indigo-500/20",
+    },
+    red: {
+      label: "text-red-600 dark:text-red-400",
+      border: "border-red-500/40",
+      tooltipBorder: "border-red-500/20",
+    },
+    green: {
+      label: "text-green-600 dark:text-green-400",
+      border: "border-green-500/40",
+      tooltipBorder: "border-green-500/20",
+    },
+    purple: {
+      label: "text-purple-600 dark:text-purple-400",
+      border: "border-purple-500/40",
+      tooltipBorder: "border-purple-500/20",
+    },
+  };
 
 interface IxTimeDateProps {
   /** Real-world date (string, Date, or ms timestamp) */
@@ -80,10 +101,7 @@ export function IxTimeDate({
           {displayText}
         </span>
       </TooltipTrigger>
-      <TooltipContent
-        side="top"
-        className={`text-xs ${accent ? accent.tooltipBorder : ""}`}
-      >
+      <TooltipContent side="top" className={`text-xs ${accent ? accent.tooltipBorder : ""}`}>
         <span className={accent ? accent.label : "text-muted-foreground"}>IxTime:</span>{" "}
         {ixTimeText}
       </TooltipContent>

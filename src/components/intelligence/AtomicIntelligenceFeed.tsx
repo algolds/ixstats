@@ -352,9 +352,9 @@ export function AtomicIntelligenceFeed({
                     className={`rounded-lg border p-4 ${getSeverityColor(item.severity)}`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex-shrink-0">{getTypeIcon(item.type)}</div>
+                      <div className="mt-0.5 shrink-0">{getTypeIcon(item.type)}</div>
 
-                      <div className="min-w-0 flex-grow">
+                      <div className="min-w-0 grow">
                         <div className="mb-2 flex items-center gap-2">
                           <h4 className="text-sm font-medium">{item.title}</h4>
                           <Badge variant="outline" className="text-xs">
@@ -417,7 +417,7 @@ export function AtomicIntelligenceFeed({
                             <ul className="space-y-1 text-xs">
                               {item.recommendations.map((rec, idx) => (
                                 <li key={idx} className="flex items-start gap-2">
-                                  <ArrowRight className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                                  <ArrowRight className="mt-0.5 h-3 w-3 shrink-0" />
                                   <span>{rec}</span>
                                 </li>
                               ))}

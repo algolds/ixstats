@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  cachedStaticProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { resolveFlags, getAllCachedFlags } from "~/lib/server-flag-cache";
 
 export const flagsProcedures = createTRPCRouter({
@@ -9,8 +13,7 @@ export const flagsProcedures = createTRPCRouter({
       return resolveFlags(input.countryNames);
     }),
 
-  getAll: rateLimitedPublicProcedure
-    .query(async () => {
-      return getAllCachedFlags();
-    }),
+  getAll: rateLimitedPublicProcedure.query(async () => {
+    return getAllCachedFlags();
+  }),
 });

@@ -75,10 +75,7 @@ interface MessagesIdentityBadgeProps {
   size?: "sm" | "md";
 }
 
-export function MessagesIdentityBadge({
-  identity,
-  size = "sm",
-}: MessagesIdentityBadgeProps) {
+export function MessagesIdentityBadge({ identity, size = "sm" }: MessagesIdentityBadgeProps) {
   if (!identity) return null;
   if (!identity.badgeIcon && !identity.sourceLabel) return null;
 
@@ -89,7 +86,7 @@ export function MessagesIdentityBadge({
     <span className="inline-flex items-center gap-1">
       {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-muted-foreground"}`} />}
       {identity.sourceLabel && (
-        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           {identity.sourceLabel}
         </span>
       )}

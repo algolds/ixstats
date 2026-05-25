@@ -37,14 +37,17 @@ async function fetchCategoryMembers(apiBaseUrl: string, categoryName: string): P
     });
 
     const url = `${apiBaseUrl}?${params.toString()}`;
-    const result = await withRetrySafe(async (signal) => {
-      const res = await fetch(url, {
-        headers: { "User-Agent": "IxStats-Builder", "Api-User-Agent": "IxStats-Builder" },
-        signal,
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json() as Promise<{ query?: { categorymembers?: Array<{ title: string }> } }>;
-    }, { maxAttempts: 2, strategy: "linear" as const, baseDelayMs: 2000, timeoutMs: 15000 });
+    const result = await withRetrySafe(
+      async (signal) => {
+        const res = await fetch(url, {
+          headers: { "User-Agent": "IxStats-Builder", "Api-User-Agent": "IxStats-Builder" },
+          signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<{ query?: { categorymembers?: Array<{ title: string }> } }>;
+      },
+      { maxAttempts: 2, strategy: "linear" as const, baseDelayMs: 2000, timeoutMs: 15000 }
+    );
 
     if (result.success && result.value) {
       const members = result.value.query?.categorymembers ?? [];
@@ -241,8 +244,8 @@ export const wikiCacheRouter = createTRPCRouter({
 
       return {
         pagesScanned: pages.length,
-        foundVariants: pages.map(p => p.title),
-        extractedData
+        foundVariants: pages.map((p) => p.title),
+        extractedData,
       };
     }),
 

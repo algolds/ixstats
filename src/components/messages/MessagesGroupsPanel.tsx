@@ -54,9 +54,7 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       items = items.filter(
-        (g: any) =>
-          g.name?.toLowerCase().includes(q) ||
-          g.description?.toLowerCase().includes(q)
+        (g: any) => g.name?.toLowerCase().includes(q) || g.description?.toLowerCase().includes(q)
       );
     }
 
@@ -88,13 +86,13 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="shrink-0 space-y-3 border-b border-border/50 p-4">
+      <div className="border-border/50 shrink-0 space-y-3 border-b p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">ThinkTank Groups</h2>
+          <h2 className="text-foreground text-sm font-semibold">ThinkTank Groups</h2>
         </div>
 
         {/* View toggle */}
-        <div className="flex gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+        <div className="border-border/50 bg-muted/30 flex gap-1 rounded-lg border p-0.5">
           {(["joined", "discover", "created"] as const).map((view) => (
             <button
               key={view}
@@ -113,7 +111,7 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search groups..."
             value={searchQuery}
@@ -145,19 +143,19 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
       <div className="flex-1 overflow-y-auto p-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : groups.length === 0 ? (
           <div className="px-3 py-12 text-center">
-            <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm font-medium text-muted-foreground">
+            <Users className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
+            <p className="text-muted-foreground text-sm font-medium">
               {activeView === "joined"
                 ? "You haven't joined any groups yet"
                 : activeView === "created"
                   ? "You haven't created any groups"
                   : "No groups found"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
+            <p className="text-muted-foreground/70 mt-1 text-xs">
               {activeView === "joined"
                 ? "Browse and join groups to start discussions"
                 : activeView === "discover"
@@ -168,8 +166,11 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
         ) : (
           <div className="space-y-1.5">
             {groups.map((group: any) => {
-              const isMember = group.isMember ?? group.members?.some?.((m: any) => m.userId === userId && m.isActive);
-              const TypeIcon = group.type === "private" ? Lock : group.type === "invite_only" ? Hash : Globe;
+              const isMember =
+                group.isMember ??
+                group.members?.some?.((m: any) => m.userId === userId && m.isActive);
+              const TypeIcon =
+                group.type === "private" ? Lock : group.type === "invite_only" ? Hash : Globe;
 
               return (
                 <div
@@ -177,8 +178,10 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
                   role="button"
                   tabIndex={0}
                   onClick={() => handleOpenGroup(group)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleOpenGroup(group); }}
-                  className="flex w-full cursor-pointer items-start gap-3 rounded-lg border border-transparent p-3 text-left transition-colors hover:bg-muted/50"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") handleOpenGroup(group);
+                  }}
+                  className="hover:bg-muted/50 flex w-full cursor-pointer items-start gap-3 rounded-lg border border-transparent p-3 text-left transition-colors"
                 >
                   <Avatar className="h-10 w-10 shrink-0">
                     <AvatarImage src={group.avatar ?? undefined} />
@@ -189,13 +192,13 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-medium text-foreground">
+                      <span className="text-foreground truncate text-sm font-medium">
                         {group.name}
                       </span>
-                      <TypeIcon className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <TypeIcon className="text-muted-foreground h-3 w-3 shrink-0" />
                     </div>
                     {group.description && (
-                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                      <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                         {group.description}
                       </p>
                     )}
@@ -204,7 +207,10 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
                         {group.memberCount ?? group._count?.members ?? 0} members
                       </Badge>
                       {group.category && (
-                        <Badge variant="outline" className="px-1.5 py-0 text-[10px] text-indigo-500 border-indigo-500/30">
+                        <Badge
+                          variant="outline"
+                          className="border-indigo-500/30 px-1.5 py-0 text-[10px] text-indigo-500"
+                        >
                           {group.category}
                         </Badge>
                       )}
@@ -230,7 +236,7 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="shrink-0 text-xs text-muted-foreground"
+                      className="text-muted-foreground shrink-0 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         void handleLeave(group.id);

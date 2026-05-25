@@ -25,11 +25,7 @@ export function VaultSidebarLayout({
   return (
     <div className="space-y-0">
       {/* Hero Section */}
-      {heroSection && (
-        <div className="container mx-auto px-4 pt-4 sm:pt-6">
-          {heroSection}
-        </div>
-      )}
+      {heroSection && <div className="container mx-auto px-4 pt-4 sm:pt-6">{heroSection}</div>}
 
       <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
         {/* Alerts */}
@@ -38,12 +34,9 @@ export function VaultSidebarLayout({
         {/* Main Layout — icon rail + content */}
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed icon rail */}
-          <div className="relative z-30 hidden flex-shrink-0 lg:block">
+          <div className="relative z-30 hidden shrink-0 lg:block">
             <div className="sticky top-6">
-              <VaultSidebarNav
-                activeSection={activeSection}
-                onNavigate={onNavigate}
-              />
+              <VaultSidebarNav activeSection={activeSection} onNavigate={onNavigate} />
             </div>
           </div>
 
@@ -58,9 +51,7 @@ export function VaultSidebarLayout({
               />
             </div>
 
-            <div className="space-y-4 sm:space-y-6">
-              {children}
-            </div>
+            <div className="space-y-4 sm:space-y-6">{children}</div>
           </div>
         </div>
       </div>

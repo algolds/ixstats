@@ -238,9 +238,9 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                           </h3>
                         </div>
                         {collection.isPublic ? (
-                          <Globe className="ml-2 h-4 w-4 flex-shrink-0 text-blue-400" />
+                          <Globe className="ml-2 h-4 w-4 shrink-0 text-blue-400" />
                         ) : (
-                          <Lock className="text-gold-400 ml-2 h-4 w-4 flex-shrink-0" />
+                          <Lock className="text-gold-400 ml-2 h-4 w-4 shrink-0" />
                         )}
                       </div>
 

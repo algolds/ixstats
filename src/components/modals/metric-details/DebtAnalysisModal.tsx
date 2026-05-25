@@ -75,14 +75,13 @@ export function DebtAnalysisModal({
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery(
-      { countryId },
-      { enabled: !!countryId && isOpen }
-    );
+    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
-  const { data: globalStats, isLoading: globalLoading } =
-    api.countries.getGlobalStats.useQuery(undefined, { enabled: isOpen });
+  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    { enabled: isOpen }
+  );
 
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
@@ -106,8 +105,7 @@ export function DebtAnalysisModal({
     };
 
     const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate =
-      monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
+    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
 
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
@@ -124,10 +122,7 @@ export function DebtAnalysisModal({
           interestPayments: interestPayments / 1e9,
         };
       })
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
   const chartConfig = {
@@ -136,18 +131,18 @@ export function DebtAnalysisModal({
     interestPayments: { label: "Interest (B)", color: "#7c3aed" },
   };
 
-  const getDebtRiskLevel = (debtToGdp: number): { label: string; color: string; variant: "default" | "secondary" | "destructive" } => {
+  const getDebtRiskLevel = (
+    debtToGdp: number
+  ): { label: string; color: string; variant: "default" | "secondary" | "destructive" } => {
     if (debtToGdp < 40) return { label: "Low Risk", color: "text-green-600", variant: "default" };
-    if (debtToGdp < 60) return { label: "Moderate", color: "text-yellow-600", variant: "secondary" };
-    if (debtToGdp < 100) return { label: "Elevated", color: "text-orange-600", variant: "secondary" };
+    if (debtToGdp < 60)
+      return { label: "Moderate", color: "text-yellow-600", variant: "secondary" };
+    if (debtToGdp < 100)
+      return { label: "Elevated", color: "text-orange-600", variant: "secondary" };
     return { label: "High Risk", color: "text-red-600", variant: "destructive" };
   };
 
-  const renderTabContent = (
-    activeTab: string,
-    timeRange: TimeRange,
-    chartType: ChartType
-  ) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
@@ -188,14 +183,9 @@ export function DebtAnalysisModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Public Debt
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Public Debt</p>
                   <p className="text-2xl font-bold text-red-600">
-                    $<NumberFlowDisplay
-                      value={publicDebt / 1e12}
-                      decimalPlaces={2}
-                    />T
+                    $<NumberFlowDisplay value={publicDebt / 1e12} decimalPlaces={2} />T
                   </p>
                 </div>
                 <Landmark className="h-8 w-8 text-red-500" />
@@ -207,14 +197,9 @@ export function DebtAnalysisModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Debt-to-GDP
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Debt-to-GDP</p>
                   <p className={`text-2xl font-bold ${riskLevel.color}`}>
-                    <NumberFlowDisplay
-                      value={debtToGdp}
-                      decimalPlaces={1}
-                    />%
+                    <NumberFlowDisplay value={debtToGdp} decimalPlaces={1} />%
                   </p>
                 </div>
                 <Percent className="h-8 w-8 text-amber-500" />
@@ -226,14 +211,9 @@ export function DebtAnalysisModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Per Capita
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Per Capita</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    $<NumberFlowDisplay
-                      value={publicDebt / population}
-                      decimalPlaces={0}
-                    />
+                    $<NumberFlowDisplay value={publicDebt / population} decimalPlaces={0} />
                   </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-purple-500" />
@@ -245,9 +225,7 @@ export function DebtAnalysisModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Risk Level
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Risk Level</p>
                   <Badge variant={riskLevel.variant} className="mt-1 text-lg">
                     {riskLevel.label}
                   </Badge>
@@ -265,9 +243,7 @@ export function DebtAnalysisModal({
               <Scale className="h-5 w-5 text-red-500" />
               Fiscal Position
             </CardTitle>
-            <CardDescription>
-              Debt sustainability and interest burden
-            </CardDescription>
+            <CardDescription>Debt sustainability and interest burden</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -279,20 +255,26 @@ export function DebtAnalysisModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  {((fiscal?.debtServiceCosts || 0) / (countryData?.currentTotalGdp || 1) * 100).toFixed(2)}%
+                  {(
+                    ((fiscal?.debtServiceCosts || 0) / (countryData?.currentTotalGdp || 1)) *
+                    100
+                  ).toFixed(2)}
+                  %
                 </div>
                 <div className="text-muted-foreground text-sm">Interest/GDP</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {((fiscal?.debtServiceCosts || 0) / (fiscal?.governmentRevenueTotal || 1) * 100).toFixed(1)}%
+                  {(
+                    ((fiscal?.debtServiceCosts || 0) / (fiscal?.governmentRevenueTotal || 1)) *
+                    100
+                  ).toFixed(1)}
+                  %
                 </div>
                 <div className="text-muted-foreground text-sm">Interest/Revenue</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-amber-600">
-                  {riskLevel.label}
-                </div>
+                <div className="text-lg font-semibold text-amber-600">{riskLevel.label}</div>
                 <div className="text-muted-foreground text-sm">Credit Assessment</div>
               </div>
             </div>
@@ -313,22 +295,21 @@ export function DebtAnalysisModal({
       return (
         <Card>
           <CardContent className="py-12 text-center">
-            <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <p className="text-muted-foreground">No historical data available</p>
           </CardContent>
         </Card>
       );
     }
 
-    const ChartComponent = chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
+    const ChartComponent =
+      chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle>Debt Trends</CardTitle>
-          <CardDescription>
-            Historical public debt and debt-to-GDP ratio
-          </CardDescription>
+          <CardDescription>Historical public debt and debt-to-GDP ratio</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-80 w-full">
@@ -414,7 +395,7 @@ export function DebtAnalysisModal({
                 <div className={`text-3xl font-bold ${riskLevel.color}`}>
                   {debtToGdp.toFixed(1)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   vs {globalAvgDebt}% global average
                 </div>
               </div>
@@ -433,17 +414,21 @@ export function DebtAnalysisModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Assessment</span>
-                <Badge variant="outline">
-                  {riskLevel.label}
-                </Badge>
+                <Badge variant="outline">{riskLevel.label}</Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  {debtToGdp < 40 ? "AAA" : debtToGdp < 60 ? "AA" : debtToGdp < 80 ? "A" : debtToGdp < 100 ? "BBB" : "BB"}
+                  {debtToGdp < 40
+                    ? "AAA"
+                    : debtToGdp < 60
+                      ? "AA"
+                      : debtToGdp < 80
+                        ? "A"
+                        : debtToGdp < 100
+                          ? "BBB"
+                          : "BB"}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Estimated credit rating
-                </div>
+                <div className="text-muted-foreground text-sm">Estimated credit rating</div>
               </div>
             </div>
           </CardContent>
@@ -460,17 +445,13 @@ export function DebtAnalysisModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Risk Assessment</span>
-                <Badge variant={riskLevel.variant}>
-                  {riskLevel.label}
-                </Badge>
+                <Badge variant={riskLevel.variant}>{riskLevel.label}</Badge>
               </div>
               <div className="text-center">
                 <div className={`text-3xl font-bold ${riskLevel.color}`}>
                   {debtToGdp < 60 ? "Sustainable" : debtToGdp < 100 ? "Manageable" : "Critical"}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Debt sustainability status
-                </div>
+                <div className="text-muted-foreground text-sm">Debt sustainability status</div>
               </div>
             </div>
           </CardContent>
@@ -488,8 +469,8 @@ export function DebtAnalysisModal({
     const internalPct = fiscal?.internalDebtGDPPercent || 0;
     const externalPct = fiscal?.externalDebtGDPPercent || 0;
     const totalPct = internalPct + externalPct;
-    const domesticShare = totalPct > 0 ? (internalPct / totalPct * 100) : 60;
-    const externalShare = totalPct > 0 ? (externalPct / totalPct * 100) : 40;
+    const domesticShare = totalPct > 0 ? (internalPct / totalPct) * 100 : 60;
+    const externalShare = totalPct > 0 ? (externalPct / totalPct) * 100 : 40;
 
     return (
       <div className="space-y-6">
@@ -500,29 +481,25 @@ export function DebtAnalysisModal({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <div className="text-lg font-semibold text-blue-600">
                   {domesticShare.toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">Domestic Debt</div>
+                <div className="text-muted-foreground text-xs">Domestic Debt</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <div className="text-lg font-semibold text-purple-600">
                   {externalShare.toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">External Debt</div>
+                <div className="text-muted-foreground text-xs">External Debt</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <div className="text-lg font-semibold text-green-600">
-                  25%
-                </div>
-                <div className="text-xs text-muted-foreground">Short-Term</div>
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-green-600">25%</div>
+                <div className="text-muted-foreground text-xs">Short-Term</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <div className="text-lg font-semibold text-amber-600">
-                  75%
-                </div>
-                <div className="text-xs text-muted-foreground">Long-Term</div>
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-amber-600">75%</div>
+                <div className="text-muted-foreground text-xs">Long-Term</div>
               </div>
             </div>
           </CardContent>
@@ -539,25 +516,17 @@ export function DebtAnalysisModal({
                 <div className="text-lg font-semibold text-red-600">
                   ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Annual Interest
-                </div>
+                <div className="text-muted-foreground text-sm">Annual Interest</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
                   {(fiscal?.interestRates || 3.5).toFixed(2)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Average Interest Rate
-                </div>
+                <div className="text-muted-foreground text-sm">Average Interest Rate</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-purple-600">
-                  8.5 yrs
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Average Maturity
-                </div>
+                <div className="text-lg font-semibold text-purple-600">8.5 yrs</div>
+                <div className="text-muted-foreground text-sm">Average Maturity</div>
               </div>
             </div>
           </CardContent>

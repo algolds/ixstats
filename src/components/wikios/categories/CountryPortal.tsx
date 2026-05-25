@@ -8,8 +8,16 @@ import { Badge } from "~/components/ui/badge";
 import { ExternalLink, TrendingUp, Users, Coins, BarChart3 } from "lucide-react";
 
 const CountryMapEmbed = dynamic(
-  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
-  { ssr: false, loading: () => <div style={{ height: 220, background: "rgba(255,255,255,0.02)", borderRadius: 8 }} /> }
+  () =>
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{ height: 220, background: "rgba(255,255,255,0.02)", borderRadius: 8 }} />
+    ),
+  }
 );
 
 interface CategoryMember {
@@ -18,7 +26,13 @@ interface CategoryMember {
 }
 
 interface CountryPortalProps {
-  country: { id: string; name: string; slug?: string | null; flagUrl?: string | null; economicTier?: string | null };
+  country: {
+    id: string;
+    name: string;
+    slug?: string | null;
+    flagUrl?: string | null;
+    economicTier?: string | null;
+  };
   subcategories: CategoryMember[];
   pages: CategoryMember[];
 }
@@ -55,19 +69,16 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
     <div className="wikios-portal">
       {/* Hero */}
       <div className="wikios-portal-hero">
-        {country.flagUrl && (
-          <img src={country.flagUrl} alt="" className="wikios-portal-flag" />
-        )}
+        {country.flagUrl && <img src={country.flagUrl} alt="" className="wikios-portal-flag" />}
         <div className="wikios-portal-hero-text">
           <h1 className="wikios-portal-hero-name">{country.name}</h1>
           <div className="wikios-portal-hero-badges">
             {country.economicTier && (
-              <Badge variant="secondary" className="text-[10px]">{country.economicTier}</Badge>
+              <Badge variant="secondary" className="text-[10px]">
+                {country.economicTier}
+              </Badge>
             )}
-            <Link
-              href={withBasePath(`/w/${slug}`)}
-              className="wikios-portal-hero-link"
-            >
+            <Link href={withBasePath(`/w/${slug}`)} className="wikios-portal-hero-link">
               <ExternalLink className="h-3 w-3" />
               Wiki article
             </Link>
@@ -90,9 +101,21 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           {vitality && (
             <div className="wikios-portal-vitality">
               <VitalityCard label="Economic" value={vitality.economicVitality} color="#22c55e" />
-              <VitalityCard label="Population" value={vitality.populationWellbeing} color="#3b82f6" />
-              <VitalityCard label="Diplomatic" value={vitality.diplomaticStanding} color="#a855f7" />
-              <VitalityCard label="Government" value={vitality.governmentalEfficiency} color="#f59e0b" />
+              <VitalityCard
+                label="Population"
+                value={vitality.populationWellbeing}
+                color="#3b82f6"
+              />
+              <VitalityCard
+                label="Diplomatic"
+                value={vitality.diplomaticStanding}
+                color="#a855f7"
+              />
+              <VitalityCard
+                label="Government"
+                value={vitality.governmentalEfficiency}
+                color="#f59e0b"
+              />
             </div>
           )}
 
@@ -132,7 +155,9 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                   return (
                     <Link
                       key={m.title}
-                      href={withBasePath(`/w/special/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+                      href={withBasePath(
+                        `/w/special/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                      )}
                       className="wikios-portal-pill"
                     >
                       {name}
@@ -146,9 +171,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           {/* Articles */}
           {pages.length > 0 && (
             <div className="wikios-portal-section">
-              <h2 className="wikios-portal-section-title">
-                Articles ({pages.length})
-              </h2>
+              <h2 className="wikios-portal-section-title">Articles ({pages.length})</h2>
               <div className="wikios-portal-articles">
                 {pages.map((m) => (
                   <Link
@@ -217,7 +240,15 @@ function VitalityCard({ label, value, color }: { label: string; value: number; c
   );
 }
 
-function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function MetricCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="wikios-portal-metric glass-hierarchy-child">
       <div className="wikios-portal-metric-icon">{icon}</div>

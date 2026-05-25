@@ -22,9 +22,7 @@ export function generateStates(graph: PackedGraph, params: WorldGenParams): void
   const n = cells.n;
   const rng = makeRng(params.seed + 600);
 
-  const targetCount = Math.round(
-    (params.countryCountRange[0] + params.countryCountRange[1]) / 2
-  );
+  const targetCount = Math.round((params.countryCountRange[0] + params.countryCountRange[1]) / 2);
 
   if (graph.burgs.length === 0) return;
 
@@ -61,16 +59,15 @@ export function generateStates(graph: PackedGraph, params: WorldGenParams): void
 
     // Color: golden-ratio hue spacing
     const hue = (stateId * 137.508) % 360;
-    const sat = 40 + (rng() * 20); // 40-60%
-    const lit = 60 + (rng() * 15); // 60-75%
+    const sat = 40 + rng() * 20; // 40-60%
+    const lit = 60 + rng() * 15; // 60-75%
     const color = hslToHex(hue, sat, lit);
 
     // Continent name from the capital's landmass feature
     const featureId = cells.f[burg.cell]!;
     const feature = graph.features[featureId];
-    const continent = feature && feature.type === "land"
-      ? (feature.name || `Continent ${featureId}`)
-      : "Unknown";
+    const continent =
+      feature && feature.type === "land" ? feature.name || `Continent ${featureId}` : "Unknown";
 
     // Mark burg as capital
     burg.isCapital = true;
@@ -270,7 +267,8 @@ function dijkstraExpand(graph: PackedGraph, capitals: Burg[]): void {
       let i = 0;
       while (true) {
         let s = i;
-        const l = 2 * i + 1, r = 2 * i + 2;
+        const l = 2 * i + 1,
+          r = 2 * i + 2;
         if (l < heap.length && heap[l]![0] < heap[s]![0]) s = l;
         if (r < heap.length && heap[r]![0] < heap[s]![0]) s = r;
         if (s === i) break;
@@ -400,6 +398,9 @@ function hslToHex(h: number, s: number, l: number): string {
   const k = (n: number) => (n + h / 30) % 12;
   const a = s * Math.min(l, 1 - l);
   const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, "0");
+  const toHex = (x: number) =>
+    Math.round(x * 255)
+      .toString(16)
+      .padStart(2, "0");
   return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
 }

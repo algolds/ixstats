@@ -529,7 +529,6 @@ class Logger {
 
 // Export singleton instance
 declare global {
-   
   var __ixstatsLogger__: Logger | undefined;
 }
 

@@ -33,13 +33,13 @@ export function DiplomacyMapWidget({
   // Fetch home country geometry
   const { data: homeGeo, isLoading: homeLoading } = api.geo.getCountryGeometry.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30 * 60_000 },
+    { enabled: !!countryId, staleTime: 30 * 60_000 }
   );
 
   // Fetch embassies
   const { data: embassies, isLoading: embassyLoading } = api.diplomatic.getEmbassies.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 5 * 60_000 },
+    { enabled: !!countryId, staleTime: 5 * 60_000 }
   );
 
   // Get active partner country IDs
@@ -47,7 +47,11 @@ export function DiplomacyMapWidget({
     if (!embassies) return [];
     const ids = new Set<string>();
     for (const e of embassies) {
-      if (e.countryId && e.countryId !== countryId && (e.status === "ACTIVE" || e.status === "active")) {
+      if (
+        e.countryId &&
+        e.countryId !== countryId &&
+        (e.status === "ACTIVE" || e.status === "active")
+      ) {
         ids.add(e.countryId);
       }
     }
@@ -58,7 +62,7 @@ export function DiplomacyMapWidget({
   const firstPartnerId = partnerIds[0] ?? null;
   const { data: partnerGeo, isLoading: partnerLoading } = api.geo.getCountryGeometry.useQuery(
     { countryId: firstPartnerId! },
-    { enabled: !!firstPartnerId, staleTime: 30 * 60_000 },
+    { enabled: !!firstPartnerId, staleTime: 30 * 60_000 }
   );
 
   const partnersLoading = !!firstPartnerId && partnerLoading;
@@ -198,7 +202,10 @@ export function DiplomacyMapWidget({
           }
 
           map.fitBounds(
-            [[minLng, minLat], [maxLng, maxLat]],
+            [
+              [minLng, minLat],
+              [maxLng, maxLat],
+            ],
             { padding: 40, maxZoom: 6, duration: 0 }
           );
         }
@@ -219,15 +226,17 @@ export function DiplomacyMapWidget({
 
   if (isLoading) {
     return (
-      <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}>
+      <div
+        className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <Building2 className="text-muted-foreground h-3.5 w-3.5" />
             <span className="text-xs font-medium">Embassy Network</span>
           </div>
         </div>
-        <div className="flex h-48 items-center justify-center bg-muted">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="bg-muted flex h-48 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       </div>
     );
@@ -235,23 +244,27 @@ export function DiplomacyMapWidget({
 
   if (!hasGeometry) {
     return (
-      <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}>
+      <div
+        className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <Building2 className="text-muted-foreground h-3.5 w-3.5" />
             <span className="text-xs font-medium">Embassy Network</span>
           </div>
         </div>
-        <div className="flex h-48 flex-col items-center justify-center gap-2 bg-muted">
-          <MapPin className="h-6 w-6 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">No map data available</span>
+        <div className="bg-muted flex h-48 flex-col items-center justify-center gap-2">
+          <MapPin className="text-muted-foreground h-6 w-6" />
+          <span className="text-muted-foreground text-xs">No map data available</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}>
+    <div
+      className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}
+    >
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-cyan-500" />
@@ -265,17 +278,20 @@ export function DiplomacyMapWidget({
       <div className="relative h-48">
         <div ref={containerRef} className="absolute inset-0" />
         {!mapReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="bg-muted absolute inset-0 flex items-center justify-center">
+            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border/50 px-3 py-1.5">
-        <span className="text-[10px] text-muted-foreground">
+      <div className="border-border/50 flex items-center justify-between border-t px-3 py-1.5">
+        <span className="text-muted-foreground text-[10px]">
           {activePartnerCount} active embass{activePartnerCount !== 1 ? "ies" : "y"}
         </span>
-        <a href={createUrl(`/maps?country=${countryId}`)} className="text-[10px] text-cyan-500 hover:text-cyan-600">
+        <a
+          href={createUrl(`/maps?country=${countryId}`)}
+          className="text-[10px] text-cyan-500 hover:text-cyan-600"
+        >
           Full map →
         </a>
       </div>

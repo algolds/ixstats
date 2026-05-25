@@ -32,17 +32,30 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 /** Tags that carry no visible shape data and can be stripped. */
 const STRIP_TAGS = new Set([
-  "metadata", "title", "desc", "script",
-  "linearGradient", "radialGradient", "pattern",
-  "filter", "feGaussianBlur", "feOffset", "feMerge", "feMergeNode",
-  "feBlend", "feFlood", "feComposite", "feColorMatrix",
-  "marker", "symbol", "font", "font-face",
+  "metadata",
+  "title",
+  "desc",
+  "script",
+  "linearGradient",
+  "radialGradient",
+  "pattern",
+  "filter",
+  "feGaussianBlur",
+  "feOffset",
+  "feMerge",
+  "feMergeNode",
+  "feBlend",
+  "feFlood",
+  "feComposite",
+  "feColorMatrix",
+  "marker",
+  "symbol",
+  "font",
+  "font-face",
 ]);
 
 /** Tags that contain reusable definitions (keep for clip-path refs, but strip contents we don't need). */
-const CONTAINER_STRIP_TAGS = new Set([
-  "defs",
-]);
+const CONTAINER_STRIP_TAGS = new Set(["defs"]);
 
 const SHAPE_TAGS = new Set(["path", "polygon", "polyline", "rect", "circle", "ellipse"]);
 
@@ -215,7 +228,8 @@ function inlineCssClasses(root: Element, _log: string[]): number {
   for (const se of styleEls) {
     for (let i = 0; i < se.childNodes.length; i++) {
       const child = se.childNodes[i];
-      if (child?.nodeType === 3 || child?.nodeType === 4) { // TEXT_NODE or CDATA
+      if (child?.nodeType === 3 || child?.nodeType === 4) {
+        // TEXT_NODE or CDATA
         cssText += (child as any).data ?? (child as any).nodeValue ?? "";
       }
     }
@@ -265,9 +279,21 @@ function inlineCssClasses(root: Element, _log: string[]): number {
   // Apply resolved CSS to elements with matching class attributes
   // SVG-relevant properties to inline
   const SVG_PROPS = new Set([
-    "fill", "stroke", "stroke-width", "stroke-miterlimit", "stroke-linecap",
-    "stroke-linejoin", "stroke-dasharray", "stroke-dashoffset", "stroke-opacity",
-    "fill-opacity", "opacity", "fill-rule", "clip-rule", "display", "visibility",
+    "fill",
+    "stroke",
+    "stroke-width",
+    "stroke-miterlimit",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-dasharray",
+    "stroke-dashoffset",
+    "stroke-opacity",
+    "fill-opacity",
+    "opacity",
+    "fill-rule",
+    "clip-rule",
+    "display",
+    "visibility",
   ]);
 
   let inlinedCount = 0;
@@ -381,11 +407,13 @@ function isDecorativeShape(el: Element): boolean {
   const fillFromStyle = style.match(/fill\s*:\s*([^;]+)/)?.[1]?.trim() ?? "";
 
   const hasNoFill =
-    fill === "none" || fillFromStyle === "none" ||
+    fill === "none" ||
+    fillFromStyle === "none" ||
     (fill === "" && fillFromStyle === "" && !style.includes("fill"));
 
   if (hasNoFill) {
-    const sw = parseFloat(strokeWidth) || parseFloat(style.match(/stroke-width\s*:\s*([^;]+)/)?.[1] ?? "1");
+    const sw =
+      parseFloat(strokeWidth) || parseFloat(style.match(/stroke-width\s*:\s*([^;]+)/)?.[1] ?? "1");
     if (sw < 0.5) return true;
   }
 
@@ -422,7 +450,7 @@ function removeTinyFragments(root: Element): number {
   if (shapes.length < 3) return 0; // Don't filter if very few shapes
 
   // Find the median point count
-  const sorted = shapes.map(s => s.pointCount).sort((a, b) => a - b);
+  const sorted = shapes.map((s) => s.pointCount).sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)] ?? 10;
   const threshold = Math.max(3, Math.floor(median * 0.05)); // 5% of median, min 3
 
@@ -535,8 +563,10 @@ export function fixSelfIntersectingRing(ring: Position[]): Position[][] {
 
 /** Find intersection point of two line segments, or null if they don't intersect. */
 function segmentIntersection(
-  p1: Position, p2: Position,
-  p3: Position, p4: Position,
+  p1: Position,
+  p2: Position,
+  p3: Position,
+  p4: Position
 ): Position | null {
   const d1x = p2[0]! - p1[0]!;
   const d1y = p2[1]! - p1[1]!;

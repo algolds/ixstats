@@ -132,7 +132,12 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
           <div style={{ display: "flex", gap: 4, marginLeft: "auto", marginRight: 12 }}>
             <button
               style={{
-                padding: "4px 10px", borderRadius: 6, fontSize: "0.75rem", fontWeight: 500, border: "none", cursor: "pointer",
+                padding: "4px 10px",
+                borderRadius: 6,
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                border: "none",
+                cursor: "pointer",
                 background: tab === "search" ? "rgba(59,130,246,0.2)" : "transparent",
                 color: tab === "search" ? "#60a5fa" : "inherit",
               }}
@@ -142,8 +147,15 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
             </button>
             <button
               style={{
-                padding: "4px 10px", borderRadius: 6, fontSize: "0.75rem", fontWeight: 500, border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 4,
+                padding: "4px 10px",
+                borderRadius: 6,
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
                 background: tab === "upload" ? "rgba(34,197,94,0.2)" : "transparent",
                 color: tab === "upload" ? "#4ade80" : "inherit",
               }}
@@ -153,7 +165,9 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
             </button>
           </div>
 
-          <button onClick={onClose} className="wikios-quick-modal-close"><X size={16} /></button>
+          <button onClick={onClose} className="wikios-quick-modal-close">
+            <X size={16} />
+          </button>
         </div>
 
         <div className="wikios-img-modal-body">
@@ -165,8 +179,14 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
               {selected && (
                 <div className="wikios-img-insert-form">
                   <div className="wikios-img-insert-preview">
-                    <img src={selected.thumbUrl ?? selected.url} alt={selected.title} referrerPolicy="no-referrer" />
-                    <span className="wikios-img-insert-name">{selected.title.replace(/^File:/, "")}</span>
+                    <img
+                      src={selected.thumbUrl ?? selected.url}
+                      alt={selected.title}
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="wikios-img-insert-name">
+                      {selected.title.replace(/^File:/, "")}
+                    </span>
                   </div>
 
                   <div className="wikios-img-insert-fields">
@@ -178,14 +198,20 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                         onChange={(e) => setCaption(e.target.value)}
                         placeholder="Image caption..."
                         className="wikios-img-insert-input"
-                        onKeyDown={(e) => { if (e.key === "Enter") handleInsert(); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleInsert();
+                        }}
                       />
                     </label>
 
                     <div className="wikios-img-insert-row">
                       <label className="wikios-img-insert-label">
                         Size
-                        <select value={size} onChange={(e) => setSize(e.target.value)} className="wikios-img-insert-select">
+                        <select
+                          value={size}
+                          onChange={(e) => setSize(e.target.value)}
+                          className="wikios-img-insert-select"
+                        >
                           <option value="thumb">Thumbnail</option>
                           <option value="frame">Frame</option>
                           <option value="frameless">Frameless</option>
@@ -194,7 +220,11 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       </label>
                       <label className="wikios-img-insert-label">
                         Align
-                        <select value={align} onChange={(e) => setAlign(e.target.value)} className="wikios-img-insert-select">
+                        <select
+                          value={align}
+                          onChange={(e) => setAlign(e.target.value)}
+                          className="wikios-img-insert-select"
+                        >
                           <option value="right">Right</option>
                           <option value="left">Left</option>
                           <option value="center">Center</option>
@@ -218,9 +248,11 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
               {/* Drop zone / file picker */}
               <div
                 style={{
-                  border: "2px dashed rgba(255,255,255,0.15)", borderRadius: 10,
+                  border: "2px dashed rgba(255,255,255,0.15)",
+                  borderRadius: 10,
                   padding: uploadPreview ? "12px" : "40px 20px",
-                  textAlign: "center", cursor: "pointer",
+                  textAlign: "center",
+                  cursor: "pointer",
                   background: "rgba(255,255,255,0.02)",
                   marginBottom: 16,
                 }}
@@ -261,9 +293,15 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       value={uploadFilename}
                       onChange={(e) => setUploadFilename(e.target.value)}
                       style={{
-                        display: "block", width: "100%", padding: "8px 10px", borderRadius: 6, marginTop: 4,
-                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                        color: "inherit", fontSize: "0.8125rem",
+                        display: "block",
+                        width: "100%",
+                        padding: "8px 10px",
+                        borderRadius: 6,
+                        marginTop: 4,
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "inherit",
+                        fontSize: "0.8125rem",
                       }}
                     />
                   </label>
@@ -275,9 +313,16 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       placeholder="Describe this file..."
                       rows={3}
                       style={{
-                        display: "block", width: "100%", padding: "8px 10px", borderRadius: 6, marginTop: 4,
-                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                        color: "inherit", fontSize: "0.8125rem", resize: "vertical",
+                        display: "block",
+                        width: "100%",
+                        padding: "8px 10px",
+                        borderRadius: 6,
+                        marginTop: 4,
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "inherit",
+                        fontSize: "0.8125rem",
+                        resize: "vertical",
                       }}
                     />
                   </label>
@@ -297,9 +342,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                     </p>
                   )}
                   {uploadMutation.isSuccess && (
-                    <p style={{ color: "#4ade80", fontSize: "0.8125rem" }}>
-                      Upload successful!
-                    </p>
+                    <p style={{ color: "#4ade80", fontSize: "0.8125rem" }}>Upload successful!</p>
                   )}
                 </div>
               )}

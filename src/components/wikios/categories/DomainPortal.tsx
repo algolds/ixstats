@@ -41,7 +41,9 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
   );
 
   const countries = useMemo(() => {
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any)?.countries ?? [];
+    const list = Array.isArray(countriesData)
+      ? countriesData
+      : ((countriesData as any)?.countries ?? []);
     return [...list].sort((a: any, b: any) => (a.name ?? "").localeCompare(b.name ?? ""));
   }, [countriesData]);
 
@@ -72,7 +74,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
       <div className="wikios-domain-header" style={{ borderColor: domainMeta.color }}>
         <h1 className="wikios-domain-title">{domain}</h1>
         <p className="wikios-domain-desc">{domainMeta.description}</p>
-        <div className="flex gap-2 mt-2">
+        <div className="mt-2 flex gap-2">
           <Badge variant="outline" className="text-[10px]">
             {pages.length} articles
           </Badge>
@@ -92,7 +94,9 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
               return (
                 <Link
                   key={m.title}
-                  href={withBasePath(`/w/special/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+                  href={withBasePath(
+                    `/w/special/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                  )}
                   className="wikios-portal-pill"
                 >
                   <Folder className="h-3 w-3 opacity-50" />
@@ -107,9 +111,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
       {/* All wiki articles in this category */}
       {pages.length > 0 && (
         <div className="wikios-portal-section">
-          <h2 className="wikios-portal-section-title">
-            Articles ({pages.length})
-          </h2>
+          <h2 className="wikios-portal-section-title">Articles ({pages.length})</h2>
           <div className="wikios-portal-articles">
             {pages.map((m) => {
               const countryMatch = countries.find((c: any) =>
@@ -122,9 +124,14 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
                   className="wikios-portal-card"
                 >
                   {countryMatch?.flagUrl ? (
-                    <img src={countryMatch.flagUrl} alt="" className="wikios-portal-card-flag" loading="lazy" />
+                    <img
+                      src={countryMatch.flagUrl}
+                      alt=""
+                      className="wikios-portal-card-flag"
+                      loading="lazy"
+                    />
                   ) : (
-                    <FileText className="h-3.5 w-3.5 opacity-40 shrink-0" />
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
                   )}
                   <span className="wikios-portal-card-title">{m.title}</span>
                 </Link>
@@ -192,10 +199,7 @@ function CollapsibleNationGrid({
         ))}
       </div>
       {hasMore && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="wikios-portal-expand"
-        >
+        <button onClick={() => setExpanded(!expanded)} className="wikios-portal-expand">
           {expanded ? "Show less" : `See all ${countries.length} nations`}
         </button>
       )}

@@ -40,15 +40,18 @@ import { EnhancedPoliticsContent } from "./EnhancedPoliticsContent";
 
 // Rarely-visited sections — lazy-loaded to keep initial bundle smaller
 const EnhancedIntelligenceContent = dynamic(
-  () => import("./EnhancedIntelligenceContent").then(m => ({ default: m.EnhancedIntelligenceContent })),
+  () =>
+    import("./EnhancedIntelligenceContent").then((m) => ({
+      default: m.EnhancedIntelligenceContent,
+    })),
   { loading: () => <SectionSkeleton /> }
 );
 const EnhancedDefenseContent = dynamic(
-  () => import("./EnhancedDefenseContent").then(m => ({ default: m.EnhancedDefenseContent })),
+  () => import("./EnhancedDefenseContent").then((m) => ({ default: m.EnhancedDefenseContent })),
   { loading: () => <SectionSkeleton /> }
 );
 const EnhancedMapEditorContent = dynamic(
-  () => import("./EnhancedMapEditorContent").then(m => ({ default: m.EnhancedMapEditorContent })),
+  () => import("./EnhancedMapEditorContent").then((m) => ({ default: m.EnhancedMapEditorContent })),
   { loading: () => <SectionSkeleton /> }
 );
 
@@ -75,8 +78,8 @@ function MyCountryRouterInner() {
   const router = useRouter();
 
   // Initialize section from pathname (supports deep links)
-  const [activeSection, setActiveSection] = useState<MyCountrySection>(
-    () => getSectionFromPathname(pathname)
+  const [activeSection, setActiveSection] = useState<MyCountrySection>(() =>
+    getSectionFromPathname(pathname)
   );
 
   // Notification counts for sidebar indicators
@@ -89,7 +92,12 @@ function MyCountryRouterInner() {
   const { features: premiumFeatures, isLoading: premiumLoading } = usePremium();
 
   // Compliance modal (overview only)
-  const { sections: complianceSections, isCompliant, loading: complianceLoading, countryId } = useMyCountryCompliance();
+  const {
+    sections: complianceSections,
+    isCompliant,
+    loading: complianceLoading,
+    countryId,
+  } = useMyCountryCompliance();
   const [showComplianceModal, setShowComplianceModal] = useState(false);
 
   const complianceStorageKey = useMemo(() => {
@@ -98,7 +106,13 @@ function MyCountryRouterInner() {
   }, [countryId]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !countryId || complianceLoading || complianceSections.length === 0) return;
+    if (
+      typeof window === "undefined" ||
+      !countryId ||
+      complianceLoading ||
+      complianceSections.length === 0
+    )
+      return;
     if (isCompliant) {
       setShowComplianceModal(false);
       if (complianceStorageKey) window.localStorage.removeItem(complianceStorageKey);
@@ -126,24 +140,28 @@ function MyCountryRouterInner() {
   };
 
   // Navigate to a section (instant client-side switch)
-  const handleNavigate = useCallback((section: MyCountrySection) => {
-    if (section === activeSection) return;
+  const handleNavigate = useCallback(
+    (section: MyCountrySection) => {
+      if (section === activeSection) return;
 
-    setActiveSection(section);
+      setActiveSection(section);
 
-    // Sync URL without triggering Next.js route navigation
-    const href = section === "overview" ? "/mycountry" : `/mycountry/${section}`;
-    window.history.pushState(null, "", withBasePath(href));
+      // Sync URL without triggering Next.js route navigation
+      const href = section === "overview" ? "/mycountry" : `/mycountry/${section}`;
+      window.history.pushState(null, "", withBasePath(href));
 
-    // Update document title
-    const countryName = country?.name ?? "MyCountry";
-    document.title = section === "overview"
-      ? `${countryName} - MyCountry`
-      : `${countryName} - ${SECTION_TITLES[section]} - IxStats`;
+      // Update document title
+      const countryName = country?.name ?? "MyCountry";
+      document.title =
+        section === "overview"
+          ? `${countryName} - MyCountry`
+          : `${countryName} - ${SECTION_TITLES[section]} - IxStats`;
 
-    // Scroll to top on section change
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [activeSection, country?.name]);
+      // Scroll to top on section change
+      window.scrollTo({ top: 0, behavior: "instant" });
+    },
+    [activeSection, country?.name]
+  );
 
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -159,9 +177,10 @@ function MyCountryRouterInner() {
   // Set initial page title
   useEffect(() => {
     if (!country?.name) return;
-    document.title = activeSection === "overview"
-      ? `${country.name} - MyCountry`
-      : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStats`;
+    document.title =
+      activeSection === "overview"
+        ? `${country.name} - MyCountry`
+        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStats`;
   }, [country?.name, activeSection]);
 
   // Render active section content

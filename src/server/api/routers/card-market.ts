@@ -11,11 +11,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/auction-service";
 import { notificationAPI } from "~/lib/notification-api";
 
@@ -69,15 +65,18 @@ export const cardMarketRouter = createTRPCRouter({
 
         // Notification: auction listed (fire-and-forget)
         try {
-          await notificationAPI.create({
-            userId: ctx.auth.userId,
-            title: "Auction Listed",
-            message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
-            type: "CARD",
-            category: "economic",
-            priority: "low",
-            metadata: { auctionId: auction.id },
-          }, ctx.db);
+          await notificationAPI.create(
+            {
+              userId: ctx.auth.userId,
+              title: "Auction Listed",
+              message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
+              type: "CARD",
+              category: "economic",
+              priority: "low",
+              metadata: { auctionId: auction.id },
+            },
+            ctx.db
+          );
         } catch {}
 
         return {
@@ -138,15 +137,18 @@ export const cardMarketRouter = createTRPCRouter({
             },
           });
           if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
-            await notificationAPI.create({
-              userId: auction.User.clerkUserId,
-              title: "New Bid on Your Auction",
-              message: `Someone bid ${input.amount} IxC on your auction`,
-              type: "CARD",
-              category: "economic",
-              priority: "medium",
-              metadata: { auctionId: input.auctionId, amount: input.amount },
-            }, ctx.db);
+            await notificationAPI.create(
+              {
+                userId: auction.User.clerkUserId,
+                title: "New Bid on Your Auction",
+                message: `Someone bid ${input.amount} IxC on your auction`,
+                type: "CARD",
+                category: "economic",
+                priority: "medium",
+                metadata: { auctionId: input.auctionId, amount: input.amount },
+              },
+              ctx.db
+            );
           }
         } catch {}
 
@@ -206,15 +208,18 @@ export const cardMarketRouter = createTRPCRouter({
             },
           });
           if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
-            await notificationAPI.create({
-              userId: auction.User.clerkUserId,
-              title: "Card Sold!",
-              message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
-              type: "CARD",
-              category: "economic",
-              priority: "high",
-              metadata: { auctionId: input.auctionId },
-            }, ctx.db);
+            await notificationAPI.create(
+              {
+                userId: auction.User.clerkUserId,
+                title: "Card Sold!",
+                message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
+                type: "CARD",
+                category: "economic",
+                priority: "high",
+                metadata: { auctionId: input.auctionId },
+              },
+              ctx.db
+            );
           }
         } catch {}
 
@@ -280,15 +285,18 @@ export const cardMarketRouter = createTRPCRouter({
         // Notification: notify current bidder about cancellation
         try {
           if (currentBidderClerkId && currentBidderClerkId !== ctx.auth.userId) {
-            await notificationAPI.create({
-              userId: currentBidderClerkId,
-              title: "Auction Cancelled",
-              message: "An auction you bid on has been cancelled",
-              type: "CARD",
-              category: "economic",
-              priority: "medium",
-              metadata: { auctionId: input.auctionId },
-            }, ctx.db);
+            await notificationAPI.create(
+              {
+                userId: currentBidderClerkId,
+                title: "Auction Cancelled",
+                message: "An auction you bid on has been cancelled",
+                type: "CARD",
+                category: "economic",
+                priority: "medium",
+                metadata: { auctionId: input.auctionId },
+              },
+              ctx.db
+            );
           }
         } catch {}
 
@@ -795,12 +803,50 @@ export const cardMarketRouter = createTRPCRouter({
 
     const now = new Date();
     const demoCards = [
-      { title: "History of Ixnay", rarity: "RARE", cardType: "LORE", marketValue: 250, description: "A comprehensive overview of the history of Ixnay, the primary continent." },
-      { title: "Battle of Corumm", rarity: "EPIC", cardType: "LORE", marketValue: 800, description: "The decisive battle that shaped the geopolitical landscape of the modern era." },
-      { title: "Treaty of Kiro", rarity: "UNCOMMON", cardType: "LORE", marketValue: 120, description: "The landmark treaty establishing diplomatic relations between major powers." },
-      { title: "The Great Migration", rarity: "ULTRA_RARE", cardType: "LORE", marketValue: 1500, description: "A rare account of the mass migration that populated the southern territories." },
-      { title: "Cathedral of Stars", rarity: "LEGENDARY", cardType: "LORE", marketValue: 5000, description: "The legendary cathedral, said to hold the secrets of the ancient world." },
-      { title: "Port of Alkharsis", rarity: "COMMON", cardType: "LORE", marketValue: 50, description: "The bustling trade port that connects the eastern and western regions." },
+      {
+        title: "History of Ixnay",
+        rarity: "RARE",
+        cardType: "LORE",
+        marketValue: 250,
+        description: "A comprehensive overview of the history of Ixnay, the primary continent.",
+      },
+      {
+        title: "Battle of Corumm",
+        rarity: "EPIC",
+        cardType: "LORE",
+        marketValue: 800,
+        description:
+          "The decisive battle that shaped the geopolitical landscape of the modern era.",
+      },
+      {
+        title: "Treaty of Kiro",
+        rarity: "UNCOMMON",
+        cardType: "LORE",
+        marketValue: 120,
+        description: "The landmark treaty establishing diplomatic relations between major powers.",
+      },
+      {
+        title: "The Great Migration",
+        rarity: "ULTRA_RARE",
+        cardType: "LORE",
+        marketValue: 1500,
+        description:
+          "A rare account of the mass migration that populated the southern territories.",
+      },
+      {
+        title: "Cathedral of Stars",
+        rarity: "LEGENDARY",
+        cardType: "LORE",
+        marketValue: 5000,
+        description: "The legendary cathedral, said to hold the secrets of the ancient world.",
+      },
+      {
+        title: "Port of Alkharsis",
+        rarity: "COMMON",
+        cardType: "LORE",
+        marketValue: 50,
+        description: "The bustling trade port that connects the eastern and western regions.",
+      },
     ];
 
     const createdAuctions = [];

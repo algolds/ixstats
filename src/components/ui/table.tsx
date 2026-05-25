@@ -8,7 +8,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto -mx-4 sm:mx-0 rounded-lg border border-border/50 bg-background/50"
+      className="border-border/50 bg-background/50 relative -mx-4 w-full overflow-x-auto rounded-lg border sm:mx-0"
     >
       <div className="min-w-full">
         <table
@@ -18,7 +18,10 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
         />
       </div>
       {/* Scroll indicator for mobile */}
-      <div className="absolute bottom-0 right-0 pointer-events-none h-full w-8 bg-gradient-to-l from-background/80 to-transparent sm:hidden" aria-hidden="true" />
+      <div
+        className="from-background/80 pointer-events-none absolute right-0 bottom-0 h-full w-8 bg-gradient-to-l to-transparent sm:hidden"
+        aria-hidden="true"
+      />
     </div>
   );
 }
@@ -65,7 +68,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 sm:px-3 text-left align-middle font-medium text-xs sm:text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-foreground h-10 px-2 text-left align-middle text-xs font-medium whitespace-nowrap sm:px-3 sm:text-sm [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -78,7 +81,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 sm:p-3 align-middle text-xs sm:text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "p-2 align-middle text-xs whitespace-nowrap sm:p-3 sm:text-sm [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}

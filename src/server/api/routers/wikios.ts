@@ -40,10 +40,7 @@ import {
   type WikiSource,
 } from "~/lib/wiki-bridge";
 import { transformWikiLinks } from "~/lib/wikios/url-compat";
-import {
-  transformArticleHtml,
-  stripConflictingStyles,
-} from "~/lib/wikios/html-transformer";
+import { transformArticleHtml, stripConflictingStyles } from "~/lib/wikios/html-transformer";
 import { computeWikitextDiff } from "~/lib/wikios/wikitext-diff";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wikios/csrf-cache";
 import {
@@ -64,10 +61,12 @@ export const wikiosRouter = createTRPCRouter({
    * happens here server-side. Client renders with zero regex work.
    */
   getArticleHtml: publicProcedure
-    .input(z.object({
-      title: z.string().min(1).max(500),
-      wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
     .query(async ({ input }) => {
       const { wikiSource } = input;
 
@@ -136,11 +135,7 @@ export const wikiosRouter = createTRPCRouter({
       const resolvedTitle = await resolveRedirect(input.title);
       const article = await getArticleHtml(resolvedTitle);
 
-      const transformed = transformArticleHtml(
-        stripConflictingStyles(article.html),
-        "",
-        "ixwiki"
-      );
+      const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
 
       return {
         contentHtml: transformed.contentHtml,
@@ -216,7 +211,8 @@ export const wikiosRouter = createTRPCRouter({
       // Extract first paragraph (intro)
       const wikitext = article.wikitext;
       const headingIdx = wikitext.search(/^==[^=]/m);
-      const introRaw = headingIdx > 0 ? wikitext.substring(0, headingIdx) : wikitext.substring(0, 500);
+      const introRaw =
+        headingIdx > 0 ? wikitext.substring(0, headingIdx) : wikitext.substring(0, 500);
 
       // Clean wiki markup from the intro
       const intro = introRaw
@@ -263,7 +259,10 @@ export const wikiosRouter = createTRPCRouter({
 
       if (wikiSource !== "all") {
         const results = await searchPages(query, limit, wikiSource as WikiSource);
-        return results.map((r) => ({ ...r, source: wikiSource as "ixwiki" | "iiwiki" | "althistory" }));
+        return results.map((r) => ({
+          ...r,
+          source: wikiSource as "ixwiki" | "iiwiki" | "althistory",
+        }));
       }
 
       // Query all 3 wikis in parallel
@@ -272,7 +271,12 @@ export const wikiosRouter = createTRPCRouter({
         sources.map((src) => searchPages(query, limit, src))
       );
 
-      const merged: Array<{ title: string; pageId: number; length: number; source: "ixwiki" | "iiwiki" | "althistory" }> = [];
+      const merged: Array<{
+        title: string;
+        pageId: number;
+        length: number;
+        source: "ixwiki" | "iiwiki" | "althistory";
+      }> = [];
       for (let i = 0; i < sources.length; i++) {
         const result = settled[i]!;
         if (result.status === "fulfilled") {
@@ -297,21 +301,19 @@ export const wikiosRouter = createTRPCRouter({
   /**
    * Get a random article title.
    */
-  getRandomPage: publicProcedure
-    .query(async () => {
-      // Direct MySQL — ~10ms vs ~200ms via API
-      const title = await getRandomPage();
-      return { title };
-    }),
+  getRandomPage: publicProcedure.query(async () => {
+    // Direct MySQL — ~10ms vs ~200ms via API
+    const title = await getRandomPage();
+    return { title };
+  }),
 
   /**
    * Get site statistics (total articles, edits, active users).
    */
-  getSiteStats: publicProcedure
-    .query(async () => {
-      // Direct MySQL — ~5ms vs ~200ms via API
-      return getSiteStats();
-    }),
+  getSiteStats: publicProcedure.query(async () => {
+    // Direct MySQL — ~5ms vs ~200ms via API
+    return getSiteStats();
+  }),
 
   // ---------------------------------------------------------------------------
   // History & Diff endpoints (Phase 3)
@@ -333,13 +335,14 @@ export const wikiosRouter = createTRPCRouter({
       const result = await getPageHistory(
         input.title,
         input.limit,
-        input.offset ? parseInt(input.offset, 10) : undefined,
+        input.offset ? parseInt(input.offset, 10) : undefined
       );
       return {
         revisions: result.revisions,
-        continueToken: result.hasMore && result.revisions.length > 0
-          ? String(result.revisions[result.revisions.length - 1]!.revid)
-          : null,
+        continueToken:
+          result.hasMore && result.revisions.length > 0
+            ? String(result.revisions[result.revisions.length - 1]!.revid)
+            : null,
       };
     }),
 
@@ -405,13 +408,14 @@ export const wikiosRouter = createTRPCRouter({
       const result = await getBacklinks(
         input.title,
         input.limit,
-        input.offset ? parseInt(input.offset, 10) : undefined,
+        input.offset ? parseInt(input.offset, 10) : undefined
       );
       return {
         links: result.links,
-        continueToken: result.hasMore && result.links.length > 0
-          ? String(result.links.length) // Use count as offset marker
-          : null,
+        continueToken:
+          result.hasMore && result.links.length > 0
+            ? String(result.links.length) // Use count as offset marker
+            : null,
       };
     }),
 
@@ -452,13 +456,14 @@ export const wikiosRouter = createTRPCRouter({
       const result = await getUserContribs(
         input.user,
         input.limit,
-        input.offset ? parseInt(input.offset, 10) : undefined,
+        input.offset ? parseInt(input.offset, 10) : undefined
       );
       return {
         contribs: result.contribs,
-        continueToken: result.hasMore && result.contribs.length > 0
-          ? String(result.contribs[result.contribs.length - 1]!.revid)
-          : null,
+        continueToken:
+          result.hasMore && result.contribs.length > 0
+            ? String(result.contribs[result.contribs.length - 1]!.revid)
+            : null,
       };
     }),
 
@@ -512,7 +517,14 @@ export const wikiosRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const { wikitext } = await htmlToWikitext(input.html, input.title);
-      return saveToMediaWiki(input.title, wikitext, input.summary, input.minor, ctx, input.basetimestamp);
+      return saveToMediaWiki(
+        input.title,
+        wikitext,
+        input.summary,
+        input.minor,
+        ctx,
+        input.basetimestamp
+      );
     }),
 
   /**
@@ -529,7 +541,14 @@ export const wikiosRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return saveToMediaWiki(input.title, input.wikitext, input.summary, input.minor, ctx, input.basetimestamp);
+      return saveToMediaWiki(
+        input.title,
+        input.wikitext,
+        input.summary,
+        input.minor,
+        ctx,
+        input.basetimestamp
+      );
     }),
 
   // ---------------------------------------------------------------------------
@@ -738,22 +757,48 @@ export const wikiosRouter = createTRPCRouter({
 
   /** Create a new stash. Max 25 per user. */
   createStash: protectedProcedure
-    .input(z.object({ name: z.string().min(1).max(100), color: z.string().max(20), icon: z.string().max(50).optional() }))
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        color: z.string().max(20),
+        icon: z.string().max(50).optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
-      const existing = await db.loreStash.findMany({ where: { userId: ctx.auth.userId }, select: { id: true } });
+      const existing = await db.loreStash.findMany({
+        where: { userId: ctx.auth.userId },
+        select: { id: true },
+      });
       if (existing.length >= 25) throw new Error("Maximum of 25 stashes allowed");
       return db.loreStash.create({
-        data: { userId: ctx.auth.userId, name: input.name, color: input.color, icon: input.icon, order: existing.length },
+        data: {
+          userId: ctx.auth.userId,
+          name: input.name,
+          color: input.color,
+          icon: input.icon,
+          order: existing.length,
+        },
       });
     }),
 
   /** Update a stash's name, color, or icon. */
   updateStash: protectedProcedure
-    .input(z.object({ id: z.string(), name: z.string().min(1).max(100).optional(), color: z.string().max(20).optional(), icon: z.string().max(50).optional() }))
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1).max(100).optional(),
+        color: z.string().max(20).optional(),
+        icon: z.string().max(50).optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       return db.loreStash.update({
         where: { id: input.id, userId: ctx.auth.userId },
-        data: { ...(input.name && { name: input.name }), ...(input.color && { color: input.color }), ...(input.icon !== undefined && { icon: input.icon }) },
+        data: {
+          ...(input.name && { name: input.name }),
+          ...(input.color && { color: input.color }),
+          ...(input.icon !== undefined && { icon: input.icon }),
+        },
       });
     }),
 
@@ -786,7 +831,9 @@ export const wikiosRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       let stashId = input.stashId;
       if (!stashId) {
-        let defaultStash = await db.loreStash.findFirst({ where: { userId: ctx.auth.userId, isDefault: true } });
+        let defaultStash = await db.loreStash.findFirst({
+          where: { userId: ctx.auth.userId, isDefault: true },
+        });
         if (!defaultStash) {
           defaultStash = await db.loreStash.create({
             data: { userId: ctx.auth.userId, name: "My Stash", color: "#3b82f6", isDefault: true },
@@ -809,13 +856,21 @@ export const wikiosRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       if (input.stashId) {
         await db.loreStashItem.deleteMany({
-          where: { stashId: input.stashId, pageTitle: input.pageTitle, stash: { userId: ctx.auth.userId } },
+          where: {
+            stashId: input.stashId,
+            pageTitle: input.pageTitle,
+            stash: { userId: ctx.auth.userId },
+          },
         });
       } else {
         // Remove from all user's stashes
-        const stashIds = (await db.loreStash.findMany({ where: { userId: ctx.auth.userId }, select: { id: true } })).map((s) => s.id);
+        const stashIds = (
+          await db.loreStash.findMany({ where: { userId: ctx.auth.userId }, select: { id: true } })
+        ).map((s) => s.id);
         if (stashIds.length > 0) {
-          await db.loreStashItem.deleteMany({ where: { stashId: { in: stashIds }, pageTitle: input.pageTitle } });
+          await db.loreStashItem.deleteMany({
+            where: { stashId: { in: stashIds }, pageTitle: input.pageTitle },
+          });
         }
       }
       return { success: true };
@@ -837,7 +892,13 @@ export const wikiosRouter = createTRPCRouter({
 
   /** Get paginated items in a stash. */
   getStashItems: protectedProcedure
-    .input(z.object({ stashId: z.string(), limit: z.number().min(1).max(100).default(50), cursor: z.string().optional() }))
+    .input(
+      z.object({
+        stashId: z.string(),
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      })
+    )
     .query(async ({ input, ctx }) => {
       const items = await db.loreStashItem.findMany({
         where: { stashId: input.stashId, stash: { userId: ctx.auth.userId } },
@@ -854,7 +915,8 @@ export const wikiosRouter = createTRPCRouter({
           pageTitle: i.pageTitle,
           pageSlug: i.pageSlug,
           note: i.note,
-          annotationCount: (i as unknown as { _count?: { annotations?: number } })._count?.annotations ?? 0,
+          annotationCount:
+            (i as unknown as { _count?: { annotations?: number } })._count?.annotations ?? 0,
           savedAt: i.savedAt.toISOString(),
         })),
         nextCursor: hasMore ? results[results.length - 1]?.id : null,
@@ -865,16 +927,25 @@ export const wikiosRouter = createTRPCRouter({
   moveItem: protectedProcedure
     .input(z.object({ itemId: z.string(), toStashId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const item = await db.loreStashItem.findUnique({ where: { id: input.itemId }, include: { stash: true } });
+      const item = await db.loreStashItem.findUnique({
+        where: { id: input.itemId },
+        include: { stash: true },
+      });
       if (!item || item.stash.userId !== ctx.auth.userId) throw new Error("Item not found");
-      return db.loreStashItem.update({ where: { id: input.itemId }, data: { stashId: input.toStashId } });
+      return db.loreStashItem.update({
+        where: { id: input.itemId },
+        data: { stashId: input.toStashId },
+      });
     }),
 
   /** Update a stash item's note (rich text). */
   updateItemNote: protectedProcedure
     .input(z.object({ itemId: z.string(), note: z.string().max(50000) }))
     .mutation(async ({ input, ctx }) => {
-      const item = await db.loreStashItem.findUnique({ where: { id: input.itemId }, include: { stash: true } });
+      const item = await db.loreStashItem.findUnique({
+        where: { id: input.itemId },
+        include: { stash: true },
+      });
       if (!item || item.stash.userId !== ctx.auth.userId) throw new Error("Item not found");
       return db.loreStashItem.update({ where: { id: input.itemId }, data: { note: input.note } });
     }),
@@ -885,31 +956,49 @@ export const wikiosRouter = createTRPCRouter({
 
   /** Add a text-selection annotation to a stashed page. */
   addAnnotation: protectedProcedure
-    .input(z.object({
-      itemId: z.string(),
-      anchorSelector: z.string().max(500),
-      anchorOffset: z.number(),
-      focusSelector: z.string().max(500),
-      focusOffset: z.number(),
-      selectedText: z.string().max(2000),
-      comment: z.string().max(5000).optional(),
-      color: z.string().max(20).optional(),
-    }))
+    .input(
+      z.object({
+        itemId: z.string(),
+        anchorSelector: z.string().max(500),
+        anchorOffset: z.number(),
+        focusSelector: z.string().max(500),
+        focusOffset: z.number(),
+        selectedText: z.string().max(2000),
+        comment: z.string().max(5000).optional(),
+        color: z.string().max(20).optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
-      const item = await db.loreStashItem.findUnique({ where: { id: input.itemId }, include: { stash: true } });
+      const item = await db.loreStashItem.findUnique({
+        where: { id: input.itemId },
+        include: { stash: true },
+      });
       if (!item || item.stash.userId !== ctx.auth.userId) throw new Error("Item not found");
       return db.loreStashAnnotation.create({ data: input });
     }),
 
   /** Update an annotation's comment or color. */
   updateAnnotation: protectedProcedure
-    .input(z.object({ id: z.string(), comment: z.string().max(5000).optional(), color: z.string().max(20).optional() }))
+    .input(
+      z.object({
+        id: z.string(),
+        comment: z.string().max(5000).optional(),
+        color: z.string().max(20).optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
-      const ann = await db.loreStashAnnotation.findUnique({ where: { id: input.id }, include: { item: { include: { stash: true } } } });
-      if (!ann || ann.item.stash.userId !== ctx.auth.userId) throw new Error("Annotation not found");
+      const ann = await db.loreStashAnnotation.findUnique({
+        where: { id: input.id },
+        include: { item: { include: { stash: true } } },
+      });
+      if (!ann || ann.item.stash.userId !== ctx.auth.userId)
+        throw new Error("Annotation not found");
       return db.loreStashAnnotation.update({
         where: { id: input.id },
-        data: { ...(input.comment !== undefined && { comment: input.comment }), ...(input.color && { color: input.color }) },
+        data: {
+          ...(input.comment !== undefined && { comment: input.comment }),
+          ...(input.color && { color: input.color }),
+        },
       });
     }),
 
@@ -917,8 +1006,12 @@ export const wikiosRouter = createTRPCRouter({
   deleteAnnotation: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const ann = await db.loreStashAnnotation.findUnique({ where: { id: input.id }, include: { item: { include: { stash: true } } } });
-      if (!ann || ann.item.stash.userId !== ctx.auth.userId) throw new Error("Annotation not found");
+      const ann = await db.loreStashAnnotation.findUnique({
+        where: { id: input.id },
+        include: { item: { include: { stash: true } } },
+      });
+      if (!ann || ann.item.stash.userId !== ctx.auth.userId)
+        throw new Error("Annotation not found");
       await db.loreStashAnnotation.delete({ where: { id: input.id } });
       return { success: true };
     }),
@@ -1027,10 +1120,7 @@ export const wikiosRouter = createTRPCRouter({
       const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
       try {
         const article = await getArticleHtml(talkTitle);
-        const transformed = transformArticleHtml(
-          stripConflictingStyles(article.html),
-          ""
-        );
+        const transformed = transformArticleHtml(stripConflictingStyles(article.html), "");
         return {
           exists: true,
           contentHtml: transformed.contentHtml,
@@ -1225,16 +1315,15 @@ export const wikiosRouter = createTRPCRouter({
       const formData = new FormData();
       formData.append("action", "upload");
       formData.append("filename", input.filename);
-      formData.append("comment", `${input.comment} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`);
+      formData.append(
+        "comment",
+        `${input.comment} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`
+      );
       formData.append("text", input.description);
       formData.append("token", csrfToken);
       formData.append("format", "json");
       formData.append("ignorewarnings", "1");
-      formData.append(
-        "file",
-        new Blob([fileBuffer]),
-        input.filename,
-      );
+      formData.append("file", new Blob([fileBuffer]), input.filename);
 
       const uploadRes = await fetch(apiBase, {
         method: "POST",
@@ -1285,10 +1374,12 @@ export const wikiosRouter = createTRPCRouter({
 
   /** Get page action log (moves, deletes, protections). */
   getPageLog: publicProcedure
-    .input(z.object({
-      title: z.string().min(1).max(500),
-      limit: z.number().min(1).max(100).default(50),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        limit: z.number().min(1).max(100).default(50),
+      })
+    )
     .query(async ({ input }) => {
       return { entries: await getPageLog(input.title, input.limit) };
     }),
@@ -1361,7 +1452,8 @@ export const wikiosRouter = createTRPCRouter({
       const info = await getCategoryInfo(input.category);
 
       let children: Array<{
-        title: string; fullTitle: string;
+        title: string;
+        fullTitle: string;
         subcategories?: Array<{ title: string; fullTitle: string }>;
       }> = info.subcategories;
 
@@ -1411,7 +1503,11 @@ export const wikiosRouter = createTRPCRouter({
       // Add page (upsert to avoid duplicates)
       await ctx.db.loreStashItem.upsert({
         where: { stashId_pageTitle: { stashId: watchlistStash.id, pageTitle: input.pageTitle } },
-        create: { stashId: watchlistStash.id, pageTitle: input.pageTitle, pageSlug: input.pageTitle.replace(/ /g, "_") },
+        create: {
+          stashId: watchlistStash.id,
+          pageTitle: input.pageTitle,
+          pageSlug: input.pageTitle.replace(/ /g, "_"),
+        },
         update: {},
       });
       return { success: true };
@@ -1437,15 +1533,14 @@ export const wikiosRouter = createTRPCRouter({
   /**
    * Get the user's full watchlist (most recently saved first, max 100).
    */
-  getWatchlist: protectedProcedure
-    .query(async ({ ctx }) => {
-      const userId = ctx.auth.userId;
-      const watchlistStash = await ctx.db.loreStash.findFirst({
-        where: { userId, name: "Watchlist" },
-        include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
-      });
-      return watchlistStash?.items ?? [];
-    }),
+  getWatchlist: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.auth.userId;
+    const watchlistStash = await ctx.db.loreStash.findFirst({
+      where: { userId, name: "Watchlist" },
+      include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
+    });
+    return watchlistStash?.items ?? [];
+  }),
 
   /**
    * Check whether a page is on the user's watchlist.
@@ -1482,7 +1577,7 @@ async function saveToMediaWiki(
   summary: string,
   minor: boolean,
   ctx: any,
-  basetimestamp?: string,
+  basetimestamp?: string
 ): Promise<{ success: boolean; revisionId: number | null; editConflict?: boolean }> {
   const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
 
@@ -1531,9 +1626,11 @@ async function saveToMediaWiki(
   invalidateCache(title);
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch((err: unknown) => {
-    console.error("[WikiOS] Background op failed:", (err as Error).message);
-  });
+  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch(
+    (err: unknown) => {
+      console.error("[WikiOS] Background op failed:", (err as Error).message);
+    }
+  );
 
   return {
     success: editData.edit?.result === "Success",
@@ -1562,7 +1659,7 @@ async function getCurrentRevisionMeta(title: string) {
 async function notifyStashOwners(
   pageTitle: string,
   editorUserId: string | null | undefined,
-  revisionId: number | null,
+  revisionId: number | null
 ): Promise<void> {
   const stashItems = await db.loreStashItem.findMany({
     where: { pageTitle },
@@ -1570,8 +1667,9 @@ async function notifyStashOwners(
   });
 
   // Deduplicate user IDs and exclude the editor
-  const userIds = [...new Set(stashItems.map((i) => i.stash.userId))]
-    .filter((uid) => uid !== editorUserId);
+  const userIds = [...new Set(stashItems.map((i) => i.stash.userId))].filter(
+    (uid) => uid !== editorUserId
+  );
 
   if (userIds.length === 0) return;
 

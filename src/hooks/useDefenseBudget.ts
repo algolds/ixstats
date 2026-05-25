@@ -85,18 +85,17 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
 
   const { data: country } = api.countries.getByIdAtTime.useQuery(
     { id: countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
-  const { data: defenseBudget, refetch: refetchBudget } =
-    api.security.getDefenseBudget.useQuery(
-      { countryId, fiscalYear: currentYear },
-      { enabled: !!countryId },
-    );
+  const { data: defenseBudget, refetch: refetchBudget } = api.security.getDefenseBudget.useQuery(
+    { countryId, fiscalYear: currentYear },
+    { enabled: !!countryId }
+  );
 
   const { data: branches } = api.security.getMilitaryBranches.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   // --- Local Save (replaces mutation) ---
@@ -115,8 +114,7 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
         militaryConstruction: defenseBudget.militaryConstruction ?? 0,
       });
     } else if (country) {
-      const defaultBudget =
-        (country.calculatedStats.currentTotalGdp ?? 0) * 0.02;
+      const defaultBudget = (country.calculatedStats.currentTotalGdp ?? 0) * 0.02;
       setBudgetData({
         totalBudget: defaultBudget,
         gdpPercent: country.calculatedStats.currentTotalGdp ? 2.0 : 0,
@@ -195,14 +193,14 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
             : budgetData.gdpPercent,
       });
     },
-    [budgetData, country],
+    [budgetData, country]
   );
 
   const handleCategoryChange = useCallback(
     (key: string, value: number) => {
       setBudgetData({ ...budgetData, [key]: value });
     },
-    [budgetData],
+    [budgetData]
   );
 
   // --- Computed values ---
@@ -214,33 +212,28 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
       budgetData.procurement +
       budgetData.rdteCosts +
       budgetData.militaryConstruction,
-    [budgetData],
+    [budgetData]
   );
 
   const allocationPercent = useMemo(
-    () =>
-      budgetData.totalBudget > 0
-        ? (totalAllocated / budgetData.totalBudget) * 100
-        : 0,
-    [totalAllocated, budgetData.totalBudget],
+    () => (budgetData.totalBudget > 0 ? (totalAllocated / budgetData.totalBudget) * 100 : 0),
+    [totalAllocated, budgetData.totalBudget]
   );
 
   const averageReadiness = useMemo(
     () =>
       branches && branches.length > 0
-        ? branches.reduce((sum, b) => sum + b.readinessLevel, 0) /
-          branches.length
+        ? branches.reduce((sum, b) => sum + b.readinessLevel, 0) / branches.length
         : 0,
-    [branches],
+    [branches]
   );
 
   const averageTechnology = useMemo(
     () =>
       branches && branches.length > 0
-        ? branches.reduce((sum, b) => sum + b.technologyLevel, 0) /
-          branches.length
+        ? branches.reduce((sum, b) => sum + b.technologyLevel, 0) / branches.length
         : 0,
-    [branches],
+    [branches]
   );
 
   const averageMorale = useMemo(
@@ -248,7 +241,7 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
       branches && branches.length > 0
         ? branches.reduce((sum, b) => sum + b.morale, 0) / branches.length
         : 0,
-    [branches],
+    [branches]
   );
 
   return {

@@ -117,7 +117,12 @@ export function CommonsCategoryBrowser({
   );
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   const handleSearch = useCallback((val: string) => {
     setSearchQuery(val);
@@ -146,7 +151,13 @@ export function CommonsCategoryBrowser({
     { categories: ALL_CATEGORIES.slice(40) },
     { staleTime: 30 * 60 * 1000, enabled: ALL_CATEGORIES.length > 40 }
   );
-  const totalCounts: Record<string, number> = { ...counts1, ...counts2, ...counts3, ...counts4, ...counts5 };
+  const totalCounts: Record<string, number> = {
+    ...counts1,
+    ...counts2,
+    ...counts3,
+    ...counts4,
+    ...counts5,
+  };
 
   // Autocomplete when searching
   const { data: autocompleteResults } = api.commons.autocompleteCategories.useQuery(
@@ -197,25 +208,32 @@ export function CommonsCategoryBrowser({
             return (
               <div key={group.label} className="wikios-commons-group">
                 <button
-                  onClick={() => setExpandedGroups((prev) => ({ ...prev, [group.label]: !prev[group.label] }))}
+                  onClick={() =>
+                    setExpandedGroups((prev) => ({ ...prev, [group.label]: !prev[group.label] }))
+                  }
                   className="wikios-commons-group-header"
                 >
-                  {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  {isGroupOpen ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
                   <span>{group.label}</span>
                 </button>
-                {isGroupOpen && group.categories.map((cat) => (
-                  <CategoryRow
-                    key={cat}
-                    name={cat}
-                    fileCount={totalCounts?.[cat]}
-                    subcatCount={undefined}
-                    isActive={activeCategories.includes(cat)}
-                    isExpanded={!!expanded[cat]}
-                    onToggle={() => onToggleCategory(cat)}
-                    onBrowse={() => onBrowseCategory(cat)}
-                    onExpand={() => setExpanded((prev) => ({ ...prev, [cat]: !prev[cat] }))}
-                  />
-                ))}
+                {isGroupOpen &&
+                  group.categories.map((cat) => (
+                    <CategoryRow
+                      key={cat}
+                      name={cat}
+                      fileCount={totalCounts?.[cat]}
+                      subcatCount={undefined}
+                      isActive={activeCategories.includes(cat)}
+                      isExpanded={!!expanded[cat]}
+                      onToggle={() => onToggleCategory(cat)}
+                      onBrowse={() => onBrowseCategory(cat)}
+                      onExpand={() => setExpanded((prev) => ({ ...prev, [cat]: !prev[cat] }))}
+                    />
+                  ))}
               </div>
             );
           })
@@ -261,9 +279,7 @@ function CategoryRow({
           {name}
         </button>
         {totalCount != null && totalCount > 0 && (
-          <span className="wikios-commons-cat-count">
-            {totalCount.toLocaleString()}
-          </span>
+          <span className="wikios-commons-cat-count">{totalCount.toLocaleString()}</span>
         )}
         <button
           onClick={onToggle}

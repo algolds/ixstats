@@ -26,17 +26,15 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
     switch (change.type) {
       case "equal":
         for (const line of change.lines) {
-
-
           // Context line (show a few around changes)
           if (isNearChange(changes, change, 3)) {
             rows.push(
               `<tr>` +
-              `<td class="diff-marker" data-marker=" "></td>` +
-              `<td class="diff-context">${escapeHtml(line)}</td>` +
-              `<td class="diff-marker" data-marker=" "></td>` +
-              `<td class="diff-context">${escapeHtml(line)}</td>` +
-              `</tr>`
+                `<td class="diff-marker" data-marker=" "></td>` +
+                `<td class="diff-context">${escapeHtml(line)}</td>` +
+                `<td class="diff-marker" data-marker=" "></td>` +
+                `<td class="diff-context">${escapeHtml(line)}</td>` +
+                `</tr>`
             );
           }
         }
@@ -44,28 +42,26 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
 
       case "delete":
         for (const line of change.lines) {
-
           rows.push(
             `<tr>` +
-            `<td class="diff-marker" data-marker="−"></td>` +
-            `<td class="diff-deletedline"><del class="diffchange diffchange-inline">${escapeHtml(line)}</del></td>` +
-            `<td class="diff-marker"></td>` +
-            `<td class="diff-empty"></td>` +
-            `</tr>`
+              `<td class="diff-marker" data-marker="−"></td>` +
+              `<td class="diff-deletedline"><del class="diffchange diffchange-inline">${escapeHtml(line)}</del></td>` +
+              `<td class="diff-marker"></td>` +
+              `<td class="diff-empty"></td>` +
+              `</tr>`
           );
         }
         break;
 
       case "insert":
         for (const line of change.lines) {
-
           rows.push(
             `<tr>` +
-            `<td class="diff-marker"></td>` +
-            `<td class="diff-empty"></td>` +
-            `<td class="diff-marker" data-marker="+"></td>` +
-            `<td class="diff-addedline"><ins class="diffchange diffchange-inline">${escapeHtml(line)}</ins></td>` +
-            `</tr>`
+              `<td class="diff-marker"></td>` +
+              `<td class="diff-empty"></td>` +
+              `<td class="diff-marker" data-marker="+"></td>` +
+              `<td class="diff-addedline"><ins class="diffchange diffchange-inline">${escapeHtml(line)}</ins></td>` +
+              `</tr>`
           );
         }
         break;
@@ -73,25 +69,23 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
       case "replace":
         // Show deleted lines first, then added lines
         for (const line of change.oldLines) {
-
           rows.push(
             `<tr>` +
-            `<td class="diff-marker" data-marker="−"></td>` +
-            `<td class="diff-deletedline"><del class="diffchange diffchange-inline">${escapeHtml(line)}</del></td>` +
-            `<td class="diff-marker"></td>` +
-            `<td class="diff-empty"></td>` +
-            `</tr>`
+              `<td class="diff-marker" data-marker="−"></td>` +
+              `<td class="diff-deletedline"><del class="diffchange diffchange-inline">${escapeHtml(line)}</del></td>` +
+              `<td class="diff-marker"></td>` +
+              `<td class="diff-empty"></td>` +
+              `</tr>`
           );
         }
         for (const line of change.newLines) {
-
           rows.push(
             `<tr>` +
-            `<td class="diff-marker"></td>` +
-            `<td class="diff-empty"></td>` +
-            `<td class="diff-marker" data-marker="+"></td>` +
-            `<td class="diff-addedline"><ins class="diffchange diffchange-inline">${escapeHtml(line)}</ins></td>` +
-            `</tr>`
+              `<td class="diff-marker"></td>` +
+              `<td class="diff-empty"></td>` +
+              `<td class="diff-marker" data-marker="+"></td>` +
+              `<td class="diff-addedline"><ins class="diffchange diffchange-inline">${escapeHtml(line)}</ins></td>` +
+              `</tr>`
           );
         }
         break;
@@ -179,7 +173,8 @@ function longestCommonSubsequence(a: string[], b: string[]): [number, number][] 
 
   // Backtrack to find LCS pairs
   const result: [number, number][] = [];
-  let i = m, j = n;
+  let i = m,
+    j = n;
   while (i > 0 && j > 0) {
     if (a[i - 1] === b[j - 1]) {
       result.unshift([i - 1, j - 1]);

@@ -25,7 +25,13 @@ import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
 // ProjectionToggle moved into MapSearchOverlay settings panel
 import type { MapLayerType, ProjectionMode } from "~/lib/map-config";
-import type { SelectedCountry, SelectedFeature, HoveredCountry, IxWorldMapRef, OverlayVisibility } from "./IxWorldMap";
+import type {
+  SelectedCountry,
+  SelectedFeature,
+  HoveredCountry,
+  IxWorldMapRef,
+  OverlayVisibility,
+} from "./IxWorldMap";
 import type { FeatureCollection } from "geojson";
 
 // MapLibre CSS - imported here (not in dynamically-loaded IxWorldMap) so it's in the main bundle
@@ -43,15 +49,14 @@ const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
 const FILL_OVERLAY_KEYS: (keyof OverlayVisibility)[] = ["wealth", "population", "crises"];
 
 // Editor overlay — dynamically loaded only when user enters edit mode
-const MapEditorOverlay = dynamic(
-  () => import("~/components/maps/editor/MapEditorOverlay"),
-  { ssr: false }
-);
+const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
+  ssr: false,
+});
 
 export interface MapContainerProps {
   className?: string;
   showControls?: boolean;
-  showTools?: boolean;      // Search + measure tools (defaults to showControls)
+  showTools?: boolean; // Search + measure tools (defaults to showControls)
   showPopup?: boolean;
   initialLayers?: MapLayerType[];
   /** Country ID to auto-select and fly to on mount (for deep linking) */
@@ -81,16 +86,16 @@ export function MapContainer({
   // Real-time sync: invalidate map caches when any geo mutation succeeds
   useMapLiveSync();
 
-  const [selectedCountry, setSelectedCountry] =
-    useState<SelectedCountry | null>(null);
-  const [_hoveredCountry, setHoveredCountry] =
-    useState<HoveredCountry | null>(null);
-  const [selectedFeature, setSelectedFeature] =
-    useState<SelectedFeature | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
+  const [_hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<SelectedFeature | null>(null);
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [mapEngineReady, setMapEngineReady] = useState(false);
   const handleMapReady = useCallback(() => setMapEngineReady(true), []);
-  const [geographyFilter, setGeographyFilter] = useState<{ type: "continent" | "region"; value: string } | null>(null);
+  const [geographyFilter, setGeographyFilter] = useState<{
+    type: "continent" | "region";
+    value: string;
+  } | null>(null);
   const [projectionMode, setProjectionMode] = useState<ProjectionMode>("dynamic");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
@@ -127,14 +132,14 @@ export function MapContainer({
   } = useMapPinInfo();
 
   // Overlay features come from batched query + story pins/labels
-  const { data: storyPinsGeoJson } = api.geo.getAllStoryPins.useQuery(
-    undefined,
-    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-  const { data: mapLabelsGeoJson } = api.geo.getAllMapLabels.useQuery(
-    undefined,
-    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
+  const { data: storyPinsGeoJson } = api.geo.getAllStoryPins.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
+  const { data: mapLabelsGeoJson } = api.geo.getAllMapLabels.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
   const overlayFeatures = useMemo(() => {
     if (!batchedOverlayFeatures) return undefined;
     return {
@@ -170,25 +175,31 @@ export function MapContainer({
     {},
     { enabled: overlayVisibility.crises, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
-  const { data: diplomacyData } = api.geo.getGeopoliticalOverlay.useQuery(
-    undefined,
-    { enabled: overlayVisibility.diplomacy, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
+  const { data: diplomacyData } = api.geo.getGeopoliticalOverlay.useQuery(undefined, {
+    enabled: overlayVisibility.diplomacy,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
   const { data: transportData } = api.transport.getAllRoutesGeoJSON.useQuery(
     {},
     { enabled: overlayVisibility.transport, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
 
-  const overlayData = useMemo(() => ({
-    wealth: wealthData ?? undefined,
-    population: populationData ?? undefined,
-    crises: crisisData ?? undefined,
-    diplomacy: diplomacyData ? {
-      relations: diplomacyData.relations,
-      conflicts: diplomacyData.conflicts,
-    } : undefined,
-    transport: transportData ?? undefined,
-  }), [wealthData, populationData, crisisData, diplomacyData, transportData]);
+  const overlayData = useMemo(
+    () => ({
+      wealth: wealthData ?? undefined,
+      population: populationData ?? undefined,
+      crises: crisisData ?? undefined,
+      diplomacy: diplomacyData
+        ? {
+            relations: diplomacyData.relations,
+            conflicts: diplomacyData.conflicts,
+          }
+        : undefined,
+      transport: transportData ?? undefined,
+    }),
+    [wealthData, populationData, crisisData, diplomacyData, transportData]
+  );
 
   const [labelsVisible, setLabelsVisible] = useState(true);
   const toggleLabels = useCallback(() => setLabelsVisible((v) => !v), []);
@@ -225,10 +236,7 @@ export function MapContainer({
     { limit: 25 },
     { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
-  const topCountrySet = useMemo(
-    () => new Set(topCountryNames ?? []),
-    [topCountryNames]
-  );
+  const topCountrySet = useMemo(() => new Set(topCountryNames ?? []), [topCountryNames]);
 
   // Deep-link: auto-select and fly to a country on mount
   const { data: initialGeo } = api.geo.getCountryGeometry.useQuery(
@@ -255,11 +263,7 @@ export function MapContainer({
 
     if (initialGeo.bbox) {
       const b = initialGeo.bbox;
-      mapRef.current.flyTo(
-        (b.minLng + b.maxLng) / 2,
-        (b.minLat + b.maxLat) / 2,
-        4
-      );
+      mapRef.current.flyTo((b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2, 4);
     } else if (initialGeo.centroid) {
       mapRef.current.flyTo(initialGeo.centroid.lng, initialGeo.centroid.lat, 4);
     }
@@ -270,18 +274,15 @@ export function MapContainer({
   const pinToolRef = useRef(false);
   pinToolRef.current = isPinToolActive;
 
-  const handleFeatureClick = useCallback(
-    (feature: SelectedFeature | null) => {
-      setSelectedFeature(feature);
-      if (feature) {
-        // Clear country selection when a feature is selected
-        setSelectedCountry(null);
-        // Fly to feature location
-        mapRef.current?.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
-      }
-    },
-    []
-  );
+  const handleFeatureClick = useCallback((feature: SelectedFeature | null) => {
+    setSelectedFeature(feature);
+    if (feature) {
+      // Clear country selection when a feature is selected
+      setSelectedCountry(null);
+      // Fly to feature location
+      mapRef.current?.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
+    }
+  }, []);
 
   const handleCountryClick = useCallback(
     (country: SelectedCountry | null) => {
@@ -317,9 +318,18 @@ export function MapContainer({
       // Prefetch all panel data on hover (fallback if bulk warm hasn't finished yet)
       if (country.displayName) {
         const wikiOpts = { staleTime: 24 * 60 * 60_000 };
-        void utils.countries.getWikiRichIntro.prefetch({ countryName: country.displayName }, wikiOpts);
-        void utils.countries.getWikiSectionPreviews.prefetch({ countryName: country.displayName }, wikiOpts);
-        void utils.countries.getWikiPageImages.prefetch({ countryName: country.displayName }, wikiOpts);
+        void utils.countries.getWikiRichIntro.prefetch(
+          { countryName: country.displayName },
+          wikiOpts
+        );
+        void utils.countries.getWikiSectionPreviews.prefetch(
+          { countryName: country.displayName },
+          wikiOpts
+        );
+        void utils.countries.getWikiPageImages.prefetch(
+          { countryName: country.displayName },
+          wikiOpts
+        );
       }
       if (country.countryId) {
         const opts = { staleTime: 10 * 60_000 };
@@ -382,7 +392,14 @@ export function MapContainer({
 
   /** Search result → fly to + optionally select as country */
   const handleSearchResult = useCallback(
-    (result: { type: string; id: string; name: string; countryId: string | null; centroidLng: number; centroidLat: number }) => {
+    (result: {
+      type: string;
+      id: string;
+      name: string;
+      countryId: string | null;
+      centroidLng: number;
+      centroidLat: number;
+    }) => {
       const zoom = result.type === "country" ? 4 : result.type === "subdivision" ? 6 : 8;
       mapRef.current?.flyTo(result.centroidLng, result.centroidLat, zoom);
 
@@ -404,7 +421,13 @@ export function MapContainer({
 
   /** Neighbor chip click → fly to + select */
   const handleNeighborClick = useCallback(
-    (neighbor: { featureId: string; countryId: string | null; displayName: string; centroidLng?: number; centroidLat?: number }) => {
+    (neighbor: {
+      featureId: string;
+      countryId: string | null;
+      displayName: string;
+      centroidLng?: number;
+      centroidLat?: number;
+    }) => {
       let lng = neighbor.centroidLng ?? 0;
       let lat = neighbor.centroidLat ?? 0;
 
@@ -449,13 +472,11 @@ export function MapContainer({
   if (error) {
     return (
       <div
-        className={`absolute inset-0 flex items-center justify-center bg-background ${className}`}
+        className={`bg-background absolute inset-0 flex items-center justify-center ${className}`}
       >
         <div className="text-center">
-          <p className="text-lg font-medium text-foreground">
-            Failed to load map data
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-foreground text-lg font-medium">Failed to load map data</p>
+          <p className="text-muted-foreground mt-1 text-sm">
             {error.message || "Please try again later."}
           </p>
         </div>
@@ -509,7 +530,14 @@ export function MapContainer({
       )}
 
       {/* MeasureTool (headless — button is in MapControls, this handles map logic + readout) */}
-      {toolsVisible && <MeasureTool ref={measureToolRef} mapRef={mapRef} onActiveChange={setIsMeasuring} headless />}
+      {toolsVisible && (
+        <MeasureTool
+          ref={measureToolRef}
+          mapRef={mapRef}
+          onActiveChange={setIsMeasuring}
+          headless
+        />
+      )}
 
       {/* Dynamic Island — unified auth, geo search, and settings */}
       {toolsVisible && (

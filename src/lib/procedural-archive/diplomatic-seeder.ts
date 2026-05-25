@@ -11,12 +11,7 @@ import { makeRng } from "./rng";
 // Types
 // ──────────────────────────────────────────────
 
-export type RelationshipLevel =
-  | "allied"
-  | "friendly"
-  | "neutral"
-  | "tense"
-  | "hostile";
+export type RelationshipLevel = "allied" | "friendly" | "neutral" | "tense" | "hostile";
 
 export interface DiplomaticRelation {
   countryA: string;
@@ -119,8 +114,7 @@ export function seedDiplomacy(
 
       // Shared culture or friendly relations
       const isSharedCulture =
-        leader.cultureId !== undefined &&
-        neighbor.cultureId === leader.cultureId;
+        leader.cultureId !== undefined && neighbor.cultureId === leader.cultureId;
       if (isSharedCulture || rng() < 0.4) {
         members.push(neighborId);
         allianced.add(neighborId);
@@ -151,7 +145,12 @@ export function seedDiplomacy(
       // Alliance members are friendly with each other
       for (let a = 0; a < members.length; a++) {
         for (let b = a + 1; b < members.length; b++) {
-          addRelation(members[a]!, members[b]!, "allied", `Members of ${allianceNames[i % allianceNames.length]}`);
+          addRelation(
+            members[a]!,
+            members[b]!,
+            "allied",
+            `Members of ${allianceNames[i % allianceNames.length]}`
+          );
         }
       }
     }

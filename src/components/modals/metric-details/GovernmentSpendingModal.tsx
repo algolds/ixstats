@@ -85,22 +85,20 @@ export function GovernmentSpendingModal({
   } = useCountryEconomicData(countryId, isOpen);
 
   // Fetch government structure
-  const { data: governmentData, isLoading: govLoading } =
-    api.government.getByCountryId.useQuery(
-      { countryId },
-      { enabled: !!countryId && isOpen }
-    );
+  const { data: governmentData, isLoading: govLoading } = api.government.getByCountryId.useQuery(
+    { countryId },
+    { enabled: !!countryId && isOpen }
+  );
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery(
-      { countryId },
-      { enabled: !!countryId && isOpen }
-    );
+    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
-  const { data: globalStats, isLoading: globalLoading } =
-    api.countries.getGlobalStats.useQuery(undefined, { enabled: isOpen });
+  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    { enabled: isOpen }
+  );
 
   const isLoading = countryLoading || govLoading || historicalLoading || globalLoading;
 
@@ -111,7 +109,8 @@ export function GovernmentSpendingModal({
 
     const spending = economyData?.spending;
     const fiscal = economyData?.fiscal;
-    const currentSpendingPct = spending?.spendingGDPPercent || fiscal?.governmentBudgetGDPPercent || 30;
+    const currentSpendingPct =
+      spending?.spendingGDPPercent || fiscal?.governmentBudgetGDPPercent || 30;
     const currentRevenuePct = fiscal?.taxRevenueGDPPercent || 25;
 
     const now = new Date();
@@ -125,8 +124,7 @@ export function GovernmentSpendingModal({
     };
 
     const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate =
-      monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
+    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
 
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
@@ -143,10 +141,7 @@ export function GovernmentSpendingModal({
           budgetBalance: (totalRevenue - totalSpending) / 1e9,
         };
       })
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
   const chartConfig = {
@@ -155,11 +150,7 @@ export function GovernmentSpendingModal({
     budgetBalance: { label: "Budget Balance (B)", color: "#16a34a" },
   };
 
-  const renderTabContent = (
-    activeTab: string,
-    timeRange: TimeRange,
-    chartType: ChartType
-  ) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
@@ -200,14 +191,9 @@ export function GovernmentSpendingModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Total Budget
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Total Budget</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    $<NumberFlowDisplay
-                      value={totalBudget / 1e9}
-                      decimalPlaces={1}
-                    />B
+                    $<NumberFlowDisplay value={totalBudget / 1e9} decimalPlaces={1} />B
                   </p>
                 </div>
                 <Wallet className="h-8 w-8 text-purple-500" />
@@ -219,14 +205,9 @@ export function GovernmentSpendingModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    % of GDP
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">% of GDP</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    <NumberFlowDisplay
-                      value={spendingGdpPercent}
-                      decimalPlaces={1}
-                    />%
+                    <NumberFlowDisplay value={spendingGdpPercent} decimalPlaces={1} />%
                   </p>
                 </div>
                 <PieChart className="h-8 w-8 text-blue-500" />
@@ -238,15 +219,12 @@ export function GovernmentSpendingModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Budget Balance
-                  </p>
-                  <p className={`text-2xl font-bold ${budgetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {budgetBalance >= 0 ? '+' : ''}
-                    $<NumberFlowDisplay
-                      value={Math.abs(budgetBalance) / 1e9}
-                      decimalPlaces={1}
-                    />B
+                  <p className="text-muted-foreground text-sm font-medium">Budget Balance</p>
+                  <p
+                    className={`text-2xl font-bold ${budgetBalance >= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {budgetBalance >= 0 ? "+" : ""}
+                    $<NumberFlowDisplay value={Math.abs(budgetBalance) / 1e9} decimalPlaces={1} />B
                   </p>
                 </div>
                 <Scale className="h-8 w-8 text-green-500" />
@@ -258,11 +236,10 @@ export function GovernmentSpendingModal({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Per Capita
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">Per Capita</p>
                   <p className="text-2xl font-bold text-amber-600">
-                    $<NumberFlowDisplay
+                    $
+                    <NumberFlowDisplay
                       value={totalBudget / (countryData?.currentPopulation || 1)}
                       decimalPlaces={0}
                     />
@@ -281,9 +258,7 @@ export function GovernmentSpendingModal({
               <Landmark className="h-5 w-5 text-purple-500" />
               Budget Summary
             </CardTitle>
-            <CardDescription>
-              Government fiscal position and spending overview
-            </CardDescription>
+            <CardDescription>Government fiscal position and spending overview</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -301,7 +276,13 @@ export function GovernmentSpendingModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  ${(((fiscal?.totalDebtGDPRatio || 0) / 100 * (countryData?.currentTotalGdp || 0)) / 1e9).toFixed(1)}B
+                  $
+                  {(
+                    (((fiscal?.totalDebtGDPRatio || 0) / 100) *
+                      (countryData?.currentTotalGdp || 0)) /
+                    1e9
+                  ).toFixed(1)}
+                  B
                 </div>
                 <div className="text-muted-foreground text-sm">Public Debt</div>
               </div>
@@ -329,22 +310,21 @@ export function GovernmentSpendingModal({
       return (
         <Card>
           <CardContent className="py-12 text-center">
-            <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <p className="text-muted-foreground">No historical data available</p>
           </CardContent>
         </Card>
       );
     }
 
-    const ChartComponent = chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
+    const ChartComponent =
+      chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle>Government Spending Trends</CardTitle>
-          <CardDescription>
-            Historical budget and spending metrics
-          </CardDescription>
+          <CardDescription>Historical budget and spending metrics</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-80 w-full">
@@ -406,7 +386,11 @@ export function GovernmentSpendingModal({
 
     const fiscal = economyData?.fiscal;
     const spending = economyData?.spending;
-    const spendingGdpPercent = spending?.spendingGDPPercent || ((governmentData?.totalBudget || spending?.totalSpending || 0) / (countryData?.currentTotalGdp || 1)) * 100;
+    const spendingGdpPercent =
+      spending?.spendingGDPPercent ||
+      ((governmentData?.totalBudget || spending?.totalSpending || 0) /
+        (countryData?.currentTotalGdp || 1)) *
+        100;
     const globalAvgSpending = 35; // Placeholder
     const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
     const budgetBalance = fiscal?.budgetDeficitSurplus || 0;
@@ -424,9 +408,7 @@ export function GovernmentSpendingModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Spending % GDP</span>
-                <Badge
-                  variant={spendingGdpPercent <= globalAvgSpending ? "default" : "secondary"}
-                >
+                <Badge variant={spendingGdpPercent <= globalAvgSpending ? "default" : "secondary"}>
                   {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
                 </Badge>
               </div>
@@ -434,7 +416,7 @@ export function GovernmentSpendingModal({
                 <div className="text-3xl font-bold text-purple-600">
                   {spendingGdpPercent.toFixed(1)}%
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   vs {globalAvgSpending}% global average
                 </div>
               </div>
@@ -455,27 +437,15 @@ export function GovernmentSpendingModal({
                 <span className="text-sm">Debt-to-GDP</span>
                 <Badge
                   variant={
-                    debtToGdp < 60
-                      ? "default"
-                      : debtToGdp < 100
-                      ? "secondary"
-                      : "destructive"
+                    debtToGdp < 60 ? "default" : debtToGdp < 100 ? "secondary" : "destructive"
                   }
                 >
-                  {debtToGdp < 60
-                    ? "Healthy"
-                    : debtToGdp < 100
-                    ? "Moderate"
-                    : "High"}
+                  {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
                 </Badge>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  {debtToGdp.toFixed(1)}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Public debt ratio
-                </div>
+                <div className="text-3xl font-bold text-green-600">{debtToGdp.toFixed(1)}%</div>
+                <div className="text-muted-foreground text-sm">Public debt ratio</div>
               </div>
             </div>
           </CardContent>
@@ -492,19 +462,18 @@ export function GovernmentSpendingModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Balance</span>
-                <Badge
-                  variant={budgetBalance >= 0 ? "default" : "destructive"}
-                >
+                <Badge variant={budgetBalance >= 0 ? "default" : "destructive"}>
                   {budgetBalance >= 0 ? "Surplus" : "Deficit"}
                 </Badge>
               </div>
               <div className="text-center">
-                <div className={`text-3xl font-bold ${budgetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {budgetBalance >= 0 ? '+' : ''}{(budgetBalance / 1e9).toFixed(1)}B
+                <div
+                  className={`text-3xl font-bold ${budgetBalance >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  {budgetBalance >= 0 ? "+" : ""}
+                  {(budgetBalance / 1e9).toFixed(1)}B
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Annual balance
-                </div>
+                <div className="text-muted-foreground text-sm">Annual balance</div>
               </div>
             </div>
           </CardContent>
@@ -521,17 +490,36 @@ export function GovernmentSpendingModal({
     const spending = economyData?.spending;
     // Build categories from spendingCategories array or use named fields
     const spendingCategories = spending?.spendingCategories;
-    const categories = spendingCategories && spendingCategories.length > 0
-      ? spendingCategories.slice(0, 6).map((cat: any, i: number) => ({
-          name: cat.category,
-          value: cat.percent || cat.gdpPercent || 0,
-          color: SPENDING_COLORS[i % SPENDING_COLORS.length],
-        }))
-      : [
-          { name: "Education", value: spending?.education ? (spending.education / (spending?.totalSpending || 1) * 100) : 15, color: SPENDING_COLORS[0] },
-          { name: "Healthcare", value: spending?.healthcare ? (spending.healthcare / (spending?.totalSpending || 1) * 100) : 12, color: SPENDING_COLORS[1] },
-          { name: "Social Safety", value: spending?.socialSafety ? (spending.socialSafety / (spending?.totalSpending || 1) * 100) : 20, color: SPENDING_COLORS[3] },
-        ];
+    const categories =
+      spendingCategories && spendingCategories.length > 0
+        ? spendingCategories.slice(0, 6).map((cat: any, i: number) => ({
+            name: cat.category,
+            value: cat.percent || cat.gdpPercent || 0,
+            color: SPENDING_COLORS[i % SPENDING_COLORS.length],
+          }))
+        : [
+            {
+              name: "Education",
+              value: spending?.education
+                ? (spending.education / (spending?.totalSpending || 1)) * 100
+                : 15,
+              color: SPENDING_COLORS[0],
+            },
+            {
+              name: "Healthcare",
+              value: spending?.healthcare
+                ? (spending.healthcare / (spending?.totalSpending || 1)) * 100
+                : 12,
+              color: SPENDING_COLORS[1],
+            },
+            {
+              name: "Social Safety",
+              value: spending?.socialSafety
+                ? (spending.socialSafety / (spending?.totalSpending || 1)) * 100
+                : 20,
+              color: SPENDING_COLORS[3],
+            },
+          ];
 
     return (
       <div className="space-y-6">
@@ -589,12 +577,16 @@ export function GovernmentSpendingModal({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {governmentData?.priorityPolicies?.slice(0, 6).map((policy: string, index: number) => (
-                <div key={index} className="text-center p-3 rounded-lg bg-muted/30">
-                  <Badge variant="outline" className="mb-2">{policy}</Badge>
-                </div>
-              )) || (
-                <div className="col-span-3 text-center py-4">
+              {governmentData?.priorityPolicies
+                ?.slice(0, 6)
+                .map((policy: string, index: number) => (
+                  <div key={index} className="bg-muted/30 rounded-lg p-3 text-center">
+                    <Badge variant="outline" className="mb-2">
+                      {policy}
+                    </Badge>
+                  </div>
+                )) || (
+                <div className="col-span-3 py-4 text-center">
                   <p className="text-muted-foreground">No priority policies defined</p>
                 </div>
               )}

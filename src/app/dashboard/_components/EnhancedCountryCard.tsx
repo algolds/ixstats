@@ -7,7 +7,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { RefreshCw, Users, TrendingUp, MapPin, Scaling } from "lucide-react";
 import { api } from "~/trpc/react";
-import { cn, getTierStyle } from "~/lib/theme-utils";
+import { cn } from "~/lib/utils";
+import { getTierStyle } from "~/lib/theme-utils";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import type { CountryStats } from "~/types/ixstats";
 import { createUrl } from "~/lib/url-utils";
@@ -91,7 +92,7 @@ export function EnhancedCountryCard({
         <div className="flex items-start justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {/* Enhanced Flag Component */}
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
               <UnifiedCountryFlag
                 countryName={country.name}
                 size="lg"
@@ -134,7 +135,7 @@ export function EnhancedCountryCard({
               </CardTitle>
 
               <CardDescription className="mt-1 flex items-center gap-2">
-                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate">
                   {country.continent || country.region || "Unknown Region"}
                 </span>
@@ -150,7 +151,7 @@ export function EnhancedCountryCard({
                   size="sm"
                   onClick={handleUpdateStats}
                   disabled={updateCountryStatsMutation.isPending}
-                  className="ml-2 flex-shrink-0"
+                  className="ml-2 shrink-0"
                 >
                   <RefreshCw
                     className={cn(

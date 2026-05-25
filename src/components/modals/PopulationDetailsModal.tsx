@@ -35,7 +35,10 @@ import {
 } from "recharts";
 import { formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./metric-details/BaseMetricDetailsModal";
+import {
+  BaseMetricDetailsModal,
+  type MetricModalTab,
+} from "./metric-details/BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./metric-details/types";
 
 interface PopulationDetailsModalProps {
@@ -67,25 +70,26 @@ export function PopulationDetailsModal({
   countryId,
   countryName,
 }: PopulationDetailsModalProps) {
-  const { data: economicDataRaw, isLoading: isEconomicLoading, refetch } =
-    api.countries.getEconomicData.useQuery(
-      { countryId },
-      {
-        enabled: isOpen,
-        staleTime: 5 * 60 * 1000,
-      }
-    );
-
   const {
-    data: historicalDataRaw,
-    isLoading: isHistoricalLoading,
-  } = api.countries.getHistoricalData.useQuery(
+    data: economicDataRaw,
+    isLoading: isEconomicLoading,
+    refetch,
+  } = api.countries.getEconomicData.useQuery(
     { countryId },
     {
       enabled: isOpen,
       staleTime: 5 * 60 * 1000,
     }
   );
+
+  const { data: historicalDataRaw, isLoading: isHistoricalLoading } =
+    api.countries.getHistoricalData.useQuery(
+      { countryId },
+      {
+        enabled: isOpen,
+        staleTime: 5 * 60 * 1000,
+      }
+    );
 
   const { data: globalStatsRaw, isLoading: isGlobalLoading } =
     api.countries.getGlobalStats.useQuery(undefined, {
@@ -184,14 +188,62 @@ export function PopulationDetailsModal({
     if (!economicData) return null;
 
     const tiers = [
-      { name: "Tier 1", min: 0, max: 9_999_999, color: "bg-red-100 text-red-800", description: "0-9.99M" },
-      { name: "Tier 2", min: 10_000_000, max: 29_999_999, color: "bg-orange-100 text-orange-800", description: "10-29.99M" },
-      { name: "Tier 3", min: 30_000_000, max: 49_999_999, color: "bg-yellow-100 text-yellow-800", description: "30-49.99M" },
-      { name: "Tier 4", min: 50_000_000, max: 79_999_999, color: "bg-green-100 text-green-800", description: "50-79.99M" },
-      { name: "Tier 5", min: 80_000_000, max: 119_999_999, color: "bg-blue-100 text-blue-800", description: "80-119.99M" },
-      { name: "Tier 6", min: 120_000_000, max: 349_999_999, color: "bg-indigo-100 text-indigo-800", description: "120-349.99M" },
-      { name: "Tier 7", min: 350_000_000, max: 499_999_999, color: "bg-purple-100 text-purple-800", description: "350-499.99M" },
-      { name: "Tier X", min: 500_000_000, max: Infinity, color: "bg-pink-100 text-pink-800", description: "500M+" },
+      {
+        name: "Tier 1",
+        min: 0,
+        max: 9_999_999,
+        color: "bg-red-100 text-red-800",
+        description: "0-9.99M",
+      },
+      {
+        name: "Tier 2",
+        min: 10_000_000,
+        max: 29_999_999,
+        color: "bg-orange-100 text-orange-800",
+        description: "10-29.99M",
+      },
+      {
+        name: "Tier 3",
+        min: 30_000_000,
+        max: 49_999_999,
+        color: "bg-yellow-100 text-yellow-800",
+        description: "30-49.99M",
+      },
+      {
+        name: "Tier 4",
+        min: 50_000_000,
+        max: 79_999_999,
+        color: "bg-green-100 text-green-800",
+        description: "50-79.99M",
+      },
+      {
+        name: "Tier 5",
+        min: 80_000_000,
+        max: 119_999_999,
+        color: "bg-blue-100 text-blue-800",
+        description: "80-119.99M",
+      },
+      {
+        name: "Tier 6",
+        min: 120_000_000,
+        max: 349_999_999,
+        color: "bg-indigo-100 text-indigo-800",
+        description: "120-349.99M",
+      },
+      {
+        name: "Tier 7",
+        min: 350_000_000,
+        max: 499_999_999,
+        color: "bg-purple-100 text-purple-800",
+        description: "350-499.99M",
+      },
+      {
+        name: "Tier X",
+        min: 500_000_000,
+        max: Infinity,
+        color: "bg-pink-100 text-pink-800",
+        description: "500M+",
+      },
     ];
 
     const currentTierIndex = tiers.findIndex(
@@ -229,8 +281,18 @@ export function PopulationDetailsModal({
     const ruralPop = economicData.currentPopulation * (1 - urbanizationRate);
 
     return [
-      { name: "Urban Population", value: urbanPop, color: "#3b82f6", percentage: urbanizationRate * 100 },
-      { name: "Rural Population", value: ruralPop, color: "#10b981", percentage: (1 - urbanizationRate) * 100 },
+      {
+        name: "Urban Population",
+        value: urbanPop,
+        color: "#3b82f6",
+        percentage: urbanizationRate * 100,
+      },
+      {
+        name: "Rural Population",
+        value: ruralPop,
+        color: "#10b981",
+        percentage: (1 - urbanizationRate) * 100,
+      },
     ];
   }, [economicData]);
 
@@ -257,11 +319,7 @@ export function PopulationDetailsModal({
     };
   }, [defaultChartData, globalStats, comparisonData]);
 
-  const renderTabContent = (
-    activeTab: string,
-    timeRange: TimeRange,
-    _chartType: ChartType
-  ) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, _chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
@@ -481,9 +539,7 @@ export function PopulationDetailsModal({
                     }
                     return [value, name];
                   }}
-                  labelFormatter={(label) =>
-                    `Year ${IxTime.getCurrentGameYear(label as number)}`
-                  }
+                  labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
                 />
                 <Area
                   yAxisId="population"
@@ -654,9 +710,7 @@ export function PopulationDetailsModal({
                   {(economicData.populationGrowthRate * 100).toFixed(3)}% growth
                 </Badge>
               </CardTitle>
-              <CardDescription>
-                Projected population assuming constant growth rates
-              </CardDescription>
+              <CardDescription>Projected population assuming constant growth rates</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">

@@ -147,7 +147,13 @@ export class NSApiClient {
         const slogan = this.extractTag(cardXml, "SLOGAN");
         const motto = this.extractTag(cardXml, "MOTTO");
 
-        console.log("[NS API] Parsing card:", { id, name, season, rarity, xmlPreview: cardXml.substring(0, 100) });
+        console.log("[NS API] Parsing card:", {
+          id,
+          name,
+          season,
+          rarity,
+          xmlPreview: cardXml.substring(0, 100),
+        });
 
         // Deck API only provides: CARDID, CATEGORY, MARKET_VALUE, SEASON
         // Name and other details must be fetched separately
@@ -204,12 +210,12 @@ export class NSApiClient {
     if (!nsRarity) return "COMMON";
 
     const rarityMap: Record<string, string> = {
-      "common": "COMMON",
-      "uncommon": "UNCOMMON",
-      "rare": "RARE",
+      common: "COMMON",
+      uncommon: "UNCOMMON",
+      rare: "RARE",
       "ultra-rare": "ULTRA_RARE",
-      "epic": "EPIC",
-      "legendary": "LEGENDARY",
+      epic: "EPIC",
+      legendary: "LEGENDARY",
     };
 
     const normalized = rarityMap[nsRarity.toLowerCase()];
@@ -291,7 +297,10 @@ export class NSApiClient {
       );
 
       if (!response.ok) {
-        console.error(`[NS API] Failed to fetch card info for ${cardId} S${season}:`, response.status);
+        console.error(
+          `[NS API] Failed to fetch card info for ${cardId} S${season}:`,
+          response.status
+        );
         return null;
       }
 
@@ -316,7 +325,7 @@ export class NSApiClient {
       // Cards use /images/cards/s{season}/uploads/ not /images/flags/
       let flagUrl: string | undefined = undefined;
       if (flag) {
-        if (flag.startsWith('http')) {
+        if (flag.startsWith("http")) {
           flagUrl = flag;
         } else {
           // Card images are stored in season-specific directories
@@ -401,7 +410,9 @@ export class NSApiClient {
       }
 
       // NS returns full URLs for nation flags
-      const fullUrl = flagPath.startsWith('http') ? flagPath : `https://www.nationstates.net/${flagPath}`;
+      const fullUrl = flagPath.startsWith("http")
+        ? flagPath
+        : `https://www.nationstates.net/${flagPath}`;
       console.log(`[NS API] Successfully fetched current flag for ${nationName}: ${fullUrl}`);
       return fullUrl;
     } catch (error) {
@@ -493,7 +504,9 @@ export class NSApiClient {
    * @param regionName - Region name
    * @returns Nation count, or null on failure
    */
-  async fetchRegionNationCount(regionName: string): Promise<{ name: string; numnations: number } | null> {
+  async fetchRegionNationCount(
+    regionName: string
+  ): Promise<{ name: string; numnations: number } | null> {
     try {
       await this.rateLimit();
 
@@ -539,52 +552,61 @@ export class NSApiClient {
 
     console.log(`[NS API] Fetching card dump for season ${season} from ${dumpUrl}`);
 
-    return withRetry(async (signal) => {
-      console.log(`[NS API] Download attempt for season ${season}`);
+    return withRetry(
+      async (signal) => {
+        console.log(`[NS API] Download attempt for season ${season}`);
 
-      const response = await fetch(dumpUrl, {
-        headers: {
-          "User-Agent": this.userAgent,
-          "Accept-Encoding": "gzip",
-        },
-        signal,
-      });
+        const response = await fetch(dumpUrl, {
+          headers: {
+            "User-Agent": this.userAgent,
+            "Accept-Encoding": "gzip",
+          },
+          signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-      const contentLength = response.headers.get("content-length");
-      const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
-      console.log(`[NS API] Downloading ${totalBytes ? (totalBytes / 1024 / 1024).toFixed(2) + " MB" : "unknown size"}`);
+        const contentLength = response.headers.get("content-length");
+        const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+        console.log(
+          `[NS API] Downloading ${totalBytes ? (totalBytes / 1024 / 1024).toFixed(2) + " MB" : "unknown size"}`
+        );
 
-      // Read response as ArrayBuffer for gzip decompression
-      const arrayBuffer = await response.arrayBuffer();
-      const compressedBytes = new Uint8Array(arrayBuffer);
+        // Read response as ArrayBuffer for gzip decompression
+        const arrayBuffer = await response.arrayBuffer();
+        const compressedBytes = new Uint8Array(arrayBuffer);
 
-      console.log(`[NS API] Downloaded ${(compressedBytes.length / 1024 / 1024).toFixed(2)} MB (compressed)`);
+        console.log(
+          `[NS API] Downloaded ${(compressedBytes.length / 1024 / 1024).toFixed(2)} MB (compressed)`
+        );
 
-      // Decompress gzip using Node.js zlib
-      const zlib = await import("zlib");
-      const { promisify } = await import("util");
-      const gunzip = promisify(zlib.gunzip);
+        // Decompress gzip using Node.js zlib
+        const zlib = await import("zlib");
+        const { promisify } = await import("util");
+        const gunzip = promisify(zlib.gunzip);
 
-      console.log(`[NS API] Decompressing gzip data...`);
-      const decompressed = await gunzip(Buffer.from(compressedBytes));
-      const xmlString = decompressed.toString("utf-8");
+        console.log(`[NS API] Decompressing gzip data...`);
+        const decompressed = await gunzip(Buffer.from(compressedBytes));
+        const xmlString = decompressed.toString("utf-8");
 
-      console.log(`[NS API] ✓ Successfully downloaded and decompressed season ${season} card dump (${(xmlString.length / 1024 / 1024).toFixed(2)} MB uncompressed)`);
-      return xmlString;
-    }, {
-      maxAttempts: 3,
-      strategy: "exponential",
-      baseDelayMs: 2000,
-      timeoutMs: 60000,
-      onRetry: (attempt, err, delayMs) => {
-        console.error(`[NS API] Attempt ${attempt} failed for season ${season}:`, err.message);
-        console.log(`[NS API] Retrying in ${delayMs / 1000} seconds...`);
+        console.log(
+          `[NS API] ✓ Successfully downloaded and decompressed season ${season} card dump (${(xmlString.length / 1024 / 1024).toFixed(2)} MB uncompressed)`
+        );
+        return xmlString;
       },
-    });
+      {
+        maxAttempts: 3,
+        strategy: "exponential",
+        baseDelayMs: 2000,
+        timeoutMs: 60000,
+        onRetry: (attempt, err, delayMs) => {
+          console.error(`[NS API] Attempt ${attempt} failed for season ${season}:`, err.message);
+          console.log(`[NS API] Retrying in ${delayMs / 1000} seconds...`);
+        },
+      }
+    );
   }
 
   /**
@@ -652,7 +674,6 @@ export class NSApiClient {
             slogan: slogan || undefined,
             cardcategory: cardCategory || undefined,
           });
-
         } catch (error) {
           parseErrors++;
           if (parseErrors <= 10) {
@@ -668,17 +689,22 @@ export class NSApiClient {
         }
       }
 
-      console.log(`[NS API] ✓ Successfully parsed ${cards.length} cards (${parseErrors} errors skipped)`);
+      console.log(
+        `[NS API] ✓ Successfully parsed ${cards.length} cards (${parseErrors} errors skipped)`
+      );
 
       if (parseErrors > 0) {
-        console.warn(`[NS API] ⚠ Encountered ${parseErrors} parse errors (${((parseErrors / totalCards) * 100).toFixed(2)}% error rate)`);
+        console.warn(
+          `[NS API] ⚠ Encountered ${parseErrors} parse errors (${((parseErrors / totalCards) * 100).toFixed(2)}% error rate)`
+        );
       }
 
       return cards;
-
     } catch (error) {
       console.error(`[NS API] Fatal error parsing card dump:`, error);
-      throw new Error(`Failed to parse card dump: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to parse card dump: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

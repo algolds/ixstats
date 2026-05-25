@@ -22,7 +22,7 @@ export function stripRecord(
     countryField?: string;
     extraStrip?: string[];
     transforms?: Record<string, (val: any) => any>;
-  },
+  }
 ): Record<string, any> {
   const countryField = options?.countryField ?? "countryId";
   const extraStrip = new Set(options?.extraStrip ?? []);
@@ -65,7 +65,7 @@ export async function cloneRecords(
     orderBy?: Record<string, string>;
     take?: number;
     where?: Record<string, any>;
-  },
+  }
 ): Promise<{ count: number; records: any[] }> {
   const countryField = options?.countryField ?? "countryId";
   const model = (prisma as any)[modelName];
@@ -110,7 +110,7 @@ export async function cloneUniqueRecord(
     countryField?: string;
     extraStrip?: string[];
     transforms?: Record<string, (val: any) => any>;
-  },
+  }
 ): Promise<{ count: number; record: any | null }> {
   const countryField = options?.countryField ?? "countryId";
   const model = (prisma as any)[modelName];
@@ -152,14 +152,17 @@ export async function cloneParentChildren(
     countryField?: string;
     extraStrip?: string[];
     transforms?: Record<string, (val: any) => any>;
-  },
+  }
 ): Promise<{ count: number; idMap: Map<string, string> }> {
   const countryField = options?.countryField ?? "countryId";
 
   // Clone parents
   const { count: parentCount, records: parents } = await cloneRecords(
-    prisma, parentModelName, sourceCountryId, demoCountryId,
-    { countryField, extraStrip: options?.extraStrip, transforms: options?.transforms },
+    prisma,
+    parentModelName,
+    sourceCountryId,
+    demoCountryId,
+    { countryField, extraStrip: options?.extraStrip, transforms: options?.transforms }
   );
   if (parentCount === 0) return { count: 0, idMap: new Map() };
 

@@ -12,14 +12,70 @@ import { api } from "~/trpc/react";
 
 /** Keywords that map each context to relevant wiki section titles */
 const SECTION_CONTEXT_MAP: Record<string, string[]> = {
-  economy: ["economy", "trade", "industry", "agriculture", "energy", "currency", "finance", "banking", "commerce", "mining", "manufacturing"],
+  economy: [
+    "economy",
+    "trade",
+    "industry",
+    "agriculture",
+    "energy",
+    "currency",
+    "finance",
+    "banking",
+    "commerce",
+    "mining",
+    "manufacturing",
+  ],
   labor: ["labor", "labour", "employment", "workforce", "education", "unions", "wages", "work"],
-  government: ["government", "politics", "executive", "legislature", "judicial", "constitution", "law", "administration", "civil service"],
-  demographics: ["demograph", "population", "ethnic", "language", "religion", "society", "health", "cities", "urban", "rural", "culture", "cuisine", "music", "art", "sport"],
+  government: [
+    "government",
+    "politics",
+    "executive",
+    "legislature",
+    "judicial",
+    "constitution",
+    "law",
+    "administration",
+    "civil service",
+  ],
+  demographics: [
+    "demograph",
+    "population",
+    "ethnic",
+    "language",
+    "religion",
+    "society",
+    "health",
+    "cities",
+    "urban",
+    "rural",
+    "culture",
+    "cuisine",
+    "music",
+    "art",
+    "sport",
+  ],
   executive: ["history", "government", "economy", "policy", "modern", "contemporary"],
   diplomacy: ["foreign", "relations", "diplomacy", "treaty", "alliance", "international"],
-  defense: ["military", "army", "navy", "air force", "defense", "defence", "armed", "war", "security"],
-  politics: ["government", "politics", "constitution", "election", "party", "legislature", "parliament"],
+  defense: [
+    "military",
+    "army",
+    "navy",
+    "air force",
+    "defense",
+    "defence",
+    "armed",
+    "war",
+    "security",
+  ],
+  politics: [
+    "government",
+    "politics",
+    "constitution",
+    "election",
+    "party",
+    "legislature",
+    "parliament",
+  ],
   intelligence: ["security", "intelligence", "law enforcement", "police", "espionage"],
 };
 
@@ -40,7 +96,9 @@ export function useWikiSectionMap(countryName: string | undefined, context: stri
       return { sections: [] as WikiSectionItem[], wikiUrl: "" };
     }
 
-    const filtered = (wikiSections as Array<{ level: number; line?: string; title?: string; anchor?: string }>)
+    const filtered = (
+      wikiSections as Array<{ level: number; line?: string; title?: string; anchor?: string }>
+    )
       .filter((s) => s.level === 2)
       .filter((s) => {
         const title = (s.line || s.title || "").toLowerCase();

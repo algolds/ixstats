@@ -113,7 +113,7 @@ export function VaultIcon({
       <div
         className={cn(
           "relative rounded-xl",
-          "bg-gradient-to-br from-purple-500 via-purple-600 to-gold-500",
+          "to-gold-500 bg-gradient-to-br from-purple-500 via-purple-600",
           "shadow-lg shadow-purple-500/40",
           "border border-purple-400/50",
           "p-2",
@@ -148,14 +148,11 @@ export function VaultIcon({
       </div>
 
       {/* Sparkle overlay */}
-      <motion.div
-        className="absolute -top-1 -right-1"
-        variants={animated ? sparkleVariants : {}}
-      >
+      <motion.div className="absolute -top-1 -right-1" variants={animated ? sparkleVariants : {}}>
         <div
           className={cn(
-            "rounded-full border border-gold-300 bg-gold-400",
-            "shadow-lg shadow-gold-500/50",
+            "border-gold-300 bg-gold-400 rounded-full border",
+            "shadow-gold-500/50 shadow-lg",
             "flex items-center justify-center",
             size === "sm" ? "p-1" : size === "md" ? "p-1.5" : size === "lg" ? "p-2" : "p-2.5"
           )}
@@ -168,10 +165,10 @@ export function VaultIcon({
       {showLevel && (
         <motion.div
           className={cn(
-            "absolute -bottom-1 -right-1",
-            "bg-gradient-to-br from-gold-400 to-orange-500",
-            "border-2 border-gold-300",
-            "rounded-full shadow-lg shadow-gold-500/50",
+            "absolute -right-1 -bottom-1",
+            "from-gold-400 bg-gradient-to-br to-orange-500",
+            "border-gold-300 border-2",
+            "shadow-gold-500/50 rounded-full shadow-lg",
             "flex items-center justify-center",
             "text-xs font-black text-black",
             size === "sm" ? "h-4 w-4" : size === "md" ? "h-5 w-5" : "h-6 w-6"
@@ -190,7 +187,7 @@ export function VaultIcon({
     <motion.div variants={animated ? textVariants : {}} className="flex flex-col leading-none">
       <span
         className={cn(
-          "bg-gradient-to-r from-purple-400 via-purple-500 to-gold-400 bg-clip-text font-bold text-transparent",
+          "to-gold-400 bg-gradient-to-r from-purple-400 via-purple-500 bg-clip-text font-bold text-transparent",
           config.text
         )}
       >

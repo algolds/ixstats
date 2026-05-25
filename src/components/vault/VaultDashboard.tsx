@@ -116,8 +116,14 @@ const StatCard = React.memo(
   }) => {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
-    const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [5, -5]), { stiffness: 300, damping: 20 });
-    const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-5, 5]), { stiffness: 300, damping: 20 });
+    const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [5, -5]), {
+      stiffness: 300,
+      damping: 20,
+    });
+    const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-5, 5]), {
+      stiffness: 300,
+      damping: 20,
+    });
     const [isHovering, setIsHovering] = useState(false);
 
     const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -149,10 +155,10 @@ const StatCard = React.memo(
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={handleMouseLeave}
         >
-          <Card className="glass-hierarchy-child relative overflow-hidden transition-all duration-300 vault-glow-gold">
+          <Card className="glass-hierarchy-child vault-glow-gold relative overflow-hidden transition-all duration-300">
             {/* Shimmer overlay on hover */}
             <motion.div
-              className="absolute inset-0 pointer-events-none"
+              className="pointer-events-none absolute inset-0"
               animate={{
                 background: isHovering
                   ? "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)"
@@ -190,7 +196,7 @@ const StatCard = React.memo(
             </AnimatePresence>
 
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">{title}</CardTitle>
+              <CardTitle className="text-xs font-medium sm:text-sm">{title}</CardTitle>
               <motion.div
                 animate={{ rotate: isHovering ? 360 : 0 }}
                 transition={{ duration: 0.6, ease: "easeInOut" }}
@@ -200,14 +206,14 @@ const StatCard = React.memo(
             </CardHeader>
             <CardContent>
               {loading ? (
-                <Skeleton className="h-6 sm:h-8 w-16 sm:w-24" />
+                <Skeleton className="h-6 w-16 sm:h-8 sm:w-24" />
               ) : (
                 <div className="space-y-1">
-                  <div className={cn("text-xl sm:text-2xl font-bold", color)}>
+                  <div className={cn("text-xl font-bold sm:text-2xl", color)}>
                     {typeof value === "number" ? <AnimatedCounter value={value} /> : value}
                   </div>
                   <div className="flex items-center gap-2">
-                    <p className="text-xs text-muted-foreground">{subtitle}</p>
+                    <p className="text-muted-foreground text-xs">{subtitle}</p>
                     {trend && (
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
@@ -231,7 +237,7 @@ const StatCard = React.memo(
 
             {/* Bottom glow line - keep subtle */}
             <motion.div
-              className="absolute bottom-0 left-0 right-0 h-0.5"
+              className="absolute right-0 bottom-0 left-0 h-0.5"
               style={{
                 background: `linear-gradient(90deg, transparent, ${color.includes("gold") ? "rgb(251, 191, 36)" : color.includes("green") ? "rgb(34, 197, 94)" : color.includes("purple") ? "rgb(168, 85, 247)" : "rgb(59, 130, 246)"}, transparent)`,
               }}
@@ -259,7 +265,7 @@ export function VaultDashboard({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Quick stats grid with 3D cards */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
+      <div className="xs:grid-cols-2 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Total Cards"
           value={stats?.totalCards ?? 0}
@@ -305,8 +311,11 @@ export function VaultDashboard({
         <Card className="glass-hierarchy-child vault-glow-gold relative overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}>
-                <Calendar className="h-5 w-5 text-gold-400" />
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                <Calendar className="text-gold-400 h-5 w-5" />
               </motion.div>
               Today&apos;s Earnings
             </CardTitle>
@@ -324,7 +333,7 @@ export function VaultDashboard({
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 200 }}
-                  className="mb-4 text-2xl sm:text-3xl font-bold text-gold-400"
+                  className="text-gold-400 mb-4 text-2xl font-bold sm:text-3xl"
                 >
                   +<AnimatedCounter value={todayEarnings?.total ?? 0} suffix=" IxC" />
                 </motion.div>
@@ -342,7 +351,7 @@ export function VaultDashboard({
                       <motion.span
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="font-semibold text-gold-400"
+                        className="text-gold-400 font-semibold"
                       >
                         +{source.amount.toLocaleString()} IxC
                       </motion.span>
@@ -355,9 +364,13 @@ export function VaultDashboard({
         </Card>
       </motion.div>
 
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
         {/* Login streak with flame animation */}
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+        >
           <Card className="glass-hierarchy-child relative overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -378,7 +391,7 @@ export function VaultDashboard({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-                className="mb-4 text-3xl sm:text-4xl font-bold text-orange-400"
+                className="mb-4 text-3xl font-bold text-orange-400 sm:text-4xl"
               >
                 <AnimatedCounter value={loginStreak} suffix=" days" />
               </motion.div>
@@ -387,7 +400,7 @@ export function VaultDashboard({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onClaimDailyBonus}
-                  className="w-full rounded-lg bg-gold-500 px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold text-black transition-all shadow-lg shadow-gold-500/30 hover:shadow-gold-500/50 touch-manipulation relative overflow-hidden"
+                  className="bg-gold-500 shadow-gold-500/30 hover:shadow-gold-500/50 relative w-full touch-manipulation overflow-hidden rounded-lg px-3 py-2 text-sm font-semibold text-black shadow-lg transition-all sm:px-4 sm:text-base"
                 >
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -401,7 +414,7 @@ export function VaultDashboard({
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-sm text-muted-foreground"
+                  className="text-muted-foreground text-sm"
                 >
                   Come back tomorrow to claim your next bonus
                 </motion.p>
@@ -411,11 +424,18 @@ export function VaultDashboard({
         </motion.div>
 
         {/* Recent activity with animations */}
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+        >
           <Card className="glass-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <motion.div animate={{ y: [-2, 2, -2] }} transition={{ duration: 2, repeat: Infinity }}>
+                <motion.div
+                  animate={{ y: [-2, 2, -2] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
                   <TrendingUp className="h-5 w-5 text-blue-400" />
                 </motion.div>
                 Recent Activity
@@ -429,7 +449,7 @@ export function VaultDashboard({
                   <Skeleton className="h-12 w-full" />
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto hide-scrollbar">
+                <div className="hide-scrollbar max-h-[300px] space-y-2 overflow-y-auto">
                   <AnimatePresence mode="popLayout">
                     {recentActivity?.slice(0, 10).map((activity, index) => {
                       const isPositive = activity.type.startsWith("EARN_");

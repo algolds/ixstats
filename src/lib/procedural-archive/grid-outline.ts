@@ -21,11 +21,7 @@ import type { Position } from "geojson";
  * @param h - Grid height
  * @returns Array of closed rings (each ring ends with a copy of its first point)
  */
-export function extractGridOutline(
-  mask: Uint8Array,
-  w: number,
-  h: number
-): Position[][] {
+export function extractGridOutline(mask: Uint8Array, w: number, h: number): Position[][] {
   // Collect oriented boundary edges (clockwise around filled region)
   // Uses grid corner coordinates: corner index = cy * cw + cx
   const fromMap = new Map<number, number>();

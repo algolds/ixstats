@@ -81,7 +81,12 @@ export async function attempt<T>(
     }
   }
 
-  return { success: false, value: undefined, error: new Error("Unreachable"), attempts: opts.maxAttempts };
+  return {
+    success: false,
+    value: undefined,
+    error: new Error("Unreachable"),
+    attempts: opts.maxAttempts,
+  };
 }
 
 export async function withRetry<T>(

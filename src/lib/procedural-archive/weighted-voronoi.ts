@@ -47,13 +47,11 @@ export function generateWeightedSeeds(
   const sampleStep = Math.max(1, Math.floor(heightmap.width / 50));
   for (let y = 0; y < heightmap.height; y += sampleStep) {
     for (let x = 0; x < heightmap.width; x += sampleStep) {
-      if ((heightmap.data[y * heightmap.width + x] ?? 0) >= heightmap.seaLevel)
-        landPixels++;
+      if ((heightmap.data[y * heightmap.width + x] ?? 0) >= heightmap.seaLevel) landPixels++;
     }
   }
   const totalSampled =
-    Math.ceil(heightmap.height / sampleStep) *
-    Math.ceil(heightmap.width / sampleStep);
+    Math.ceil(heightmap.height / sampleStep) * Math.ceil(heightmap.width / sampleStep);
   const landFraction = Math.max(0.1, landPixels / totalSampled);
   const landArea = lngRange * latRange * landFraction;
 
@@ -207,18 +205,10 @@ export function expandWithBudgets(
           const nlng = points[neighbor * 2]!;
           const nlat = points[neighbor * 2 + 1]!;
 
-          const gx1 = Math.floor(
-            ((clng + 180) / 360) * heightmap.width
-          );
-          const gy1 = Math.floor(
-            ((90 - clat) / 180) * heightmap.height
-          );
-          const gx2 = Math.floor(
-            ((nlng + 180) / 360) * heightmap.width
-          );
-          const gy2 = Math.floor(
-            ((90 - nlat) / 180) * heightmap.height
-          );
+          const gx1 = Math.floor(((clng + 180) / 360) * heightmap.width);
+          const gy1 = Math.floor(((90 - clat) / 180) * heightmap.height);
+          const gx2 = Math.floor(((nlng + 180) / 360) * heightmap.width);
+          const gy2 = Math.floor(((90 - nlat) / 180) * heightmap.height);
           const e1 = heightmap.data[gy1 * heightmap.width + gx1] ?? 0;
           const e2 = heightmap.data[gy2 * heightmap.width + gx2] ?? 0;
           const elevDiff = Math.abs(e2 - e1);

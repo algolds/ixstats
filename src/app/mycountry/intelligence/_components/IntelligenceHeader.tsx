@@ -16,7 +16,7 @@ export function IntelligenceHeader({ countryName, briefingsCount }: Intelligence
     >
       <div>
         <div className="mb-2 flex items-center gap-2 sm:gap-3">
-          <div className="flex-shrink-0 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 p-1.5 sm:p-2">
+          <div className="shrink-0 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 p-1.5 sm:p-2">
             <Brain className="h-5 w-5 text-white sm:h-6 sm:w-6" />
           </div>
           <div>

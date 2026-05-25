@@ -47,8 +47,16 @@ export interface ImageAnalysisResult {
 // Color Classification
 // ──────────────────────────────────────────────
 
-interface RGB { r: number; g: number; b: number }
-interface HSL { h: number; s: number; l: number }
+interface RGB {
+  r: number;
+  g: number;
+  b: number;
+}
+interface HSL {
+  h: number;
+  s: number;
+  l: number;
+}
 
 function hexToRgb(hex: string): RGB {
   const h = hex.replace("#", "");
@@ -60,8 +68,11 @@ function hexToRgb(hex: string): RGB {
 }
 
 function rgbToHsl(rgb: RGB): HSL {
-  const r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const r = rgb.r / 255,
+    g = rgb.g / 255,
+    b = rgb.b / 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
   const l = (max + min) / 2;
   if (max === min) return { h: 0, s: 0, l };
   const d = max - min;
@@ -82,11 +93,11 @@ function classifyColor(hex: string): "background" | "terrain" | "water" | "land"
   const hsl = rgbToHsl(rgb);
 
   // Very light or very dark = background
-  if (hsl.s < 0.10 && hsl.l > 0.90) return "background";
-  if (hsl.s < 0.10 && hsl.l < 0.10) return "background";
+  if (hsl.s < 0.1 && hsl.l > 0.9) return "background";
+  if (hsl.s < 0.1 && hsl.l < 0.1) return "background";
 
   // Blue hues (180-270°) with decent saturation = water
-  if (hsl.h >= 180 && hsl.h <= 270 && hsl.s > 0.20) return "water";
+  if (hsl.h >= 180 && hsl.h <= 270 && hsl.s > 0.2) return "water";
 
   // Cyan/teal (160-180°) with high saturation = also water
   if (hsl.h >= 160 && hsl.h < 180 && hsl.s > 0.35) return "water";
@@ -112,16 +123,15 @@ function classifyColor(hex: string): "background" | "terrain" | "water" | "land"
  * Group nearby features into continent clusters using simple distance-based
  * agglomerative clustering on centroids.
  */
-function detectContinents(
-  features: Feature[]
-): number {
+function detectContinents(features: Feature[]): number {
   if (features.length === 0) return 0;
 
   // Compute centroids
   const centroids: Array<[number, number]> = features.map((f) => {
     if (f.geometry.type === "Polygon") {
       const coords = (f.geometry as Polygon).coordinates[0]!;
-      let cx = 0, cy = 0;
+      let cx = 0,
+        cy = 0;
       for (const [x, y] of coords) {
         cx += x!;
         cy += y!;
@@ -195,9 +205,7 @@ export function analyzeImageWorld(
   log.push(`Ocean percentage estimated: ${(oceanPercentage * 100).toFixed(1)}%`);
 
   // Count land regions
-  const landColors = colorGroups.filter(
-    (c) => c.category === "land" || c.category === "terrain"
-  );
+  const landColors = colorGroups.filter((c) => c.category === "land" || c.category === "terrain");
   const regionCount = landColors.length;
   log.push(`Detected ${regionCount} distinct land regions`);
 
@@ -266,7 +274,8 @@ export function generateOverlaysForPoliticalMap(
     if (!coords || coords.length < 3) continue;
 
     // Compute centroid
-    let cx = 0, cy = 0;
+    let cx = 0,
+      cy = 0;
     for (const [x, y] of coords) {
       cx += x!;
       cy += y!;
@@ -278,7 +287,8 @@ export function generateOverlaysForPoliticalMap(
     // Use distance from centroid to nearest edge point as proxy
     const absLat = Math.abs(cy);
     const elevZone = absLat > 60 ? "alpine" : absLat > 45 ? "uplands" : "lowlands";
-    const elevColor = elevZone === "alpine" ? "#796142" : elevZone === "uplands" ? "#dac497" : "#a8c995";
+    const elevColor =
+      elevZone === "alpine" ? "#796142" : elevZone === "uplands" ? "#dac497" : "#a8c995";
 
     altFeatures.push({
       type: "Feature",
@@ -294,12 +304,25 @@ export function generateOverlaysForPoliticalMap(
     // Climate: latitude-based Trewartha approximation
     let climateName: string;
     let climateColor: string;
-    if (absLat < 10) { climateName = "Tropical Wet"; climateColor = "#006400"; }
-    else if (absLat < 25) { climateName = "Tropical Dry"; climateColor = "#BDB76B"; }
-    else if (absLat < 35) { climateName = "Subtropical"; climateColor = "#CC7722"; }
-    else if (absLat < 50) { climateName = "Temperate"; climateColor = "#2E8B57"; }
-    else if (absLat < 65) { climateName = "Boreal"; climateColor = "#355E3B"; }
-    else { climateName = "Tundra"; climateColor = "#A8B8C8"; }
+    if (absLat < 10) {
+      climateName = "Tropical Wet";
+      climateColor = "#006400";
+    } else if (absLat < 25) {
+      climateName = "Tropical Dry";
+      climateColor = "#BDB76B";
+    } else if (absLat < 35) {
+      climateName = "Subtropical";
+      climateColor = "#CC7722";
+    } else if (absLat < 50) {
+      climateName = "Temperate";
+      climateColor = "#2E8B57";
+    } else if (absLat < 65) {
+      climateName = "Boreal";
+      climateColor = "#355E3B";
+    } else {
+      climateName = "Tundra";
+      climateColor = "#A8B8C8";
+    }
 
     climFeatures.push({
       type: "Feature",

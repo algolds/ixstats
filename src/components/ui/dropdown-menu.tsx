@@ -28,8 +28,10 @@ function DropdownMenuBackdrop({
   return <DropdownMenuPrimitive.Backdrop data-slot="dropdown-menu-backdrop" {...props} />;
 }
 
-interface DropdownMenuContentProps
-  extends Omit<React.ComponentProps<typeof DropdownMenuPrimitive.Positioner>, "render"> {}
+interface DropdownMenuContentProps extends Omit<
+  React.ComponentProps<typeof DropdownMenuPrimitive.Positioner>,
+  "render"
+> {}
 
 function DropdownMenuContent({
   className,
@@ -120,8 +122,9 @@ function DropdownMenuGroup({ ...props }: React.ComponentProps<typeof DropdownMen
   return <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-interface DropdownMenuGroupLabelProps
-  extends React.ComponentProps<typeof DropdownMenuPrimitive.GroupLabel> {
+interface DropdownMenuGroupLabelProps extends React.ComponentProps<
+  typeof DropdownMenuPrimitive.GroupLabel
+> {
   inset?: boolean;
 }
 

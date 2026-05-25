@@ -15,7 +15,11 @@ import { useAuth } from "@clerk/nextjs";
 export function useVaultBalance() {
   const { userId } = useAuth();
 
-  const { data: balanceData, isLoading, refetch } = api.vault.getBalance.useQuery(
+  const {
+    data: balanceData,
+    isLoading,
+    refetch,
+  } = api.vault.getBalance.useQuery(
     { userId: userId ?? "" },
     {
       enabled: !!userId,

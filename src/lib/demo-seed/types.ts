@@ -26,11 +26,25 @@ export interface SeedStats {
 
 export function emptySeedStats(): SeedStats {
   return {
-    meetings: 0, policies: 0, elections: 0, diplomacy: 0,
-    intelligence: 0, defense: 0, nationalIssues: 0,
-    crisisEvents: 0, social: 0, economics: 0, government: 0,
-    tax: 0, geography: 0, security: 0, history: 0,
-    activityFeed: 0, achievements: 0, npcPersonality: 0, total: 0,
+    meetings: 0,
+    policies: 0,
+    elections: 0,
+    diplomacy: 0,
+    intelligence: 0,
+    defense: 0,
+    nationalIssues: 0,
+    crisisEvents: 0,
+    social: 0,
+    economics: 0,
+    government: 0,
+    tax: 0,
+    geography: 0,
+    security: 0,
+    history: 0,
+    activityFeed: 0,
+    achievements: 0,
+    npcPersonality: 0,
+    total: 0,
   };
 }
 

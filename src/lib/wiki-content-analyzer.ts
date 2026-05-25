@@ -87,15 +87,94 @@ export interface WikiAnalyzedData {
 // Reused from useWikiSectionMap.ts SECTION_CONTEXT_MAP
 
 const SECTION_KEYWORDS: Record<string, string[]> = {
-  economy: ["economy", "trade", "industry", "agriculture", "energy", "currency", "finance", "banking", "commerce", "mining", "manufacturing", "economic"],
-  government: ["government", "politics", "executive", "legislature", "judicial", "constitution", "law", "administration", "governance"],
-  demographics: ["demograph", "population", "ethnic", "language", "religion", "society", "people", "culture"],
-  geography: ["geography", "climate", "terrain", "topography", "environment", "land", "area", "border", "location"],
-  military: ["military", "army", "navy", "air force", "defense", "defence", "armed", "war", "security", "force"],
-  history: ["history", "historical", "founding", "independence", "establishment", "ancient", "modern", "colonial", "medieval"],
-  diplomacy: ["foreign", "relations", "diplomacy", "treaty", "alliance", "international", "ambassador"],
+  economy: [
+    "economy",
+    "trade",
+    "industry",
+    "agriculture",
+    "energy",
+    "currency",
+    "finance",
+    "banking",
+    "commerce",
+    "mining",
+    "manufacturing",
+    "economic",
+  ],
+  government: [
+    "government",
+    "politics",
+    "executive",
+    "legislature",
+    "judicial",
+    "constitution",
+    "law",
+    "administration",
+    "governance",
+  ],
+  demographics: [
+    "demograph",
+    "population",
+    "ethnic",
+    "language",
+    "religion",
+    "society",
+    "people",
+    "culture",
+  ],
+  geography: [
+    "geography",
+    "climate",
+    "terrain",
+    "topography",
+    "environment",
+    "land",
+    "area",
+    "border",
+    "location",
+  ],
+  military: [
+    "military",
+    "army",
+    "navy",
+    "air force",
+    "defense",
+    "defence",
+    "armed",
+    "war",
+    "security",
+    "force",
+  ],
+  history: [
+    "history",
+    "historical",
+    "founding",
+    "independence",
+    "establishment",
+    "ancient",
+    "modern",
+    "colonial",
+    "medieval",
+  ],
+  diplomacy: [
+    "foreign",
+    "relations",
+    "diplomacy",
+    "treaty",
+    "alliance",
+    "international",
+    "ambassador",
+  ],
   education: ["education", "university", "school", "literacy", "academic"],
-  infrastructure: ["transport", "infrastructure", "railway", "highway", "airport", "port", "communication"],
+  infrastructure: [
+    "transport",
+    "infrastructure",
+    "railway",
+    "highway",
+    "airport",
+    "port",
+    "communication",
+  ],
 };
 
 // ── Helpers ──
@@ -174,7 +253,8 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
     if (name) data.name = { value: name, confidence: 0.95, source: "infobox" };
 
     const officialName = getFieldValue("conventional_long_name") || getFieldValue("official_name");
-    if (officialName) data.officialName = { value: officialName, confidence: 0.95, source: "infobox" };
+    if (officialName)
+      data.officialName = { value: officialName, confidence: 0.95, source: "infobox" };
 
     const motto = getFieldValue("national_motto") || getFieldValue("motto");
     if (motto) data.motto = { value: motto, confidence: 0.9, source: "infobox" };
@@ -207,17 +287,24 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
     if (coa) data.coatOfArms = { value: coa, confidence: 0.95, source: "infobox" };
 
     // Numeric fields
-    const pop = getFieldTyped("population_estimate") || getFieldTyped("population_census") || getFieldTyped("population");
-    if (typeof pop === "number") data.population = { value: pop, confidence: 0.9, source: "infobox" };
+    const pop =
+      getFieldTyped("population_estimate") ||
+      getFieldTyped("population_census") ||
+      getFieldTyped("population");
+    if (typeof pop === "number")
+      data.population = { value: pop, confidence: 0.9, source: "infobox" };
 
     const area = getFieldTyped("area_km2") || getFieldTyped("area_total_km2");
-    if (typeof area === "number") data.landArea = { value: area, confidence: 0.9, source: "infobox" };
+    if (typeof area === "number")
+      data.landArea = { value: area, confidence: 0.9, source: "infobox" };
 
     const gdpNom = getFieldTyped("gdp_nominal");
-    if (typeof gdpNom === "number") data.gdp = { value: gdpNom, confidence: 0.85, source: "infobox" };
+    if (typeof gdpNom === "number")
+      data.gdp = { value: gdpNom, confidence: 0.85, source: "infobox" };
 
     const gdpPc = getFieldTyped("gdp_nominal_per_capita");
-    if (typeof gdpPc === "number") data.gdpPerCapita = { value: gdpPc, confidence: 0.85, source: "infobox" };
+    if (typeof gdpPc === "number")
+      data.gdpPerCapita = { value: gdpPc, confidence: 0.85, source: "infobox" };
   }
 
   // ── Coordinates ──
@@ -255,7 +342,12 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
     if (!data.gdp) {
       const gdpNum = extractNumberFromText(econText);
       if (gdpNum && gdpNum > 1e6) {
-        data.gdp = { value: gdpNum, confidence: 0.4, source: "section", sectionTitle: econSections[0]!.title };
+        data.gdp = {
+          value: gdpNum,
+          confidence: 0.4,
+          source: "section",
+          sectionTitle: econSections[0]!.title,
+        };
       }
     }
 
@@ -282,7 +374,9 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
     };
 
     // Look for legislature/parliament mentions
-    const legMatch = govText.match(/(?:parliament|congress|legislature|assembly|diet|senate|chamber)\s+(?:of\s+)?[A-Z]\w+/i);
+    const legMatch = govText.match(
+      /(?:parliament|congress|legislature|assembly|diet|senate|chamber)\s+(?:of\s+)?[A-Z]\w+/i
+    );
     if (legMatch) {
       data.legislativeBody = { value: legMatch[0], confidence: 0.6, source: "section" };
     }
@@ -291,7 +385,12 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
     for (const section of govSections) {
       const items = extractListItemsFromSection(section);
       if (items.length > 1 && section.title.toLowerCase().includes("part")) {
-        data.politicalParties = { value: items.slice(0, 10), confidence: 0.6, source: "list", sectionTitle: section.title };
+        data.politicalParties = {
+          value: items.slice(0, 10),
+          confidence: 0.6,
+          source: "list",
+          sectionTitle: section.title,
+        };
       }
     }
   }
@@ -301,22 +400,40 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
   if (demoSections.length > 0) {
     // Ethnic groups
     for (const section of demoSections) {
-      if (section.title.toLowerCase().includes("ethnic") || section.title.toLowerCase().includes("people")) {
+      if (
+        section.title.toLowerCase().includes("ethnic") ||
+        section.title.toLowerCase().includes("people")
+      ) {
         const items = extractListItemsFromSection(section);
         if (items.length > 0) {
-          data.ethnicGroups = { value: items.slice(0, 10), confidence: 0.6, source: "list", sectionTitle: section.title };
+          data.ethnicGroups = {
+            value: items.slice(0, 10),
+            confidence: 0.6,
+            source: "list",
+            sectionTitle: section.title,
+          };
         }
       }
       if (section.title.toLowerCase().includes("religion")) {
         const items = extractListItemsFromSection(section);
         if (items.length > 0) {
-          data.religions = { value: items.slice(0, 10), confidence: 0.6, source: "list", sectionTitle: section.title };
+          data.religions = {
+            value: items.slice(0, 10),
+            confidence: 0.6,
+            source: "list",
+            sectionTitle: section.title,
+          };
         }
       }
       if (section.title.toLowerCase().includes("language")) {
         const items = extractListItemsFromSection(section);
         if (items.length > 0 && !data.languages) {
-          data.languages = { value: items.slice(0, 10), confidence: 0.6, source: "list", sectionTitle: section.title };
+          data.languages = {
+            value: items.slice(0, 10),
+            confidence: 0.6,
+            source: "list",
+            sectionTitle: section.title,
+          };
         }
       }
     }
@@ -361,7 +478,10 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
   const milSections = getSectionsForContext(sections, "military");
   if (milSections.length > 0) {
     data.militaryDescription = {
-      value: milSections.map((s) => s.cleanContent).join(" ").substring(0, 500),
+      value: milSections
+        .map((s) => s.cleanContent)
+        .join(" ")
+        .substring(0, 500),
       confidence: 0.7,
       source: "section",
       sectionTitle: milSections[0]!.title,
@@ -371,7 +491,12 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
     for (const section of milSections) {
       const items = extractListItemsFromSection(section);
       if (items.length > 0) {
-        data.militaryBranches = { value: items.slice(0, 10), confidence: 0.6, source: "list", sectionTitle: section.title };
+        data.militaryBranches = {
+          value: items.slice(0, 10),
+          confidence: 0.6,
+          source: "list",
+          sectionTitle: section.title,
+        };
         break;
       }
     }
@@ -381,16 +506,17 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
   const histSections = getSectionsForContext(sections, "history");
   if (histSections.length > 0) {
     data.historyDescription = {
-      value: histSections.map((s) => s.cleanContent).join(" ").substring(0, 500),
+      value: histSections
+        .map((s) => s.cleanContent)
+        .join(" ")
+        .substring(0, 500),
       confidence: 0.7,
       source: "section",
       sectionTitle: histSections[0]!.title,
     };
 
     // Extract historical periods from subsection titles
-    const periods = histSections
-      .filter((s) => s.level === 3)
-      .map((s) => s.title);
+    const periods = histSections.filter((s) => s.level === 3).map((s) => s.title);
     if (periods.length > 0) {
       data.historicalPeriods = { value: periods, confidence: 0.6, source: "section" };
     }
@@ -402,9 +528,13 @@ export function analyzeWikiContent(extracted: WikiExtractedContent): WikiAnalyze
 
     // Try to infer continent from categories
     const continentKeywords: Record<string, string> = {
-      europe: "Europe", asia: "Asia", africa: "Africa",
-      "north america": "North America", "south america": "South America",
-      oceania: "Oceania", antarctica: "Antarctica",
+      europe: "Europe",
+      asia: "Asia",
+      africa: "Africa",
+      "north america": "North America",
+      "south america": "South America",
+      oceania: "Oceania",
+      antarctica: "Antarctica",
     };
     for (const cat of categories) {
       const lower = cat.toLowerCase();

@@ -14,7 +14,7 @@ import {
   getCardImagePreset,
   getFallbackGradient,
   allowsCustomUpload,
-  type CardImageType
+  type CardImageType,
 } from "~/lib/card-image-presets";
 import { useCountryImage } from "~/hooks/useCountryImage";
 import type { CountryImageData, ImageContext } from "~/lib/country-image-engine";
@@ -109,10 +109,10 @@ export interface MetricCardGridProps {
 
 /**
  * MetricCardGrid - A themed grid of metric cards with staggered animations
- * 
+ *
  * Displays metrics in a responsive grid layout with consistent theming
  * and entrance animations. Uses the MetricCard component under the hood.
- * 
+ *
  * Now supports optional title/subtitle header with background image support
  * for enhanced visual presentation in MyCountry interface.
  */
@@ -132,13 +132,14 @@ export function MetricCardGrid({
   const [imageError, setImageError] = useState(false);
 
   // Fetch the card image from database if backgroundImage is provided
-  const { data: cardImage, isLoading: isLoadingImage } = api.cardImages.getByCountryAndType.useQuery(
-    {
-      countryId: backgroundImage?.countryId || "",
-      cardType: backgroundImage?.cardType || "national_identity"
-    },
-    { enabled: !!backgroundImage?.countryId }
-  );
+  const { data: cardImage, isLoading: isLoadingImage } =
+    api.cardImages.getByCountryAndType.useQuery(
+      {
+        countryId: backgroundImage?.countryId || "",
+        cardType: backgroundImage?.cardType || "national_identity",
+      },
+      { enabled: !!backgroundImage?.countryId }
+    );
 
   // Auto-fallback: fetch contextual Unsplash image when no DB image exists
   const cardTypeToContext = useMemo((): ImageContext => {
@@ -151,10 +152,13 @@ export function MetricCardGrid({
   const { imageUrl: autoImageUrl } = useCountryImage({
     countryData: backgroundImage?.countryImageData ?? null,
     context: cardTypeToContext,
-    enabled: !!backgroundImage?.autoFallback && !!backgroundImage?.countryImageData && !cardImage?.imageUrl,
+    enabled:
+      !!backgroundImage?.autoFallback &&
+      !!backgroundImage?.countryImageData &&
+      !cardImage?.imageUrl,
     size: "small",
   });
-  
+
   const gridCols = {
     2: "grid-cols-1 sm:grid-cols-2",
     3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
@@ -163,7 +167,7 @@ export function MetricCardGrid({
 
   const Wrapper = animate ? motion.div : "div";
   const ItemWrapper = animate ? motion.div : "div";
-  
+
   const wrapperProps = animate
     ? {
         variants: staggerContainer,
@@ -171,14 +175,14 @@ export function MetricCardGrid({
         animate: "show",
       }
     : {};
-    
+
   const itemProps = animate ? { variants: staggerItem } : {};
 
   // Get image URL: DB custom image takes priority, then auto-fallback
   const imageUrl = cardImage?.imageUrl || autoImageUrl || null;
   const hasImage = !!imageUrl && !imageError;
-  const fallbackGradient = backgroundImage?.cardType 
-    ? getFallbackGradient(backgroundImage.cardType) 
+  const fallbackGradient = backgroundImage?.cardType
+    ? getFallbackGradient(backgroundImage.cardType)
     : `bg-gradient-to-br from-${theme}-50/80 to-${theme}-100/80 dark:from-${theme}-900/20 dark:to-${theme}-800/20`;
   const preset = backgroundImage?.cardType ? getCardImagePreset(backgroundImage.cardType) : null;
 
@@ -215,11 +219,13 @@ export function MetricCardGrid({
 
   // Return wrapped in a card with optional background image
   return (
-    <Card className={cn(
-      "relative overflow-hidden border-border",
-      !hasImage && fallbackGradient,
-      className
-    )}>
+    <Card
+      className={cn(
+        "border-border relative overflow-hidden",
+        !hasImage && fallbackGradient,
+        className
+      )}
+    >
       {/* Background Image */}
       <AnimatePresence>
         {hasImage && (
@@ -240,7 +246,7 @@ export function MetricCardGrid({
               onError={() => setImageError(true)}
             />
             {/* Gradient overlay for readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/80 to-background/50" />
+            <div className="from-background/95 via-background/80 to-background/50 absolute inset-0 bg-gradient-to-t" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -248,41 +254,41 @@ export function MetricCardGrid({
       {/* Loading indicator */}
       {isLoadingImage && (
         <div className="absolute top-2 right-2 z-10">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
         </div>
       )}
 
       {/* Edit button */}
-      {backgroundImage?.showEditButton && preset?.allowCustomUpload && backgroundImage?.onEditClick && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 z-10 h-8 w-8 bg-foreground/30 hover:bg-foreground/50 text-background"
-              onClick={(e) => {
-                e.stopPropagation();
-                backgroundImage.onEditClick?.();
-              }}
-            >
-              {hasImage ? (
-                <Edit2 className="h-4 w-4" />
-              ) : (
-                <ImageIcon className="h-4 w-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {hasImage ? "Change image" : "Add custom image"}
-          </TooltipContent>
-        </Tooltip>
-      )}
+      {backgroundImage?.showEditButton &&
+        preset?.allowCustomUpload &&
+        backgroundImage?.onEditClick && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-foreground/30 hover:bg-foreground/50 text-background absolute top-2 right-2 z-10 h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  backgroundImage.onEditClick?.();
+                }}
+              >
+                {hasImage ? <Edit2 className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{hasImage ? "Change image" : "Add custom image"}</TooltipContent>
+          </Tooltip>
+        )}
 
       {/* Content */}
       <div className="relative z-[5]">
         <CardHeader className={cn(hasImage && "text-foreground")}>
           <CardTitle className="text-sm">{title}</CardTitle>
-          {subtitle && <CardDescription className={cn(hasImage && "text-muted-foreground")}>{subtitle}</CardDescription>}
+          {subtitle && (
+            <CardDescription className={cn(hasImage && "text-muted-foreground")}>
+              {subtitle}
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           {metricsGrid}

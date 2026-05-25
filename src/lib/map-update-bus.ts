@@ -24,7 +24,9 @@ class MapUpdateBus {
 
   subscribe(listener: MapUpdateListener): () => void {
     this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   emit(event: MapUpdateEvent): void {

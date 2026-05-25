@@ -69,7 +69,7 @@ export const cardImagesRouter = createTRPCRouter({
       });
 
       // Return as a map for easy lookup
-      const imageMap: Record<string, typeof images[0]> = {};
+      const imageMap: Record<string, (typeof images)[0]> = {};
       for (const image of images) {
         imageMap[image.cardType] = image;
       }

@@ -28,13 +28,16 @@ function ThinkPagesAccountHubInner() {
 
   const { data: countryData } = api.countries.getMapSummary.useQuery(
     { countryId: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", staleTime: 5 * 60_000, retry: false }
+    {
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
+      staleTime: 5 * 60_000,
+      retry: false,
+    }
   );
 
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
 
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 
@@ -43,7 +46,8 @@ function ThinkPagesAccountHubInner() {
   }, [accounts, selectedAccount]);
 
   const isCountryReady =
-    userProfile && countryData &&
+    userProfile &&
+    countryData &&
     userProfile.countryId?.trim() &&
     countryData.id?.trim() &&
     countryData.name?.trim();
@@ -53,9 +57,9 @@ function ThinkPagesAccountHubInner() {
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
         <Card className="glass-hierarchy-parent">
           <CardContent className="p-8 text-center">
-            <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <Users className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-semibold">Country Setup Required</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-4 text-sm">
               You need a country to create ThinkPages accounts.
             </p>
             <Link href={"/setup"}>
@@ -73,10 +77,10 @@ function ThinkPagesAccountHubInner() {
       <Card className="border-blue-500/20 bg-blue-500/5">
         <CardContent className="flex items-center justify-between p-4">
           <div>
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-foreground text-sm font-medium">
               The social feed has moved to your Dashboard
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Post, browse, and interact from the unified feed.
             </p>
           </div>
@@ -92,8 +96,8 @@ function ThinkPagesAccountHubInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">ThinkPages Accounts</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-foreground text-xl font-bold">ThinkPages Accounts</h1>
+          <p className="text-muted-foreground text-sm">
             Manage your personas — government officials, media outlets, and citizen voices.
           </p>
         </div>

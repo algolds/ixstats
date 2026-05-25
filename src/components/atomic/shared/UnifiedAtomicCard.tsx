@@ -64,7 +64,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           <div
             className={cn(
-              "flex-shrink-0 rounded-md p-1",
+              "shrink-0 rounded-md p-1",
               isSelected
                 ? `${getEffectivenessBgColor(component.effectiveness)} ${getIconColor()}`
                 : "bg-muted"
@@ -81,7 +81,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
           </h4>
         </div>
 
-        <div className="ml-1 flex flex-shrink-0 items-center gap-0.5">
+        <div className="ml-1 flex shrink-0 items-center gap-0.5">
           <Badge variant="outline" className="h-4 px-1 text-[9px] leading-none">
             {component.effectiveness}%
           </Badge>

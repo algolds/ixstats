@@ -318,7 +318,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         {(item as any).icon &&
                           React.createElement((item as any).icon, {
-                            className: "h-3 w-3 flex-shrink-0 text-muted-foreground",
+                            className: "h-3 w-3 shrink-0 text-muted-foreground",
                           })}
                         <span className="text-muted-foreground truncate text-sm">
                           {item.label}:
