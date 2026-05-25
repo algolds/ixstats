@@ -92,6 +92,42 @@ export function MapContainer({
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [mapEngineReady, setMapEngineReady] = useState(false);
   const handleMapReady = useCallback(() => setMapEngineReady(true), []);
+  const [webglError, setWebglError] = useState<string | null>(null);
+  const [mapLoadTimeout, setMapLoadTimeout] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleWebGLErrorEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setWebglError(customEvent.detail?.error || "WebGL Error detected");
+    };
+
+    const handleContextLostEvent = () => {
+      setWebglError("WebGL context lost. Hardware acceleration might be disabled or overloaded.");
+    };
+
+    window.addEventListener("webgl-error" as any, handleWebGLErrorEvent);
+    window.addEventListener("webgl-context-lost" as any, handleContextLostEvent);
+
+    return () => {
+      window.removeEventListener("webgl-error" as any, handleWebGLErrorEvent);
+      window.removeEventListener("webgl-context-lost" as any, handleContextLostEvent);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || mapEngineReady) return;
+
+    const timer = setTimeout(() => {
+      if (!mapEngineReady) {
+        setMapLoadTimeout(true);
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, mapEngineReady]);
+
   const [geographyFilter, setGeographyFilter] = useState<{
     type: "continent" | "region";
     value: string;
@@ -628,6 +664,49 @@ export function MapContainer({
           mapLayers={mapLayers}
           onExit={handleExitEditor}
         />
+      )}
+
+      {/* WebGL/Loading Error Fallback Overlay */}
+      {(webglError || mapLoadTimeout) && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#0a1628] p-6 text-center">
+          <div className="glass-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-8 h-8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-13.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">
+                {webglError ? "WebGL Error Detected" : "Map Loading Timeout"}
+              </h3>
+              <p className="text-sm text-white/60">
+                {webglError 
+                  ? webglError 
+                  : "The map engine took too long to initialize. Hardware acceleration might be disabled, or your graphics card could be overloaded."
+                }
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <button 
+                onClick={() => window.location.reload()}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+              >
+                Reload Page
+              </button>
+              {mapLoadTimeout && !webglError && (
+                <button 
+                  onClick={() => {
+                    setMapLoadTimeout(false);
+                    setMapEngineReady(true);
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Force Bypass
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

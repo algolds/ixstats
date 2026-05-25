@@ -86,6 +86,12 @@ export class NSApiClient {
 
       if (!response.ok) {
         console.error("[NS API] Failed to fetch deck:", response.status);
+        if (response.status === 429) {
+          throw new Error("RATE_LIMIT");
+        }
+        if (response.status >= 500) {
+          throw new Error("SERVER_ERROR");
+        }
         return null;
       }
 
@@ -96,7 +102,7 @@ export class NSApiClient {
       return result;
     } catch (error) {
       console.error("[NS API] Failed to fetch deck:", error);
-      return null;
+      throw error;
     }
   }
 

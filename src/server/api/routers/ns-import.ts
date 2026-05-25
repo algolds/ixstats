@@ -405,12 +405,33 @@ export const nsImportRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const deckData = await nsApiClient.fetchDeck(input.nationName);
+      let deckData;
+      try {
+        deckData = await nsApiClient.fetchDeck(input.nationName);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg === "RATE_LIMIT") {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "NationStates API rate limit exceeded. Please wait a few minutes and try again.",
+          });
+        }
+        if (msg === "SERVER_ERROR") {
+          throw new TRPCError({
+            code: "BAD_GATEWAY",
+            message: "NationStates API is currently unavailable. Please try again later.",
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `NationStates API error: ${msg}`,
+        });
+      }
 
       if (!deckData) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Failed to fetch deck from NationStates",
+          message: "Failed to fetch deck from NationStates (Unknown Nation or Empty Deck)",
         });
       }
 
@@ -635,14 +656,35 @@ export const nsImportRouter = createTRPCRouter({
         });
       }
 
-      const nationName = verification.nationName;
+       const nationName = verification.nationName;
       // Fetch deck from NS API
-      const deckData = await nsApiClient.fetchDeck(nationName);
+      let deckData;
+      try {
+        deckData = await nsApiClient.fetchDeck(nationName);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg === "RATE_LIMIT") {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "NationStates API rate limit exceeded. Please wait a few minutes and try again.",
+          });
+        }
+        if (msg === "SERVER_ERROR") {
+          throw new TRPCError({
+            code: "BAD_GATEWAY",
+            message: "NationStates API is currently unavailable. Please try again later.",
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `NationStates API error: ${msg}`,
+        });
+      }
 
       if (!deckData) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Failed to fetch deck from NationStates. Please try again.",
+          message: "Failed to fetch deck from NationStates (Unknown Nation or Empty Deck).",
         });
       }
 
