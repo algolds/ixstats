@@ -18,60 +18,85 @@ This document provides complete formulas, examples, and logic for all economic c
 
 ## Tier-Based Growth Engine
 
-The core growth system uses economic tiers to determine realistic growth rates based on development level.
+The core growth system uses 7 economic tiers to determine realistic growth rate caps and modifiers based on development level.
 
 ### Formula
 ```
-adjustedGrowth = baseGrowth * tierMultiplier * localFactor
+effectiveGrowthRate = min(
+  max(
+    (baseGrowth * globalGrowthFactor * localGrowthFactor * tierModifier + gdpAdjustments) * growthModifiers,
+    minGrowthFloor
+  ),
+  tierMaxRate
+)
 ```
 
 **Components:**
-- `baseGrowth`: User-defined growth rate (typically 1-8%)
-- `tierMultiplier`: Tier-based modifier (see table below)
-- `localFactor`: Country-specific adjustment (default 1.0)
+- `baseGrowth`: User-defined growth rate (as decimal form, e.g. `0.035` for 3.5%)
+- `globalGrowthFactor`: Global modifier (default `1.0321`, amplifies base growth)
+- `localGrowthFactor`: Country-specific modifier (default `1.0`)
+- `tierModifier`: Tier-specific growth rate modifier (default `1.0`)
+- `gdpAdjustments` & `growthModifiers`: Storyteller or event adjustments
+- `minGrowthFloor`: Minimum growth floor (default `-0.1` or -10%)
+- `tierMaxRate`: Maximum growth rate allowed for that tier (see table below)
 
-### Economic Tiers & Multipliers
+### Economic Tiers & Growth Caps
 
-| Tier | Classification | Multiplier | Typical GDP/capita |
-|------|---------------|------------|-------------------|
-| 1 | Emerging | 1.8 | <$5,000 |
-| 2 | Developing | 1.5 | $5,000-$15,000 |
-| 3 | Industrializing | 1.2 | $15,000-$30,000 |
-| 4 | Advanced | 1.0 | $30,000-$60,000 |
-| 5 | Mature | 0.8 | >$60,000 |
+| Tier | Classification | GDP per Capita Range | Max Growth Rate Cap |
+|------|---------------|----------------------|---------------------|
+| Impoverished | Emerging / low income | $0 - $9,999 | 10.0% (`0.10`) |
+| Developing | Low-middle income | $10,000 - $24,999 | 7.5% (`0.075`) |
+| Developed | Middle income | $25,000 - $34,999 | 5.0% (`0.05`) |
+| Healthy | High-middle income | $35,000 - $44,999 | 3.5% (`0.035`) |
+| Strong | High income | $45,000 - $54,999 | 2.75% (`0.0275`) |
+| Very Strong | Very high income | $55,000 - $64,999 | 1.5% (`0.015`) |
+| Extravagant | Ultra high income | $65,000+ | 0.5% (`0.005`) |
+
+### Diminishing Returns for High GDP per Capita
+For countries with GDP per capita exceeding `$60,000` (configurable), a logarithmic diminishing return modifier is applied to the growth rate:
+```
+diminishingFactor = log2(baselineGdpPerCapita / 60000 + 1)
+effectiveGrowthRate = effectiveGrowthRate / (1 + diminishingFactor * 0.5)
+```
 
 ### Examples
 
-**Emerging Economy (Tier 1):**
-```
-baseGrowth = 3.5%
-tierMultiplier = 1.8
-localFactor = 1.0
-adjustedGrowth = 3.5 * 1.8 * 1.0 = 6.3%
-```
+**Impoverished Economy (Tier: Impoverished):**
+- Starting GDP PC: `$8,000`
+- Base Growth: `6.0%` (`0.06`)
+- Global Factor: `1.0321`
+- Calculation: `0.06 * 1.0321 = 0.0619` (6.19% growth, under the 10% cap)
+- New GDP PC: `$8,000 * 1.0619 = $8,495.20`
 
-**Developing Economy (Tier 2):**
-```
-baseGrowth = 3.0%
-tierMultiplier = 1.5
-localFactor = 1.0
-adjustedGrowth = 3.0 * 1.5 * 1.0 = 4.5%
-```
-
-**Mature Economy (Tier 5):**
-```
-baseGrowth = 1.5%
-tierMultiplier = 0.8
-localFactor = 1.0
-adjustedGrowth = 1.5 * 0.8 * 1.0 = 1.2%
-```
+**Extravagant Economy (Tier: Extravagant):**
+- Starting GDP PC: `$72,000`
+- Base Growth: `2.0%` (`0.02`)
+- Global Factor: `1.0321`
+- Calculation: `0.02 * 1.0321 = 0.0206` -> capped at `0.005` (0.5% tier cap)
+- New GDP PC (before diminishing returns): `$72,000 * 1.005 = $72,360`
 
 ### Tier Transitions
 
-When a country's GDP per capita crosses tier boundaries, growth is recalculated:
-- Transition occurs over 1 IxTime year (smooth interpolation)
-- Historical data preserves original tier classification
-- Components may require re-validation for new tier
+When a country's GDP per capita crosses tier boundaries:
+- The tier is recalculated dynamically at each time step based on the current GDP per capita.
+- New growth caps and modifiers apply immediately to the next projection steps.
+- Historical data points preserve the tier classification at their respective timestamps.
+
+---
+
+## Active Game Engine vs Sandbox Modeling Engine Math
+
+Developers should be aware of a fundamental math distinction between the game engine calculations and the builder modeling engine:
+
+### Active Game Engine (`calculations.ts`)
+- **Rate Representation:** Decimals (e.g. `3%` is stored and passed as `0.03`).
+- **Formula compounding:** Uses exact decimal math: `Math.pow(1 + rate, years)`.
+- **Validation limits:** Rates are validated to fall between `-0.5` and `+0.5` (-50% to +50%).
+
+### Sandbox Modeling Engine (`economic-modeling-engine.ts`)
+- **Rate Representation:** Percentages (e.g. `3%` is stored and passed as `3.0`).
+- **Formula compounding:** Converts the rate by dividing by 100 first: `currentGDP *= 1 + rate / 100`.
+- **Validation limits:** Validates inputs using standard percentage bounds (e.g. `-20%` to `+20%`).
 
 ---
 

@@ -1,7 +1,4 @@
-// src/lib/economic-calculation-groups.ts
-// Grouped Economic Calculation Methodologies
-// Organizing related calculations into logical groups for intuitive analysis
-
+import { EconomicTier } from "../types/ixstats";
 import type { CountryStats, EconomicConfig, HistoricalDataPoint } from "../types/ixstats";
 import type { EconomyData } from "../types/economics";
 
@@ -378,20 +375,24 @@ export class EconomicCalculationGroups {
     let score = 50;
 
     // Economic tier sustainability
-    switch (countryStats.economicTier) {
-      case "Impoverished":
+    switch (countryStats.economicTier as string) {
+      case EconomicTier.IMPOVERISHED:
+      case "Emerging": // Support 4-tier
         score += countryStats.adjustedGdpGrowth > 0.08 ? 20 : 10; // High growth potential
         break;
-      case "Developing":
+      case EconomicTier.DEVELOPING:
         score += countryStats.adjustedGdpGrowth > 0.06 ? 15 : 5;
         break;
-      case "Developed":
+      case EconomicTier.DEVELOPED:
         score += countryStats.adjustedGdpGrowth > 0.03 ? 10 : 5;
         break;
-      case "Healthy":
-      case "Strong":
+      case EconomicTier.HEALTHY:
+      case EconomicTier.STRONG:
         score += countryStats.adjustedGdpGrowth > 0.02 ? 10 : 0;
         break;
+      case EconomicTier.VERY_STRONG:
+      case EconomicTier.EXTRAVAGANT:
+      case "Advanced": // Support 4-tier
       default:
         score += countryStats.adjustedGdpGrowth > 0.01 ? 5 : -5; // Mature economies
     }
@@ -618,7 +619,7 @@ export class EconomicCalculationGroups {
       factors.push({ factor: "Price stability", impact: "positive" as const, weight: 0.2 });
     }
 
-    if (countryStats.economicTier === "Strong" || countryStats.economicTier === "Very Strong") {
+    if (countryStats.economicTier === EconomicTier.STRONG || countryStats.economicTier === EconomicTier.VERY_STRONG) {
       factors.push({ factor: "High income status", impact: "positive" as const, weight: 0.25 });
     }
 
