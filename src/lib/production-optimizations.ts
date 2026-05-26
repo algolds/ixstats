@@ -24,7 +24,7 @@ export class MemoryOptimizer {
    * In development mode, proactively clears caches before hitting memory limits
    */
   static async monitorMemoryUsage(): Promise<void> {
-    if (typeof process !== "undefined" && process.memoryUsage) {
+    if (typeof process !== "undefined" && typeof process.memoryUsage === "function") {
       const stats = getMemoryStats();
       const { heapUsedMB, heapTotalMB, usagePercent, rssMB } = stats;
 

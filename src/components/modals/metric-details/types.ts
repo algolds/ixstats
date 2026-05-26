@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { BarChart3, LineChart, Globe, Info } from "lucide-react";
 
 /**
  * Tab configuration for metric detail modals
@@ -61,10 +62,10 @@ export const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
  * Standard tab configuration for metric modals
  */
 export const STANDARD_TABS: MetricModalTab[] = [
-  { id: "overview", label: "Overview", icon: () => null as any }, // Will be replaced with BarChart3
-  { id: "trends", label: "Trends", icon: () => null as any }, // Will be replaced with LineChart
-  { id: "comparison", label: "Comparison", icon: () => null as any }, // Will be replaced with Globe
-  { id: "details", label: "Details", icon: () => null as any }, // Will be replaced with Info
+  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "trends", label: "Trends", icon: LineChart },
+  { id: "comparison", label: "Comparison", icon: Globe },
+  { id: "details", label: "Details", icon: Info },
 ];
 
 /**

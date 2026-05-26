@@ -308,8 +308,7 @@ For each fix:
 
 ## NOTES FOR DEVELOPER
 
-- **DO NOT** run global `tsc --noEmit` - will exhaust 4GB Node heap
-- Use IDE TypeScript checking or `bun run dev` for incremental checks
+- Use `bun run typecheck` for full typechecking, or `bun run dev` for incremental checks
 - Test with `bun run dev` and verify via browser before committing
 - Check browser DevTools Console for unhandled errors
 - Each fix should be isolated and tested independently

@@ -1,6 +1,6 @@
 # Environment Configuration
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 IxStats relies on layered environment files loaded by `server.mjs` (`.env.production`, `.env.local`, `.env`). Development scripts (`start-development.sh`) prioritise `.env.local.dev`.
 

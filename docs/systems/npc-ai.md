@@ -1,6 +1,6 @@
 # NPC Personality & Behavioral AI System
 
-**Last updated:** November 2025
+**Last updated:** May 2026
 
 Comprehensive system that creates distinct personalities for NPC countries based on observable database data and drives their diplomatic behavior, event responses, and relationship evolution.
 

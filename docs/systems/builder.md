@@ -1,6 +1,6 @@
 # Nation Builder System
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 The builder lets new nations establish identity, government, economics, demographics, and fiscal posture. It pulls from wiki sources and atomic component libraries to accelerate onboarding.
 

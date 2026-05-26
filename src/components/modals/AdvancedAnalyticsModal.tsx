@@ -92,7 +92,7 @@ export function AdvancedAnalyticsModal({
 
   // Get historical data
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: isOpen });
+    api.historical.getCountryHistory.useQuery({ countryId }, { enabled: isOpen });
 
   // Get advanced analytics
   const { data: advancedAnalytics, isLoading: analyticsLoading } =

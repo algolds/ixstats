@@ -300,7 +300,7 @@ async function processSeasonDumpInBackground(
                 trophies: nsCard.trophies,
               },
               metadata: {
-                nsData: nsCard,
+                nsData: nsCard as any,
                 importedFrom: `dump:season_${season}`,
                 importedAt: new Date().toISOString(),
               },
@@ -863,7 +863,7 @@ export const nsImportRouter = createTRPCRouter({
           importedCardData.push({
             id: card.id,
             title: card.title,
-            artwork: card.artwork,
+            artwork: card.artwork ?? "",
             rarity: card.rarity,
             season: card.season ?? parseInt(nsCard.season),
             marketValue: card.marketValue,
@@ -1746,7 +1746,7 @@ export const nsImportRouter = createTRPCRouter({
           forceAll: z.boolean().optional().default(false),
         })
         .optional()
-        .default({})
+        .default({ forceAll: false })
     )
     .mutation(async ({ ctx, input }) => {
       const BATCH = 100;

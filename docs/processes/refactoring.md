@@ -1,6 +1,6 @@
 # Refactoring Best Practices
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This guide documents the established patterns and best practices for refactoring large components in the IxStats codebase, based on successful refactoring work completed in October 2025.
 

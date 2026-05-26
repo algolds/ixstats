@@ -723,7 +723,7 @@ export const geoAdminRouter = createTRPCRouter({
           status: "pending",
           uploadedBy: ctx.auth!.userId ?? "system",
           svgContent: svgString,
-          svgMetadata: metadata as unknown as Record<string, unknown>,
+          svgMetadata: metadata as any,
         },
       });
 
@@ -823,7 +823,7 @@ export const geoAdminRouter = createTRPCRouter({
           where: { id: input.uploadId },
           data: {
             status: "processed",
-            geojsonData: result.featureCollection as unknown as Record<string, unknown>,
+            geojsonData: result.featureCollection as any,
             featureCount: result.features.length,
             processingLog: result.log,
             processedAt: new Date(),
@@ -967,7 +967,7 @@ export const geoAdminRouter = createTRPCRouter({
           }));
 
         if (newFeatures.length > 0) {
-          const autoMatches = matchFeaturesToCountries(newFeatures, countries);
+          const autoMatches = matchFeaturesToCountries(newFeatures as any, countries);
           for (const [fId, match] of autoMatches) {
             countryMap.set(fId, match.countryId);
           }
@@ -1043,11 +1043,11 @@ export const geoAdminRouter = createTRPCRouter({
           if (fillColor) {
             const zone = getZoneByColor(fillColor);
             if (zone) {
-              props.zoneId = zone.id;
-              props.zoneName = zone.name;
-              props.elevationMin = zone.minElevation;
-              props.elevationMax = zone.maxElevation;
-              props.elevationLabel = zone.label;
+              props.zoneId = zone.zoneId;
+              props.zoneName = zone.zoneName;
+              props.elevationMin = zone.elevationMin;
+              props.elevationMax = zone.elevationMax;
+              props.elevationLabel = `${zone.elevationMin}-${zone.elevationMax}m`;
             }
           }
         }
@@ -1066,12 +1066,12 @@ export const geoAdminRouter = createTRPCRouter({
             data: dedupedRecords.map((r) => ({
               layerType: upload.layerType,
               featureId: r.featureId,
-              geometry: r.geometry as unknown as Record<string, unknown>,
-              properties: (r.properties ?? {}) as Record<string, unknown>,
+              geometry: r.geometry as any,
+              properties: (r.properties ?? {}) as any,
               countryId: r.countryId,
               displayName: r.displayName,
-              centroid: r.centroid as unknown as Record<string, unknown>,
-              boundingBox: r.bbox as unknown as Record<string, unknown>,
+              centroid: r.centroid as any,
+              boundingBox: r.bbox as any,
               isActive: true,
               sourceUploadId: upload.id,
             })),
@@ -1109,9 +1109,9 @@ export const geoAdminRouter = createTRPCRouter({
             await ctx.db.country.update({
               where: { id: r.countryId! },
               data: {
-                geometry: r.geometry as unknown as Record<string, unknown>,
-                centroid: r.centroid as unknown as Record<string, unknown>,
-                boundingBox: r.bbox as unknown as Record<string, unknown>,
+                geometry: r.geometry as any,
+                centroid: r.centroid as any,
+                boundingBox: r.bbox as any,
               },
             });
           } catch (e) {
@@ -1144,7 +1144,7 @@ export const geoAdminRouter = createTRPCRouter({
         "geo.getAllMapFeatures",
         "geo.listCountries",
       ]);
-      broadcastMapUpdate("bulk", upload.countryId ?? undefined);
+      broadcastMapUpdate("bulk", undefined);
 
       return {
         success: true,
@@ -1233,10 +1233,10 @@ export const geoAdminRouter = createTRPCRouter({
               featureId,
               displayName,
               countryId,
-              geometry: feature.geometry as unknown as Record<string, unknown>,
-              properties: (feature.properties ?? {}) as Record<string, unknown>,
-              centroid: centroid as unknown as Record<string, unknown>,
-              boundingBox: bbox as unknown as Record<string, unknown>,
+              geometry: feature.geometry as any,
+              properties: (feature.properties ?? {}) as any,
+              centroid: centroid as any,
+              boundingBox: bbox as any,
               isActive: true,
               sourceUploadId: targetUpload.id,
             };
@@ -1380,9 +1380,8 @@ export const geoAdminRouter = createTRPCRouter({
           id: true,
           name: true,
           slug: true,
-          flagCode: true,
+          flag: true,
           region: true,
-          subregion: true,
         },
       });
 
@@ -1408,9 +1407,8 @@ export const geoAdminRouter = createTRPCRouter({
         countries: countries.map((c) => ({
           name: c.name,
           slug: c.slug,
-          flagCode: c.flagCode,
+          flagCode: c.flag,
           region: c.region,
-          subregion: c.subregion,
         })),
         sovereignty: sovereignty.map((s) => ({
           sovereign: s.sovereignId,
@@ -1425,7 +1423,7 @@ export const geoAdminRouter = createTRPCRouter({
         data: {
           name: input.name,
           description: input.description,
-          createdBy: ctx.auth!.userId,
+          createdBy: ctx.auth!.userId ?? "system",
           metadata: {
             featureCounts,
             totalFeatures: allLayers.length,
@@ -1433,13 +1431,12 @@ export const geoAdminRouter = createTRPCRouter({
             layerTypes: Object.keys(layerMap),
             exportedAt: new Date().toISOString(),
           },
-          layers: layerMap as unknown as Record<string, unknown>,
+          layers: layerMap as any,
           countries: countries.map((c) => ({
             name: c.name,
             slug: c.slug,
-            flagCode: c.flagCode,
+            flagCode: c.flag,
             region: c.region,
-            subregion: c.subregion,
           })),
           sovereignty: sovereignty.map((s) => ({
             sovereign: s.sovereignId,
@@ -1554,12 +1551,12 @@ export const geoAdminRouter = createTRPCRouter({
               (props.featureId as string) ||
               (f.id as string) ||
               `imported-${Math.random().toString(36).slice(2, 10)}`,
-            geometry: f.geometry as Record<string, unknown>,
-            properties: props,
+            geometry: f.geometry as any,
+            properties: props as any,
             displayName: (props.displayName as string) || null,
             areaSqKm: (props.areaSqKm as number) || null,
-            centroid: (props.centroid as Record<string, unknown>) || null,
-            boundingBox: (props.boundingBox as unknown[]) || null,
+            centroid: (props.centroid as any) || null,
+            boundingBox: (props.boundingBox as any) || null,
             countryId: (props.countryId as string) || null,
             isActive: true,
           };
@@ -1595,7 +1592,7 @@ export const geoAdminRouter = createTRPCRouter({
         : { createdBy: ctx.auth!.userId };
 
       return ctx.db.worldTemplate.findMany({
-        where,
+        where: where as any,
         select: {
           id: true,
           name: true,
@@ -1650,7 +1647,7 @@ export const geoAdminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -1760,7 +1757,7 @@ export const geoAdminRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -1849,7 +1846,7 @@ export const geoAdminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -1904,7 +1901,7 @@ export const geoAdminRouter = createTRPCRouter({
               countryId: input.countryId,
               type: province.type,
               level: province.level,
-              geometry: province.geometry,
+              geometry: province.geometry as any,
               capital: province.capital,
               population: province.population,
               color: province.color,
@@ -1929,7 +1926,7 @@ export const geoAdminRouter = createTRPCRouter({
   getProvinceImportPreview: countryOwnerProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -2013,7 +2010,7 @@ function extractCoords(geometry: import("geojson").Geometry): [number, number][]
   const result: [number, number][] = [];
   const limit = 200;
 
-  function walk(coords: unknown): void {
+  function walk(coords: any): void {
     if (result.length >= limit) return;
     if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
       result.push([coords[0] as number, coords[1] as number]);

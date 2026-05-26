@@ -189,7 +189,7 @@ export async function syncUserToForum(userId: string): Promise<boolean> {
         where: { userId },
         select: {
           quantity: true,
-          card: { select: { marketValue: true } },
+          cards: { select: { marketValue: true } },
         },
       }),
       db.myVault.findUnique({
@@ -199,7 +199,7 @@ export async function syncUserToForum(userId: string): Promise<boolean> {
     ]);
 
     const totalCards = ownedCards.reduce((sum, o) => sum + o.quantity, 0);
-    const vaultValue = ownedCards.reduce((sum, o) => sum + o.quantity * o.card.marketValue, 0);
+    const vaultValue = ownedCards.reduce((sum, o) => sum + o.quantity * o.cards.marketValue, 0);
 
     const fields: Record<string, string> = {
       ixstats_cards_owned: String(totalCards),

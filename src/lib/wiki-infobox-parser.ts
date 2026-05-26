@@ -304,7 +304,7 @@ function parseField(fieldStr: string): InfoboxField | null {
     typedValue = cleanValue;
   }
 
-  return { key, rawValue, cleanValue, typedValue, fieldType };
+  return { key, value: cleanValue, rawValue, cleanValue, typedValue, fieldType };
 }
 
 /**

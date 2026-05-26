@@ -1,6 +1,6 @@
 # Achievements & Leaderboards
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 Achievements reward milestone progress across economic, diplomatic, social, and defense domains. Leaderboards surface comparative stats across nations and players.
 

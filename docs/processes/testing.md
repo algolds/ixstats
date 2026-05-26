@@ -1,6 +1,6 @@
 # Testing Practices
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 IxStats combines automated Jest suites, wiring audits, and manual verification through the help system.
 

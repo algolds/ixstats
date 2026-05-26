@@ -1,6 +1,6 @@
 # Wiki Integration Hub
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 The wiki integration surfaces at `/wiki` and within builder workflows to fetch canonical country data from MediaWiki sources.
 

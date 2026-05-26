@@ -267,7 +267,7 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     }
 
     // Generate cache key
-    const userId = userAware ? ctx.auth?.userId : undefined;
+    const userId = userAware ? (ctx.auth?.userId ?? undefined) : undefined;
     const cacheKey = generateCacheKey(path, input, userId, namespace);
 
     // Check cache

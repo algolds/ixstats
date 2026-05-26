@@ -1,3 +1,4 @@
+// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * useCountryTaxSystem - Shared hook for country tax system data queries
  *

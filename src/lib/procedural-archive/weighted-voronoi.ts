@@ -8,6 +8,7 @@
  * area is reached.
  */
 
+// @ts-expect-error d3-delaunay lacks declaration file
 import { Delaunay } from "d3-delaunay";
 import type { Position } from "geojson";
 import type { HeightmapResult } from "./landmass-generator";

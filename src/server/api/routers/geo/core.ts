@@ -2385,7 +2385,7 @@ export const geoCoreRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Get countries to process
       const countries = await ctx.db.country.findMany({
-        where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } },
+        where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } as any },
         select: { id: true, name: true },
       });
 
@@ -2540,9 +2540,9 @@ export const geoCoreRouter = createTRPCRouter({
             create: {
               countryId: country.id,
               climateDistribution:
-                climateDistribution as unknown as import("@prisma/client").Prisma.JsonValue,
+                climateDistribution as any,
               elevationProfile:
-                elevationProfile as unknown as import("@prisma/client").Prisma.JsonValue,
+                elevationProfile as any,
               arableLandPercent: profile.arableLandPercent,
               coastlineKm,
               isLandlocked: profile.isLandlocked,
@@ -2561,9 +2561,9 @@ export const geoCoreRouter = createTRPCRouter({
             },
             update: {
               climateDistribution:
-                climateDistribution as unknown as import("@prisma/client").Prisma.JsonValue,
+                climateDistribution as any,
               elevationProfile:
-                elevationProfile as unknown as import("@prisma/client").Prisma.JsonValue,
+                elevationProfile as any,
               arableLandPercent: profile.arableLandPercent,
               coastlineKm,
               isLandlocked: profile.isLandlocked,
@@ -2605,7 +2605,7 @@ export const geoCoreRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: { geometry: { not: null } },
+        where: { geometry: { not: null } as any },
         select: {
           id: true,
           name: true,
@@ -2769,7 +2769,7 @@ export const geoCoreRouter = createTRPCRouter({
 
       // Also get active crisis events for point markers
       const activeCrises = await ctx.db.crisisEvent.findMany({
-        where: { status: { not: "resolved" } },
+        where: { responseStatus: { not: "resolved" } },
         select: {
           id: true,
           title: true,
@@ -2815,7 +2815,7 @@ export const geoCoreRouter = createTRPCRouter({
           dominantClimate: "",
           dominantElevation: "",
           drainageDensity: 0,
-        });
+        } as any);
 
         const riskType = input?.riskType;
         const riskScore = riskType ? (risk[riskType] ?? 0) : Math.max(...Object.values(risk));
@@ -2972,21 +2972,34 @@ export const geoCoreRouter = createTRPCRouter({
         strength: { gt: 0 },
       },
       select: {
-        country1Id: true,
-        country2Id: true,
+        country1: true,
+        country2: true,
         relationship: true,
         strength: true,
-        country1: { select: { name: true, centroid: true } },
-        country2: { select: { name: true, centroid: true } },
       },
       take: 100,
       orderBy: { strength: "desc" },
     });
 
+    const uniqueCountryIds = Array.from(
+      new Set(relations.flatMap((r) => [r.country1, r.country2]))
+    );
+
+    const relationCountries = await ctx.db.country.findMany({
+      where: { id: { in: uniqueCountryIds } },
+      select: { id: true, name: true, centroid: true },
+    });
+
+    const relationCountryMap = new Map(relationCountries.map((c) => [c.id, c]));
+
     const relationFeatures = [];
     for (const r of relations) {
-      const c1 = r.country1.centroid as { coordinates: [number, number] } | null;
-      const c2 = r.country2.centroid as { coordinates: [number, number] } | null;
+      const country1Obj = relationCountryMap.get(r.country1);
+      const country2Obj = relationCountryMap.get(r.country2);
+      if (!country1Obj || !country2Obj) continue;
+
+      const c1 = country1Obj.centroid as { coordinates: [number, number] } | null;
+      const c2 = country2Obj.centroid as { coordinates: [number, number] } | null;
       if (!c1 || !c2) continue;
 
       const relType = (r.relationship ?? "neutral").toLowerCase();
@@ -3001,8 +3014,8 @@ export const geoCoreRouter = createTRPCRouter({
         type: "Feature" as const,
         geometry: { type: "LineString" as const, coordinates: [c1.coordinates, c2.coordinates] },
         properties: {
-          country1Name: r.country1.name,
-          country2Name: r.country2.name,
+          country1Name: country1Obj.name,
+          country2Name: country2Obj.name,
           relationship: r.relationship,
           strength: r.strength,
           color,
@@ -3101,7 +3114,7 @@ function extractCoords(geometry: import("geojson").Geometry): [number, number][]
   const result: [number, number][] = [];
   const limit = 200;
 
-  function walk(coords: unknown): void {
+  function walk(coords: any): void {
     if (result.length >= limit) return;
     if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
       result.push([coords[0] as number, coords[1] as number]);

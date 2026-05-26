@@ -1,6 +1,6 @@
 # Services (`src/services`)
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 Client-side services live in this folder. They provide richer orchestration than simple hooks while remaining UI-facing (no direct database access).
 

@@ -1,6 +1,6 @@
 # Schema Validation Developer Guide
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This guide provides comprehensive instructions for maintaining 100% schema alignment between Prisma models and Zod validation schemas in the IxStats platform.
 

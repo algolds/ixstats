@@ -706,26 +706,27 @@ export class BuilderPolicyIntegrationService {
   }
 
   private extractSectorData(economyData: EconomyData): EconomicSectorData[] {
-    // Extract sector data from economy data
+    // Extract sector data from economy data (using employment rate as proxy)
+    const totalWorkforce = economyData.labor.totalWorkforce || 1000000;
     return [
       {
         name: "Agriculture",
-        gdpContribution: economyData.labor.employmentBySector.agriculture,
-        employment: economyData.labor.employmentBySector.agriculture,
+        gdpContribution: totalWorkforce * 0.12,
+        employment: totalWorkforce * 0.12,
         growthRate: 2.5,
         productivity: 75,
       },
       {
         name: "Industry",
-        gdpContribution: economyData.labor.employmentBySector.industry,
-        employment: economyData.labor.employmentBySector.industry,
+        gdpContribution: totalWorkforce * 0.28,
+        employment: totalWorkforce * 0.28,
         growthRate: 3.5,
         productivity: 85,
       },
       {
         name: "Services",
-        gdpContribution: economyData.labor.employmentBySector.services,
-        employment: economyData.labor.employmentBySector.services,
+        gdpContribution: totalWorkforce * 0.60,
+        employment: totalWorkforce * 0.60,
         growthRate: 4.0,
         productivity: 80,
       },

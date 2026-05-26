@@ -1,6 +1,6 @@
 # Shared Component Library
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 `src/components/shared` contains reusable UI primitives shared across dashboards, builder flows, and admin tooling.
 

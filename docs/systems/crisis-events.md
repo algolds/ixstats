@@ -1,6 +1,6 @@
 # Crisis Events Management System
 
-**Last updated:** November 2025
+**Last updated:** May 2026
 
 Dynamic crisis event system that generates natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression and player responses.
 

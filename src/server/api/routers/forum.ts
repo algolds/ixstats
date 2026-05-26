@@ -361,8 +361,8 @@ export const forumRouter = createTRPCRouter({
 
     return {
       forums: data.nodes
-        .filter((n) => n.node_type_id === "Forum" || n.node_type_id === "Category")
-        .sort((a, b) => a.display_order - b.display_order)
+        .filter((n: XFForum) => n.node_type_id === "Forum" || n.node_type_id === "Category")
+        .sort((a: XFForum, b: XFForum) => a.display_order - b.display_order)
         .map(normalizeNode),
     };
   }),
@@ -951,7 +951,7 @@ export const forumRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const xfUserId = await requireForumUser(ctx.user.id);
 
-      let body: Record<string, unknown>;
+      let body: Record<string, any> = {};
       switch (input.action) {
         case "soft_delete":
           body = { soft_delete: true, soft_delete_reason: "Moderated via IxStates" };
@@ -966,7 +966,7 @@ export const forumRouter = createTRPCRouter({
 
       const result = await xfPostAsUser<{ post: XFPost }>(
         `/posts/${input.postId}/`,
-        body,
+        body as any,
         xfUserId
       );
 
@@ -996,7 +996,7 @@ export const forumRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const xfUserId = await requireForumUser(ctx.user.id);
 
-      let body: Record<string, unknown>;
+      let body: Record<string, any> = {};
       switch (input.action) {
         case "lock":
           body = { discussion_open: false };
@@ -1020,7 +1020,7 @@ export const forumRouter = createTRPCRouter({
 
       const result = await xfPostAsUser<{ thread: XFThread }>(
         `/threads/${input.threadId}/`,
-        body,
+        body as any,
         xfUserId
       );
 

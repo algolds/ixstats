@@ -75,7 +75,7 @@ export async function calculateLoreScore(
     db.card
       .count({
         where: {
-          ownerId: countryId,
+          countryId: countryId,
           cardType: "LORE",
         },
       })

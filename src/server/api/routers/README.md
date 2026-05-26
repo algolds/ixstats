@@ -1,8 +1,8 @@
 # tRPC Router Overview
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
-Routers live under `src/server/api/routers` and expose the typed API surface for IxStats. The current codebase contains **35 routers** with **546 procedures** (274 queries / 272 mutations). This README describes shared patterns and points to supporting documentation.
+Routers live under `src/server/api/routers` and expose the typed API surface for IxStats. The current codebase contains **83 routers** with **1,329 procedures**. Some routers are split into subdirectory modules (geo, diplomacy, intelligence, countries). All routers are registered in `src/server/api/root.ts`.
 
 ## Request Flow
 1. Client calls `api.<router>.<procedure>` generated in `src/trpc/react.tsx`
@@ -20,16 +20,27 @@ Routers live under `src/server/api/routers` and expose the typed API surface for
 ## Router Groups
 | Domain | Routers (examples) |
 | --- | --- |
-| Countries & Economy | `countries`, `economics`, `enhanced-economics`, `optimized-countries` |
-| Intelligence & Diplomacy | `intelligence`, `diplomatic`, `diplomatic-intelligence`, `unified-intelligence`, `unifiedAtomic` |
-| Defense & Security | `sdi`, `security`, `meetings`, `policies` |
-| Social & Collaboration | `thinkpages`, `activities`, `notifications` |
+| Countries & Economy | `countries/`, `economics`, `enhanced-economics`, `market`, `formulas` |
+| Geospatial & Maps | `geo/` (6 files: core, features, editor, admin, sovereignty, wiki — 102 endpoints) |
+| Intelligence & Diplomacy | `intelligence/`, `diplomacy/`, `diplomatic-intelligence`, `unified-intelligence`, `unifiedAtomic` |
+| Government & Politics | `elections`, `national-issues`, `atomicGovernment`, `policies` |
+| Defense & Security | `defense`, `security`, `meetings` |
+| Social & Collaboration | `thinkpages`, `activities`, `notifications`, `forum` |
 | Builder & Atomic Systems | `atomicGovernment`, `atomicEconomic`, `atomicTax`, `taxSystem`, `formulas` |
+| Cards & Vault | `ixcards`, `vault`, `crafting`, `packs` |
 | Admin & Operations | `admin`, `users`, `roles`, `user-logging`, `scheduledChanges` |
-| Integrations | `wikiImporter`, `wikiCache`, `archetypes`, `customTypes`
+| Integrations | `wikiImporter`, `wikiCache`, `archetypes`, `customTypes` |
+
+## Subdirectory Routers
+Some domains are split into multiple files under a subdirectory with an `index.ts` barrel:
+
+- **`geo/`** — 6 files (~11,558 lines, 102 endpoints): core, features, editor, admin, sovereignty, wiki
+- **`diplomacy/`** — Split diplomatic operations
+- **`intelligence/`** — Split intelligence operations
+- **`countries/`** — Split country data operations
 
 ## Adding a Router
-1. Create `<name>.ts` under `src/server/api/routers`
+1. Create `<name>.ts` under `src/server/api/routers` (or in a subdirectory with `index.ts`)
 2. Export `createTRPCRouter({ ... })`
 3. Register the router in `src/server/api/root.ts`
 4. Regenerate the client if needed (the project uses dynamic type inference; no manual generation step)
@@ -42,4 +53,4 @@ Routers live under `src/server/api/routers` and expose the typed API surface for
 - Reuse utilities from `src/lib` and `src/services` rather than duplicating logic
 - Ensure new procedures have tests under `src/server/api/routers/__tests__` where feasible
 
-See `docs/architecture/backend.md` and `docs/reference/api.md` for deeper detail.
+See `docs/reference/api.md` for deeper detail.

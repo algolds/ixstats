@@ -1,4 +1,4 @@
-# IxStats Documentation Index (February 2026)
+# IxStats Documentation Index (May 2026)
 
 This index mirrors the new documentation structure. Use it as the canonical map when authoring, reviewing, or discovering guidance.
 
@@ -9,7 +9,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 - **Database Reference** – [`docs/reference/database.md`](reference/database.md)
 - **Environment Reference** – [`docs/operations/environments.md`](operations/environments.md)
 - **Help System Authoring** – [`docs/systems/help.md`](systems/help.md)
-- **Tax System Reference** – [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)
+- **Tax System Reference** – [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)
 - **Admin CMS** – [`systems/admin-cms.md`](systems/admin-cms.md)
 - **API Complete** – [`reference/api-complete.md`](reference/api-complete.md)
 - **Maps System** – [`systems/maps.md`](systems/maps.md)
@@ -42,7 +42,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/achievements.md`](systems/achievements.md) | Achievement unlock logic, leaderboards, notifications, and analytics |
 | [`systems/builder.md`](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
 | [`systems/help.md`](systems/help.md) | Help center architecture, article conventions, and synchronization with `/help` |
-| [`systems/admin-cms.md`](systems/admin-cms.md) | 20 admin interfaces, CMS architecture, dynamic content management |
+| [`systems/admin-cms.md`](systems/admin-cms.md) | 28+ admin interfaces, CMS architecture, dynamic content management |
 | [`systems/calculations.md`](systems/calculations.md) | Economic formulas and step-by-step calculation examples |
 | [`systems/npc-ai.md`](systems/npc-ai.md) | NPC personality traits, archetypes, behavioral prediction |
 | [`systems/crisis-events.md`](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
@@ -54,7 +54,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/elections.md`](systems/elections.md) | Elections & political parties, D'Hondt/FPTP seat allocation, legislature configuration |
 | [`systems/national-issues.md`](systems/national-issues.md) | National issues engine, dynamic decisions, consequences system |
 | [`systems/forum.md`](systems/forum.md) | XenForo forum integration, widget embedding, forum-wiki bridge |
-| [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (70 endpoints), procedural world generation, border editor |
+| [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (102 endpoints across 6 files), border editor |
 
 ### Operations & Processes
 | Document | Summary |
@@ -81,46 +81,30 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 ### Tax System Reference
 | Document | Summary |
 | --- | --- |
-| [`TAX_SYSTEM_PERSISTENCE.md`](TAX_SYSTEM_PERSISTENCE.md) | Tax system persistence architecture and implementation |
-| [`TAX_SYSTEM_DATA_STRUCTURE.md`](TAX_SYSTEM_DATA_STRUCTURE.md) | Tax system data structures and type definitions |
-| [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) | Tax system frontend integration examples |
-| [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) | Complete tax system implementation summary |
+| [`archive/pre-consolidation/TAX_SYSTEM_PERSISTENCE.md`](archive/pre-consolidation/TAX_SYSTEM_PERSISTENCE.md) | Tax system persistence architecture and implementation |
+| [`archive/pre-consolidation/TAX_SYSTEM_DATA_STRUCTURE.md`](archive/pre-consolidation/TAX_SYSTEM_DATA_STRUCTURE.md) | Tax system data structures and type definitions |
+| [`archive/pre-consolidation/TAX_SYSTEM_FRONTEND_EXAMPLE.md`](archive/pre-consolidation/TAX_SYSTEM_FRONTEND_EXAMPLE.md) | Tax system frontend integration examples |
+| [`archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) | Complete tax system implementation summary |
+| [`TAX_SYSTEM.md`](TAX_SYSTEM.md) | Tax system overview |
 
 ### Maps & World Visualization
 | Document | Summary |
 | --- | --- |
-| [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (70 endpoints), procedural generation, border editor |
+| [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (102 endpoints), border editor |
 | [`IXWORLD_OCEANOGRAPHY_REPORT.md`](IXWORLD_OCEANOGRAPHY_REPORT.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |
 
-#### Legacy Map References (v1 — vector tiles, Martin tile server)
-| Document | Summary |
-| --- | --- |
-| [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) | Comprehensive vector tiles implementation guide |
-| [`VECTOR_TILES_API.md`](VECTOR_TILES_API.md) | Vector tiles API reference and endpoints |
-| [`VECTOR_TILES_IMPLEMENTATION.md`](VECTOR_TILES_IMPLEMENTATION.md) | Vector tiles technical implementation details |
-| [`MAP_EDITOR_IMPLEMENTATION_SUMMARY.md`](MAP_EDITOR_IMPLEMENTATION_SUMMARY.md) | Map editor implementation summary |
-| [`MAP_EDITOR_SPRINT2_COMPLETE.md`](MAP_EDITOR_SPRINT2_COMPLETE.md) | Map editor sprint 2 completion report |
-| [`MAP_PROJECTION_GUIDE.md`](MAP_PROJECTION_GUIDE.md) | Map projection and coordinate systems guide |
-| [`MAP_DATA_VALIDATION.md`](MAP_DATA_VALIDATION.md) | Map data validation procedures |
-| [`MAPS_MONITORING_GUIDE.md`](MAPS_MONITORING_GUIDE.md) | Maps system monitoring and observability |
-| [`MAPS_OPTIMIZATION_COMPLETE.md`](MAPS_OPTIMIZATION_COMPLETE.md) | Maps performance optimization report |
-| [`MARTIN_TILE_SERVER.md`](MARTIN_TILE_SERVER.md) | Martin tile server configuration and setup |
-| [`BORDER_EDITING_SYSTEM.md`](BORDER_EDITING_SYSTEM.md) | Border editing system architecture |
-| [`BORDER_EDITING_QUICK_START.md`](BORDER_EDITING_QUICK_START.md) | Border editing quick start guide |
+
 
 ### Operations & Deployment Reference
 | Document | Summary |
 | --- | --- |
 | [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) | Production deployment checklist |
 | [`PRE_DEPLOYMENT_CHECKLIST.md`](PRE_DEPLOYMENT_CHECKLIST.md) | Pre-deployment verification steps |
-| [`MIGRATION_v1.1_to_v1.2.md`](MIGRATION_v1.1_to_v1.2.md) | Version migration guide |
 | [`TROUBLESHOOTING_v1.2.md`](TROUBLESHOOTING_v1.2.md) | Troubleshooting guide for v1.2 |
 | [`CREDENTIALS.md`](CREDENTIALS.md) | Credentials and secrets management |
 | [`PERFORMANCE_BENCHMARKS.md`](PERFORMANCE_BENCHMARKS.md) | Performance metrics and benchmarks |
 | [`EXTERNAL_API_CACHE.md`](EXTERNAL_API_CACHE.md) | External API caching strategies |
 | [`CACHE_INTEGRATION_EXAMPLE.md`](CACHE_INTEGRATION_EXAMPLE.md) | Cache integration implementation examples |
-| [`IXEARTH_METRICS.md`](IXEARTH_METRICS.md) | IxEarth platform metrics and analytics |
-| [`WORLD_ROSTER_INTEGRATION.md`](WORLD_ROSTER_INTEGRATION.md) | World roster system integration guide |
 
 ## Legacy Material
 - All previous documentation remains available under [`docs/archive/v1`](archive/v1/)

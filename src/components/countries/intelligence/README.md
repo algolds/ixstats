@@ -1,6 +1,6 @@
 # Country Intelligence Components
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 These components power country-level intelligence dashboards (MyCountry, country detail pages, admin views).
 

@@ -16,7 +16,7 @@ bun run build                  # production build (uses basePath wrapper)
 bun run start:prod             # production server on port 3550
 bun run lint                   # ESLint with cache (pre-existing issues expected)
 bun run format:write           # Prettier with tailwindcss plugin
-bun run db:setup               # prisma generate + db push + seed
+bun run db:setup               # prisma generate + db push (BLOCKED — see below) + seed
 bun run db:studio              # Prisma Studio GUI
 bun run db:sync                # sync production DB to dev
 bun run redis:start            # start Redis cache (rate limiting)
@@ -63,13 +63,13 @@ bun run ts:build          # build with project references (lib + server)
 
 | Layer | Location | Notes |
 |-------|----------|-------|
-| Pages | `src/app/` | Next.js 16.2 App Router, 182 routes |
-| Components | `src/components/` | 813+ UI components, glass physics design system |
-| API (tRPC) | `src/server/api/routers/` | 73 routers, 1205 endpoints. Register new routers in `src/server/api/root.ts` |
-| Database | `prisma/schema/` | 236 models split across 12 `.prisma` files |
+| Pages | `src/app/` | Next.js 16.2 App Router, 187 routes |
+| Components | `src/components/` | 893+ UI components, glass physics design system |
+| API (tRPC) | `src/server/api/routers/` | 83 routers, 1,329 endpoints. Register new routers in `src/server/api/root.ts` |
+| Database | `prisma/schema/` | 237 models split across 12 `.prisma` files |
 | Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers (NOT `middleware.ts`) |
 | Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
-| Hooks | `src/hooks/` | 100+ custom React hooks |
+| Hooks | `src/hooks/` | 107+ custom React hooks |
 | Lib | `src/lib/` | Utilities, rate limiter, WebSocket server, memory config |
 
 ### Key pages
@@ -78,7 +78,7 @@ bun run ts:build          # build with project references (lib + server)
 - `/vault` — IxCards & MyVault
 - `/thinkpages` — Social knowledge sharing
 - `/maps` — IxWorld interactive map (also standalone at maps.ixwiki.com)
-- `/admin` — 26 admin CMS interfaces (system-owner or admin role required)
+- `/admin` — 28 admin CMS interfaces (system-owner or admin role required)
 
 ### Path aliases
 - `~/*` → `./src/*`
@@ -164,6 +164,6 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 - `CLAUDE.md` — Detailed architecture, design system, MyCountry routing, maps system
 - `docs/README.md` — Documentation hub
-- `docs/reference/api-complete.md` — Full tRPC API catalog (1205 endpoints)
+- `docs/reference/api-complete.md` — Full tRPC API catalog (1,329 endpoints)
 - `docs/systems/` — System-specific guides
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)

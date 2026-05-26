@@ -282,8 +282,8 @@ export function Demographics({
   const regionData = (demographicData.regions ?? []).map((region, index) => ({
     ...region,
     color: region.color || COLORS[index % COLORS.length],
-    urbanPopulation: Math.round(region.population * (region.urbanPercent / 100)),
-    ruralPopulation: Math.round(region.population * ((100 - region.urbanPercent) / 100)),
+    urbanPopulation: Math.round(region.population * ((region.urbanPercent ?? 0) / 100)),
+    ruralPopulation: Math.round(region.population * ((100 - (region.urbanPercent ?? 0)) / 100)),
   }));
 
   const basicMetrics = [
@@ -1060,7 +1060,7 @@ export function Demographics({
                           </div>
                           <div>
                             <div className="text-muted-foreground">Urban %</div>
-                            <div className="font-medium">{region.urbanPercent.toFixed(0)}%</div>
+                            <div className="font-medium">{(region.urbanPercent ?? 0).toFixed(0)}%</div>
                           </div>
                         </div>
                         <Progress

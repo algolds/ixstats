@@ -810,7 +810,7 @@ export const notificationsRouter = createTRPCRouter({
     .input(
       z.object({
         eventKey: z.string(),
-        config: z.record(z.unknown()).optional(),
+        config: z.record(z.string(), z.unknown()).optional(),
         name: z.string().optional(),
         description: z.string().optional(),
       })

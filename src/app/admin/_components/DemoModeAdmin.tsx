@@ -32,7 +32,7 @@ export function DemoModeAdmin() {
 
   // Queries
   const { data: status, isLoading: statusLoading } = api.demoMode.getStatus.useQuery();
-  const { data: countries } = api.countries.getSelectList.useQuery();
+  const { data: countries } = api.countries.getSelectList.useQuery({});
 
   // Mutations
   const activateMutation = api.demoMode.activate.useMutation({

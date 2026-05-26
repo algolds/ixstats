@@ -454,9 +454,10 @@ export class WikiBatchFetcher {
     options: FetchOptions
   ): Promise<EligibleArticle> {
     // Get article URL
-    const baseUrls = {
+    const baseUrls: Record<WikiSource, string> = {
       ixwiki: "https://ixwiki.com/wiki",
       iiwiki: "https://iiwiki.com/wiki",
+      althistory: "https://althistory.fandom.com/wiki",
     };
     const url = `${baseUrls[wikiSource]}/${encodeURIComponent(metadata.title)}`;
 

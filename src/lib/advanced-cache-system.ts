@@ -14,7 +14,7 @@ class InMemoryCache {
   private readonly maxSize = memoryConfig.cache.maxEntries;
   private readonly defaultTTL = memoryConfig.cache.defaultTTL;
 
-  set(key: string, value: any, ttl = this.defaultTTL): void {
+  set(key: string, value: any, ttl: number = this.defaultTTL): void {
     // Remove oldest entries if cache is full
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;

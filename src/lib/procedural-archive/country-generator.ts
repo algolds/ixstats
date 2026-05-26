@@ -11,6 +11,7 @@
  *   7. Polygon assembly into GeoJSON
  */
 
+// @ts-expect-error d3-delaunay lacks declaration file
 import { Delaunay } from "d3-delaunay";
 import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
 import type { HeightmapResult } from "./landmass-generator";

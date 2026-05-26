@@ -710,7 +710,7 @@ export const messagesRouter = createTRPCRouter({
 
       for (const p of otherParticipants) {
         try {
-          await notificationAPI.createNotification({
+          await notificationAPI.create({
             userId: p.userId,
             title: "New Message",
             message: `New message in ${conversation?.name ?? "conversation"}`,
@@ -789,7 +789,7 @@ export const messagesRouter = createTRPCRouter({
       for (const pid of participantIds) {
         if (pid !== ctx.auth?.userId) {
           try {
-            await notificationAPI.createNotification({
+            await notificationAPI.create({
               userId: pid,
               title: "New Conversation",
               message: "You've been added to a new conversation",

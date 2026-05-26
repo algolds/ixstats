@@ -40,7 +40,7 @@ import {
   Link2,
 } from "lucide-react";
 import { useUser, SignInButton } from "~/context/auth-context";
-import { useTheme } from "~/context/theme-context";
+import { useTheme, type Theme } from "~/context/theme-context";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -743,9 +743,9 @@ function MapSettingsPopover({
 }: {
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
-  theme: string;
+  theme: Theme;
   effectiveTheme: string;
-  setTheme: (t: string) => void;
+  setTheme: (t: Theme) => void;
 }) {
   return (
     <Popover>

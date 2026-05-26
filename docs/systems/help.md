@@ -1,6 +1,6 @@
 # Help System
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 The help system delivers contextual documentation directly inside the app at `/help`. It mirrors the Markdown guides in this repository so in-app content stays consistent with developer references.
 

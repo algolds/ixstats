@@ -157,12 +157,11 @@ export const cardPacksRouter = createTRPCRouter({
               userId: ctx.user.id,
               title: "Pack Purchased",
               message: "Your card pack is ready to open!",
-              type: "CARD",
+              type: "info",
               category: "achievement",
               priority: "medium",
               metadata: { packId: input.packId },
             },
-            ctx.db
           );
         } catch {}
 
@@ -250,13 +249,12 @@ export const cardPacksRouter = createTRPCRouter({
               userId: ctx.user.id,
               title: "Cards Revealed!",
               message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
-              type: "CARD",
+              type: "info",
               category: "achievement",
               priority:
                 bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
               metadata: { cardCount: cards.length, bestRarity },
             },
-            ctx.db
           );
         } catch {}
 
@@ -470,12 +468,11 @@ export const cardPacksRouter = createTRPCRouter({
                 userId: input.targetUserId,
                 title: "Pack Received!",
                 message: `You have been awarded a ${userPack.pack.name} by an Administrator!`,
-                type: "CARD",
+                type: "info",
                 category: "achievement",
                 priority: "high",
                 metadata: { packId: input.packId, userPackId: userPack.id },
               },
-              ctx.db
             );
           } catch (e) {
             console.error("[CardPacks] Failed to send pack award notification:", e);

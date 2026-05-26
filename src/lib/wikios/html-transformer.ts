@@ -169,7 +169,7 @@ function extractBalancedTag(
   html: string,
   startPos: number,
   tagName: string
-): { infoboxHtml: string; remainingHtml: string } {
+): { infoboxHtml: string | null; remainingHtml: string } {
   const openTag = `<${tagName}`;
   const closeTag = `</${tagName}>`;
   let depth = 0;

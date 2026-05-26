@@ -1,6 +1,6 @@
 # Cards System
 
-**Last updated:** November 2025 (Phase 1)
+**Last updated:** May 2026 (Phase 1)
 **Status:** Development - Phase 1 Implementation
 
 The IxCards system provides collectible trading cards that integrate deeply with IxStats gameplay. Cards feature nations, historical lore, NationStates imports, and special editions, creating a rich collecting experience with real-time stat tracking and market dynamics.

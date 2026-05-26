@@ -948,7 +948,7 @@ function extractCoords(geometry: import("geojson").Geometry): [number, number][]
   const result: [number, number][] = [];
   const limit = 200;
 
-  function walk(coords: unknown): void {
+  function walk(coords: any): void {
     if (result.length >= limit) return;
     if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
       result.push([coords[0] as number, coords[1] as number]);

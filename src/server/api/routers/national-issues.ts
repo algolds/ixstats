@@ -809,7 +809,7 @@ export const nationalIssuesRouter = createTRPCRouter({
       } as const;
 
       const openWhere = {
-        status: { in: ["pending", "viewed"] as const },
+        status: { in: ["pending", "viewed"] },
       };
 
       const since = new Date();
@@ -889,7 +889,7 @@ export const nationalIssuesRouter = createTRPCRouter({
         });
         const byCountry = new Map<string, typeof fillPool>();
         for (const row of fillPool) {
-          const cid = row.countryId;
+          const cid = row.country.id;
           const arr = byCountry.get(cid) ?? [];
           arr.push(row);
           byCountry.set(cid, arr);

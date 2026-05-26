@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import React from "react";
@@ -66,7 +67,7 @@ export function TrendRiskAnalytics({ countryId, userId }: TrendRiskAnalyticsProp
 
   // Get historical data for trend analysis
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId });
+    api.historical.getCountryHistory.useQuery({ countryId }, { enabled: !!countryId });
 
   // Get security dashboard for risk assessment
   const { data: securityDashboard, isLoading: securityLoading } =

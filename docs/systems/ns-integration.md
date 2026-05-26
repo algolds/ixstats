@@ -1,6 +1,6 @@
 # NationStates Integration
 
-**Last updated:** November 2025 (Phase 1)
+**Last updated:** May 2026 (Phase 1)
 **Status:** Development - Phase 1 Implementation
 
 The NationStates (NS) integration allows IxStats users to import their existing NationStates card collections and synchronize NS cards into the IxStats card ecosystem. This creates a bridge between the two platforms while respecting NS's API rate limiting and data policies.

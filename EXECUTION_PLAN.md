@@ -204,7 +204,6 @@ For each issue:
 ## 🔗 REFERENCE FILES
 
 **Documentation:**
-- [STABILITY_FIX_PLAN.md](STABILITY_FIX_PLAN.md) - Initial analysis
 - [INVESTIGATION_REPORT_MAY25.md](INVESTIGATION_REPORT_MAY25.md) - Detailed findings
 
 **Source Files (Key):**
@@ -220,8 +219,8 @@ For each issue:
 
 ## ⚠️ CRITICAL REMINDERS
 
-1. **DO NOT** run `tsc --noEmit` globally - exhausts 4GB Node heap limit
-2. Use IDE TypeScript checking or `bun run dev` only
+1. Use `bun run typecheck` for full typechecking across all sub-projects
+2. Use IDE TypeScript checking or `bun run dev` for fast incremental checks
 3. Test each fix in isolation before committing
 4. Browser console must be checked after each fix
 5. Each file edit should be minimal and focused

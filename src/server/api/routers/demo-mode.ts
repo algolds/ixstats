@@ -120,7 +120,7 @@ export const demoModeRouter = createTRPCRouter({
   activate: adminProcedure
     .input(z.object({ sourceCountryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.auth?.userId;
       if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Auto-destroy any existing demo country (config-tracked or orphaned)
@@ -200,7 +200,7 @@ export const demoModeRouter = createTRPCRouter({
    * Re-seed: wipe and regenerate all demo data.
    */
   reseed: adminProcedure.mutation(async ({ ctx }) => {
-    const userId = ctx.auth.userId;
+    const userId = ctx.auth?.userId;
     if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
     const countryId = await getConfig(ctx.db, DEMO_COUNTRY_KEY);

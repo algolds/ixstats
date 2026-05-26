@@ -22,6 +22,11 @@ export {
   type XFPost,
   type XFNodeForum,
   type XFPaginatedResponse,
+  type XFForumsResponse,
+  type XFThreadsResponse,
+  type XFThreadResponse,
+  type XFPostsResponse,
+  type XFForum,
 } from "./services/xenforo-service";
 
 export {

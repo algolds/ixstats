@@ -1,6 +1,6 @@
 # Country Economy Components
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This folder contains reusable components that render economic views for existing countries (profile pages, dashboards, analytics tabs).
 

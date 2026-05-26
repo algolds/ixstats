@@ -1,6 +1,6 @@
 # Events & Realtime Channels
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStats.
 

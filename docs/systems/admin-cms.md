@@ -1,8 +1,8 @@
 # Admin Content Management System
 
-**Last updated:** February 2026
+**Last updated:** May 2026
 
-Comprehensive guide to IxStats' 20 admin interfaces for managing dynamic content, reference data, and system configuration.
+Comprehensive guide to IxStats' 28+ admin interfaces for managing dynamic content, reference data, and system configuration.
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -679,7 +679,14 @@ USER
   └─ No admin access
 ```
 
-### ~~Map Editor~~ (DEPRECATED - Maps removed November 2025)
+### 19. Maps Admin (`/admin/maps`)
+
+**Purpose:** Administrative tools for the IxWorld map system
+
+**Features:**
+- Province management
+- Map data integrity monitoring
+- Geo API diagnostics (102 endpoints across 6 router files)
 
 ---
 
@@ -778,6 +785,6 @@ api.governmentComponents.bulkUpdate.useMutation({
 ## Related Documentation
 
 - [NPC AI System](./npc-ai.md) - Personality configuration
-- [Map System](./map-system.md) - GIS editing and monitoring
+- [Maps System](./maps.md) - IxWorld map system and geo API
 - [Crisis Events](./crisis-events.md) - Event templates
 - [API Reference](../reference/api-complete.md) - Admin API endpoints

@@ -915,7 +915,7 @@ export const geoEditorRouter = createTRPCRouter({
         ctx.db.mapEditRequest.findMany({
           where: { status },
           include: {
-            country: { select: { id: true, name: true, flagUrl: true } },
+            country: { select: { id: true, name: true, flag: true } },
           },
           orderBy: { createdAt: "desc" },
           take: limit,
@@ -925,27 +925,12 @@ export const geoEditorRouter = createTRPCRouter({
       ]);
 
       return {
-        edits: edits.map(
-          (e: {
-            id: string;
-            countryId: string;
-            userId: string;
-            editType: string;
-            targetId: string | null;
-            operation: string;
-            proposedData: unknown;
-            currentData: unknown;
-            status: string;
-            reviewedBy: string | null;
-            reviewedAt: Date | null;
-            reviewNote: string | null;
-            createdAt: Date;
-            country: { id: string; name: string; flagUrl: string | null };
-          }) => ({
+        edits: (edits as any).map(
+          (e: any) => ({
             id: e.id,
             countryId: e.countryId,
             countryName: e.country.name,
-            countryFlag: e.country.flagUrl,
+            countryFlag: e.country?.flag ?? null,
             userId: e.userId,
             editType: e.editType,
             targetId: e.targetId,
@@ -1081,6 +1066,7 @@ export const geoEditorRouter = createTRPCRouter({
               level: (proposed.level as number) ?? 1,
               geometry: proposed.geometry as any,
               status: "approved",
+              submittedBy: edit.userId ?? "system",
             },
           });
         } else if (edit.operation === "update" && edit.targetId) {
@@ -1101,11 +1087,12 @@ export const geoEditorRouter = createTRPCRouter({
             data: {
               name: proposed.name as string,
               countryId: edit.countryId,
-              cityType: (proposed.cityType as string) ?? "city",
-              coordinates: proposed.coordinates as object | undefined,
+              type: (proposed.cityType as string) ?? "city",
+              coordinates: proposed.coordinates as any,
               population: proposed.population as number | undefined,
               isNationalCapital: proposed.isNationalCapital as boolean | undefined,
               status: "approved",
+              submittedBy: edit.userId ?? "system",
             },
           });
         } else if (edit.operation === "update" && edit.targetId) {
@@ -1113,7 +1100,7 @@ export const geoEditorRouter = createTRPCRouter({
             where: { id: edit.targetId },
             data: {
               name: proposed.name as string | undefined,
-              coordinates: proposed.coordinates as object | undefined,
+              coordinates: proposed.coordinates as any,
               population: proposed.population as number | undefined,
               isNationalCapital: proposed.isNationalCapital as boolean | undefined,
             },
@@ -1128,9 +1115,10 @@ export const geoEditorRouter = createTRPCRouter({
               name: proposed.name as string,
               countryId: edit.countryId,
               category: (proposed.category as string) ?? "landmark",
-              coordinates: proposed.coordinates as object | undefined,
+              coordinates: proposed.coordinates as any,
               description: proposed.description as string | undefined,
               status: "approved",
+              submittedBy: edit.userId ?? "system",
             },
           });
 
@@ -1163,7 +1151,7 @@ export const geoEditorRouter = createTRPCRouter({
             data: {
               name: proposed.name as string | undefined,
               category: proposed.category as string | undefined,
-              coordinates: proposed.coordinates as object | undefined,
+              coordinates: proposed.coordinates as any,
               description: proposed.description as string | undefined,
             },
           });
@@ -1289,12 +1277,12 @@ export const geoEditorRouter = createTRPCRouter({
       // Create or resume session
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const session = await ctx.db.mapEditorSession.upsert({
-        where: { id: `${ctx.auth!.userId}_${input.featureId}` },
+        where: { id: `${ctx.auth!.userId ?? "system"}_${input.featureId}` },
         create: {
-          id: `${ctx.auth!.userId}_${input.featureId}`,
-          userId: ctx.auth!.userId,
+          id: `${ctx.auth!.userId ?? "system"}_${input.featureId}`,
+          userId: ctx.auth!.userId ?? "system",
           featureId: input.featureId,
-          sessionData: { undoStack: [], mode: "select" },
+          sessionData: { undoStack: [], mode: "select" } as any,
           expiresAt,
         },
         update: { expiresAt, updatedAt: new Date() },
@@ -1327,7 +1315,7 @@ export const geoEditorRouter = createTRPCRouter({
       await ctx.db.mapEditorSession.update({
         where: { id: input.sessionId },
         data: {
-          sessionData: input.sessionData,
+          sessionData: input.sessionData as any,
           updatedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
@@ -1372,7 +1360,7 @@ export const geoEditorRouter = createTRPCRouter({
         await ctx.db.mapLayer.update({
           where: { id: feature.id },
           data: {
-            geometry: input.proposedGeometry,
+            geometry: input.proposedGeometry as any,
             centroid,
             boundingBox: bbox,
             areaSqKm: area,
@@ -1384,7 +1372,7 @@ export const geoEditorRouter = createTRPCRouter({
 
         // Clean up session
         await ctx.db.mapEditorSession.deleteMany({
-          where: { userId: ctx.auth!.userId, featureId: input.featureId },
+          where: { userId: ctx.auth!.userId ?? "system", featureId: input.featureId },
         });
 
         return { applied: true, editRequestId: null };
@@ -1394,11 +1382,11 @@ export const geoEditorRouter = createTRPCRouter({
       const editRequest = await ctx.db.mapEditRequest.create({
         data: {
           countryId: feature.countryId ?? "unknown",
-          userId: ctx.auth!.userId,
+          userId: ctx.auth!.userId ?? "system",
           editType: "border_adjust",
           editSubtype: input.editSubtype,
           operation: "update",
-          proposedData: input.proposedGeometry,
+          proposedData: input.proposedGeometry as any,
           currentData: feature.geometry ?? undefined,
           previousGeometry: feature.geometry ?? undefined,
           affectedFeatures: input.affectedFeatures ?? [],
@@ -1587,7 +1575,7 @@ export const geoEditorRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -1955,11 +1943,11 @@ export const geoEditorRouter = createTRPCRouter({
       const world = await ctx.db.proceduralWorld.create({
         data: {
           seed: input.seed,
-          parameters: input as unknown as Record<string, unknown>,
+          parameters: input as any,
           status: "completed",
-          generatedData: result.layers as unknown as Record<string, unknown>,
-          metadata: result.stats as unknown as Record<string, unknown>,
-          createdBy: ctx.auth!.userId,
+          generatedData: result.layers as any,
+          metadata: result.stats as any,
+          createdBy: ctx.auth!.userId ?? "system",
         },
       });
 
@@ -2035,8 +2023,8 @@ export const geoEditorRouter = createTRPCRouter({
               (props.featureId as string) ||
               (f.id as string) ||
               `proc-${Math.random().toString(36).slice(2, 10)}`,
-            geometry: f.geometry as Record<string, unknown>,
-            properties: props,
+            geometry: f.geometry as any,
+            properties: props as any,
             displayName: (props.displayName as string) || null,
             areaSqKm: (props.areaKm2 as number) || null,
             isActive: true,
@@ -2059,9 +2047,9 @@ export const geoEditorRouter = createTRPCRouter({
           data: {
             name: input.templateName || `Procedural World (seed: ${world.seed})`,
             description: `Auto-generated world with seed ${world.seed}`,
-            createdBy: ctx.auth!.userId,
-            metadata: world.metadata,
-            layers: world.generatedData as Record<string, unknown>,
+            createdBy: ctx.auth!.userId ?? "system",
+            metadata: world.metadata as any,
+            layers: world.generatedData as any,
             isPublic: false,
           },
         });
@@ -2108,11 +2096,11 @@ export const geoEditorRouter = createTRPCRouter({
       await ctx.db.proceduralWorld.update({
         where: { id: world.id },
         data: {
-          generatedData: existingLayers,
+          generatedData: existingLayers as any,
           metadata: {
             ...(world.metadata as Record<string, unknown>),
             lastRegenerated: input.layerType,
-          },
+          } as any,
         },
       });
 
@@ -2125,7 +2113,7 @@ export const geoEditorRouter = createTRPCRouter({
   /** List procedural world generation history */
   listProceduralWorlds: adminProcedure.query(async ({ ctx }) => {
     return ctx.db.proceduralWorld.findMany({
-      where: { createdBy: ctx.auth!.userId },
+      where: { createdBy: ctx.auth!.userId ?? "system" },
       select: {
         id: true,
         seed: true,
@@ -2215,16 +2203,16 @@ export const geoEditorRouter = createTRPCRouter({
                 layerType_featureId: { layerType, featureId },
               },
               update: {
-                geometry: feature.geometry as unknown as Record<string, unknown>,
-                properties: (feature.properties ?? {}) as Record<string, unknown>,
+                geometry: feature.geometry as any,
+                properties: (feature.properties ?? {}) as any,
                 isActive: true,
                 worldId: input.worldId,
               },
               create: {
                 layerType,
                 featureId,
-                geometry: feature.geometry as unknown as Record<string, unknown>,
-                properties: (feature.properties ?? {}) as Record<string, unknown>,
+                geometry: feature.geometry as any,
+                properties: (feature.properties ?? {}) as any,
                 isActive: true,
                 worldId: input.worldId,
               },
@@ -2258,7 +2246,7 @@ export const geoEditorRouter = createTRPCRouter({
               data: sharedVertices.map((sv) => ({
                 lng: sv.lng,
                 lat: sv.lat,
-                featureRefs: sv.featureRefs as unknown as Record<string, unknown>,
+                featureRefs: sv.featureRefs as any,
                 worldId: input.worldId,
               })),
             });
@@ -2269,7 +2257,7 @@ export const geoEditorRouter = createTRPCRouter({
       }
 
       // Invalidate layer cache
-      invalidateCache("geo.getWorldMap");
+      invalidateCache(["geo.getWorldMap"]);
 
       return { imported, mode: input.mode };
     }),
@@ -2328,7 +2316,7 @@ function extractCoords(geometry: import("geojson").Geometry): [number, number][]
   const result: [number, number][] = [];
   const limit = 200;
 
-  function walk(coords: unknown): void {
+  function walk(coords: any): void {
     if (result.length >= limit) return;
     if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
       result.push([coords[0] as number, coords[1] as number]);

@@ -113,7 +113,7 @@ export function PredictiveModelsModal({
 
   // Get historical data for context
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: isOpen });
+    api.historical.getCountryHistory.useQuery({ countryId }, { enabled: isOpen });
 
   const isLoading = countryLoading || modelsLoading || historicalLoading;
 

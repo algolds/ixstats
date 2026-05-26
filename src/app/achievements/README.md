@@ -1,6 +1,6 @@
 # Achievements & Leaderboards
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This directory contains the React views and supporting utilities for `/achievements` and `/leaderboards`.
 

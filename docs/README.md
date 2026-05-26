@@ -34,7 +34,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/achievements.md`](systems/achievements.md) – achievement unlock logic, leaderboards, and notifications
 - [`systems/builder.md`](systems/builder.md) – nation creation flows, atomic components, and data ingestion
 - [`systems/help.md`](systems/help.md) – in-app help center architecture and authoring workflow
-- [`systems/admin-cms.md`](systems/admin-cms.md) – 20 admin interfaces, CMS architecture, and role-based access
+- [`systems/admin-cms.md`](systems/admin-cms.md) – 28+ admin interfaces, CMS architecture, and role-based access
 - [`systems/calculations.md`](systems/calculations.md) – economic formulas with step-by-step examples
 - [`systems/npc-ai.md`](systems/npc-ai.md) – NPC personality system documentation
 - [`systems/crisis-events.md`](systems/crisis-events.md) – crisis management system guide
@@ -46,6 +46,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
 - [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
 - [`systems/maps.md`](systems/maps.md) – IxWorld interactive map, MapLibre GL JS, procedural world generation, border editor
+- [`systems/ixcredits.md`](systems/ixcredits.md) – IxCredits economy and premium features
 
 ### Operations
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
@@ -55,12 +56,15 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 ### Processes
 - [`processes/testing.md`](processes/testing.md) – Jest strategy, wiring audits, browser automation, and fixtures
 - [`processes/contributing.md`](processes/contributing.md) – coding standards, review expectations, and release management
+- [`processes/refactoring.md`](processes/refactoring.md) – modular architecture patterns and refactoring guidelines
+- [`processes/schema-validation.md`](processes/schema-validation.md) – schema validation and alignment procedures
 
-### Reference
-- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (1205 endpoints across 73 routers)
+- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (1,329 endpoints across 83 routers)
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
+- [`reference/api-examples.md`](reference/api-examples.md) – tRPC API usage examples
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
+- [`reference/edge-cases.md`](reference/edge-cases.md) – edge case handling and error scenarios
 - [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) – government component synergy system and interaction patterns
 - [`RATE_LIMITING_IMPLEMENTATION_GUIDE.md`](RATE_LIMITING_IMPLEMENTATION_GUIDE.md) – rate limiting implementation and configuration guide
 - [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md) – comprehensive rate limiting configuration and Redis setup
@@ -70,40 +74,28 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) – comprehensive API documentation and usage patterns
 
 ### Tax System Reference
-- [`TAX_SYSTEM_PERSISTENCE.md`](TAX_SYSTEM_PERSISTENCE.md) – tax system persistence architecture and implementation
-- [`TAX_SYSTEM_DATA_STRUCTURE.md`](TAX_SYSTEM_DATA_STRUCTURE.md) – tax system data structures and type definitions
-- [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) – tax system frontend integration examples
-- [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) – complete tax system implementation summary
+- [`archive/pre-consolidation/TAX_SYSTEM_PERSISTENCE.md`](archive/pre-consolidation/TAX_SYSTEM_PERSISTENCE.md) – tax system persistence architecture and implementation
+- [`archive/pre-consolidation/TAX_SYSTEM_DATA_STRUCTURE.md`](archive/pre-consolidation/TAX_SYSTEM_DATA_STRUCTURE.md) – tax system data structures and type definitions
+- [`archive/pre-consolidation/TAX_SYSTEM_FRONTEND_EXAMPLE.md`](archive/pre-consolidation/TAX_SYSTEM_FRONTEND_EXAMPLE.md) – tax system frontend integration examples
+- [`archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) – complete tax system implementation summary
+- [`TAX_SYSTEM.md`](TAX_SYSTEM.md) – tax system overview
 
 ### Maps & World Visualization
-- [`systems/maps.md`](systems/maps.md) – IxWorld map system: MapLibre GL JS, 7 layers, geo API (70 endpoints), procedural world generation, border editor
+- [`systems/maps.md`](systems/maps.md) – IxWorld map system: MapLibre GL JS, 7 layers, geo API (102 endpoints across 6 router files), border editor
 - [`IXWORLD_OCEANOGRAPHY_REPORT.md`](IXWORLD_OCEANOGRAPHY_REPORT.md) – ocean basins, seas, currents, shipping routes, and marine ecology
-
-#### Legacy Map References (v1 — vector tiles, Martin tile server)
-- [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) – comprehensive vector tiles implementation guide
-- [`VECTOR_TILES_API.md`](VECTOR_TILES_API.md) – vector tiles API reference and endpoints
-- [`VECTOR_TILES_IMPLEMENTATION.md`](VECTOR_TILES_IMPLEMENTATION.md) – vector tiles technical implementation details
-- [`MAP_EDITOR_IMPLEMENTATION_SUMMARY.md`](MAP_EDITOR_IMPLEMENTATION_SUMMARY.md) – map editor implementation summary
-- [`MAP_EDITOR_SPRINT2_COMPLETE.md`](MAP_EDITOR_SPRINT2_COMPLETE.md) – map editor sprint 2 completion report
-- [`MAP_PROJECTION_GUIDE.md`](MAP_PROJECTION_GUIDE.md) – map projection and coordinate systems guide
-- [`MAP_DATA_VALIDATION.md`](MAP_DATA_VALIDATION.md) – map data validation procedures
-- [`MAPS_MONITORING_GUIDE.md`](MAPS_MONITORING_GUIDE.md) – maps system monitoring and observability
-- [`MAPS_OPTIMIZATION_COMPLETE.md`](MAPS_OPTIMIZATION_COMPLETE.md) – maps performance optimization report
-- [`MARTIN_TILE_SERVER.md`](MARTIN_TILE_SERVER.md) – Martin tile server configuration and setup
-- [`BORDER_EDITING_SYSTEM.md`](BORDER_EDITING_SYSTEM.md) – border editing system architecture
-- [`BORDER_EDITING_QUICK_START.md`](BORDER_EDITING_QUICK_START.md) – border editing quick start guide
 
 ### Operations & Deployment Reference
 - [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) – production deployment checklist
 - [`PRE_DEPLOYMENT_CHECKLIST.md`](PRE_DEPLOYMENT_CHECKLIST.md) – pre-deployment verification steps
-- [`MIGRATION_v1.1_to_v1.2.md`](MIGRATION_v1.1_to_v1.2.md) – version migration guide
 - [`TROUBLESHOOTING_v1.2.md`](TROUBLESHOOTING_v1.2.md) – troubleshooting guide for v1.2
 - [`CREDENTIALS.md`](CREDENTIALS.md) – credentials and secrets management
 - [`PERFORMANCE_BENCHMARKS.md`](PERFORMANCE_BENCHMARKS.md) – performance metrics and benchmarks
 - [`EXTERNAL_API_CACHE.md`](EXTERNAL_API_CACHE.md) – external API caching strategies
 - [`CACHE_INTEGRATION_EXAMPLE.md`](CACHE_INTEGRATION_EXAMPLE.md) – cache integration implementation examples
-- [`IXEARTH_METRICS.md`](IXEARTH_METRICS.md) – IxEarth platform metrics and analytics
-- [`WORLD_ROSTER_INTEGRATION.md`](WORLD_ROSTER_INTEGRATION.md) – world roster system integration guide
+
+### Development Reference
+- [`development/ixcards-phase1.md`](development/ixcards-phase1.md) – IxCards phase 1 implementation guide
+- [`guides/DIPLOMATIC_MESSAGING_MIGRATION.md`](guides/DIPLOMATIC_MESSAGING_MIGRATION.md) – diplomatic messaging migration guide
 
 ## Archive
 

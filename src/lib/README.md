@@ -1,6 +1,6 @@
 # Library Overview (`src/lib`)
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 `src/lib` hosts utilities, services, and domain helpers shared across the application. Modules are grouped by concern and are safe to import from both server and client code unless otherwise noted.
 

@@ -699,8 +699,8 @@ export const intelAlertsRouter = createTRPCRouter({
 function calculateVolatility(data: Record<string, unknown>[]) {
   if (data.length < 2) return { gdp: 0, population: 0, overall: 0 };
 
-  const gdpValues = data.map((d) => d.totalGdp).filter(Boolean);
-  const populationValues = data.map((d) => d.population).filter(Boolean);
+  const gdpValues = data.map((d) => d.totalGdp).filter((v): v is number => typeof v === "number");
+  const populationValues = data.map((d) => d.population).filter((v): v is number => typeof v === "number");
 
   return {
     gdp: calculateStandardDeviation(gdpValues),
@@ -719,8 +719,8 @@ function calculateTrends(data: Record<string, unknown>[]) {
   const recent = data.slice(0, 10);
   const older = data.slice(10, 20);
 
-  const recentAvgGdp = recent.reduce((sum, d) => sum + (d.totalGdp || 0), 0) / recent.length;
-  const olderAvgGdp = older.reduce((sum, d) => sum + (d.totalGdp || 0), 0) / older.length;
+  const recentAvgGdp = recent.reduce((sum, d) => sum + (typeof d.totalGdp === "number" ? d.totalGdp : 0), 0) / recent.length;
+  const olderAvgGdp = older.reduce((sum, d) => sum + (typeof d.totalGdp === "number" ? d.totalGdp : 0), 0) / older.length;
 
   const gdpTrend =
     recentAvgGdp > olderAvgGdp * 1.02
@@ -767,7 +767,7 @@ function generateAIRecommendations(
 ) {
   const recommendations = [];
 
-  if (country.currentGdpPerCapita && country.currentGdpPerCapita < 25000) {
+  if (typeof country.currentGdpPerCapita === "number" && country.currentGdpPerCapita < 25000) {
     recommendations.push({
       id: "infrastructure_investment",
       title: "Infrastructure Investment",
@@ -778,7 +778,7 @@ function generateAIRecommendations(
     });
   }
 
-  if (country.populationGrowthRate && country.populationGrowthRate > 0.05) {
+  if (typeof country.populationGrowthRate === "number" && country.populationGrowthRate > 0.05) {
     recommendations.push({
       id: "education_expansion",
       title: "Education System Expansion",
@@ -816,17 +816,17 @@ function generatePredictiveModels(
     "5_years": 60,
   };
 
-  const periods = timeframePeriods[input.timeframe as keyof typeof timeframePeriods];
-  const baseGrowthRate = country.adjustedGdpGrowth || 0.03;
+  const periods = timeframePeriods[input.timeframe as keyof typeof timeframePeriods] || 12;
+  const baseGrowthRate = (country.adjustedGdpGrowth as number) || 0.03;
 
-  const scenarios = input.scenarios.map((scenario: string) => {
+  const scenarios = (Array.isArray(input.scenarios) ? input.scenarios : []).map((scenario: string) => {
     const multiplier = scenario === "optimistic" ? 1.5 : scenario === "pessimistic" ? 0.5 : 1.0;
 
     const projectedGdp =
-      country.currentTotalGdp * Math.pow(1 + baseGrowthRate * multiplier, periods / 12);
+      (country.currentTotalGdp as number) * Math.pow(1 + baseGrowthRate * multiplier, periods / 12);
     const projectedPopulation =
-      country.currentPopulation *
-      Math.pow(1 + (country.populationGrowthRate || 0.01), periods / 12);
+      (country.currentPopulation as number) *
+      Math.pow(1 + ((country.populationGrowthRate as number) || 0.01), periods / 12);
     const projectedGdpPerCapita = projectedGdp / projectedPopulation;
 
     return {
@@ -849,7 +849,7 @@ function generatePredictiveModels(
 /**
  * Calculate real-time country metrics (social, security, political)
  */
-async function calculateRealTimeMetrics(db: Record<string, unknown>, countryId: string) {
+async function calculateRealTimeMetrics(db: any, countryId: string) {
   // Get recent security threats
   const securityThreats = await db.intelligenceAlert.findMany({
     where: {

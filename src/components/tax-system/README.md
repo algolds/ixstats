@@ -1,6 +1,6 @@
 # Tax System Components
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This folder contains UI components for visualising and managing tax system data inside IxStats. They are consumed by MyCountry, builder/editor flows, and analytics dashboards.
 

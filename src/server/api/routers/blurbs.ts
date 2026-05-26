@@ -403,7 +403,7 @@ export const blurbsRouter = createTRPCRouter({
           closedAt: input.closedAt ? new Date(input.closedAt) : null,
           isRecurring: input.isRecurring,
           publishedAt: input.status === "ACTIVE" ? new Date() : null,
-          createdBy: ctx.auth?.userId,
+          createdBy: ctx.auth?.userId ?? "system",
         },
       });
     }),

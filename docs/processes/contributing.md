@@ -1,6 +1,6 @@
 # Contributing Guide
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 This guide outlines expectations for contributing to IxStats. Use it alongside the architectural and system docs when planning work.
 

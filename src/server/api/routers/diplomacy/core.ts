@@ -109,7 +109,7 @@ export const diplomaticCoreRouter = createTRPCRouter({
             targetCountryId: targetId,
             targetCountryName: targetInfo?.name ?? targetId,
             targetCountryFlag: normalizeFlagUrl(targetInfo?.flag) ?? null,
-            relationship: relation.relationship,
+            relationship: relation.relationship as any,
             strength: relation.strength,
             treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
             lastContact: relation.lastContact.toISOString(),
@@ -122,6 +122,8 @@ export const diplomaticCoreRouter = createTRPCRouter({
             recentActivity: relation.recentActivity,
             economicTier: relation.economicTier,
             flagUrl: relation.flagUrl,
+            activePolicies: [],
+            recentIncidents: [],
             establishedAt: relation.establishedAt.toISOString(),
           };
         });

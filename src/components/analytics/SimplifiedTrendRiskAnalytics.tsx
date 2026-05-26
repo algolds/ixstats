@@ -42,7 +42,7 @@ export function SimplifiedTrendRiskAnalytics({ countryId }: SimplifiedTrendRiskA
 
   // Get historical data for trend analysis
   const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId });
+    api.historical.getCountryHistory.useQuery({ countryId }, { enabled: !!countryId });
 
   // Get country data
   const { data: countryData } = api.countries.getByIdWithEconomicData.useQuery({ id: countryId });

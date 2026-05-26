@@ -1275,10 +1275,10 @@ async function fetchExternalWiki(url: string, retries = 2): Promise<Response | n
   );
 
   if (!result.success) {
-    console.warn(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, result.error.message);
+    console.warn(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, result.error?.message);
     return null;
   }
-  return result.value;
+  return result.value ?? null;
 }
 
 // ──────────────────────────────────────────────
@@ -1357,7 +1357,7 @@ async function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSear
     });
 
     if (!data || !Array.isArray(data) || data.length < 2) return [];
-    return (data[1] ?? []).map((title, i) => ({
+    return ((data[1] as string[]) ?? []).map((title: string, i: number) => ({
       title,
       pageId: i,
       length: 0,
@@ -1437,7 +1437,7 @@ async function althistorySearch(query: string, limit: number = 10): Promise<Wiki
     });
 
     if (!data || !Array.isArray(data) || data.length < 2) return [];
-    return (data[1] ?? []).map((title, i) => ({
+    return ((data[1] as string[]) ?? []).map((title: string, i: number) => ({
       title,
       pageId: i,
       length: 0,

@@ -79,5 +79,27 @@ export default tseslint.config(
       "no-var": "error",
       eqeqeq: ["warn", "always", { null: "ignore" }],
     },
+  },
+  // ═══════════════════════════════════════════════════════════════════
+  // Zod-first enforcement: no manual interfaces in economics domain.
+  // All domain types must be z.infer<> derived from Zod schemas.
+  // (Excludes economy-builder.ts which has legitimate UI-state interfaces)
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    files: [
+      "src/types/economics.ts",
+      "src/schemas/economics.schema.ts",
+      "src/schemas/economics/**/*.ts",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "TSInterfaceDeclaration",
+          message:
+            "Use z.infer<typeof Schema> from Zod schemas instead of manual interfaces for domain models. See ~/schemas/economics.schema.ts",
+        },
+      ],
+    },
   }
 );

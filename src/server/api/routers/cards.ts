@@ -671,13 +671,7 @@ export const cardsRouter = createTRPCRouter({
         include: {
           cardOwnership: {
             include: {
-              cards: {
-                include: {
-                  country: {
-                    select: { id: true, name: true, continent: true, region: true, flag: true },
-                  },
-                },
-              },
+              cards: true,
             },
           },
         },

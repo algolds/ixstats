@@ -48,7 +48,7 @@ function findContainingFeature(
     if (geomType !== "Polygon" && geomType !== "MultiPolygon") continue;
 
     try {
-      if (booleanPointInPolygon(pt, feature.geometry as Polygon | MultiPolygon)) {
+      if (booleanPointInPolygon(pt as any, feature.geometry as Polygon | MultiPolygon)) {
         return feature;
       }
     } catch {

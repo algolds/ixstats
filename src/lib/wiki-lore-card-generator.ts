@@ -675,6 +675,7 @@ export class WikiLoreCardGenerator {
     const baseUrls = {
       ixwiki: "https://ixwiki.com/wiki",
       iiwiki: "https://iiwiki.com/wiki",
+      althistory: "https://althistory.fandom.com/wiki",
     };
 
     return `${baseUrls[wikiSource]}/${encodeURIComponent(articleTitle)}`;

@@ -1,6 +1,6 @@
 # In-App Help Center
 
-**Last updated:** November 2025
+**Last updated:** May 2026
 
 The help center at `/help` delivers React-rendered articles that mirror the Markdown guides under `docs/`. Each article uses shared layouts for consistent typography, navigation, and metadata.
 

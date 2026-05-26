@@ -1,6 +1,6 @@
 # Edge Cases & Error Scenarios
 
-**Last updated:** November 2025
+**Last updated:** May 2026
 
 Comprehensive guide to edge cases, error handling, and unusual scenarios across all IxStats systems.
 

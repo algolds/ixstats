@@ -70,12 +70,11 @@ export const cardMarketRouter = createTRPCRouter({
               userId: ctx.auth.userId,
               title: "Auction Listed",
               message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
-              type: "CARD",
+              type: "info",
               category: "economic",
               priority: "low",
               metadata: { auctionId: auction.id },
             },
-            ctx.db
           );
         } catch {}
 
@@ -142,12 +141,11 @@ export const cardMarketRouter = createTRPCRouter({
                 userId: auction.User.clerkUserId,
                 title: "New Bid on Your Auction",
                 message: `Someone bid ${input.amount} IxC on your auction`,
-                type: "CARD",
+                type: "info",
                 category: "economic",
                 priority: "medium",
                 metadata: { auctionId: input.auctionId, amount: input.amount },
               },
-              ctx.db
             );
           }
         } catch {}
@@ -213,12 +211,11 @@ export const cardMarketRouter = createTRPCRouter({
                 userId: auction.User.clerkUserId,
                 title: "Card Sold!",
                 message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
-                type: "CARD",
+                type: "info",
                 category: "economic",
                 priority: "high",
                 metadata: { auctionId: input.auctionId },
               },
-              ctx.db
             );
           }
         } catch {}
@@ -290,12 +287,11 @@ export const cardMarketRouter = createTRPCRouter({
                 userId: currentBidderClerkId,
                 title: "Auction Cancelled",
                 message: "An auction you bid on has been cancelled",
-                type: "CARD",
+                type: "info",
                 category: "economic",
                 priority: "medium",
                 metadata: { auctionId: input.auctionId },
               },
-              ctx.db
             );
           }
         } catch {}

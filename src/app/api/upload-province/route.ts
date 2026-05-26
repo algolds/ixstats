@@ -52,20 +52,20 @@ export async function POST(request: NextRequest) {
 
     // Verify country ownership (unless system owner or admin)
     if (!isSystemOwner(session.userId)) {
-      const role = (session.sessionClaims?.metadata as Record<string, unknown>)?.role;
+      const role = (session.sessionClaims?.metadata as any)?.role;
       const isAdmin = ["admin", "owner", "staff"].includes(role as string);
 
       if (!isAdmin) {
-        // Check if user owns this country
-        const country = await db.country.findUnique({
-          where: { id: countryId },
-          select: { ownerId: true },
+        // Check if user owns this country via User.countryId
+        const userProfile = await db.user.findUnique({
+          where: { clerkUserId: session.userId },
+          select: { countryId: true },
         });
 
-        if (!country) {
-          return NextResponse.json({ error: "Country not found" }, { status: 404 });
+        if (!userProfile) {
+          return NextResponse.json({ error: "User profile not found" }, { status: 404 });
         }
-        if (country.ownerId !== session.userId) {
+        if (userProfile.countryId !== countryId) {
           return NextResponse.json({ error: "You do not own this country" }, { status: 403 });
         }
       }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         status: "pending",
         uploadedBy: session.userId,
         svgContent: fileContent,
-        svgMetadata: metadata,
+        svgMetadata: metadata as any,
       },
     });
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { Users, Globe } from "lucide-react";

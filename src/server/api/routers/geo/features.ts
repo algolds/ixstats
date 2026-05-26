@@ -673,7 +673,7 @@ export const geoFeaturesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -747,7 +747,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -815,7 +815,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -854,7 +854,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -869,7 +869,7 @@ export const geoFeaturesRouter = createTRPCRouter({
           countryId: input.countryId,
           type: input.type,
           level: input.level,
-          geometry: input.geometry,
+          geometry: input.geometry as any,
           capital: input.capital,
           population: input.population,
           status: "approved",
@@ -912,7 +912,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -944,7 +944,7 @@ export const geoFeaturesRouter = createTRPCRouter({
           ...(input.name && { name: input.name }),
           ...(input.type && { type: input.type }),
           ...(input.level !== undefined && { level: input.level }),
-          ...(input.geometry && { geometry: input.geometry }),
+          ...(input.geometry && { geometry: input.geometry as any }),
           ...(input.capital !== undefined && { capital: input.capital }),
           ...(input.population !== undefined && { population: input.population }),
         },
@@ -966,7 +966,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -997,7 +997,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1208,7 +1208,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1291,7 +1291,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1352,7 +1352,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1410,7 +1410,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1509,7 +1509,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1558,7 +1558,7 @@ export const geoFeaturesRouter = createTRPCRouter({
   deleteStoryPin: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), pinId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1734,7 +1734,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1762,7 +1762,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1783,7 +1783,7 @@ export const geoFeaturesRouter = createTRPCRouter({
   deleteStoryline: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), storylineId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1874,7 +1874,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1946,7 +1946,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -1978,7 +1978,7 @@ export const geoFeaturesRouter = createTRPCRouter({
   deleteMapLabel: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), labelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
@@ -2067,7 +2067,7 @@ export const geoFeaturesRouter = createTRPCRouter({
   deleteAllSubdivisions: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country;
+      const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -2130,7 +2130,7 @@ function extractCoords(geometry: import("geojson").Geometry): [number, number][]
   const result: [number, number][] = [];
   const limit = 200;
 
-  function walk(coords: unknown): void {
+  function walk(coords: any): void {
     if (result.length >= limit) return;
     if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
       result.push([coords[0] as number, coords[1] as number]);

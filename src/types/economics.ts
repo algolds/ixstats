@@ -1,191 +1,56 @@
 // src/types/economics.ts
+// ═══════════════════════════════════════════════════════════════════════════
+// RE-EXPORT HUB — All economy types derived from Zod schemas.
+// ❌ Do NOT define interfaces or types here.
+// ✅ Only re-export from ~/schemas/economics.schema
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Core economic indicators
-export interface CoreEconomicIndicatorsData {
-  totalPopulation: number;
-  nominalGDP: number;
-  gdpPerCapita: number;
-  realGDPGrowthRate: number; // decimal (e.g. 0.03)
-  inflationRate: number; // decimal
-  currencyExchangeRate: number;
-  giniCoefficient?: number; // 0-100 scale, income inequality measure
-}
+export type {
+  // Root types
+  EconomyData,
+  Economy,
+  // Section data types (extended, for UI/mapper)
+  CoreEconomicIndicatorsData,
+  LaborEmploymentData,
+  FiscalSystemData,
+  IncomeWealthDistributionData,
+  GovernmentSpendingData,
+  DemographicsData,
+  // Strict section types (for templates/factory)
+  CoreEconomicIndicators,
+  LaborEmployment,
+  FiscalSystem,
+  IncomeWealth,
+  GovernmentSpending,
+  Demographics,
+  // Sub-object types
+  EmploymentBySector,
+  EmploymentByType,
+  SkillsAndProductivity,
+  DemographicsAndConditions,
+  RegionalEmployment,
+  SocialProtection,
+  SpendingCategory,
+} from "~/schemas/economics.schema";
 
-// Labor & employment - Enhanced with detailed metrics
-export interface LaborEmploymentData {
-  laborForceParticipationRate: number;
-  employmentRate: number;
-  unemploymentRate: number;
-  totalWorkforce: number;
-  averageWorkweekHours: number;
-  minimumWage: number;
-  averageAnnualIncome: number;
-  laborProtections: boolean;
-  youthUnemploymentRate?: number;
-  informalEmploymentRate?: number;
-  femaleParticipationRate?: number;
-  medianWage?: number;
-  wageGrowthRate?: number;
-}
-
-// Fiscal system
-export interface FiscalSystemData {
-  taxRevenueGDPPercent: number;
-  governmentRevenueTotal: number;
-  taxRevenuePerCapita: number;
-  governmentBudgetGDPPercent: number;
-  budgetDeficitSurplus: number;
-  internalDebtGDPPercent: number;
-  externalDebtGDPPercent: number;
-  totalDebtGDPRatio: number;
-  debtPerCapita: number;
-  interestRates: number; // decimal
-  debtServiceCosts: number;
-  taxRates: {
-    personalIncomeTaxRates: Array<{ bracket: number; rate: number }>;
-    corporateTaxRates: Array<{ size: string; rate: number }>;
-    salesTaxRate: number;
-    propertyTaxRate: number;
-    payrollTaxRate: number;
-    exciseTaxRates: Array<{ type: string; rate: number }>;
-    wealthTaxRate: number;
-  };
-  governmentSpendingByCategory: Array<{
-    category: string;
-    amount: number;
-    percent: number;
-    icon?: string;
-    color?: string;
-    description?: string;
-  }>;
-}
-
-// Income & wealth distribution
-export interface IncomeWealthDistributionData {
-  economicClasses: Array<{
-    name: string;
-    populationPercent: number;
-    wealthPercent: number;
-    averageIncome: number;
-    color: string;
-  }>;
-  povertyRate: number; // percent
-  incomeInequalityGini: number; // decimal
-  socialMobilityIndex: number;
-}
-
-// Government spending
-export interface GovernmentSpendingData {
-  education: number;
-  healthcare: number;
-  socialSafety: number;
-  totalSpending: number;
-  spendingGDPPercent: number;
-  spendingPerCapita: number;
-  deficitSurplus: number;
-  spendingCategories: Array<{
-    category: string;
-    amount: number;
-    percent: number;
-    icon?: string;
-    color?: string;
-    description?: string;
-  }>;
-  // Policy flags
-  performanceBasedBudgeting: boolean;
-  universalBasicServices: boolean;
-  greenInvestmentPriority: boolean;
-  digitalGovernmentInitiative: boolean;
-  zeroBasedBudgeting: boolean;
-  publicPrivatePartnerships: boolean;
-  participatoryBudgeting: boolean;
-  emergencyReserveFund: boolean;
-  socialImpactBonds: boolean;
-  childWelfareFirstPolicy: boolean;
-  preventiveCareEmphasis: boolean;
-  infrastructureBankFund: boolean;
-  universalBasicIncome: boolean;
-  progressiveTaxation: boolean;
-  carbonTax: boolean;
-  wealthTax: boolean;
-  financialTransactionTax: boolean;
-  universalHealthcare: boolean;
-  freeEducation: boolean;
-  affordableHousing: boolean;
-  elderlyCare: boolean;
-  disabilitySupport: boolean;
-  mentalHealthServices: boolean;
-  stemEducationFocus: boolean;
-  vocationalTraining: boolean;
-  adultEducation: boolean;
-  earlyChildhoodEducation: boolean;
-  smartCityInitiative: boolean;
-  publicTransportExpansion: boolean;
-  renewableEnergyTransition: boolean;
-  highSpeedInternet: boolean;
-  waterInfrastructure: boolean;
-  researchDevelopmentFund: boolean;
-  startupIncubators: boolean;
-  patentReform: boolean;
-  openDataInitiative: boolean;
-  cybersecurityInitiative: boolean;
-  borderSecurity: boolean;
-  disasterPreparedness: boolean;
-  crimePrevention: boolean;
-  carbonNeutrality: boolean;
-  biodiversityProtection: boolean;
-  wasteReduction: boolean;
-  greenBuildingStandards: boolean;
-  sustainableAgriculture: boolean;
-  criminalJusticeReform: boolean;
-  legalAidExpansion: boolean;
-  restorativeJustice: boolean;
-  courtSystemModernization: boolean;
-  artsCultureFunding: boolean;
-  heritagePreservation: boolean;
-  multiculturalPrograms: boolean;
-  languagePreservation: boolean;
-  ruralDevelopment: boolean;
-  ruralHealthcare: boolean;
-  ruralBroadband: boolean;
-  agriculturalSupport: boolean;
-  foreignAidProgram: boolean;
-  refugeeSupport: boolean;
-  diplomaticEngagement: boolean;
-  tradePromotion: boolean;
-  transparencyInitiative: boolean;
-  citizenEngagement: boolean;
-  antiCorruption: boolean;
-  publicServiceReform: boolean;
-}
-
-// Demographics
-export interface DemographicsData {
-  lifeExpectancy: number;
-  urbanRuralSplit: { urban: number; rural: number };
-  ageDistribution: Array<{ group: string; percent: number; color?: string }>;
-  regions: Array<{ name: string; population: number; urbanPercent: number; color?: string }>;
-  educationLevels: Array<{ level: string; percent: number; color?: string }>;
-  literacyRate: number;
-  citizenshipStatuses: Array<{ status: string; percent: number; color?: string }>;
-}
-
-// Spending Category type
-export interface SpendingCategory {
-  category: string;
-  amount: number;
-  percent: number;
-  icon?: string;
-  color?: string;
-  description?: string;
-}
-
-// Aggregate
-export interface EconomyData {
-  core: CoreEconomicIndicatorsData;
-  labor: LaborEmploymentData;
-  fiscal: FiscalSystemData;
-  income: IncomeWealthDistributionData;
-  spending: GovernmentSpendingData;
-  demographics: DemographicsData;
-}
+// Re-export schemas for runtime validation
+export {
+  EconomyDataSchema,
+  EconomySchema,
+  CoreEconomicIndicatorsDataSchema,
+  LaborEmploymentDataSchema,
+  FiscalSystemDataSchema,
+  IncomeWealthDataSchema,
+  GovernmentSpendingDataSchema,
+  DemographicsDataSchema,
+  EconomicTierSchema,
+  EconomicClassSchema,
+  SpendingCategorySchema,
+  TaxBracketSchema,
+  CorporateSizeSchema,
+  RegionTypeSchema,
+  parseEconomy,
+  parseEconomyData,
+  safeParseEconomy,
+  safeParseEconomyData,
+} from "~/schemas/economics.schema";

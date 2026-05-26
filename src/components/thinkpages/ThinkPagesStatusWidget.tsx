@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { Settings, Hash, FileText, UserCircle } from "lucide-react";

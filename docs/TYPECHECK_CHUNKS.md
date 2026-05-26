@@ -1,6 +1,8 @@
 # Chunked TypeScript Typecheck
 
-This repository is too large to run a single global `tsc --noEmit` without exhausting memory. The `scripts/typecheck-chunks.sh` helper runs `tsc` on small groups of files sequentially and writes per-chunk logs.
+> **Note:** The OOM issue that motivated this script has been resolved. Use `bun run typecheck` for full typechecking across all sub-projects. This chunked script remains available as an alternative for very granular per-file diagnostics.
+
+This script runs `tsc` on small groups of files sequentially and writes per-chunk logs.
 
 Usage
 

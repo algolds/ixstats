@@ -1,6 +1,6 @@
 # Economic & Statistical Calculations
 
-**Last updated:** November 2025
+**Last updated:** May 2026
 
 This document provides complete formulas, examples, and logic for all economic calculations, growth modeling, synergy calculations, and statistical projections in IxStats.
 

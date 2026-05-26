@@ -1,6 +1,6 @@
 # Monitoring & Observability
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 Monitoring combines server logs, Discord webhooks, audit scripts, and compliance tooling to keep IxStats healthy.
 

@@ -702,7 +702,7 @@ export const thinkpagesRouter = createTRPCRouter({
       },
       include: {
         account: {
-          select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+          select: { id: true, username: true, displayName: true, profileImageUrl: true, clerkUserId: true },
         },
         parentPost: {
           include: {
@@ -711,7 +711,7 @@ export const thinkpagesRouter = createTRPCRouter({
                 id: true,
                 username: true,
                 displayName: true,
-                avatar: true,
+                profileImageUrl: true,
                 clerkUserId: true,
               },
             },
@@ -724,7 +724,7 @@ export const thinkpagesRouter = createTRPCRouter({
                 id: true,
                 username: true,
                 displayName: true,
-                avatar: true,
+                profileImageUrl: true,
                 clerkUserId: true,
               },
             },
@@ -806,7 +806,7 @@ export const thinkpagesRouter = createTRPCRouter({
               id: true,
               username: true,
               displayName: true,
-              avatar: true,
+              profileImageUrl: true,
               clerkUserId: true,
             },
           },

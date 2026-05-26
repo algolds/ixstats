@@ -1,6 +1,6 @@
 # ThinkPages Component Suite
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 Components in this folder power the ThinkPages social and collaboration experience.
 

@@ -1,6 +1,6 @@
 # Economy System
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 The economy pillar models GDP, income, labor, trade, projections, and economic tiers. It is consumed across MyCountry, dashboard cards, builder flows, and analytics widgets.
 

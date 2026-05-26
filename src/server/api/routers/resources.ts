@@ -108,7 +108,7 @@ export const resourcesRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string().optional() }).optional())
     .mutation(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } },
+        where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } as any },
         select: {
           id: true,
           name: true,

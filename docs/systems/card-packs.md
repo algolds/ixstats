@@ -1,6 +1,6 @@
 # Card Packs System
 
-**Last updated:** November 2025 (Phase 1)
+**Last updated:** May 2026 (Phase 1)
 **Status:** Development - Phase 1 Implementation
 
 Card packs are the primary method for acquiring new cards in IxStats. Players purchase packs with IxCredits, open them through a cinematic reveal sequence, and receive randomized cards based on rarity distribution mechanics.

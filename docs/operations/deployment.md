@@ -1,6 +1,6 @@
 # Deployment Guide
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 IxStats ships as a Next.js app with a custom Node server (`server.mjs`). Production deployments wrap the Next build with base-path tooling and enable WebSocket broadcasting.
 

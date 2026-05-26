@@ -8,6 +8,7 @@
  * ONE country — guaranteeing no layer intersections.
  */
 
+// @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./rng";
 import { type PackedGraph, type CellData } from "./types";

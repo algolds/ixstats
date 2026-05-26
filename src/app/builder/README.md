@@ -1,6 +1,6 @@
 # Builder Overview
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 The builder (`/builder`) lets new nations configure identity, government, economics, demographics, and fiscal policy before entering the MyCountry command suite.
 
