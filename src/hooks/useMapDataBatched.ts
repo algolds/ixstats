@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * useMapDataBatched - Batched map data hook that fetches world map layers,
- * overlay features, and capital cities in a single tRPC request.
+ * useMapDataBatched - Batched map data hook with two-phase loading.
  *
- * Replaces 3 separate queries (getWorldMap + getAllMapFeatures + getCapitalCities)
- * with a single getMapBundle call, reducing HTTP round-trips on initial map load.
+ * Phase 1 (fast): Loads critical layers (background, political, country_labels)
+ *   + overlay features + capitals. The map renders immediately with borders.
  *
- * Maintains the same two-tier cache strategy as useMapData:
- * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL
- * 2. React Query (in-memory) — instant during SPA navigation
+ * Phase 2 (deferred): Loads decorative layers (altitudes, rivers, lakes, icecaps)
+ *   in a separate request. These fill in after the map is already visible.
+ *
+ * Maintains the same IndexedDB + React Query two-tier cache strategy.
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -33,9 +33,20 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "country_labels",
 ];
 
-// Climate is NOT prefetched — lazy-loaded when user toggles the layer.
-// This cuts ~2MB from the initial bundle (climate = 2.12MB uncompressed).
-const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
+/** Critical layers load first — altitudes are the terrain base, must render with map */
+const CRITICAL_LAYERS: MapLayerType[] = [
+  "background",
+  "altitudes",
+  "political",
+  "country_labels",
+];
+
+/** Decorative layers load in a deferred second request */
+const DECORATIVE_LAYERS: MapLayerType[] = [
+  "rivers",
+  "lakes",
+  "icecaps",
+];
 
 export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
@@ -62,22 +73,33 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     return 2;
   }, [zoom]);
 
-  const allRequestedLayers = useMemo(() => {
-    const layers = new Set([...ALL_PREFETCH_LAYERS, ...visibleLayers]);
-    return Array.from(layers);
+  const zoomParam = useMemo(
+    () =>
+      zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
+    [zoomBucket]
+  );
+
+  // Determine which extra layers to include (e.g. user toggled climate on)
+  const extraDecorativeLayers = useMemo(() => {
+    const extra: MapLayerType[] = [];
+    for (const layer of visibleLayers) {
+      if (
+        !CRITICAL_LAYERS.includes(layer) &&
+        !DECORATIVE_LAYERS.includes(layer)
+      ) {
+        extra.push(layer);
+      }
+    }
+    return extra;
   }, [visibleLayers]);
 
-  // Single batched query for all map data
+  // ── Phase 1: Critical layers + overlays + capitals (fast) ──
   const {
-    data: bundleData,
-    isLoading: queryLoading,
-    error,
+    data: criticalBundle,
+    isLoading: criticalLoading,
+    error: criticalError,
   } = api.geoCore.getMapBundle.useQuery(
-    {
-      layers: allRequestedLayers,
-      zoom:
-        zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
-    },
+    { layers: CRITICAL_LAYERS, zoom: zoomParam },
     {
       ...MAP_QUERY_OPTIONS,
       placeholderData: idbData
@@ -86,23 +108,55 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     }
   );
 
-  // Persist world map layers to IndexedDB
+  // ── Phase 2: Decorative layers (deferred) ──
+  const decorativeLayersToFetch = useMemo(
+    () => [...DECORATIVE_LAYERS, ...extraDecorativeLayers],
+    [extraDecorativeLayers]
+  );
+
+  const {
+    data: decorativeData,
+    isLoading: _decorativeLoading,
+  } = api.geoCore.getWorldMap.useQuery(
+    { layers: decorativeLayersToFetch, zoom: zoomParam },
+    {
+      ...MAP_QUERY_OPTIONS,
+      // Don't block the map from rendering — load in background
+      placeholderData: undefined,
+    }
+  );
+
+  // Merge both phases into a single world map record
+  const mergedWorldMap = useMemo(() => {
+    const merged: Record<string, unknown> = {};
+
+    // Start with IDB cache as base (if available)
+    if (idbData) Object.assign(merged, idbData);
+
+    // Overlay critical layers
+    if (criticalBundle?.worldMap) Object.assign(merged, criticalBundle.worldMap);
+
+    // Overlay decorative layers when ready
+    if (decorativeData) Object.assign(merged, decorativeData);
+
+    return Object.keys(merged).length > 0 ? merged : null;
+  }, [idbData, criticalBundle?.worldMap, decorativeData]);
+
+  // Persist to IndexedDB when both phases are loaded
   const persistedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!bundleData?.worldMap) return;
-    const keys = Object.keys(bundleData.worldMap).sort().join(",");
+    if (!mergedWorldMap) return;
+    const keys = Object.keys(mergedWorldMap).sort().join(",");
     if (persistedRef.current === keys) return;
     persistedRef.current = keys;
-    setCachedMapLayers(bundleData.worldMap as Record<string, unknown>);
-  }, [bundleData?.worldMap]);
+    setCachedMapLayers(mergedWorldMap);
+  }, [mergedWorldMap]);
 
-  // Extract world map data
-  const effectiveWorldMap = bundleData?.worldMap ?? idbData;
-  const isLoading = queryLoading && !effectiveWorldMap;
+  const isLoading = criticalLoading && !mergedWorldMap;
 
   const mapLayers: MapLayerData[] = useMemo(() => {
-    if (!effectiveWorldMap) return [];
-    return Object.entries(effectiveWorldMap)
+    if (!mergedWorldMap) return [];
+    return Object.entries(mergedWorldMap)
       .filter(
         ([type]) =>
           MAP_LAYER_TYPES.includes(type as MapLayerType) && LAYER_CONFIGS[type as MapLayerType]
@@ -113,19 +167,19 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
         visible: visibleLayers.has(type as MapLayerType),
       }))
       .sort((a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0));
-  }, [effectiveWorldMap, visibleLayers]);
+  }, [mergedWorldMap, visibleLayers]);
 
   // Extract overlay features
   const overlayFeatures: MapOverlayFeatures | undefined = useMemo(() => {
-    if (!bundleData?.features) return undefined;
-    return bundleData.features as unknown as MapOverlayFeatures;
-  }, [bundleData?.features]);
+    if (!criticalBundle?.features) return undefined;
+    return criticalBundle.features as unknown as MapOverlayFeatures;
+  }, [criticalBundle?.features]);
 
   // Extract capitals
   const capitalsGeoJson: CapitalsGeoJson | undefined = useMemo(() => {
-    if (!bundleData?.capitals) return undefined;
-    return bundleData.capitals as unknown as CapitalsGeoJson;
-  }, [bundleData?.capitals]);
+    if (!criticalBundle?.capitals) return undefined;
+    return criticalBundle.capitals as unknown as CapitalsGeoJson;
+  }, [criticalBundle?.capitals]);
 
   const toggleLayer = useCallback((layer: MapLayerType) => {
     if (LOCKED_LAYERS.includes(layer)) return;
@@ -145,8 +199,9 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     visibleLayers,
     toggleLayer,
     isLoading,
-    error,
+    error: criticalError,
     overlayFeatures,
     capitalsGeoJson,
   };
 }
+

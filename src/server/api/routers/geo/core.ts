@@ -247,6 +247,36 @@ export async function warmGeoCache(db: any): Promise<void> {
   );
 }
 
+/**
+ * Lightweight cache warm-up for dev mode.
+ * Only warms critical layers at default zoom bucket (1) — 4 queries instead of 24.
+ * Runs as fire-and-forget at startup so the first map load is instant.
+ */
+export async function warmGeoCacheDev(db: any): Promise<void> {
+  const start = Date.now();
+  const criticalLayers = ["background", "altitudes", "political", "country_labels"];
+  const defaultZoom: ZoomBucket = 1;
+
+  console.log(`[GeoCache] Dev warm-up: ${criticalLayers.length} critical layers at z${defaultZoom}...`);
+
+  await Promise.all(
+    criticalLayers.map(async (layerType) => {
+      try {
+        const result = await loadLayerFromDB(db, layerType, defaultZoom);
+        if (result) {
+          console.log(
+            `[GeoCache]   ${layerType}: ${result.features.length} features`
+          );
+        }
+      } catch (err) {
+        console.warn(`[GeoCache] Failed to warm ${layerType}:`, err);
+      }
+    })
+  );
+
+  console.log(`[GeoCache] Dev warm-up done in ${Date.now() - start}ms`);
+}
+
 // ──────────────────────────────────────────────
 // Geometry helpers
 // ──────────────────────────────────────────────
@@ -434,6 +464,9 @@ async function loadLayerFromDB(
 
   const layers = await db.mapLayer.findMany({
     where: { layerType, isActive: true },
+    // Explicit take bypasses global findMany guard (db.ts caps at 1000 by default).
+    // Map layers like altitudes have 4000+ features that must all be loaded.
+    take: 50000,
     select: {
       featureId: true,
       geometry: true,
@@ -625,8 +658,63 @@ async function loadLayerFromDB(
 
   // Split features crossing the antimeridian to prevent rendering artifacts
   const split = splitCollectionAtAntimeridian(compressed);
-  setCache(cacheKey, split);
-  return split;
+
+  // Merge decorative layers by fill color — these don't need individual feature identity.
+  // Reduces 4000+ small Polygons to ~9 MultiPolygons (one per color), cutting payload ~30%.
+  const DECORATIVE_LAYERS = new Set(["altitudes", "climate"]);
+  const result = DECORATIVE_LAYERS.has(layerType)
+    ? mergeFeaturesByColor(split)
+    : split;
+
+  setCache(cacheKey, result);
+  return result;
+}
+
+/**
+ * Merge GeoJSON features that share the same _fillColor into single MultiPolygon features.
+ * Only applied to decorative layers (altitudes, climate) that don't need per-feature identity.
+ *
+ * Example: 4068 altitude polygons across 9 colors → 9 MultiPolygon features.
+ */
+function mergeFeaturesByColor(fc: FeatureCollection): FeatureCollection {
+  // Position[][][] = array of polygon rings, each polygon is Position[][] (ring of [lng,lat])
+  const colorGroups = new Map<string, import("geojson").Position[][][]>();
+
+  for (const feature of fc.features) {
+    const color = (feature.properties as Record<string, unknown>)?._fillColor as string ?? "none";
+    if (!colorGroups.has(color)) colorGroups.set(color, []);
+    const polygons = colorGroups.get(color)!;
+
+    const geom = feature.geometry;
+    if (geom.type === "Polygon") {
+      polygons.push((geom as import("geojson").Polygon).coordinates);
+    } else if (geom.type === "MultiPolygon") {
+      for (const poly of (geom as import("geojson").MultiPolygon).coordinates) {
+        polygons.push(poly);
+      }
+    }
+    // Skip non-polygon geometries (shouldn't exist in altitude/climate layers)
+  }
+
+  const features: Feature[] = [];
+  let id = 0;
+  for (const [color, polygons] of colorGroups) {
+    const geometry: import("geojson").MultiPolygon = {
+      type: "MultiPolygon",
+      coordinates: polygons,
+    };
+    features.push({
+      type: "Feature",
+      id: id++,
+      geometry,
+      properties: {
+        _id: `merged_${id}`,
+        _fillColor: color,
+      },
+    });
+  }
+
+  return { type: "FeatureCollection", features };
 }
 
 function getColorForFeature(featureId: string, properties: Record<string, unknown>): string {

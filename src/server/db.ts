@@ -323,6 +323,14 @@ export const db = (globalForPrisma.prisma ??
     .$extends({
       query: {
         $allModels: {
+          /**
+           * Safety guard: cap unbounded findMany queries to 1000 rows.
+           * Prevents accidental full-table scans from OOMing the server.
+           *
+           * ⚠️  IMPORTANT: If your query needs more than 1000 rows,
+           *    set `take` explicitly (e.g. `take: 50000`) to bypass this guard.
+           *    Example: Map layer queries need all 4000+ altitude features.
+           */
           async findMany({ args, query }) {
             if (!args.take && !args.cursor) {
               args.take = 1000;

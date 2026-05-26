@@ -42,7 +42,7 @@ export async function register() {
       // Warm up geo layer cache (pre-load all 7 map layers into memory)
       try {
         const { db } = await import("./server/db");
-        const { warmGeoCache } = await import("./server/api/routers/geo");
+        const { warmGeoCache } = await import("./server/api/routers/geo/core");
         await warmGeoCache(db);
       } catch (geoError) {
         console.warn("[Instrumentation] Geo cache warm-up failed (non-fatal):", geoError);
@@ -78,6 +78,19 @@ export async function register() {
       console.log("[Instrumentation] Dev memory monitoring initialized");
     } catch (error) {
       console.warn("[Instrumentation] Dev memory monitoring setup failed (non-fatal):", error);
+    }
+
+    // Warm critical geo layers in dev so the first map load is instant.
+    // Altitudes (4068 features) takes ~2s to query+compress — do it at startup, not on first request.
+    try {
+      const { db } = await import("./server/db");
+      const { warmGeoCacheDev } = await import("./server/api/routers/geo/core");
+      // Fire-and-forget — don't block server startup
+      warmGeoCacheDev(db).catch((err: unknown) =>
+        console.warn("[Instrumentation] Dev geo cache warm-up failed (non-fatal):", err)
+      );
+    } catch (error) {
+      console.warn("[Instrumentation] Dev geo cache import failed (non-fatal):", error);
     }
   }
 }

@@ -9,8 +9,8 @@
  * Icons: Layers | Analytics | Tools (measure/pin) | Labels toggle
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool, EyeOff, Eye } from "lucide-react";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/map-config";
 import type { OverlayVisibility } from "./IxWorldMap";
 
@@ -41,6 +41,8 @@ const FEATURE_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = [
   { key: "cities", label: "Cities" },
   { key: "pois", label: "Points of Interest" },
   { key: "subdivisions", label: "Regions" },
+  { key: "storyPins", label: "Story Pins" },
+  { key: "mapLabels", label: "Map Labels" },
 ];
 
 const ANALYTICS_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = [
@@ -181,6 +183,10 @@ export function MapControls({
                   onChange={() => onToggleOverlay(item.key)}
                 />
               ))}
+              <ToggleAllRow
+                overlayVisibility={overlayVisibility}
+                onToggleOverlay={onToggleOverlay}
+              />
             </PanelSection>
           )}
 
@@ -274,6 +280,43 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
       </div>
       {children}
     </div>
+  );
+}
+
+function ToggleAllRow({
+  overlayVisibility,
+  onToggleOverlay,
+}: {
+  overlayVisibility: OverlayVisibility;
+  onToggleOverlay: (key: keyof OverlayVisibility) => void;
+}) {
+  const anyFeatureOn = FEATURE_OVERLAYS.some((item) => overlayVisibility[item.key]);
+
+  const handleToggleAll = useCallback(() => {
+    for (const item of FEATURE_OVERLAYS) {
+      // If any are on, we want to turn all off; if all are off, turn all on
+      if (anyFeatureOn && overlayVisibility[item.key]) {
+        onToggleOverlay(item.key);
+      } else if (!anyFeatureOn && !overlayVisibility[item.key]) {
+        onToggleOverlay(item.key);
+      }
+    }
+  }, [anyFeatureOn, overlayVisibility, onToggleOverlay]);
+
+  return (
+    <button
+      onClick={handleToggleAll}
+      className="hover:bg-accent mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t border-border px-1.5 py-1.5 text-left transition-colors sm:py-1"
+    >
+      {anyFeatureOn ? (
+        <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+      ) : (
+        <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+      )}
+      <span className="text-foreground text-[12px] font-medium">
+        {anyFeatureOn ? "Hide All Markers" : "Show All Markers"}
+      </span>
+    </button>
   );
 }
 
