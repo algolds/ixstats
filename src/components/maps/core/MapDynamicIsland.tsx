@@ -162,15 +162,16 @@ export function MapDynamicIsland({
   // Profile data for greeting
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     enabled: !!user?.id,
+    retry: 1, // Retry once on error
   });
-  const countryName = userProfile?.country?.name;
+  const countryName = userProfile?.country?.name ?? "Country";
 
   // Notification stats
   const { stats: notificationStats } = useNotificationStore();
-  const unreadNotifications = notificationStats.unread || 0;
+  const unreadNotifications = notificationStats?.unread ?? 0;
 
   // Messages unread count
-  const { totalUnread: messageUnreadCount, refetch: refetchMessages } = useMessageUnreadCount();
+  const { totalUnread: messageUnreadCount = 0, refetch: refetchMessages } = useMessageUnreadCount();
 
   // Unified unread count for the main pill (optional, currently using separate badges)
   const totalUnread = unreadNotifications + messageUnreadCount;

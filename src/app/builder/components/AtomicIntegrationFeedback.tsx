@@ -107,19 +107,51 @@ export function AtomicIntegrationFeedback({
   };
 
   const handleFeedbackAction = (feedbackItem: FeedbackType) => {
-    if (feedbackItem.actionLabel === "Update Government Builder" && onUpdateGovernmentBuilder) {
-      onUpdateGovernmentBuilder();
-    } else if (feedbackItem.actionLabel === "Add Components" && onAddComponents) {
-      // Extract suggested components from message
-      const suggestedComponents = feedbackItem.message
-        .split("Consider adding: ")[1]
-        ?.split(" for better governance")[0]
-        ?.split(", ") as ComponentType[];
+    if (feedbackItem.actionLabel === "Update Government Builder") {
+      if (onUpdateGovernmentBuilder) {
+        onUpdateGovernmentBuilder();
+      } else {
+        console.warn("Update Government Builder action not available");
+      }
+      return;
+    }
 
-      if (suggestedComponents) {
+    if (feedbackItem.actionLabel === "Add Components") {
+      if (!onAddComponents) {
+        console.warn("Add Components action not available");
+        return;
+      }
+
+      const suggestedComponents = getSuggestedComponents(feedbackItem);
+      if (suggestedComponents.length > 0) {
         onAddComponents(suggestedComponents);
+      } else {
+        console.warn("No suggested components could be parsed from feedback", feedbackItem);
       }
     }
+  };
+
+  const getSuggestedComponents = (feedbackItem: FeedbackType): ComponentType[] => {
+    if (feedbackItem.suggestedComponents && feedbackItem.suggestedComponents.length > 0) {
+      return feedbackItem.suggestedComponents;
+    }
+
+    const match = feedbackItem.message.match(/Consider adding: ([^.]+?)(?: for better governance)?$/);
+    if (!match?.[1]) return [];
+    return match[1].split(", ").map((component) => component.trim()) as ComponentType[];
+  };
+
+  const getActionDisabled = (feedbackItem: FeedbackType) => {
+    if (feedbackItem.actionLabel === "Update Government Builder") {
+      return !onUpdateGovernmentBuilder;
+    }
+
+    if (feedbackItem.actionLabel === "Add Components") {
+      const suggestedComponents = getSuggestedComponents(feedbackItem);
+      return !onAddComponents || suggestedComponents.length === 0;
+    }
+
+    return true;
   };
 
   const overallHealth =
@@ -240,6 +272,7 @@ export function AtomicIntegrationFeedback({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleFeedbackAction(feedbackItem)}
+                                disabled={getActionDisabled(feedbackItem)}
                                 className="mt-2"
                               >
                                 {feedbackItem.actionLabel}
@@ -275,8 +308,8 @@ export function AtomicIntegrationFeedback({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={onUpdateGovernmentBuilder}
-                  disabled={!currentGovernmentBuilder}
+                  onClick={() => onUpdateGovernmentBuilder?.()}
+                  disabled={!currentGovernmentBuilder || !onUpdateGovernmentBuilder}
                   className="flex-1"
                 >
                   <Building2 className="mr-1 h-3 w-3" />

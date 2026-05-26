@@ -11,10 +11,10 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 // ─── Safe Router Import Helper ───────────────────────────────────────────────
 // Wraps a router import so that if it throws (broken dependency, circular import,
 // schema error, etc.) the server still boots with the other routers intact.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const EMPTY_ROUTER = createTRPCRouter({}) as any;
-
-function safeRouter(name: string, routerFn: () => ReturnType<typeof createTRPCRouter>) {
+// Uses a generic type parameter so the concrete router type is preserved — without
+// this, the `as any` fallback collapses the entire AppRouter type to `any`, which
+// breaks all tRPC client-side decorator type inference (2150+ TS2339 errors).
+function safeRouter<T>(name: string, routerFn: () => T): T {
   try {
     return routerFn();
   } catch (error) {
@@ -22,7 +22,7 @@ function safeRouter(name: string, routerFn: () => ReturnType<typeof createTRPCRo
       `[ROOT_ROUTER] ✗ Failed to load router "${name}":`,
       error instanceof Error ? error.message : error
     );
-    return EMPTY_ROUTER;
+    return createTRPCRouter({}) as T;
   }
 }
 

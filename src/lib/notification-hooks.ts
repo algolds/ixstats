@@ -4,7 +4,7 @@
  */
 
 import { notificationAPI } from "./notification-api";
-import { isNotificationEventEnabled } from "./notification-event-guard";
+import { isNotificationEventEnabled, guardNotificationEvent } from "./notification-event-guard";
 
 /**
  * Economic Data Change Hook

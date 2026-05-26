@@ -102,8 +102,13 @@ function ThinkPagesAccountHubInner() {
           </p>
         </div>
         <Button
-          onClick={() => setShowAccountCreation(true)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowAccountCreation(true);
+          }}
           className="gap-1.5 bg-gradient-to-r from-purple-600 to-violet-600 text-white hover:from-purple-700 hover:to-violet-700"
+          type="button"
         >
           <Plus className="h-4 w-4" />
           New Account

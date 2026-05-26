@@ -313,10 +313,15 @@ export function EnhancedAccountManager({
         {/* Create Account Button */}
         {isOwner && accounts.length < 25 && (
           <Button
-            onClick={onCreateAccount}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCreateAccount();
+            }}
             variant="outline"
             size="sm"
             className="flex w-full items-center gap-2"
+            type="button"
           >
             <Plus className="h-4 w-4" />
             Create New Account ({25 - accounts.length} remaining)

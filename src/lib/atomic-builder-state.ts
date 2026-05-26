@@ -3,7 +3,7 @@
  * Phase 2: Atomic Components Native Builder Experience
  */
 
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 
 export interface AtomicBuilderState {
   selectedComponents: ComponentType[];

@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "./scripts/with-base-path.sh next build && bun run postbuild",
+    "prebuild": "node ./scripts/write-build-version.js",
     "build:no-check": "./scripts/with-base-path.sh next build && bun run postbuild",
     "build:fast": "SKIP_ENV_VALIDATION=true ./scripts/with-base-path.sh next build && bun run postbuild",
     "postbuild": "./scripts/post-build.sh",
@@ -35,6 +36,7 @@
     "typecheck:server": "tsc --project tsconfig.server.json --noEmit",
     "typecheck:full": "echo '⚠️ WARNING: Full typecheck requires 8GB+ RAM. Use IDE for type checking instead.' && NODE_OPTIONS='--max-old-space-size=8192' tsc --noEmit",
     "typecheck:quick": "NODE_OPTIONS='--max-old-space-size=4096' tsc --project tsconfig.check.json --noEmit",
+    "typecheck:chunks": "bash scripts/typecheck-chunks.sh 50 logs/typecheck-chunks",
     "sync:owners": "tsx scripts/sync-system-owner-roles.ts",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",

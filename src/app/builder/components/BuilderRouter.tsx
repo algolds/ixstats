@@ -89,19 +89,34 @@ function BuilderRouterInner() {
 
   // Ref to track current builderState.step for use in callbacks without stale closures
   const builderStepRef = useRef(builderState.step);
+  const initialUrlSyncRef = useRef(false);
+
   useEffect(() => {
     builderStepRef.current = builderState.step;
   }, [builderState.step]);
 
+  // Sync builder state with the URL on first load so deep links work correctly.
+  useEffect(() => {
+    if (initialUrlSyncRef.current) return;
+    if (activeSection !== "import") {
+      const targetStep = sectionToLegacyStep(activeSection);
+      if (targetStep !== builderState.step) {
+        setBuilderState((prev) => ({ ...prev, step: targetStep }));
+      }
+    }
+    initialUrlSyncRef.current = true;
+  }, [activeSection, builderState.step, setBuilderState]);
+
   // Sync activeSection when builderState.step changes (handles clear button, footer nav, etc.)
   useEffect(() => {
+    if (!initialUrlSyncRef.current) return;
     const mappedSection = legacyStepToSection(builderState.step) as BuilderSection;
     if (mappedSection !== activeSection && BUILD_STEPS.includes(mappedSection)) {
       setActiveSection(mappedSection);
       window.history.pushState(null, "", withBasePath(buildSectionUrl(mappedSection)));
       document.title = `${SECTION_TITLES[mappedSection]} - MyCountry Builder - IxStats`;
     }
-  }, [builderState.step]);
+  }, [builderState.step, activeSection]);
 
   // Advanced mode state
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);

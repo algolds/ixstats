@@ -90,6 +90,7 @@ export function AccountCreationModal({
   existingAccountCount,
   maxAccounts = 25,
 }: AccountCreationModalProps) {
+  const utils = api.useContext();
   const notify = useNotify();
   const [step, setStep] = useState<"type" | "details">("type");
   const [formData, setFormData] = useState<ThinkpagesAccountInput>({
@@ -111,7 +112,11 @@ export function AccountCreationModal({
   const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const createAccountMutation = api.thinkpages.createAccount.useMutation();
+  const createAccountMutation = api.thinkpages.createAccount.useMutation({
+    onError: (error) => {
+      console.error("[Account Creation Mutation] Error:", error);
+    },
+  });
 
   // Username validation regex (must match backend)
   const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
@@ -192,9 +197,8 @@ export function AccountCreationModal({
     }
   }, [isOpen]);
 
-  // Always allow account creation - backend will enforce the actual limit
-  const canCreateMoreAccounts = true;
-  const accountsRemaining = maxAccounts - existingAccountCount;
+  const accountsRemaining = Math.max(0, maxAccounts - existingAccountCount);
+  const canCreateMoreAccounts = accountsRemaining > 0;
 
   const handleUsernameChange = (value: string) => {
     setFormData((prev) => ({ ...prev, username: value }));
@@ -239,11 +243,30 @@ export function AccountCreationModal({
         ...submitData,
         countryId,
       });
+      await utils.thinkpages.getMyAccounts.invalidate();
+      await utils.thinkpages.getAccountCountsByType.invalidate({ countryId });
       notify.success("Account created successfully!");
       onAccountCreated(newAccount);
       onClose();
     } catch (error: any) {
-      notify.error(error.message || "Failed to create account");
+      // Provide more specific error messages
+      let errorMessage = "Failed to create account";
+      
+      if (error?.data?.code === "CONFLICT") {
+        errorMessage = "An account with this username already exists";
+      } else if (error?.data?.code === "BAD_REQUEST") {
+        errorMessage = error?.data?.message || "Invalid account information. Please check your entries.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error("[Account Creation] Error:", error);
+      notify.error(errorMessage);
+      
+      // Set form error if username conflict
+      if (error?.data?.code === "CONFLICT" && error?.data?.field === "username") {
+        setErrors((prev) => ({ ...prev, username: "This username is already taken" }));
+      }
     }
   };
 
@@ -730,6 +753,7 @@ export function AccountCreationModal({
                       type="button"
                       onClick={handleCreateAccount}
                       disabled={
+                        !canCreateMoreAccounts ||
                         !isUsernameAvailable ||
                         Object.keys(errors).length > 0 ||
                         isCheckingUsername ||

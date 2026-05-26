@@ -3,6 +3,8 @@ import Link from "next/link";
 import { BookOpen, MessageSquare } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
 import { cn } from "~/lib/utils";
+import { IXWORLD_VERSION } from "~/components/maps/core/MapWelcomeModal";
+import { BUILD_VERSION } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/modals/FeedbackModal";
 
@@ -20,6 +22,8 @@ const EXTERNAL_LINKS = [
     color: "text-amber-500",
   },
 ] as const;
+
+/** IxWorld version — reused from MapWelcomeModal */
 
 export function DashboardQuickLinks() {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,8 +89,10 @@ export function DashboardQuickLinks() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
           </span>
-          <span className="text-muted-foreground text-[9px]">System Online</span>
+          <span className="text-muted-foreground text-[9px]">System Online</span> 
+          
         </div>
+        <span className="text-muted-foreground text-[9px]">IxStates v{IXWORLD_VERSION} Build {BUILD_VERSION}</span>
       </div>
     </div>
   );

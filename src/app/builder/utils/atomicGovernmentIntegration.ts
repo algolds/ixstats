@@ -46,6 +46,7 @@ export interface AtomicIntegrationFeedback {
   actionable: boolean;
   actionLabel?: string;
   actionUrl?: string;
+  suggestedComponents?: ComponentType[];
   impact: "low" | "medium" | "high" | "critical";
 }
 
@@ -2743,6 +2744,7 @@ export function generateAtomicIntegrationFeedback(
       message: `Consider adding: ${missingEssential.join(", ")} for better governance`,
       actionable: true,
       actionLabel: "Add Components",
+      suggestedComponents: missingEssential,
       impact: "critical",
     });
   }

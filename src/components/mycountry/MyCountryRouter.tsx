@@ -13,6 +13,7 @@ import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
 import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
 import { usePremium } from "~/hooks/usePremium";
 import { PremiumGate } from "~/components/ui/premium-gate";
+import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
@@ -32,6 +33,46 @@ function SectionSkeleton() {
   );
 }
 
+// Error fallback for failed section loads
+function SectionErrorFallback({
+  sectionName,
+  retry,
+}: {
+  sectionName: string;
+  retry: () => void;
+}) {
+  return (
+    <div className="space-y-4 p-6">
+      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+        <h3 className="font-semibold text-red-400 mb-2">Couldn't Load {sectionName}</h3>
+        <p className="text-sm text-red-300 mb-4">
+          There was an issue loading this section. Try again or refresh the page.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={retry}
+            className="rounded px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-medium transition-colors"
+          >
+            Retry
+          </button>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-medium transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function createSectionFallback(sectionName: string) {
+  return function SectionFallback({ error, retry }: { error: Error; retry: () => void }) {
+    return <SectionErrorFallback sectionName={sectionName} retry={retry} />;
+  };
+}
+
 // Core gameplay sections — eagerly imported for instant tab switching
 import { EnhancedMyCountryContent } from "./EnhancedMyCountryContent";
 import { EnhancedExecutiveContent } from "./EnhancedExecutiveContent";
@@ -44,15 +85,24 @@ const EnhancedIntelligenceContent = dynamic(
     import("./EnhancedIntelligenceContent").then((m) => ({
       default: m.EnhancedIntelligenceContent,
     })),
-  { loading: () => <SectionSkeleton /> }
+  { 
+    loading: () => <SectionSkeleton />,
+    ssr: false,
+  }
 );
 const EnhancedDefenseContent = dynamic(
   () => import("./EnhancedDefenseContent").then((m) => ({ default: m.EnhancedDefenseContent })),
-  { loading: () => <SectionSkeleton /> }
+  { 
+    loading: () => <SectionSkeleton />,
+    ssr: false,
+  }
 );
 const EnhancedMapEditorContent = dynamic(
   () => import("./EnhancedMapEditorContent").then((m) => ({ default: m.EnhancedMapEditorContent })),
-  { loading: () => <SectionSkeleton /> }
+  { 
+    loading: () => <SectionSkeleton />,
+    ssr: false,
+  }
 );
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
@@ -174,6 +224,13 @@ function MyCountryRouterInner() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
+  useEffect(() => {
+    const routeSection = getSectionFromPathname(pathname);
+    if (routeSection !== activeSection) {
+      setActiveSection(routeSection);
+    }
+  }, [pathname, activeSection]);
+
   // Set initial page title
   useEffect(() => {
     if (!country?.name) return;
@@ -233,14 +290,6 @@ function MyCountryRouterInner() {
             notifications={notifications}
           />
         );
-      case "politics":
-        return (
-          <EnhancedPoliticsContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-          />
-        );
       case "map-editor":
         return (
           <EnhancedMapEditorContent
@@ -255,7 +304,12 @@ function MyCountryRouterInner() {
   };
 
   return (
-    <>
+    <DashboardErrorBoundary
+      fallback={createSectionFallback(SECTION_TITLES[activeSection])}
+      title={`Unable to load ${SECTION_TITLES[activeSection]}`}
+      description="This section could not be loaded. Try again or refresh the page."
+      resetKeys={[activeSection]}
+    >
       {renderSection()}
       {activeSection === "overview" && country?.id && complianceSections.length > 0 && (
         <MyCountryComplianceModal
@@ -266,7 +320,7 @@ function MyCountryRouterInner() {
           onDismiss={handleRemindLater}
         />
       )}
-    </>
+    </DashboardErrorBoundary>
   );
 }
 

@@ -849,7 +849,7 @@ export const geoRouter = createTRPCRouter({
             .filter((s) => s.geometry)
             .map((s) => ({
               type: "Feature" as const,
-              geometry: s.geometry as import("geojson").Geometry,
+              geometry: s.geometry as unknown as import("geojson").Geometry,
               properties: {
                 id: s.id,
                 name: s.name,
@@ -2245,7 +2245,7 @@ export const geoRouter = createTRPCRouter({
         // Admin direct apply — update geometry immediately
         const { calculateArea, calculateCentroid, calculateBBox } =
           await import("~/lib/border-editor");
-        const geom = input.proposedGeometry as
+        const geom = input.proposedGeometry as unknown as
           | import("geojson").Polygon
           | import("geojson").MultiPolygon;
         const centroid = calculateCentroid(geom);
@@ -2315,7 +2315,7 @@ export const geoRouter = createTRPCRouter({
 
       const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
         await import("~/lib/border-editor");
-      const geometry = feature.geometry as
+      const geometry = feature.geometry as unknown as
         | import("geojson").Polygon
         | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
@@ -2405,9 +2405,9 @@ export const geoRouter = createTRPCRouter({
 
       // Merge all geometries
       type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;
-      let merged = features[0]!.geometry as GeoType;
+      let merged = features[0]!.geometry as unknown as GeoType;
       for (let i = 1; i < features.length; i++) {
-        merged = mergeGeometries(merged, features[i]!.geometry as GeoType);
+        merged = mergeGeometries(merged, features[i]!.geometry as unknown as GeoType);
       }
 
       const newFeatureId = input.newName.replace(/\s+/g, "_");
@@ -2811,7 +2811,7 @@ export const geoRouter = createTRPCRouter({
       // Get terrain breakdown for the subdivision (informational)
       let terrainInfo: Awaited<ReturnType<typeof getTerrainForArea>> | null = null;
       try {
-        terrainInfo = await getTerrainForArea(ctx.db, input.geometry as import("geojson").Geometry);
+        terrainInfo = await getTerrainForArea(ctx.db, input.geometry as unknown as import("geojson").Geometry);
       } catch {
         // Terrain query failed — non-blocking
       }
@@ -4603,7 +4603,7 @@ export const geoRouter = createTRPCRouter({
           .filter((s) => s.geometry)
           .map((s) => ({
             type: "Feature" as const,
-            geometry: s.geometry as import("geojson").Geometry,
+            geometry: s.geometry as unknown as import("geojson").Geometry,
             properties: {
               id: s.id,
               name: s.name,
@@ -6550,7 +6550,7 @@ export const geoRouter = createTRPCRouter({
       for (const province of input.provinces) {
         if ("coordinates" in province.geometry) {
           const { validateGeometryBounds } = await import("~/lib/geo-validation");
-          validateGeometryBounds(province.geometry as import("geojson").Geometry);
+          validateGeometryBounds(province.geometry as unknown as import("geojson").Geometry);
         }
       }
 
@@ -7317,7 +7317,7 @@ export const geoRouter = createTRPCRouter({
           type: "FeatureCollection" as const,
           features: countries.map((c) => ({
             type: "Feature" as const,
-            geometry: c.geometry as import("geojson").Geometry,
+            geometry: c.geometry as unknown as import("geojson").Geometry,
             properties: {
               id: c.id,
               name: c.name,
@@ -7378,7 +7378,7 @@ export const geoRouter = createTRPCRouter({
             input.groupBy === "region" ? (c.region ?? "Unknown") : (c.continent ?? "Unknown");
           return {
             type: "Feature" as const,
-            geometry: c.geometry as import("geojson").Geometry,
+            geometry: c.geometry as unknown as import("geojson").Geometry,
             properties: {
               id: c.id,
               name: c.name,
@@ -7481,7 +7481,7 @@ export const geoRouter = createTRPCRouter({
 
         riskFeatures.push({
           type: "Feature" as const,
-          geometry: p.country.geometry as import("geojson").Geometry,
+          geometry: p.country.geometry as unknown as import("geojson").Geometry,
           properties: {
             id: p.countryId,
             name: p.country.name,
