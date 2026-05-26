@@ -223,7 +223,7 @@ export const StoryPinModal = memo(function StoryPinModal({
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Fetch full pin data with wiki enrichment
-  const { data, isLoading } = api.geo.getStoryPinFull.useQuery(
+  const { data, isLoading } = api.geoFeatures.getStoryPinFull.useQuery(
     { pinId },
     { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );

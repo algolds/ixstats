@@ -166,7 +166,7 @@ export function useEmbassyNetworkData(
     data: embassies,
     isLoading,
     refetch,
-  } = api.diplomatic.getEmbassies.useQuery({
+  } = api.diplomaticEmbassies.getEmbassies.useQuery({
     countryId,
   });
 

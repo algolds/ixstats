@@ -60,7 +60,7 @@ export const usersRouter = createTRPCRouter({
 
       // Auto-create user record if missing (handles first-time logins)
       if (!userRecord) {
-        const userService = new UserManagementService(ctx.db);
+        const userService = new UserManagementService(ctx.db as any);
         userRecord = await userService.getOrCreateUser(clerkUserId);
       }
 
@@ -199,7 +199,7 @@ export const usersRouter = createTRPCRouter({
         where: { clerkUserId: { in: validIds } },
         include: {
           country: {
-            select: { id: true, name: true, slug: true, flagUrl: true },
+            select: { id: true, name: true, slug: true, flag: true },
           },
         },
       });
@@ -208,11 +208,19 @@ export const usersRouter = createTRPCRouter({
 
       return validIds.map((userId) => {
         const user = userMap.get(userId);
+        const country = user?.country
+          ? {
+              id: user.country.id,
+              name: user.country.name,
+              slug: user.country.slug,
+              flagUrl: user.country.flag,
+            }
+          : null;
         return {
           userId,
-          countryId: user?.country?.id ?? null,
-          country: user?.country ?? null,
-          hasCompletedSetup: !!user?.country,
+          countryId: country?.id ?? null,
+          country,
+          hasCompletedSetup: !!country,
         };
       });
     }),
@@ -826,7 +834,7 @@ export const usersRouter = createTRPCRouter({
       const userId = ctx.auth.userId;
 
       // Use centralized user management service
-      const userService = new UserManagementService(ctx.db);
+      const userService = new UserManagementService(ctx.db as any);
       const user = await userService.getOrCreateUser(userId);
 
       if (!user) {

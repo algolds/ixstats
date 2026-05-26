@@ -13,15 +13,15 @@ export function IntelligenceSidebarWidget({ countryId }: IntelligenceSidebarWidg
     { countryId },
     { enabled: !!countryId }
   );
-  const { data: intelligenceOverview } = api.unifiedIntelligence.getOverview.useQuery(
+  const { data: intelligenceOverview } = api.intelCore.getOverview.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-  const { data: keyFindings } = api.unifiedIntelligence.getKeyFindings.useQuery(
+  const { data: keyFindings } = api.intelCore.getKeyFindings.useQuery(
     { countryId },
     { enabled: !!countryId }
   );

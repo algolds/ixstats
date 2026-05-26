@@ -59,7 +59,7 @@ export function TrendRiskAnalytics({ countryId, userId }: TrendRiskAnalyticsProp
     data: analytics,
     isLoading: analyticsLoading,
     refetch: refetchAnalytics,
-  } = api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+  } = api.intelAnalytics.getAdvancedAnalytics.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
@@ -70,7 +70,7 @@ export function TrendRiskAnalytics({ countryId, userId }: TrendRiskAnalyticsProp
 
   // Get security dashboard for risk assessment
   const { data: securityDashboard, isLoading: securityLoading } =
-    api.unifiedIntelligence.getSecurityDashboard.useQuery(
+    api.intelAlerts.getSecurityDashboard.useQuery(
       { userId: userId ?? "" },
       { enabled: !!userId }
     );

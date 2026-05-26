@@ -39,7 +39,7 @@ export const transportRouter = createTRPCRouter({
         type: "FeatureCollection" as const,
         features: routes.map((r) => ({
           type: "Feature" as const,
-          geometry: r.geometry as import("geojson").Geometry,
+          geometry: r.geometry as unknown as import("geojson").Geometry,
           properties: {
             id: r.id,
             name: r.name,
@@ -80,7 +80,7 @@ export const transportRouter = createTRPCRouter({
         type: "FeatureCollection" as const,
         features: routes.map((r) => ({
           type: "Feature" as const,
-          geometry: r.geometry as import("geojson").Geometry,
+          geometry: r.geometry as unknown as import("geojson").Geometry,
           properties: {
             id: r.id,
             name: r.name,
@@ -204,7 +204,7 @@ export const transportRouter = createTRPCRouter({
           select: { geometry: true },
         });
         if (countryGeo?.geometry) {
-          const coords = extractBoundaryCoords(countryGeo.geometry as import("geojson").Geometry);
+          const coords = extractBoundaryCoords(countryGeo.geometry as unknown as import("geojson").Geometry);
           cityNodes = estimateCoastalCities(cityNodes, coords, 50);
         }
       }
@@ -233,7 +233,7 @@ export const transportRouter = createTRPCRouter({
             name: route.name,
             geometry: route.geometry,
             stops: route.stops,
-            properties: route.properties,
+            properties: route.properties as any,
             isInternational: route.isInternational,
             status: "operational",
             terrainDifficulty: route.terrainDifficulty,

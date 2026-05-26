@@ -81,12 +81,12 @@ export interface UseUnifiedIntelligenceReturn {
   pagination: PaginationState;
 
   // Data
-  overview: ReturnType<typeof api.unifiedIntelligence.getOverview.useQuery>["data"];
-  quickActions: ReturnType<typeof api.unifiedIntelligence.getQuickActions.useQuery>["data"];
-  intelligenceFeed: ReturnType<typeof api.unifiedIntelligence.getIntelligenceFeed.useQuery>["data"];
-  analytics: ReturnType<typeof api.unifiedIntelligence.getAnalytics.useQuery>["data"];
+  overview: ReturnType<typeof api.intelCore.getOverview.useQuery>["data"];
+  quickActions: ReturnType<typeof api.intelCore.getQuickActions.useQuery>["data"];
+  intelligenceFeed: ReturnType<typeof api.intelCore.getIntelligenceFeed.useQuery>["data"];
+  analytics: ReturnType<typeof api.intelAnalytics.getAnalytics.useQuery>["data"];
   diplomaticChannels: ReturnType<
-    typeof api.unifiedIntelligence.getDiplomaticChannels.useQuery
+    typeof api.intelCore.getDiplomaticChannels.useQuery
   >["data"];
 
   // Loading states
@@ -152,7 +152,7 @@ export function useUnifiedIntelligence({
     isLoading: overviewLoading,
     refetch: refetchOverview,
     isFetching: overviewRefreshing,
-  } = api.unifiedIntelligence.getOverview.useQuery(
+  } = api.intelCore.getOverview.useQuery(
     { countryId },
     {
       enabled: !!countryId,
@@ -165,7 +165,7 @@ export function useUnifiedIntelligence({
     isLoading: actionsLoading,
     refetch: refetchActions,
     isFetching: actionsRefreshing,
-  } = api.unifiedIntelligence.getQuickActions.useQuery(
+  } = api.intelCore.getQuickActions.useQuery(
     { countryId },
     {
       enabled: !!countryId,
@@ -178,7 +178,7 @@ export function useUnifiedIntelligence({
     isLoading: feedLoading,
     refetch: refetchFeed,
     isFetching: feedRefreshing,
-  } = api.unifiedIntelligence.getIntelligenceFeed.useQuery(
+  } = api.intelCore.getIntelligenceFeed.useQuery(
     {
       countryId,
       category: filters.category !== "all" ? filters.category : undefined,
@@ -197,7 +197,7 @@ export function useUnifiedIntelligence({
     isLoading: analyticsLoading,
     refetch: refetchAnalytics,
     isFetching: analyticsRefreshing,
-  } = api.unifiedIntelligence.getAnalytics.useQuery(
+  } = api.intelAnalytics.getAnalytics.useQuery(
     { countryId, timeframe: "30d" },
     {
       enabled: !!countryId && activeTab === "analytics",
@@ -210,7 +210,7 @@ export function useUnifiedIntelligence({
     isLoading: channelsLoading,
     refetch: refetchChannels,
     isFetching: channelsRefreshing,
-  } = api.unifiedIntelligence.getDiplomaticChannels.useQuery(
+  } = api.intelCore.getDiplomaticChannels.useQuery(
     {
       countryId,
       clearanceLevel: filters.classification !== "all" ? filters.classification : "PUBLIC",
@@ -222,7 +222,7 @@ export function useUnifiedIntelligence({
   );
 
   // Mutations
-  const executeActionMutation = api.unifiedIntelligence.executeAction.useMutation({
+  const executeActionMutation = api.intelCore.executeAction.useMutation({
     onSuccess: (result) => {
       notify.success("Action Executed", `${result.message} - ${result.effect}`);
       void refetchOverview();
@@ -233,7 +233,7 @@ export function useUnifiedIntelligence({
     },
   });
 
-  const acknowledgeAlertMutation = api.unifiedIntelligence.acknowledgeAlert.useMutation({
+  const acknowledgeAlertMutation = api.intelAlerts.acknowledgeAlert.useMutation({
     onSuccess: () => {
       notify.success("Alert Acknowledged");
       void refetchOverview();
@@ -243,7 +243,7 @@ export function useUnifiedIntelligence({
     },
   });
 
-  const archiveAlertMutation = api.unifiedIntelligence.archiveAlert.useMutation({
+  const archiveAlertMutation = api.intelAlerts.archiveAlert.useMutation({
     onSuccess: () => {
       notify.success("Alert archived");
       void refetchOverview();
@@ -253,7 +253,7 @@ export function useUnifiedIntelligence({
     },
   });
 
-  const sendMessageMutation = api.unifiedIntelligence.sendSecureMessage.useMutation({
+  const sendMessageMutation = api.intelCore.sendSecureMessage.useMutation({
     onSuccess: (result) => {
       notify.success(
         "Message Sent",
@@ -519,7 +519,7 @@ export function useUnifiedIntelligence({
  * Lightweight hook for dashboard widgets that only need overview data
  */
 export function useIntelligenceOverview(countryId: string) {
-  const { data, isLoading, refetch } = api.unifiedIntelligence.getOverview.useQuery(
+  const { data, isLoading, refetch } = api.intelCore.getOverview.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
@@ -535,12 +535,12 @@ export function useIntelligenceOverview(countryId: string) {
  * Hook specifically for quick actions functionality
  */
 export function useQuickActions(countryId: string) {
-  const { data, isLoading, refetch } = api.unifiedIntelligence.getQuickActions.useQuery(
+  const { data, isLoading, refetch } = api.intelCore.getQuickActions.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const executeMutation = api.unifiedIntelligence.executeAction.useMutation({
+  const executeMutation = api.intelCore.executeAction.useMutation({
     onSuccess: () => {
       void refetch();
     },

@@ -116,18 +116,6 @@ export function MapContainer({
     };
   }, []);
 
-  useEffect(() => {
-    if (isLoading || mapEngineReady) return;
-
-    const timer = setTimeout(() => {
-      if (!mapEngineReady) {
-        setMapLoadTimeout(true);
-      }
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, [isLoading, mapEngineReady]);
-
   const [geographyFilter, setGeographyFilter] = useState<{
     type: "continent" | "region";
     value: string;
@@ -156,6 +144,19 @@ export function MapContainer({
     capitalsGeoJson: batchedCapitalsGeoJson,
   } = useMapDataBatched(initialLayers, currentZoom);
 
+  // Moved after isLoading is declared to avoid TS2448 (used before declaration)
+  useEffect(() => {
+    if (isLoading || mapEngineReady) return;
+
+    const timer = setTimeout(() => {
+      if (!mapEngineReady) {
+        setMapLoadTimeout(true);
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, mapEngineReady]);
+
   const {
     isPinToolActive,
     togglePinTool,
@@ -168,11 +169,11 @@ export function MapContainer({
   } = useMapPinInfo();
 
   // Overlay features come from batched query + story pins/labels
-  const { data: storyPinsGeoJson } = api.geo.getAllStoryPins.useQuery(undefined, {
+  const { data: storyPinsGeoJson } = api.geoFeatures.getAllStoryPins.useQuery(undefined, {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
   });
-  const { data: mapLabelsGeoJson } = api.geo.getAllMapLabels.useQuery(undefined, {
+  const { data: mapLabelsGeoJson } = api.geoFeatures.getAllMapLabels.useQuery(undefined, {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
   });
@@ -199,19 +200,19 @@ export function MapContainer({
   });
 
   // Analytics overlay data — only fetched when the corresponding toggle is ON
-  const { data: wealthData } = api.geo.getRegionalChoropleth.useQuery(
+  const { data: wealthData } = api.geoCore.getRegionalChoropleth.useQuery(
     { metric: "gdpPerCapita", groupBy: "country" },
     { enabled: overlayVisibility.wealth, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
-  const { data: populationData } = api.geo.getRegionalChoropleth.useQuery(
+  const { data: populationData } = api.geoCore.getRegionalChoropleth.useQuery(
     { metric: "population", groupBy: "country" },
     { enabled: overlayVisibility.population, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
-  const { data: crisisData } = api.geo.getCrisisRiskMap.useQuery(
+  const { data: crisisData } = api.geoCore.getCrisisRiskMap.useQuery(
     {},
     { enabled: overlayVisibility.crises, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
-  const { data: diplomacyData } = api.geo.getGeopoliticalOverlay.useQuery(undefined, {
+  const { data: diplomacyData } = api.geoCore.getGeopoliticalOverlay.useQuery(undefined, {
     enabled: overlayVisibility.diplomacy,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
@@ -275,7 +276,7 @@ export function MapContainer({
   const topCountrySet = useMemo(() => new Set(topCountryNames ?? []), [topCountryNames]);
 
   // Deep-link: auto-select and fly to a country on mount
-  const { data: initialGeo } = api.geo.getCountryGeometry.useQuery(
+  const { data: initialGeo } = api.geoCore.getCountryGeometry.useQuery(
     { countryId: initialCountryId! },
     { enabled: !!initialCountryId, staleTime: 30 * 60_000 }
   );
@@ -370,8 +371,8 @@ export function MapContainer({
       if (country.countryId) {
         const opts = { staleTime: 10 * 60_000 };
         void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
-        void utils.geo.getNeighbors.prefetch({ countryId: country.countryId }, opts);
-        void utils.geo.getCountrySovereignty.prefetch({ countryId: country.countryId }, opts);
+        void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
+        void utils.geoSovereignty.getCountrySovereignty.prefetch({ countryId: country.countryId }, opts);
       }
     },
     [utils]

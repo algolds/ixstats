@@ -47,7 +47,7 @@ export function useTaxComponents({ countryId, initialComponents = [] }: UseTaxCo
     if (getComponentsQuery.data && getComponentsQuery.data.length > 0) {
       const activeComponents = getComponentsQuery.data
         .filter((comp) => comp.isActive)
-        .map((comp) => comp.componentType);
+        .map((comp) => comp.componentType as TaxComponentType);
       setSelectedComponents(activeComponents);
     }
   }, [getComponentsQuery.data]);

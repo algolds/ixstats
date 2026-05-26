@@ -19,28 +19,28 @@ export function CountryAssigner() {
 
   const utils = api.useUtils();
 
-  const { data: features, isLoading: featuresLoading } = api.geo.listCountries.useQuery();
+  const { data: features, isLoading: featuresLoading } = api.geoCore.listCountries.useQuery();
 
   // Get all countries from the database for the assignment dropdown
   const { data: dbCountries } = api.countries.getAll.useQuery(undefined, {
     staleTime: 60000,
   });
 
-  const assignMutation = api.geo.assignCountryGeometry.useMutation({
+  const assignMutation = api.geoEditor.assignCountryGeometry.useMutation({
     onSuccess: () => {
-      utils.geo.listCountries.invalidate();
-      utils.geo.getMapStats.invalidate();
-      utils.geo.getWorldMap.invalidate();
+      utils.geoCore.listCountries.invalidate();
+      utils.geoCore.getMapStats.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
       setAssigningFeatureId(null);
       setSelectedCountryId("");
     },
   });
 
-  const unlinkMutation = api.geo.unlinkCountryGeometry.useMutation({
+  const unlinkMutation = api.geoEditor.unlinkCountryGeometry.useMutation({
     onSuccess: () => {
-      utils.geo.listCountries.invalidate();
-      utils.geo.getMapStats.invalidate();
-      utils.geo.getWorldMap.invalidate();
+      utils.geoCore.listCountries.invalidate();
+      utils.geoCore.getMapStats.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
     },
   });
 

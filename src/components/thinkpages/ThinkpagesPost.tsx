@@ -304,6 +304,7 @@ const ThinkpagesPostComponent = ({
       document.addEventListener("click", handleClickOutside);
       return () => document.removeEventListener("click", handleClickOutside);
     }
+    return;
   }, [showMoreOptions]);
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation();

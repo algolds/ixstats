@@ -57,12 +57,12 @@ export function CollectiveActionsPanel({
   const [actionType, setActionType] = useState<string>("joint_statement");
   const [description, setDescription] = useState("");
 
-  const { data: dashboard, refetch } = api.diplomatic.getAllianceDashboard.useQuery(
+  const { data: dashboard, refetch } = api.diplomaticPolicies.getAllianceDashboard.useQuery(
     { allianceId },
     { enabled: !!allianceId }
   );
 
-  const proposeMutation = api.diplomatic.proposeAllianceAction.useMutation({
+  const proposeMutation = api.diplomaticPolicies.proposeAllianceAction.useMutation({
     onSuccess: () => {
       setProposeOpen(false);
       setTitle("");
@@ -71,7 +71,7 @@ export function CollectiveActionsPanel({
     },
   });
 
-  const voteMutation = api.diplomatic.voteOnAllianceAction.useMutation({
+  const voteMutation = api.diplomaticPolicies.voteOnAllianceAction.useMutation({
     onSuccess: () => void refetch(),
   });
 

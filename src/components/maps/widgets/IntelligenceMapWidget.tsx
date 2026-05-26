@@ -55,7 +55,7 @@ export function IntelligenceMapWidget({
     hasGeometry,
   } = useCountryMapEmbed(countryId);
 
-  const { data: relations, isLoading: relationsLoading } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations, isLoading: relationsLoading } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 5 * 60_000 }
   );

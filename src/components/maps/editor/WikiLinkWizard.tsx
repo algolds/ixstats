@@ -55,13 +55,13 @@ export function WikiLinkWizard({
   const debouncedQuery = useDebounce(searchQuery, 300);
 
   // Wiki search
-  const { data: searchResults, isLoading: searchLoading } = api.geo.searchWikiPages.useQuery(
+  const { data: searchResults, isLoading: searchLoading } = api.geoWiki.searchWikiPages.useQuery(
     { query: debouncedQuery, limit: 8 },
     { enabled: isSearching && debouncedQuery.length >= 2, staleTime: 30_000 }
   );
 
   // Infobox parse (fires when a page is linked)
-  const { data: infobox, isLoading: infoboxLoading } = api.geo.parseWikiInfobox.useQuery(
+  const { data: infobox, isLoading: infoboxLoading } = api.geoWiki.parseWikiInfobox.useQuery(
     { pageTitle: value! },
     { enabled: !!value && showInfobox, staleTime: 5 * 60_000 }
   );

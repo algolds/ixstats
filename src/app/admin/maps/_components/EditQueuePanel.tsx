@@ -20,23 +20,23 @@ export function EditQueuePanel() {
 
   const utils = api.useUtils();
 
-  const { data, isLoading } = api.geo.getEditQueue.useQuery(
+  const { data, isLoading } = api.geoEditor.getEditQueue.useQuery(
     { status: statusFilter, limit: 50 },
     { refetchInterval: statusFilter === "pending" ? 15000 : false }
   );
 
-  const approveMutation = api.geo.approveEdit.useMutation({
+  const approveMutation = api.geoEditor.approveEdit.useMutation({
     onSuccess: () => {
-      utils.geo.getEditQueue.invalidate();
-      utils.geo.getMapStats.invalidate();
+      utils.geoEditor.getEditQueue.invalidate();
+      utils.geoCore.getMapStats.invalidate();
       setExpandedId(null);
       setReviewNote("");
     },
   });
 
-  const rejectMutation = api.geo.rejectEdit.useMutation({
+  const rejectMutation = api.geoEditor.rejectEdit.useMutation({
     onSuccess: () => {
-      utils.geo.getEditQueue.invalidate();
+      utils.geoEditor.getEditQueue.invalidate();
       setExpandedId(null);
       setReviewNote("");
     },
@@ -130,7 +130,7 @@ export function EditQueuePanel() {
                       Proposed Changes
                     </span>
                     <pre className="bg-muted text-foreground mt-1 max-h-40 overflow-auto rounded-lg p-3 text-xs">
-                      {JSON.stringify(edit.proposedData, null, 2)}
+                      {JSON.stringify(edit.proposedData as any, null, 2)}
                     </pre>
                   </div>
 
@@ -141,7 +141,7 @@ export function EditQueuePanel() {
                         Current Data
                       </span>
                       <pre className="bg-muted text-foreground mt-1 max-h-40 overflow-auto rounded-lg p-3 text-xs">
-                        {JSON.stringify(edit.currentData, null, 2)}
+                        {JSON.stringify(edit.currentData as any, null, 2)}
                       </pre>
                     </div>
                   )}

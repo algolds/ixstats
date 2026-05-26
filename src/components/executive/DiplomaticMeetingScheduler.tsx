@@ -105,13 +105,13 @@ export function DiplomaticMeetingScheduler({
   const [selectedEmbassy, setSelectedEmbassy] = useState<string | null>(null);
 
   // Get diplomatic relations
-  const { data: relations = [] } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations = [] } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: open }
   );
 
   // Get embassies for location selection
-  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies = [] } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: open }
   );

@@ -66,7 +66,10 @@ import { scheduledChangesRouter } from "./routers/scheduledChanges";
 import { nationalIssuesRouter } from "./routers/national-issues";
 
 // ─── Diplomacy ───────────────────────────────────────────────────────────────
-import { diplomaticRouter } from "./routers/diplomatic";
+import { diplomaticCoreRouter } from "./routers/diplomacy/core";
+import { diplomaticEmbassiesRouter } from "./routers/diplomacy/embassies";
+import { diplomaticCulturalRouter } from "./routers/diplomacy/cultural";
+import { diplomaticPoliciesRouter } from "./routers/diplomacy/policies";
 import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
 import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
 import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
@@ -75,7 +78,9 @@ import { archetypesRouter } from "./routers/archetypes";
 
 // ─── Intelligence & Security ─────────────────────────────────────────────────
 import { intelligenceRouter, intelligenceBriefingRouter } from "./routers/intelligence";
-import { unifiedIntelligenceRouter } from "./routers/unified-intelligence";
+import { intelCoreRouter } from "./routers/intelligence/core";
+import { intelAlertsRouter } from "./routers/intelligence/alerts";
+import { intelAnalyticsRouter } from "./routers/intelligence/analytics";
 import { securityRouter } from "./routers/security";
 import { meetingsRouter } from "./routers/meetings";
 
@@ -96,7 +101,12 @@ import { craftingRouter } from "./routers/crafting";
 import { tradingRouter } from "./routers/trading";
 
 // ─── Maps & Geo ──────────────────────────────────────────────────────────────
-import { geoRouter } from "./routers/geo";
+import { geoCoreRouter } from "./routers/geo/core";
+import { geoFeaturesRouter } from "./routers/geo/features";
+import { geoEditorRouter } from "./routers/geo/editor";
+import { geoAdminRouter } from "./routers/geo/admin";
+import { geoSovereigntyRouter } from "./routers/geo/sovereignty";
+import { geoWikiRouter } from "./routers/geo/wiki";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
 import { studioRouter } from "./routers/studio";
@@ -174,7 +184,10 @@ export const appRouter = createTRPCRouter({
   nationalIssues: safeRouter("nationalIssues", () => nationalIssuesRouter),
 
   // ─── Diplomacy ─────────────────────────────────────────────────────────────
-  diplomatic: safeRouter("diplomatic", () => diplomaticRouter),
+  diplomaticCore: safeRouter("diplomaticCore", () => diplomaticCoreRouter),
+  diplomaticEmbassies: safeRouter("diplomaticEmbassies", () => diplomaticEmbassiesRouter),
+  diplomaticCultural: safeRouter("diplomaticCultural", () => diplomaticCulturalRouter),
+  diplomaticPolicies: safeRouter("diplomaticPolicies", () => diplomaticPoliciesRouter),
   diplomaticIntelligence: safeRouter("diplomaticIntelligence", () => diplomaticIntelligenceRouter),
   diplomaticScenarios: safeRouter("diplomaticScenarios", () => diplomaticScenariosRouter),
   npcPersonalities: safeRouter("npcPersonalities", () => npcPersonalitiesRouter),
@@ -184,7 +197,9 @@ export const appRouter = createTRPCRouter({
   // ─── Intelligence & Security ───────────────────────────────────────────────
   intelligence: safeRouter("intelligence", () => intelligenceRouter),
   intelligenceBriefing: safeRouter("intelligenceBriefing", () => intelligenceBriefingRouter),
-  unifiedIntelligence: safeRouter("unifiedIntelligence", () => unifiedIntelligenceRouter),
+  intelCore: safeRouter("intelCore", () => intelCoreRouter),
+  intelAlerts: safeRouter("intelAlerts", () => intelAlertsRouter),
+  intelAnalytics: safeRouter("intelAnalytics", () => intelAnalyticsRouter),
   security: safeRouter("security", () => securityRouter),
   meetings: safeRouter("meetings", () => meetingsRouter),
 
@@ -205,7 +220,12 @@ export const appRouter = createTRPCRouter({
   trading: safeRouter("trading", () => tradingRouter),
 
   // ─── Maps & Geo ────────────────────────────────────────────────────────────
-  geo: safeRouter("geo", () => geoRouter),
+  geoCore: safeRouter("geoCore", () => geoCoreRouter),
+  geoFeatures: safeRouter("geoFeatures", () => geoFeaturesRouter),
+  geoEditor: safeRouter("geoEditor", () => geoEditorRouter),
+  geoAdmin: safeRouter("geoAdmin", () => geoAdminRouter),
+  geoSovereignty: safeRouter("geoSovereignty", () => geoSovereigntyRouter),
+  geoWiki: safeRouter("geoWiki", () => geoWikiRouter),
   resources: safeRouter("resources", () => resourcesRouter),
   transport: safeRouter("transport", () => transportRouter),
   studio: safeRouter("studio", () => studioRouter),

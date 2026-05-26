@@ -76,14 +76,14 @@ export function GlobalStatsCard({
 }: GlobalStatsCardProps) {
   // Wire to live data via tRPC (migrated from deprecated SDI router to unified intelligence)
   const { data: activeCrises, isLoading: crisesLoading } =
-    api.unifiedIntelligence.getActiveCrises.useQuery();
+    api.intelAlerts.getActiveCrises.useQuery();
   const { data: intelligenceFeed, isLoading: intelLoading } =
-    api.unifiedIntelligence.getIntelligenceFeed.useQuery({
+    api.intelCore.getIntelligenceFeed.useQuery({
       limit: 10,
       offset: 0,
     });
   const { data: economicIndicators, isLoading: economicLoading } =
-    api.unifiedIntelligence.getEconomicIndicators.useQuery();
+    api.intelAnalytics.getEconomicIndicators.useQuery();
 
   const isLoading = crisesLoading || intelLoading || economicLoading;
   return (

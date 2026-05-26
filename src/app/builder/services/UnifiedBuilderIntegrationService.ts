@@ -148,11 +148,6 @@ export const GOVERNMENT_TO_ECONOMY_MAPPING: Partial<
     EconomicComponentType.HEALTHCARE_FOCUSED,
   ],
 
-  // Additional Government Systems
-  [ComponentType.MINIMAL_GOVERNMENT]: [
-    EconomicComponentType.FREE_MARKET_SYSTEM,
-    EconomicComponentType.FLEXIBLE_LABOR,
-  ],
   [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,
     EconomicComponentType.STARTUP_ECOSYSTEM,

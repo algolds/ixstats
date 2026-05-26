@@ -19,13 +19,13 @@ export function BorderEditorTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search for features
-  const { data: searchResults } = api.geo.searchFeatures.useQuery(
+  const { data: searchResults } = api.geoCore.searchFeatures.useQuery(
     { query: searchQuery, types: ["political"], limit: 10 },
     { enabled: searchQuery.length >= 2 }
   );
 
   // Load neighbor geometries when editing
-  const { data: neighborGeoms } = api.geo.getNeighborGeometries.useQuery(
+  const { data: neighborGeoms } = api.geoCore.getNeighborGeometries.useQuery(
     { featureId: state.featureId! },
     { enabled: !!state.featureId }
   );

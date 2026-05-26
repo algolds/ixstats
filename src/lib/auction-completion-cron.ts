@@ -64,7 +64,7 @@ export async function processExpiredAuctions() {
 
     for (const auction of expiredAuctions) {
       try {
-        await auctionService.completeAuction(auction.id, db);
+        await auctionService.completeAuction(auction.id, db as any);
         successCount++;
         console.log(
           `[CRON] ✓ Completed auction ${auction.id} (card: ${auction.cardInstanceId}, winner: ${auction.currentBidderId ?? "none"})`

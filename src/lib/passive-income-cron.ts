@@ -86,7 +86,7 @@ export async function distributePassiveIncome() {
             }
 
             // Calculate daily dividend using the vault service
-            const dailyIncome = await vaultService.calculatePassiveIncome(country.id, db);
+            const dailyIncome = await vaultService.calculatePassiveIncome(country.id, db as any);
 
             if (dailyIncome > 0) {
               // Award passive income
@@ -95,7 +95,7 @@ export async function distributePassiveIncome() {
                 dailyIncome,
                 "EARN_PASSIVE",
                 "DAILY_DIVIDEND",
-                db,
+                db as any,
                 {
                   countryId: country.id,
                   countryName: country.name,
@@ -179,7 +179,7 @@ export async function testPassiveIncomeDistribution() {
     console.log(`[TEST] Testing with ${countries.length} sample countries\n`);
 
     for (const country of countries) {
-      const dailyIncome = await vaultService.calculatePassiveIncome(country.id, db);
+      const dailyIncome = await vaultService.calculatePassiveIncome(country.id, db as any);
 
       console.log(
         `[TEST] ${country.name}:`,

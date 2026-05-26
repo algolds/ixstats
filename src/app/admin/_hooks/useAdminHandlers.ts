@@ -15,7 +15,7 @@ interface UseAdminHandlersParams {
   setConfig: React.Dispatch<React.SetStateAction<AdminConfig>>;
   setImportState: React.Dispatch<React.SetStateAction<ImportState>>;
   saveConfigMutation: ReturnType<typeof api.admin.saveConfig.useMutation>;
-  forceCalculationMutation: ReturnType<typeof api.countries.updateStats.useMutation>;
+  forceCalculationMutation: ReturnType<typeof api.admin.forceRecalculation.useMutation>;
   setCustomTimeMutation: ReturnType<typeof api.admin.setCustomTime.useMutation>;
   analyzeImportMutation: ReturnType<typeof api.admin.analyzeImport.useMutation>;
   importDataMutation: ReturnType<typeof api.admin.importRosterData.useMutation>;

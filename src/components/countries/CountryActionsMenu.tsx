@@ -55,7 +55,7 @@ export function CountryActionsMenu({
   const [copiedLink, setCopiedLink] = useState(false);
 
   const { data: followStatus, refetch: refetchFollowStatus } =
-    api.diplomatic.getFollowStatus.useQuery(
+    api.diplomaticCore.getFollowStatus.useQuery(
       { viewerCountryId: viewerCountryId || "", targetCountryId },
       { enabled: !!viewerCountryId }
     );
@@ -65,7 +65,7 @@ export function CountryActionsMenu({
     { enabled: isOpen }
   );
 
-  const followMutation = api.diplomatic.followCountry.useMutation({
+  const followMutation = api.diplomaticCore.followCountry.useMutation({
     onSuccess: () => {
       notify.success(`Now following ${targetCountryName}`);
       void refetchFollowStatus();
@@ -73,7 +73,7 @@ export function CountryActionsMenu({
     onError: (error) => notify.error(`Failed to follow: ${error.message}`),
   });
 
-  const unfollowMutation = api.diplomatic.unfollowCountry.useMutation({
+  const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
     onSuccess: () => {
       notify.success(`Unfollowed ${targetCountryName}`);
       void refetchFollowStatus();
@@ -81,7 +81,7 @@ export function CountryActionsMenu({
     onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
   });
 
-  const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
+  const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
     onSuccess: () => {
       notify.success(`Embassy construction initiated with ${targetCountryName}`);
       onClose();
@@ -89,7 +89,7 @@ export function CountryActionsMenu({
     onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
   });
 
-  const foreignPolicyMutation = api.diplomatic.proposeForeignPolicyAction.useMutation({
+  const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
     onSuccess: (_, variables) => {
       const labels: Record<string, string> = {
         free_trade: "Free trade agreement",

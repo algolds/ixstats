@@ -17,7 +17,7 @@
  */
 
 import { useMemo } from "react";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import {
   DiplomaticScenarioGenerator,
   type ScenarioType,
@@ -71,7 +71,7 @@ export interface ParsedDiplomaticScenario {
   outcomeNotes?: any; // Parsed from JSON
 }
 
-type ScenarioResponse = RouterOutputs["diplomaticScenarios"]["getScenarioById"];
+type ScenarioResponse = any;
 
 /**
  * useDiplomaticScenarios - Fetch diplomatic scenarios data

@@ -20,7 +20,7 @@ export function CrisisStatusBanner({ countryId }: CrisisStatusBannerProps) {
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Get crisis events affecting this country
-  const { data: crisisEvents, isLoading } = api.unifiedIntelligence.getCrisisEvents.useQuery();
+  const { data: crisisEvents, isLoading } = api.intelAlerts.getCrisisEvents.useQuery();
 
   if (isLoading) {
     return null; // Don't show loading state for this banner

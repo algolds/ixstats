@@ -92,14 +92,14 @@ export function ProposePolicyModal({ countryId, onSuccess }: ProposePolicyModalP
   const [reason, setReason] = useState("");
 
   // Get countries for target selection
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: open }
   );
 
   // Preview impact when target + action are selected
   const { data: preview, isFetching: previewLoading } =
-    api.diplomatic.previewForeignPolicyImpact.useQuery(
+    api.diplomaticPolicies.previewForeignPolicyImpact.useQuery(
       {
         initiatorId: countryId,
         targetId,
@@ -109,7 +109,7 @@ export function ProposePolicyModal({ countryId, onSuccess }: ProposePolicyModalP
       { enabled: !!targetId && open }
     );
 
-  const proposeMutation = api.diplomatic.proposeForeignPolicyAction.useMutation({
+  const proposeMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
     onSuccess: () => {
       setOpen(false);
       setTargetId("");

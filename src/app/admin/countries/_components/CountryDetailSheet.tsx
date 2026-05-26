@@ -257,7 +257,7 @@ function MapLinkageSection({
   landArea: number | null | undefined;
   areaSqMi: number | null | undefined;
 }) {
-  const { data: linkage, isLoading } = api.geo.getCountryLinkage.useQuery(
+  const { data: linkage, isLoading } = api.geoCore.getCountryLinkage.useQuery(
     { countryId },
     { staleTime: 10_000 }
   );

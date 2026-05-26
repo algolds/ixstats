@@ -46,7 +46,7 @@ export async function enrichFromWiki(wikiPageTitle: string): Promise<WikiEnrichm
   ]);
 
   if (intro.status === "fulfilled" && intro.value) {
-    result.intro = intro.value;
+    result.intro = intro.value.text;
   }
 
   if (images.status === "fulfilled" && images.value) {
@@ -57,7 +57,7 @@ export async function enrichFromWiki(wikiPageTitle: string): Promise<WikiEnrichm
   }
 
   if (coords.status === "fulfilled" && coords.value) {
-    result.coordinates = coords.value;
+    result.coordinates = { lat: coords.value[0], lng: coords.value[1] };
   }
 
   if (sections.status === "fulfilled" && sections.value) {

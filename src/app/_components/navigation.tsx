@@ -24,6 +24,7 @@ import {
   Shield,
   SlidersHorizontal,
   Trophy,
+  User,
   Users,
   Vote,
   X,

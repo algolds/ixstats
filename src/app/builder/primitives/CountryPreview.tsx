@@ -100,7 +100,7 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
           <div>
             <span className="text-[var(--color-text-muted)]">Total Population:</span>
             <div className="font-medium text-[var(--color-text-primary)]">
-              {formatNumber(country.population, 0)}
+              {formatNumber(country.population, false, 0)}
             </div>
           </div>
           <div>

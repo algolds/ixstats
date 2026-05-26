@@ -270,6 +270,7 @@ function CompactViewComponent({
     }
 
     previousNotificationCountRef.current = totalUnreadCount;
+    return;
   }, [totalUnreadCount, mounted]);
 
   // Debug sticky state changes - only in development

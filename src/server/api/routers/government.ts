@@ -218,7 +218,7 @@ export const governmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const warnings = await detectGovernmentConflicts(ctx.db, input.countryId, input.data);
+      const warnings = await detectGovernmentConflicts(ctx.db as any, input.countryId, input.data);
       return { warnings };
     }),
 
@@ -249,7 +249,7 @@ export const governmentRouter = createTRPCRouter({
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];
       if (!skipConflictCheck) {
-        warnings = await detectGovernmentConflicts(ctx.db, countryId, data);
+        warnings = await detectGovernmentConflicts(ctx.db as any, countryId, data);
       }
 
       // Create in transaction with batched operations for performance
@@ -380,7 +380,7 @@ export const governmentRouter = createTRPCRouter({
       });
 
       // Sync with other tables (Country, GovernmentBudget, etc.)
-      const syncResult = await syncGovernmentData(ctx.db, countryId, data);
+      const syncResult = await syncGovernmentData(ctx.db as any, countryId, data);
 
       // Notify about government structure creation
       try {
@@ -419,7 +419,7 @@ export const governmentRouter = createTRPCRouter({
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];
       if (!skipConflictCheck) {
-        warnings = await detectGovernmentConflicts(ctx.db, countryId, data);
+        warnings = await detectGovernmentConflicts(ctx.db as any, countryId, data);
       }
 
       const result = await ctx.db.$transaction(async (tx) => {
@@ -557,7 +557,7 @@ export const governmentRouter = createTRPCRouter({
       });
 
       // Sync with other tables (Country, GovernmentBudget, etc.)
-      const syncResult = await syncGovernmentData(ctx.db, countryId, data);
+      const syncResult = await syncGovernmentData(ctx.db as any, countryId, data);
 
       // Notify about government structure update
       try {

@@ -27,6 +27,8 @@ import { PolicyPresetSelector } from "../components/spending/PolicyPresetSelecto
 import { useGovernmentSpending } from "../hooks/useGovernmentSpending";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
+import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
+
 // Help System
 import { GovernmentSpendingHelpSystem } from "../components/help/GovernmentHelpSystem";
 
@@ -54,7 +56,6 @@ export function GovernmentSpendingSection({
   fieldLocks,
 }: GovernmentSpendingSectionProps) {
   const isEditMode = mode === "edit";
-  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // All hooks must be called unconditionally (Rules of Hooks)

@@ -164,7 +164,7 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
     for (const key in payload) {
       if (
         typeof (payload as Record<string, unknown>)[key] === "number" &&
-        isNaN((payload as Record<string, number>)[key]!)
+        isNaN((payload as unknown as Record<string, number>)[key]!)
       ) {
         notify.error(`Invalid budget data: ${key} is not a number.`);
         return;

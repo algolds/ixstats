@@ -45,17 +45,17 @@ export function AllianceDashboard({
   const [inviteTarget, setInviteTarget] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
 
-  const { data: alliance, refetch } = api.diplomatic.getAllianceDashboard.useQuery(
+  const { data: alliance, refetch } = api.diplomaticPolicies.getAllianceDashboard.useQuery(
     { allianceId },
     { enabled: !!allianceId }
   );
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: inviteOpen }
   );
 
-  const inviteMutation = api.diplomatic.inviteMember.useMutation({
+  const inviteMutation = api.diplomaticPolicies.inviteMember.useMutation({
     onSuccess: () => {
       setInviteOpen(false);
       setInviteTarget("");
@@ -63,7 +63,7 @@ export function AllianceDashboard({
     },
   });
 
-  const leaveMutation = api.diplomatic.leaveAlliance.useMutation({
+  const leaveMutation = api.diplomaticPolicies.leaveAlliance.useMutation({
     onSuccess: () => {
       onLeave?.();
     },

@@ -22,7 +22,7 @@ export const PaintPropertyForm = React.memo(function PaintPropertyForm({
 }: PaintPropertyFormProps) {
   const [activeMode, setActiveMode] = useState<string>("population");
 
-  const { data: stats, isLoading } = api.geo.getSubdivisionStats.useQuery(
+  const { data: stats, isLoading } = api.geoFeatures.getSubdivisionStats.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId, staleTime: 60_000 }
   );

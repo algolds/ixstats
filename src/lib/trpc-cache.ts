@@ -38,7 +38,6 @@ function getRedisClient(): Redis | null {
     try {
       redis = new Redis(redisUrl, {
         maxRetriesPerRequest: 3,
-        retryDelayOnFailover: 100,
         lazyConnect: true,
       });
 
@@ -342,7 +341,7 @@ export function getCacheStats(): {
 } {
   return {
     memoryCacheSize: memoryCache.size,
-    redisConnected: redis?.status === "ready" ?? false,
+    redisConnected: redis?.status === "ready",
   };
 }
 

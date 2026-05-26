@@ -39,7 +39,7 @@ interface FoundationFiltersPanelProps {
   className?: string;
 }
 
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
+const CATEGORY_ICONS: Record<string, any> = {
   "economy-size": TrendingUp,
   region: Globe,
   government: Building2,

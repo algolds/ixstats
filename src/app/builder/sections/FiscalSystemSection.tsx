@@ -32,6 +32,8 @@ import {
 // Help System
 import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
 
+import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
+
 // Note: Tax system building is now handled by the atomic tax builder component
 // integrated into the unified builder workflow via TaxSystemStep component
 
@@ -60,7 +62,6 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
   fieldLocks,
 }: FiscalSystemSectionProps) {
   const isEditMode = mode === "edit";
-  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   const [selectedView, setSelectedView] = useState<

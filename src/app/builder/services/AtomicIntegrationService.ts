@@ -290,22 +290,27 @@ export class AtomicIntegrationService extends BaseBuilderService<
 
     // Calculate new government spending based on allocations
     const totalSpending = builder.budgetAllocations.reduce(
-      (sum, alloc) => sum + (alloc.amount || 0),
+      (sum, alloc) => sum + (alloc.allocatedAmount || 0),
       0
     );
 
     // Update government spending in economic inputs
-    const existingBreakdown = this.state.economicInputs.governmentSpending.spendingBreakdown ?? [];
+    const existingBreakdown = this.state.economicInputs.governmentSpending.spendingCategories ?? [];
     const updatedInputs: EconomicInputs = {
       ...this.state.economicInputs,
       governmentSpending: {
         ...this.state.economicInputs.governmentSpending,
         totalSpending,
-        spendingBreakdown: existingBreakdown.map((item) => {
-          const allocation = builder.budgetAllocations.find(
-            (a) => a.departmentId === item.category || a.departmentName === item.category
-          );
-          return allocation ? { ...item, amount: allocation.amount || item.amount } : item;
+        spendingCategories: existingBreakdown.map((item: any) => {
+          const allocation = builder.budgetAllocations.find((a) => {
+            const deptIndex = parseInt(a.departmentId);
+            const dept = !isNaN(deptIndex) ? builder.departments[deptIndex] : null;
+            return (
+              a.departmentId === item.category ||
+              (dept && (dept.name === item.category || dept.shortName === item.category))
+            );
+          });
+          return allocation ? { ...item, amount: allocation.allocatedAmount || item.amount } : item;
         }),
       },
     };
@@ -345,7 +350,7 @@ export class AtomicIntegrationService extends BaseBuilderService<
     // Check if government spending matches economic expectations
     const governmentSpending = inputs.governmentSpending?.totalSpending || 0;
     const budgetTotal = builder.budgetAllocations.reduce(
-      (sum, alloc) => sum + (alloc.amount || 0),
+      (sum, alloc) => sum + (alloc.allocatedAmount || 0),
       0
     );
 

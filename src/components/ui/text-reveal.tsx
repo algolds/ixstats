@@ -93,6 +93,7 @@ export const CountUp = ({
       const controls = animate(count, to, { duration, delay, ease: "easeOut" });
       return controls.stop;
     }
+    return;
   }, [isInView, count, to, duration, delay]);
 
   return (

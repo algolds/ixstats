@@ -47,7 +47,7 @@ interface CountryPreviewProps {
   selectedResult: SearchResult;
   onCancel: () => void;
   onContinue: () => void;
-  formatNumber: (num: number | undefined) => string;
+  formatNumber: (num: number | undefined, decimals?: number) => string;
   isVisible: boolean;
 }
 

@@ -53,7 +53,7 @@ const HeadingPlugin = createPlatePlugin({
   render: {
     node: ({ children, element, attributes }: RenderNodeProps) => {
       const level = element.level ?? 2;
-      const Tag = `h${Math.min(Math.max(level, 1), 6)}` as keyof JSX.IntrinsicElements;
+      const Tag = `h${Math.min(Math.max(level, 1), 6)}` as React.ElementType;
       return (
         <Tag {...attributes} style={{ marginTop: 24, marginBottom: 8 }}>
           {children}

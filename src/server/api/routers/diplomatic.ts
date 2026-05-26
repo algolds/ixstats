@@ -4498,8 +4498,8 @@ export const diplomaticRouter = createTRPCRouter({
       let trade = await ctx.db.bilateralTrade.findUnique({
         where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },
         include: {
-          country1: { select: { id: true, name: true, gdpPerCapita: true, population: true } },
-          country2: { select: { id: true, name: true, gdpPerCapita: true, population: true } },
+          country1: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
+          country2: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
         },
       });
 
@@ -4565,7 +4565,21 @@ export const diplomaticRouter = createTRPCRouter({
         });
       }
 
-      return trade;
+      const formatCountry = (c: any) => {
+        if (!c) return null;
+        return {
+          id: c.id,
+          name: c.name,
+          gdpPerCapita: c.currentGdpPerCapita,
+          population: c.currentPopulation,
+        };
+      };
+
+      return {
+        ...trade,
+        country1: formatCountry(trade.country1),
+        country2: formatCountry(trade.country2),
+      };
     }),
 
   // Preview the economic impact of a foreign policy action before confirming
@@ -5186,19 +5200,16 @@ export const diplomaticRouter = createTRPCRouter({
       // Notification: alliance formed (fire-and-forget)
       try {
         if (ctx.auth?.userId) {
-          await notificationAPI.create(
-            {
-              userId: ctx.auth.userId,
-              countryId: ctx.user.countryId,
-              title: "Alliance Formed",
-              message: `You founded the ${input.name} alliance`,
-              type: "DIPLOMATIC",
-              category: "diplomatic",
-              priority: "high",
-              metadata: { allianceId: alliance.id, allianceName: input.name },
-            },
-            ctx.db
-          );
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            countryId: ctx.user.countryId,
+            title: "Alliance Formed",
+            message: `You founded the ${input.name} alliance`,
+            type: "info",
+            category: "diplomatic",
+            priority: "high",
+            metadata: { allianceId: alliance.id, allianceName: input.name },
+          });
         }
       } catch {}
 
@@ -5280,26 +5291,24 @@ export const diplomaticRouter = createTRPCRouter({
       try {
         const targetCountry = await ctx.db.country.findUnique({
           where: { id: input.targetCountryId },
-          select: { userId: true },
+          select: { users: { select: { clerkUserId: true } } },
         });
+        const targetUserId = targetCountry?.users[0]?.clerkUserId;
         const alliance = await ctx.db.alliance.findUnique({
           where: { id: input.allianceId },
           select: { name: true },
         });
-        if (targetCountry?.userId) {
-          await notificationAPI.create(
-            {
-              userId: targetCountry.userId,
-              countryId: input.targetCountryId,
-              title: "Alliance Invitation",
-              message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
-              type: "DIPLOMATIC",
-              category: "diplomatic",
-              priority: "high",
-              metadata: { allianceId: input.allianceId },
-            },
-            ctx.db
-          );
+        if (targetUserId) {
+          await notificationAPI.create({
+            userId: targetUserId,
+            countryId: input.targetCountryId,
+            title: "Alliance Invitation",
+            message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
+            type: "info",
+            category: "diplomatic",
+            priority: "high",
+            metadata: { allianceId: input.allianceId },
+          });
         }
       } catch {}
 

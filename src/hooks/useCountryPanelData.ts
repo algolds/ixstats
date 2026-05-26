@@ -30,13 +30,13 @@ export function useCountryPanelData(countryId: string | null, displayName?: stri
     { enabled: !!countryId, ...DB_QUERY_OPTS }
   );
 
-  const { data: neighbors, isLoading: neighborsLoading } = api.geo.getNeighbors.useQuery(
+  const { data: neighbors, isLoading: neighborsLoading } = api.geoCore.getNeighbors.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId, ...DB_QUERY_OPTS }
   );
 
   const { data: sovereignty, isLoading: sovereigntyLoading } =
-    api.geo.getCountrySovereignty.useQuery(
+    api.geoSovereignty.getCountrySovereignty.useQuery(
       { countryId: countryId! },
       { enabled: !!countryId, ...DB_QUERY_OPTS }
     );

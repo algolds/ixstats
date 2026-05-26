@@ -12,9 +12,12 @@
 import * as DOMPurifyModule from "dompurify";
 const DOMPurify = DOMPurifyModule.default || DOMPurifyModule;
 
+// Type definition for the sanitize function
+type SanitizeFunc = (html: string, config?: any) => string;
+
 // Client-side DOMPurify instance
 // Note: This should only be used in client components or after hydration
-const getPurify = () => {
+const getPurify = (): { sanitize: SanitizeFunc } => {
   if (typeof window === "undefined") {
     // Server-side: pass through HTML as-is (will be sanitized on client hydration)
     // This prevents SSR from escaping all HTML tags, breaking links and formatting
@@ -22,7 +25,7 @@ const getPurify = () => {
       sanitize: (html: string, _config?: any) => html,
     };
   }
-  return DOMPurify;
+  return DOMPurify as any as { sanitize: SanitizeFunc };
 };
 
 const purify = getPurify();

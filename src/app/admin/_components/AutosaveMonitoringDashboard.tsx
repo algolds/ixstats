@@ -294,13 +294,15 @@ export function AutosaveMonitoringDashboard() {
           <ActiveUsersTable
             users={
               activeUsers?.users.map((u) => ({
-                ...u,
-                userName: null,
-                section: null,
+                userId: u.userId ?? "",
+                userName: (u as Record<string, unknown>).userName as string | null ?? null,
+                section: (u as Record<string, unknown>).section as string | null ?? null,
                 lastAutosave:
                   u.lastAutosave instanceof Date
                     ? u.lastAutosave.toISOString()
-                    : String(u.lastAutosave),
+                    : String(u.lastAutosave ?? ""),
+                autosaveCount: u.autosaveCount ?? 0,
+                failureCount: u.failureCount ?? 0,
               })) || []
             }
           />

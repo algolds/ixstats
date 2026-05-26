@@ -78,14 +78,14 @@ export interface OverviewStatsData {
 export function useDiplomaticAnalytics({ countryId }: { countryId: string }) {
   // Fetch diplomatic relationships
   const { data: relationships, isLoading: relationshipsLoading } =
-    api.diplomatic.getRelationships.useQuery({ countryId });
+    api.diplomaticCore.getRelationships.useQuery({ countryId });
 
   // Fetch recent diplomatic changes (last 30 days)
   const { data: recentChanges, isLoading: changesLoading } =
-    api.diplomatic.getRecentChanges.useQuery({ countryId, hours: 720 });
+    api.diplomaticCore.getRecentChanges.useQuery({ countryId, hours: 720 });
 
   // Fetch embassy network
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery({ countryId });
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery({ countryId });
 
   // Fetch historical relationship data (real data from database)
   const { data: relationshipHistory } = api.historical.getRelationshipHistory.useQuery({

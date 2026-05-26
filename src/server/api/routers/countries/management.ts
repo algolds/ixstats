@@ -807,4 +807,80 @@ export const managementProcedures = {
         );
       }
     }),
+
+  // Storyteller effects endpoints
+  getStorytellerEffects: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.storytellerEffect.findMany({
+        where: input.countryId ? { countryId: input.countryId } : undefined,
+        include: {
+          country: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { ixTimeTimestamp: "desc" },
+      });
+    }),
+
+  addStorytellerEffect: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string().optional(),
+        inputType: z.string(),
+        value: z.number(),
+        description: z.string(),
+        duration: z.number().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.storytellerEffect.create({
+        data: {
+          countryId: input.countryId || null,
+          inputType: input.inputType,
+          value: input.value,
+          description: input.description,
+          duration: input.duration || null,
+          isActive: true,
+          ixTimeTimestamp: new Date(),
+        },
+      });
+    }),
+
+  updateStorytellerEffect: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        inputType: z.string().optional(),
+        value: z.number().optional(),
+        description: z.string().optional(),
+        duration: z.number().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return ctx.db.storytellerEffect.update({
+        where: { id },
+        data,
+      });
+    }),
+
+  deleteStorytellerEffect: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.storytellerEffect.delete({
+        where: { id: input.id },
+      });
+    }),
 };

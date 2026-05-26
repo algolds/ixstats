@@ -96,7 +96,7 @@ export function createVoronoiMesh(
     const poly = voronoi.cellPolygon(i);
     if (poly) {
       // d3-delaunay returns closed polygon (last === first), keep it for GeoJSON
-      vertices.push(poly.map(([x, y]) => [x, y] as [number, number]));
+      vertices.push(poly.map(([x, y]: [number, number]) => [x, y] as [number, number]));
     } else {
       vertices.push([[0, 0]]);
     }

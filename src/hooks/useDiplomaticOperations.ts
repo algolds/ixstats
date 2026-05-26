@@ -10,7 +10,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
   calculateNetworkMetrics,
@@ -164,12 +164,12 @@ export interface UseDiplomaticOperationsReturn {
   openCreateExchangeDialog: () => void;
 
   // Mutation states
-  establishEmbassyMutation: ReturnType<typeof api.diplomatic.establishEmbassy.useMutation>;
-  startMissionMutation: ReturnType<typeof api.diplomatic.startMission.useMutation>;
-  completeMissionMutation: ReturnType<typeof api.diplomatic.completeMission.useMutation>;
-  createExchangeMutation: ReturnType<typeof api.diplomatic.createCulturalExchange.useMutation>;
-  allocateBudgetMutation: ReturnType<typeof api.diplomatic.allocateBudget.useMutation>;
-  upgradeEmbassyMutation: ReturnType<typeof api.diplomatic.upgradeEmbassy.useMutation>;
+  establishEmbassyMutation: ReturnType<typeof api.diplomaticEmbassies.establishEmbassy.useMutation>;
+  startMissionMutation: ReturnType<typeof api.diplomaticEmbassies.startMission.useMutation>;
+  completeMissionMutation: ReturnType<typeof api.diplomaticEmbassies.completeMission.useMutation>;
+  createExchangeMutation: ReturnType<typeof api.diplomaticCultural.createCulturalExchange.useMutation>;
+  allocateBudgetMutation: ReturnType<typeof api.diplomaticEmbassies.allocateBudget.useMutation>;
+  upgradeEmbassyMutation: ReturnType<typeof api.diplomaticEmbassies.upgradeEmbassy.useMutation>;
 }
 
 /**
@@ -222,13 +222,13 @@ export function useDiplomaticOperations({
     data: embassies,
     isLoading: embassiesLoading,
     refetch: refetchEmbassies,
-  } = api.diplomatic.getEmbassies.useQuery({ countryId });
+  } = api.diplomaticEmbassies.getEmbassies.useQuery({ countryId });
 
   const {
     data: missions,
     isLoading: missionsLoading,
     refetch: refetchMissions,
-  } = api.diplomatic.getAvailableMissions.useQuery(
+  } = api.diplomaticEmbassies.getAvailableMissions.useQuery(
     { embassyId: selectedEmbassy || "" },
     { enabled: !!selectedEmbassy }
   );
@@ -246,7 +246,7 @@ export function useDiplomaticOperations({
 
     return embassies.map((embassy: Embassy) => ({
       id: embassy.id ?? `embassy-${Math.random().toString(36).slice(2)}`,
-      country: embassy.country ?? embassy.hostCountryName ?? "Unknown",
+      country: embassy.country ?? "Unknown",
       status: validStatuses.includes(embassy.status) ? embassy.status : "neutral",
       strength: typeof embassy.strength === "number" ? embassy.strength : 0,
       level: typeof embassy.level === "number" ? embassy.level : 1,
@@ -260,9 +260,9 @@ export function useDiplomaticOperations({
     data: exchanges,
     isLoading: exchangesLoading,
     refetch: refetchExchanges,
-  } = api.diplomatic.getCulturalExchanges.useQuery({ countryId });
+  } = api.diplomaticCultural.getCulturalExchanges.useQuery({ countryId });
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery({ countryId });
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery({ countryId });
 
   const normalizedMissions = useMemo<Mission[]>(() => {
     if (!Array.isArray(missions)) return [];
@@ -291,7 +291,7 @@ export function useDiplomaticOperations({
   }, [exchanges]);
 
   const { data: availableUpgrades, isLoading: upgradesLoading } =
-    api.diplomatic.getAvailableUpgrades.useQuery(
+    api.diplomaticEmbassies.getAvailableUpgrades.useQuery(
       { embassyId: selectedEmbassy || "" },
       { enabled: upgradeEmbassyOpen && !!selectedEmbassy }
     );
@@ -381,7 +381,7 @@ export function useDiplomaticOperations({
   }, [establishEmbassyOpen, hostCountryOptions, existingGuestEmbassyHosts, countryName]);
 
   // Mutations
-  const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
+  const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
     onSuccess: (data) => {
       notify.success(
         "Embassy Established",
@@ -396,7 +396,7 @@ export function useDiplomaticOperations({
     },
   });
 
-  const startMissionMutation = api.diplomatic.startMission.useMutation({
+  const startMissionMutation = api.diplomaticEmbassies.startMission.useMutation({
     onSuccess: () => {
       notify.success("Mission Started", "Your diplomatic mission has been initiated!");
       setStartMissionOpen(false);
@@ -409,7 +409,7 @@ export function useDiplomaticOperations({
     },
   });
 
-  const completeMissionMutation = api.diplomatic.completeMission.useMutation({
+  const completeMissionMutation = api.diplomaticEmbassies.completeMission.useMutation({
     onSuccess: (data) => {
       const message = data.success
         ? `Mission successful! Earned +${data.rewards.experience} XP and +${data.rewards.influence.toFixed(0)} influence.`
@@ -427,7 +427,7 @@ export function useDiplomaticOperations({
     },
   });
 
-  const createExchangeMutation = api.diplomatic.createCulturalExchange.useMutation({
+  const createExchangeMutation = api.diplomaticCultural.createCulturalExchange.useMutation({
     onSuccess: () => {
       notify.success(
         "Cultural Exchange Created",
@@ -448,7 +448,7 @@ export function useDiplomaticOperations({
     },
   });
 
-  const allocateBudgetMutation = api.diplomatic.allocateBudget.useMutation({
+  const allocateBudgetMutation = api.diplomaticEmbassies.allocateBudget.useMutation({
     onSuccess: () => {
       notify.success(
         "Budget Allocated",
@@ -463,7 +463,7 @@ export function useDiplomaticOperations({
     },
   });
 
-  const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
+  const upgradeEmbassyMutation = api.diplomaticEmbassies.upgradeEmbassy.useMutation({
     onSuccess: (upgrade) => {
       notify.success(
         "Upgrade Initiated",

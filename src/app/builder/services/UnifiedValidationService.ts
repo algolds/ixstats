@@ -887,13 +887,11 @@ export class UnifiedValidationService {
     const hasFlexibleLabor = economyBuilder.selectedAtomicComponents.includes(
       EconomicComponentType.FLEXIBLE_LABOR
     );
-    const hasMinimalGov = governmentComponents.includes(ComponentType.MINIMAL_GOVERNMENT);
-
     if (hasFreeMarket && hasFlexibleLabor) {
       coherent.push("Free market and flexible labor policies are coherent");
     }
 
-    if (hasFreeMarket && !hasMinimalGov && governmentComponents.length > 0) {
+    if (hasFreeMarket && governmentComponents.length > 0) {
       incoherent.push("Free market economy with extensive government intervention lacks coherence");
     }
 

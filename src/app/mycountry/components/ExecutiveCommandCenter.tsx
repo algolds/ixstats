@@ -108,7 +108,7 @@ function CriticalAlertsSection({
   countryId?: string;
 }) {
   // Add diplomatic alerts to the critical alerts
-  const { data: diplomaticChanges = [] } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: diplomaticChanges = [] } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId: countryId || "", hours: 48 },
     { enabled: !!countryId }
   );
@@ -381,11 +381,11 @@ function DiplomaticStat({
   countryId: string;
   statType: "embassies" | "relationships" | "pending";
 }) {
-  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies = [] } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId && statType === "embassies" }
   );
-  const { data: recentChanges = [] } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: recentChanges = [] } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId, hours: 24 },
     { enabled: !!countryId && statType === "relationships" }
   );
@@ -454,11 +454,11 @@ function DiplomaticStat({
 }
 
 function DiplomaticRecommendations({ countryId }: { countryId: string }) {
-  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies = [] } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-  const { data: relations = [] } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations = [] } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
@@ -543,13 +543,13 @@ export function ExecutiveCommandCenter({
 
   // Get live quick actions from unified intelligence API
   const { data: quickActionsData, refetch: refetchActions } =
-    api.unifiedIntelligence.getQuickActions.useQuery(
+    api.intelCore.getQuickActions.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
 
   // Execute quick action mutation using unified intelligence API
-  const executeAction = api.unifiedIntelligence.executeAction.useMutation({
+  const executeAction = api.intelCore.executeAction.useMutation({
     onSuccess: (result) => {
       notify.success(`Action executed: ${result.message}`);
       void refetchActions();

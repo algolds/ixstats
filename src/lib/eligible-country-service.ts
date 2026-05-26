@@ -248,6 +248,21 @@ function calculateCompleteness(data: UnifiedInfoboxData): {
   governmentType?: string;
   leaderTitle?: string;
   leaderName?: string;
+  currency?: string;
+  currencyCode?: string;
+  languages?: string;
+  areaKm2?: number;
+  demonym?: string;
+  lifeExpectancy?: number;
+  literacyRate?: number;
+  urbanization?: number;
+  internetTld?: string;
+  callingCode?: string;
+  anthem?: string;
+  motto?: string;
+  coordinates?: string;
+  largestCity?: string;
+  officialName?: string;
 } {
   let count = 0;
 
@@ -323,29 +338,47 @@ function calculateCompleteness(data: UnifiedInfoboxData): {
     leaderName = data.head_of_government;
   }
 
+  let areaKm2: number | undefined;
+  if (typeof data.area_km2 === "number") areaKm2 = data.area_km2;
+  else if (typeof data.area_total === "number") areaKm2 = data.area_total;
+
+  let lifeExpectancy: number | undefined;
+  if (typeof data.life_expectancy === "number") lifeExpectancy = data.life_expectancy;
+
+  let literacyRate: number | undefined;
+  if (typeof data.literacy_rate === "number") literacyRate = data.literacy_rate;
+
+  let urbanization: number | undefined;
+  if (typeof data.urbanization === "number") urbanization = data.urbanization;
+
   return {
     score,
+    flagUrl: (data.image_flag || data.flag || data.flagUrl) as string | undefined,
     population,
     gdp,
     capital: data.capital || data.largest_city,
-    governmentType: data.government_type,
+    governmentType: data.government_type as string | undefined,
     leaderTitle,
     leaderName,
-    currency: data.currency,
-    currencyCode: data.currency_code,
-    languages: data.official_languages || data.languages,
-    areaKm2: typeof data.area_km2 === "number" ? data.area_km2 : undefined,
-    demonym: data.demonym,
-    lifeExpectancy: typeof data.life_expectancy === "number" ? data.life_expectancy : undefined,
-    literacyRate: typeof data.literacy_rate === "number" ? data.literacy_rate : undefined,
-    urbanization: typeof data.urbanization === "number" ? data.urbanization : undefined,
-    internetTld: data.internet_tld,
-    callingCode: data.calling_code,
-    anthem: data.national_anthem,
-    motto: data.motto,
-    coordinates: data.coordinates,
-    largestCity: data.largest_city,
-    officialName: data.official_name || data.conventional_long_name,
+    currency: (typeof data.currency === "string" ? data.currency : undefined),
+    currencyCode: (typeof data.currency_code === "string" ? data.currency_code : undefined),
+    languages: (typeof data.official_languages === "string" 
+      ? data.official_languages 
+      : typeof data.languages === "string" 
+      ? data.languages 
+      : undefined),
+    areaKm2,
+    demonym: (typeof data.demonym === "string" ? data.demonym : undefined),
+    lifeExpectancy,
+    literacyRate,
+    urbanization,
+    internetTld: (typeof data.internet_tld === "string" ? data.internet_tld : undefined),
+    callingCode: (typeof data.calling_code === "string" ? data.calling_code : undefined),
+    anthem: (typeof data.national_anthem === "string" ? data.national_anthem : undefined),
+    motto: (typeof data.national_motto === "string" ? data.national_motto : undefined),
+    coordinates: (typeof data.coordinates === "string" ? data.coordinates : undefined),
+    largestCity: (typeof data.largest_city === "string" ? data.largest_city : undefined),
+    officialName: (typeof data.official_name === "string" ? data.official_name : undefined),
   };
 }
 

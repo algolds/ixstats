@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
+  AlertCircle,
   Download,
   Globe,
   Sparkles,
@@ -18,6 +19,7 @@ import {
   Clock,
   Coins,
   Layers,
+  X,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";

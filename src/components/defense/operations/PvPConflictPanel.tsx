@@ -37,7 +37,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     { enabled: !!countryId }
   );
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: challengeOpen }
   );

@@ -18,6 +18,8 @@ import {
   SliderWithDirectInput,
 } from "../primitives/enhanced";
 import type { LaborEmploymentData } from "../lib/economy-data-service";
+import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
+import { FieldLockIndicator } from "../components/FieldLockIndicator";
 import {
   SectionBase,
   SectionLayout,
@@ -55,9 +57,7 @@ export function LaborEmploymentSection({
   fieldLocks,
 }: LaborEmploymentSectionProps) {
   const isEditMode = mode === "edit";
-  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
-  const { FieldLockIndicator } = require("../components/FieldLockIndicator");
 
   const laborEmployment = inputs.laborEmployment;
   const totalPopulation = inputs.coreIndicators.totalPopulation;

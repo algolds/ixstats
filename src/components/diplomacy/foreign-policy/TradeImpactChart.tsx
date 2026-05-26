@@ -19,12 +19,12 @@ interface TradeImpactChartProps {
 export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
   const [targetId, setTargetId] = useState("");
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: trade, isLoading } = api.diplomatic.getBilateralTrade.useQuery(
+  const { data: trade, isLoading } = api.diplomaticPolicies.getBilateralTrade.useQuery(
     { country1Id: countryId, country2Id: targetId },
     { enabled: !!targetId }
   );

@@ -125,7 +125,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
   const [climateExpanded, setClimateExpanded] = useState(false);
   const [elevationExpanded, setElevationExpanded] = useState(false);
 
-  const { data: profile, isLoading } = api.geo.getCountryGeoProfile.useQuery(
+  const { data: profile, isLoading } = api.geoCore.getCountryGeoProfile.useQuery(
     { countryId },
     { staleTime: 10 * 60_000, gcTime: 30 * 60_000 }
   );

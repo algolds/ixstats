@@ -117,6 +117,7 @@ export function ColoredProgress({
       }, 100);
       return () => clearTimeout(timer);
     }
+    return;
   }, [value, animate]);
 
   const finalValue = animate ? displayValue : value;

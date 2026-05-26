@@ -72,7 +72,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     data: bundleData,
     isLoading: queryLoading,
     error,
-  } = api.geo.getMapBundle.useQuery(
+  } = api.geoCore.getMapBundle.useQuery(
     {
       layers: allRequestedLayers,
       zoom:

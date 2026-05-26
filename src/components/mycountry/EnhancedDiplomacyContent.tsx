@@ -36,11 +36,11 @@ export function EnhancedDiplomacyContent({
 }: EnhancedDiplomacyContentProps) {
   const { country, isLoading } = useCountryData();
 
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
-  const { data: relations } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );

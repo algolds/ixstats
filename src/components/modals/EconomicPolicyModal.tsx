@@ -142,13 +142,13 @@ export function EconomicPolicyModal({
     data: policies,
     isLoading: policiesLoading,
     refetch,
-  } = api.unifiedIntelligence.getEconomicPolicies.useQuery(
+  } = api.intelAnalytics.getEconomicPolicies.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId && open }
   );
 
   // Create policy mutation
-  const createPolicy = api.unifiedIntelligence.createEconomicPolicy.useMutation({
+  const createPolicy = api.intelAnalytics.createEconomicPolicy.useMutation({
     onSuccess: () => {
       notify.success("Economic policy created successfully!");
       setOpen(false);

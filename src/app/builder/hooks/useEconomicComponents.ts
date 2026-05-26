@@ -50,7 +50,7 @@ export function useEconomicComponents({
     if (getComponentsQuery.data && getComponentsQuery.data.length > 0) {
       const activeComponents = getComponentsQuery.data
         .filter((comp) => comp.isActive)
-        .map((comp) => comp.componentType);
+        .map((comp) => comp.componentType as EconomicComponentType);
       setSelectedComponents(activeComponents);
     }
   }, [getComponentsQuery.data]);

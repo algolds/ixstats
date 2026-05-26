@@ -65,18 +65,18 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
     api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId });
 
   const { data: policyEffectiveness, error: policyError } =
-    api.unifiedIntelligence.getPolicyEffectiveness.useQuery(
+    api.intelAnalytics.getPolicyEffectiveness.useQuery(
       { countryId, category: "all" },
       { enabled: !!countryId, retry: false }
     );
 
-  const { data: diplomaticInfluence } = api.diplomatic.getRelationships.useQuery(
+  const { data: diplomaticInfluence } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
   const { data: predictiveModels, error: predictiveError } =
-    api.unifiedIntelligence.getPredictiveModels.useQuery(
+    api.intelAnalytics.getPredictiveModels.useQuery(
       {
         countryId,
         timeframe:
@@ -93,7 +93,7 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
     );
 
   const { data: analytics, error: analyticsQueryError } =
-    api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+    api.intelAnalytics.getAdvancedAnalytics.useQuery(
       { countryId },
       { enabled: !!countryId, retry: false }
     );

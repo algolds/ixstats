@@ -1503,7 +1503,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
         }
 
         // Calculate real metrics based on country data and recent events
-        const metrics = await calculateRealTimeMetrics(ctx.db, input.countryId);
+        const metrics = await calculateRealTimeMetrics(ctx.db as any, input.countryId);
 
         return metrics;
       } catch (error) {

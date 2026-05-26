@@ -14,7 +14,7 @@ export async function calculateAtomicEconomicImpactServer(
   baseGdpPerCapita: number,
   baseTaxRevenue: number = 0
 ): Promise<AtomicEconomicModifiers> {
-  const atomicService = getAtomicEffectivenessService(db);
+  const atomicService = getAtomicEffectivenessService(db as any);
   const componentBreakdown = atomicService.getComponentBreakdown(components);
 
   const modifiers: AtomicEconomicModifiers = {
@@ -101,7 +101,7 @@ export async function calculateCountryDataWithAtomicEnhancement(
   country: CountryWithAtomicComponents
 ): Promise<AtomicEnhancedCountryData> {
   // Get atomic effectiveness
-  const atomicService = getAtomicEffectivenessService(db);
+  const atomicService = getAtomicEffectivenessService(db as any);
 
   let atomicEffectiveness: AtomicEffectiveness;
   if (country.usesAtomicGovernment && country.governmentComponents.length > 0) {
@@ -212,7 +212,7 @@ export async function getAtomicIntelligenceRecommendations(countryId: string): P
     };
   }>
 > {
-  const atomicService = getAtomicEffectivenessService(db);
+  const atomicService = getAtomicEffectivenessService(db as any);
 
   // Get current country data
   const country = await db.country.findUnique({

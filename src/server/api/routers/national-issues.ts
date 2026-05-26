@@ -158,12 +158,12 @@ export const nationalIssuesRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       // Trigger evaluation if stale
-      const shouldEval = await NationalIssuesEngine.shouldEvaluate(input.countryId, ctx.db);
+      const shouldEval = await NationalIssuesEngine.shouldEvaluate(input.countryId, ctx.db as any);
       if (shouldEval) {
         // Run evaluation in background - don't block the query
         NationalIssuesEngine.evaluateCountry(
           input.countryId,
-          ctx.db,
+          ctx.db as any,
           input.domain ? { forceDomain: input.domain } : undefined
         ).catch((err) => {
           console.error("[NationalIssues] Background evaluation failed:", err);
@@ -278,7 +278,7 @@ export const nationalIssuesRouter = createTRPCRouter({
       const result = await NationalIssuesConsequences.resolveIssue(
         input.issueId,
         input.optionId,
-        ctx.db
+        ctx.db as any
       );
 
       if (!result.success) {
@@ -525,7 +525,7 @@ export const nationalIssuesRouter = createTRPCRouter({
     return ctx.db.nationalIssueTemplate.create({
       data: {
         ...input,
-        authorId: ctx.userId,
+        authorId: ctx.auth!.userId,
       },
     });
   }),
@@ -608,7 +608,7 @@ export const nationalIssuesRouter = createTRPCRouter({
         });
       }
 
-      const snapshot = await NationalIssuesEngine.buildCountrySnapshot(input.countryId, ctx.db);
+      const snapshot = await NationalIssuesEngine.buildCountrySnapshot(input.countryId, ctx.db as any);
       if (!snapshot) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -682,7 +682,7 @@ export const nationalIssuesRouter = createTRPCRouter({
       const issueId = await NationalIssuesEngine.forceGenerate(
         input.templateId,
         input.countryId,
-        ctx.db
+        ctx.db as any
       );
 
       if (!issueId) {
@@ -715,7 +715,7 @@ export const nationalIssuesRouter = createTRPCRouter({
         try {
           const created = await ctx.db.nationalIssueTemplate.upsert({
             where: { slug: template.slug },
-            create: { ...template, authorId: ctx.userId },
+            create: { ...template, authorId: ctx.auth!.userId },
             update: { ...template, version: { increment: 1 } },
           });
           results.push({ slug: created.slug, id: created.id });
@@ -889,7 +889,7 @@ export const nationalIssuesRouter = createTRPCRouter({
         });
         const byCountry = new Map<string, typeof fillPool>();
         for (const row of fillPool) {
-          const cid = row.country.id;
+          const cid = row.countryId;
           const arr = byCountry.get(cid) ?? [];
           arr.push(row);
           byCountry.set(cid, arr);
@@ -928,7 +928,7 @@ export const nationalIssuesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return NationalIssuesEngine.evaluateCountry(input.countryId, ctx.db, {
+      return NationalIssuesEngine.evaluateCountry(input.countryId, ctx.db as any, {
         maxIssues: input.maxIssues,
         forceDomain: input.domain,
       });

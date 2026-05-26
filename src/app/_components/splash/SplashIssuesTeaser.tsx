@@ -213,7 +213,7 @@ export function SplashIssuesTeaser() {
           </AnimatePresence>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 px-2">
-            {issues.map((iss, i) => (
+            {issues.map((iss: any, i: number) => (
               <button
                 key={iss.id}
                 type="button"

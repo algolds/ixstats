@@ -89,8 +89,8 @@ export function ForgeTab() {
 
   // Transport generation
   const generateTransport = api.transport.generateRoutes.useMutation();
-  const recalculateGeo = api.geo.recalculateGeoProfiles.useMutation();
-  const deleteAllRegions = api.geo.deleteAllSubdivisions.useMutation();
+  const recalculateGeo = api.geoCore.recalculateGeoProfiles.useMutation();
+  const deleteAllRegions = api.geoFeatures.deleteAllSubdivisions.useMutation();
 
   // Wiki province finder
   const [showWikiPanel, setShowWikiPanel] = useState(false);
@@ -325,14 +325,18 @@ export function ForgeTab() {
 
   const handleDeleteAllRegions = useCallback(async () => {
     if (!selectedCountryId) return;
-    const countryName = countries?.find((c) => c.id === selectedCountryId)?.name ?? "this country";
+    const countryName = countries?.find((c: any) => c.id === selectedCountryId)?.name ?? "this country";
     if (!confirm(`Delete ALL regions/subdivisions for ${countryName}? This cannot be undone.`))
       return;
     try {
       const result = await deleteAllRegions.mutateAsync({ countryId: selectedCountryId });
       alert(`Deleted ${result.deleted} regions`);
       // Invalidate all geo queries to refresh the editor
-      await utils.geo.invalidate();
+      await Promise.all([
+        utils.geoCore.invalidate(),
+        utils.geoFeatures.invalidate(),
+        utils.geoEditor.invalidate(),
+      ]);
     } catch (e) {
       alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
     }
@@ -589,7 +593,6 @@ export function ForgeTab() {
               features={editor.allFeatures}
               mode={editor.mode}
               pendingCoordinates={editor.pendingCoordinates}
-              pendingGeometry={editor.pendingGeometry}
               selectedFeature={editor.selectedFeature}
               onMapClick={editor.handleMapClick}
               onDrawComplete={editor.handleDrawComplete}
@@ -628,12 +631,12 @@ export function ForgeTab() {
                 pendingCoordinates={editor.pendingCoordinates}
                 pendingGeometry={editor.pendingGeometry}
                 isMutating={editor.isMutating}
-                mutationError={editor.mutationError}
+                error={editor.mutationError}
                 lastSavedAt={editor.lastSavedAt}
                 onSubmit={handleSubmit}
                 onCancel={editor.resetForm}
-                pointInfo={editor.pointInfo}
-                isPointInfoLoading={editor.isPendingPointInfoLoading}
+                pendingPointInfo={editor.pendingPointInfo}
+                isPendingPointInfoLoading={editor.isPendingPointInfoLoading}
                 countryId={selectedCountryId}
               />
             }
@@ -681,10 +684,10 @@ export function ForgeTab() {
           cursorCoords={cursorCoords}
           mode={editor.mode}
           terrainInfo={
-            editor.pointInfo
+            editor.pendingPointInfo
               ? {
-                  elevation: editor.pointInfo.elevation?.zoneName ?? null,
-                  climate: editor.pointInfo.climate?.climateName ?? null,
+                  elevation: editor.pendingPointInfo.elevation?.zoneName ?? null,
+                  climate: editor.pendingPointInfo.climate?.climateName ?? null,
                 }
               : null
           }

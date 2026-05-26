@@ -28,7 +28,7 @@ import {
   XCircle,
   Users,
 } from "lucide-react";
-import { type RouterOutputs } from "~/trpc/react";
+
 import { createUrl } from "~/lib/url-utils";
 
 const EFFECT_TYPES = [
@@ -108,7 +108,7 @@ interface StorytellerEffectData {
   createdBy: string | null; // Prisma returns null, not undefined
 }
 
-type Country = RouterOutputs["countries"]["getAll"]["countries"][number];
+interface CountryDto { id: string; name: string; }
 
 function DmDashboardContent() {
   const [showForm, setShowForm] = useState(false);
@@ -257,7 +257,7 @@ function DmDashboardContent() {
                     >
                       <option value="global">🌍 Global Effects</option>
                       {countriesLoading && <option disabled>Loading countries...</option>}
-                      {countriesData?.countries.map((country: Country) => (
+                      {countriesData?.countries.map((country: CountryDto) => (
                         <option key={country.id} value={country.id}>
                           {country.name}
                         </option>

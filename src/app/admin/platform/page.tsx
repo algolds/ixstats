@@ -71,7 +71,7 @@ export default function PlatformPage() {
 
   // tRPC mutations
   const saveConfigMutation = api.admin.saveConfig.useMutation();
-  const forceCalculationMutation = api.countries.updateStats.useMutation();
+  const forceCalculationMutation = api.admin.forceRecalculation.useMutation();
   const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
   const analyzeImportMutation = api.admin.analyzeImport.useMutation();
   const importDataMutation = api.admin.importRosterData.useMutation();

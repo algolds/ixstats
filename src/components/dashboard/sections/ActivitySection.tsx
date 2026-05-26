@@ -146,7 +146,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
     { refetchInterval: 5 * 60_000 }
   );
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
-  const { data: leaderboard } = api.diplomatic.getInfluenceLeaderboard.useQuery();
+  const { data: leaderboard } = api.diplomaticCore.getInfluenceLeaderboard.useQuery();
   const { data: inboxData } = api.thinkpages.getConversations.useQuery(
     { userId, limit: 20 },
     { enabled: !!userId }

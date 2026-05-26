@@ -65,7 +65,7 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
       },
       center,
       zoom,
-      projection: { type: "globe" },
+      projection: { type: "globe" } as any,
     });
 
     map.on("load", () => {

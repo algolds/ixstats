@@ -38,12 +38,12 @@ export function IntelligenceDashboard({
     { enabled: !!countryId }
   );
 
-  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies = [] } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: recentDiplomaticChanges = [] } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: recentDiplomaticChanges = [] } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId, hours: 48 },
     { enabled: !!countryId }
   );

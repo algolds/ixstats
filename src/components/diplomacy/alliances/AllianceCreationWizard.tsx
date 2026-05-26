@@ -59,7 +59,7 @@ export function AllianceCreationWizard({ onSuccess }: AllianceCreationWizardProp
   const [visibility, setVisibility] = useState<"public" | "private" | "secret">("public");
   const [joinPolicy, setJoinPolicy] = useState<"open" | "invite" | "application">("invite");
 
-  const createMutation = api.diplomatic.createAlliance.useMutation({
+  const createMutation = api.diplomaticPolicies.createAlliance.useMutation({
     onSuccess: () => {
       setOpen(false);
       setName("");

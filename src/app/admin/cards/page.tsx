@@ -185,6 +185,7 @@ export default function CardAdminDashboardPage() {
       }, 5000);
       return () => clearTimeout(timer);
     }
+    return;
   }, [activeSyncStatus, refetchLogs, refetchInterrupted]);
 
   // ─── Mutations ────────────────────────────────────────────────

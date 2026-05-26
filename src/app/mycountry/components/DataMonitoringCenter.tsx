@@ -253,6 +253,7 @@ export function DataMonitoringCenter({
         }
       };
     }
+    return;
   }, [isVisible, countryId, dbService, addNotification]);
 
   // Render trend indicator

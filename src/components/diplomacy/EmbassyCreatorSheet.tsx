@@ -73,7 +73,7 @@ export function EmbassyCreatorSheet({
   const { saveAction } = useLocalActions(countryId);
 
   const { data: costData, isLoading: costLoading } =
-    api.diplomatic.calculateEstablishmentCost.useQuery(
+    api.diplomaticEmbassies.calculateEstablishmentCost.useQuery(
       { hostCountryId, guestCountryId: countryId },
       { enabled: !!hostCountryId }
     );

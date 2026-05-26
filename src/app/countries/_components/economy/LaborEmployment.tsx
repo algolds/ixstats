@@ -43,13 +43,13 @@ const itemVariants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
+    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
   },
 };
 
 const cardHover = {
   scale: 1.02,
-  transition: { type: "spring", stiffness: 400, damping: 10 },
+  transition: { type: "spring" as const, stiffness: 400, damping: 10 },
 };
 import {
   PieChart,
@@ -64,6 +64,49 @@ import {
 } from "recharts";
 import { formatPopulation, formatPercentage, formatCurrency } from "./utils";
 import type { LaborEmploymentData } from "~/types/economics";
+
+type ExtendedLaborEmploymentData = LaborEmploymentData & {
+  employmentBySector: {
+    agriculture: number;
+    industry: number;
+    services: number;
+  };
+  employmentByType: {
+    fullTime: number;
+    partTime: number;
+    temporary: number;
+    selfEmployed: number;
+    informal: number;
+  };
+  regionalEmployment: {
+    urban: { participationRate: number; unemploymentRate: number; averageIncome: number };
+    rural: { participationRate: number; unemploymentRate: number; averageIncome: number };
+  };
+  skillsAndProductivity: {
+    laborProductivityIndex: number;
+    averageEducationYears: number;
+    tertiaryEducationRate: number;
+    vocationalTrainingRate: number;
+    skillsGapIndex: number;
+    productivityGrowthRate: number;
+  };
+  demographicsAndConditions: {
+    youthUnemploymentRate: number;
+    femaleParticipationRate: number;
+    genderPayGap: number;
+    unionizationRate: number;
+    workplaceSafetyIndex: number;
+    averageCommutingTime: number;
+  };
+  socialProtection: {
+    unemploymentBenefitCoverage: number;
+    pensionCoverage: number;
+    healthInsuranceCoverage: number;
+    paidSickLeaveDays: number;
+    paidVacationDays: number;
+    parentalLeaveWeeks: number;
+  };
+};
 
 export interface RealCountryData {
   name: string;
@@ -91,6 +134,7 @@ export function LaborEmployment({
   const [view, setView] = useState<"overview" | "detailed">("overview");
   const [editMode, setEditMode] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState("sectors");
+  const data = laborData as ExtendedLaborEmploymentData;
 
   function handleField<K extends keyof LaborEmploymentData>(field: K, value: number | any) {
     const next = { ...laborData, [field]: value };
@@ -105,7 +149,7 @@ export function LaborEmployment({
     onLaborDataChangeAction(next);
   }
 
-  function handleNestedField(section: keyof LaborEmploymentData, field: string, value: number) {
+  function handleNestedField(section: keyof ExtendedLaborEmploymentData, field: string, value: number) {
     const next = { ...laborData };
     if (typeof next[section] === "object" && next[section] !== null) {
       (next[section] as any)[field] = value;
@@ -115,21 +159,21 @@ export function LaborEmployment({
 
   // Derived calculations
   const wap = Math.round(totalPopulation * 0.65); // Working age population
-  const lf = Math.round((laborData.laborForceParticipationRate / 100) * wap);
-  const employed = Math.round((laborData.employmentRate / 100) * lf);
+  const lf = Math.round((data.laborForceParticipationRate / 100) * wap);
+  const employed = Math.round((data.employmentRate / 100) * lf);
   const unemployed = lf - employed;
 
   function getEmploymentHealth() {
-    if (laborData.unemploymentRate === null || laborData.unemploymentRate === undefined) {
+    if (data.unemploymentRate === null || data.unemploymentRate === undefined) {
       return { label: "No Data", color: "text-gray-500", variant: "outline" as const };
     }
-    if (laborData.unemploymentRate <= 4) {
+    if (data.unemploymentRate <= 4) {
       return { label: "Full Employment", color: "text-green-600", variant: "default" as const };
     }
-    if (laborData.unemploymentRate <= 7) {
+    if (data.unemploymentRate <= 7) {
       return { label: "Healthy", color: "text-blue-600", variant: "secondary" as const };
     }
-    if (laborData.unemploymentRate <= 12) {
+    if (data.unemploymentRate <= 12) {
       return {
         label: "Moderate Concern",
         color: "text-yellow-600",
@@ -140,7 +184,7 @@ export function LaborEmployment({
   }
 
   function getLaborProductivityHealth() {
-    const index = laborData.skillsAndProductivity?.laborProductivityIndex || 100;
+    const index = data.skillsAndProductivity?.laborProductivityIndex || 100;
     if (index >= 120) return { label: "Excellent", color: "text-green-600" };
     if (index >= 105) return { label: "Good", color: "text-blue-600" };
     if (index >= 95) return { label: "Average", color: "text-yellow-600" };
@@ -151,37 +195,37 @@ export function LaborEmployment({
   const productivityHealth = getLaborProductivityHealth();
 
   // Chart data
-  const sectorData = laborData.employmentBySector
+  const sectorData = data.employmentBySector
     ? [
-        { name: "Agriculture", value: laborData.employmentBySector.agriculture, fill: "#10b981" },
-        { name: "Industry", value: laborData.employmentBySector.industry, fill: "#3b82f6" },
-        { name: "Services", value: laborData.employmentBySector.services, fill: "#8b5cf6" },
+        { name: "Agriculture", value: data.employmentBySector.agriculture, fill: "#10b981" },
+        { name: "Industry", value: data.employmentBySector.industry, fill: "#3b82f6" },
+        { name: "Services", value: data.employmentBySector.services, fill: "#8b5cf6" },
       ]
     : [];
 
-  const employmentTypeData = laborData.employmentByType
+  const employmentTypeData = data.employmentByType
     ? [
-        { name: "Full-time", value: laborData.employmentByType.fullTime, fill: "#059669" },
-        { name: "Part-time", value: laborData.employmentByType.partTime, fill: "#0891b2" },
-        { name: "Temporary", value: laborData.employmentByType.temporary, fill: "#7c3aed" },
-        { name: "Self-employed", value: laborData.employmentByType.selfEmployed, fill: "#dc2626" },
-        { name: "Informal", value: laborData.employmentByType.informal, fill: "#ea580c" },
+        { name: "Full-time", value: data.employmentByType.fullTime, fill: "#059669" },
+        { name: "Part-time", value: data.employmentByType.partTime, fill: "#0891b2" },
+        { name: "Temporary", value: data.employmentByType.temporary, fill: "#7c3aed" },
+        { name: "Self-employed", value: data.employmentByType.selfEmployed, fill: "#dc2626" },
+        { name: "Informal", value: data.employmentByType.informal, fill: "#ea580c" },
       ]
     : [];
 
-  const regionalComparisonData = laborData.regionalEmployment
+  const regionalComparisonData = data.regionalEmployment
     ? [
         {
           region: "Urban",
-          participation: laborData.regionalEmployment.urban.participationRate,
-          unemployment: laborData.regionalEmployment.urban.unemploymentRate,
-          income: laborData.regionalEmployment.urban.averageIncome / 1000,
+          participation: data.regionalEmployment.urban.participationRate,
+          unemployment: data.regionalEmployment.urban.unemploymentRate,
+          income: data.regionalEmployment.urban.averageIncome / 1000,
         },
         {
           region: "Rural",
-          participation: laborData.regionalEmployment.rural.participationRate,
-          unemployment: laborData.regionalEmployment.rural.unemploymentRate,
-          income: laborData.regionalEmployment.rural.averageIncome / 1000,
+          participation: data.regionalEmployment.rural.participationRate,
+          unemployment: data.regionalEmployment.rural.unemploymentRate,
+          income: data.regionalEmployment.rural.averageIncome / 1000,
         },
       ]
     : [];
@@ -190,7 +234,7 @@ export function LaborEmployment({
     {
       label: "Participation Rate",
       field: "laborForceParticipationRate" as const,
-      value: laborData.laborForceParticipationRate,
+      value: data.laborForceParticipationRate,
       target: 65,
       reverse: false,
       description: "% of working-age population",
@@ -199,7 +243,7 @@ export function LaborEmployment({
     {
       label: "Employment Rate",
       field: "employmentRate" as const,
-      value: laborData.employmentRate,
+      value: data.employmentRate,
       target: 95,
       reverse: false,
       description: "% of labor force employed",
@@ -208,7 +252,7 @@ export function LaborEmployment({
     {
       label: "Unemployment Rate",
       field: "unemploymentRate" as const,
-      value: laborData.unemploymentRate,
+      value: data.unemploymentRate,
       target: 5,
       reverse: true,
       description: "% seeking work",
@@ -267,7 +311,7 @@ export function LaborEmployment({
             <span>
               Labor Market Health:{" "}
               <span className={`font-semibold ${health.color}`}>{health.label}</span>
-              {laborData.skillsAndProductivity && (
+              {data.skillsAndProductivity && (
                 <span className="ml-4">
                   Productivity:{" "}
                   <span className={`font-semibold ${productivityHealth.color}`}>
@@ -277,8 +321,8 @@ export function LaborEmployment({
               )}
             </span>
             <Badge variant={health.variant}>
-              {laborData.unemploymentRate !== null && laborData.unemploymentRate !== undefined
-                ? `${formatPercentage(laborData.unemploymentRate)} Unemployed`
+              {data.unemploymentRate !== null && data.unemploymentRate !== undefined
+                ? `${formatPercentage(data.unemploymentRate)} Unemployed`
                 : "Missing data"}
             </Badge>
           </AlertDescription>
@@ -306,7 +350,7 @@ export function LaborEmployment({
               <div className="space-y-1">
                 <div className="text-primary text-2xl font-bold">{formatPopulation(lf)}</div>
                 <div className="text-muted-foreground text-xs">
-                  Labor Force ({formatPercentage(laborData.laborForceParticipationRate)})
+                  Labor Force ({formatPercentage(data.laborForceParticipationRate)})
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-2">
@@ -422,7 +466,7 @@ export function LaborEmployment({
                   <CardContent className="p-4 text-center">
                     <Clock className="mx-auto mb-2 h-6 w-6 text-amber-600" />
                     <div className="text-xl font-bold text-amber-700 dark:text-amber-400">
-                      {laborData.averageWorkweekHours}h
+                      {data.averageWorkweekHours}h
                     </div>
                     <div className="text-muted-foreground text-xs">Avg Work Week</div>
                   </CardContent>
@@ -433,7 +477,7 @@ export function LaborEmployment({
                   <CardContent className="p-4 text-center">
                     <TrendingUp className="mx-auto mb-2 h-6 w-6 text-green-600" />
                     <div className="text-xl font-bold text-green-700 dark:text-green-400">
-                      {formatCurrency(laborData.minimumWage)}
+                      {formatCurrency(data.minimumWage)}
                     </div>
                     <div className="text-muted-foreground text-xs">Minimum Wage</div>
                   </CardContent>
@@ -444,7 +488,7 @@ export function LaborEmployment({
                   <CardContent className="p-4 text-center">
                     <TrendingUp className="mx-auto mb-2 h-6 w-6 text-blue-600" />
                     <div className="text-xl font-bold text-blue-700 dark:text-blue-400">
-                      {formatCurrency(laborData.averageAnnualIncome)}
+                      {formatCurrency(data.averageAnnualIncome)}
                     </div>
                     <div className="text-muted-foreground text-xs">Avg Annual Income</div>
                   </CardContent>
@@ -455,7 +499,7 @@ export function LaborEmployment({
                   <CardContent className="p-4 text-center">
                     <Users className="mx-auto mb-2 h-6 w-6 text-purple-600" />
                     <div className="text-xl font-bold text-purple-700 dark:text-purple-400">
-                      {formatPopulation(laborData.totalWorkforce)}
+                      {formatPopulation(data.totalWorkforce)}
                     </div>
                     <div className="text-muted-foreground text-xs">Total Workforce</div>
                   </CardContent>
@@ -477,9 +521,9 @@ export function LaborEmployment({
                         <span>Unemployment Rate:</span>
                         <div className="space-x-2">
                           <span className="font-medium">
-                            {laborData.unemploymentRate !== null &&
-                            laborData.unemploymentRate !== undefined
-                              ? formatPercentage(laborData.unemploymentRate)
+                            {data.unemploymentRate !== null &&
+                            data.unemploymentRate !== undefined
+                              ? formatPercentage(data.unemploymentRate)
                               : "Missing data"}
                           </span>
                           {referenceCountry && (
@@ -547,10 +591,10 @@ export function LaborEmployment({
                                   value={sector.value}
                                   onChange={(e) => {
                                     const field =
-                                      sector.name.toLowerCase() as keyof typeof laborData.employmentBySector;
+                                      sector.name.toLowerCase() as keyof typeof data.employmentBySector;
                                     handleNestedField(
                                       "employmentBySector",
-                                      field,
+                                      field as string,
                                       parseFloat(e.target.value) || 0
                                     );
                                   }}
@@ -574,7 +618,7 @@ export function LaborEmployment({
                     </div>
                     {sectorData.length > 0 && (
                       <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width={"100%" as any} height={"100%" as any}>
                           <PieChart>
                             <Pie
                               data={sectorData}
@@ -624,10 +668,10 @@ export function LaborEmployment({
                                   onChange={(e) => {
                                     const field = type.name
                                       .toLowerCase()
-                                      .replace("-", "") as keyof typeof laborData.employmentByType;
+                                      .replace("-", "") as keyof typeof data.employmentByType;
                                     handleNestedField(
                                       "employmentByType",
-                                      field,
+                                      field as string,
                                       parseFloat(e.target.value) || 0
                                     );
                                   }}
@@ -684,47 +728,47 @@ export function LaborEmployment({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {laborData.skillsAndProductivity && (
+                  {data.skillsAndProductivity && (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Average Education Years</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.skillsAndProductivity.averageEducationYears} years
+                          {data.skillsAndProductivity.averageEducationYears} years
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Tertiary Education Rate</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.skillsAndProductivity.tertiaryEducationRate)}
+                          {formatPercentage(data.skillsAndProductivity.tertiaryEducationRate)}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Vocational Training Rate</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.skillsAndProductivity.vocationalTrainingRate)}
+                          {formatPercentage(data.skillsAndProductivity.vocationalTrainingRate)}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Skills Gap Index</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.skillsAndProductivity.skillsGapIndex}/100
+                          {data.skillsAndProductivity.skillsGapIndex}/100
                         </div>
                         <Progress
-                          value={laborData.skillsAndProductivity.skillsGapIndex}
+                          value={data.skillsAndProductivity.skillsGapIndex}
                           className="h-2"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Labor Productivity Index</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.skillsAndProductivity.laborProductivityIndex}
+                          {data.skillsAndProductivity.laborProductivityIndex}
                         </div>
                         <div className="text-muted-foreground text-xs">Base: 100</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Productivity Growth</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.skillsAndProductivity.productivityGrowthRate)}
+                          {formatPercentage(data.skillsAndProductivity.productivityGrowthRate)}
                         </div>
                         <div className="text-muted-foreground text-xs">Annual</div>
                       </div>
@@ -745,13 +789,13 @@ export function LaborEmployment({
                   <CardDescription>Workforce demographics and workplace conditions</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {laborData.demographicsAndConditions && (
+                  {data.demographicsAndConditions && (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Youth Unemployment (15-24)</Label>
                         <div className="text-2xl font-bold text-red-600">
                           {formatPercentage(
-                            laborData.demographicsAndConditions.youthUnemploymentRate
+                            data.demographicsAndConditions.youthUnemploymentRate
                           )}
                         </div>
                       </div>
@@ -759,36 +803,36 @@ export function LaborEmployment({
                         <Label>Female Participation Rate</Label>
                         <div className="text-2xl font-bold">
                           {formatPercentage(
-                            laborData.demographicsAndConditions.femaleParticipationRate
+                            data.demographicsAndConditions.femaleParticipationRate
                           )}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Gender Pay Gap</Label>
                         <div className="text-2xl font-bold text-orange-600">
-                          {formatPercentage(laborData.demographicsAndConditions.genderPayGap)}
+                          {formatPercentage(data.demographicsAndConditions.genderPayGap)}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Unionization Rate</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.demographicsAndConditions.unionizationRate)}
+                          {formatPercentage(data.demographicsAndConditions.unionizationRate)}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Workplace Safety Index</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.demographicsAndConditions.workplaceSafetyIndex}/100
+                          {data.demographicsAndConditions.workplaceSafetyIndex}/100
                         </div>
                         <Progress
-                          value={laborData.demographicsAndConditions.workplaceSafetyIndex}
+                          value={data.demographicsAndConditions.workplaceSafetyIndex}
                           className="h-2"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Avg Commuting Time</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.demographicsAndConditions.averageCommutingTime} min
+                          {data.demographicsAndConditions.averageCommutingTime} min
                         </div>
                       </div>
                     </div>
@@ -810,7 +854,7 @@ export function LaborEmployment({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {laborData.regionalEmployment && (
+                  {data.regionalEmployment && (
                     <div className="space-y-6">
                       <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
@@ -837,7 +881,7 @@ export function LaborEmployment({
                               <span>Participation Rate:</span>
                               <span className="font-bold">
                                 {formatPercentage(
-                                  laborData.regionalEmployment.urban.participationRate
+                                  data.regionalEmployment.urban.participationRate
                                 )}
                               </span>
                             </div>
@@ -845,14 +889,14 @@ export function LaborEmployment({
                               <span>Unemployment Rate:</span>
                               <span className="font-bold">
                                 {formatPercentage(
-                                  laborData.regionalEmployment.urban.unemploymentRate
+                                  data.regionalEmployment.urban.unemploymentRate
                                 )}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Average Income:</span>
                               <span className="font-bold">
-                                {formatCurrency(laborData.regionalEmployment.urban.averageIncome)}
+                                {formatCurrency(data.regionalEmployment.urban.averageIncome)}
                               </span>
                             </div>
                           </CardContent>
@@ -866,7 +910,7 @@ export function LaborEmployment({
                               <span>Participation Rate:</span>
                               <span className="font-bold">
                                 {formatPercentage(
-                                  laborData.regionalEmployment.rural.participationRate
+                                  data.regionalEmployment.rural.participationRate
                                 )}
                               </span>
                             </div>
@@ -874,14 +918,14 @@ export function LaborEmployment({
                               <span>Unemployment Rate:</span>
                               <span className="font-bold">
                                 {formatPercentage(
-                                  laborData.regionalEmployment.rural.unemploymentRate
+                                  data.regionalEmployment.rural.unemploymentRate
                                 )}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Average Income:</span>
                               <span className="font-bold">
-                                {formatCurrency(laborData.regionalEmployment.rural.averageIncome)}
+                                {formatCurrency(data.regionalEmployment.rural.averageIncome)}
                               </span>
                             </div>
                           </CardContent>
@@ -906,47 +950,47 @@ export function LaborEmployment({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {laborData.socialProtection && (
+                  {data.socialProtection && (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Unemployment Benefit Coverage</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.socialProtection.unemploymentBenefitCoverage)}
+                          {formatPercentage(data.socialProtection.unemploymentBenefitCoverage)}
                         </div>
                         <div className="text-muted-foreground text-xs">of unemployed</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Pension Coverage</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.socialProtection.pensionCoverage)}
+                          {formatPercentage(data.socialProtection.pensionCoverage)}
                         </div>
                         <div className="text-muted-foreground text-xs">of workforce</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Health Insurance Coverage</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.socialProtection.healthInsuranceCoverage)}
+                          {formatPercentage(data.socialProtection.healthInsuranceCoverage)}
                         </div>
                         <div className="text-muted-foreground text-xs">of workforce</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Paid Sick Leave</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.socialProtection.paidSickLeaveDays} days
+                          {data.socialProtection.paidSickLeaveDays} days
                         </div>
                         <div className="text-muted-foreground text-xs">average per year</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Paid Vacation</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.socialProtection.paidVacationDays} days
+                          {data.socialProtection.paidVacationDays} days
                         </div>
                         <div className="text-muted-foreground text-xs">average per year</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Parental Leave</Label>
                         <div className="text-2xl font-bold">
-                          {laborData.socialProtection.parentalLeaveWeeks} weeks
+                          {data.socialProtection.parentalLeaveWeeks} weeks
                         </div>
                         <div className="text-muted-foreground text-xs">available</div>
                       </div>

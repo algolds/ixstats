@@ -14,6 +14,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+
 interface WikiSite {
   name: string;
   displayName: string;
@@ -24,20 +26,8 @@ interface SearchResult {
   flagUrl?: string | null;
 }
 
-interface ParsedCountryData {
-  wikiIntro?: string;
-  flagUrl?: string | null;
-  conventional_long_name?: string;
-  official_name?: string;
-  common_name?: string;
-  population?: string | number;
-  population_estimate?: string | number;
+interface ParsedCountryData extends UnifiedInfoboxData {
   population_total?: string | number;
-  gdpPerCapita?: string | number;
-  GDP_nominal_per_capita?: string | number;
-  GDP_PPP_per_capita?: string | number;
-  capital?: string;
-  government_type?: string;
   government?: string;
 }
 

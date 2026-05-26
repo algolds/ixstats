@@ -138,6 +138,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
 
         return () => clearTimeout(timeout);
       }
+      return;
     }, [trigger, isActive, generateSplashParticles, particleConfig.lifetime, onComplete]);
 
     /**

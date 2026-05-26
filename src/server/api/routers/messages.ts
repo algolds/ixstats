@@ -219,8 +219,8 @@ export const messagesRouter = createTRPCRouter({
       // Fire-and-forget bridge sync for folders that need it (non-blocking)
       if ((folder === "inbox" || folder === "discussions") && input.userId) {
         Promise.allSettled([
-          wikiTalkBridge.syncInbound(input.userId, ctx.db),
-          forumBridge.syncInbound(input.userId, ctx.db),
+          wikiTalkBridge.syncInbound(input.userId, ctx.db as any),
+          forumBridge.syncInbound(input.userId, ctx.db as any),
         ]).catch((err: unknown) => {
           console.error("[Messages] Background op failed:", (err as Error).message);
         });
@@ -665,7 +665,7 @@ export const messagesRouter = createTRPCRouter({
             conversation.sourceId,
             input.content,
             input.userId,
-            ctx.db
+            ctx.db as any
           );
         } catch (err) {
           console.error("Wiki bridge outbound failed:", err);
@@ -676,7 +676,7 @@ export const messagesRouter = createTRPCRouter({
             conversation.sourceId,
             input.content,
             input.userId,
-            ctx.db
+            ctx.db as any
           );
         } catch (err) {
           console.error("Forum bridge outbound failed:", err);
@@ -998,8 +998,8 @@ export const messagesRouter = createTRPCRouter({
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const [wikiResult, forumResult] = await Promise.allSettled([
-        wikiTalkBridge.syncInbound(input.userId, ctx.db),
-        forumBridge.syncInbound(input.userId, ctx.db),
+        wikiTalkBridge.syncInbound(input.userId, ctx.db as any),
+        forumBridge.syncInbound(input.userId, ctx.db as any),
       ]);
 
       return {

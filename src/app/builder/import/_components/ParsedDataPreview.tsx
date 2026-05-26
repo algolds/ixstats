@@ -26,7 +26,7 @@ interface ParsedCountryData {
 interface ParsedDataPreviewProps {
   parsedData: ParsedCountryData;
   handleContinueWithData: () => void;
-  formatNumber: (num: number | undefined) => string;
+  formatNumber: (num: number | undefined, decimals?: number) => string;
 }
 
 export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({

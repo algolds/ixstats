@@ -1,12 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-    "outDir": "./dist/hooks",
-    "rootDir": "./src/hooks",
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
     "types": [],
     "isolatedModules": true
   },
@@ -17,8 +11,5 @@
   "exclude": [
     "**/*.test.ts",
     "**/*.test.tsx"
-  ],
-  "references": [
-    { "path": "./tsconfig.lib.json" }
   ]
 }

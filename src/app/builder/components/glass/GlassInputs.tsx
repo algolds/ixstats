@@ -433,6 +433,8 @@ export function GlassProgressRing({
     blue: "stroke-blue-400",
     indigo: "stroke-indigo-400",
     red: "stroke-red-400",
+    emerald: "stroke-emerald-400",
+    teal: "stroke-teal-400",
     neutral: "stroke-slate-400",
   };
 

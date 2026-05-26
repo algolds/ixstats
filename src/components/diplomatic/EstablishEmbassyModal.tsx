@@ -80,7 +80,7 @@ export function EstablishEmbassyModal({
 
   // Calculate establishment cost
   const { data: costData, isLoading: costLoading } =
-    api.diplomatic.calculateEstablishmentCost.useQuery(
+    api.diplomaticEmbassies.calculateEstablishmentCost.useQuery(
       {
         hostCountryId,
         guestCountryId,
@@ -91,7 +91,7 @@ export function EstablishEmbassyModal({
     );
 
   // Establish embassy mutation
-  const establishMutation = api.diplomatic.establishEmbassy.useMutation({
+  const establishMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
     onSuccess: (data) => {
       notify.success(
         "Embassy established successfully!",

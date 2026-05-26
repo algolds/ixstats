@@ -51,8 +51,8 @@ export default function ForumIndexPage() {
   );
 
   const forums = forumsData?.forums ?? [];
-  const categories = forums.filter((f) => f.nodeType === "Category");
-  const subForums = forums.filter((f) => f.nodeType === "Forum");
+  const categories = forums.filter((f: any) => f.nodeType === "Category");
+  const subForums = forums.filter((f: any) => f.nodeType === "Forum");
 
   const categoryMap = new Map<number, typeof subForums>();
   for (const forum of subForums) {
@@ -62,7 +62,7 @@ export default function ForumIndexPage() {
   }
 
   const orphanForums = subForums.filter(
-    (f) => !categories.some((c) => c.nodeId === f.parentNodeId)
+    (f: any) => !categories.some((c: any) => c.nodeId === f.parentNodeId)
   );
 
   const isLoading = viewMode === "categories" ? forumsLoading : threadsLoading;
@@ -89,11 +89,7 @@ export default function ForumIndexPage() {
         <div className="mb-4 flex items-center gap-2">
           <Link
             href={withBasePath("/forum")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === "categories"
-                ? "bg-orange-500/15 text-orange-400"
-                : "text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
-            }`}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
           >
             <HomeIcon className="h-3.5 w-3.5" />
             All Forums
@@ -132,7 +128,7 @@ export default function ForumIndexPage() {
       ) : viewMode === "categories" ? (
         /* ─── Categories View ─── */
         <div className="space-y-6">
-          {categories.map((cat) => {
+          {categories.map((cat: any) => {
             const children = categoryMap.get(cat.nodeId) ?? [];
             if (children.length === 0) return null;
 
@@ -150,7 +146,7 @@ export default function ForumIndexPage() {
                 lastThreadId={cat.lastThreadId}
                 isCategory
               >
-                {children.map((forum) => (
+                {children.map((forum: any) => (
                   <ForumCategoryCard
                     key={forum.nodeId}
                     nodeId={forum.nodeId}
@@ -170,7 +166,7 @@ export default function ForumIndexPage() {
 
           {orphanForums.length > 0 && (
             <div className="glass-forum-parent space-y-0.5 overflow-hidden p-1">
-              {orphanForums.map((forum) => (
+              {orphanForums.map((forum: any) => (
                 <ForumCategoryCard
                   key={forum.nodeId}
                   nodeId={forum.nodeId}
@@ -197,7 +193,7 @@ export default function ForumIndexPage() {
         /* ─── Thread Feed View (Trending / New) ─── */
         <div>
           <div className="glass-forum-parent overflow-hidden p-1">
-            {(threadsData?.threads ?? []).map((thread) => (
+            {(threadsData?.threads ?? []).map((thread: any) => (
               <ThreadListItem key={thread.threadId} {...thread} />
             ))}
 

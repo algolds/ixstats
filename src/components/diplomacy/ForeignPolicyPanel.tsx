@@ -17,12 +17,12 @@ export function ForeignPolicyPanel({ countryId }: ForeignPolicyPanelProps) {
   const [showCreator, setShowCreator] = useState(false);
   const utils = api.useUtils();
 
-  const { data: policies } = api.diplomatic.getActiveForeignPolicies.useQuery(
+  const { data: policies } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: relations } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
@@ -37,7 +37,7 @@ export function ForeignPolicyPanel({ countryId }: ForeignPolicyPanelProps) {
   }, [policies, relations]);
 
   const handlePolicyCreated = () => {
-    void utils.diplomatic.getActiveForeignPolicies.invalidate({ countryId });
+    void utils.diplomaticPolicies.getActiveForeignPolicies.invalidate({ countryId });
   };
 
   return (

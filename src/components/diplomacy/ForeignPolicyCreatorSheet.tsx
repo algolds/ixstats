@@ -97,13 +97,13 @@ export function ForeignPolicyCreatorSheet({
   const [reason, setReason] = useState("");
   const { saveAction } = useLocalActions(countryId);
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: open }
   );
 
   const { data: preview, isFetching: previewLoading } =
-    api.diplomatic.previewForeignPolicyImpact.useQuery(
+    api.diplomaticPolicies.previewForeignPolicyImpact.useQuery(
       { initiatorId: countryId, targetId, actionType, severity },
       { enabled: !!targetId && open }
     );

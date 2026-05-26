@@ -45,8 +45,8 @@ export default function ForumThreadListPage() {
   const pagination = data?.pagination;
 
   // Separate sticky and regular threads
-  const stickyThreads = threads.filter((t) => t.isSticky);
-  const regularThreads = threads.filter((t) => !t.isSticky);
+  const stickyThreads = threads.filter((t: any) => t.isSticky);
+  const regularThreads = threads.filter((t: any) => !t.isSticky);
 
   return (
     <ForumLayout>
@@ -112,7 +112,7 @@ export default function ForumThreadListPage() {
       ) : (
         <div className="glass-forum-parent overflow-hidden p-1">
           {/* Sticky threads */}
-          {stickyThreads.map((thread) => (
+          {stickyThreads.map((thread: any) => (
             <ThreadListItem key={thread.threadId} {...thread} />
           ))}
 
@@ -122,7 +122,7 @@ export default function ForumThreadListPage() {
           )}
 
           {/* Regular threads */}
-          {regularThreads.map((thread) => (
+          {regularThreads.map((thread: any) => (
             <ThreadListItem key={thread.threadId} {...thread} />
           ))}
 

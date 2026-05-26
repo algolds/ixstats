@@ -36,7 +36,7 @@ import {
 import { formatCurrency } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
-import type { RouterOutputs } from "~/trpc/react";
+
 
 interface TrendingTopic {
   id: string;
@@ -164,7 +164,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   // Transform trending data
   const trendingTopics: TrendingTopic[] = useMemo(() => {
     if (!trendingData) return [];
-    return trendingData.map((topic: RouterOutputs["activities"]["getTrendingTopics"][number]) => ({
+    return trendingData.map((topic: any) => ({
       id: topic.id,
       title: topic.title,
       category: topic.category,
@@ -175,9 +175,8 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
   // Transform activity feed data
   const activityFeed = useMemo((): ActivityFeedItem[] => {
-    type ActivityAPIItem = RouterOutputs["activities"]["getGlobalFeed"]["activities"][number];
     const regularActivities: ActivityFeedItem[] = activitiesData?.activities
-      ? activitiesData.activities.map((activity: ActivityAPIItem) => ({
+      ? activitiesData.activities.map((activity: any) => ({
           id: activity.id,
           type: activity.type as ActivityFeedItem["type"],
           category: activity.category as ActivityFeedItem["category"],
@@ -218,9 +217,8 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
       : [];
 
     // Add ThinkPages posts as social activities
-    type ThinkpagesFeedPostItem = RouterOutputs["thinkpages"]["getFeed"]["posts"][number];
     const thinkpagesActivities: ActivityFeedItem[] = thinkpagesFeed?.posts
-      ? thinkpagesFeed.posts.map((post: ThinkpagesFeedPostItem) => ({
+      ? thinkpagesFeed.posts.map((post: any) => ({
           id: `thinkpages-${post.id}`,
           type: "social" as const,
           category: "social" as const,

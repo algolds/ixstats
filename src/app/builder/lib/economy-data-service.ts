@@ -234,6 +234,11 @@ export interface LaborEmploymentData {
   minimumWage: number;
   averageAnnualIncome: number;
   laborProtections: boolean;
+  youthUnemploymentRate?: number;
+  informalEmploymentRate?: number;
+  femaleParticipationRate?: number;
+  medianWage?: number;
+  wageGrowthRate?: number;
 }
 
 export interface TaxRates {

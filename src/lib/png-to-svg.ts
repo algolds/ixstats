@@ -7,7 +7,7 @@
  * Pipeline: PNG → sharp (color extraction) → potrace (vectorization) → SVG
  */
 
-import type { Buffer } from "node:buffer";
+import { Buffer } from "node:buffer";
 
 export interface PngToSvgConfig {
   /** Color map: hex color → feature ID. If not provided, auto-detects colors. */

@@ -83,11 +83,11 @@ export function EnhancedIntelligenceContent({
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
-  const { data: intelligenceOverview } = api.unifiedIntelligence.getOverview.useQuery(
+  const { data: intelligenceOverview } = api.intelCore.getOverview.useQuery(
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );

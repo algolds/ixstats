@@ -45,11 +45,11 @@ export function useOverviewHealthRings({
   );
 
   // ---- Diplomacy data ----
-  const { data: embassies, isLoading: l4 } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies, isLoading: l4 } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: countryId ?? "" },
     { enabled }
   );
-  const { data: relations, isLoading: l5 } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations, isLoading: l5 } = api.diplomaticCore.getRelationships.useQuery(
     { countryId: countryId ?? "" },
     { enabled }
   );
@@ -60,7 +60,7 @@ export function useOverviewHealthRings({
     { enabled }
   );
   const { data: intelligenceOverview, isLoading: l7 } =
-    api.unifiedIntelligence.getOverview.useQuery({ countryId: countryId ?? "" }, { enabled });
+    api.intelCore.getOverview.useQuery({ countryId: countryId ?? "" }, { enabled });
 
   // ---- Defense data ----
   const { data: securityAssessment, isLoading: l8 } = api.security.getSecurityAssessment.useQuery(

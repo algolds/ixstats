@@ -20,6 +20,7 @@ import type {
   DepartmentInput,
   BudgetAllocationInput,
   RevenueSourceInput,
+  GovernmentType,
 } from "~/types/government";
 import type { GovernmentSpendingData } from "~/types/economics";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -417,6 +418,7 @@ function createDepartmentsFromParsed(
       icon: "",
       color: "#6366f1",
       priority: 50,
+      organizationalLevel: "Ministry",
       functions: [],
     };
     departments.push(deptInput);
@@ -561,7 +563,7 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
   const governmentStructure: Partial<GovernmentBuilderState> = {
     structure: {
       governmentName: `Government of ${name}`,
-      governmentType: govType,
+      governmentType: govType as GovernmentType,
       headOfState: infoboxData.head_of_state || "",
       headOfGovernment: infoboxData.head_of_government || "",
       legislatureName: infoboxData.legislature || infoboxData.upper_house || "",
@@ -613,20 +615,17 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
         wholesale: 5,
         retail: 10,
         transportation: 5,
-        hospitality: 5,
         information: 3,
         finance: 5,
-        realEstate: 3,
         professional: 10,
-        admin: 5,
-        public: 8,
         education: 6,
-        health: 8,
-        arts: 2,
-        other: 5,
+        healthcare: 8,
+        hospitality: 5,
+        government: 8,
+        other: 3,
       },
-      employmentTypes: { fullTime: 70, partTime: 15, contract: 8, gig: 5, informal: 2 },
-      averageWorkingHours: 40,
+      employmentType: { fullTime: 70, partTime: 15, temporary: 8, seasonal: 0, selfEmployed: 5, gig: 2, informal: 0 },
+      averageWorkweekHours: 40,
       minimumWage: labor.minimumWage,
       averageWage: core.gdpPerCapita * 0.6,
       medianWage: core.gdpPerCapita * 0.5,
@@ -644,7 +643,7 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
       pensionSystem: "Mixed",
       unemploymentBenefits: tier !== "Developing",
       jobTrainingPrograms: true,
-    },
+    } as any,
     demographics: {
       totalPopulation: core.totalPopulation,
       populationGrowthRate: 1.0,

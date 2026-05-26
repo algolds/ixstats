@@ -153,8 +153,8 @@ function QuickUpdatePanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
 
-  const processMutation = api.geo.processSvgUpload.useMutation();
-  const commitMutation = api.geo.commitSvgUpload.useMutation();
+  const processMutation = api.geoAdmin.processSvgUpload.useMutation();
+  const commitMutation = api.geoAdmin.commitSvgUpload.useMutation();
 
   const reset = useCallback(() => {
     setStage("select");
@@ -233,12 +233,16 @@ function QuickUpdatePanel() {
     try {
       await commitMutation.mutateAsync({ uploadId: result.uploadId });
       setStage("done");
-      await utils.geo.invalidate();
+      await Promise.all([
+        utils.geoCore.invalidate(),
+        utils.geoFeatures.invalidate(),
+        utils.geoEditor.invalidate(),
+      ]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Commit failed");
       setStage("review");
     }
-  }, [result, commitMutation, utils.geo]);
+  }, [result, commitMutation, utils.geoCore, utils.geoFeatures, utils.geoEditor]);
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -550,8 +554,8 @@ function FullPipelinePanel() {
   const [error, setError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<{ imported: number } | null>(null);
 
-  const runPipeline = api.geo.runPipeline.useMutation();
-  const importPipeline = api.geo.importPipelineResult.useMutation();
+  const runPipeline = api.geoEditor.runPipeline.useMutation();
+  const importPipeline = api.geoEditor.importPipelineResult.useMutation();
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -843,7 +847,7 @@ function DiffBadge({
   count,
   color,
 }: {
-  icon: React.ElementType;
+  icon: any;
   label: string;
   count: number;
   color: string;

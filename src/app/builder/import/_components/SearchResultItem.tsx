@@ -22,7 +22,9 @@ interface SearchResultItemProps {
   selectedResult: SearchResult | null;
   handleSelectResult: (result: SearchResult) => void;
   categoryFilter: string;
-  formatNumber: (num: number | undefined) => string;
+  formatNumber: (num: number | undefined, decimals?: number) => string;
+  isFocused?: boolean;
+  onFocus?: () => void;
 }
 
 export const SearchResultItem: React.FC<SearchResultItemProps> = ({
@@ -32,6 +34,8 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   handleSelectResult,
   categoryFilter,
   formatNumber,
+  isFocused,
+  onFocus,
 }) => {
   return (
     <motion.div

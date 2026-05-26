@@ -101,7 +101,7 @@ function BuilderRouterInner() {
     if (activeSection !== "import") {
       const targetStep = sectionToLegacyStep(activeSection);
       if (targetStep !== builderState.step) {
-        setBuilderState((prev) => ({ ...prev, step: targetStep }));
+        setBuilderState((prev) => ({ ...prev, step: targetStep as BuilderStep }));
       }
     }
     initialUrlSyncRef.current = true;

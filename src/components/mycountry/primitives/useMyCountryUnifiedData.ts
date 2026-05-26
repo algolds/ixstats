@@ -25,9 +25,9 @@ interface UseMyCountryUnifiedDataReturn {
   activityRingsData: ReturnType<typeof useCountryData>["activityRingsData"];
   unifiedIntelligence: UseUnifiedIntelligenceReturn;
   executiveIntelligence: ExecutiveIntelligence;
-  diplomaticRelations: ReturnType<typeof api.diplomatic.getRelationships.useQuery>["data"];
-  embassies: ReturnType<typeof api.diplomatic.getEmbassies.useQuery>["data"];
-  recentDiplomaticActivity: ReturnType<typeof api.diplomatic.getRecentChanges.useQuery>["data"];
+  diplomaticRelations: ReturnType<typeof api.diplomaticCore.getRelationships.useQuery>["data"];
+  embassies: ReturnType<typeof api.diplomaticEmbassies.getEmbassies.useQuery>["data"];
+  recentDiplomaticActivity: ReturnType<typeof api.diplomaticCore.getRecentChanges.useQuery>["data"];
   diplomaticMetrics: DiplomaticMetrics;
   quickActionMeetings: ReturnType<typeof api.quickActions.getMeetings.useQuery>["data"];
   quickActionPolicies: ReturnType<typeof api.quickActions.getPolicies.useQuery>["data"];
@@ -442,17 +442,17 @@ export function useMyCountryUnifiedData({
     autoRefresh,
   });
 
-  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
+  const { data: diplomaticRelations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: recentDiplomaticActivity } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: recentDiplomaticActivity } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId, hours: 72 },
     { enabled: !!countryId }
   );

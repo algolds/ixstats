@@ -53,6 +53,8 @@ import {
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
+import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
+
 interface EconomySectionComponentProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
   countryId?: string;
@@ -80,14 +82,13 @@ export function EconomySection({
   fieldLocks,
 }: EconomySectionComponentProps) {
   const isEditMode = mode === "edit";
-  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // Get builder context to update global state
   const builderContext = useBuilderContext?.();
 
   // Economy Builder State (read from context if available)
-  const economyBuilderState = builderContext?.builderState?.economyBuilder || null;
+  const economyBuilderState = builderContext?.builderState?.economyBuilderState || null;
 
   // Calculate component effectiveness if we have economy builder state
   const componentEffectiveness = useMemo(() => {
@@ -95,7 +96,7 @@ export function EconomySection({
 
     const components = economyBuilderState.selectedAtomicComponents;
     const totalEffectiveness = components.reduce(
-      (sum, comp) => sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0),
+      (sum: number, comp: any) => sum + ((ATOMIC_ECONOMIC_COMPONENTS as any)[comp]?.effectiveness || 0),
       0
     );
 
@@ -270,8 +271,8 @@ export function EconomySection({
                   <div className="flex flex-wrap gap-1">
                     {economyBuilderState.selectedAtomicComponents
                       .slice(0, 5)
-                      .map((componentType) => {
-                        const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
+                      .map((componentType: any) => {
+                        const component = (ATOMIC_ECONOMIC_COMPONENTS as any)[componentType];
                         if (!component) return null;
                         return (
                           <Badge key={componentType} variant="outline" className="text-xs">

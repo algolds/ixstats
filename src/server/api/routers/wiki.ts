@@ -401,10 +401,11 @@ export const wikiRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const wikitext = await getArticleWikitext(input.countryName, "ixwiki");
-      if (!wikitext) {
+      const article = await getArticleWikitext(input.countryName, "ixwiki");
+      if (!article) {
         return { sections: [], files: [], infoboxData: null };
       }
+      const wikitext = article.wikitext;
 
       // 1. Find administrative division-related sections
       const sectionKeywords = [

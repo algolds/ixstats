@@ -16,23 +16,23 @@ const MAP_CACHE = { staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 } as const;
 export function useCountryMapEmbed(countryId: string | null | undefined) {
   const enabled = !!countryId;
 
-  const { data: geoData, isLoading: geoLoading } = api.geo.getCountryGeometry.useQuery(
+  const { data: geoData, isLoading: geoLoading } = api.geoCore.getCountryGeometry.useQuery(
     { countryId: countryId! },
     { enabled, ...MAP_CACHE }
   );
 
-  const { data: neighbors, isLoading: neighborsLoading } = api.geo.getNeighbors.useQuery(
+  const { data: neighbors, isLoading: neighborsLoading } = api.geoCore.getNeighbors.useQuery(
     { countryId: countryId! },
     { enabled, ...MAP_CACHE }
   );
 
-  const { data: features, isLoading: featuresLoading } = api.geo.getCountryFeatures.useQuery(
+  const { data: features, isLoading: featuresLoading } = api.geoCore.getCountryFeatures.useQuery(
     { countryId: countryId! },
     { enabled, ...MAP_CACHE }
   );
 
   // Fetch world political layer for neighbor rendering (shared cache with main map)
-  const { data: worldMap } = api.geo.getWorldMap.useQuery(
+  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
     { layers: ["political"] },
     { enabled, staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 }
   );

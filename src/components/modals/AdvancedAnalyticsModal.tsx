@@ -96,7 +96,7 @@ export function AdvancedAnalyticsModal({
 
   // Get advanced analytics
   const { data: advancedAnalytics, isLoading: analyticsLoading } =
-    api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+    api.intelAnalytics.getAdvancedAnalytics.useQuery(
       { countryId: countryId || "disabled" },
       { enabled: isOpen && !!countryId }
     );

@@ -1562,7 +1562,7 @@ function ChoicesTab({
           </div>
         ) : (
           <div className="space-y-2">
-            {responseOptions.map((choice) => (
+            {responseOptions.map((choice, index) => (
               <Card key={choice.id} className="glass-card-child p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

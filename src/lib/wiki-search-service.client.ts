@@ -93,6 +93,56 @@ export async function searchWiki(
     throw new Error(`Unsupported wiki site: ${site}`);
   }
 
+  function createWikiUrl(title: string, cfg: WikiConfig, _site: string): string {
+    return `${cfg.baseUrl}/index.php?title=${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  }
+
+  async function searchWithCategoryFilter(
+    q: string,
+    catFilter: string,
+    cfg: WikiConfig,
+    _site: string
+  ): Promise<SearchResult[]> {
+    const cmparams = new URLSearchParams({
+      action: "query",
+      format: "json",
+      list: "categorymembers",
+      cmtitle: catFilter,
+      cmlimit: "50",
+    });
+    const cmresp = await fetch(
+      `${cfg.baseUrl}${cfg.apiEndpoint}?${cmparams.toString()}`,
+      { headers: { "User-Agent": "IxStats-Builder" } }
+    );
+    if (!cmresp.ok) throw new Error(`HTTP ${cmresp.status}`);
+    const cmdata = await cmresp.json();
+    const members: { title: string }[] = cmdata?.query?.categorymembers || [];
+    const titles = members.map((m) => m.title);
+    const sp = new URLSearchParams({
+      action: "query",
+      format: "json",
+      list: "search",
+      srsearch: q,
+      srwhat: "text",
+      srlimit: "50",
+    });
+    const sresp = await fetch(
+      `${cfg.baseUrl}${cfg.apiEndpoint}?${sp.toString()}`,
+      { headers: { "User-Agent": "IxStats-Builder" } }
+    );
+    if (!sresp.ok) throw new Error(`HTTP ${sresp.status}`);
+    const sdata = await sresp.json();
+    const results: { title: string; snippet: string }[] = sdata?.query?.search || [];
+    return results
+      .filter((r) => titles.some((t) => t.toLowerCase() === r.title.toLowerCase()))
+      .map((r) => ({
+        title: r.title,
+        snippet: r.snippet || "",
+        url: createWikiUrl(r.title, cfg, _site),
+        namespace: 0,
+      }));
+  }
+
   try {
     // Use comprehensive category search for both sites when category filter is provided
     if (categoryFilter) {

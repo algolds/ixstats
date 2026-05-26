@@ -11,9 +11,9 @@ import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 
 export function MapStatsDashboard() {
-  const { data: stats, isLoading: statsLoading } = api.geo.getMapStats.useQuery();
-  const { data: layerInfo, isLoading: layerLoading } = api.geo.getLayerInfo.useQuery();
-  const { data: features } = api.geo.listCountries.useQuery();
+  const { data: stats, isLoading: statsLoading } = api.geoCore.getMapStats.useQuery();
+  const { data: layerInfo, isLoading: layerLoading } = api.geoCore.getLayerInfo.useQuery();
+  const { data: features } = api.geoCore.listCountries.useQuery();
 
   const unlinkedFeatures = features?.filter((f) => !f.isClaimed) ?? [];
   const linkedFeatures = features?.filter((f) => f.isClaimed) ?? [];

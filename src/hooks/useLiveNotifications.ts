@@ -96,7 +96,7 @@ export function useLiveNotifications(
 
   // Mutations with Optimistic Updates and Rollback
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
-    onMutate: async ({ notificationId }) => {
+    onMutate: async ({ notificationId }: { notificationId: string }) => {
       const queryKey = { limit: 50, offset: 0, unreadOnly: false };
       await utils.notifications.getUserNotifications.cancel(queryKey);
       await utils.notifications.getUnreadCount.cancel();
@@ -178,7 +178,7 @@ export function useLiveNotifications(
   });
 
   const dismissMutation = api.notifications.dismissNotification.useMutation({
-    onMutate: async ({ notificationId }) => {
+    onMutate: async ({ notificationId }: { notificationId: string }) => {
       const queryKey = { limit: 50, offset: 0, unreadOnly: false };
       await utils.notifications.getUserNotifications.cancel(queryKey);
       await utils.notifications.getUnreadCount.cancel();

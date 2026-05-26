@@ -33,7 +33,7 @@ interface EnhancedBarChartProps extends EnhancedChartProps {
 
 interface ChartTooltipProps {
   active?: boolean;
-  payload?: readonly { name: string; value: number; fill?: string; color?: string }[];
+  payload?: readonly any[];
   label?: string | number;
   formatValue?: (value: number) => string;
   colors: string[];

@@ -10,7 +10,7 @@
 
 import { useRef, useCallback, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, AlertCircle, Map, ChevronRight, List, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Map, ChevronRight, List, Loader2, X } from "lucide-react";
 import { useCountryData } from "./primitives";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 import { useMapEditor } from "~/hooks/useMapEditor";

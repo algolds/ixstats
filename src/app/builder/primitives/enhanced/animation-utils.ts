@@ -55,6 +55,7 @@ export function useAnimatedValue(targetValue: number, config?: AnimationConfig) 
       return () => clearTimeout(timeout);
     } else {
       motionValue.set(safeTargetValue);
+      return;
     }
   }, [safeTargetValue, motionValue, safeConfig?.enabled, safeConfig?.delay]);
 

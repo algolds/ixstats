@@ -147,7 +147,7 @@ export function MessagesChatPanel({
 
   // ── Lifted mutations (shared across all bubbles) ──
   const addReaction = api.messages.addReaction.useMutation({
-    onMutate: async ({ messageId, reaction }) => {
+    onMutate: async ({ messageId, reaction }: { messageId: string; reaction: string }) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
       await utils.messages.getConversationMessages.cancel(queryKey);
       const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
@@ -180,7 +180,7 @@ export function MessagesChatPanel({
   });
 
   const removeReaction = api.messages.removeReaction.useMutation({
-    onMutate: async ({ messageId, reaction }) => {
+    onMutate: async ({ messageId, reaction }: { messageId: string; reaction: string }) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
       await utils.messages.getConversationMessages.cancel(queryKey);
       const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
@@ -218,7 +218,7 @@ export function MessagesChatPanel({
   });
 
   const editMutation = api.messages.editMessage.useMutation({
-    onMutate: async ({ messageId, content }) => {
+    onMutate: async ({ messageId, content }: { messageId: string; content: string }) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
       await utils.messages.getConversationMessages.cancel(queryKey);
       const previousMessages = utils.messages.getConversationMessages.getData(queryKey);

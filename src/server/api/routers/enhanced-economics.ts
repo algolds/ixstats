@@ -87,6 +87,112 @@ const historicalDataSchema = z.array(
   })
 );
 
+async function performCountryEconomicAnalysis(
+  ctx: { db: any },
+  countryId: string,
+  analysisType: "comprehensive" | "health" | "builder" | "intelligence"
+): Promise<any> {
+  const country = await ctx.db.country.findUnique({
+    where: { id: countryId },
+    include: {
+      historicalData: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      },
+    },
+  });
+
+  if (!country) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Country not found",
+    });
+  }
+
+  const countryStats = {
+    id: country.id,
+    name: country.name,
+    currentTotalGdp: country.currentTotalGdp || 0,
+    currentGdpPerCapita: country.currentGdpPerCapita || 0,
+    adjustedGdpGrowth: country.adjustedGdpGrowth || 0,
+    economicTier: (country.economicTier || "Developing") as EconomicTier,
+    populationTier: (country.populationTier || "2") as PopulationTier,
+    populationGrowthRate: country.populationGrowthRate || 0.02,
+    totalGdp: country.currentTotalGdp || 0,
+    lastCalculated: Date.now(),
+    baselineDate: Date.now(),
+    localGrowthFactor: 1.0,
+    maxGdpGrowthRate: country.adjustedGdpGrowth || 0.02,
+    actualGdpGrowth: country.adjustedGdpGrowth || 0.02,
+    projected2040Population: country.currentPopulation || 0,
+    projected2040Gdp: country.currentTotalGdp || 0,
+    projected2040GdpPerCapita: country.currentGdpPerCapita || 0,
+  } as CountryStats;
+
+  const economyData = {
+    core: {
+      nominalGDP: country.currentTotalGdp || 0,
+      gdpPerCapita: country.currentGdpPerCapita,
+      realGDPGrowthRate: country.adjustedGdpGrowth,
+      inflationRate: country.inflationRate || 0.02,
+    },
+    fiscal: {
+      totalDebtGDPRatio: country.totalDebtGDPRatio || 60,
+      budgetDeficitSurplus: country.budgetDeficitSurplus || 0,
+      taxRevenueGDPPercent: country.taxRevenueGDPPercent || 20,
+      debtServiceCosts: country.debtServiceCosts || country.currentTotalGdp * 0.03,
+      interestRates: country.interestRates || 0.03,
+    },
+    labor: {
+      unemploymentRate: country.unemploymentRate || 6,
+      employmentRate: 100 - (country.unemploymentRate || 6),
+      laborForceParticipationRate: country.laborForceParticipationRate || 65,
+    },
+    income: {
+      incomeInequalityGini: country.incomeInequalityGini || 0.35,
+      socialMobilityIndex: country.socialMobilityIndex || 60,
+      economicClasses: [
+        { wealthPercent: 40 },
+        { wealthPercent: 30 },
+        { wealthPercent: 30 },
+      ],
+    },
+    spending: {
+      spendingGDPPercent: country.governmentBudgetGDPPercent || 35,
+      spendingCategories: [
+        { category: "healthcare", percent: 8 },
+        { category: "education", percent: 6 },
+        { category: "infrastructure", percent: 5 },
+        { category: "defense", percent: 4 },
+        { category: "social", percent: 12 },
+      ],
+    },
+    demographics: {
+      lifeExpectancy: country.lifeExpectancy || 75,
+      literacyRate: country.literacyRate || 95,
+      regions: [{ name: "National Average" }],
+    },
+  } as unknown as EconomyData;
+
+  const historicalData: HistoricalDataPoint[] = country.historicalData.map(
+    (h: any) => ({
+      ...h,
+      ixTimeTimestamp: h.ixTimeTimestamp instanceof Date ? h.ixTimeTimestamp.getTime() : h.ixTimeTimestamp,
+    })
+  );
+
+  switch (analysisType) {
+    case "health":
+      return getQuickEconomicHealth(countryStats, economyData);
+    case "builder":
+      return getBuilderEconomicMetrics(countryStats, economyData);
+    case "intelligence":
+      return getIntelligenceEconomicData(countryStats, economyData);
+    default:
+      return await analyzeCountryEconomics(countryStats, economyData, historicalData);
+  }
+}
+
 export const enhancedEconomicsRouter = createTRPCRouter({
   /**
    * Get comprehensive economic analysis for a country
@@ -230,114 +336,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const { countryId, analysisType } = input;
-
-        // Get country data from database
-        const country = await ctx.db.country.findUnique({
-          where: { id: countryId },
-          include: {
-            economicData: true,
-            historicalData: {
-              orderBy: { createdAt: "desc" },
-              take: 20,
-            },
-          },
-        });
-
-        if (!country) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Country not found",
-          });
-        }
-
-        // Convert to required format - use Partial to handle missing fields
-        const countryStats = {
-          id: country.id,
-          name: country.name,
-          currentTotalGdp: country.currentTotalGdp || 0,
-          currentGdpPerCapita: country.currentGdpPerCapita || 0,
-          adjustedGdpGrowth: country.adjustedGdpGrowth || 0,
-          economicTier: (country.economicTier || "Developing") as EconomicTier,
-          populationTier: (country.populationTier || "2") as PopulationTier,
-          populationGrowthRate: country.populationGrowthRate || 0.02,
-          totalGdp: country.currentTotalGdp || 0,
-          lastCalculated: Date.now(),
-          baselineDate: Date.now(),
-          localGrowthFactor: 1.0,
-          maxGdpGrowthRate: country.adjustedGdpGrowth || 0.02,
-          actualGdpGrowth: country.adjustedGdpGrowth || 0.02,
-          projected2040Population: country.currentPopulation || 0,
-          projected2040Gdp: country.currentTotalGdp || 0,
-          projected2040GdpPerCapita: country.currentGdpPerCapita || 0,
-        } as CountryStats;
-
-        // Create economy data from country economic data
-        const economyData: Record<string, unknown> = {
-          core: {
-            nominalGDP: country.currentTotalGdp || 0,
-            gdpPerCapita: country.currentGdpPerCapita,
-            realGDPGrowthRate: country.adjustedGdpGrowth,
-            inflationRate: country.inflationRate || 0.02,
-          },
-          fiscal: {
-            totalDebtGDPRatio: country.totalDebtGDPRatio || 60,
-            budgetDeficitSurplus: country.budgetDeficitSurplus || 0,
-            taxRevenueGDPPercent: country.taxRevenueGDPPercent || 20,
-            debtServiceCosts: country.debtServiceCosts || country.currentTotalGdp * 0.03,
-            interestRates: country.interestRates || 0.03,
-          },
-          labor: {
-            unemploymentRate: country.unemploymentRate || 6,
-            employmentRate: 100 - (country.unemploymentRate || 6),
-            laborForceParticipationRate: country.laborForceParticipationRate || 65,
-          },
-          income: {
-            incomeInequalityGini: country.incomeInequalityGini || 0.35,
-            socialMobilityIndex: country.socialMobilityIndex || 60,
-            economicClasses: [
-              { wealthPercent: 40 }, // Top 10%
-              { wealthPercent: 30 }, // Middle class
-              { wealthPercent: 30 }, // Lower income
-            ],
-          },
-          spending: {
-            spendingGDPPercent: country.governmentBudgetGDPPercent || 35,
-            spendingCategories: [
-              { category: "healthcare", percent: 8 },
-              { category: "education", percent: 6 },
-              { category: "infrastructure", percent: 5 },
-              { category: "defense", percent: 4 },
-              { category: "social", percent: 12 },
-            ],
-          },
-          demographics: {
-            lifeExpectancy: country.lifeExpectancy || 75,
-            literacyRate: country.literacyRate || 95,
-            regions: [{ name: "National Average" }],
-          },
-        };
-
-        const historicalData: HistoricalDataPoint[] = country.historicalData.map(
-          (h: HistoricalDataPoint) => ({
-            gdpGrowthRate: h.gdpGrowthRate,
-            timestamp: h.timestamp.toISOString(),
-          })
-        );
-
-        // Return appropriate analysis based on type
-        switch (analysisType) {
-          case "health":
-            return getQuickEconomicHealth(countryStats, economyData);
-
-          case "builder":
-            return getBuilderEconomicMetrics(countryStats, economyData);
-
-          case "intelligence":
-            return getIntelligenceEconomicData(countryStats, economyData);
-
-          default:
-            return await analyzeCountryEconomics(countryStats, economyData, historicalData);
-        }
+        return await performCountryEconomicAnalysis(ctx, countryId, analysisType);
       } catch (error) {
         console.error("Country economic analysis failed:", error);
         throw new TRPCError({
@@ -370,10 +369,8 @@ export const enhancedEconomicsRouter = createTRPCRouter({
           const comparisons: { countryId: string; analysis: EconomicAnalysisResult }[] = [];
 
           for (const countryId of countryIds) {
-            // Get individual country analysis (reusing the logic above)
-            const analysis = await enhancedEconomicsRouter
-              .createCaller(ctx as Record<string, unknown>)
-              .getCountryEconomicAnalysis({ countryId, analysisType: "comprehensive" });
+            // Get individual country analysis by directly calling the helper function
+            const analysis = await performCountryEconomicAnalysis(ctx, countryId, "comprehensive");
 
             comparisons.push({
               countryId,

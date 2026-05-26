@@ -97,6 +97,7 @@ function CommandPaletteContent({
       const timer = setTimeout(() => setDiPulseClass(""), 400);
       return () => clearTimeout(timer);
     }
+    return;
   }, [diPathname, isOnWikiPage]);
 
   // Initialize notification store
@@ -267,6 +268,7 @@ function CommandPaletteWrapper({ isSticky, scrollY }: { isSticky?: boolean; scro
       document.addEventListener("mousedown", handleClickOutside, { passive: true });
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
+    return;
   }, [isExpanded, isInitialized, switchMode]);
 
   // Don't render until properly initialized

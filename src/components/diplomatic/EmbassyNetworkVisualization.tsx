@@ -182,31 +182,31 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     data: liveRelations,
     isLoading,
     error,
-  } = api.diplomatic.getRelationships.useQuery(
+  } = api.diplomaticCore.getRelationships.useQuery(
     { countryId: primaryCountry.id },
     { enabled: !!primaryCountry.id, refetchInterval: 30000 } // Refetch every 30 seconds
   );
 
   // Fetch embassy game data
   const { data: embassyData, isLoading: embassyLoading } =
-    api.diplomatic.getEmbassyDetails.useQuery(
+    api.diplomaticEmbassies.getEmbassyDetails.useQuery(
       { embassyId: primaryCountry.id },
       { enabled: !!primaryCountry.id && viewMode === "game", refetchInterval: 60000 }
     );
 
   // Fetch available missions
-  const { data: availableMissions } = api.diplomatic.getAvailableMissions.useQuery(
+  const { data: availableMissions } = api.diplomaticEmbassies.getAvailableMissions.useQuery(
     { embassyId: primaryCountry.id },
     { enabled: !!primaryCountry.id && viewMode === "game" }
   );
 
   // Fetch available upgrades
-  const { data: availableUpgrades } = api.diplomatic.getAvailableUpgrades.useQuery(
+  const { data: availableUpgrades } = api.diplomaticEmbassies.getAvailableUpgrades.useQuery(
     { embassyId: primaryCountry.id },
     { enabled: !!primaryCountry.id && viewMode === "game" }
   );
 
-  const { data: embassyList, refetch: refetchEmbassyList } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassyList, refetch: refetchEmbassyList } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: primaryCountry.id },
     { enabled: !!primaryCountry.id, refetchInterval: 60000 }
   );
@@ -267,7 +267,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   ]);
 
   // Game action mutations
-  const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
+  const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
     onSuccess: (data) => {
       notify.success(
         `Embassy established`,
@@ -342,7 +342,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     primaryCountry.name,
   ]);
 
-  const startMissionMutation = api.diplomatic.startMission.useMutation({
+  const startMissionMutation = api.diplomaticEmbassies.startMission.useMutation({
     onSuccess: (data) => {
       notify.success(
         `Mission "${(data as any).name || "Mission"}" started!`,
@@ -354,7 +354,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     },
   });
 
-  const completeMissionMutation = api.diplomatic.completeMission.useMutation({
+  const completeMissionMutation = api.diplomaticEmbassies.completeMission.useMutation({
     onSuccess: (data) => {
       if (data.success) {
         notify.success(
@@ -373,7 +373,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     },
   });
 
-  const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
+  const upgradeEmbassyMutation = api.diplomaticEmbassies.upgradeEmbassy.useMutation({
     onSuccess: (data) => {
       notify.success(
         `Embassy upgraded!`,
@@ -385,7 +385,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     },
   });
 
-  const payMaintenanceMutation = api.diplomatic.payMaintenance.useMutation({
+  const payMaintenanceMutation = api.diplomaticEmbassies.payMaintenance.useMutation({
     onSuccess: (_data) => {
       notify.success("Maintenance paid successfully!", `Embassy maintenance paid successfully`);
     },

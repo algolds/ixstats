@@ -12,23 +12,25 @@ export { CountrySelector } from "./CountrySelector";
 export { EconomicCustomizationHub } from "./EconomicCustomizationHub";
 export { EconomyBuilderSidebar } from "./EconomyBuilderSidebar";
 
+import type { ComponentType } from "react";
+
 // Lazy-loaded large components (code-split)
-export const EconomyBuilderPage = lazy(() =>
+export const EconomyBuilderPage = lazy<ComponentType<any>>(() =>
   import("./EconomyBuilderPage").then((module) => ({ default: module.EconomyBuilderPage }))
 );
 
-export const EconomicArchetypeDisplay = lazy(() =>
+export const EconomicArchetypeDisplay = lazy<ComponentType<any>>(() =>
   import("./EconomicArchetypeDisplay").then((module) => ({
     default: module.EconomicArchetypeDisplay,
   }))
 );
 
-export const IntegrationTestingDisplay = lazy(() =>
+export const IntegrationTestingDisplay = lazy<ComponentType<any>>(() =>
   import("./IntegrationTestingDisplay").then((module) => ({
     default: module.IntegrationTestingDisplay,
   }))
 );
 
-export const InteractivePreview = lazy(() =>
+export const InteractivePreview = lazy<ComponentType<any>>(() =>
   import("./InteractivePreview").then((module) => ({ default: module.InteractivePreview }))
 );

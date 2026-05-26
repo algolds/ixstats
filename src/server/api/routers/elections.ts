@@ -633,7 +633,7 @@ export const electionsRouter = createTRPCRouter({
       // Step 11: Auto-news — post election results to ThinkPages
       const topResult = results.sort((a, b) => b.seatsWon - a.seatsWon)[0];
       if (topResult) {
-        const winnerParty = candidates.find((c) => c.id === topResult.candidateId);
+        const winnerParty = election.candidates.find((c) => c.id === topResult.candidateId);
         const country = await ctx.db.country.findUnique({
           where: { id: election.countryId },
           select: { name: true },

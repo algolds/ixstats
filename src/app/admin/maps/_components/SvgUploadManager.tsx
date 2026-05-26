@@ -49,7 +49,7 @@ const LAYER_TYPES = [
 
 type LayerType = (typeof LAYER_TYPES)[number]["value"];
 
-const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+const STATUS_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
   pending: { icon: Clock, color: "text-amber-500", label: "Pending" },
   processing: { icon: Cog, color: "text-blue-500", label: "Processing" },
   processed: { icon: CheckCircle2, color: "text-emerald-500", label: "Processed" },
@@ -69,22 +69,22 @@ export function SvgUploadManager() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
 
-  const { data: history, isLoading: historyLoading } = api.geo.getSvgUploadHistory.useQuery(
+  const { data: history, isLoading: historyLoading } = api.geoAdmin.getSvgUploadHistory.useQuery(
     { layerType: selectedLayer },
     { refetchInterval: 10000 }
   );
 
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const rollbackMutation = api.geo.rollbackSvgUpload.useMutation({
+  const rollbackMutation = api.geoAdmin.rollbackSvgUpload.useMutation({
     onSuccess: () => {
-      utils.geo.getSvgUploadHistory.invalidate();
-      utils.geo.getMapStats.invalidate();
+      utils.geoAdmin.getSvgUploadHistory.invalidate();
+      utils.geoCore.getMapStats.invalidate();
     },
   });
 
-  const deleteMutation = api.geo.deleteSvgUpload.useMutation({
-    onSuccess: () => utils.geo.getSvgUploadHistory.invalidate(),
+  const deleteMutation = api.geoAdmin.deleteSvgUpload.useMutation({
+    onSuccess: () => utils.geoAdmin.getSvgUploadHistory.invalidate(),
   });
 
   const handleFile = useCallback(
@@ -119,7 +119,7 @@ export function SvgUploadManager() {
           return;
         }
 
-        utils.geo.getSvgUploadHistory.invalidate();
+        utils.geoAdmin.getSvgUploadHistory.invalidate();
         setProcessingUpload({ id: data.id, fileName: data.fileName });
       } catch (err) {
         setUploadError(err instanceof Error ? err.message : "Upload failed");
@@ -374,8 +374,8 @@ export function SvgUploadManager() {
           onClose={() => setProcessingUpload(null)}
           onCommitted={() => {
             setProcessingUpload(null);
-            utils.geo.getSvgUploadHistory.invalidate();
-            utils.geo.getMapStats.invalidate();
+            utils.geoAdmin.getSvgUploadHistory.invalidate();
+            utils.geoCore.getMapStats.invalidate();
           }}
         />
       )}

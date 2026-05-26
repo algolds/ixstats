@@ -137,7 +137,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
         }
 
         // Calculate current market value
-        const currentValue = await getCardMarketValue(db, card.id);
+        const currentValue = await getCardMarketValue(db as any, card.id);
 
         // Calculate sale statistics from recent CardOwnership trades
         const recentSales = card.CardOwnership.filter(

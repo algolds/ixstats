@@ -206,6 +206,15 @@ export interface XFPagination {
   total: number;
 }
 
+/** Alias for XFForum — forums are node types in XenForo */
+export type XFNodeForum = XFForum;
+
+/** Generic paginated response wrapper */
+export interface XFPaginatedResponse<T = unknown> {
+  data: T[];
+  pagination?: XFPagination;
+}
+
 export interface ForumThread {
   threadId: number;
   title: string;

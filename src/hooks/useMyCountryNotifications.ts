@@ -20,13 +20,13 @@ export function useMyCountryNotifications(countryId: string | undefined): Sectio
   );
 
   // Diplomacy: active missions
-  const { data: missions } = api.diplomatic.getActiveMissions.useQuery(
+  const { data: missions } = api.diplomaticEmbassies.getActiveMissions.useQuery(
     { countryId: countryId! },
     { enabled, refetchInterval: 60_000 }
   );
 
   // Intelligence: critical alerts
-  const { data: intelOverview } = api.unifiedIntelligence.getOverview.useQuery(
+  const { data: intelOverview } = api.intelCore.getOverview.useQuery(
     { countryId: countryId! },
     { enabled, refetchInterval: 60_000 }
   );

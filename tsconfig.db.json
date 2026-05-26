@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "src/db/**/*",
+    "src/server/db.ts"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/.*"
+  ]
+}

@@ -38,13 +38,13 @@ export default function NetworkDashboard({ countryId, countryName }: NetworkDash
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Fetch data
-  const { data: embassies = [], refetch: refetchEmbassies } = api.diplomatic.getEmbassies.useQuery({
+  const { data: embassies = [], refetch: refetchEmbassies } = api.diplomaticEmbassies.getEmbassies.useQuery({
     countryId,
   });
   const { data: relationships = [], refetch: refetchRelationships } =
-    api.diplomatic.getRelationships.useQuery({ countryId });
+    api.diplomaticCore.getRelationships.useQuery({ countryId });
   const { data: culturalExchanges = [], refetch: refetchExchanges } =
-    api.diplomatic.getCulturalExchanges.useQuery({ countryId });
+    api.diplomaticCultural.getCulturalExchanges.useQuery({ countryId });
 
   // Mock treaties and shared data for now
   const treaties: any[] = [];

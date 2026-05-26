@@ -198,7 +198,7 @@ export function MapDynamicIsland({
 
   const debouncedQuery = useDebounce(query.trim(), 250);
 
-  const { data: results, isLoading: searchLoading } = api.geo.searchFeatures.useQuery(
+  const { data: results, isLoading: searchLoading } = api.geoCore.searchFeatures.useQuery(
     { query: debouncedQuery, limit: 20 },
     { enabled: debouncedQuery.length >= 2, staleTime: 30_000 }
   );
@@ -660,7 +660,6 @@ function AuthSection({
   return (
     <Popover>
       <PopoverTrigger
-        render={<div />}
         className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors"
       >
         {user.imageUrl ? (
@@ -751,7 +750,6 @@ function MapSettingsPopover({
   return (
     <Popover>
       <PopoverTrigger
-        render={<div />}
         className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 cursor-pointer rounded-full p-1 transition-colors"
         title="Settings"
       >

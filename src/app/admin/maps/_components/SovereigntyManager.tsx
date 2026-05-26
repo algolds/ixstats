@@ -42,32 +42,32 @@ export function SovereigntyManager() {
 
   const utils = api.useUtils();
 
-  const { data: relations, isLoading } = api.geo.getSovereigntyRelations.useQuery();
+  const { data: relations, isLoading } = api.geoSovereignty.getSovereigntyRelations.useQuery();
 
   const { data: dbCountries } = api.countries.getAll.useQuery({ limit: 500 }, { staleTime: 60000 });
 
-  const createMutation = api.geo.createSovereignty.useMutation({
+  const createMutation = api.geoSovereignty.createSovereignty.useMutation({
     onSuccess: () => {
-      utils.geo.getSovereigntyRelations.invalidate();
-      utils.geo.getWorldMap.invalidate();
-      utils.geo.getMapStats.invalidate();
+      utils.geoSovereignty.getSovereigntyRelations.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapStats.invalidate();
       resetForm();
     },
   });
 
-  const updateMutation = api.geo.updateSovereignty.useMutation({
+  const updateMutation = api.geoSovereignty.updateSovereignty.useMutation({
     onSuccess: () => {
-      utils.geo.getSovereigntyRelations.invalidate();
-      utils.geo.getWorldMap.invalidate();
+      utils.geoSovereignty.getSovereigntyRelations.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
       resetForm();
     },
   });
 
-  const deleteMutation = api.geo.deleteSovereignty.useMutation({
+  const deleteMutation = api.geoSovereignty.deleteSovereignty.useMutation({
     onSuccess: () => {
-      utils.geo.getSovereigntyRelations.invalidate();
-      utils.geo.getWorldMap.invalidate();
-      utils.geo.getMapStats.invalidate();
+      utils.geoSovereignty.getSovereigntyRelations.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapStats.invalidate();
     },
   });
 

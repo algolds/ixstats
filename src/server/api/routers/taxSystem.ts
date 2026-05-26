@@ -194,7 +194,7 @@ export const taxSystemRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const warnings = await detectTaxConflicts(
-        ctx.db,
+        ctx.db as any,
         input.countryId,
         input.data as TaxBuilderState
       );
@@ -322,7 +322,7 @@ export const taxSystemRouter = createTRPCRouter({
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];
       if (!skipConflictCheck) {
-        warnings = await detectTaxConflicts(ctx.db, input.countryId, data);
+        warnings = await detectTaxConflicts(ctx.db as any, input.countryId, data);
       }
 
       // Create tax system with categories; fallback to update on unique constraint
@@ -499,7 +499,7 @@ export const taxSystemRouter = createTRPCRouter({
       }
 
       // Sync with FiscalSystem table
-      const syncResult = await syncTaxData(ctx.db, input.countryId, data);
+      const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
 
       // Notify about tax system creation
       try {
@@ -547,7 +547,7 @@ export const taxSystemRouter = createTRPCRouter({
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];
       if (!skipConflictCheck) {
-        warnings = await detectTaxConflicts(ctx.db, input.countryId, data);
+        warnings = await detectTaxConflicts(ctx.db as any, input.countryId, data);
       }
 
       // Delete existing categories and recreate (easier than updating)
@@ -636,7 +636,7 @@ export const taxSystemRouter = createTRPCRouter({
       });
 
       // Sync with FiscalSystem table
-      const syncResult = await syncTaxData(ctx.db, input.countryId, data);
+      const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
 
       // Check for significant revenue projection changes
       try {

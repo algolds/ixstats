@@ -1,12 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-    "outDir": "./dist/app",
-    "rootDir": "./src/app",
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
     "types": [],
     "isolatedModules": true,
     "jsx": "react-jsx"
@@ -22,11 +16,5 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx"
-  ],
-  "references": [
-    { "path": "./tsconfig.lib.json" },
-    { "path": "./tsconfig.hooks.json" },
-    { "path": "./tsconfig.components.json" },
-    { "path": "./tsconfig.server.json" }
   ]
 }

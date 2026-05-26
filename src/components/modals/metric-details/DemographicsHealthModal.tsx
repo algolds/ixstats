@@ -475,14 +475,14 @@ export function DemographicsHealthModal({
     // Age distribution from mapped data (array of {group, percentage})
     const ageDistribution = demographics?.ageDistribution;
     const youthPct = Array.isArray(ageDistribution)
-      ? ageDistribution.find((a: any) => a.group?.includes("0-14"))?.percentage || 25
+      ? ageDistribution.find((a: any) => a.group?.includes("0-14"))?.percent || 25
       : 25;
     const workingPct = Array.isArray(ageDistribution)
       ? ageDistribution.find((a: any) => a.group?.includes("15-64") || a.group?.includes("15-"))
-          ?.percentage || 60
+          ?.percent || 60
       : 60;
     const elderlyPct = Array.isArray(ageDistribution)
-      ? ageDistribution.find((a: any) => a.group?.includes("65"))?.percentage || 15
+      ? ageDistribution.find((a: any) => a.group?.includes("65"))?.percent || 15
       : 15;
 
     return (

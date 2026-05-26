@@ -36,11 +36,11 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
 
   // Get unified intelligence data related to this country
   const { data: crisisEvents, isLoading: crisisLoading } =
-    api.unifiedIntelligence.getCrisisEvents.useQuery();
+    api.intelAlerts.getCrisisEvents.useQuery();
   const { data: diplomaticData, isLoading: diplomacyLoading } =
-    api.unifiedIntelligence.getEnhancedDiplomaticIntelligence.useQuery({ countryId });
+    api.intelCore.getEnhancedDiplomaticIntelligence.useQuery({ countryId });
   const { data: economicIntelligence, isLoading: economicLoading } =
-    api.unifiedIntelligence.getIntelligenceFeed.useQuery({
+    api.intelCore.getIntelligenceFeed.useQuery({
       countryId,
       category: "ECONOMIC",
       limit: 20,

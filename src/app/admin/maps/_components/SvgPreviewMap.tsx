@@ -41,7 +41,7 @@ export function SvgPreviewMap({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: buildBaseStyle(),
+      style: buildBaseStyle() as any,
       center: [10, 5],
       zoom: 1.5,
       attributionControl: false,

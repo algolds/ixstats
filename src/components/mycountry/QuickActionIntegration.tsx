@@ -35,19 +35,19 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
   const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get real-time metrics
-  const { data: metrics } = api.unifiedIntelligence.getRealTimeMetrics.useQuery(
+  const { data: metrics } = api.intelAnalytics.getRealTimeMetrics.useQuery(
     { countryId: country?.id ?? "placeholder-disabled" },
     { enabled: !!country?.id, refetchInterval: 30000 } // Refetch every 30 seconds
   );
 
   // Get policy statistics
-  const { data: policies } = api.unifiedIntelligence.getEconomicPolicies.useQuery(
+  const { data: policies } = api.intelAnalytics.getEconomicPolicies.useQuery(
     { countryId: country?.id ?? "placeholder-disabled" },
     { enabled: !!country?.id }
   );
 
   // Get meeting statistics
-  const { data: meetings } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
+  const { data: meetings } = api.intelCore.getCabinetMeetings.useQuery(
     { countryId: country?.id ?? "placeholder-disabled" },
     { enabled: !!country?.id }
   );

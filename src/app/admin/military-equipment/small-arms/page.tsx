@@ -222,9 +222,9 @@ export default function SmallArmsEquipmentPage() {
 
   // Filtered equipment
   const filteredEquipment = useMemo(() => {
-    if (!equipment) return [];
+    if (!equipment?.equipment) return [];
 
-    return equipment.filter((item) => {
+    return (equipment.equipment as any[]).filter((item: any) => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -615,7 +615,7 @@ export default function SmallArmsEquipmentPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredEquipment.map((item) => (
+                {filteredEquipment.map((item: any) => (
                   <EquipmentCard
                     key={item.key}
                     equipment={item}

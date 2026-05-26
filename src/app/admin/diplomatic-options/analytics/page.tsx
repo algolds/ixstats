@@ -29,7 +29,7 @@ import { Loader2, TrendingUp, TrendingDown, BarChart3, PieChartIcon, Activity } 
  * - Summary statistics
  */
 export default function DiplomaticOptionsAnalyticsPage() {
-  const { data: stats, isLoading, error } = api.diplomatic.getOptionUsageStats.useQuery();
+  const { data: stats, isLoading, error } = api.diplomaticCore.getOptionUsageStats.useQuery();
 
   if (isLoading) {
     return (

@@ -102,7 +102,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   }, []);
 
   // Fetch embassy details
-  const { data: embassy, isLoading: isLoadingEmbassy } = api.diplomatic.getEmbassyDetails.useQuery(
+  const { data: embassy, isLoading: isLoadingEmbassy } = api.diplomaticEmbassies.getEmbassyDetails.useQuery(
     { embassyId },
     { enabled: !!embassyId, refetchInterval: 30000 } // Refetch every 30s for real-time updates
   );
@@ -125,19 +125,19 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
     data: sharedData,
     isLoading: isLoadingData,
     refetch,
-  } = api.diplomatic.getSharedData.useQuery(
+  } = api.diplomaticCore.getSharedData.useQuery(
     { embassyId, dataType },
     { enabled: !!embassyId && shouldFetchData, refetchInterval: 30000 }
   );
 
   // Fetch diplomatic options from database (with fallback to hardcoded values)
-  const { data: diplomaticOptions } = api.diplomatic.getAllDiplomaticOptions.useQuery(
+  const { data: diplomaticOptions } = api.diplomaticCore.getAllDiplomaticOptions.useQuery(
     undefined,
     { staleTime: 5 * 60 * 1000 } // Cache for 5 minutes
   );
 
   // Mutation for updating embassy profile
-  const updateProfileMutation = api.diplomatic.updateEmbassyProfile.useMutation({
+  const updateProfileMutation = api.diplomaticEmbassies.updateEmbassyProfile.useMutation({
     onSuccess: () => {
       notify.success("Embassy profile updated successfully");
       setIsEditingOverview(false);

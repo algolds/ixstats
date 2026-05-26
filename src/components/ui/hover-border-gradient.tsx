@@ -56,6 +56,7 @@ export function HoverBorderGradient({
       }, duration * 1000);
       return () => clearInterval(interval);
     }
+    return;
   }, [hovered]);
 
   const content = (

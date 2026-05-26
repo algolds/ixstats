@@ -9,6 +9,7 @@ import { cn } from "~/lib/utils";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
+import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
 
 // Help System
 import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
@@ -34,8 +35,6 @@ export function CoreIndicatorsSection({
 }: CoreIndicatorsSectionProps) {
   const isEditMode = mode === "edit";
 
-  // Import field locks if not provided
-  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // Ensure coreIndicators exists with defaults and sanitize any NaN values
@@ -283,7 +282,7 @@ export function CoreIndicatorsSection({
                 onInputsChange({
                   ...inputs,
                   coreIndicators: {
-                    ...(inputs.coreIndicators || {}),
+                    ...inputs.coreIndicators,
                     totalPopulation: clampedPopulation,
                     nominalGDP: clampedPopulation * gdpPerCapita,
                   },
@@ -330,7 +329,7 @@ export function CoreIndicatorsSection({
                 onInputsChange({
                   ...inputs,
                   coreIndicators: {
-                    ...(inputs.coreIndicators || {}),
+                    ...inputs.coreIndicators,
                     gdpPerCapita: clampedGdpPerCapita,
                     nominalGDP: population * clampedGdpPerCapita,
                   },
@@ -419,7 +418,7 @@ export function CoreIndicatorsSection({
               onInputsChange({
                 ...inputs,
                 coreIndicators: {
-                  ...(inputs.coreIndicators || {}),
+                  ...inputs.coreIndicators,
                   inflationRate: clampedInflationRate,
                 },
               });

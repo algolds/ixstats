@@ -21,7 +21,7 @@ import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import type { GovernmentDepartment } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
-import { CountryWithEditorFields } from "~/types/country-editor";
+import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
 
@@ -389,7 +389,7 @@ export function useBuilderState(
             fiscalYear: existingGovernment.fiscalYear,
             budgetCurrency: existingGovernment.budgetCurrency,
           },
-          departments: (existingGovernment.departments as GovernmentDepartment[]).map((dept) => ({
+          departments: (existingGovernment.departments as unknown as GovernmentDepartment[]).map((dept) => ({
             name: dept.name,
             shortName: dept.shortName ?? undefined,
             category: dept.category,
@@ -741,26 +741,25 @@ export function useBuilderState(
                     wholesale: 5,
                     retail: 10,
                     transportation: 5,
-                    hospitality: 5,
                     information: 3,
                     finance: 5,
-                    realEstate: 3,
                     professional: 10,
-                    admin: 5,
-                    public: 8,
                     education: 6,
-                    health: 8,
-                    arts: 2,
-                    other: 5,
+                    healthcare: 8,
+                    hospitality: 5,
+                    government: 8,
+                    other: 3,
                   },
-                  employmentTypes: {
+                  employmentType: {
                     fullTime: 70,
                     partTime: 15,
-                    contract: 8,
-                    gig: 5,
-                    informal: 2,
+                    temporary: 8,
+                    seasonal: 0,
+                    selfEmployed: 5,
+                    gig: 2,
+                    informal: 0,
                   },
-                  averageWorkingHours: 40,
+                  averageWorkweekHours: 40,
                   minimumWage: Math.max(gdpPerCapCalc * 0.08, 5),
                   averageWage: gdpPerCapCalc * 0.6,
                   medianWage: gdpPerCapCalc * 0.5,
@@ -778,7 +777,7 @@ export function useBuilderState(
                   pensionSystem: "Mixed",
                   unemploymentBenefits: true,
                   jobTrainingPrograms: true,
-                },
+                } as any,
                 demographics: {
                   totalPopulation: totalPop,
                   populationGrowthRate: 1.0,

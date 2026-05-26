@@ -14,22 +14,22 @@ interface DiplomacyOverviewProps {
 
 export function DiplomacyOverview({ countryId, onTabChange }: DiplomacyOverviewProps) {
   // Fetch diplomatic data
-  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies = [] } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: relationships = [] } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships = [] } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: alliances = [] } = api.diplomatic.getAlliances.useQuery(
+  const { data: alliances = [] } = api.diplomaticPolicies.getAlliances.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: policies = [] } = api.diplomatic.getActiveForeignPolicies.useQuery(
+  const { data: policies = [] } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );

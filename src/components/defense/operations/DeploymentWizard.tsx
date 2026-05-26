@@ -80,7 +80,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     { enabled: open }
   );
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: open }
   );

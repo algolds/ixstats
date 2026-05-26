@@ -23,13 +23,13 @@ const itemVariants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
+    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
   },
 };
 
 const cardHover = {
   scale: 1.01,
-  transition: { type: "spring", stiffness: 400, damping: 10 },
+  transition: { type: "spring" as const, stiffness: 400, damping: 10 },
 };
 
 interface SimplifiedTrendRiskAnalyticsProps {

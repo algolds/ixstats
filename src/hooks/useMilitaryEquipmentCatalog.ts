@@ -16,7 +16,7 @@
  */
 
 import { useMemo } from "react";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import {
   MILITARY_AIRCRAFT,
   MILITARY_SHIPS,
@@ -70,8 +70,7 @@ export interface MilitaryEquipmentItem {
   updatedAt: Date;
 }
 
-type CatalogEquipmentRecord =
-  RouterOutputs["militaryEquipment"]["getCatalogEquipment"]["equipment"][number];
+type CatalogEquipmentRecord = any;
 
 function transformDatabaseEquipment(item: CatalogEquipmentRecord): MilitaryEquipmentItem {
   const manufacturerName = (item as { manufacturer?: string }).manufacturer ?? "Unknown";

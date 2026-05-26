@@ -31,13 +31,13 @@ export function DiplomacyMapWidget({
   const [mapReady, setMapReady] = useState(false);
 
   // Fetch home country geometry
-  const { data: homeGeo, isLoading: homeLoading } = api.geo.getCountryGeometry.useQuery(
+  const { data: homeGeo, isLoading: homeLoading } = api.geoCore.getCountryGeometry.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30 * 60_000 }
   );
 
   // Fetch embassies
-  const { data: embassies, isLoading: embassyLoading } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies, isLoading: embassyLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 5 * 60_000 }
   );
@@ -60,7 +60,7 @@ export function DiplomacyMapWidget({
 
   // Fetch geometry for first partner (keep it minimal — one query, not N)
   const firstPartnerId = partnerIds[0] ?? null;
-  const { data: partnerGeo, isLoading: partnerLoading } = api.geo.getCountryGeometry.useQuery(
+  const { data: partnerGeo, isLoading: partnerLoading } = api.geoCore.getCountryGeometry.useQuery(
     { countryId: firstPartnerId! },
     { enabled: !!firstPartnerId, staleTime: 30 * 60_000 }
   );

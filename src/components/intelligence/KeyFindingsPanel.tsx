@@ -53,7 +53,7 @@ const SEVERITY_CONFIG: Record<string, { label: string; color: string; border: st
 };
 
 export function KeyFindingsPanel({ countryId }: KeyFindingsPanelProps) {
-  const { data, isLoading } = api.unifiedIntelligence.getKeyFindings.useQuery(
+  const { data, isLoading } = api.intelCore.getKeyFindings.useQuery(
     { countryId },
     { enabled: !!countryId, refetchInterval: 60_000 }
   );

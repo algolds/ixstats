@@ -86,12 +86,12 @@ export function EmbassyDetailSheet({
   const notify = useNotify();
   const isOpen = embassyId !== null;
 
-  const { data: embassy, isLoading } = api.diplomatic.getEmbassyDetails.useQuery(
+  const { data: embassy, isLoading } = api.diplomaticEmbassies.getEmbassyDetails.useQuery(
     { embassyId: embassyId! },
     { enabled: !!embassyId }
   );
 
-  const closeMutation = api.diplomatic.closeEmbassy.useMutation({
+  const closeMutation = api.diplomaticEmbassies.closeEmbassy.useMutation({
     onSuccess: () => {
       notify.success("Embassy closed.");
       onEmbassyChanged?.();

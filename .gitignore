@@ -140,6 +140,12 @@ scripts/world-roster-data.json
 # --------------------------------------------------------------------------------
 .claude/
 CLAUDE.md
+.antigravitycli/
+.antigravityignore
+.cursor/
+.cursorrules
+.opencode/
+.diagnostics/
 
 # --------------------------------------------------------------------------------
 # Extra tsconfigs (typecheck commands crash server)

@@ -81,7 +81,7 @@ export function LiveDataIntegration({
     : null;
 
   // Diplomatic events stream - using diplomatic relations and recent changes
-  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
+  const { data: diplomaticRelations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId: effectiveCountryId },
     {
       enabled: enableDiplomaticStream && !!effectiveCountryId,
@@ -90,7 +90,7 @@ export function LiveDataIntegration({
     }
   );
 
-  const { data: recentDiplomaticChanges } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: recentDiplomaticChanges } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId: effectiveCountryId, hours: 24 },
     {
       enabled: enableDiplomaticStream && !!effectiveCountryId,
@@ -344,6 +344,7 @@ export function LiveDataIntegration({
 
       return () => clearInterval(achievementInterval);
     }
+    return;
   }, [economicData, intelligence, enableEconomicStream, enableIntelligenceStream]);
 
   // Initialize bridge

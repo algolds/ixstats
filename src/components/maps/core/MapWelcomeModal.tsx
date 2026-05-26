@@ -103,6 +103,7 @@ export function MapWelcomeModal({ isMapReady }: MapWelcomeModalProps) {
     } catch {
       // localStorage unavailable
     }
+    return;
   }, [isMapReady]);
 
   const handleClose = useCallback(() => {

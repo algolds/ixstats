@@ -30,20 +30,20 @@ export function WorldGeneratorTab() {
 
   const utils = api.useUtils();
 
-  const generateMutation = api.geo.generateProceduralWorld.useMutation({
+  const generateMutation = api.geoEditor.generateProceduralWorld.useMutation({
     onSuccess: (data) => {
       setCurrentWorldId(data.worldId);
-      void utils.geo.listProceduralWorlds.invalidate();
+      void utils.geoEditor.listProceduralWorlds.invalidate();
     },
   });
 
-  const commitMutation = api.geo.commitProceduralWorld.useMutation({
+  const commitMutation = api.geoEditor.commitProceduralWorld.useMutation({
     onSuccess: () => {
-      void utils.geo.getMapStats.invalidate();
+      void utils.geoCore.getMapStats.invalidate();
     },
   });
 
-  const { data: history } = api.geo.listProceduralWorlds.useQuery(undefined, {
+  const { data: history } = api.geoEditor.listProceduralWorlds.useQuery(undefined, {
     enabled: showHistory,
     refetchOnWindowFocus: false,
   });
@@ -100,7 +100,7 @@ export function WorldGeneratorTab() {
     });
   }, [currentWorldId, commitName, commitMutation]);
 
-  const stats = generateMutation.data?.stats;
+  const stats = generateMutation.data?.stats as any;
 
   return (
     <div className="flex gap-4" style={{ height: "calc(100vh - 280px)" }}>
@@ -313,7 +313,7 @@ export function WorldGeneratorTab() {
               <p className="text-muted-foreground/50 text-xs">No generated worlds yet.</p>
             ) : (
               history.map((w) => {
-                const meta = w.metadata as Record<string, unknown> | null;
+                const meta = w.metadata as Record<string, any> | null;
                 return (
                   <div key={w.id} className="border-border bg-muted/30 rounded-lg border p-3">
                     <div className="flex items-center justify-between">

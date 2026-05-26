@@ -847,7 +847,7 @@ export const thinkpagesRouter = createTRPCRouter({
           1,
           "EARN_SOCIAL",
           "SOCIAL_POST",
-          db,
+          db as any,
           {
             postId: post.id,
             postType,
@@ -1073,7 +1073,7 @@ export const thinkpagesRouter = createTRPCRouter({
     if (existingReaction) {
       if (existingReaction.reactionType === input.reactionType) {
         // Same reaction - remove it (toggle behavior)
-        await db.$transaction(async (tx) => {
+        await (db as any).$transaction(async (tx: any) => {
           reactionCounts[existingReaction.reactionType] =
             (reactionCounts[existingReaction.reactionType] || 1) - 1;
 
@@ -1096,7 +1096,7 @@ export const thinkpagesRouter = createTRPCRouter({
       }
 
       // Different reaction - update it
-      await db.$transaction(async (tx) => {
+      await (db as any).$transaction(async (tx: any) => {
         reactionCounts[existingReaction.reactionType] =
           (reactionCounts[existingReaction.reactionType] || 1) - 1;
         reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
@@ -1120,7 +1120,7 @@ export const thinkpagesRouter = createTRPCRouter({
       return { updated: true, reactionType: input.reactionType };
     } else {
       // New reaction - create it
-      const reaction = await db.$transaction(async (tx) => {
+      const reaction = await (db as any).$transaction(async (tx: any) => {
         reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
 
         const newReaction = await tx.postReaction.create({
@@ -1226,7 +1226,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
       if (existingReaction) {
         // Use transaction to ensure consistency
-        await db.$transaction(async (tx) => {
+        await (db as any).$transaction(async (tx: any) => {
           // Update reaction counts
           reactionCounts[existingReaction.reactionType] =
             (reactionCounts[existingReaction.reactionType] || 1) - 1;

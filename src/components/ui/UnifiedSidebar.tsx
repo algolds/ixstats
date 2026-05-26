@@ -75,7 +75,7 @@ export function UnifiedSidebar({
   const router = useRouter();
   const { user } = useUser();
   // Fetch notifications from backend (single query, derive unread count)
-  const { data: notificationsData } = api.unifiedIntelligence.getIntelligenceFeed?.useQuery?.(
+  const { data: notificationsData } = api.intelCore.getIntelligenceFeed?.useQuery?.(
     { countryId: countryId || "" },
     { enabled: !!countryId, refetchInterval: 60000, staleTime: 30000 }
   ) || { data: undefined };

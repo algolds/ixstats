@@ -16,7 +16,7 @@ export function WorldMapManager() {
   const [selectedFeature, setSelectedFeature] = useState<SelectedCountry | null>(null);
 
   // Fetch country list for the selected feature lookup
-  const { data: featureList } = api.geo.listCountries.useQuery();
+  const { data: featureList } = api.geoCore.listCountries.useQuery();
 
   const handleSelect = useCallback((country: SelectedCountry | null) => {
     setSelectedFeature(country);
@@ -119,7 +119,7 @@ export function WorldMapManager() {
 }
 
 function LayerCountList() {
-  const { data: layerInfo, isLoading } = api.geo.getLayerInfo.useQuery();
+  const { data: layerInfo, isLoading } = api.geoCore.getLayerInfo.useQuery();
 
   if (isLoading) {
     return <p className="text-muted-foreground mt-2 text-sm">Loading...</p>;

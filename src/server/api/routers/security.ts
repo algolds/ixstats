@@ -1060,19 +1060,16 @@ export const securityRouter = createTRPCRouter({
       // Notification: security event resolved (fire-and-forget)
       try {
         if (ctx.auth?.userId) {
-          await notificationAPI.create(
-            {
-              userId: ctx.auth.userId,
-              countryId: event.countryId,
-              title: "Threat Resolved",
-              message: "A security event has been successfully resolved",
-              type: "SECURITY",
-              category: "security",
-              priority: "medium",
-              metadata: { eventId: input.id },
-            },
-            ctx.db
-          );
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            countryId: event.countryId,
+            title: "Threat Resolved",
+            message: "A security event has been successfully resolved",
+            type: "info",
+            category: "security",
+            priority: "medium",
+            metadata: { eventId: input.id },
+          });
         }
       } catch {}
 
@@ -1688,14 +1685,25 @@ export const securityRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const statusFilter = input.includeCompleted ? {} : { status: { in: ["planned", "active"] } };
 
-      return ctx.db.militaryOperation.findMany({
+      const operations = await ctx.db.militaryOperation.findMany({
         where: { countryId: input.countryId, ...statusFilter },
         include: {
-          targetCountry: { select: { id: true, name: true, flagUrl: true } },
+          targetCountry: { select: { id: true, name: true, flag: true } },
           deployments: true,
         },
         orderBy: { createdAt: "desc" },
       });
+
+      return operations.map((op) => ({
+        ...op,
+        targetCountry: op.targetCountry
+          ? {
+              id: op.targetCountry.id,
+              name: op.targetCountry.name,
+              flagUrl: op.targetCountry.flag,
+            }
+          : null,
+      }));
     }),
 
   // Create a military operation and deploy units/assets
@@ -1735,7 +1743,7 @@ export const securityRouter = createTRPCRouter({
       // Get country GDP for cost calculation
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { id: true, name: true, gdpPerCapita: true, population: true },
+        select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
       });
 
       if (!country) {
@@ -1754,7 +1762,7 @@ export const securityRouter = createTRPCRouter({
 
       const dailyCost = input.personnelDeployed * 200 + assetMaintenanceCost * 1.5;
       const annualCost = dailyCost * 365;
-      const gdp = (country.gdpPerCapita ?? 10000) * (country.population ?? 1000000);
+      const gdp = (country.currentGdpPerCapita ?? 10000) * (country.currentPopulation ?? 1000000);
       const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
 
       // Create the operation
@@ -1839,7 +1847,7 @@ export const securityRouter = createTRPCRouter({
       }
 
       // Auto-news: military deployment
-      void generateDiplomaticNews(ctx.db, input.countryId, "military_deployed", {
+      void generateDiplomaticNews(ctx.db as any, input.countryId, "military_deployed", {
         countryName: country.name,
         operationName: input.name,
         personnel: input.personnelDeployed,
@@ -1920,19 +1928,16 @@ export const securityRouter = createTRPCRouter({
       // Notification: operation completed (fire-and-forget)
       try {
         if (ctx.auth?.userId) {
-          await notificationAPI.create(
-            {
-              userId: ctx.auth.userId,
-              countryId: operation.countryId,
-              title: "Operation Complete",
-              message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
-              type: "MILITARY",
-              category: "military",
-              priority: "high",
-              metadata: { operationId: input.operationId, result: input.successRating },
-            },
-            ctx.db
-          );
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            countryId: operation.countryId,
+            title: "Operation Complete",
+            message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
+            type: "info",
+            category: "military",
+            priority: "high",
+            metadata: { operationId: input.operationId, result: input.successRating },
+          });
         }
       } catch {}
 
@@ -2010,22 +2015,20 @@ export const securityRouter = createTRPCRouter({
       try {
         const defenderCountry = await ctx.db.country.findUnique({
           where: { id: input.defenderId },
-          select: { userId: true, name: true },
+          select: { name: true, users: { select: { clerkUserId: true } } },
         });
-        if (defenderCountry?.userId) {
-          await notificationAPI.create(
-            {
-              userId: defenderCountry.userId,
-              countryId: input.defenderId,
-              title: "Conflict Proposed",
-              message: `${conflict.initiator.name} has proposed a military conflict against your nation`,
-              type: "MILITARY",
-              category: "military",
-              priority: "high",
-              metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
-            },
-            ctx.db
-          );
+        const defenderUserId = defenderCountry?.users[0]?.clerkUserId;
+        if (defenderUserId) {
+          await notificationAPI.create({
+            userId: defenderUserId,
+            countryId: input.defenderId,
+            title: "Conflict Proposed",
+            message: `${conflict.initiator.name} has proposed a military conflict against your nation`,
+            type: "warning",
+            category: "military",
+            priority: "high",
+            metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
+          });
         }
       } catch {}
 
@@ -2072,22 +2075,20 @@ export const securityRouter = createTRPCRouter({
         try {
           const initiatorCountry = await ctx.db.country.findUnique({
             where: { id: conflict.initiatorId },
-            select: { userId: true },
+            select: { users: { select: { clerkUserId: true } } },
           });
-          if (initiatorCountry?.userId) {
-            await notificationAPI.create(
-              {
-                userId: initiatorCountry.userId,
-                countryId: conflict.initiatorId,
-                title: "Conflict Declined",
-                message: "Your conflict proposal was declined",
-                type: "MILITARY",
-                category: "military",
-                priority: "medium",
-                metadata: { conflictId: input.conflictId },
-              },
-              ctx.db
-            );
+          const initiatorUserId = initiatorCountry?.users[0]?.clerkUserId;
+          if (initiatorUserId) {
+            await notificationAPI.create({
+              userId: initiatorUserId,
+              countryId: conflict.initiatorId,
+              title: "Conflict Declined",
+              message: "Your conflict proposal was declined",
+              type: "warning",
+              category: "military",
+              priority: "medium",
+              metadata: { conflictId: input.conflictId },
+            });
           }
         } catch {}
 
@@ -2111,22 +2112,20 @@ export const securityRouter = createTRPCRouter({
       try {
         const initiatorCountry = await ctx.db.country.findUnique({
           where: { id: conflict.initiatorId },
-          select: { userId: true },
+          select: { users: { select: { clerkUserId: true } } },
         });
-        if (initiatorCountry?.userId) {
-          await notificationAPI.create(
-            {
-              userId: initiatorCountry.userId,
-              countryId: conflict.initiatorId,
-              title: "Conflict Accepted",
-              message: `${accepted.defender.name} has accepted your conflict proposal - hostilities begin`,
-              type: "MILITARY",
-              category: "military",
-              priority: "high",
-              metadata: { conflictId: input.conflictId },
-            },
-            ctx.db
-          );
+        const initiatorUserId = initiatorCountry?.users[0]?.clerkUserId;
+        if (initiatorUserId) {
+          await notificationAPI.create({
+            userId: initiatorUserId,
+            countryId: conflict.initiatorId,
+            title: "Conflict Accepted",
+            message: `${accepted.defender.name} has accepted your conflict proposal - hostilities begin`,
+            type: "warning",
+            category: "military",
+            priority: "high",
+            metadata: { conflictId: input.conflictId },
+          });
         }
       } catch {}
 
@@ -2137,16 +2136,34 @@ export const securityRouter = createTRPCRouter({
   getConflicts: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.militaryConflict.findMany({
+      const conflicts = await ctx.db.militaryConflict.findMany({
         where: {
           OR: [{ initiatorId: input.countryId }, { defenderId: input.countryId }],
         },
         include: {
-          initiator: { select: { id: true, name: true, flagUrl: true } },
-          defender: { select: { id: true, name: true, flagUrl: true } },
+          initiator: { select: { id: true, name: true, flag: true } },
+          defender: { select: { id: true, name: true, flag: true } },
         },
         orderBy: { createdAt: "desc" },
       });
+
+      return conflicts.map((c) => ({
+        ...c,
+        initiator: c.initiator
+          ? {
+              id: c.initiator.id,
+              name: c.initiator.name,
+              flagUrl: c.initiator.flag,
+            }
+          : null,
+        defender: c.defender
+          ? {
+              id: c.defender.id,
+              name: c.defender.name,
+              flagUrl: c.defender.flag,
+            }
+          : null,
+      }));
     }),
 
   // Resolve a PvNPC conflict automatically
@@ -2179,11 +2196,11 @@ export const securityRouter = createTRPCRouter({
         }),
         ctx.db.country.findUnique({
           where: { id: userProfile.countryId },
-          select: { id: true, name: true, gdpPerCapita: true, population: true },
+          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
         }),
         ctx.db.country.findUnique({
           where: { id: input.targetCountryId },
-          select: { id: true, name: true, gdpPerCapita: true, population: true },
+          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
         }),
       ]);
 

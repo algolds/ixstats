@@ -1,0 +1,1526 @@
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure, systemOwnerProcedure, cachedPublicProcedure, rateLimitedPublicProcedure, countryOwnerProcedure, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { z } from "zod";
+import * as Shared from "./shared";
+
+export const geoEditorRouter = createTRPCRouter({
+  assignCountryGeometry: adminProcedure
+    .input(
+      z.object({
+        featureId: z.string(),
+        countryId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify feature exists
+      const mapLayer = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId },
+      });
+      if (!mapLayer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Map feature not found: ${input.featureId}`,
+        });
+      }
+
+      // Verify country exists
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+      });
+      if (!country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Country not found: ${input.countryId}`,
+        });
+      }
+
+      // Update map layer with country link
+      await ctx.db.mapLayer.update({
+        where: { id: mapLayer.id },
+        data: { countryId: input.countryId },
+      });
+
+      // Update country with geometry + area
+      await ctx.db.country.update({
+        where: { id: input.countryId },
+        data: {
+          geometry: mapLayer.geometry as object,
+          centroid: mapLayer.centroid as object | undefined,
+          boundingBox: mapLayer.boundingBox as object | undefined,
+          landArea: mapLayer.areaSqKm ?? undefined,
+          areaSqMi: mapLayer.areaSqKm ? mapLayer.areaSqKm * 0.386102 : undefined,
+        },
+      });
+
+      // Invalidate caches
+      layerCache.delete("political");
+      await invalidateCache([
+        "geo.listCountries",
+        "geo.getWorldMap",
+        "geo.validateLinkage",
+        "geo.getCountryLinkage",
+      ]);
+      broadcastMapUpdate("linkage", input.countryId);
+
+      return {
+        featureId: input.featureId,
+        countryId: input.countryId,
+        countryName: country.name,
+      };
+    }),
+  unlinkCountryGeometry: adminProcedure
+    .input(z.object({ featureId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const mapLayer = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId },
+      });
+
+      if (!mapLayer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Map feature not found: ${input.featureId}`,
+        });
+      }
+
+      const previousCountryId = mapLayer.countryId;
+
+      await ctx.db.mapLayer.update({
+        where: { id: mapLayer.id },
+        data: { countryId: null },
+      });
+
+      // Clear geometry + area from country
+      if (previousCountryId) {
+        await ctx.db.country.update({
+          where: { id: previousCountryId },
+          data: {
+            geometry: null as any,
+            centroid: null as any,
+            boundingBox: null as any,
+            landArea: null,
+            areaSqMi: null,
+          },
+        });
+      }
+
+      layerCache.delete("political");
+      await invalidateCache([
+        "geo.listCountries",
+        "geo.getWorldMap",
+        "geo.validateLinkage",
+        "geo.getCountryLinkage",
+      ]);
+      broadcastMapUpdate("linkage", previousCountryId ?? undefined);
+
+      return { featureId: input.featureId, previousCountryId };
+    }),
+  autoLinkAllCountries: adminProcedure.mutation(async ({ ctx }) => {
+    const unlinked = await ctx.db.mapLayer.findMany({
+      where: { layerType: "political", countryId: null, isActive: true },
+      select: {
+        id: true,
+        featureId: true,
+        displayName: true,
+        geometry: true,
+        areaSqKm: true,
+        centroid: true,
+        boundingBox: true,
+      },
+    });
+
+    if (unlinked.length === 0) return { linked: 0, created: 0, failed: [] as string[] };
+
+    // Get all existing countries for name matching
+    const existingCountries = await ctx.db.country.findMany({
+      where: { isDemo: false },
+      select: { id: true, name: true },
+    });
+    const countryByName = new Map(existingCountries.map((c) => [c.name.toLowerCase(), c]));
+
+    // Track which countries are already linked
+    const alreadyLinked = new Set(
+      (
+        await ctx.db.mapLayer.findMany({
+          where: { layerType: "political", countryId: { not: null }, isActive: true },
+          select: { countryId: true },
+        })
+      ).map((ml) => ml.countryId)
+    );
+
+    let linked = 0;
+    let created = 0;
+    const failed: string[] = [];
+
+    // Load WikiBridge for auto-detecting wiki articles
+    let wikiBridge: typeof import("~/lib/wiki-bridge") | null = null;
+    try {
+      wikiBridge = await import("~/lib/wiki-bridge");
+    } catch {
+      /* wiki bridge unavailable */
+    }
+
+    for (const feature of unlinked) {
+      const name = feature.displayName || feature.featureId;
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      try {
+        // Try to match existing country by name
+        const existing = countryByName.get(name.toLowerCase());
+
+        if (existing && !alreadyLinked.has(existing.id)) {
+          // Link to existing country
+          await ctx.db.mapLayer.update({
+            where: { id: feature.id },
+            data: { countryId: existing.id },
+          });
+          await ctx.db.country.update({
+            where: { id: existing.id },
+            data: {
+              geometry: feature.geometry as object,
+              centroid: feature.centroid as object | undefined,
+              boundingBox: feature.boundingBox as object | undefined,
+              landArea: feature.areaSqKm ?? undefined,
+              areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+            },
+          });
+          alreadyLinked.add(existing.id);
+          linked++;
+        } else {
+          // Auto-detect wiki article
+          let wikiPageTitle: string | null = null;
+          if (wikiBridge) {
+            const wikiResults = await wikiBridge.searchPages(name, 1, "ixwiki");
+            if (
+              wikiResults.length > 0 &&
+              wikiResults[0]!.title.toLowerCase() === name.toLowerCase()
+            ) {
+              wikiPageTitle = wikiResults[0]!.title;
+            }
+          }
+
+          // Create new country
+          const newCountry = await ctx.db.country.create({
+            data: {
+              name,
+              slug,
+              geometry: feature.geometry as any,
+              centroid: feature.centroid as any,
+              boundingBox: feature.boundingBox as any,
+              landArea: feature.areaSqKm ?? undefined,
+              areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+              economicTier: "developing",
+              isDemo: false,
+              wikiPageTitle,
+              wikiSource: wikiPageTitle ? "ixwiki" : undefined,
+            } as any,
+          });
+
+          // Link map feature to new country
+          await ctx.db.mapLayer.update({
+            where: { id: feature.id },
+            data: { countryId: newCountry.id },
+          });
+          alreadyLinked.add(newCountry.id);
+          created++;
+        }
+      } catch (err) {
+        failed.push(`${name}: ${err instanceof Error ? err.message : "Unknown error"}`);
+      }
+    }
+
+    layerCache.delete("political");
+    await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage"]);
+
+    return { linked, created, failed, total: unlinked.length };
+  }),
+  getEditQueue: adminProcedure
+    .input(
+      z
+        .object({
+          status: z.enum(["pending", "approved", "rejected"]).optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+          offset: z.number().int().min(0).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const status = input?.status ?? "pending";
+      const limit = input?.limit ?? 50;
+      const offset = input?.offset ?? 0;
+
+      const [edits, total] = await Promise.all([
+        ctx.db.mapEditRequest.findMany({
+          where: { status },
+          include: {
+            country: { select: { id: true, name: true, flagUrl: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.mapEditRequest.count({ where: { status } }),
+      ]);
+
+      return {
+        edits: edits.map(
+          (e: {
+            id: string;
+            countryId: string;
+            userId: string;
+            editType: string;
+            targetId: string | null;
+            operation: string;
+            proposedData: unknown;
+            currentData: unknown;
+            status: string;
+            reviewedBy: string | null;
+            reviewedAt: Date | null;
+            reviewNote: string | null;
+            createdAt: Date;
+            country: { id: string; name: string; flagUrl: string | null };
+          }) => ({
+            id: e.id,
+            countryId: e.countryId,
+            countryName: e.country.name,
+            countryFlag: e.country.flagUrl,
+            userId: e.userId,
+            editType: e.editType,
+            targetId: e.targetId,
+            operation: e.operation,
+            proposedData: e.proposedData,
+            currentData: e.currentData,
+            status: e.status,
+            reviewedBy: e.reviewedBy,
+            reviewedAt: e.reviewedAt,
+            reviewNote: e.reviewNote,
+            createdAt: e.createdAt,
+          })
+        ),
+        total,
+        hasMore: offset + limit < total,
+      };
+    }),
+  approveEdit: adminProcedure
+    .input(
+      z.object({
+        editId: z.string(),
+        reviewNote: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const edit = await ctx.db.mapEditRequest.findUnique({
+        where: { id: input.editId },
+      });
+
+      if (!edit) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Edit request not found",
+        });
+      }
+
+      if (edit.status !== "pending") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Edit already ${edit.status}`,
+        });
+      }
+
+      // Apply the edit based on type
+      const proposed = edit.proposedData as Record<string, unknown>;
+
+      if (edit.editType === "border_adjust" && edit.operation === "update") {
+        // Update the country's border geometry
+        const mapLayer = await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", countryId: edit.countryId },
+        });
+        if (mapLayer && proposed.geometry) {
+          const oldAreaSqKm = mapLayer.areaSqKm;
+
+          await ctx.db.mapLayer.update({
+            where: { id: mapLayer.id },
+            data: { geometry: proposed.geometry as object },
+          });
+          await ctx.db.country.update({
+            where: { id: edit.countryId },
+            data: { geometry: proposed.geometry as object },
+          });
+
+          // Recalculate area via PostGIS and update records
+          try {
+            const areaResult = await ctx.db.$queryRawUnsafe<Array<{ area_sq_km: number }>>(
+              `SELECT ST_Area(geom_postgis::geography) / 1000000 as area_sq_km
+               FROM map_layers WHERE id = $1 AND geom_postgis IS NOT NULL`,
+              mapLayer.id
+            );
+            const newAreaSqKm = areaResult[0]?.area_sq_km;
+            if (newAreaSqKm != null) {
+              const areaSqMi = newAreaSqKm * 0.386102;
+              await ctx.db.mapLayer.update({
+                where: { id: mapLayer.id },
+                data: { areaSqKm: newAreaSqKm },
+              });
+              await ctx.db.country.update({
+                where: { id: edit.countryId },
+                data: { landArea: newAreaSqKm, areaSqMi },
+              });
+
+              // Create BorderHistory record
+              const oldSqMi = oldAreaSqKm ? oldAreaSqKm * 0.386102 : null;
+              const newSqMi = newAreaSqKm * 0.386102;
+              await ctx.db.borderHistory.create({
+                data: {
+                  countryId: edit.countryId,
+                  geometry: proposed.geometry as object,
+                  changedBy: ctx.auth!.userId ?? "system",
+                  reason: input.reviewNote ?? "Border adjustment approved",
+                  oldAreaSqMi: oldSqMi,
+                  newAreaSqMi: newSqMi,
+                  areaDeltaSqMi: newSqMi - (oldSqMi ?? 0),
+                },
+              });
+
+              // Create activity feed entry
+              const country = await ctx.db.country.findUnique({
+                where: { id: edit.countryId },
+                select: { name: true },
+              });
+              const deltaKm = newAreaSqKm - (oldAreaSqKm ?? 0);
+              const direction = deltaKm >= 0 ? "expanded" : "contracted";
+              await ActivityGenerator.createActivity({
+                type: "economic",
+                category: "game",
+                countryId: edit.countryId,
+                title: `Border ${direction === "expanded" ? "Expansion" : "Contraction"}: ${country?.name ?? "Unknown"}`,
+                description: `${country?.name ?? "A country"} ${direction} by ${Math.abs(deltaKm).toFixed(0)} km². New area: ${newAreaSqKm.toFixed(0)} km².`,
+                priority: "medium",
+                visibility: "public",
+                metadata: { oldArea: oldAreaSqKm, newArea: newAreaSqKm, delta: deltaKm },
+              });
+            }
+          } catch (areaErr) {
+            console.error("[geo.approveEdit] Area recalculation failed:", areaErr);
+          }
+
+          layerCache.delete("political");
+        }
+      } else if (edit.editType === "subdivision") {
+        if (edit.operation === "create") {
+          await ctx.db.subdivision.create({
+            data: {
+              name: proposed.name as string,
+              countryId: edit.countryId,
+              type: (proposed.type as string) ?? "province",
+              level: (proposed.level as number) ?? 1,
+              geometry: proposed.geometry as any,
+              status: "approved",
+            },
+          });
+        } else if (edit.operation === "update" && edit.targetId) {
+          await ctx.db.subdivision.update({
+            where: { id: edit.targetId },
+            data: {
+              name: proposed.name as string | undefined,
+              type: proposed.type as string | undefined,
+              geometry: proposed.geometry as any,
+            },
+          });
+        } else if (edit.operation === "delete" && edit.targetId) {
+          await ctx.db.subdivision.delete({ where: { id: edit.targetId } });
+        }
+      } else if (edit.editType === "city") {
+        if (edit.operation === "create") {
+          await ctx.db.city.create({
+            data: {
+              name: proposed.name as string,
+              countryId: edit.countryId,
+              cityType: (proposed.cityType as string) ?? "city",
+              coordinates: proposed.coordinates as object | undefined,
+              population: proposed.population as number | undefined,
+              isNationalCapital: proposed.isNationalCapital as boolean | undefined,
+              status: "approved",
+            },
+          });
+        } else if (edit.operation === "update" && edit.targetId) {
+          await ctx.db.city.update({
+            where: { id: edit.targetId },
+            data: {
+              name: proposed.name as string | undefined,
+              coordinates: proposed.coordinates as object | undefined,
+              population: proposed.population as number | undefined,
+              isNationalCapital: proposed.isNationalCapital as boolean | undefined,
+            },
+          });
+        } else if (edit.operation === "delete" && edit.targetId) {
+          await ctx.db.city.delete({ where: { id: edit.targetId } });
+        }
+      } else if (edit.editType === "poi") {
+        if (edit.operation === "create") {
+          const poi = await ctx.db.pointOfInterest.create({
+            data: {
+              name: proposed.name as string,
+              countryId: edit.countryId,
+              category: (proposed.category as string) ?? "landmark",
+              coordinates: proposed.coordinates as object | undefined,
+              description: proposed.description as string | undefined,
+              status: "approved",
+            },
+          });
+
+          try {
+            const country = await ctx.db.country.findUnique({
+              where: { id: edit.countryId },
+              select: { name: true },
+            });
+            await ActivityGenerator.createActivity({
+              type: "meta",
+              category: "game",
+              countryId: edit.countryId,
+              title: `New Point of Interest: ${poi.name}`,
+              description: `${country?.name ?? "A country"} added a new point of interest: ${poi.name} (${poi.category}).`,
+              priority: "low",
+              visibility: "public",
+              metadata: {
+                poiId: poi.id,
+                poiName: poi.name,
+                category: poi.category,
+                description: poi.description,
+              },
+            });
+          } catch (e) {
+            console.error("[geo.approveEdit] Failed to create activity for POI:", e);
+          }
+        } else if (edit.operation === "update" && edit.targetId) {
+          await ctx.db.pointOfInterest.update({
+            where: { id: edit.targetId },
+            data: {
+              name: proposed.name as string | undefined,
+              category: proposed.category as string | undefined,
+              coordinates: proposed.coordinates as object | undefined,
+              description: proposed.description as string | undefined,
+            },
+          });
+        } else if (edit.operation === "delete" && edit.targetId) {
+          await ctx.db.pointOfInterest.delete({ where: { id: edit.targetId } });
+        }
+      }
+
+      // Mark approved
+      await ctx.db.mapEditRequest.update({
+        where: { id: input.editId },
+        data: {
+          status: "approved",
+          reviewedBy: ctx.auth!.userId,
+          reviewedAt: new Date(),
+          reviewNote: input.reviewNote ?? null,
+        },
+      });
+
+      return { id: input.editId, status: "approved" as const };
+    }),
+  rejectEdit: adminProcedure
+    .input(
+      z.object({
+        editId: z.string(),
+        reviewNote: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const edit = await ctx.db.mapEditRequest.findUnique({
+        where: { id: input.editId },
+      });
+
+      if (!edit) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Edit request not found",
+        });
+      }
+
+      if (edit.status !== "pending") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Edit already ${edit.status}`,
+        });
+      }
+
+      await ctx.db.mapEditRequest.update({
+        where: { id: input.editId },
+        data: {
+          status: "rejected",
+          reviewedBy: ctx.auth!.userId,
+          reviewedAt: new Date(),
+          reviewNote: input.reviewNote ?? null,
+        },
+      });
+
+      return { id: input.editId, status: "rejected" as const };
+    }),
+  startBorderEditSession: adminProcedure
+    .input(z.object({ featureId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const feature = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        select: {
+          id: true,
+          featureId: true,
+          displayName: true,
+          geometry: true,
+          centroid: true,
+          boundingBox: true,
+          areaSqKm: true,
+          countryId: true,
+        },
+      });
+      if (!feature) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
+      }
+
+      // Find neighboring features by bounding box overlap
+      const bbox = feature.boundingBox as number[] | null;
+      let neighbors: Array<{ featureId: string; displayName: string | null }> = [];
+      if (bbox && bbox.length === 4) {
+        const pad = 1; // 1° padding for neighbor search
+        neighbors = await ctx.db.mapLayer
+          .findMany({
+            where: {
+              layerType: "political",
+              featureId: { not: input.featureId },
+              isActive: true,
+            },
+            select: { featureId: true, displayName: true, boundingBox: true },
+          })
+          .then((layers) =>
+            layers
+              .filter((l) => {
+                const nb = l.boundingBox as number[] | null;
+                if (!nb || nb.length !== 4) return false;
+                return (
+                  nb[0]! < bbox[2]! + pad &&
+                  nb[2]! > bbox[0]! - pad &&
+                  nb[1]! < bbox[3]! + pad &&
+                  nb[3]! > bbox[1]! - pad
+                );
+              })
+              .map((l) => ({ featureId: l.featureId, displayName: l.displayName }))
+          );
+      }
+
+      // Create or resume session
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const session = await ctx.db.mapEditorSession.upsert({
+        where: { id: `${ctx.auth!.userId}_${input.featureId}` },
+        create: {
+          id: `${ctx.auth!.userId}_${input.featureId}`,
+          userId: ctx.auth!.userId,
+          featureId: input.featureId,
+          sessionData: { undoStack: [], mode: "select" },
+          expiresAt,
+        },
+        update: { expiresAt, updatedAt: new Date() },
+      });
+
+      return {
+        session: { id: session.id, sessionData: session.sessionData },
+        feature: {
+          featureId: feature.featureId,
+          displayName: feature.displayName,
+          geometry: feature.geometry,
+          centroid: feature.centroid,
+          boundingBox: feature.boundingBox,
+          areaSqKm: feature.areaSqKm,
+          countryId: feature.countryId,
+        },
+        neighbors,
+      };
+    }),
+  saveBorderEditDraft: adminProcedure
+    .input(
+      z.object({
+        sessionId: z.string(),
+        sessionData: z.record(z.string(), z.unknown()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.mapEditorSession.update({
+        where: { id: input.sessionId },
+        data: {
+          sessionData: input.sessionData,
+          updatedAt: new Date(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+      return { ok: true };
+    }),
+  submitBorderEdit: adminProcedure
+    .input(
+      z.object({
+        featureId: z.string(),
+        editSubtype: z.enum(["vertex_edit", "redraw", "split", "merge"]),
+        proposedGeometry: z.record(z.string(), z.unknown()), // GeoJSON geometry
+        affectedFeatures: z.array(z.string()).optional(),
+        applyDirectly: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const feature = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        select: { id: true, geometry: true, countryId: true, displayName: true },
+      });
+      if (!feature) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
+      }
+
+      if (input.applyDirectly) {
+        // Admin direct apply — update geometry immediately
+        const { calculateArea, calculateCentroid, calculateBBox } =
+          await import("~/lib/border-editor");
+        const geom = input.proposedGeometry as unknown as
+          | import("geojson").Polygon
+          | import("geojson").MultiPolygon;
+        const centroid = calculateCentroid(geom);
+        const bbox = calculateBBox(geom);
+        const area = calculateArea(geom);
+
+        await ctx.db.mapLayer.update({
+          where: { id: feature.id },
+          data: {
+            geometry: input.proposedGeometry,
+            centroid,
+            boundingBox: bbox,
+            areaSqKm: area,
+          },
+        });
+
+        // Clear cache
+        layerCache.delete("political");
+
+        // Clean up session
+        await ctx.db.mapEditorSession.deleteMany({
+          where: { userId: ctx.auth!.userId, featureId: input.featureId },
+        });
+
+        return { applied: true, editRequestId: null };
+      }
+
+      // Create edit request for review
+      const editRequest = await ctx.db.mapEditRequest.create({
+        data: {
+          countryId: feature.countryId ?? "unknown",
+          userId: ctx.auth!.userId,
+          editType: "border_adjust",
+          editSubtype: input.editSubtype,
+          operation: "update",
+          proposedData: input.proposedGeometry,
+          currentData: feature.geometry ?? undefined,
+          previousGeometry: feature.geometry ?? undefined,
+          affectedFeatures: input.affectedFeatures ?? [],
+          status: "pending",
+        },
+      });
+
+      return { applied: false, editRequestId: editRequest.id };
+    }),
+  splitCountry: adminProcedure
+    .input(
+      z.object({
+        featureId: z.string(),
+        splitLine: z.array(z.tuple([z.number(), z.number()])),
+        nameA: z.string(),
+        nameB: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const feature = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId, isActive: true },
+      });
+      if (!feature) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
+      }
+
+      const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
+        await import("~/lib/border-editor");
+      const geometry = feature.geometry as unknown as
+        | import("geojson").Polygon
+        | import("geojson").MultiPolygon;
+      const result = splitPolygon(geometry, input.splitLine);
+
+      if (!result) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Split line does not properly intersect the feature",
+        });
+      }
+
+      const [geomA, geomB] = result;
+      const featureIdA = input.nameA.replace(/\s+/g, "_");
+      const featureIdB = input.nameB.replace(/\s+/g, "_");
+
+      await ctx.db.$transaction(async (tx) => {
+        // Deactivate original
+        await tx.mapLayer.update({
+          where: { id: feature.id },
+          data: { isActive: false },
+        });
+
+        // Create two new features
+        await tx.mapLayer.createMany({
+          data: [
+            {
+              layerType: "political",
+              featureId: featureIdA,
+              displayName: input.nameA,
+              geometry: geomA as object,
+              properties: { id: featureIdA, name: input.nameA },
+              centroid: calculateCentroid(geomA),
+              boundingBox: calculateBBox(geomA),
+              areaSqKm: calculateArea(geomA),
+              isActive: true,
+            },
+            {
+              layerType: "political",
+              featureId: featureIdB,
+              displayName: input.nameB,
+              geometry: geomB as object,
+              properties: { id: featureIdB, name: input.nameB },
+              centroid: calculateCentroid(geomB),
+              boundingBox: calculateBBox(geomB),
+              areaSqKm: calculateArea(geomB),
+              isActive: true,
+            },
+          ],
+        });
+      });
+
+      layerCache.delete("political");
+
+      return {
+        originalFeatureId: input.featureId,
+        newFeatures: [
+          { featureId: featureIdA, name: input.nameA },
+          { featureId: featureIdB, name: input.nameB },
+        ],
+      };
+    }),
+  mergeCountries: adminProcedure
+    .input(
+      z.object({
+        featureIds: z.array(z.string()).min(2),
+        newName: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const features = await ctx.db.mapLayer.findMany({
+        where: { layerType: "political", featureId: { in: input.featureIds }, isActive: true },
+      });
+
+      if (features.length !== input.featureIds.length) {
+        const found = new Set(features.map((f) => f.featureId));
+        const missing = input.featureIds.filter((id) => !found.has(id));
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Features not found: ${missing.join(", ")}`,
+        });
+      }
+
+      const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } =
+        await import("~/lib/border-editor");
+
+      // Merge all geometries
+      type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;
+      let merged = features[0]!.geometry as unknown as GeoType;
+      for (let i = 1; i < features.length; i++) {
+        merged = mergeGeometries(merged, features[i]!.geometry as unknown as GeoType);
+      }
+
+      const newFeatureId = input.newName.replace(/\s+/g, "_");
+
+      await ctx.db.$transaction(async (tx) => {
+        // Deactivate originals
+        await tx.mapLayer.updateMany({
+          where: { id: { in: features.map((f) => f.id) } },
+          data: { isActive: false },
+        });
+
+        // Create merged feature
+        await tx.mapLayer.create({
+          data: {
+            layerType: "political",
+            featureId: newFeatureId,
+            displayName: input.newName,
+            geometry: merged as object,
+            properties: { id: newFeatureId, name: input.newName },
+            centroid: calculateCentroid(merged),
+            boundingBox: calculateBBox(merged),
+            areaSqKm: calculateArea(merged),
+            isActive: true,
+          },
+        });
+      });
+
+      layerCache.delete("political");
+
+      return {
+        mergedFeatures: input.featureIds,
+        newFeature: { featureId: newFeatureId, name: input.newName },
+      };
+    }),
+  getMyEditHistory: countryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().int().min(1).max(50).default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only view your own edit history",
+        });
+      }
+
+      const edits = await ctx.db.mapEditRequest.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+      });
+
+      return edits.map(
+        (e: {
+          id: string;
+          editType: string;
+          operation: string;
+          status: string;
+          createdAt: Date;
+          reviewedAt: Date | null;
+          reviewNote: string | null;
+          proposedData: unknown;
+        }) => ({
+          id: e.id,
+          editType: e.editType,
+          operation: e.operation,
+          status: e.status,
+          createdAt: e.createdAt,
+          reviewedAt: e.reviewedAt,
+          reviewNote: e.reviewNote,
+          summary: (e.proposedData as Record<string, unknown>)?.name ?? "Unknown",
+        })
+      );
+    }),
+  validateLinkage: adminProcedure.query(async ({ ctx }) => {
+    // Get all political map layers with country links
+    const mapLayers = await ctx.db.mapLayer.findMany({
+      where: { layerType: "political", isActive: true },
+      select: {
+        id: true,
+        featureId: true,
+        displayName: true,
+        countryId: true,
+        areaSqKm: true,
+        centroid: true,
+        boundingBox: true,
+      },
+    });
+
+    // Get all countries with their users
+    const countries = await ctx.db.country.findMany({
+      where: { isDemo: false },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        flag: true,
+        landArea: true,
+        geometry: true,
+        centroid: true,
+        boundingBox: true,
+        users: { select: { clerkUserId: true, forumUsername: true } },
+      },
+    });
+
+    const mapLayerByCountryId = new Map(
+      mapLayers.filter((l) => l.countryId).map((l) => [l.countryId!, l])
+    );
+    const countryById = new Map(countries.map((c) => [c.id, c]));
+
+    const issues: Array<{
+      type:
+        | "no_map_link"
+        | "orphan_geometry"
+        | "missing_geometry_sync"
+        | "missing_area_sync"
+        | "stale_map_link";
+      countryId: string;
+      countryName: string;
+      featureId?: string;
+      featureName?: string;
+      detail: string;
+    }> = [];
+
+    // Countries with no MapLayer link
+    for (const country of countries) {
+      const mapLayer = mapLayerByCountryId.get(country.id);
+
+      if (!mapLayer) {
+        // Country has no linked map feature
+        if (country.geometry || (country.landArea && country.landArea > 0)) {
+          issues.push({
+            type: "orphan_geometry",
+            countryId: country.id,
+            countryName: country.name,
+            detail: `Country has geometry/landArea but no MapLayer link`,
+          });
+        } else {
+          issues.push({
+            type: "no_map_link",
+            countryId: country.id,
+            countryName: country.name,
+            detail: `Country has no linked map feature`,
+          });
+        }
+      } else {
+        // Country IS linked — check data sync
+        if (!country.geometry) {
+          issues.push({
+            type: "missing_geometry_sync",
+            countryId: country.id,
+            countryName: country.name,
+            featureId: mapLayer.featureId,
+            featureName: mapLayer.displayName ?? mapLayer.featureId,
+            detail: `MapLayer linked but Country.geometry is null`,
+          });
+        }
+        if (!country.landArea && mapLayer.areaSqKm) {
+          issues.push({
+            type: "missing_area_sync",
+            countryId: country.id,
+            countryName: country.name,
+            featureId: mapLayer.featureId,
+            featureName: mapLayer.displayName ?? mapLayer.featureId,
+            detail: `MapLayer has areaSqKm=${mapLayer.areaSqKm?.toFixed(0)} but Country.landArea is null`,
+          });
+        }
+      }
+    }
+
+    // MapLayers pointing to non-existent countries
+    for (const layer of mapLayers) {
+      if (layer.countryId && !countryById.has(layer.countryId)) {
+        issues.push({
+          type: "stale_map_link",
+          countryId: layer.countryId,
+          countryName: "(deleted)",
+          featureId: layer.featureId,
+          featureName: layer.displayName ?? layer.featureId,
+          detail: `MapLayer links to non-existent country ${layer.countryId}`,
+        });
+      }
+    }
+
+    // Build linkage summary
+    const linked = countries.filter((c) => mapLayerByCountryId.has(c.id));
+    const unlinked = countries.filter((c) => !mapLayerByCountryId.has(c.id));
+
+    return {
+      totalCountries: countries.length,
+      linkedCount: linked.length,
+      unlinkedCount: unlinked.length,
+      issueCount: issues.length,
+      issues,
+      linked: linked.map((c) => {
+        const ml = mapLayerByCountryId.get(c.id)!;
+        return {
+          countryId: c.id,
+          countryName: c.name,
+          countryFlag: normalizeFlagUrl(c.flag),
+          featureId: ml.featureId,
+          featureName: ml.displayName ?? ml.featureId,
+          areaSqKm: ml.areaSqKm,
+          hasOwner: c.users.length > 0,
+          ownerName: c.users[0]?.forumUsername ?? c.users[0]?.clerkUserId ?? null,
+        };
+      }),
+      unlinked: unlinked.map((c) => ({
+        countryId: c.id,
+        countryName: c.name,
+        countryFlag: normalizeFlagUrl(c.flag),
+        hasGeometry: !!c.geometry,
+        hasLandArea: !!(c.landArea && c.landArea > 0),
+        hasOwner: c.users.length > 0,
+        ownerName: c.users[0]?.forumUsername ?? c.users[0]?.clerkUserId ?? null,
+      })),
+    };
+  }),
+  repairLinkage: adminProcedure
+    .input(
+      z.object({
+        action: z.enum(["sync_all", "auto_match", "link_by_name"]),
+        /** For link_by_name: map featureId to countryId */
+        featureId: z.string().optional(),
+        countryId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      let repaired = 0;
+
+      if (input.action === "sync_all") {
+        // Re-sync geometry + area from MapLayer → Country for all linked countries
+        const linkedLayers = await ctx.db.mapLayer.findMany({
+          where: { layerType: "political", countryId: { not: null }, isActive: true },
+          select: {
+            countryId: true,
+            geometry: true,
+            centroid: true,
+            boundingBox: true,
+            areaSqKm: true,
+          },
+        });
+
+        for (const ml of linkedLayers) {
+          if (!ml.countryId) continue;
+          await ctx.db.country.update({
+            where: { id: ml.countryId },
+            data: {
+              geometry: ml.geometry as object,
+              centroid: ml.centroid as object | undefined,
+              boundingBox: ml.boundingBox as object | undefined,
+              landArea: ml.areaSqKm ?? undefined,
+              areaSqMi: ml.areaSqKm ? ml.areaSqKm * 0.386102 : undefined,
+            },
+          });
+          repaired++;
+        }
+      }
+
+      if (input.action === "auto_match") {
+        // Try to match unlinked countries to unlinked features by name
+        const unlinkedLayers = await ctx.db.mapLayer.findMany({
+          where: { layerType: "political", countryId: null, isActive: true },
+          select: {
+            id: true,
+            featureId: true,
+            displayName: true,
+            geometry: true,
+            centroid: true,
+            boundingBox: true,
+            areaSqKm: true,
+          },
+        });
+        const unlinkedCountries = await ctx.db.country.findMany({
+          where: {
+            isDemo: false,
+            id: {
+              notIn: (
+                await ctx.db.mapLayer.findMany({
+                  where: { layerType: "political", countryId: { not: null } },
+                  select: { countryId: true },
+                })
+              )
+                .map((m) => m.countryId!)
+                .filter(Boolean),
+            },
+          },
+          select: { id: true, name: true },
+        });
+
+        const countryNameMap = new Map(unlinkedCountries.map((c) => [c.name.toLowerCase(), c]));
+
+        for (const layer of unlinkedLayers) {
+          const name = (layer.displayName || featureIdToDisplayName(layer.featureId)).toLowerCase();
+          const match = countryNameMap.get(name);
+          if (match) {
+            await ctx.db.mapLayer.update({
+              where: { id: layer.id },
+              data: { countryId: match.id },
+            });
+            await ctx.db.country.update({
+              where: { id: match.id },
+              data: {
+                geometry: layer.geometry as object,
+                centroid: layer.centroid as object | undefined,
+                boundingBox: layer.boundingBox as object | undefined,
+                landArea: layer.areaSqKm ?? undefined,
+                areaSqMi: layer.areaSqKm ? layer.areaSqKm * 0.386102 : undefined,
+              },
+            });
+            repaired++;
+            countryNameMap.delete(name);
+          }
+        }
+      }
+
+      if (input.action === "link_by_name" && input.featureId && input.countryId) {
+        const ml = await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true },
+        });
+        if (!ml) throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
+
+        await ctx.db.mapLayer.update({
+          where: { id: ml.id },
+          data: { countryId: input.countryId },
+        });
+        await ctx.db.country.update({
+          where: { id: input.countryId },
+          data: {
+            geometry: ml.geometry as object,
+            centroid: ml.centroid as object | undefined,
+            boundingBox: ml.boundingBox as object | undefined,
+            landArea: ml.areaSqKm ?? undefined,
+            areaSqMi: ml.areaSqKm ? ml.areaSqKm * 0.386102 : undefined,
+          },
+        });
+        repaired = 1;
+      }
+
+      layerCache.delete("political");
+      await invalidateCache([
+        "geo.listCountries",
+        "geo.getWorldMap",
+        "geo.validateLinkage",
+        "geo.getCountryGeometry",
+      ]);
+
+      return { repaired };
+    }),
+  generateProceduralWorld: adminProcedure
+    .input(
+      z.object({
+        seed: z.number().int(),
+        continentCount: z.number().int().min(1).max(8).default(4),
+        countryCountRange: z
+          .tuple([z.number().int().min(1), z.number().int().max(200)])
+          .default([20, 60]),
+        oceanPercentage: z.number().min(0.2).max(0.95).default(0.65),
+        terrainRoughness: z.number().min(0).max(1).default(0.5),
+        hasIcecaps: z.boolean().default(true),
+        hasRivers: z.boolean().default(true),
+        hasLakes: z.boolean().default(true),
+        gridResolution: z.number().int().min(128).max(512).default(512),
+        similarity: z.number().min(0).max(1).default(0.5),
+        profileName: z.string().default("IxWorld"),
+        erosionIntensity: z.number().min(0).max(1).default(0.8),
+        climateDetail: z.enum(["simple", "full"]).default("full"),
+        useTectonicElevation: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Dynamic import to avoid loading heavy generation code on every request
+      const { generateWorld } = await import("~/lib/worldgen/engine");
+
+      const result = generateWorld(input);
+
+      // Save to database
+      const world = await ctx.db.proceduralWorld.create({
+        data: {
+          seed: input.seed,
+          parameters: input as unknown as Record<string, unknown>,
+          status: "completed",
+          generatedData: result.layers as unknown as Record<string, unknown>,
+          metadata: result.stats as unknown as Record<string, unknown>,
+          createdBy: ctx.auth!.userId,
+        },
+      });
+
+      return {
+        worldId: world.id,
+        seed: result.seed,
+        stats: result.stats,
+      };
+    }),
+  getProceduralWorldPreview: adminProcedure
+    .input(z.object({ worldId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const world = await ctx.db.proceduralWorld.findUnique({
+        where: { id: input.worldId },
+      });
+      if (!world) throw new TRPCError({ code: "NOT_FOUND" });
+
+      return {
+        seed: world.seed,
+        parameters: world.parameters,
+        layers: world.generatedData,
+        stats: world.metadata,
+        status: world.status,
+      };
+    }),
+  commitProceduralWorld: adminProcedure
+    .input(
+      z.object({
+        worldId: z.string(),
+        saveAsTemplate: z.boolean().default(false),
+        templateName: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const world = await ctx.db.proceduralWorld.findUnique({
+        where: { id: input.worldId },
+      });
+      if (!world) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const layers = world.generatedData as Record<
+        string,
+        {
+          features?: Array<{
+            id?: string;
+            geometry: unknown;
+            properties?: Record<string, unknown>;
+          }>;
+        }
+      >;
+      if (!layers) throw new TRPCError({ code: "BAD_REQUEST", message: "No generated data" });
+
+      // Deactivate all existing features
+      await ctx.db.mapLayer.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      });
+
+      let totalImported = 0;
+      const log: string[] = [];
+
+      for (const [layerType, fc] of Object.entries(layers)) {
+        if (!fc.features || !Array.isArray(fc.features)) continue;
+
+        const records = fc.features.map((f) => {
+          const props = (f.properties || {}) as Record<string, unknown>;
+          return {
+            layerType,
+            featureId:
+              (props.featureId as string) ||
+              (f.id as string) ||
+              `proc-${Math.random().toString(36).slice(2, 10)}`,
+            geometry: f.geometry as Record<string, unknown>,
+            properties: props,
+            displayName: (props.displayName as string) || null,
+            areaSqKm: (props.areaKm2 as number) || null,
+            isActive: true,
+            worldId: `proc-${world.seed}`,
+          };
+        });
+
+        const created = await ctx.db.mapLayer.createMany({
+          data: records,
+          skipDuplicates: true,
+        });
+        log.push(`${layerType}: ${created.count} features`);
+        totalImported += created.count;
+      }
+
+      // Optionally save as template
+      let templateId: string | null = null;
+      if (input.saveAsTemplate) {
+        const template = await ctx.db.worldTemplate.create({
+          data: {
+            name: input.templateName || `Procedural World (seed: ${world.seed})`,
+            description: `Auto-generated world with seed ${world.seed}`,
+            createdBy: ctx.auth!.userId,
+            metadata: world.metadata,
+            layers: world.generatedData as Record<string, unknown>,
+            isPublic: false,
+          },
+        });
+        templateId = template.id;
+
+        await ctx.db.proceduralWorld.update({
+          where: { id: world.id },
+          data: { templateId },
+        });
+      }
+
+      return { totalImported, log, templateId };
+    }),
+  regenerateLayer: adminProcedure
+    .input(
+      z.object({
+        worldId: z.string(),
+        layerType: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const world = await ctx.db.proceduralWorld.findUnique({
+        where: { id: input.worldId },
+      });
+      if (!world) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const params = world.parameters as Record<string, unknown>;
+      const { generateWorld } = await import("~/lib/worldgen/engine");
+
+      // Regenerate with a shifted seed for the target layer
+      const newSeed = (params.seed as number) + input.layerType.length * 1000;
+      const newParams = { ...params, seed: newSeed } as Parameters<typeof generateWorld>[0];
+      const result = generateWorld(newParams);
+
+      // Replace only the target layer
+      const existingLayers = (world.generatedData || {}) as Record<string, unknown>;
+      const layerKey = input.layerType;
+      if (layerKey in result.layers) {
+        existingLayers[layerKey] = result.layers[layerKey as keyof typeof result.layers];
+      }
+
+      await ctx.db.proceduralWorld.update({
+        where: { id: world.id },
+        data: {
+          generatedData: existingLayers,
+          metadata: {
+            ...(world.metadata as Record<string, unknown>),
+            lastRegenerated: input.layerType,
+          },
+        },
+      });
+
+      return {
+        layerType: input.layerType,
+        featureCount: result.layers[layerKey as keyof typeof result.layers]?.features.length ?? 0,
+      };
+    }),
+  listProceduralWorlds: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db.proceduralWorld.findMany({
+      where: { createdBy: ctx.auth!.userId },
+      select: {
+        id: true,
+        seed: true,
+        parameters: true,
+        status: true,
+        metadata: true,
+        templateId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  }),
+  runPipeline: adminProcedure
+    .input(
+      z.object({
+        source: z.enum(["svg", "procedural"]),
+        svgContent: z.string().optional(),
+        worldGenParams: z.record(z.string(), z.unknown()).optional(),
+        targetLayers: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { runMapPipeline, validatePipelineResult } = await import("~/lib/map-pipeline");
+
+      const result = await runMapPipeline({
+        source: input.source,
+        svgContent: input.svgContent,
+        worldGenParams: input.worldGenParams as
+          | import("~/lib/worldgen/types").WorldGenParams
+          | undefined,
+        targetLayers: input.targetLayers,
+      });
+
+      const validation = validatePipelineResult(result);
+
+      return {
+        ...result,
+        validation,
+      };
+    }),
+  importPipelineResult: adminProcedure
+    .input(
+      z.object({
+        layers: z.record(z.string(), z.unknown()),
+        mode: z.enum(["replace", "merge"]).default("merge"),
+        worldId: z.string().default("default"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const layers = input.layers as Record<string, import("geojson").FeatureCollection>;
+      let imported = 0;
+
+      await ctx.db.$transaction(async (tx) => {
+        if (input.mode === "replace") {
+          // Deactivate existing layers for this world
+          await tx.mapLayer.updateMany({
+            where: { worldId: input.worldId, isActive: true },
+            data: { isActive: false },
+          });
+        }
+
+        for (const [layerType, collection] of Object.entries(layers)) {
+          if (!collection?.features) continue;
+
+          for (const feature of collection.features) {
+            const featureId =
+              (feature.properties?.featureId as string) ??
+              (feature.id as string) ??
+              `${layerType}_${imported}`;
+
+            await tx.mapLayer.upsert({
+              where: {
+                layerType_featureId: { layerType, featureId },
+              },
+              update: {
+                geometry: feature.geometry as unknown as Record<string, unknown>,
+                properties: (feature.properties ?? {}) as Record<string, unknown>,
+                isActive: true,
+                worldId: input.worldId,
+              },
+              create: {
+                layerType,
+                featureId,
+                geometry: feature.geometry as unknown as Record<string, unknown>,
+                properties: (feature.properties ?? {}) as Record<string, unknown>,
+                isActive: true,
+                worldId: input.worldId,
+              },
+            });
+            imported++;
+          }
+        }
+      });
+
+      // Build shared vertex index for political features
+      if (layers.political) {
+        try {
+          const { buildSharedVertexIndex } = await import("~/lib/shared-vertex-builder");
+          const politicalFeatures = layers.political.features
+            .filter((f) => f.geometry?.type === "Polygon" || f.geometry?.type === "MultiPolygon")
+            .map((f) => ({
+              featureId: (f.properties?.featureId as string) ?? (f.id as string) ?? "",
+              geometry: f.geometry as import("geojson").Polygon | import("geojson").MultiPolygon,
+            }));
+
+          const sharedVertices = buildSharedVertexIndex(politicalFeatures);
+
+          // Clear existing shared vertices for this world
+          await ctx.db.sharedVertex.deleteMany({
+            where: { worldId: input.worldId },
+          });
+
+          // Insert new shared vertices
+          if (sharedVertices.length > 0) {
+            await ctx.db.sharedVertex.createMany({
+              data: sharedVertices.map((sv) => ({
+                lng: sv.lng,
+                lat: sv.lat,
+                featureRefs: sv.featureRefs as unknown as Record<string, unknown>,
+                worldId: input.worldId,
+              })),
+            });
+          }
+        } catch {
+          // Shared vertex build failed — non-blocking
+        }
+      }
+
+      // Invalidate layer cache
+      invalidateCache("geo.getWorldMap");
+
+      return { imported, mode: input.mode };
+    }),
+});

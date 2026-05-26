@@ -729,7 +729,7 @@ export function CountryInfobox({
                 })}
               </div>
 
-              <style jsx global>{`
+              <style {...{ jsx: "true", global: "true" } as any}>{`
                 .wiki-content a {
                   color: #429284 !important;
                   text-decoration: none !important;
@@ -773,7 +773,7 @@ export function CountryInfobox({
                   __html: sanitizeWikiContent(infobox.renderedHtml || ""),
                 }}
               />
-              <style jsx global>{`
+              <style {...{ jsx: "true", global: "true" } as any}>{`
                 .styled-infobox table.infobox,
                 .styled-infobox .infobox,
                 .styled-infobox table.wikitable {

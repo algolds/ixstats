@@ -197,7 +197,7 @@ export const wikiImporterRouter = createTRPCRouter({
       if (input.countryId) {
         // Wrap update path in transaction for atomicity
         try {
-          const result = await ctx.db.$transaction(async (tx) => {
+          const result = await (ctx.db as any).$transaction(async (tx: any) => {
             const country = await tx.country.update({
               where: { id: input.countryId },
               data: {
@@ -282,7 +282,7 @@ export const wikiImporterRouter = createTRPCRouter({
 
         // Use transaction to create country and all related records atomically
         try {
-          const result = await ctx.db.$transaction(async (tx) => {
+          const result = await (ctx.db as any).$transaction(async (tx: any) => {
             // Create the country with ALL fields (same as builder)
             const country = await tx.country.create({
               data: {
@@ -731,7 +731,7 @@ export const wikiImporterRouter = createTRPCRouter({
           ixworldMatch = await matchToIxWorld(
             extracted.coordinates,
             input.pageName,
-            ctx.db,
+            ctx.db as any,
             analyzed.borders?.value
           );
         } catch (e) {
@@ -778,7 +778,7 @@ export const wikiImporterRouter = createTRPCRouter({
         ixworldMatch = await matchToIxWorld(
           extracted.coordinates,
           input.pageName,
-          ctx.db,
+          ctx.db as any,
           analyzed.borders?.value
         );
       } catch (e) {

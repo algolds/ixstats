@@ -318,8 +318,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: ReturnType<typeof createPrismaClient> | undefined;
 };
 
-export const db =
-  globalForPrisma.prisma ??
+export const db = (globalForPrisma.prisma ??
   createPrismaClient()
     .$extends({
       query: {
@@ -345,7 +344,7 @@ export const db =
           },
         },
       },
-    });
+    })) as unknown as PrismaClient;
 
 export { db as prisma };
 

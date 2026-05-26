@@ -208,6 +208,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
         }, 100);
         return () => clearTimeout(timer);
       }
+      return;
     }, [isRevealed, isFlipped]);
 
     const rarityColor = service.getRarityColor(card.rarity);

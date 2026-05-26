@@ -33,6 +33,10 @@ export interface WorldGenParamsUI {
   useMarkovNaming: boolean;
   languageFamilies: string[];
   preset: string;
+  climateDetail: "simple" | "full";
+  erosionIntensity: number;
+  gridResolution: number;
+  useTectonicElevation: boolean;
 }
 
 export interface StudioState {
@@ -90,6 +94,10 @@ export const DEFAULT_PARAMS: WorldGenParamsUI = {
   useMarkovNaming: true,
   languageFamilies: [],
   preset: "ixworld",
+  climateDetail: "full",
+  erosionIntensity: 0.8,
+  gridResolution: 512,
+  useTectonicElevation: true,
 };
 
 export const PRESETS: Record<string, Partial<WorldGenParamsUI>> = {

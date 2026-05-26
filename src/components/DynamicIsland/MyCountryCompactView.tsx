@@ -65,7 +65,7 @@ function MyCountryCompactViewComponent({
   );
 
   // Crisis events data from unified intelligence
-  const { data: crisisEvents } = api.unifiedIntelligence.getCrisisEvents.useQuery();
+  const { data: crisisEvents } = api.intelAlerts.getCrisisEvents.useQuery();
 
   // Notification system integration
   const enhancedStats = useNotificationStore((state) => state.stats);

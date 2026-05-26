@@ -67,9 +67,9 @@ export function useProvinceImporter(countryId: string) {
   const [detectedLayers, setDetectedLayers] = useState<string[]>([]);
 
   // ── tRPC Mutations ──
-  const parseMutation = api.geo.parseProvinceUpload.useMutation();
-  const commitMutation = api.geo.commitProvinceImport.useMutation();
-  const previewQuery = api.geo.getProvinceImportPreview.useQuery(
+  const parseMutation = api.geoAdmin.parseProvinceUpload.useMutation();
+  const commitMutation = api.geoAdmin.commitProvinceImport.useMutation();
+  const previewQuery = api.geoAdmin.getProvinceImportPreview.useQuery(
     { countryId },
     { enabled: step === "upload" || step === "commit" }
   );

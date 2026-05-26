@@ -47,16 +47,16 @@ export function DiplomaticOperationsCard({
     { enabled: !!userProfile?.countryId }
   ) || { data: [] };
 
-  const { data: activeCrises } = api.unifiedIntelligence.getActiveCrises.useQuery();
+  const { data: activeCrises } = api.intelAlerts.getActiveCrises.useQuery();
 
   const { data: diplomaticIntelligence } =
-    api.unifiedIntelligence.getEnhancedDiplomaticIntelligence?.useQuery(
+    api.intelCore.getEnhancedDiplomaticIntelligence?.useQuery(
       { countryId: userProfile?.countryId || "" },
       { enabled: !!userProfile?.countryId }
     ) || { data: null };
 
   // Fetch live embassy network data
-  const { data: liveEmbassies, isLoading: embassiesLoading } = api.diplomatic.getEmbassies.useQuery(
+  const { data: liveEmbassies, isLoading: embassiesLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId, refetchInterval: 60000 }
   );

@@ -34,7 +34,7 @@ export const ExpandedCardActions = React.memo<ExpandedCardActionsProps>(
 
     // Follow status query - only when viewer has a country and it's not their own
     const { data: followStatus, refetch: refetchFollowStatus } =
-      api.diplomatic.getFollowStatus.useQuery(
+      api.diplomaticCore.getFollowStatus.useQuery(
         {
           viewerCountryId: viewerCountryId || "",
           targetCountryId: countryId,
@@ -44,7 +44,7 @@ export const ExpandedCardActions = React.memo<ExpandedCardActionsProps>(
         }
       );
 
-    const followMutation = api.diplomatic.followCountry.useMutation({
+    const followMutation = api.diplomaticCore.followCountry.useMutation({
       onSuccess: () => {
         notify.success(`Now following ${countryName}`);
         void refetchFollowStatus();
@@ -54,7 +54,7 @@ export const ExpandedCardActions = React.memo<ExpandedCardActionsProps>(
       },
     });
 
-    const unfollowMutation = api.diplomatic.unfollowCountry.useMutation({
+    const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
       onSuccess: () => {
         notify.success(`Unfollowed ${countryName}`);
         void refetchFollowStatus();

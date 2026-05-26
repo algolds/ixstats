@@ -83,7 +83,7 @@ export function DiplomaticIntelligenceHub({
   >("overview");
 
   // Fetch diplomatic data with periodic refresh
-  const { data: embassies, isLoading: embassiesLoading } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies, isLoading: embassiesLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     {
       refetchInterval: 60000,
@@ -92,7 +92,7 @@ export function DiplomaticIntelligenceHub({
     }
   );
 
-  const { data: relationships } = api.diplomatic.getRelationships.useQuery(
+  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     {
       refetchInterval: 60000,
@@ -101,7 +101,7 @@ export function DiplomaticIntelligenceHub({
     }
   );
 
-  const { data: exchanges } = api.diplomatic.getCulturalExchanges.useQuery(
+  const { data: exchanges } = api.diplomaticCultural.getCulturalExchanges.useQuery(
     { countryId },
     {
       refetchInterval: 60000,
@@ -110,7 +110,7 @@ export function DiplomaticIntelligenceHub({
     }
   );
 
-  const { data: recentChanges } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: recentChanges } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId, hours: 24 },
     {
       refetchInterval: 30000,
@@ -119,16 +119,16 @@ export function DiplomaticIntelligenceHub({
     }
   );
 
-  const missionList: MissionSummary[] = [];
+  const missions: MissionSummary[] = [];
 
   const activeMissions = useMemo(
-    () => missionList.filter((mission) => mission?.status === "active"),
-    [missionList]
+    () => missions.filter((mission) => mission?.status === "active"),
+    [missions]
   );
 
   const completedMissions = useMemo(
-    () => missionList.filter((mission) => mission?.status === "completed"),
-    [missionList]
+    () => missions.filter((mission) => mission?.status === "completed"),
+    [missions]
   );
 
   const averageActiveMissionSuccess = useMemo(() => {

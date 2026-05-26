@@ -130,6 +130,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
         container.addEventListener("mousemove", handleMouseMove);
         return () => container.removeEventListener("mousemove", handleMouseMove);
       }
+      return;
     }, [enableMouseTracking, disabled]);
 
     // Particle generation on hover

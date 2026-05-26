@@ -47,8 +47,8 @@ interface UseEconomyBuilderSyncReturn {
   // Sync status
   syncStatus: SyncStatus;
   // Sync mutations
-  syncGovernmentMutation: ReturnType<typeof api.economics.syncGovernment.useMutation>;
-  syncTaxMutation: ReturnType<typeof api.economics.syncTaxSystem.useMutation>;
+  syncGovernmentMutation: ReturnType<typeof api.economics.syncEconomyWithGovernment.useMutation>;
+  syncTaxMutation: ReturnType<typeof api.economics.syncEconomyWithTax.useMutation>;
 }
 
 /**

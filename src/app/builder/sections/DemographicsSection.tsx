@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { Users, Heart, Building2, GraduationCap, Home, MapPin } from "lucide-react";
 import { EnhancedNumberInput, MetricCard, SliderWithDirectInput } from "../primitives/enhanced";
 import type { DemographicData } from "../lib/economy-data-service";
+import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
 import {
   SectionBase,
   SectionLayout,
@@ -30,7 +31,6 @@ export function DemographicsSection({
   fieldLocks,
 }: DemographicsSectionProps) {
   const isEditMode = mode === "edit";
-  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   const [selectedView, setSelectedView] = useState<"age" | "geographic" | "social">("age");

@@ -36,32 +36,32 @@ export function TemplateManager() {
 
   const utils = api.useUtils();
 
-  const { data: templates, isLoading: templatesLoading } = api.geo.listWorldTemplates.useQuery(
+  const { data: templates, isLoading: templatesLoading } = api.geoAdmin.listWorldTemplates.useQuery(
     undefined,
     {
       refetchOnWindowFocus: false,
     }
   );
 
-  const exportMutation = api.geo.exportWorldTemplate.useMutation({
+  const exportMutation = api.geoAdmin.exportWorldTemplate.useMutation({
     onSuccess: () => {
       setExportName("");
       setExportDescription("");
-      void utils.geo.listWorldTemplates.invalidate();
+      void utils.geoAdmin.listWorldTemplates.invalidate();
     },
   });
 
-  const importMutation = api.geo.importWorldTemplate.useMutation({
+  const importMutation = api.geoAdmin.importWorldTemplate.useMutation({
     onSuccess: () => {
       setImportJson(null);
-      void utils.geo.listWorldTemplates.invalidate();
-      void utils.geo.getMapStats.invalidate();
+      void utils.geoAdmin.listWorldTemplates.invalidate();
+      void utils.geoCore.getMapStats.invalidate();
     },
   });
 
-  const deleteMutation = api.geo.deleteWorldTemplate.useMutation({
+  const deleteMutation = api.geoAdmin.deleteWorldTemplate.useMutation({
     onSuccess: () => {
-      void utils.geo.listWorldTemplates.invalidate();
+      void utils.geoAdmin.listWorldTemplates.invalidate();
     },
   });
 
@@ -108,7 +108,7 @@ export function TemplateManager() {
   const handleDownload = useCallback(
     async (templateId: string, name: string) => {
       try {
-        const data = await utils.geo.downloadWorldTemplate.fetch({ templateId });
+        const data = await utils.geoAdmin.downloadWorldTemplate.fetch({ templateId });
         const blob = new Blob([JSON.stringify(data, null, 2)], {
           type: "application/json",
         });

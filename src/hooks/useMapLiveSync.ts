@@ -22,12 +22,12 @@ const RECONNECT_MAX_MS = 30000;
 
 /** Invalidate all map-related React Query caches */
 function invalidateMapCaches(utils: ReturnType<typeof api.useUtils>) {
-  utils.geo.getMapBundle.invalidate();
-  utils.geo.getWorldMap.invalidate();
-  utils.geo.getCountryFeatures.invalidate();
-  utils.geo.getAllStoryPins.invalidate();
-  utils.geo.getAllMapLabels.invalidate();
-  utils.geo.getCapitalCities.invalidate();
+  utils.geoCore.getMapBundle.invalidate();
+  utils.geoCore.getWorldMap.invalidate();
+  utils.geoCore.getCountryFeatures.invalidate();
+  utils.geoFeatures.getAllStoryPins.invalidate();
+  utils.geoFeatures.getAllMapLabels.invalidate();
+  utils.geoCore.getCapitalCities.invalidate();
 }
 
 export function useMapLiveSync() {

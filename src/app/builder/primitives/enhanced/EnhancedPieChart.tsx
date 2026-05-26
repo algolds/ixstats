@@ -22,7 +22,7 @@ interface EnhancedPieChartProps extends EnhancedChartProps {
 
 interface ChartTooltipProps {
   active?: boolean;
-  payload?: any[];
+  payload?: readonly any[];
   formatValue?: (value: number) => string;
   colors: string[];
 }

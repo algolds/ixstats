@@ -108,13 +108,13 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
     data: thresholdsData,
     isLoading,
     refetch,
-  } = api.unifiedIntelligence.getAlertThresholds.useQuery(
+  } = api.intelAlerts.getAlertThresholds.useQuery(
     { countryId, userId: user?.id || "" },
     { enabled: !!user?.id }
   );
 
   // Mutations
-  const updateMutation = api.unifiedIntelligence.updateAlertThreshold.useMutation({
+  const updateMutation = api.intelAlerts.updateAlertThreshold.useMutation({
     onSuccess: () => {
       notify.success("Alert threshold saved successfully");
       void refetch();
@@ -126,7 +126,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
     },
   });
 
-  const deleteMutation = api.unifiedIntelligence.deleteAlertThreshold.useMutation({
+  const deleteMutation = api.intelAlerts.deleteAlertThreshold.useMutation({
     onSuccess: () => {
       notify.success("Alert threshold deleted successfully");
       void refetch();

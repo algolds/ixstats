@@ -62,7 +62,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
   const handleArchetypeSelect = (archetypeId: string) => {
     const archetype = archetypes.find(
-      (a) => a.id === archetypeId || (a as any).key === archetypeId
+      (a: any) => a.id === archetypeId || (a as any).key === archetypeId
     );
     setSelectedArchetype((archetype as EconomicArchetype) ?? null);
   };
@@ -662,7 +662,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              {archetypes.map((archetype) =>
+              {archetypes.map((archetype: any) =>
                 renderArchetypeCard(archetype as EconomicArchetype, true)
               )}
             </div>

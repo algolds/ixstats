@@ -41,7 +41,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     data: liveExchanges,
     isLoading: exchangesLoading,
     refetch: refetchExchanges,
-  } = api.diplomatic.getCulturalExchanges.useQuery(
+  } = api.diplomaticCultural.getCulturalExchanges.useQuery(
     {
       countryId: primaryCountry.id,
       status: filterStatus !== "all" ? (filterStatus as any) : undefined,
@@ -54,7 +54,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   );
 
   // Create exchange mutation
-  const createExchangeMutation = api.diplomatic.createCulturalExchange.useMutation({
+  const createExchangeMutation = api.diplomaticCultural.createCulturalExchange.useMutation({
     onSuccess: () => {
       notify.success("Cultural exchange created successfully!");
       setShowCreateModal(false);
@@ -66,7 +66,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Join exchange mutation
-  const joinExchangeMutation = api.diplomatic.joinCulturalExchange.useMutation({
+  const joinExchangeMutation = api.diplomaticCultural.joinCulturalExchange.useMutation({
     onSuccess: () => {
       notify.success("Successfully joined cultural exchange!");
       refetchExchanges();
@@ -77,7 +77,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Vote on exchange mutation
-  const voteExchangeMutation = api.diplomatic.voteOnExchange.useMutation({
+  const voteExchangeMutation = api.diplomaticCultural.voteOnExchange.useMutation({
     onSuccess: () => {
       notify.success("Vote recorded!");
       refetchExchanges();
@@ -88,7 +88,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Upload artifact mutation
-  const uploadArtifactMutation = api.diplomatic.uploadCulturalArtifact.useMutation({
+  const uploadArtifactMutation = api.diplomaticCultural.uploadCulturalArtifact.useMutation({
     onSuccess: () => {
       notify.success("Cultural artifact uploaded successfully!");
       setShowArtifactUpload(false);
@@ -100,7 +100,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Generate cultural scenario mutation
-  const generateScenarioMutation = api.diplomatic.generateCulturalScenario.useMutation({
+  const generateScenarioMutation = api.diplomaticCultural.generateCulturalScenario.useMutation({
     onSuccess: (data) => {
       setSelectedScenario(data);
       setShowScenarioModal(true);
@@ -112,7 +112,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Calculate exchange impact mutation
-  const calculateImpactMutation = api.diplomatic.calculateExchangeImpact.useMutation({
+  const calculateImpactMutation = api.diplomaticCultural.calculateExchangeImpact.useMutation({
     onSuccess: () => {
       setShowImpactVisualization(true);
       notify.success("Impact calculated successfully!");
@@ -124,7 +124,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Get NPC responses for selected exchange
-  const { data: npcResponses } = api.diplomatic.getNPCCulturalResponses.useQuery(
+  const { data: npcResponses } = api.diplomaticCultural.getNPCCulturalResponses.useQuery(
     {
       exchangeId: selectedExchange?.id || "",
       hostCountryId: primaryCountry.id,
@@ -135,7 +135,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   );
 
   // Update exchange mutation
-  const updateExchangeMutation = api.diplomatic.updateCulturalExchange.useMutation({
+  const updateExchangeMutation = api.diplomaticCultural.updateCulturalExchange.useMutation({
     onSuccess: () => {
       notify.success("Exchange updated successfully!");
       setShowEditModal(false);
@@ -147,7 +147,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Cancel exchange mutation (with negative effects)
-  const cancelExchangeMutation = api.diplomatic.cancelCulturalExchange.useMutation({
+  const cancelExchangeMutation = api.diplomaticCultural.cancelCulturalExchange.useMutation({
     onSuccess: (data) => {
       const penalties = data.penalties;
       notify.success(

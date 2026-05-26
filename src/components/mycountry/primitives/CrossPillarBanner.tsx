@@ -58,7 +58,7 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
-  const { data: relations } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
@@ -121,7 +121,7 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
       policies: policyData,
       relations: relationData,
       parties: partyData,
-      foreignPolicies: [], // TODO: wire to api.diplomatic.getActiveForeignPolicies when available
+      foreignPolicies: [], // TODO: wire to api.diplomaticPolicies.getActiveForeignPolicies when available
       crises: [], // TODO: wire to api.crisisEvents.getActive when available
       legislature: legislatureData,
       seatSummary,

@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { SignInButton, useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
@@ -152,11 +152,7 @@ interface EquipmentFormData {
   isActive: boolean;
 }
 
-// Type definitions for analytics
-type UsageStats = RouterOutputs["militaryEquipment"]["getEquipmentUsageStats"];
-type ManufacturerStats = RouterOutputs["militaryEquipment"]["getManufacturerStats"];
-type CatalogEquipment = RouterOutputs["militaryEquipment"]["getAllCatalogEquipment"];
-type CatalogEquipmentItem = CatalogEquipment extends Array<infer Item> ? Item : never;
+
 
 // Manufacturer specialties
 const SPECIALTIES = [
@@ -1378,10 +1374,10 @@ export default function MilitaryEquipmentPage() {
                 )}
 
                 {/* Equipment Display */}
-                {smallArmsEquipment && smallArmsEquipment.length > 0 ? (
+                {smallArmsEquipment && smallArmsEquipment.equipment && smallArmsEquipment.equipment.length > 0 ? (
                   <div className="glass-card-child rounded-xl border border-white/10 p-6">
                     <p className="text-foreground text-sm">
-                      {smallArmsEquipment.length} equipment items available
+                      {smallArmsEquipment.equipment.length} equipment items available
                     </p>
                   </div>
                 ) : (
@@ -2135,9 +2131,9 @@ function MediaTab({
 
 // Analytics Content Component
 interface AnalyticsContentProps {
-  usageStats: UsageStats | undefined;
-  manufacturerStats: ManufacturerStats | undefined;
-  allEquipment: CatalogEquipment | undefined;
+  usageStats: any;
+  manufacturerStats: any;
+  allEquipment: any;
   isLoading: boolean;
   error: any;
 }
@@ -2151,7 +2147,7 @@ function AnalyticsContent({
 }: AnalyticsContentProps) {
   // useMemo must be called unconditionally before any early returns
   const manufacturerLookup = useMemo(
-    () => new Map((manufacturerStats?.manufacturers ?? []).map((m) => [m.name, m] as const)),
+    () => new Map((manufacturerStats?.manufacturers ?? []).map((m: any) => [m.name, m] as const)),
     [manufacturerStats?.manufacturers]
   );
 
@@ -2185,15 +2181,15 @@ function AnalyticsContent({
 
   // Calculate summary statistics
   const totalEquipment = allEquipment.length;
-  const activeEquipment = allEquipment.filter((eq) => eq.isActive).length;
+  const activeEquipment = allEquipment.filter((eq: any) => eq.isActive).length;
   const totalManufacturers = manufacturerStats.totalManufacturers;
   const avgTechLevel =
     totalEquipment > 0
-      ? allEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
+      ? allEquipment.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
       : 0;
 
   // Prepare chart data
-  const topEquipmentChartData = usageStats.topEquipment.map((eq) => ({
+  const topEquipmentChartData = usageStats.topEquipment.map((eq: any) => ({
     name: eq.name.length > 30 ? eq.name.substring(0, 30) + "..." : eq.name,
     fullName: eq.name,
     count: eq.usageCount,
@@ -2201,19 +2197,19 @@ function AnalyticsContent({
     manufacturer: eq.manufacturer ?? "Unknown",
   }));
 
-  const categoryChartData = usageStats.byCategory.map((cat) => ({
+  const categoryChartData = usageStats.byCategory.map((cat: any) => ({
     name: cat.category.charAt(0).toUpperCase() + cat.category.slice(1),
     value: cat._count.id,
     usage: cat._sum.usageCount || 0,
   }));
 
-  const eraChartData = usageStats.byEra.map((era) => ({
+  const eraChartData = usageStats.byEra.map((era: any) => ({
     name: era.era.toUpperCase().replace("-", " "),
     value: era._count.id,
     usage: era._sum.usageCount || 0,
   }));
 
-  const manufacturerChartData = usageStats.byManufacturer.slice(0, 10).map((mfr) => {
+  const manufacturerChartData = usageStats.byManufacturer.slice(0, 10).map((mfr: any) => {
     const details = manufacturerLookup.get(mfr.manufacturerName);
     const displayName =
       mfr.manufacturerName.length > 25
@@ -2233,10 +2229,10 @@ function AnalyticsContent({
   const eraOrder = ["wwi", "wwii", "cold-war", "modern", "future"];
   const techProgressionData = eraOrder
     .map((era) => {
-      const eraEquipment = allEquipment.filter((eq) => eq.era === era);
+      const eraEquipment = allEquipment.filter((eq: any) => eq.era === era);
       const avgTech =
         eraEquipment.length > 0
-          ? eraEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) /
+          ? eraEquipment.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) /
             eraEquipment.length
           : 0;
       return {
@@ -2249,8 +2245,8 @@ function AnalyticsContent({
 
   // Deprecation candidates (usageCount < 5)
   const deprecationCandidates = allEquipment
-    .filter((eq) => eq.isActive && eq.usageCount < 5)
-    .sort((a, b) => a.usageCount - b.usageCount)
+    .filter((eq: any) => eq.isActive && eq.usageCount < 5)
+    .sort((a: any, b: any) => a.usageCount - b.usageCount)
     .slice(0, 20);
 
   // Colors for charts (red theme)
@@ -2492,12 +2488,12 @@ function AnalyticsContent({
                   </tr>
                 </thead>
                 <tbody>
-                  {deprecationCandidates.map((equipment, index) => {
+                  {deprecationCandidates.map((equipment: any, index: number) => {
                     const manufacturerName =
-                      (equipment as CatalogEquipmentItem).manufacturer ?? "N/A";
+                      (equipment as any).manufacturer ?? "N/A";
                     const techLevel =
-                      (equipment as CatalogEquipmentItem).technologyLevel ??
-                      (equipment as CatalogEquipmentItem & { technologyTier?: number })
+                      (equipment as any).technologyLevel ??
+                      (equipment as any & { technologyTier?: number })
                         .technologyTier ??
                       null;
 

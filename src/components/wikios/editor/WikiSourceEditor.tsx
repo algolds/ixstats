@@ -17,10 +17,9 @@ import {
   drawSelection,
   rectangularSelection,
   Decoration,
-  DecorationSet,
   ViewPlugin,
-  ViewUpdate,
 } from "@codemirror/view";
+import type { DecorationSet, ViewUpdate } from "@codemirror/view";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
 import {
   defaultKeymap,

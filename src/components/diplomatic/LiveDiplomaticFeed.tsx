@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Virtuoso } from "react-virtuoso";
 import { cn } from "~/lib/utils";
 import { useCountryDiplomaticUpdates } from "~/hooks/useDiplomaticUpdates";

@@ -56,10 +56,14 @@ export function useArchetypes(era?: "modern" | "historical" | "all") {
 
   // Process archetypes with fallback logic
   const { archetypes, isUsingFallback } = useMemo(() => {
+    const list = Array.isArray(dbArchetypes)
+      ? dbArchetypes
+      : (dbArchetypes as any)?.archetypes;
+
     // Use database if available and not empty
-    if (dbArchetypes && dbArchetypes.length > 0) {
+    if (list && list.length > 0) {
       return {
-        archetypes: dbArchetypes,
+        archetypes: list as EconomicArchetype[],
         isUsingFallback: false,
       };
     }

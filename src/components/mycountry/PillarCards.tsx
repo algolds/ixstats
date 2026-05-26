@@ -47,11 +47,11 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
   );
 
   // Diplomacy data
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-  const { data: relations } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );

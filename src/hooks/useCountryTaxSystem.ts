@@ -13,7 +13,8 @@
 
 import { useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
-import type { TaxBuilderState, TaxCategory, TaxBracket } from "~/hooks/useTaxBuilderState";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { TaxCategoryInput, TaxBracketInput } from "~/types/tax-system";
 
 // Standard staleTime constants (in milliseconds)
 export const STALE_TIME = {
@@ -42,8 +43,8 @@ interface TaxSystemMetrics {
 interface UseCountryTaxSystemReturn {
   // Data
   taxSystemData: TaxBuilderState | null;
-  categories: TaxCategory[];
-  brackets: Record<string, TaxBracket[]>;
+  categories: TaxCategoryInput[];
+  brackets: Record<string, TaxBracketInput[]>;
 
   // Metrics
   metrics: TaxSystemMetrics;

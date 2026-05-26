@@ -23,7 +23,7 @@ export const GlobalActivityMarquee = memo(function GlobalActivityMarquee() {
   const { data: processedCountries = [], isLoading: countriesLoading } = useAllCountriesData({
     select: (data) => {
       const list = data?.countries ?? [];
-      return list.slice(0, 10).map((country) => ({
+      return list.slice(0, 10).map((country: any) => ({
         id: country.id,
         name: country.name,
         currentPopulation: country.currentPopulation ?? 0,

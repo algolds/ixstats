@@ -378,6 +378,7 @@ export function EconomyBuilderPage({
         console.log("[EconomyBuilder] Unregistered autosync from BuilderContext");
       };
     }
+    return;
   }, [countryId, syncNow, builderContext]);
 
   // Government Revenue Integration State
@@ -533,8 +534,8 @@ export function EconomyBuilderPage({
 
         // User-friendly notification
         notify.success(
-          `Auto-selected ${topComponents.length} economic components that synergize with your government structure`,
-          { duration: 4000 }
+          "Components Auto-Selected",
+          `Auto-selected ${topComponents.length} economic components that synergize with your government structure`
         );
       } else {
         console.log("[EconomyBuilder] No strong synergies found with government components");

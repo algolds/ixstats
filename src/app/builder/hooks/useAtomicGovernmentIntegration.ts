@@ -273,11 +273,11 @@ export function useAtomicGovernmentIntegration(
 
   // Clear errors and warnings
   const clearErrors = useCallback(() => {
-    atomicIntegrationService.clearUpdateQueue();
+    atomicIntegrationService.clearQueue();
   }, []);
 
   const clearWarnings = useCallback(() => {
-    atomicIntegrationService.clearUpdateQueue();
+    atomicIntegrationService.clearQueue();
   }, []);
 
   return {

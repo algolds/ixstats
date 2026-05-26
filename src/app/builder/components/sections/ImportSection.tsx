@@ -242,7 +242,7 @@ export const ImportSection = React.memo(function ImportSection({
     setTimeout(() => setSearchResults([]), 200);
 
     try {
-      let data: Record<string, unknown> | null;
+      let data: any;
 
       // All wikis use tRPC (server-side proxy)
       data = await parseInfoboxMutation.mutateAsync({
@@ -253,7 +253,7 @@ export const ImportSection = React.memo(function ImportSection({
       if (data?.flagUrl) setSelectedCountryFlag(data.flagUrl as string);
 
       if (data) {
-        setParsedData(data as ParsedCountryData);
+        setParsedData(data as unknown as ParsedCountryData);
       } else {
         setError("Could not parse data from this page.");
       }
@@ -317,11 +317,11 @@ export const ImportSection = React.memo(function ImportSection({
           if (enhancedData.economy.gdpNominal)
             (finalData as any).gdp_nominal = enhancedData.economy.gdpNominal.toString();
           if (enhancedData.economy.gdpPerCapita)
-            finalData.gdpPerCapita = enhancedData.economy.gdpPerCapita.toString();
+            (finalData as any).gdpPerCapita = enhancedData.economy.gdpPerCapita;
         }
         if (enhancedData.demographics) {
           if (enhancedData.demographics.population)
-            finalData.population = enhancedData.demographics.population.toString();
+            (finalData as any).population = enhancedData.demographics.population;
         }
       }
 

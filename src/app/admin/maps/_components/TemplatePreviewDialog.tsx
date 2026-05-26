@@ -29,7 +29,7 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
-  const { data, isLoading, error } = api.geo.downloadWorldTemplate.useQuery(
+  const { data, isLoading, error } = api.geoAdmin.downloadWorldTemplate.useQuery(
     { templateId },
     { refetchOnWindowFocus: false }
   );
@@ -59,7 +59,7 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
       projection: { type: "globe" },
       maxTileCacheSize: 50,
       fadeDuration: 0,
-    });
+    } as any);
 
     map.on("load", () => {
       // Add each layer type

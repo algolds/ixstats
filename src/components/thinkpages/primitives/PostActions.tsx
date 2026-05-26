@@ -276,6 +276,7 @@ export function PostActions({
       document.addEventListener("click", handleClickOutside);
       return () => document.removeEventListener("click", handleClickOutside);
     }
+    return;
   }, [showReactionPopup]);
 
   const utils = api.useUtils();

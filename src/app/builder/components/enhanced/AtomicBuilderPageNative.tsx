@@ -94,6 +94,7 @@ export function AtomicBuilderPageNative({
       const unsubscribe = stateManager.subscribe(setBuilderState);
       return unsubscribe;
     }
+    return;
   }, []); // Empty deps - subscribe once only
 
   // Generate country profile from inputs and reference country

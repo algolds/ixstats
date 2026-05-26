@@ -121,7 +121,7 @@ export function GlassCanvasComposer({
       { enabled: !!countryId, refetchOnWindowFocus: false }
     );
   const { data: diplomaticData, isLoading: isLoadingDiplomatic } =
-    api.diplomatic.getRelationships.useQuery(
+    api.diplomaticCore.getRelationships.useQuery(
       { countryId },
       { enabled: !!countryId, refetchOnWindowFocus: false }
     );

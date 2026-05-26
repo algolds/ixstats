@@ -120,6 +120,7 @@ export function NationalIdentitySection({
         unregisterAutoSync("nationalIdentity");
       };
     }
+    return;
   }, [countryId, autoSync.syncNow, registerAutoSync, unregisterAutoSync]);
 
   // Helper function to render autosave status

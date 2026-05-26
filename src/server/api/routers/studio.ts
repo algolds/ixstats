@@ -31,7 +31,7 @@ export const studioRouter = createTRPCRouter({
           .regex(/^[a-z0-9-]+$/),
         description: z.string().max(1000).optional(),
         seed: z.number().int().optional(),
-        generationParams: z.record(z.unknown()).optional(),
+        generationParams: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,9 +50,9 @@ export const studioRouter = createTRPCRouter({
           name: input.name,
           slug: input.slug,
           description: input.description,
-          ownerId: ctx.userId,
+          ownerId: ctx.auth!.userId,
           seed: input.seed,
-          generationParams: input.generationParams ?? undefined,
+          generationParams: (input.generationParams ?? undefined) as any,
           status: "draft",
         },
       });
@@ -75,7 +75,7 @@ export const studioRouter = createTRPCRouter({
   /** List realms for the current user */
   listMyRealms: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.realm.findMany({
-      where: { ownerId: ctx.userId },
+      where: { ownerId: ctx.auth!.userId },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -143,7 +143,7 @@ export const studioRouter = createTRPCRouter({
     }
 
     // Only owner can view private realms
-    if (realm.visibility === "private" && realm.ownerId !== ctx.userId) {
+    if (realm.visibility === "private" && realm.ownerId !== ctx.auth!.userId) {
       throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
     }
 
@@ -159,14 +159,14 @@ export const studioRouter = createTRPCRouter({
         description: z.string().max(1000).optional(),
         visibility: z.enum(["private", "unlisted", "public"]).optional(),
         status: z.enum(["draft", "generating", "active", "archived"]).optional(),
-        generationParams: z.record(z.unknown()).optional(),
+        generationParams: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const realm = await ctx.db.realm.findUnique({
         where: { id: input.id },
       });
-      if (!realm || realm.ownerId !== ctx.userId) {
+      if (!realm || realm.ownerId !== ctx.auth!.userId) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
@@ -175,7 +175,7 @@ export const studioRouter = createTRPCRouter({
         where: { id },
         data: {
           ...data,
-          generationParams: data.generationParams ?? undefined,
+          generationParams: (data.generationParams ?? undefined) as any,
         },
       });
     }),
@@ -187,7 +187,7 @@ export const studioRouter = createTRPCRouter({
       const realm = await ctx.db.realm.findUnique({
         where: { id: input.id },
       });
-      if (!realm || realm.ownerId !== ctx.userId) {
+      if (!realm || realm.ownerId !== ctx.auth!.userId) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
@@ -408,8 +408,8 @@ export const studioRouter = createTRPCRouter({
     .input(
       z.object({
         realmId: z.string(),
-        layers: z.record(z.unknown()),
-        stats: z.record(z.number()),
+        layers: z.record(z.string(), z.unknown()),
+        stats: z.record(z.string(), z.number()),
         seed: z.number().int(),
       })
     )
@@ -417,7 +417,7 @@ export const studioRouter = createTRPCRouter({
       const realm = await ctx.db.realm.findUnique({
         where: { id: input.realmId },
       });
-      if (!realm || realm.ownerId !== ctx.userId) {
+      if (!realm || realm.ownerId !== ctx.auth!.userId) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
@@ -451,7 +451,7 @@ export const studioRouter = createTRPCRouter({
       });
 
       // Create countries from political features
-      const countries = [];
+      const countries: any[] = [];
       for (const feature of political.features) {
         const props = feature.properties ?? {};
         const name = props.displayName ?? props.featureId ?? `Country-${countries.length}`;
@@ -472,7 +472,7 @@ export const studioRouter = createTRPCRouter({
             economicTier: "Tier 3",
             populationTier: "Small",
             landArea: props.areaKm2 ?? 0,
-            geometry: feature.geometry as object,
+            geometry: (feature.geometry as object) ?? undefined,
             coastlineKm: (props.coastalPerimeter ?? 0) * 1000,
           },
         });
@@ -492,13 +492,13 @@ export const studioRouter = createTRPCRouter({
       await ctx.db.worldTemplate.create({
         data: {
           name: `${realm.name} - Generated`,
-          createdBy: ctx.userId,
-          layers: input.layers as object,
+          createdBy: ctx.auth!.userId,
+          layers: input.layers as any,
           metadata: {
             seed: input.seed,
             stats: input.stats,
             generatedAt: new Date().toISOString(),
-          },
+          } as any,
           countries: countries.map((c) => ({
             id: c.id,
             name: c.name,

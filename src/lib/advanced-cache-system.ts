@@ -184,7 +184,7 @@ export class AdvancedCacheSystem {
       const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
 
       // Always set in memory cache
-      this.memoryCache.set(key, value, ttl * 1000);
+      this.memoryCache.set(key, value, (ttl * 1000) as number);
 
       // Set in Redis for critical and standard tiers (unless skipped)
       if (!skipRedis && (tier === "critical" || tier === "standard")) {

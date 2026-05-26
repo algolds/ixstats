@@ -242,7 +242,7 @@ function ManualLinkEditorSection() {
   const selectedCountry = countries.find((c) => c.id === selectedCountryId);
 
   const wikiIntroQuery = api.wiki.getIntro.useQuery(
-    { title: wikiPageTitle, source: wikiSource },
+    { title: wikiPageTitle, wiki: wikiSource },
     { enabled: false }
   );
   const notify = useNotify();
@@ -260,14 +260,14 @@ function ManualLinkEditorSection() {
     setIsTesting(true);
     setTestResult(null);
     try {
-      const result = await wikiIntroQuery.refetch();
+      const result = (await wikiIntroQuery.refetch()) as any;
       if (result.data) {
         setTestResult({
           success: true,
           intro:
             typeof result.data === "string"
               ? result.data
-              : ((result.data as any)?.intro ?? "Article found"),
+              : (result.data.text ?? "Article found"),
         });
       } else {
         setTestResult({ success: false });
@@ -530,7 +530,7 @@ function BulkScannerSection() {
           links: chunk.map((r) => ({
             countryId: r.countryId,
             wikiPageTitle: r.matchedTitle,
-            wikiSource: r.source,
+            wikiSource: r.source as "ixwiki" | "iiwiki",
           })),
         });
       }

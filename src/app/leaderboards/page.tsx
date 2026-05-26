@@ -34,7 +34,7 @@ export default function LeaderboardsPage() {
 
   // Get diplomatic influence leaderboard
   const { data: diplomaticLeaderboard, isLoading: diplomaticLoading } =
-    api.diplomatic.getInfluenceLeaderboard.useQuery();
+    api.diplomaticCore.getInfluenceLeaderboard.useQuery();
 
   const metrics = [
     { id: "gdp", name: "Total GDP", icon: TrendingUp, format: formatCurrency },
@@ -151,7 +151,7 @@ export default function LeaderboardsPage() {
           <CardContent>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
               {metrics.map((metric) => {
-                const metricData = getLeaderboardData();
+                const metricData = leaderboardData;
                 const rank =
                   metricData.findIndex(
                     (item: { id: string }) => item.id === userProfile.countryId

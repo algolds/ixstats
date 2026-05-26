@@ -57,20 +57,20 @@ export function SvgProcessingDialog({
 
   const utils = api.useUtils();
 
-  const processMutation = api.geo.processSvgUpload.useMutation({
+  const processMutation = api.geoAdmin.processSvgUpload.useMutation({
     onSuccess: (data) => setProcessResult(data),
   });
 
-  const previewQuery = api.geo.previewSvgUpload.useQuery(
+  const previewQuery = api.geoAdmin.previewSvgUpload.useQuery(
     { uploadId: uploadId ?? "" },
     { enabled: showPreview && !!uploadId && !!processResult }
   );
 
-  const commitMutation = api.geo.commitSvgUpload.useMutation({
+  const commitMutation = api.geoAdmin.commitSvgUpload.useMutation({
     onSuccess: () => {
-      utils.geo.getMapStats.invalidate();
-      utils.geo.getSvgUploadHistory.invalidate();
-      utils.geo.getWorldMap.invalidate();
+      utils.geoCore.getMapStats.invalidate();
+      utils.geoAdmin.getSvgUploadHistory.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
       onCommitted();
     },
   });

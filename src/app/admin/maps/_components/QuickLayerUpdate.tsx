@@ -103,8 +103,8 @@ export function QuickLayerUpdate() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
 
-  const processMutation = api.geo.processSvgUpload.useMutation();
-  const commitMutation = api.geo.commitSvgUpload.useMutation();
+  const processMutation = api.geoAdmin.processSvgUpload.useMutation();
+  const commitMutation = api.geoAdmin.commitSvgUpload.useMutation();
 
   const reset = useCallback(() => {
     setStage("select");
@@ -187,12 +187,16 @@ export function QuickLayerUpdate() {
       await commitMutation.mutateAsync({ uploadId: result.uploadId });
       setStage("done");
       // Invalidate all geo caches
-      await utils.geo.invalidate();
+      await Promise.all([
+        utils.geoCore.invalidate(),
+        utils.geoFeatures.invalidate(),
+        utils.geoEditor.invalidate(),
+      ]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Commit failed");
       setStage("review");
     }
-  }, [result, commitMutation, utils.geo]);
+  }, [result, commitMutation, utils.geoCore, utils.geoFeatures, utils.geoEditor]);
 
   // Drag-and-drop handlers
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -506,7 +510,7 @@ function DiffBadge({
   count,
   color,
 }: {
-  icon: React.ElementType;
+  icon: any;
   label: string;
   count: number;
   color: string;

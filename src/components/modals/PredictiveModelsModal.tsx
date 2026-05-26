@@ -102,7 +102,7 @@ export function PredictiveModelsModal({
 
   // Get predictive models
   const { data: predictiveModels, isLoading: modelsLoading } =
-    api.unifiedIntelligence.getPredictiveModels.useQuery(
+    api.intelAnalytics.getPredictiveModels.useQuery(
       {
         countryId: countryId || "disabled",
         timeframe: "5_years",

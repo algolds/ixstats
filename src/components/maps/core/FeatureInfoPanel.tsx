@@ -42,7 +42,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
   onOpenStoryModal,
 }: FeatureInfoPanelProps) {
   // Fetch wiki intro on demand (only if wikiPageTitle is set)
-  const { data: wikiIntro, isLoading: wikiLoading } = api.geo.getFeatureWikiIntro.useQuery(
+  const { data: wikiIntro, isLoading: wikiLoading } = api.geoWiki.getFeatureWikiIntro.useQuery(
     { wikiPageTitle: feature.wikiPageTitle! },
     {
       enabled: !!feature.wikiPageTitle,

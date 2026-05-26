@@ -19,7 +19,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import type { RouterOutputs } from "~/trpc/react";
+
 
 interface ReactionsDialogProps {
   postId: string;
@@ -104,7 +104,7 @@ export function ReactionsDialog({
   const apiDiscordEmojis = discordEmojisData?.emojis;
 
   // Group reactions by type
-  type PostReaction = RouterOutputs["thinkpages"]["getPostReactions"][number];
+  type PostReaction = any;
   const reactionsByType = React.useMemo(() => {
     if (!allReactions) return {} as Record<string, PostReaction[]>;
     return allReactions.reduce(

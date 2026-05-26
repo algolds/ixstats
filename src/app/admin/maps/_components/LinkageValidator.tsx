@@ -13,24 +13,24 @@ export function LinkageValidator() {
   const [tab, setTab] = useState<"issues" | "linked" | "unlinked">("issues");
   const utils = api.useUtils();
 
-  const { data, isLoading, error, refetch } = api.geo.validateLinkage.useQuery(undefined, {
+  const { data, isLoading, error, refetch } = api.geoEditor.validateLinkage.useQuery(undefined, {
     staleTime: 10_000,
     retry: false,
   });
 
-  const syncMutation = api.geo.repairLinkage.useMutation({
+  const syncMutation = api.geoEditor.repairLinkage.useMutation({
     onSuccess: () => {
-      utils.geo.validateLinkage.invalidate();
-      utils.geo.listCountries.invalidate();
-      utils.geo.getWorldMap.invalidate();
+      utils.geoEditor.validateLinkage.invalidate();
+      utils.geoCore.listCountries.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
     },
   });
 
-  const autoMatchMutation = api.geo.repairLinkage.useMutation({
+  const autoMatchMutation = api.geoEditor.repairLinkage.useMutation({
     onSuccess: () => {
-      utils.geo.validateLinkage.invalidate();
-      utils.geo.listCountries.invalidate();
-      utils.geo.getWorldMap.invalidate();
+      utils.geoEditor.validateLinkage.invalidate();
+      utils.geoCore.listCountries.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
     },
   });
 

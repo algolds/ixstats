@@ -82,7 +82,7 @@ export function MapSearchOverlay({
 
   const debouncedQuery = useDebounce(query.trim(), 250);
 
-  const { data: results, isLoading } = api.geo.searchFeatures.useQuery(
+  const { data: results, isLoading } = api.geoCore.searchFeatures.useQuery(
     { query: debouncedQuery, limit: 20 },
     { enabled: debouncedQuery.length >= 2, staleTime: 30_000 }
   );

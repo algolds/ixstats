@@ -3,7 +3,7 @@
 ## Critical Constraints
 
 - **Package manager**: `bun` (never npm/yarn/pnpm). Lockfile: `bun.lock`.
-- **NEVER run global `tsc --noEmit`** — 236 Prisma models + 813+ components + 1205 tRPC endpoints will exhaust server memory (7.2GB total, 4GB Node heap). Use IDE TypeScript or `bun run dev` for incremental checking.
+- **Global typechecking is split into sub-projects.** Use `bun run typecheck` to sequentially run all checks, or check individual sub-projects like `typecheck:ui` or `typecheck:server`. The scripts run with predefined safe heap bounds (`--max-old-space-size=6144` or `4096`) to prevent OOM on 8GB host servers.
 - **Database write commands are blocked**: `db:migrate`, `db:push`, `db:reset` exit with error to protect 82 nations of production data. Use `db:migrate:force` or `db:push:force` only when explicitly intended.
 - **Active branch**: `v2`.
 
@@ -29,11 +29,15 @@ bun run test:watch             # Jest watch mode
 bun run test -- <path-or-pattern>   # e.g. bun run test -- src/lib/foo.test.ts
 ```
 
-### Focused typecheck (safe)
+### Typecheck commands
 ```bash
-bun run typecheck:file path/to/file.ts   # single file only
-bun run typecheck:components             # tsconfig.components.json (892 component files)
-bun run typecheck:server                 # tsconfig.server.json (100 server files)
+bun run typecheck                       # sequentially checks ui, server, trpc, and db sub-projects
+bun run typecheck:ui                    # frontend client-side pages, hooks, components (6144MB heap)
+bun run typecheck:server                # backend routers, databases, libs (6144MB heap)
+bun run typecheck:trpc                  # core tRPC types and router definitions (4096MB heap)
+bun run typecheck:db                    # Prisma client connections and database helpers (4096MB heap)
+bun run typecheck:file path/to/file.ts  # single file typecheck using safe defaults (6144MB heap)
+bun run typecheck:diag                  # run diagnostics on global tsconfig (6144MB heap)
 ```
 
 ### TypeScript Performance & Profiling

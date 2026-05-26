@@ -82,7 +82,7 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
     data: layerData,
     isLoading: queryLoading,
     error,
-  } = api.geo.getWorldMap.useQuery(
+  } = api.geoCore.getWorldMap.useQuery(
     {
       layers: allRequestedLayers,
       zoom:
@@ -168,13 +168,13 @@ export function useMapPrefetch() {
 
   useEffect(() => {
     // Fire-and-forget prefetch using batched bundle endpoint (single request)
-    utils.geo.getMapBundle.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
+    utils.geoCore.getMapBundle.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
     // Also prefetch individual endpoints for backward compatibility with non-batched consumers
-    utils.geo.getWorldMap.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
+    utils.geoCore.getWorldMap.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After political layer is available, warm ALL per-country data
-  const { data: worldMap } = api.geo.getWorldMap.useQuery(
+  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
     { layers: ALL_PREFETCH_LAYERS },
     { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current }
   );

@@ -82,7 +82,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentTy
     [ComponentType.REGIONAL_DEVELOPMENT]: 0.75,
   },
 
-  large: {
+  medium: {
     [ComponentType.CENTRALIZED_POWER]: 0.6,
     [ComponentType.FEDERAL_SYSTEM]: 0.5,
     [ComponentType.CONFEDERATE_SYSTEM]: 0.3,

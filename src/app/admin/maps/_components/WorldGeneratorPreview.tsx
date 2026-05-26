@@ -75,7 +75,7 @@ export const WorldGeneratorPreview = React.memo(function WorldGeneratorPreview({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const sourcesReady = useRef(false);
 
-  const { data } = api.geo.getProceduralWorldPreview.useQuery(
+  const { data } = api.geoEditor.getProceduralWorldPreview.useQuery(
     { worldId: worldId! },
     { enabled: !!worldId && !directLayers, refetchOnWindowFocus: false }
   );

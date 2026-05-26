@@ -148,10 +148,10 @@ export default function MapEditorOverlay({
 
   // Admin mutations (only used in forge mode)
   const generateTransport = api.transport.generateRoutes.useMutation();
-  const recalculateGeo = api.geo.recalculateGeoProfiles.useMutation();
+  const recalculateGeo = api.geoCore.recalculateGeoProfiles.useMutation();
 
   // Simplify all regions (available to country owner)
-  const simplifyAll = api.geo.simplifySubdivisions.useMutation({
+  const simplifyAll = api.geoFeatures.simplifySubdivisions.useMutation({
     onSuccess: () => {
       editor.refetchFeatures();
     },
@@ -161,16 +161,16 @@ export default function MapEditorOverlay({
   const importer = useProvinceImporter(countryId);
 
   // Wiki scanner — link features to wiki pages
-  const updateCityWiki = api.geo.updateCity.useMutation({
+  const updateCityWiki = api.geoFeatures.updateCity.useMutation({
     onSuccess: () => editor.refetchFeatures(),
   });
-  const updatePOIWiki = api.geo.updatePOI.useMutation({
+  const updatePOIWiki = api.geoFeatures.updatePOI.useMutation({
     onSuccess: () => editor.refetchFeatures(),
   });
-  const updateStoryPinWiki = api.geo.updateStoryPin.useMutation({
+  const updateStoryPinWiki = api.geoFeatures.updateStoryPin.useMutation({
     onSuccess: () => editor.refetchFeatures(),
   });
-  const updateMapLabelWiki = api.geo.updateMapLabel.useMutation({
+  const updateMapLabelWiki = api.geoFeatures.updateMapLabel.useMutation({
     onSuccess: () => editor.refetchFeatures(),
   });
 
@@ -253,7 +253,7 @@ export default function MapEditorOverlay({
   );
 
   // Paint mode: fetch subdivision stats
-  const { data: subdivisionStats } = api.geo.getSubdivisionStats.useQuery(
+  const { data: subdivisionStats } = api.geoFeatures.getSubdivisionStats.useQuery(
     { countryId },
     { enabled: editor.mode === "paint", staleTime: 60_000 }
   );
@@ -308,7 +308,7 @@ export default function MapEditorOverlay({
     return () => clearTimeout(timer);
   }, [cursorCoords]);
 
-  const { data: cursorTerrainInfo } = api.geo.getPointInfo.useQuery(
+  const { data: cursorTerrainInfo } = api.geoCore.getPointInfo.useQuery(
     { lng: debouncedCoords?.[0] ?? 0, lat: debouncedCoords?.[1] ?? 0 },
     { enabled: !!debouncedCoords, staleTime: 30_000, gcTime: 60_000 }
   );

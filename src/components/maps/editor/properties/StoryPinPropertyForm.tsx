@@ -356,18 +356,18 @@ function StorylineSelector({
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
-  const { data: storylines } = api.geo.getStorylinesByCountry.useQuery(
+  const { data: storylines } = api.geoFeatures.getStorylinesByCountry.useQuery(
     { countryId },
     { staleTime: 60_000, enabled: !!countryId }
   );
 
   const utils = api.useUtils();
-  const createStoryline = api.geo.createStoryline.useMutation({
+  const createStoryline = api.geoFeatures.createStoryline.useMutation({
     onSuccess: (created) => {
       onChangeId(created.id);
       setShowCreate(false);
       setNewTitle("");
-      utils.geo.getStorylinesByCountry.invalidate({ countryId });
+      utils.geoFeatures.getStorylinesByCountry.invalidate({ countryId });
     },
   });
 

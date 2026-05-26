@@ -22,15 +22,15 @@ interface LogEntry {
  * embassies established, relations formed, foreign policies enacted.
  */
 export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProps) {
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
-  const { data: relations } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
-  const { data: foreignPolicies } = api.diplomatic.getActiveForeignPolicies.useQuery(
+  const { data: foreignPolicies } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );

@@ -144,7 +144,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
           // Normal mode: use centralized user management service to ensure correct role
           if (VERBOSE)
             console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
-          const userService = new UserManagementService(db);
+          const userService = new UserManagementService(db as any);
           user = await userService.getOrCreateUser(auth.userId);
           if (user) {
             setCachedUserContext(auth.userId, user);

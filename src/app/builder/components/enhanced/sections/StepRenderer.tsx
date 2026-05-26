@@ -644,10 +644,10 @@ export const StepRenderer = memo(function StepRenderer({
           countryId={builderState.selectedCountry?.countryCode}
           showAdvanced={builderState.showAdvancedMode}
           persistedEconomyBuilder={builderState.economyBuilderState}
-          onPersistEconomyBuilder={(economyBuilderState) => {
+          onPersistEconomyBuilder={(economyBuilderState: any) => {
             setBuilderState((prev) => ({ ...prev, economyBuilderState }));
           }}
-          onPersistTaxSystem={(taxSystemDraft) => {
+          onPersistTaxSystem={(taxSystemDraft: any) => {
             setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
           }}
         />

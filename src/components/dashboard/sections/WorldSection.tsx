@@ -56,7 +56,7 @@ export function WorldSection() {
   // Crisis data
   const { data: activeCrises } = api.crisisEvents.getActive.useQuery({ limit: 10 });
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
-  const { data: leaderboard } = api.diplomatic.getInfluenceLeaderboard.useQuery();
+  const { data: leaderboard } = api.diplomaticCore.getInfluenceLeaderboard.useQuery();
 
   // Global economics
   const { data: globalStats } = api.countries.getGlobalStats.useQuery({});

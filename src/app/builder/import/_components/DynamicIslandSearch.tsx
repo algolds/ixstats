@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { IconSwap, IconSwapItem } from "~/components/icon-swap";
+import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
 
 // ─── Types ───
 
@@ -40,11 +41,7 @@ interface SearchResult {
   government?: string;
 }
 
-interface ParsedCountryData {
-  wikiIntro?: string;
-  flagUrl?: string | null;
-  [key: string]: unknown;
-}
+type ParsedCountryData = UnifiedInfoboxData;
 
 const logoMap: Record<string, string> = {
   ixwiki: "/images/ix-logo.svg",
@@ -57,7 +54,7 @@ const logoMap: Record<string, string> = {
 interface DynamicIslandSearchProps {
   selectedSite: WikiSite;
   wikiSites: WikiSite[];
-  onSelectSite: (site: WikiSite) => void;
+  onSelectSite: (site: any) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   isSearching: boolean;

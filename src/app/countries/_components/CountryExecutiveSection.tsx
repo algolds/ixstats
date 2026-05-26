@@ -43,32 +43,32 @@ export function CountryExecutiveSection({
 
   // Get unified intelligence data for this country
   const { data: cabinetMeetings, isLoading: meetingsLoading } =
-    api.unifiedIntelligence.getCabinetMeetings.useQuery(
+    api.intelCore.getCabinetMeetings.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
   const { data: economicPolicies, isLoading: policiesLoading } =
-    api.unifiedIntelligence.getEconomicPolicies.useQuery(
+    api.intelAnalytics.getEconomicPolicies.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
   const { data: strategicPlans, isLoading: plansLoading } =
-    api.unifiedIntelligence.getStrategicPlans.useQuery(
+    api.intelCore.getStrategicPlans.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
   const { data: securityThreats, isLoading: threatsLoading } =
-    api.unifiedIntelligence.getSecurityThreats.useQuery(
+    api.intelAlerts.getSecurityThreats.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
   const { data: realTimeMetrics, isLoading: metricsLoading } =
-    api.unifiedIntelligence.getRealTimeMetrics.useQuery(
+    api.intelAnalytics.getRealTimeMetrics.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
   const { data: aiRecommendations, isLoading: aiLoading } =
-    api.unifiedIntelligence.getAIRecommendations.useQuery(
+    api.intelAnalytics.getAIRecommendations.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );

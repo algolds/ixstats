@@ -76,13 +76,13 @@ export function CabinetMeetingModal({
     data: meetings,
     isLoading: meetingsLoading,
     refetch,
-  } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
+  } = api.intelCore.getCabinetMeetings.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId && open }
   );
 
   // Create meeting mutation
-  const createMeeting = api.unifiedIntelligence.createCabinetMeeting.useMutation({
+  const createMeeting = api.intelCore.createCabinetMeeting.useMutation({
     onSuccess: () => {
       notify.success("Cabinet meeting scheduled successfully!");
       setOpen(false);

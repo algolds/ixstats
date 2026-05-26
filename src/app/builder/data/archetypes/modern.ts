@@ -39,7 +39,6 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
         EconomicComponentType.VENTURE_CAPITAL,
       ],
       governmentComponents: [
-        ComponentType.MINIMAL_GOVERNMENT,
         ComponentType.PRIVATE_SECTOR_LEADERSHIP,
         ComponentType.DEMOCRATIC_PROCESS,
         ComponentType.FEDERAL_SYSTEM,

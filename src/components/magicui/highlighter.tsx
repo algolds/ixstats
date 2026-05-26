@@ -60,6 +60,7 @@ export function Highlighter({
         }
       };
     }
+    return;
   }, [action, color, strokeWidth, animationDuration, iterations, padding, multiline]);
 
   return (

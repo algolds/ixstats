@@ -178,7 +178,7 @@ export function transformToExecutiveIntelligence(
       urgentActions,
       vitalityIntelligence,
       // executiveSummary removed as it's not part of ExecutiveIntelligence interface
-    } as ExecutiveIntelligence;
+    } as unknown as ExecutiveIntelligence;
   } catch (error) {
     console.error("Failed to transform economic data to executive intelligence:", error);
 
@@ -191,7 +191,7 @@ export function transformToExecutiveIntelligence(
       urgentActions: [],
       vitalityIntelligence: [],
       // executiveSummary removed as it's not part of ExecutiveIntelligence interface
-    } as ExecutiveIntelligence;
+    } as unknown as ExecutiveIntelligence;
   }
 }
 

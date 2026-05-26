@@ -103,14 +103,14 @@ export function AIAdvisorModal({ isOpen, onClose, countryId, countryName }: AIAd
 
   // Get AI recommendations
   const { data: aiRecommendations, isLoading: recommendationsLoading } =
-    api.unifiedIntelligence.getAIRecommendations.useQuery(
+    api.intelAnalytics.getAIRecommendations.useQuery(
       { countryId: countryId },
       { enabled: isOpen && !!countryId }
     );
 
   // Get advanced analytics for context
   const { data: advancedAnalytics, isLoading: analyticsLoading } =
-    api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+    api.intelAnalytics.getAdvancedAnalytics.useQuery(
       { countryId: countryId },
       { enabled: isOpen && !!countryId }
     );

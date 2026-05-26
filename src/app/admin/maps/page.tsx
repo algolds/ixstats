@@ -84,7 +84,7 @@ export default function AdminMapsPage() {
   usePageTitle({ title: "Admin - World Map" });
   const [activeTab, setActiveTab] = useState<TabId>("pipeline");
 
-  const { data: stats, isLoading } = api.geo.getMapStats.useQuery(undefined, {
+  const { data: stats, isLoading } = api.geoCore.getMapStats.useQuery(undefined, {
     refetchInterval: 30000,
     refetchOnWindowFocus: false,
   });

@@ -85,13 +85,13 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   const { showSharedData, closeModal: closeSharedDataModal } = useSharedDataModal();
 
   // Relations data
-  const { data: relations } = api.diplomatic.getRelationships.useQuery(
+  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
   // Alliances data
-  const { data: alliances, refetch: refetchAlliances } = api.diplomatic.getAlliances.useQuery(
+  const { data: alliances, refetch: refetchAlliances } = api.diplomaticPolicies.getAlliances.useQuery(
     { countryId },
     { enabled: !!countryId }
   );

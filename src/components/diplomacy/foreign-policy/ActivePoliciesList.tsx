@@ -64,12 +64,12 @@ const ACTION_CONFIG: Record<
 export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
   const [showExpired, setShowExpired] = useState(false);
 
-  const { data: policies, refetch } = api.diplomatic.getActiveForeignPolicies.useQuery(
+  const { data: policies, refetch } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId, includeExpired: showExpired },
     { enabled: !!countryId }
   );
 
-  const liftMutation = api.diplomatic.liftForeignPolicyAction.useMutation({
+  const liftMutation = api.diplomaticPolicies.liftForeignPolicyAction.useMutation({
     onSuccess: () => void refetch(),
   });
 

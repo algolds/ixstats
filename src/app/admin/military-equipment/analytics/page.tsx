@@ -15,13 +15,10 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { Loader2, Shield, Activity, Factory, TrendingUp, AlertTriangle } from "lucide-react";
 
-type UsageStats = RouterOutputs["militaryEquipment"]["getEquipmentUsageStats"];
-type ManufacturerStats = RouterOutputs["militaryEquipment"]["getManufacturerStats"];
-type CatalogEquipment = RouterOutputs["militaryEquipment"]["getAllCatalogEquipment"];
-type CatalogEquipmentItem = CatalogEquipment extends Array<infer Item> ? Item : never;
+
 
 /**
  * Military Equipment Analytics Dashboard
@@ -112,13 +109,13 @@ export default function MilitaryEquipmentAnalyticsPage() {
     manufacturer: eq.manufacturer ?? "Unknown",
   }));
 
-  const categoryChartData = usageStats.byCategory.map((cat) => ({
+  const categoryChartData = usageStats.byCategory.map((cat: any) => ({
     name: cat.category.charAt(0).toUpperCase() + cat.category.slice(1),
     value: cat._count.id,
     usage: cat._sum.usageCount || 0,
   }));
 
-  const eraChartData = usageStats.byEra.map((era) => ({
+  const eraChartData = usageStats.byEra.map((era: any) => ({
     name: era.era.toUpperCase().replace("-", " "),
     value: era._count.id,
     usage: era._sum.usageCount || 0,
@@ -405,11 +402,10 @@ export default function MilitaryEquipmentAnalyticsPage() {
                 <tbody>
                   {deprecationCandidates.map((equipment, index) => {
                     const manufacturerName =
-                      (equipment as CatalogEquipmentItem).manufacturer ?? "N/A";
+                      (equipment as any).manufacturer ?? "N/A";
                     const techLevel =
-                      (equipment as CatalogEquipmentItem).technologyLevel ??
-                      (equipment as CatalogEquipmentItem & { technologyTier?: number })
-                        .technologyTier ??
+                      (equipment as any).technologyLevel ??
+                      (equipment as any).technologyTier ??
                       null;
 
                     return (

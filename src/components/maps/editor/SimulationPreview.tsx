@@ -18,7 +18,7 @@ interface SimulationPreviewProps {
 }
 
 export function SimulationPreview({ countryId, visible }: SimulationPreviewProps) {
-  const { data: profile } = api.geo.getCountryGeoProfile.useQuery(
+  const { data: profile } = api.geoCore.getCountryGeoProfile.useQuery(
     { countryId },
     { enabled: visible, staleTime: 60_000 }
   );

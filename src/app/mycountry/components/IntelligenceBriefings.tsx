@@ -509,17 +509,17 @@ export function IntelligenceBriefings({
   );
 
   // Fetch diplomatic data for briefings
-  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
+  const { data: diplomaticRelations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId }
   );
 
-  const { data: recentDiplomaticChanges } = api.diplomatic.getRecentChanges.useQuery(
+  const { data: recentDiplomaticChanges } = api.diplomaticCore.getRecentChanges.useQuery(
     { countryId: countryId!, hours: 48 },
     { enabled: !!countryId }
   );
 
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId }
   );

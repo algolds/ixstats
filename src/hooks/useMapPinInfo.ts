@@ -23,7 +23,7 @@ export function useMapPinInfo() {
   const [clientResult, setClientResult] = useState<ClientPointQueryResult | null>(null);
 
   // Server-side enrichment query — only fires when pin is placed
-  const serverQuery = api.geo.getPointInfo.useQuery(
+  const serverQuery = api.geoCore.getPointInfo.useQuery(
     { lng: pinPosition?.lng ?? 0, lat: pinPosition?.lat ?? 0 },
     { enabled: !!pinPosition }
   );

@@ -103,11 +103,11 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const [state, setState] = useState<BorderEditorState>(INITIAL_STATE);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startSession = api.geo.startBorderEditSession.useMutation();
-  const saveDraft = api.geo.saveBorderEditDraft.useMutation();
-  const submitBorderEdit = api.geo.submitBorderEdit.useMutation();
-  const splitCountry = api.geo.splitCountry.useMutation();
-  const mergeCountries = api.geo.mergeCountries.useMutation();
+  const startSession = api.geoEditor.startBorderEditSession.useMutation();
+  const saveDraft = api.geoEditor.saveBorderEditDraft.useMutation();
+  const submitBorderEdit = api.geoEditor.submitBorderEdit.useMutation();
+  const splitCountry = api.geoEditor.splitCountry.useMutation();
+  const mergeCountries = api.geoEditor.mergeCountries.useMutation();
   const utils = api.useUtils();
   const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
   // Keep saveDraft in a ref to avoid resetting the auto-save timer on every render
@@ -384,7 +384,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       });
 
       if (result.applied) {
-        await utils.geo.getWorldMap.invalidate();
+        await utils.geoCore.getWorldMap.invalidate();
         setState((s) => ({
           ...s,
           originalGeometry: s.geometry,
@@ -411,7 +411,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         nameB,
       });
 
-      await utils.geo.getWorldMap.invalidate();
+      await utils.geoCore.getWorldMap.invalidate();
       setState(INITIAL_STATE);
     },
     [state.featureId, state.splitLine, splitCountry, utils]
@@ -428,7 +428,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         newName,
       });
 
-      await utils.geo.getWorldMap.invalidate();
+      await utils.geoCore.getWorldMap.invalidate();
       setState(INITIAL_STATE);
     },
     [state.featureId, state.mergeTargets, mergeCountries, utils]

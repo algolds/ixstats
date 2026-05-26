@@ -35,8 +35,7 @@ export function CountryAdminPanel() {
   } | null>(null);
 
   // Mutation for updating country
-  const updateMutation = api.countries.updateCountryName.useMutation();
-  const updateVisibilityMutation = api.countries.updateProfileVisibility.useMutation();
+  const updateMutation = api.countries.update.useMutation();
 
   // Prepare country list
   const countries = useMemo(() => {
@@ -76,9 +75,15 @@ export function CountryAdminPanel() {
     if (!editId) return;
     setSaveStatus({ id: editId, status: "saving" });
     try {
+      const { name, continent, region, currentPopulation, currentGdpPerCapita, currentTotalGdp } = editData;
       await updateMutation.mutateAsync({
-        countryId: editId,
-        ...editData,
+        id: editId,
+        name,
+        continent,
+        region,
+        currentPopulation,
+        currentGdpPerCapita,
+        currentTotalGdp,
       });
       setSaveStatus({ id: editId, status: "success" });
       setEditId(null);
@@ -95,8 +100,8 @@ export function CountryAdminPanel() {
     currentValue: boolean
   ) => {
     try {
-      await updateVisibilityMutation.mutateAsync({
-        countryId,
+      await updateMutation.mutateAsync({
+        id: countryId,
         [field]: !currentValue,
       });
       notify.success("Profile visibility updated");
@@ -295,7 +300,7 @@ export function CountryAdminPanel() {
                           country.hideDiplomaticOps || false
                         )
                       }
-                      disabled={updateVisibilityMutation.isPending}
+                      disabled={updateMutation.isPending}
                       title="Hide Diplomatic Operations tab"
                     />
                   </td>
@@ -309,7 +314,7 @@ export function CountryAdminPanel() {
                           country.hideStratcommIntel || false
                         )
                       }
-                      disabled={updateVisibilityMutation.isPending}
+                      disabled={updateMutation.isPending}
                       title="Hide StratComm Intelligence tab"
                     />
                   </td>
