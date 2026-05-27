@@ -13,41 +13,13 @@ import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-
-function MiniProgressCircle({
-  progress,
-  colorClass = "stroke-purple-500",
-}: {
-  progress: number;
-  colorClass?: string;
-}) {
-  const radius = 6;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference;
-  return (
-    <svg className="h-4 w-4 -rotate-90 transform shrink-0" viewBox="0 0 16 16">
-      <circle
-        cx="8"
-        cy="8"
-        r={radius}
-        fill="none"
-        className="stroke-slate-200 dark:stroke-slate-800"
-        strokeWidth="1.8"
-      />
-      <circle
-        cx="8"
-        cy="8"
-        r={radius}
-        fill="none"
-        className={colorClass}
-        strokeWidth="1.8"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+import { cn } from "~/lib/utils";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 
 export function VaultWidget() {
   const { userId } = useAuth();
@@ -93,23 +65,31 @@ export function VaultWidget() {
   }
 
   return (
-    <div className="glass-hierarchy-child overflow-hidden rounded-xl border border-yellow-500/30 p-2.5 backdrop-blur-md dark:border-yellow-500/15">
-      <div className="mb-2 flex items-center gap-1.5">
-        <svg
-          className="h-3.5 w-3.5 text-yellow-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-        <span className="text-xs font-semibold">MyVault</span>
+    <CutoutCard className={cn(cutoutCardSurfaceClassName, "rounded-xl overflow-hidden")}
+      trackPointerHover={false}
+    >
+      {/* Cutout tab header */}
+      <div className="relative bg-yellow-500/10 px-2.5 pt-2.5 pb-4">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-card-foreground">
+          <svg
+            className="h-3.5 w-3.5 text-yellow-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+          MyVault
+        </div>
+        <CutoutCorner className="absolute -bottom-px left-0 text-card" size={16} />
+        <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={16} />
       </div>
+      <CutoutCardContent className="space-y-2.5 p-2.5 pt-1">
 
       <div className="space-y-2.5">
         {/* Balance */}
@@ -220,20 +200,28 @@ export function VaultWidget() {
           </div>
         )}
 
-        {/* Vault Level */}
+        {/* Vault Level — compact inline */}
         {balanceData && (
-          <div className="flex items-center justify-between text-[8px] bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/15 dark:border-purple-500/10 rounded-md px-1.5 py-1">
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground font-medium">Vault:</span>
-              <span className="font-bold text-purple-600 dark:text-purple-400">Lv.{balanceData.vaultLevel}</span>
-            </div>
-            <div className="flex items-center gap-1 font-semibold text-purple-600 dark:text-purple-400">
-              <span className="text-muted-foreground text-[7px]">{balanceData.vaultXp % 1000}/1k</span>
-              <MiniProgressCircle
-                progress={((balanceData.vaultXp % 1000) / 1000) * 100}
-                colorClass="stroke-purple-500 dark:stroke-purple-400"
-              />
-            </div>
+          <div className="flex items-center justify-between rounded-md bg-purple-500/10 px-2 py-1 text-[10px]">
+            <span className="flex items-center gap-1 font-semibold text-purple-400">
+              <svg
+                className="h-3 w-3 text-amber-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+              Lv.{balanceData.vaultLevel}
+            </span>
+            <span className="text-muted-foreground text-[9px]">
+              {balanceData.vaultXp % 1000}/1k XP
+            </span>
           </div>
         )}
 
@@ -247,6 +235,7 @@ export function VaultWidget() {
           </Link>
         </div>
       </div>
-    </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

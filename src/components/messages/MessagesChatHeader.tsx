@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import {
   Search,
   MoreVertical,
-  Phone,
-  Video,
   Info,
   UserPlus,
   Trash2,
@@ -21,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -160,12 +159,6 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
           <Button variant="ghost" size="icon" onClick={toggleSearch}>
             <Search className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-            <Video className="h-4 w-4" />
-          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -177,7 +170,8 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               <MoreVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <Info className="mr-2 h-4 w-4" />
@@ -201,6 +195,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Conversation
               </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

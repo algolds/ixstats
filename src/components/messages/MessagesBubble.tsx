@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { cn } from "~/lib/utils";
+import {
+  usePretextWithSegments,
+  useShrinkwrap,
+} from "~/lib/pretext/use-pretext";
 
 interface MessageAccount {
   id: string;
@@ -48,6 +52,11 @@ interface MessagesBubbleProps {
 
 const QUICK_REACTIONS = ["❤️", "👍", "👎", "😂", "😮", "😢", "😡"];
 
+// Pretext shrinkwrap constants
+const BUBBLE_PADDING_X = 24; // px-3 = 12px * 2
+const MAX_BUBBLE_WIDTH = 480; // max bubble content width in px
+const BUBBLE_FONT = "14px ui-sans-serif, system-ui, sans-serif"; // matches text-sm
+
 function formatTimestamp(date: Date | string): string {
   const d = new Date(date);
   const now = new Date();
@@ -63,6 +72,16 @@ function formatTimestamp(date: Date | string): string {
   });
 }
 
+/** Strip HTML tags to get plain text for Pretext measurement */
+function stripHtml(html: string): string {
+  if (typeof document !== "undefined") {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent ?? tmp.innerText ?? "";
+  }
+  return html.replace(/<[^>]*>/g, "");
+}
+
 export const MessagesBubble = React.memo(function MessagesBubble({
   message,
   currentUserId,
@@ -74,6 +93,19 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
   const isOwn = message.accountId === currentUserId;
   const account = message.account;
+
+  // Only apply Pretext shrinkwrap to plain-text messages.
+  // HTML content (wiki edits, forum messages) has bold/link formatting that
+  // renders wider than the plain-text measurement, causing overflow.
+  const hasHtml = useMemo(() => /<[a-z][\s\S]*>/i.test(message.content), [message.content]);
+  const plainText = useMemo(() => (hasHtml ? "" : message.content), [hasHtml, message.content]);
+  const textMaxWidth = MAX_BUBBLE_WIDTH - BUBBLE_PADDING_X;
+  const prepared = usePretextWithSegments(plainText, BUBBLE_FONT);
+  const shrinkwrappedWidth = useShrinkwrap(prepared, textMaxWidth);
+  const bubbleWidth =
+    !hasHtml && shrinkwrappedWidth > 0
+      ? Math.min(MAX_BUBBLE_WIDTH, shrinkwrappedWidth + BUBBLE_PADDING_X)
+      : undefined;
 
   if (!account) return null;
 
@@ -131,19 +163,23 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
           <div
             className={cn(
-              "rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm",
+              "overflow-hidden rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm break-words",
               isOwn
-                ? "rounded-tr-none bg-gradient-to-br from-blue-500 to-blue-600 text-white"
-                : "bg-muted/80 text-foreground rounded-tl-none",
+                ? "bg-primary text-primary-foreground rounded-br-sm"
+                : "bg-muted text-foreground rounded-bl-sm",
               message.replyTo && "rounded-t-none"
             )}
+            style={{
+              maxWidth: MAX_BUBBLE_WIDTH,
+              ...(bubbleWidth ? { width: bubbleWidth } : {}),
+            }}
           >
             <div className="[&>p]:mb-0" dangerouslySetInnerHTML={{ __html: message.content }} />
 
             <div
               className={cn(
                 "mt-1 flex items-center gap-1.5 text-[9px]",
-                isOwn ? "justify-end text-blue-100/70" : "text-muted-foreground/70 justify-start"
+                isOwn ? "justify-end text-primary-foreground/60" : "text-muted-foreground/70 justify-start"
               )}
             >
               <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>

@@ -21,10 +21,48 @@ import {
   Rss,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { escapeHtml, sanitizeUserContent } from "~/lib/sanitize-html";
 
-type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "milestones" | "events";
+/**
+ * Render text that may contain Discord custom emoji markup.
+ * Extracts Discord emoji patterns as placeholders BEFORE HTML escaping,
+ * converts them to <img> tags, then restores after sanitization.
+ */
+function renderWithEmojis(text: string): string {
+  if (!text) return "";
+  // Extract Discord emoji markup before escaping to preserve the <:name:id> pattern
+  const emojis: { placeholder: string; imgTag: string }[] = [];
+  let idx = 0;
+  const withPlaceholders = text.replace(
+    /<(a)?:([a-zA-Z0-9_]+):(\d{17,20})>/g,
+    (_match: string, animated: string, name: string, id: string) => {
+      const ext = animated ? "gif" : "png";
+      const imgTag = `<img src="https://cdn.discordapp.com/emojis/${id}.${ext}" alt=":${name}:" class="inline-block h-5 w-5 align-text-bottom" loading="lazy" />`;
+      const placeholder = `\u0000EMOJI${idx++}\u0000`;
+      emojis.push({ placeholder, imgTag });
+      return placeholder;
+    }
+  );
+  // Escape HTML on the remaining text (safe — placeholders have no HTML chars)
+  let result = escapeHtml(withPlaceholders);
+  // Restore emoji img tags
+  for (const { placeholder, imgTag } of emojis) {
+    result = result.replace(placeholder, imgTag);
+  }
+  return sanitizeUserContent(result);
+}
+
+/** Safely parse a value into a valid Date, falling back to now. */
+function safeDate(value: unknown): Date {
+  if (value instanceof Date && isValid(value)) return value;
+  if (value == null) return new Date();
+  const d = new Date(value as string | number);
+  return isValid(d) ? d : new Date();
+}
+
+type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "social";
 
 interface CountryActivityPanelProps {
   countryId: string;
@@ -36,142 +74,40 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
   const [showMore, setShowMore] = useState(false);
 
-  const { data: activityData, isLoading: activityLoading } =
+  // Single backend query — same endpoint used by the dashboard feed.
+  // Already merges ActivityFeed entries + ThinkPages posts server-side.
+  const { data: activityData, isLoading } =
     api.activities.getCountryActivity.useQuery({
       countryId,
       limit: showMore ? 50 : 20,
       timeRange,
     });
 
-  const { data: milestones } = api.countries.getEconomicMilestones.useQuery({
-    countryId,
-    limit: 10,
-  });
+  // Normalize and filter the backend response
+  const feed = useMemo(() => {
+    if (!activityData?.activities) return [];
 
-  const { data: liveEvents } = api.countries.getLiveEvents.useQuery({
-    countryId,
-    limit: 15,
-    windowHours: timeRange === "7d" ? 168 : timeRange === "30d" ? 720 : 2160,
-  });
+    const items = activityData.activities.map((activity) => ({
+      id: activity.id,
+      type: activity.type as string,
+      source: activity.source as string,
+      title: activity.title,
+      description: activity.description,
+      timestamp: safeDate(activity.timestamp),
+      engagement: activity.engagement,
+      metadata: activity.metadata,
+    }));
 
-  const { data: thinkpagesFeed } = api.thinkpages.getFeed.useQuery({
-    countryId,
-    filter: "recent",
-    limit: 15,
-  });
-
-  // Merge all sources into a unified feed
-  const unifiedFeed = useMemo(() => {
-    const items: Array<{
-      id: string;
-      type:
-        | "post"
-        | "economic"
-        | "diplomatic"
-        | "achievement"
-        | "social"
-        | "event"
-        | "milestone"
-        | "meta";
-      source: string;
-      title: string;
-      description: string;
-      timestamp: Date;
-      engagement?: { likes: number; comments: number; shares: number };
-      metadata?: Record<string, any>;
-    }> = [];
-
-    // Activity feed entries (already merged activity + some thinkpages)
-    if (activityData?.activities) {
-      for (const activity of activityData.activities) {
-        items.push({
-          id: activity.id,
-          type: activity.type as any,
-          source: activity.source,
-          title: activity.title,
-          description: activity.description,
-          timestamp: new Date(activity.timestamp),
-          engagement: activity.engagement,
-          metadata: activity.metadata,
-        });
-      }
-    }
-
-    // ThinkPages posts (deduplicate against activity feed)
-    if (thinkpagesFeed?.posts) {
-      const existingIds = new Set(items.map((i) => i.id));
-      for (const post of thinkpagesFeed.posts) {
-        if (existingIds.has(post.id)) continue;
-        items.push({
-          id: post.id,
-          type: "post",
-          source: "thinkpages",
-          title: `@${post.account?.username ?? "unknown"} posted`,
-          description: post.content ?? "",
-          timestamp: new Date(post.achievedAt),
-          engagement: {
-            likes: post.likeCount ?? 0,
-            comments: post.replyCount ?? 0,
-            shares: post.repostCount ?? 0,
-          },
-          metadata: {
-            accountType: post.account?.accountType,
-            verified: post.account?.verified,
-            trending: post.trending,
-          },
-        });
-      }
-    }
-
-    // Live events
-    if (liveEvents && Array.isArray(liveEvents)) {
-      const existingIds = new Set(items.map((i) => i.id));
-      for (const event of liveEvents) {
-        const eventId = `event-${event.id ?? event.title}`;
-        if (existingIds.has(eventId)) continue;
-        items.push({
-          id: eventId,
-          type: "event",
-          source: "live-events",
-          title: event.title ?? "Event",
-          description: event.description ?? "",
-          timestamp: new Date(event.timestamp ?? event.achievedAt ?? Date.now()),
-          metadata: { severity: event.severity, category: event.category },
-        });
-      }
-    }
-
-    // Milestones
-    if (milestones && Array.isArray(milestones)) {
-      const existingIds = new Set(items.map((i) => i.id));
-      for (const milestone of milestones) {
-        if (existingIds.has(milestone.id)) continue;
-        items.push({
-          id: milestone.id,
-          type: "milestone",
-          source: "milestones",
-          title: milestone.title ?? "Milestone",
-          description: milestone.description ?? "",
-          timestamp: new Date(milestone.achievedAt ?? milestone.achievedAt ?? Date.now()),
-          metadata: { category: milestone.category, icon: milestone.icon },
-        });
-      }
-    }
-
-    // Sort by timestamp descending
-    items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-    // Apply filter
+    // Apply client-side filter
     if (filter === "all") return items;
     if (filter === "posts")
-      return items.filter((i) => i.type === "post" || i.source === "thinkpages");
+      return items.filter((i) => i.type === "social" || i.source === "thinkpages");
     if (filter === "economic") return items.filter((i) => i.type === "economic");
     if (filter === "diplomatic") return items.filter((i) => i.type === "diplomatic");
-    if (filter === "milestones")
-      return items.filter((i) => i.type === "milestone" || i.type === "achievement");
-    if (filter === "events") return items.filter((i) => i.type === "event");
+    if (filter === "social")
+      return items.filter((i) => i.type === "social" || i.source === "thinkpages");
     return items;
-  }, [activityData, thinkpagesFeed, liveEvents, milestones, filter]);
+  }, [activityData, filter]);
 
   const filterOptions: Array<{
     value: ActivityFilter;
@@ -182,8 +118,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
     { value: "posts", label: "Posts", icon: Rss },
     { value: "economic", label: "Economic", icon: TrendingUp },
     { value: "diplomatic", label: "Diplomatic", icon: Globe },
-    { value: "milestones", label: "Milestones", icon: Trophy },
-    { value: "events", label: "Events", icon: Zap },
+    { value: "social", label: "Social", icon: MessageSquare },
   ];
 
   const getItemIcon = (type: string, source: string) => {
@@ -232,24 +167,8 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             ThinkPages
           </Badge>
         );
-      case "live-events":
-        return (
-          <Badge
-            variant="outline"
-            className="border-orange-200 text-xs text-orange-600 dark:border-orange-800 dark:text-orange-400"
-          >
-            Event
-          </Badge>
-        );
-      case "milestones":
-        return (
-          <Badge
-            variant="outline"
-            className="border-yellow-200 text-xs text-yellow-600 dark:border-yellow-800 dark:text-yellow-400"
-          >
-            Milestone
-          </Badge>
-        );
+      case "activity":
+        return null;
       default:
         return null;
     }
@@ -310,7 +229,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
           </Card>
 
           {/* Feed Items */}
-          {activityLoading ? (
+          {isLoading ? (
             <Card className="bg-card/50 backdrop-blur-sm">
               <CardContent className="space-y-4 pt-6">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -325,14 +244,14 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                 ))}
               </CardContent>
             </Card>
-          ) : unifiedFeed.length > 0 ? (
+          ) : feed.length > 0 ? (
             <Card className="bg-card/50 backdrop-blur-sm">
               <CardContent className="space-y-1 pt-6">
-                {unifiedFeed.map((item, idx) => (
+                {feed.map((item, idx) => (
                   <div
                     key={item.id}
                     className={`flex items-start gap-3 py-3 ${
-                      idx < unifiedFeed.length - 1 ? "border-border/50 border-b" : ""
+                      idx < feed.length - 1 ? "border-border/50 border-b" : ""
                     }`}
                   >
                     <div
@@ -342,17 +261,22 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
                           {getItemIcon(item.type, item.source)}
-                          <p className="truncate text-sm font-medium">{item.title}</p>
+                          <p
+                            className="truncate text-sm font-medium"
+                            dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.title) }}
+                          />
                         </div>
                         {getSourceBadge(item.source)}
                       </div>
                       <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
-                        {item.description}
+                        <span dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }} />
                       </p>
                       <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {formatDistanceToNow(item.timestamp, { addSuffix: true })}
+                          {isValid(item.timestamp)
+                            ? formatDistanceToNow(item.timestamp, { addSuffix: true })
+                            : "recently"}
                         </div>
                         {item.engagement && (
                           <>
@@ -381,7 +305,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                   </div>
                 ))}
 
-                {!showMore && unifiedFeed.length >= 15 && (
+                {!showMore && feed.length >= 15 && (
                   <div className="pt-3 text-center">
                     <Button
                       variant="ghost"
@@ -421,65 +345,28 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Total Items</span>
-                <span className="text-sm font-semibold">{unifiedFeed.length}</span>
+                <span className="text-sm font-semibold">{feed.length}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Posts</span>
                 <span className="text-sm font-semibold">
-                  {unifiedFeed.filter((i) => i.type === "post" || i.source === "thinkpages").length}
+                  {feed.filter((i) => i.type === "social" || i.source === "thinkpages").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Economic</span>
                 <span className="text-sm font-semibold">
-                  {unifiedFeed.filter((i) => i.type === "economic").length}
+                  {feed.filter((i) => i.type === "economic").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Diplomatic</span>
                 <span className="text-sm font-semibold">
-                  {unifiedFeed.filter((i) => i.type === "diplomatic").length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Milestones</span>
-                <span className="text-sm font-semibold">
-                  {
-                    unifiedFeed.filter((i) => i.type === "milestone" || i.type === "achievement")
-                      .length
-                  }
+                  {feed.filter((i) => i.type === "diplomatic").length}
                 </span>
               </div>
             </CardContent>
           </Card>
-
-          {/* Milestones Highlight */}
-          {milestones && milestones.length > 0 && (
-            <Card className="bg-card/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Trophy className="h-4 w-4 text-yellow-500" />
-                  Recent Milestones
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {milestones.slice(0, 5).map((milestone: any) => (
-                  <div
-                    key={milestone.id}
-                    className="flex items-start gap-2 rounded-lg border border-yellow-200/50 bg-yellow-50/50 p-2 dark:border-yellow-900/30 dark:bg-yellow-900/10"
-                  >
-                    <Trophy className="mt-0.5 h-3 w-3 shrink-0 text-yellow-500" />
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-medium">{milestone.title}</p>
-                      <p className="text-muted-foreground line-clamp-1 text-xs">
-                        {milestone.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Wiki Link */}
           <Card className="bg-card/50 backdrop-blur-sm">

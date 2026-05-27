@@ -97,6 +97,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
+
         <ChunkLoadErrorHandler />
         <ChunkLoadErrorBoundary>
           <ClerkProvider

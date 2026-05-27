@@ -11,7 +11,12 @@ import { withBasePath } from "~/lib/base-path";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { MessagesLayout } from "./MessagesLayout";
-import { MessagesFolderNav, getFolderFromPathname } from "./MessagesFolderNav";
+import {
+  MessagesFolderNav,
+  getFolderFromPathname,
+  DEFAULT_MESSAGES_SETTINGS,
+  type MessagesSettings,
+} from "./MessagesFolderNav";
 import { MessagesConversationPanel } from "./MessagesConversationPanel";
 import { MessagesChatPanel } from "./MessagesChatPanel";
 import { MessagesEmptyState } from "./MessagesEmptyState";
@@ -49,6 +54,26 @@ function MessagesRouterInner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [folderNavExpanded, setFolderNavExpanded] = useState(false);
+
+  // ── Settings (localStorage-backed) ──
+  const [messagesSettings, setMessagesSettings] = useState<MessagesSettings>(() => {
+    if (typeof window === "undefined") return DEFAULT_MESSAGES_SETTINGS;
+    try {
+      const stored = localStorage.getItem("ixstats:messages:settings");
+      return stored ? { ...DEFAULT_MESSAGES_SETTINGS, ...JSON.parse(stored) } : DEFAULT_MESSAGES_SETTINGS;
+    } catch {
+      return DEFAULT_MESSAGES_SETTINGS;
+    }
+  });
+
+  const handleSettingsChange = useCallback((next: MessagesSettings) => {
+    setMessagesSettings(next);
+    try {
+      localStorage.setItem("ixstats:messages:settings", JSON.stringify(next));
+    } catch {
+      // Storage unavailable
+    }
+  }, []);
 
   // ── Handle URL conversation param ──
   useEffect(() => {
@@ -178,8 +203,36 @@ function MessagesRouterInner() {
             };
           });
 
-          // Refetch conversations list to update preview/unread state
-          void refetchConversations();
+          // Optimistically update conversation list preview instead of full refetch
+          const folderQueryKey = { userId: currentUserId, folder: activeFolder };
+          utils.messages.getConversationsByFolder.setData(folderQueryKey, (old: any) => {
+            if (!old?.conversations) return old;
+            const updated = old.conversations.map((c: any) => {
+              if (c.id !== data.conversationId) return c;
+              return {
+                ...c,
+                lastActivity: new Date(data.timestamp),
+                lastMessage: {
+                  id: data.messageId,
+                  accountId: data.accountId,
+                  content: data.content ?? "",
+                  ixTimeTimestamp: new Date(data.timestamp),
+                  createdAt: new Date(data.timestamp),
+                  account: data.accountId === currentUserId
+                    ? { id: currentUserId, displayName: user?.fullName ?? "Me" }
+                    : c.lastMessage?.account ?? { id: data.accountId, displayName: "User" },
+                },
+                unreadCount: data.accountId !== currentUserId
+                  ? (c.unreadCount ?? 0) + 1
+                  : c.unreadCount,
+              };
+            });
+            // Sort by lastActivity descending so the updated conversation bubbles up
+            updated.sort((a: any, b: any) =>
+              new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+            );
+            return { ...old, conversations: updated };
+          });
         } else if (data.type === "message:updated") {
           utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
             if (!old) return old;
@@ -320,6 +373,8 @@ function MessagesRouterInner() {
             unreadCounts={unreadCounts}
             expanded={folderNavExpanded}
             onToggleExpanded={() => setFolderNavExpanded((prev) => !prev)}
+            settings={messagesSettings}
+            onSettingsChange={handleSettingsChange}
           />
         }
         conversationPanel={

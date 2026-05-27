@@ -48,7 +48,7 @@ export function MessagesChatPanel({
     {
       enabled: !!conversation.id && !!currentUserId,
       refetchOnWindowFocus: false,
-      staleTime: 5000,
+      staleTime: 30000, // WebSocket provides real-time updates
     }
   );
 
@@ -62,7 +62,8 @@ export function MessagesChatPanel({
   const markAsRead = api.messages.markMessagesAsRead.useMutation();
 
   useEffect(() => {
-    if (conversation.id && currentUserId) {
+    // Only fire mark-as-read if there are actually unread messages
+    if (conversation.id && currentUserId && (conversation as any).unreadCount > 0) {
       markAsRead.mutate({
         conversationId: conversation.id,
         userId: currentUserId,
@@ -138,9 +139,12 @@ export function MessagesChatPanel({
       }
       notify.error(msg);
     },
-    onSettled: () => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      void utils.messages.getConversationMessages.invalidate(queryKey);
+    onSettled: (_data, error) => {
+      // Only invalidate on error to reconcile; optimistic update handles success
+      if (error) {
+        const queryKey = { conversationId: conversation.id, userId: currentUserId };
+        void utils.messages.getConversationMessages.invalidate(queryKey);
+      }
       refetchConversations();
     },
   });
@@ -324,6 +328,9 @@ export function MessagesChatPanel({
     );
   }, [messagesData?.messages, searchQuery]);
 
+  // Memoize reversed message list to avoid re-creating on every render
+  const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+
   const participantStatus = useMemo(() => {
     if (conversation.type === "group") return undefined;
     const otherParticipant = conversation.otherParticipants[0];
@@ -342,7 +349,7 @@ export function MessagesChatPanel({
       />
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
@@ -355,7 +362,7 @@ export function MessagesChatPanel({
           </div>
         ) : (
           <div className="py-2">
-            {[...messages].reverse().map((message: any, index: number, arr: any[]) => {
+            {reversedMessages.map((message: any, index: number, arr: any[]) => {
               const prev = index > 0 ? arr[index - 1] : null;
               const isConsecutive =
                 prev != null &&

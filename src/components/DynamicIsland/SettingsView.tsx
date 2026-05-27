@@ -6,24 +6,25 @@ import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { AnimatedThemeToggler } from "~/components/magicui/animated-theme-toggler";
 import {
   Settings,
   X,
-  Sun,
   Moon,
-  Monitor,
+  Sun,
   User,
   Layout,
-  Languages,
   RefreshCw,
   LogOut,
-  ChevronDown,
+  ChevronRight,
   BookOpen,
   MessageSquare,
   List,
   ExternalLink,
 } from "lucide-react";
 import type { SettingsViewProps } from "./types";
+
+// ─── Local toggle hook ───────────────────────────────────────────────────────
 
 function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => void] {
   const [value, setValue] = useState(defaultValue);
@@ -49,9 +50,43 @@ function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => voi
   return [value, toggle];
 }
 
+// ─── Toggle Switch ───────────────────────────────────────────────────────────
+
+function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      onClick={onToggle}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+        enabled ? "bg-blue-500" : "bg-muted-foreground/25"
+      }`}
+    >
+      <span
+        className={`pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          enabled ? "translate-x-[18px]" : "translate-x-[3px]"
+        }`}
+      />
+    </button>
+  );
+}
+
+// ─── Section label ───────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-muted-foreground px-1 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider">
+      {children}
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
+
 export function SettingsView({ onClose }: SettingsViewProps) {
   const { user, isLoaded, isSignedIn } = useUser();
-  const { theme, effectiveTheme, setTheme, compactMode, toggleCompactMode } = useTheme();
+  const { effectiveTheme, compactMode, toggleCompactMode } = useTheme();
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "");
   const isOnWikiPage =
@@ -68,7 +103,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   const [autoExpandToc, toggleAutoExpandToc] = useLocalToggle("wikios:autoExpandToc", false);
   const [openInNewTab, toggleOpenInNewTab] = useLocalToggle("wikios:openInNewTab", false);
 
-  // API queries for refresh functionality
+  // Refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const { refetch: refetchCountries } = api.countries.getAll.useQuery(undefined, {
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -87,6 +124,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   );
 
   const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       const promises: Promise<any>[] = [refetchCountries()];
       if (isSignedIn && user?.id) {
@@ -95,6 +133,8 @@ export function SettingsView({ onClose }: SettingsViewProps) {
       await Promise.allSettled(promises);
     } catch (error) {
       console.error("Refresh failed:", error);
+    } finally {
+      setIsRefreshing(false);
     }
   }, [refetchCountries, refetchNotifications, isSignedIn, user?.id]);
 
@@ -102,221 +142,23 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
     : (user?.firstName ?? "");
 
-  return (
-    <div className="p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="text-foreground flex items-center gap-2 text-lg font-bold">
-          {isOnWikiPage ? (
-            <BookOpen className="h-5 w-5 text-blue-400" />
-          ) : (
-            <Settings className="h-5 w-5 text-blue-400" />
-          )}
-          <span>{isOnWikiPage ? "Wiki Settings" : "User Settings"}</span>
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent px-2 py-2"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+  // ─── Signed-out state ────────────────────────────────────────────────────
 
-      {isLoaded && isSignedIn && user ? (
-        <div className="space-y-3">
-          {/* Theme Switcher — always shown */}
-          <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-            <div className="bg-primary/20 shrink-0 rounded p-1.5">
-              {effectiveTheme === "dark" ? (
-                <Moon className="text-primary h-4 w-4" />
-              ) : (
-                <Sun className="text-primary h-4 w-4" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">Theme</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                {theme === "system" ? "System" : theme === "dark" ? "Dark" : "Light"}
-              </div>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant={theme === "light" ? "default" : "outline"}
-                onClick={() => setTheme("light")}
-                className="h-7 w-7 p-1.5"
-              >
-                <Sun className="h-3 w-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant={theme === "dark" ? "default" : "outline"}
-                onClick={() => setTheme("dark")}
-                className="h-7 w-7 p-1.5"
-              >
-                <Moon className="h-3 w-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant={theme === "system" ? "default" : "outline"}
-                onClick={() => setTheme("system")}
-                className="h-7 w-7 p-1.5"
-              >
-                <Monitor className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Profile link */}
-          <Button
-            size="sm"
-            onClick={() =>
-              (window.location.href =
-                isOnWikiPage && wikiUsername
-                  ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
-                  : createAbsoluteUrl("/profile"))
-            }
-            className="bg-card hover:bg-accent/10 border-border flex w-full items-center justify-start gap-3 rounded-lg p-3 transition-all"
-          >
-            <div className="shrink-0 rounded bg-blue-500/20 p-1.5">
-              <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {isOnWikiPage ? "Wiki Profile" : "Profile & Settings"}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                {isOnWikiPage
-                  ? "View your contributions and awards"
-                  : "Manage your account, billing, and preferences"}
-              </div>
-            </div>
-            <ChevronDown className="text-muted-foreground h-4 w-4 rotate-[-90deg]" />
-          </Button>
-
-          {isOnWikiPage ? (
-            /* Wiki-specific settings */
-            <>
-              <SettingsToggle
-                icon={<MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />}
-                iconBg="bg-purple-500/20"
-                label="Citation Tooltips"
-                description={
-                  showCiteTooltips ? "Hover footnotes to preview" : "Click to jump to footnote"
-                }
-                enabled={showCiteTooltips}
-                onToggle={toggleCiteTooltips}
-              />
-              <SettingsToggle
-                icon={<List className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
-                iconBg="bg-cyan-500/20"
-                label="Auto-Expand TOC"
-                description={
-                  autoExpandToc
-                    ? "Table of contents starts open"
-                    : "Table of contents starts collapsed"
-                }
-                enabled={autoExpandToc}
-                onToggle={toggleAutoExpandToc}
-              />
-              <SettingsToggle
-                icon={<ExternalLink className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
-                iconBg="bg-emerald-500/20"
-                label="Open Links in New Tab"
-                description={
-                  openInNewTab ? "Wiki links open in new tabs" : "Wiki links open in same tab"
-                }
-                enabled={openInNewTab}
-                onToggle={toggleOpenInNewTab}
-              />
-            </>
-          ) : (
-            /* IxStats settings */
-            <>
-              <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-                <div className="shrink-0 rounded bg-purple-500/20 p-1.5">
-                  <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    Compact Mode
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    {compactMode ? "Enabled - Denser UI layout" : "Disabled - Standard spacing"}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={toggleCompactMode}
-                  className="px-2 py-1 text-xs"
-                >
-                  {compactMode ? "Disable" : "Enable"}
-                </Button>
-              </div>
-
-              <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-                <div className="shrink-0 rounded bg-blue-500/20 p-1.5">
-                  <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">Language</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">English</div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="cursor-not-allowed px-3 py-1 opacity-50"
-                  disabled
-                >
-                  Coming Soon
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* Refresh */}
-          <div className="pt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleRefresh}
-              className="flex w-full items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Refresh Data</span>
-            </Button>
-          </div>
-
-          {/* Sign Out */}
-          <div className="border-border border-t pt-3">
-            <Button
-              asChild
-              size="sm"
-              className="flex w-full items-center gap-2 border-red-200 bg-red-50 p-3 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
-            >
-              <SignOutButton>
-                <div className="flex items-center gap-2">
-                  <LogOut className="h-4 w-4" />
-                  <span>Sign Out</span>
-                </div>
-              </SignOutButton>
-            </Button>
-          </div>
-        </div>
-      ) : isLoaded && !isSignedIn ? (
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="p-4">
+        <SettingsHeader onClose={onClose} isOnWikiPage={isOnWikiPage} />
         <div className="py-6 text-center">
-          <div className="bg-muted/50 rounded-xl p-6">
-            <User className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <div className="mb-2 text-lg font-medium">
+          <div className="bg-muted/30 rounded-xl p-6">
+            <User className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+            <div className="text-foreground mb-1 text-sm font-medium">
               {isOnWikiPage ? "Welcome to WikiOS" : "Welcome to IxStats"}
             </div>
-            <div className="text-muted-foreground mb-6 text-sm">
-              Sign in to access your personalized {isOnWikiPage ? "wiki" : "dashboard"} and settings
+            <div className="text-muted-foreground mb-4 text-xs">
+              Sign in to access your settings
             </div>
             <Button
-              size="lg"
+              size="sm"
               onClick={() =>
                 (window.location.href =
                   process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
@@ -327,41 +169,224 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             </Button>
           </div>
         </div>
-      ) : (
-        <div className="py-6 text-center">
-          <div className="text-muted-foreground">Loading authentication...</div>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="p-4">
+        <SettingsHeader onClose={onClose} isOnWikiPage={isOnWikiPage} />
+        <div className="py-8 text-center">
+          <div className="text-muted-foreground text-sm">Loading…</div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  // ─── Signed-in state ─────────────────────────────────────────────────────
+
+  return (
+    <div className="p-4">
+      <SettingsHeader
+        onClose={onClose}
+        isOnWikiPage={isOnWikiPage}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
+
+      <div className="space-y-1">
+        {/* ── Appearance ─────────────────────────────────────────────── */}
+        <SectionLabel>Appearance</SectionLabel>
+
+        {/* Theme — animated view-transition toggle */}
+        <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+          <div className="bg-primary/15 shrink-0 rounded-md p-1.5">
+            {effectiveTheme === "dark" ? (
+              <Moon className="text-primary h-3.5 w-3.5" />
+            ) : (
+              <Sun className="text-primary h-3.5 w-3.5" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-foreground text-sm font-medium">Theme</div>
+            <div className="text-muted-foreground text-xs">
+              {effectiveTheme === "dark" ? "Dark" : "Light"}
+            </div>
+          </div>
+          <AnimatedThemeToggler className="h-8 w-8" />
+        </div>
+
+        {/* Compact Mode — only on non-wiki pages */}
+        {!isOnWikiPage && (
+          <SettingsRow
+            icon={<Layout className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
+            iconBg="bg-purple-500/15"
+            label="Compact Mode"
+            description="Denser UI layout"
+          >
+            <ToggleSwitch enabled={compactMode} onToggle={toggleCompactMode} />
+          </SettingsRow>
+        )}
+
+        {/* ── Wiki Settings ──────────────────────────────────────────── */}
+        {isOnWikiPage && (
+          <>
+            <SectionLabel>Wiki</SectionLabel>
+
+            <SettingsRow
+              icon={
+                <MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              }
+              iconBg="bg-purple-500/15"
+              label="Citation Tooltips"
+              description="Hover footnotes to preview"
+            >
+              <ToggleSwitch enabled={showCiteTooltips} onToggle={toggleCiteTooltips} />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<List className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />}
+              iconBg="bg-cyan-500/15"
+              label="Auto-Expand TOC"
+              description="Table of contents starts open"
+            >
+              <ToggleSwitch enabled={autoExpandToc} onToggle={toggleAutoExpandToc} />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={
+                <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              }
+              iconBg="bg-emerald-500/15"
+              label="Open in New Tab"
+              description="Wiki links open in new tabs"
+            >
+              <ToggleSwitch enabled={openInNewTab} onToggle={toggleOpenInNewTab} />
+            </SettingsRow>
+          </>
+        )}
+
+        {/* ── Account ────────────────────────────────────────────────── */}
+        <SectionLabel>Account</SectionLabel>
+
+        {/* Profile link */}
+        <button
+          onClick={() =>
+            (window.location.href =
+              isOnWikiPage && wikiUsername
+                ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
+                : createAbsoluteUrl("/profile"))
+          }
+          className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
+        >
+          <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
+            <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-foreground text-sm font-medium">
+              {isOnWikiPage ? "Wiki Profile" : "Profile & Settings"}
+            </div>
+            <div className="text-muted-foreground text-xs">
+              {isOnWikiPage ? "Contributions and awards" : "Account and preferences"}
+            </div>
+          </div>
+          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+        </button>
+
+        {/* Sign Out */}
+        <div className="border-border mt-1 border-t pt-2">
+          <Button
+            asChild
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex w-full items-center justify-start gap-2 px-3 py-2"
+          >
+            <SignOutButton>
+              <div className="flex items-center gap-2">
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="text-sm">Sign Out</span>
+              </div>
+            </SignOutButton>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
 
-// Reusable toggle row component
-function SettingsToggle({
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+function SettingsHeader({
+  onClose,
+  isOnWikiPage,
+  onRefresh,
+  isRefreshing,
+}: {
+  onClose: () => void;
+  isOnWikiPage: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+}) {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
+        {isOnWikiPage ? (
+          <BookOpen className="h-4 w-4 text-blue-400" />
+        ) : (
+          <Settings className="h-4 w-4 text-blue-400" />
+        )}
+        <span>{isOnWikiPage ? "Wiki Settings" : "Settings"}</span>
+      </div>
+      <div className="flex items-center gap-1">
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            title="Refresh data"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Reusable settings row ───────────────────────────────────────────────────
+
+function SettingsRow({
   icon,
   iconBg,
   label,
   description,
-  enabled,
-  onToggle,
+  children,
 }: {
   icon: React.ReactNode;
   iconBg: string;
   label: string;
-  description: string;
-  enabled: boolean;
-  onToggle: () => void;
+  description?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-      <div className={`shrink-0 rounded p-1.5 ${iconBg}`}>{icon}</div>
+    <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+      <div className={`shrink-0 rounded-md p-1.5 ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
-        <div className="text-xs text-gray-600 dark:text-gray-400">{description}</div>
+        <div className="text-foreground text-sm font-medium">{label}</div>
+        {description && (
+          <div className="text-muted-foreground text-xs">{description}</div>
+        )}
       </div>
-      <Button size="sm" variant="outline" onClick={onToggle} className="px-2 py-1 text-xs">
-        {enabled ? "Disable" : "Enable"}
-      </Button>
+      {children}
     </div>
   );
 }

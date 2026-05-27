@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import {
   AlertTriangle,
   Newspaper,
@@ -23,11 +24,22 @@ import {
   MessageSquare,
   Globe,
   Eye,
+  Map as MapIcon,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import {
   staggerContainer,
   staggerItem,
@@ -65,7 +77,7 @@ const SOURCE_CONFIG: Record<
   string,
   { icon: typeof Rss; color: string; bg: string; label: string }
 > = {
-  activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "IxStats" },
+  activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "Activity" },
   thinkpages: {
     icon: Newspaper,
     color: "text-purple-400",
@@ -75,6 +87,141 @@ const SOURCE_CONFIG: Record<
   wiki: { icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/10", label: "Wiki" },
   forum: { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
 };
+
+// Contextual label for IxStats activities based on metadata/category
+function getActivityLabel(activity: any): { label: string; icon: typeof Rss; color: string; bg: string } {
+  const cat = activity.category ?? activity.content?.metadata?.category ?? "";
+  const title = (activity.content?.title ?? "").toLowerCase();
+  // Specific map feature types (check before generic "map")
+  if (title.includes("point of interest") || title.includes("poi")) return { label: "POI", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (title.includes("city") || title.includes("settlement")) return { label: "City", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (title.includes("subdivision") || title.includes("province") || title.includes("state") || title.includes("region")) return { label: "Subdivision", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (cat === "map" || title.includes("map") || title.includes("claim")) return { label: "Maps", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (cat === "economic" || title.includes("gdp") || title.includes("econom") || title.includes("trade")) return { label: "Economy", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (cat === "diplomatic" || title.includes("embassy") || title.includes("diplom") || title.includes("treaty")) return { label: "Diplomacy", icon: Globe, color: "text-cyan-400", bg: "bg-cyan-500/10" };
+  if (cat === "military" || title.includes("military") || title.includes("defense") || title.includes("deploy")) return { label: "Defense", icon: Shield, color: "text-red-400", bg: "bg-red-500/10" };
+  if (cat === "political" || title.includes("govern") || title.includes("politic") || title.includes("election")) return { label: "Politics", icon: Landmark, color: "text-purple-400", bg: "bg-purple-500/10" };
+  if (cat === "crisis" || title.includes("crisis")) return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
+  if (cat === "achievement" || title.includes("tier") || title.includes("achieve")) return { label: "Achievement", icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" };
+  return { label: "Activity", icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10" };
+}
+
+// Group consecutive wiki edits to the same page
+function groupWikiEdits(activities: any[]): any[] {
+  const result: any[] = [];
+  let i = 0;
+  while (i < activities.length) {
+    const a = activities[i];
+    if (a.source === "wiki" && a.content?.metadata?.pageTitle) {
+      const pageTitle = a.content.metadata.pageTitle;
+      const group = [a];
+      let j = i + 1;
+      // Collect consecutive edits to same page
+      while (j < activities.length) {
+        const b = activities[j];
+        if (b.source === "wiki" && b.content?.metadata?.pageTitle === pageTitle) {
+          group.push(b);
+          j++;
+        } else {
+          break;
+        }
+      }
+      if (group.length > 1) {
+        // Build a condensed entry
+        const editors = new Set(group.map((g: any) => g.user?.name).filter(Boolean));
+        const totalBytes = group.reduce((sum: number, g: any) => {
+          const desc = g.content?.description ?? "";
+          const match = desc.match(/([+-]?\d+)\s+bytes/);
+          return sum + (match ? parseInt(match[1], 10) : 0);
+        }, 0);
+        const isNew = group.some((g: any) => g.content?.title?.startsWith("New wiki page"));
+        result.push({
+          ...group[0],
+          id: `wiki-grouped-${pageTitle}`,
+          content: {
+            ...group[0].content,
+            title: isNew ? `New wiki page: ${pageTitle}` : pageTitle,
+          },
+          _grouped: true,
+          _editCount: group.length,
+          _editors: Array.from(editors),
+          _totalBytes: totalBytes,
+          _subEdits: group,
+          _isNew: isNew,
+        });
+      } else {
+        result.push(a);
+      }
+      i = j;
+    } else {
+      result.push(a);
+      i++;
+    }
+  }
+  return result;
+}
+
+// Group repeated IxStats activities of the same type by the same user within a time window
+const ACTIVITY_GROUP_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+function groupRepeatedActivities(activities: any[]): any[] {
+  const result: any[] = [];
+  let i = 0;
+  while (i < activities.length) {
+    const a = activities[i];
+    // Only group source=activity (not wiki, thinkpages, forum)
+    if (a.source === "activity") {
+      // Group by country (or user if no country) + label
+      const groupKey = a.user?.countryName ?? a.user?.countryId ?? a.user?.name ?? a.user?.id ?? "";
+      const displayName = a.user?.countryName ?? a.user?.name ?? "unknown";
+      const label = getActivityLabel(a).label;
+      const aTime = new Date(a.timestamp).getTime();
+      const group = [a];
+      let j = i + 1;
+      // Collect consecutive activities with same user + label within window
+      while (j < activities.length) {
+        const b = activities[j];
+        if (
+          b.source === "activity" &&
+          (b.user?.countryName ?? b.user?.countryId ?? b.user?.name ?? b.user?.id ?? "") === groupKey &&
+          getActivityLabel(b).label === label &&
+          Math.abs(new Date(b.timestamp).getTime() - aTime) < ACTIVITY_GROUP_WINDOW_MS
+        ) {
+          group.push(b);
+          j++;
+        } else {
+          break;
+        }
+      }
+      if (group.length > 1) {
+        const titles = group.map((g: any) => g.content?.title ?? "").filter(Boolean);
+        const groupLabel = getActivityLabel(a).label;
+        result.push({
+          ...group[0],
+          id: `activity-grouped-${groupKey}-${label}-${i}`,
+          content: {
+            ...group[0].content,
+            title: `${group.length} ${groupLabel} updates`,
+          },
+          _grouped: true,
+          _editCount: group.length,
+          _editors: [displayName],
+          _totalBytes: 0,
+          _subEdits: group,
+          _groupLabel: groupLabel,
+          _subTitles: titles,
+        });
+      } else {
+        result.push(a);
+      }
+      i = j;
+    } else {
+      result.push(a);
+      i++;
+    }
+  }
+  return result;
+}
 
 const _CATEGORY_CONFIG: Record<
   string,
@@ -357,38 +504,45 @@ export function UnifiedDashboardSection({
   }, [wikiRecentChanges]);
 
   const filteredFeed = useMemo(() => {
-    if (activeTab === "following") return followingData?.activities ?? [];
-
-    if (activeTab === "community") {
+    let raw: any[] = [];
+    if (activeTab === "following") {
+      raw = followingData?.activities ?? [];
+    } else if (activeTab === "community") {
       const fromFeed = (feedData?.activities ?? []).filter(
         (a: any) => a.source === "wiki" || a.source === "forum"
       );
       if (fromFeed.length === 0 && wikiAsFeed.length > 0) {
-        return wikiAsFeed;
+        raw = wikiAsFeed;
+      } else {
+        const merged = [...fromFeed];
+        for (const wikiItem of wikiAsFeed) {
+          if (!merged.some((m) => m.id === wikiItem.id)) {
+            merged.push(wikiItem);
+          }
+        }
+        merged.sort(
+          (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        raw = merged.slice(0, 50);
       }
-      const merged = [...fromFeed];
-      for (const wikiItem of wikiAsFeed) {
-        if (!merged.some((m) => m.id === wikiItem.id)) {
-          merged.push(wikiItem);
+    } else {
+      if (!feedData?.activities) {
+        raw = [];
+      } else {
+        const hasWiki = feedData.activities.some((a: any) => a.source === "wiki");
+        if (!hasWiki && wikiAsFeed.length > 0) {
+          const merged = [...feedData.activities, ...wikiAsFeed];
+          merged.sort(
+            (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          raw = merged.slice(0, 50);
+        } else {
+          raw = feedData.activities;
         }
       }
-      merged.sort(
-        (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      return merged.slice(0, 50);
     }
-
-    if (!feedData?.activities) return [];
-
-    const hasWiki = feedData.activities.some((a: any) => a.source === "wiki");
-    if (!hasWiki && wikiAsFeed.length > 0) {
-      const merged = [...feedData.activities, ...wikiAsFeed];
-      merged.sort(
-        (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      return merged.slice(0, 50);
-    }
-    return feedData.activities;
+    // Group consecutive wiki edits, then group repeated IxStats activities
+    return groupRepeatedActivities(groupWikiEdits(raw));
   }, [feedData, followingData, wikiAsFeed, activeTab]);
 
   // ── ThinkPages Action Handlers ──
@@ -454,26 +608,52 @@ export function UnifiedDashboardSection({
     >
       {/* Feed Tab Bar */}
       <motion.div variants={staggerItem}>
-        <div className="border-border/50 bg-muted/30 flex gap-1 rounded-xl border p-1">
+        <div className="glass-surface glass-refraction relative flex gap-1 rounded-xl p-1">
+          {/* Sliding indicator behind active tab */}
+          <motion.div
+            className="absolute inset-y-1 rounded-lg bg-white/8"
+            layout
+            layoutId="feed-tab-indicator"
+            style={{
+              width: `${100 / TABS.length}%`,
+              left: `${(TABS.findIndex((t) => t.id === activeTab) / TABS.length) * 100}%`,
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+          />
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <motion.button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
+                  "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-200",
                   isActive
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon
+                  className={cn(
+                    "h-3.5 w-3.5 transition-colors duration-200",
+                    isActive && "text-indigo-400"
+                  )}
+                />
                 <span className="hidden sm:inline">{tab.label}</span>
-              </button>
+              </motion.button>
             );
           })}
+          {/* Settings gear */}
+          <button
+            onClick={() => setIsAccountModalOpen(true)}
+            className="text-muted-foreground hover:text-foreground hover:bg-white/5 relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors"
+            title="Feed & Account Settings"
+          >
+            <Settings className="h-3.5 w-3.5" />
+          </button>
         </div>
       </motion.div>
 
@@ -612,14 +792,19 @@ export function UnifiedDashboardSection({
           {/* Sidebar (right 1/3): Community widgets */}
           <div className="space-y-4 md:sticky md:top-6 md:self-start lg:col-span-1">
             {/* Trending Now — Compact */}
-            <Card className="glass-hierarchy-child border-border/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-1.5 text-xs">
-                  <Flame className="h-3 w-3 text-orange-400" />
+            <CutoutCard className={cn(cutoutCardSurfaceClassName, "no-wiki-tooltip rounded-xl overflow-hidden")}
+              trackPointerHover={false}
+            >
+              {/* Cutout tab header */}
+              <div className="relative bg-orange-500/10 px-4 pt-3 pb-5">
+                <div className="flex items-center gap-2 text-sm font-bold text-card-foreground">
+                  <Flame className="h-4.5 w-4.5 text-orange-400" />
                   Trending
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
+                </div>
+                <CutoutCorner className="absolute -bottom-px left-0 text-card" size={20} />
+                <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={20} />
+              </div>
+              <CutoutCardContent className="px-4 pb-4 pt-0 space-y-3">
                 <div className="space-y-1">
                   {trendingItems.length === 0 && (
                     <p className="text-muted-foreground py-6 text-center text-[11px]">
@@ -719,25 +904,30 @@ export function UnifiedDashboardSection({
                     return el;
                   })}
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Blurb of the Day — integrated */}
+                <BlurbSection />
+              </CutoutCardContent>
+            </CutoutCard>
 
             {/* Countries to Explore */}
             <CountriesToExploreCard currentUserCountryId={userProfile?.countryId ?? ""} />
 
-            {/* Blurb of the Day */}
-            <BlurbOfTheDayCard />
-
             {/* Economic Tier Distribution */}
             {globalStats?.economicTierDistribution && (
-              <Card className="glass-hierarchy-child border-border/40">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-1.5 text-xs font-semibold">
-                    <Globe className="h-3.5 w-3.5 text-emerald-500" />
+              <CutoutCard className={cn(cutoutCardSurfaceClassName, "rounded-xl overflow-hidden")}
+                trackPointerHover={false}
+              >
+                {/* Cutout tab header */}
+                <div className="relative bg-emerald-500/10 px-4 pt-3 pb-5">
+                  <div className="flex items-center gap-2 text-sm font-bold text-card-foreground">
+                    <Globe className="h-4.5 w-4.5 text-emerald-500" />
                     Economic Tiers
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
+                  </div>
+                  <CutoutCorner className="absolute -bottom-px left-0 text-card" size={20} />
+                  <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={20} />
+                </div>
+                <CutoutCardContent className="px-4 pb-4 pt-0">
                   <div className="flex flex-wrap items-center gap-1">
                     {Object.entries(globalStats.economicTierDistribution).map(([tier, count]) => (
                       <div
@@ -754,8 +944,8 @@ export function UnifiedDashboardSection({
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </CutoutCardContent>
+              </CutoutCard>
             )}
           </div>
         </div>
@@ -884,7 +1074,7 @@ function UnifiedFeedContent({
   if (activities.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <Card className="glass-hierarchy-child border-border/40">
+      <Card className="glass-surface glass-refraction border-border/40">
         <CardContent className="p-8 text-center">
           <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
@@ -979,7 +1169,7 @@ function FollowingFeedContent({
   }
   if (followingCount === 0) {
     return (
-      <Card className="glass-hierarchy-child border-border/40">
+      <Card className="glass-surface glass-refraction border-border/40">
         <CardContent className="p-8 text-center">
           <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
@@ -997,7 +1187,7 @@ function FollowingFeedContent({
   }
   if (activities.length === 0) {
     return (
-      <Card className="glass-hierarchy-child border-border/40">
+      <Card className="glass-surface glass-refraction border-border/40">
         <CardContent className="p-8 text-center">
           <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
@@ -1151,14 +1341,19 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
   if (!randomCountries || randomCountries.length === 0) return null;
 
   return (
-    <Card className="glass-hierarchy-child border-border/40">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-1.5 text-xs">
-          <Users className="h-3 w-3 text-blue-400" />
+    <CutoutCard className={cn(cutoutCardSurfaceClassName, "rounded-xl overflow-hidden")}
+      trackPointerHover={false}
+    >
+      {/* Cutout tab header */}
+      <div className="relative bg-blue-500/10 px-4 pt-3 pb-5">
+        <div className="flex items-center gap-2 text-sm font-bold text-card-foreground">
+          <Users className="h-4.5 w-4.5 text-blue-400" />
           Countries to Explore
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
+        </div>
+        <CutoutCorner className="absolute -bottom-px left-0 text-card" size={20} />
+        <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={20} />
+      </div>
+      <CutoutCardContent className="px-4 pb-4 pt-0">
         <div className="space-y-1.5">
           {randomCountries.map((c) => {
             const isFollowed = followedIds.has(c.id);
@@ -1224,27 +1419,26 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
           <Globe className="h-3 w-3" />
           Explore all countries →
         </Link>
-      </CardContent>
-    </Card>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }
 
 // ─── Blurb of the Day ──────────────────────────────────────────
 
-function BlurbOfTheDayCard() {
+function BlurbSection() {
+  const [modalOpen, setModalOpen] = useState(false);
   const { data: prompt } = api.blurbs.getRandomActivePrompt.useQuery();
 
   if (!prompt) return null;
 
   return (
-    <Card className="glass-hierarchy-child border-border/40">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-1.5 text-xs">
+    <>
+      <div className="border-border/20 border-t pt-2.5">
+        <div className="mb-1.5 flex items-center gap-1.5">
           <MessageCircle className="h-3 w-3 text-purple-400" />
-          Blurb of the Day
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
+          <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Blurb of the Day</span>
+        </div>
         <div className="border-border/30 bg-muted/20 rounded-lg border p-2.5">
           <p className="text-foreground text-[11px] leading-relaxed italic">
             &ldquo;{prompt.question}?&rdquo;
@@ -1254,15 +1448,141 @@ function BlurbOfTheDayCard() {
           <span className="text-muted-foreground text-[10px]">
             📝 {prompt._count?.responses ?? 0} responses
           </span>
-          <Link
-            href={createUrl(`/thinkpages?prompt=${prompt.slug ?? prompt.id}`)}
-            className="text-[10px] font-medium text-purple-500 transition-colors hover:text-purple-400"
+          <button
+            onClick={() => setModalOpen(true)}
+            className="cursor-pointer text-[10px] font-medium text-purple-500 transition-colors hover:text-purple-400"
           >
             Write Response →
+          </button>
+        </div>
+      </div>
+
+      <BlurbResponseModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        prompt={prompt}
+      />
+    </>
+  );
+}
+
+function BlurbResponseModal({
+  open,
+  onClose,
+  prompt,
+}: {
+  open: boolean;
+  onClose: () => void;
+  prompt: { id: string; title?: string; question: string; slug?: string; _count?: { responses: number } };
+}) {
+  const {
+    data: responsesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = api.blurbs.getResponsesForPrompt.useInfiniteQuery(
+    { promptId: prompt.id, limit: 8, featuredFirst: true },
+    {
+      enabled: open,
+      getNextPageParam: (lastPage: any) => lastPage.nextCursor,
+    }
+  );
+
+  const responses = responsesData?.pages.flatMap((p: any) => p.responses) ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
+        {/* Header */}
+        <DialogHeader className="border-border/30 border-b px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10">
+              <MessageCircle className="h-4 w-4 text-purple-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-sm font-semibold">
+                {prompt.title ?? "Blurb of the Day"}
+              </DialogTitle>
+              <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                {prompt.question}
+              </p>
+              <Badge variant="secondary" className="mt-1.5 text-[10px]">
+                {prompt._count?.responses ?? 0}{" "}
+                {(prompt._count?.responses ?? 0) === 1 ? "response" : "responses"}
+              </Badge>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Responses */}
+        <div className="flex-1 space-y-2 overflow-y-auto px-5 py-3">
+          {responses.length === 0 && (
+            <p className="text-muted-foreground py-6 text-center text-xs">
+              No responses yet. Be the first!
+            </p>
+          )}
+          {responses.map((r: any) => (
+            <div
+              key={r.id}
+              className={cn(
+                "rounded-lg border p-3",
+                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-border/30"
+              )}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                {r.country?.flag && (
+                  <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
+                )}
+                <span className="text-foreground text-xs font-medium">
+                  {r.country?.name ?? "Unknown"}
+                </span>
+                {r.featured && (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/30 px-1 py-0 text-[9px] text-amber-400"
+                  >
+                    Featured
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground line-clamp-4 text-xs whitespace-pre-wrap">
+                {r.content}
+              </p>
+            </div>
+          ))}
+          {hasNextPage && (
+            <div className="py-1 text-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? "Loading..." : "Load more"}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-border/30 flex items-center justify-between border-t px-5 py-3">
+          <Link
+            href={createUrl(`/thinkpages?prompt=${prompt.slug ?? prompt.id}`)}
+            className="inline-flex items-center gap-1.5 text-xs text-purple-400 transition-colors hover:text-purple-300"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Open full prompt
+          </Link>
+          <Link
+            href={createUrl("/thinkpages")}
+            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+          >
+            All prompts →
           </Link>
         </div>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1270,14 +1590,31 @@ function BlurbOfTheDayCard() {
 
 function UnifiedFeedItem({ activity }: { activity: any }) {
   const source = activity.source ?? "activity";
-  const config = SOURCE_CONFIG[source] ?? SOURCE_CONFIG.activity!;
-  const Icon = config.icon;
+  const isWiki = source === "wiki";
+  const isGrouped = !!activity._grouped;
+  const [expanded, setExpanded] = useState(false);
+
+  // Dynamic badge for IxStats activities
+  const resolvedConfig = useMemo(() => {
+    if (source === "activity") return getActivityLabel(activity);
+    return SOURCE_CONFIG[source] ?? SOURCE_CONFIG.activity!;
+  }, [source, activity]);
+
+  const Icon = resolvedConfig.icon;
   const metadata = activity.content?.metadata ?? {};
   const externalUrl = metadata.wikiUrl ?? metadata.forumUrl;
 
-  const titleHtml = activity.content?.title
-    ? sanitizeUserContent(renderDiscordEmojis(activity.content.title))
-    : "";
+  // Wiki page title for clickable link
+  const wikiPageTitle = metadata.pageTitle as string | undefined;
+  const wikiHref = wikiPageTitle ? titleToWikiOSRoute(wikiPageTitle) : null;
+
+  const titleText = activity.content?.title ?? "";
+  // For wiki items, strip the "Wiki edit: " or "New wiki page: " prefix — we show the page title as a link
+  const displayTitle = isWiki && wikiPageTitle
+    ? (activity._isNew ? "New page created" : isGrouped ? "" : titleText.replace(/^(Wiki edit|New wiki page):\s*/i, ""))
+    : titleText;
+  const titleHtml = displayTitle ? sanitizeUserContent(renderDiscordEmojis(displayTitle)) : "";
+
   const descHtml = activity.content?.description
     ? sanitizeUserContent(renderDiscordEmojis(activity.content.description))
     : "";
@@ -1285,37 +1622,144 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
   return (
     <div className="group glass-hierarchy-child bg-muted/5 hover:bg-muted/15 border-border/30 rounded-xl border p-3 transition-colors">
       <div className="flex items-start gap-3">
+        {/* Source icon — wiki uses the W logo */}
         <div
           className={cn(
             "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-            config.bg
+            isWiki ? "bg-teal-500/10" : resolvedConfig.bg
           )}
         >
-          <Icon className={cn("h-4 w-4", config.color)} />
+          {isWiki ? (
+            <img
+              src="https://cdn.simpleicons.org/wikipedia/teal"
+              alt="Wiki"
+              className="h-4 w-4"
+            />
+          ) : (
+            <Icon className={cn("h-4 w-4", resolvedConfig.color)} />
+          )}
         </div>
         <div className="min-w-0 flex-1">
+          {/* Title row */}
           <div className="mb-1 flex items-center gap-2">
-            <span
-              className="text-foreground truncate text-sm font-medium"
-              dangerouslySetInnerHTML={{ __html: titleHtml }}
-            />
-            <Badge
-              variant="outline"
-              className={cn("shrink-0 text-[10px]", config.color, "border-current/30")}
-            >
-              {config.label}
-            </Badge>
+            {/* Wiki: clickable page title */}
+            {isWiki && wikiPageTitle ? (
+              <Link
+                href={wikiHref ?? "#"}
+                className="text-foreground truncate text-sm font-medium hover:underline"
+              >
+                {wikiPageTitle}
+              </Link>
+            ) : (
+              <span
+                className="text-foreground truncate text-sm font-medium"
+                dangerouslySetInnerHTML={{ __html: titleHtml }}
+              />
+            )}
+            {/* Badge — wiki shows nothing (icon is enough), others show dynamic label */}
+            {!isWiki && (
+              <Badge
+                variant="outline"
+                className={cn("shrink-0 text-[10px]", resolvedConfig.color, "border-current/30")}
+              >
+                {resolvedConfig.label}
+              </Badge>
+            )}
+            {activity._isNew && (
+              <Badge className="shrink-0 bg-teal-500/15 text-[9px] text-teal-500 border-teal-500/30">
+                NEW
+              </Badge>
+            )}
           </div>
-          <p
-            className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: descHtml }}
-          />
+
+          {/* Grouped summary (wiki edits or IxStats activity batches) */}
+          {isGrouped ? (
+            <div>
+              {isWiki ? (
+                /* Wiki: byte-count summary */
+                <p className="text-muted-foreground text-xs">
+                  <span className="text-foreground font-medium">{activity._editCount}</span> edits by{" "}
+                  <span className="text-foreground font-medium">
+                    {activity._editors.length === 1
+                      ? activity._editors[0]
+                      : `${activity._editors.length} editors`}
+                  </span>
+                  {" · "}
+                  <span className={cn(
+                    "font-medium",
+                    activity._totalBytes > 0 ? "text-emerald-500" : activity._totalBytes < 0 ? "text-red-500" : "text-muted-foreground"
+                  )}>
+                    {activity._totalBytes > 0 ? "+" : ""}{activity._totalBytes} bytes
+                  </span>
+                </p>
+              ) : (
+                /* IxStats activity: count summary */
+                <p className="text-muted-foreground text-xs">
+                  <span className="text-foreground font-medium">{activity._editCount}</span> updates by{" "}
+                  <span className="text-foreground font-medium">
+                    {activity._editors?.[0] ?? "unknown"}
+                  </span>
+                </p>
+              )}
+              {/* Expandable sub-items */}
+              {activity._subEdits.length > 1 && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-muted-foreground hover:text-foreground mt-1 flex items-center gap-0.5 text-[10px] transition-colors cursor-pointer"
+                >
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")} />
+                  {expanded ? "Hide" : "Show"} {activity._subEdits.length} {isWiki ? "edits" : "items"}
+                </button>
+              )}
+              {expanded && (
+                <div className="border-border/20 mt-1.5 space-y-0.5 border-l-2 pl-2">
+                  {activity._subEdits.map((sub: any, i: number) => {
+                    const subTitle = sub.content?.title ?? "";
+                    const subDesc = sub.content?.description ?? "";
+                    const display = isWiki ? subDesc.slice(0, 80) : subTitle.slice(0, 80);
+                    return (
+                      <div key={i} className="text-muted-foreground text-[10px]">
+                        <span className="text-foreground/70 font-medium">{sub.user?.name ?? "?"}</span>
+                        {" · "}
+                        <span>{display}</span>
+                        {" · "}
+                        <span>{formatTimeAgo(new Date(sub.timestamp))}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : descHtml ? (
+            <p
+              className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: descHtml }}
+            />
+          ) : null}
+
+          {/* Footer metadata */}
           <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[10px]">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatTimeAgo(new Date(activity.timestamp))}
             </span>
-            {activity.user?.name && <span>by {activity.user.name}</span>}
+            {!isGrouped && activity.user?.name && (
+              isWiki ? (
+                <WikiAuthorPopover username={activity.user.name} />
+              ) : (
+                <span>by {activity.user.name}</span>
+              )
+            )}
+            {isGrouped && activity._editors.length <= 3 && (
+              <span className="flex items-center gap-1">
+                {activity._editors.map((editor: string, idx: number) => (
+                  <span key={editor}>
+                    {idx > 0 && ", "}
+                    <WikiAuthorPopover username={editor} />
+                  </span>
+                ))}
+              </span>
+            )}
             {externalUrl && <FeedExternalLink url={externalUrl} title={activity.content?.title} />}
           </div>
         </div>
@@ -1348,3 +1792,120 @@ function FeedExternalLink({ url }: { url: string; title?: string }) {
     return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
   return link;
 }
+
+// ─── Wiki Author Hover Card ──────────────────────────────────────
+
+function WikiAuthorPopover({ username }: { username: string }) {
+  const [open, setOpen] = useState(false);
+
+  // Only fetch when the card is opened — avoids N+1 queries on page load
+  const { data: author, isLoading } = api.users.resolveWikiAuthor.useQuery(
+    { wikiUsername: username },
+    { enabled: open, staleTime: 60_000 }
+  );
+
+  const wikiUserUrl = `https://ixwiki.com/wiki/User:${encodeURIComponent(username.replace(/ /g, "_"))}`;
+  const wikiContribsUrl = `https://ixwiki.com/wiki/Special:Contributions/${encodeURIComponent(username.replace(/ /g, "_"))}`;
+
+  return (
+    <HoverCardPrimitive.Root open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>
+      <HoverCardPrimitive.Trigger asChild>
+        <button className="text-foreground/80 hover:text-foreground cursor-pointer font-medium underline decoration-dotted underline-offset-2 transition-colors">
+          {username}
+        </button>
+      </HoverCardPrimitive.Trigger>
+      <HoverCardPrimitive.Portal>
+        <HoverCardPrimitive.Content
+          side="top"
+          align="start"
+          sideOffset={4}
+          className="bg-popover border-border/50 z-50 w-56 rounded-xl border p-3 shadow-lg animate-in fade-in-0 zoom-in-95"
+        >
+          {isLoading ? (
+            <div className="space-y-2">
+              <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+              <div className="bg-muted/60 h-3 w-32 animate-pulse rounded" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Header */}
+              <div className="flex items-center gap-2">
+                {author?.country?.flag ? (
+                  <SimpleFlag countryName={author.country.name ?? ""} size="sm" className="shrink-0" />
+                ) : (
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-teal-500/10">
+                    <Users className="h-3 w-3 text-teal-400" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-foreground truncate text-xs font-semibold">{username}</p>
+                  {author?.country && (
+                    <p className="text-muted-foreground truncate text-[10px]">
+                      {author.country.name}
+                      {author.country.continent ? ` · ${author.country.continent}` : ""}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Country info badge */}
+              {author?.country?.economicTier && (
+                <div className="text-muted-foreground text-[10px]">
+                  <span className="text-foreground/70 font-medium">{author.country.economicTier}</span>
+                  {author.country.leader && <span> · Led by {author.country.leader}</span>}
+                </div>
+              )}
+
+              {/* Quick links */}
+              <div className="border-border/30 flex flex-col gap-0.5 border-t pt-1.5">
+                <a
+                  href={wikiUserUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
+                >
+                  <BookOpen className="h-3 w-3 shrink-0 text-teal-400" />
+                  Wiki User Page
+                </a>
+                <a
+                  href={wikiContribsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
+                >
+                  <Clock className="h-3 w-3 shrink-0 text-teal-400" />
+                  Contributions
+                </a>
+                {author?.country?.slug && (
+                  <>
+                    <Link
+                      href={createUrl(`/countries/${author.country.slug}`)}
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
+                    >
+                      <Globe className="h-3 w-3 shrink-0 text-blue-400" />
+                      Country Page
+                    </Link>
+                    <Link
+                      href={createUrl(`/maps?country=${author.country.id}`)}
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
+                    >
+                      <MapIcon className="h-3 w-3 shrink-0 text-emerald-400" />
+                      View on Map
+                    </Link>
+                  </>
+                )}
+                {!author?.country && !isLoading && (
+                  <span className="text-muted-foreground/50 px-1.5 py-0.5 text-[9px] italic">
+                    No linked IxStats country
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <HoverCardPrimitive.Arrow className="fill-popover" />
+        </HoverCardPrimitive.Content>
+      </HoverCardPrimitive.Portal>
+    </HoverCardPrimitive.Root>
+  );
+}
+

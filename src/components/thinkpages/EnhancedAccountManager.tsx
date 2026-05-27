@@ -30,6 +30,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { PreText } from "~/components/ui/pretext";
 
 interface EnhancedAccountManagerProps {
   countryId: string;
@@ -145,7 +146,7 @@ export function EnhancedAccountManager({
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <span className="truncate text-sm font-medium">{account.displayName}</span>
+                <PreText className="truncate text-sm font-medium">{account.displayName}</PreText>
                 {account.verified && (
                   <span
                     className="inline-flex h-3 w-3 items-center justify-center text-xs leading-none"
@@ -231,7 +232,7 @@ export function EnhancedAccountManager({
 
         {/* Account Bio Preview */}
         {account.bio && (
-          <p className="text-muted-foreground mt-2 line-clamp-2 text-xs">{account.bio}</p>
+          <PreText className="text-muted-foreground mt-2 line-clamp-2 text-xs">{account.bio}</PreText>
         )}
       </motion.div>
     );
@@ -248,9 +249,9 @@ export function EnhancedAccountManager({
             </Badge>
           </div>
         </div>
-        <p className="text-muted-foreground text-sm">
+        <PreText className="text-muted-foreground text-sm">
           Manage your strategic communication personas
-        </p>
+        </PreText>
       </CardHeader>
 
       <CardContent className="space-y-4 sm:space-y-5">
@@ -258,7 +259,7 @@ export function EnhancedAccountManager({
           type="single"
           value={filterType}
           onValueChange={(value) => value && setFilterType(value as typeof filterType)}
-          className="flex w-full flex-wrap justify-center gap-2 rounded-full bg-white/5 p-1 [-webkit-overflow-scrolling:touch] sm:flex-nowrap sm:justify-between sm:gap-1 [&::-webkit-scrollbar]:hidden"
+          className="grid w-full grid-cols-2 gap-1.5 rounded-lg bg-white/5 p-1"
         >
           {(["all", "government", "media", "citizen"] as const).map((type) => {
             const Icon = getAccountIcon(type);
@@ -270,17 +271,17 @@ export function EnhancedAccountManager({
                 key={type}
                 value={type}
                 className={cn(
-                  "data-[state=on]:border-primary data-[state=on]:bg-primary/10 flex min-w-[130px] items-center justify-between gap-2 rounded-full border px-3 py-2 text-xs tracking-wide uppercase transition-all sm:min-w-[120px]",
+                  "data-[state=on]:border-primary data-[state=on]:bg-primary/10 flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all",
                   type !== "all" ? getAccountTypeColor(type) : "border-accent/40 text-foreground"
                 )}
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1">
                   {type === "all" ? <Users className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
                   <span className="font-medium">
                     {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
                   </span>
                 </span>
-                <span className="bg-background/50 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-[9px] font-semibold">
                   {count}/{limit}
                 </span>
               </ToggleGroupItem>

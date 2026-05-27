@@ -17,24 +17,24 @@ export function MessagesLayout({
   folderNavExpanded,
 }: MessagesLayoutProps) {
   return (
-    <div className="border-border flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border shadow-sm">
-      {/* Column 1: Folder nav rail / sidebar */}
+    <div className="border-border flex h-[calc(100vh-4rem)] rounded-xl border shadow-sm">
+      {/* Column 1: Folder nav rail / sidebar — overflow-visible so tooltips escape */}
       <div
         className={cn(
-          "glass-hierarchy-parent border-border/50 bg-background/80 z-10 shrink-0 border-r backdrop-blur-md transition-[width] duration-200 ease-in-out",
+          "border-border/50 bg-background/95 relative z-20 shrink-0 overflow-visible rounded-l-xl border-r transition-[width] duration-200 ease-in-out",
           folderNavExpanded ? "w-48" : "w-14"
         )}
       >
         {folderNav}
       </div>
 
-      {/* Column 2: Conversation list panel */}
-      <div className="glass-hierarchy-child border-border/50 bg-background/60 w-80 shrink-0 border-r backdrop-blur-md xl:w-96">
+      {/* Column 2: Conversation list panel — no backdrop-filter to avoid blurring nav tooltips */}
+      <div className="border-border/50 bg-background/90 z-10 w-80 shrink-0 overflow-hidden border-r xl:w-96">
         {conversationPanel}
       </div>
 
       {/* Column 3: Chat panel */}
-      <div className="glass-hierarchy-child bg-background/40 min-w-0 flex-1 backdrop-blur-sm">
+      <div className="bg-background/80 min-w-0 flex-1 overflow-hidden rounded-r-xl backdrop-blur-sm">
         {chatPanel}
       </div>
     </div>

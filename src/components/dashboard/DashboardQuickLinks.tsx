@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { BookOpen, MessageSquare } from "lucide-react";
-import { FaDiscord } from "react-icons/fa";
 import { cn } from "~/lib/utils";
+import { StatusIndicator } from "~/components/status-indicator";
 import { IXWORLD_VERSION } from "~/components/maps/core/MapWelcomeModal";
 import { BUILD_VERSION } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/modals/FeedbackModal";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 
 const EXTERNAL_LINKS = [
-  {
-    label: "Discord",
-    href: "https://discord.gg/mgXAEYdqkd",
-    icon: FaDiscord,
-    color: "text-indigo-500",
-  },
   {
     label: "Getting Started",
     href: "/help/getting-started",
@@ -23,33 +23,46 @@ const EXTERNAL_LINKS = [
   },
 ] as const;
 
-/** IxWorld version — reused from MapWelcomeModal */
+interface DashboardQuickLinksProps {
+  /** Server-rendered Discord badge passed from a server component boundary. */
+  discordBadge?: ReactNode;
+}
 
-export function DashboardQuickLinks() {
+export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="glass-hierarchy-child w-48 space-y-2.5 rounded-xl border border-border/40 p-3 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center gap-1.5">
-        <svg
-          className="text-muted-foreground h-3 w-3"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-          />
-        </svg>
-        <span className="text-muted-foreground text-[10px] font-semibold">Quick Links</span>
+    <CutoutCard className={cn(cutoutCardSurfaceClassName, "w-48 rounded-xl overflow-hidden")}
+      trackPointerHover={false}
+    >
+      {/* Cutout tab header */}
+      <div className="relative bg-cyan-500/10 px-3 pt-2.5 pb-4">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-card-foreground">
+          <svg
+            className="h-3.5 w-3.5 text-cyan-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+            />
+          </svg>
+          Quick Links
+        </div>
+        <CutoutCorner className="absolute -bottom-px left-0 text-card" size={16} />
+        <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={16} />
       </div>
+      <CutoutCardContent className="space-y-2.5 p-3 pt-1">
 
       {/* Links */}
       <div className="space-y-1">
+        {/* Discord badge — server-rendered, passed through props */}
+        {discordBadge}
+
         {EXTERNAL_LINKS.map((link) => {
           const Icon = link.icon;
           const isExternal = link.href.startsWith("http");
@@ -82,18 +95,13 @@ export function DashboardQuickLinks() {
         </Dialog>
       </div>
 
-      {/* Status */}
-      <div className="border-border/40 border-t pt-2">
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-          </span>
-          <span className="text-muted-foreground text-[9px]">System Online</span> 
-          
+      <div className="border-border/40 border-t pt-2 space-y-1.5">
+        <StatusIndicator status="operational" label="System Online" size="sm" />
+        <div className="text-muted-foreground/60 text-[9px] tabular-nums">
+          v{IXWORLD_VERSION} · Build {BUILD_VERSION}
         </div>
-        <span className="text-muted-foreground text-[9px]">IxStates v{IXWORLD_VERSION} Build {BUILD_VERSION}</span>
       </div>
-    </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import {
@@ -25,8 +25,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
-import { useCountryData, VitalityRings, SectionHeaderBackground } from "./primitives";
-import type { RingConfig } from "./primitives";
+import { useCountryData, SectionHeaderBackground } from "./primitives";
 import { useUser } from "~/context/auth-context";
 import { AlertThresholdSettings } from "~/app/mycountry/intelligence/_components/AlertThresholdSettings";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
@@ -92,53 +91,7 @@ export function EnhancedIntelligenceContent({
     { enabled: !!country?.id }
   );
 
-  const intelligenceRings = useMemo((): RingConfig[] => {
-    const securityScore = defenseOverview?.overallScore ?? 0;
-    const securityLevel = defenseOverview?.securityLevel?.replace("_", " ") ?? "unknown";
-    const criticalAlerts = intelligenceOverview?.alerts?.critical ?? 0;
-    const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
-    const activeEmbassies =
-      embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
-    const totalEmbassies = embassies?.length ?? 0;
 
-    const alertColor = criticalAlerts > 0 ? "#ef4444" : "#22c55e";
-
-    return [
-      {
-        key: "security",
-        label: "Security",
-        subtitle: securityLevel,
-        color: "#3B82F6",
-        icon: Shield,
-        value: securityScore,
-        target: 100,
-        displayValue: `${securityScore}/100`,
-        onClick: () => setActiveTab("dashboard"),
-      },
-      {
-        key: "alerts",
-        label: "Alerts",
-        subtitle: `${totalAlerts} total`,
-        color: alertColor,
-        icon: AlertTriangle,
-        value: criticalAlerts,
-        target: totalAlerts || 1,
-        displayValue: `${criticalAlerts} critical`,
-        onClick: () => setActiveTab("reports"),
-      },
-      {
-        key: "network",
-        label: "Network",
-        subtitle: "embassies",
-        color: "#3B82F6",
-        icon: Globe,
-        value: activeEmbassies,
-        target: totalEmbassies || 1,
-        displayValue: `${activeEmbassies} active`,
-        onClick: () => setActiveTab("analysis"),
-      },
-    ];
-  }, [defenseOverview, intelligenceOverview, embassies]);
 
   if (isLoading || !country) {
     return null;
@@ -223,8 +176,6 @@ export function EnhancedIntelligenceContent({
         {/* Geopolitical Map */}
         <IntelligenceMapWidget countryId={country.id} countryName={country.name} />
 
-        {/* Intelligence Status Rings */}
-        <VitalityRings rings={intelligenceRings} title="Intelligence Overview" variant="grid" />
 
         {/* Stats strip */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

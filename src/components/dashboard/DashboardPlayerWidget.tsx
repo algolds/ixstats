@@ -1,27 +1,33 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Mail,
-  ClipboardList,
   AlertTriangle,
   MessageSquare,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
+  ChevronUp,
+  ClipboardList,
+  FileText,
+  Layers,
   Users,
+  DollarSign,
+  Map as MapIcon,
 } from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
+import { createUrl } from "~/lib/url-utils";
+import { SimpleFlag } from "~/components/SimpleFlag";
+import { PreText } from "~/components/ui/pretext";
 import {
-  ECONOMIC_TIER_INFO,
-  POPULATION_TIER_INFO,
-  getEconomicTierFromGdpPerCapita,
-  getPopulationTierFromPopulation,
-} from "~/types/ixstats";
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
+import { formatCompactNumber, formatCompactCurrency } from "~/lib/format-utils";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
 
@@ -34,66 +40,12 @@ const FOLDER_LABELS: Record<FolderKey, { label: string; icon: typeof MessageSqua
   system: { label: "System", icon: MessageSquare },
 };
 
-function formatCompact(num: number): string {
-  if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-  return num.toString();
+interface DashboardPlayerWidgetProps {
+  heroCollapsed?: boolean;
+  onHeroExpand?: () => void;
 }
 
-function MiniProgressCircle({
-  progress,
-  colorClass = "stroke-emerald-500",
-}: {
-  progress: number;
-  colorClass?: string;
-}) {
-  const radius = 6;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference;
-  return (
-    <svg className="h-4 w-4 -rotate-90 transform shrink-0" viewBox="0 0 16 16">
-      <circle
-        cx="8"
-        cy="8"
-        r={radius}
-        fill="none"
-        className="stroke-slate-200 dark:stroke-slate-800"
-        strokeWidth="1.8"
-      />
-      <circle
-        cx="8"
-        cy="8"
-        r={radius}
-        fill="none"
-        className={colorClass}
-        strokeWidth="1.8"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function GrowthArrow({ rate }: { rate: number }) {
-  if (rate === 0) return null;
-  const absPct = Math.abs(rate) * 100;
-  const isUp = rate > 0;
-  const intensity = absPct < 1 ? "opacity-30" : absPct < 3 ? "opacity-60" : "opacity-100";
-  const scale = absPct >= 3 ? "scale-110" : "";
-  const Icon = isUp ? TrendingUp : TrendingDown;
-  const color = isUp ? "text-green-500" : "text-red-500";
-  return (
-    <Icon
-      className={cn("h-3 w-3 transition-all", color, intensity, scale)}
-      strokeWidth={absPct >= 3 ? 3 : 2.5}
-    />
-  );
-}
-
-export function DashboardPlayerWidget() {
+export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: DashboardPlayerWidgetProps) {
   const { user, isSignedIn } = useUser();
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
@@ -103,23 +55,6 @@ export function DashboardPlayerWidget() {
   const countryId = userProfile?.countryId || "";
   const hasCountry = !!countryId;
 
-  // ── Toggle state for stat cards ──
-  const [gdpView, setGdpView] = useState<"perCapita" | "total" | "growth">("perCapita");
-  const [popView, setPopView] = useState<"total" | "growth" | "density">("total");
-
-  const cycleGdp = () => {
-    const order: (typeof gdpView)[] = ["perCapita", "total", "growth"];
-    setGdpView(order[(order.indexOf(gdpView) + 1) % order.length]);
-  };
-  const cyclePop = () => {
-    const order: (typeof popView)[] = ["total", "growth", "density"];
-    setPopView(order[(order.indexOf(popView) + 1) % order.length]);
-  };
-
-  const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
-    { countryId },
-    { enabled: hasCountry }
-  );
   const { data: folderCounts } = api.messages.getFolderCounts.useQuery(
     { userId: user?.id ?? "" },
     { enabled: !!user?.id }
@@ -127,6 +62,10 @@ export function DashboardPlayerWidget() {
   const { data: activeCrises } = api.crisisEvents.getActive.useQuery(
     { limit: 5 },
     { enabled: hasCountry }
+  );
+  const { data: country } = api.countries.getByIdAtTime.useQuery(
+    { id: countryId },
+    { enabled: hasCountry && !!heroCollapsed }
   );
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery(
     { timeframe: "month" },
@@ -136,162 +75,107 @@ export function DashboardPlayerWidget() {
     { countryId },
     { enabled: hasCountry }
   );
+  const { data: policies } = api.policies.getPolicies.useQuery(
+    { countryId },
+    { enabled: hasCountry }
+  );
+  const { data: meetings } = api.meetings.getMeetings.useQuery(
+    { countryId },
+    { enabled: hasCountry }
+  );
 
   if (!isSignedIn) return null;
 
   if (profileLoading) {
     return (
-      <div className="glass-hierarchy-child w-48 space-y-2.5 rounded-xl border border-border/40 p-3 shadow-sm">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-4 w-28" />
-      </div>
+      <CutoutCard className={cn(cutoutCardSurfaceClassName, "w-48 rounded-xl overflow-hidden")}
+        trackPointerHover={false}
+      >
+        <div className="relative bg-indigo-500/10 px-3 pt-2.5 pb-4">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-card-foreground">
+            <Skeleton className="h-4 w-4 rounded-sm" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <CutoutCorner className="absolute -bottom-px left-0 text-card" size={16} />
+          <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={16} />
+        </div>
+        <CutoutCardContent className="space-y-2.5 p-3 pt-0">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-28" />
+        </CutoutCardContent>
+      </CutoutCard>
     );
   }
-
-  const dash = (dashboard ?? {}) as any;
-  const stats = {
-    gdpPerCapita: dash.currentGdpPerCapita ?? 0,
-    totalGdp: dash.currentTotalGdp ?? 0,
-    population: dash.currentPopulation ?? 0,
-    growth: dash.adjustedGdpGrowth ?? 0,
-    popGrowth: dash.populationGrowthRate ?? 0,
-    popDensity: dash.populationDensity ?? 0,
-  };
-
-  const gdpDisplayValue =
-    gdpView === "perCapita"
-      ? `$${formatCompact(stats.gdpPerCapita)}`
-      : gdpView === "total"
-        ? `$${formatCompact(stats.totalGdp)}`
-        : `${(stats.growth * 100).toFixed(2)}%`;
-
-  const gdpDisplayLabel =
-    gdpView === "perCapita" ? "GDP/Cap" : gdpView === "total" ? "Total GDP" : "Growth";
-
-  const popDisplayValue =
-    popView === "total"
-      ? formatCompact(stats.population)
-      : popView === "growth"
-        ? `${(stats.popGrowth * 100).toFixed(2)}%`
-        : `${formatCompact(Math.round(stats.popDensity))}/mi²`;
-
-  const popDisplayLabel =
-    popView === "total" ? "Population" : popView === "growth" ? "Pop Growth" : "Density";
-
-  // Tier progress calculations
-  const econTier = stats.gdpPerCapita ? getEconomicTierFromGdpPerCapita(stats.gdpPerCapita) : null;
-  const econInfo = econTier ? ECONOMIC_TIER_INFO[econTier] : null;
-  const econMin = econInfo ? econInfo.min : 0;
-  const econMax = econInfo ? (econInfo.max === Infinity ? econMin * 1.5 : econInfo.max) : 100;
-  const econProgress = econInfo
-    ? Math.min(100, Math.max(0, ((stats.gdpPerCapita - econMin) / (econMax - econMin)) * 100))
-    : 0;
-
-  const popTier = stats.population ? getPopulationTierFromPopulation(stats.population) : null;
-  const popInfo = popTier ? POPULATION_TIER_INFO[popTier] : null;
-  const popMin = popInfo ? popInfo.min : 0;
-  const popMax = popInfo ? (popInfo.max === Infinity ? popMin * 2 : popInfo.max) : 100;
-  const popProgress = popInfo
-    ? Math.min(100, Math.max(0, ((stats.population - popMin) / (popMax - popMin)) * 100))
-    : 0;
 
   const msgFolders = folderCounts as Record<FolderKey, number> | undefined;
   const hasMessages = msgFolders && Object.values(msgFolders).some((c) => c > 0);
   const activeCrisesList = activeCrises ?? [];
   const crisesCount = crisisStats?.activeEvents ?? 0;
 
+  const issueCount = pendingIssues?.total ?? 0;
+  const urgentCount = pendingIssues?.urgent ?? 0;
+  const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
+  const totalPolicies = policies?.length ?? 0;
+  const pendingActions =
+    meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
+
   return (
-    <div className="glass-hierarchy-child w-48 space-y-2.5 rounded-xl border border-border/40 p-3 shadow-sm">
-      {/* GDP/Pop Stat Cards */}
-      {dashboard && (
-        <div className="space-y-3">
-          {/* GDP Card */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-semibold text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                Economy
-              </span>
-              <button
-                onClick={cycleGdp}
-                title="Cycle view"
-                className="text-[8px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 rounded px-1 py-0.5 hover:bg-white/5 transition-colors"
-              >
-                <span>{gdpDisplayLabel}</span>
-                <span className="text-[7px]">↻</span>
-              </button>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
-                {gdpDisplayValue}
-              </span>
-              <div className="flex items-center gap-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
-                <GrowthArrow rate={stats.growth} />
-                <span>{stats.growth >= 0 ? "+" : ""}{(stats.growth * 100).toFixed(1)}%</span>
-              </div>
-            </div>
-            {/* Economic Tier Progress */}
-            {econTier && (
-              <div className="flex items-center justify-between text-[8px] bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/15 dark:border-emerald-500/10 rounded-md px-1.5 py-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground font-medium">Tier:</span>
-                  <span className="font-bold text-foreground">{econTier}</span>
-                </div>
-                <div className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                  <span>{Math.round(econProgress)}%</span>
-                  <MiniProgressCircle progress={econProgress} colorClass="stroke-emerald-500 dark:stroke-emerald-400" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="border-border/30 border-t" />
-
-          {/* Population Card */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-semibold text-muted-foreground flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-blue-500" />
-                Demographics
-              </span>
-              <button
-                onClick={cyclePop}
-                title="Cycle view"
-                className="text-[8px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 rounded px-1 py-0.5 hover:bg-white/5 transition-colors"
-              >
-                <span>{popDisplayLabel}</span>
-                <span className="text-[7px]">↻</span>
-              </button>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-[13px] font-bold text-blue-600 dark:text-blue-400">
-                {popDisplayValue}
-              </span>
-              <div className="flex items-center gap-0.5 text-[9px] font-medium text-blue-600 dark:text-blue-400">
-                <GrowthArrow rate={stats.popGrowth} />
-                <span>{stats.popGrowth >= 0 ? "+" : ""}{(stats.popGrowth * 100).toFixed(1)}%</span>
-              </div>
-            </div>
-            {/* Population Tier Progress */}
-            {popTier && (
-              <div className="flex items-center justify-between text-[8px] bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/15 dark:border-blue-500/10 rounded-md px-1.5 py-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground font-medium">Tier:</span>
-                  <span className="font-bold text-foreground">{popTier}</span>
-                </div>
-                <div className="flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
-                  <span>{Math.round(popProgress)}%</span>
-                  <MiniProgressCircle progress={popProgress} colorClass="stroke-blue-500 dark:stroke-blue-400" />
-                </div>
-              </div>
-            )}
-          </div>
+    <CutoutCard className={cn(cutoutCardSurfaceClassName, "w-48 rounded-xl overflow-hidden")}
+      trackPointerHover={false}
+    >
+      {/* Cutout tab header */}
+      <div className="relative bg-indigo-500/10 px-3 pt-2.5 pb-5">
+        <div className="flex items-center gap-1.5">
+          <SimpleFlag countryName={userProfile?.country?.name ?? ""} size="xs" className="shrink-0" />
         </div>
+        <PreText className="mt-1 text-center text-sm text-card-foreground/80">{userProfile?.country?.name ?? "My Country"}</PreText>
+        <CutoutCorner className="absolute -bottom-px left-0 text-card" size={16} />
+        <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={16} />
+      </div>
+      <CutoutCardContent className="space-y-2.5 p-3 pt-1">
+
+      {/* Condensed hero stats — visible when hero is collapsed */}
+      {heroCollapsed && (
+        <>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                <Users className="h-3 w-3 text-blue-400" /> Pop
+              </span>
+              <span className="text-foreground text-[10px] font-semibold">
+                {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                <DollarSign className="h-3 w-3 text-emerald-400" /> GDP
+              </span>
+              <span className="text-foreground text-[10px] font-semibold">
+                {formatCompactCurrency((country as any)?.newStats?.currentTotalGdp ?? 0)}
+              </span>
+            </div>
+            {(country as any)?.newStats?.landArea && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                  <MapIcon className="h-3 w-3 text-amber-400" /> Area
+                </span>
+                <span className="text-foreground text-[10px] font-semibold">
+                  {formatCompactNumber((country as any)?.newStats?.landArea)} km²
+                </span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={onHeroExpand}
+            className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-md bg-muted/40 px-2 py-1 text-[9px] transition-colors cursor-pointer"
+          >
+            <ChevronUp className="h-3 w-3 rotate-180" />
+            Expand
+          </button>
+          <div className="border-border/40 border-t" />
+        </>
       )}
-
-      <div className="border-border/40 border-t" />
-
       {/* Messages */}
       <div className="space-y-1.5">
         <Link href={"/messages"} className="group flex items-center justify-between">
@@ -332,26 +216,61 @@ export function DashboardPlayerWidget() {
         )}
       </div>
 
-      <div className="border-border/40 border-t" />
-
-      {/* Pending Issues */}
-      {pendingIssues && (
-        <Link href={"/mycountry/executive"} className="group flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-[10px] font-semibold">
-            <ClipboardList className="h-3.5 w-3.5" />
-            Issues
-          </span>
-          <span className="flex items-center gap-1.5">
-            {pendingIssues.urgent > 0 && (
-              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] font-bold text-white">
-                {pendingIssues.urgent} urgent
+      {/* Issues / Policies / Actions */}
+      {hasCountry && (
+        <>
+          <div className="border-border/40 border-t" />
+          <div className="space-y-1">
+            {/* Issues */}
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="group flex items-center justify-between rounded-md bg-amber-500/5 px-2 py-1.5 transition-colors hover:bg-amber-500/10"
+            >
+              <span className="flex items-center gap-1.5 text-[10px] font-medium text-amber-500">
+                <ClipboardList className="h-3 w-3" />
+                Issues
               </span>
-            )}
-            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[9px] font-semibold">
-              {pendingIssues.total}
-            </span>
-          </span>
-        </Link>
+              <span className="flex items-center gap-1">
+                {urgentCount > 0 && (
+                  <span className="rounded-full bg-red-500 px-1 py-0.5 text-[7px] font-bold text-white">
+                    {urgentCount}
+                  </span>
+                )}
+                <span className="text-muted-foreground text-[9px] font-medium">
+                  {issueCount}
+                </span>
+              </span>
+            </Link>
+
+            {/* Policies */}
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="group flex items-center justify-between rounded-md bg-blue-500/5 px-2 py-1.5 transition-colors hover:bg-blue-500/10"
+            >
+              <span className="flex items-center gap-1.5 text-[10px] font-medium text-blue-500">
+                <FileText className="h-3 w-3" />
+                Policies
+              </span>
+              <span className="text-muted-foreground text-[9px] font-medium">
+                {activePolicies}/{totalPolicies}
+              </span>
+            </Link>
+
+            {/* Actions */}
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="group flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1.5 transition-colors hover:bg-emerald-500/10"
+            >
+              <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-500">
+                <Layers className="h-3 w-3" />
+                Actions
+              </span>
+              <span className={`text-[9px] font-medium ${pendingActions > 0 ? "text-orange-500" : "text-emerald-500"}`}>
+                {pendingActions > 0 ? `${pendingActions} pending` : "All clear"}
+              </span>
+            </Link>
+          </div>
+        </>
       )}
 
       {/* Active Crises */}
@@ -374,6 +293,7 @@ export function DashboardPlayerWidget() {
           </div>
         </>
       )}
-    </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

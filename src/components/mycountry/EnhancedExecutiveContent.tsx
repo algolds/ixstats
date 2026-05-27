@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import { Bell, FileText, Layers } from "lucide-react";
+import { Bell } from "lucide-react";
 import { CrownIcon } from "~/components/ui/icons";
-import { useCountryData, VitalityRings, SectionHero } from "./primitives";
-import type { RingConfig, StatusBadgeConfig } from "./primitives";
+import { useCountryData, SectionHero } from "./primitives";
+import type { StatusBadgeConfig } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { api } from "~/trpc/react";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
@@ -38,47 +37,7 @@ export function EnhancedExecutiveContent({
     { enabled: !!country?.id }
   );
 
-  const executiveRings = useMemo((): RingConfig[] => {
-    const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
-    const totalPolicies = policies?.length ?? 0;
-    const pendingActions =
-      meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
-    const totalActions = meetings?.flatMap((m) => m.actionItems).length ?? 0;
-    const completedActions = totalActions - pendingActions;
 
-    return [
-      {
-        key: "issues",
-        label: "Issues",
-        subtitle: urgentIssueCount > 0 ? `${urgentIssueCount} urgent` : "pending",
-        color: urgentIssueCount > 0 ? "#ef4444" : issueCount > 0 ? "#f59e0b" : "#22c55e",
-        icon: Bell,
-        value: issueCount,
-        target: Math.max(issueCount + 3, 5),
-        displayValue: `${issueCount} pending`,
-      },
-      {
-        key: "policies",
-        label: "Policies",
-        subtitle: `${totalPolicies} total`,
-        color: activePolicies > 0 ? "#f59e0b" : "#6b7280",
-        icon: FileText,
-        value: activePolicies,
-        target: totalPolicies || 1,
-        displayValue: `${activePolicies} active`,
-      },
-      {
-        key: "actions",
-        label: "Actions",
-        subtitle: pendingActions > 0 ? "require attention" : "all clear",
-        color: pendingActions > 0 ? "#f97316" : "#22c55e",
-        icon: Layers,
-        value: completedActions,
-        target: totalActions || 1,
-        displayValue: pendingActions > 0 ? `${pendingActions} pending` : "all done",
-      },
-    ];
-  }, [issueCount, urgentIssueCount, policies, meetings]);
 
   if (isLoading || !country) {
     return null;
@@ -113,8 +72,6 @@ export function EnhancedExecutiveContent({
       onNavigate={onNavigate}
       notifications={notifications}
     >
-      {/* Executive Status Rings */}
-      <VitalityRings rings={executiveRings} title="Executive Status" variant="grid" />
 
       {/* Cross-Pillar Effects */}
       <CrossPillarBanner section="executive" countryId={country.id} onNavigate={onNavigate} />

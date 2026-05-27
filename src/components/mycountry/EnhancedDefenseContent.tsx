@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
@@ -13,11 +13,10 @@ import { OperationsPanel } from "~/components/defense/OperationsPanel";
 import { DefenseCommandPanel } from "~/components/defense/DefenseCommandPanel";
 import {
   useCountryData,
-  VitalityRings,
   SectionHeaderBackground,
   TabHeroBanner,
 } from "./primitives";
-import type { RingConfig } from "./primitives";
+
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
 import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
@@ -69,49 +68,7 @@ export function EnhancedDefenseContent({
       : 0;
   const securityScore = securityData?.overallSecurityScore ?? 0;
 
-  const defenseRings = useMemo((): RingConfig[] => {
-    const securityLevel = securityData?.securityLevel?.replace("_", " ") ?? "unknown";
 
-    const scoreColor =
-      securityScore >= 75 ? "#22c55e" : securityScore >= 50 ? "#3b82f6" : "#f97316";
-    const readinessColor = avgReadiness >= 70 ? "#22c55e" : "#eab308";
-
-    return [
-      {
-        key: "security",
-        label: "Security",
-        subtitle: securityLevel,
-        color: scoreColor,
-        icon: Shield,
-        value: securityScore,
-        target: 100,
-        displayValue: `${securityScore}/100`,
-        onClick: () => setActiveTab("command"),
-      },
-      {
-        key: "branches",
-        label: "Branches",
-        subtitle: "military forces",
-        color: "#ef4444",
-        icon: Sword,
-        value: branchCount,
-        target: branchCount + 2,
-        displayValue: `${branchCount} active`,
-        onClick: () => setActiveTab("forces"),
-      },
-      {
-        key: "readiness",
-        label: "Readiness",
-        subtitle: "avg. combat ready",
-        color: readinessColor,
-        icon: Target,
-        value: avgReadiness,
-        target: 100,
-        displayValue: `${avgReadiness}%`,
-        onClick: () => setActiveTab("operations"),
-      },
-    ];
-  }, [securityData, securityScore, branchCount, avgReadiness]);
 
   if (isLoading || !country) {
     return null;
@@ -178,8 +135,7 @@ export function EnhancedDefenseContent({
       {/* Defense Territory Map */}
       <DefenseMapWidget countryId={country.id} countryName={country.name} />
 
-      {/* Defense Status Rings */}
-      <VitalityRings rings={defenseRings} title="Defense Status" variant="grid" />
+
 
       {/* Compact stats strip (replaces 175-line security card) */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

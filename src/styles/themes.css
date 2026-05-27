@@ -9,26 +9,26 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
-  /* Dark Theme Colors (Default) */
-  --color-bg-primary: #111827;        /* gray-900 */
-  --background-rgb: 17, 24, 39;       /* RGB values for glassmorphic backgrounds */
-  --border-rgb: 55, 65, 81;           /* RGB values for glassmorphic borders */
-  --color-bg-secondary: #1f2937;      /* gray-800 */
-  --color-bg-tertiary: #374151;       /* gray-700 */
-  --color-bg-accent: #4b5563;         /* gray-600 */
-  --color-bg-hover: #6b7280;          /* gray-500 */
-  --color-bg-surface: #1f2937;        /* gray-800 */
-  --color-bg-elevated: #374151;       /* gray-700 */
+  /* Dark Theme Colors (WikiOS-aligned) */
+  --color-bg-primary: #0f1114;        /* WikiOS bg */
+  --background-rgb: 15, 17, 20;       /* RGB values for glassmorphic backgrounds */
+  --border-rgb: 255, 255, 255;        /* RGB values for glassmorphic borders (white-based, low alpha) */
+  --color-bg-secondary: #16181d;      /* WikiOS surface */
+  --color-bg-tertiary: #1e2028;       /* WikiOS elevated */
+  --color-bg-accent: #282a33;         /* WikiOS accent surface */
+  --color-bg-hover: #32343e;          /* WikiOS hover */
+  --color-bg-surface: #16181d;        /* WikiOS surface */
+  --color-bg-elevated: #1e2028;       /* WikiOS elevated */
 
-  --color-text-primary: #f9fafb;      /* gray-50 */
-  --color-text-secondary: #e5e7eb;    /* gray-200 */
-  --color-text-tertiary: #d1d5db;     /* gray-300 */
-  --color-text-muted: #9ca3af;        /* gray-400 */
-  --color-text-disabled: #6b7280;     /* gray-500 */
+  --color-text-primary: #e4e4e7;      /* WikiOS text */
+  --color-text-secondary: #d4d4d8;    /* WikiOS text-light */
+  --color-text-tertiary: #a1a1aa;     /* WikiOS text-muted */
+  --color-text-muted: #a1a1aa;        /* WikiOS text-muted */
+  --color-text-disabled: #71717a;     /* WikiOS text-dim */
 
-  --color-border-primary: #374151;    /* gray-700 */
-  --color-border-secondary: #4b5563;  /* gray-600 */
-  --color-border-accent: #6b7280;     /* gray-500 */
+  --color-border-primary: rgba(255, 255, 255, 0.08);  /* WikiOS border */
+  --color-border-secondary: rgba(255, 255, 255, 0.12); /* WikiOS border-hover */
+  --color-border-accent: rgba(255, 255, 255, 0.18);    /* WikiOS border-accent */
 
   /* Brand Colors */
   --color-brand-primary: #6366f1;     /* indigo-500 */
@@ -64,22 +64,22 @@
   /* Special Purpose Colors */
   --color-overlay: rgba(0, 0, 0, 0.75);
   --color-backdrop: rgba(0, 0, 0, 0.5);
-  --color-glass: rgba(31, 41, 55, 0.8);
-  --color-surface-blur: rgba(31, 41, 55, 0.95);
+  --color-glass: rgba(22, 24, 29, 0.8);  /* WikiOS surface */
+  --color-surface-blur: rgba(22, 24, 29, 0.95);
 
   /* Component Specific Colors */
-  --color-input-bg: #374151;
-  --color-input-border: #4b5563;
+  --color-input-bg: #1e2028;
+  --color-input-border: rgba(255, 255, 255, 0.12);
   --color-input-focus: #6366f1;
 
   --color-button-primary: #6366f1;
   --color-button-primary-hover: #5855eb;
-  --color-button-secondary: #374151;
-  --color-button-secondary-hover: #4b5563;
+  --color-button-secondary: #1e2028;
+  --color-button-secondary-hover: #282a33;
 
-  --color-card-bg: #1f2937;
-  --color-card-border: #374151;
-  --color-card-hover: #2d3748;
+  --color-card-bg: #16181d;
+  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-card-hover: #1e2028;
 
   /* Economic Tier Colors */
   --color-tier-advanced: #8b5cf6;     /* purple-500 */
@@ -93,26 +93,26 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.14);
   
-  /* Tailwind CSS Variables - Dark Theme */
+  /* Tailwind CSS Variables - Dark Theme (WikiOS-aligned) */
   --radius: 0.625rem;
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 84% 4.9%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
+  --background: 220 14% 7%;           /* #0f1114 WikiOS bg */
+  --foreground: 240 5% 90%;           /* #e4e4e7 WikiOS text */
+  --card: 222 13% 10%;                /* #16181d WikiOS surface */
+  --card-foreground: 240 5% 90%;      /* #e4e4e7 */
+  --popover: 222 13% 10%;             /* #16181d */
+  --popover-foreground: 240 5% 90%;   /* #e4e4e7 */
+  --primary: 240 5% 90%;
+  --primary-foreground: 220 14% 7%;
+  --secondary: 223 14% 14%;           /* #1e2028 */
+  --secondary-foreground: 240 5% 90%;
+  --muted: 223 14% 14%;               /* #1e2028 */
+  --muted-foreground: 240 4% 63%;     /* #a1a1aa WikiOS text-muted */
+  --accent: 223 14% 14%;
+  --accent-foreground: 240 5% 90%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
+  --destructive-foreground: 240 5% 90%;
+  --border: 223 14% 14%;              /* Slightly visible */
+  --input: 223 14% 14%;
   --ring: 212.7 26.8% 83.9%;
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;

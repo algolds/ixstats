@@ -1316,4 +1316,42 @@ export const usersRouter = createTRPCRouter({
         update: input,
       });
     }),
+
+  // Resolve a wiki username to their IxStats country (for feed hover cards)
+  resolveWikiAuthor: rateLimitedPublicProcedure
+    .input(z.object({ wikiUsername: z.string().min(1).max(100) }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findFirst({
+        where: { wikiUsername: input.wikiUsername },
+        select: {
+          wikiUsername: true,
+          country: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              flag: true,
+              economicTier: true,
+              leader: true,
+              continent: true,
+            },
+          },
+        },
+      });
+      if (!user) return null;
+      return {
+        wikiUsername: user.wikiUsername,
+        country: user.country
+          ? {
+              id: user.country.id,
+              name: user.country.name,
+              slug: user.country.slug,
+              flag: user.country.flag,
+              economicTier: user.country.economicTier,
+              leader: user.country.leader,
+              continent: user.country.continent,
+            }
+          : null,
+      };
+    }),
 });

@@ -10,9 +10,33 @@ import {
   Settings,
   PanelLeftOpen,
   PanelLeftClose,
+  Volume2,
+  Eye,
+  Rows3,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
+} from "~/components/ui/popover";
+import { Switch } from "~/components/ui/switch";
 import type { MessageFolder, MessageFolderConfig } from "~/types/messages";
+
+export interface MessagesSettings {
+  notificationSounds: boolean;
+  showReadReceipts: boolean;
+  compactMode: boolean;
+}
+
+export const DEFAULT_MESSAGES_SETTINGS: MessagesSettings = {
+  notificationSounds: true,
+  showReadReceipts: true,
+  compactMode: false,
+};
 
 export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   {
@@ -93,6 +117,8 @@ interface MessagesFolderNavProps {
   unreadCounts?: Record<MessageFolder, number>;
   expanded: boolean;
   onToggleExpanded: () => void;
+  settings?: MessagesSettings;
+  onSettingsChange?: (settings: MessagesSettings) => void;
 }
 
 export function MessagesFolderNav({
@@ -101,7 +127,13 @@ export function MessagesFolderNav({
   unreadCounts,
   expanded,
   onToggleExpanded,
+  settings = DEFAULT_MESSAGES_SETTINGS,
+  onSettingsChange,
 }: MessagesFolderNavProps) {
+  const toggleSetting = (key: keyof MessagesSettings) => {
+    onSettingsChange?.({ ...settings, [key]: !settings[key] });
+  };
+
   return (
     <nav className="flex h-full flex-col justify-between">
       <div className="flex flex-col gap-0.5 p-1.5">
@@ -171,10 +203,10 @@ export function MessagesFolderNav({
 
               {/* Tooltip (collapsed mode only) */}
               {!expanded && (
-                <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+                <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 bg-[#f8fafc] text-[#0f172a] dark:bg-[#1e293b] dark:text-[#f1f5f9]">
                   {folder.title}
                   {count > 0 && ` (${count})`}
-                  <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
+                  <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
                 </span>
               )}
             </button>
@@ -184,22 +216,63 @@ export function MessagesFolderNav({
 
       {/* Bottom: settings + expand toggle */}
       <div className="flex flex-col gap-0.5 p-1.5">
-        <button
-          className={cn(
-            "group/tip text-muted-foreground hover:bg-muted/60 hover:text-foreground relative flex items-center gap-3 rounded-lg transition-colors",
-            expanded ? "px-3 py-2" : "justify-center p-2"
-          )}
-          aria-label="Settings"
-        >
-          <Settings className="h-[18px] w-[18px] shrink-0 transition-transform duration-150 group-hover/tip:scale-110" />
-          {expanded && <span className="min-w-0 truncate text-sm font-medium">Settings</span>}
-          {!expanded && (
-            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
-              Settings
-              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
-            </span>
-          )}
-        </button>
+        {/* Settings popover */}
+        <Popover>
+          <PopoverTrigger
+            className={cn(
+              "group/tip text-muted-foreground hover:bg-muted/60 hover:text-foreground relative flex items-center gap-3 rounded-lg transition-colors",
+              expanded ? "px-3 py-2" : "justify-center p-2"
+            )}
+            aria-label="Settings"
+          >
+            <Settings className="h-[18px] w-[18px] shrink-0 transition-transform duration-150 group-hover/tip:scale-110" />
+            {expanded && <span className="min-w-0 truncate text-sm font-medium">Settings</span>}
+            {!expanded && (
+              <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 bg-[#f8fafc] text-[#0f172a] dark:bg-[#1e293b] dark:text-[#f1f5f9]">
+                Settings
+                <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
+              </span>
+            )}
+          </PopoverTrigger>
+          <PopoverContent side="right" align="end" className="w-64">
+            <PopoverHeader>
+              <PopoverTitle>Message Settings</PopoverTitle>
+              <PopoverDescription>Customize your messaging experience.</PopoverDescription>
+            </PopoverHeader>
+            <div className="mt-4 flex flex-col gap-3">
+              <label className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="text-muted-foreground h-3.5 w-3.5" />
+                  <span className="text-sm">Notification sounds</span>
+                </div>
+                <Switch
+                  checked={settings.notificationSounds}
+                  onCheckedChange={() => toggleSetting("notificationSounds")}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Eye className="text-muted-foreground h-3.5 w-3.5" />
+                  <span className="text-sm">Read receipts</span>
+                </div>
+                <Switch
+                  checked={settings.showReadReceipts}
+                  onCheckedChange={() => toggleSetting("showReadReceipts")}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Rows3 className="text-muted-foreground h-3.5 w-3.5" />
+                  <span className="text-sm">Compact mode</span>
+                </div>
+                <Switch
+                  checked={settings.compactMode}
+                  onCheckedChange={() => toggleSetting("compactMode")}
+                />
+              </label>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Expand / Collapse toggle */}
         <button
@@ -217,9 +290,9 @@ export function MessagesFolderNav({
           )}
           {expanded && <span className="min-w-0 truncate text-sm font-medium">Collapse</span>}
           {!expanded && (
-            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 bg-[#f8fafc] text-[#0f172a] dark:bg-[#1e293b] dark:text-[#f1f5f9]">
               Expand
-              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
+              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
             </span>
           )}
         </button>

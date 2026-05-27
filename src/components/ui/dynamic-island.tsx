@@ -12,15 +12,16 @@ import React, {
 } from "react";
 import { AnimatePresence, motion, useWillChange } from "motion/react";
 
-// Optimized animation constants for instant responsiveness
-const stiffness = 400; // Increased for snappier response
-const damping = 30; // Balanced for quick settling
+// Spring physics — Apple-style morph: crisp snap with weighted settle
+const stiffness = 450;
+const damping = 32;
+const mass = 0.8; // lighter mass = faster acceleration into target shape
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
 // Performance optimization constants
-const RESIZE_DEBOUNCE_MS = 100; // Reduced for faster response
-const ANIMATION_DURATION_MS = 300; // Shorter for instant feel
+const RESIZE_DEBOUNCE_MS = 100;
+const ANIMATION_DURATION_MS = 250; // ≤250ms feels instantaneous
 
 export type SizePresets =
   | "reset"
@@ -99,22 +100,22 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 22,
   },
   [SIZE_PRESETS.COMPACT]: {
-    width: 200,
+    width: 220,
     height: 36,
-    aspectRatio: 36 / 200,
-    borderRadius: 46,
+    aspectRatio: 36 / 220,
+    borderRadius: 44,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
-    width: 320,
+    width: 300,
     height: 40,
-    aspectRatio: 40 / 320,
-    borderRadius: 46,
+    aspectRatio: 40 / 300,
+    borderRadius: 44,
   },
   [SIZE_PRESETS.COMPACT_TALL]: {
-    width: 360,
-    height: 44,
-    aspectRatio: 44 / 360,
-    borderRadius: 46,
+    width: 340,
+    height: 42,
+    aspectRatio: 42 / 340,
+    borderRadius: 44,
   },
   [SIZE_PRESETS.COMPACT_MEDIUM]: {
     width: 351,
@@ -163,16 +164,16 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 28,
   },
   [SIZE_PRESETS.WIKI_INLINE]: {
-    width: 280,
+    width: 260,
     height: 38,
-    aspectRatio: 38 / 280,
-    borderRadius: 46,
+    aspectRatio: 38 / 260,
+    borderRadius: 44,
   },
   [SIZE_PRESETS.WIKI_COMPACT]: {
-    width: 170,
+    width: 180,
     height: 32,
-    aspectRatio: 32 / 170,
-    borderRadius: 46,
+    aspectRatio: 32 / 180,
+    borderRadius: 44,
   },
 };
 
@@ -476,9 +477,9 @@ const DynamicIslandContent = ({
           borderRadius: currentSize.borderRadius,
           transition: {
             type: "spring",
-            stiffness: stiffness * 0.8,
-            damping: damping * 0.9,
-            duration: ANIMATION_DURATION_MS / 1000,
+            stiffness: stiffness * 0.7,
+            damping: damping * 0.85,
+            mass,
           },
         }}
         style={{ willChange }}
@@ -525,7 +526,7 @@ const DynamicIslandContent = ({
             type: "spring",
             stiffness,
             damping,
-            duration: ANIMATION_DURATION_MS / 1000,
+            mass,
           },
         }}
         style={{
@@ -592,7 +593,7 @@ const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
       type: "spring" as const,
       stiffness,
       damping,
-      duration: isSizeChanged ? ANIMATION_DURATION_MS / 1000 : (ANIMATION_DURATION_MS * 1.2) / 1000,
+      mass,
     },
   };
 
@@ -632,6 +633,7 @@ const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
           type: "spring",
           stiffness,
           damping,
+          mass,
         },
       }}
       exit={{ opacity: 0, filter: "blur(10px)", scale: 0 }}
@@ -660,7 +662,7 @@ const DynamicTitle = ({ className, children }: MotionProps) => {
       animate={{
         opacity: size === previousSize ? 0 : 1,
         scale: size === previousSize ? 0.9 : 1,
-        transition: { type: "spring", stiffness, damping },
+        transition: { type: "spring", stiffness, damping, mass },
       }}
       style={{ willChange }}
     >
@@ -681,7 +683,7 @@ const DynamicDescription = ({ className, children }: MotionProps) => {
       animate={{
         opacity: size === previousSize ? 0 : 1,
         scale: size === previousSize ? 0.9 : 1,
-        transition: { type: "spring", stiffness, damping },
+        transition: { type: "spring", stiffness, damping, mass },
       }}
       style={{ willChange }}
     >
@@ -697,8 +699,9 @@ export {
   DynamicIsland,
   SIZE_PRESETS,
   stiffness,
-  DynamicDiv,
   damping,
+  mass,
+  DynamicDiv,
   DynamicIslandSizePresets,
   BlobContext,
   useDynamicIslandSize,
