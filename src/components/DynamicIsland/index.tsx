@@ -1,3 +1,5 @@
+"use client";
+
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
@@ -7,6 +9,7 @@ import {
   useDynamicIslandSize,
   SIZE_PRESETS,
   DynamicIslandProvider,
+  type SizePresets,
 } from "../ui/dynamic-island";
 import { CompactView } from "./CompactView";
 import { ExpandedView } from "./ExpandedView";
@@ -26,7 +29,13 @@ export {
 } from "../ui/dynamic-island";
 
 // Re-export plugin system for page-level consumption
-export { useDIPlugin, useActiveDIPlugin, useAllDIPlugins, useDIPluginView, DIPluginProvider } from "./plugin-context";
+export {
+  useDIPlugin,
+  useActiveDIPlugin,
+  useAllDIPlugins,
+  useDIPluginView,
+  DIPluginProvider,
+} from "./plugin-context";
 export type { DIPlugin, DIAction, DIViewProps, DIBadge } from "./types";
 
 interface CommandPaletteProps {
@@ -80,9 +89,11 @@ function CommandPaletteContent({
   const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
   const isWikiActive = activePlugin?.id === "wiki";
 
-  // Dynamic size based on sticky/collapsed state + wiki context
+  // Dynamic size based on sticky/collapsed state + wiki/forum context
   useEffect(() => {
-    let newSize: string;
+    let newSize: SizePresets;
+    const isForumActive = activePlugin?.id === "forum";
+
     if (isWikiActive) {
       if (isSticky && isCollapsed) {
         newSize = SIZE_PRESETS.WIKI_COMPACT; // 170x32 — compact wiki pill
@@ -90,6 +101,12 @@ function CommandPaletteContent({
         newSize = SIZE_PRESETS.COMPACT; // 200x36 — hover state
       } else {
         newSize = SIZE_PRESETS.WIKI_INLINE; // 280x38 — inline wiki pill
+      }
+    } else if (isForumActive) {
+      if (isCollapsed) {
+        newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32 — compact forum text mode
+      } else {
+        newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40 — hover state/expanded full text
       }
     } else {
       if (isSticky && isCollapsed) {
@@ -101,7 +118,7 @@ function CommandPaletteContent({
       }
     }
     setSize(newSize);
-  }, [setSize, isSticky, isCollapsed, isWikiActive]);
+  }, [setSize, isSticky, isCollapsed, isWikiActive, activePlugin?.id]);
 
   useEffect(() => {
     if (isWikiActive && diPathname !== prevNavRef.current) {
@@ -149,10 +166,12 @@ function CommandPaletteContent({
       clearTimeout(collapseTimeoutRef.current);
     }
 
-    if (isSticky && !isUserInteracting && !isCollapsed) {
+    const isForumActive = activePlugin?.id === "forum";
+
+    if ((isSticky || isForumActive) && !isUserInteracting && !isCollapsed) {
       collapseTimeoutRef.current = setTimeout(() => setIsCollapsed(true), 1200);
-    } else if (!isSticky && isCollapsed) {
-      // Immediately expand when not sticky
+    } else if (!(isSticky || isForumActive) && isCollapsed) {
+      // Immediately expand when not sticky and not forum
       setIsCollapsed(false);
     }
 
@@ -161,7 +180,7 @@ function CommandPaletteContent({
         clearTimeout(collapseTimeoutRef.current);
       }
     };
-  }, [isSticky, isUserInteracting, isCollapsed]);
+  }, [isSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
 
   // Ring + bump animation on any new toast
   const [ringActive, setRingActive] = useState(false);
@@ -230,6 +249,7 @@ function CommandPaletteContent({
         >
           <DynamicIsland id="command-palette">
             <CompactView
+              mode={mode}
               isSticky={isSticky}
               isCollapsed={isCollapsed}
               setIsCollapsed={setIsCollapsed}
@@ -248,7 +268,7 @@ function CommandPaletteContent({
           {/* Section accent line — visible when sticky */}
           {isSticky && (
             <motion.div
-              className="pointer-events-none absolute -bottom-0.5 left-1/4 right-1/4 h-[2px] rounded-full"
+              className="pointer-events-none absolute right-1/4 -bottom-0.5 left-1/4 h-[2px] rounded-full"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 0.8, scaleX: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
@@ -258,10 +278,7 @@ function CommandPaletteContent({
         </motion.div>
 
         {/* Nav tray dropdown */}
-        <NavTray
-          isOpen={navTrayOpen && !isExpanded}
-          onClose={() => setNavTrayOpen(false)}
-        />
+        <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayOpen(false)} />
       </div>
 
       {/* Expanded dropdown content - only on desktop */}
@@ -298,9 +315,7 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
       }}
     >
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <DIPluginProvider>
-          <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
-        </DIPluginProvider>
+        <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
       </DynamicIslandProvider>
     </div>
   );

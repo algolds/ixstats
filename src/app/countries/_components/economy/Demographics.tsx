@@ -1060,7 +1060,9 @@ export function Demographics({
                           </div>
                           <div>
                             <div className="text-muted-foreground">Urban %</div>
-                            <div className="font-medium">{(region.urbanPercent ?? 0).toFixed(0)}%</div>
+                            <div className="font-medium">
+                              {(region.urbanPercent ?? 0).toFixed(0)}%
+                            </div>
                           </div>
                         </div>
                         <Progress

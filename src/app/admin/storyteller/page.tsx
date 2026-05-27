@@ -36,7 +36,7 @@ export default function StorytellerPage() {
       />
 
       {/* Tab Navigation */}
-      <div className="border-border/50 bg-muted/20 flex gap-1 overflow-x-auto rounded-xl border p-1">
+      <div className="glass-surface border-border/40 flex gap-1.5 overflow-x-auto rounded-xl p-1.5 shadow-sm">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -44,10 +44,10 @@ export default function StorytellerPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
                 isActive
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? "bg-card text-foreground border-border/30 border shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ export default function StorytellerPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="glass-card-child border-border/50 rounded-xl border p-6">
+      <div className="glass-surface border-border/40 rounded-xl p-6 shadow-sm">
         {activeTab === "wizard" && <EventWizard />}
         {activeTab === "timeline" && <WorldTimeline />}
         {activeTab === "interventions" && <ActiveInterventions />}

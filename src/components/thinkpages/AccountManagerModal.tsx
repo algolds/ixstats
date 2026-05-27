@@ -41,7 +41,7 @@ export function AccountManagerModal({
         <DialogHeader>
           <DialogTitle>Account Manager</DialogTitle>
         </DialogHeader>
-        <div className="overflow-y-auto overflow-x-hidden">
+        <div className="overflow-x-hidden overflow-y-auto">
           <EnhancedAccountManager
             countryId={countryId}
             accounts={accounts}

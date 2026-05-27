@@ -440,7 +440,9 @@ function AtomicBuilderPageInner({
               <Button
                 onClick={() => router.push(createUrl("/sign-in"))}
                 size="lg"
-                className={cn("w-full bg-gradient-to-r from-yellow-400 to-amber-600 hover:from-yellow-500 hover:to-amber-700")}
+                className={cn(
+                  "w-full bg-gradient-to-r from-yellow-400 to-amber-600 hover:from-yellow-500 hover:to-amber-700"
+                )}
               >
                 <UnlockIcon className="mr-2 h-4 w-4" />
                 Sign In to Continue

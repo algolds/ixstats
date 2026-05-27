@@ -1,18 +1,14 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "~/lib/utils"
-import {
-  fetchDiscordServer,
-  formatMemberCount,
-  type DiscordServerData,
-} from "~/lib/discord"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "~/lib/utils";
+import { fetchDiscordServer, formatMemberCount, type DiscordServerData } from "~/lib/discord";
 
 function DiscordIcon({
   iconStyle = "currentColor",
   className,
 }: {
-  iconStyle?: "currentColor" | "discord"
-  className?: string
+  iconStyle?: "currentColor" | "discord";
+  className?: string;
 }) {
   return (
     <svg
@@ -26,7 +22,7 @@ function DiscordIcon({
         fillRule="nonzero"
       />
     </svg>
-  )
+  );
 }
 
 function UsersIcon({ className }: { className?: string }) {
@@ -46,7 +42,7 @@ function UsersIcon({ className }: { className?: string }) {
       <circle cx="12" cy="5.5" r="1.5" />
       <path d="M14.5 14c0-1.657-1.343-3-3-3-.552 0-1.07.149-1.514.41" />
     </svg>
-  )
+  );
 }
 
 const inlineVariants = cva(
@@ -56,8 +52,7 @@ const inlineVariants = cva(
       variant: {
         default:
           "rounded-md border border-border bg-muted/50 text-muted-foreground shadow-xs hover:bg-accent hover:text-accent-foreground",
-        primary:
-          "rounded-md bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        primary: "rounded-md bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
         secondary:
           "rounded-md border border-transparent bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         outline:
@@ -66,8 +61,7 @@ const inlineVariants = cva(
           "rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         subtle:
           "rounded-full border border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
-        discord:
-          "rounded-md bg-[#5865F2] text-white shadow-xs hover:bg-[#4752C4]",
+        discord: "rounded-md bg-[#5865F2] text-white shadow-xs hover:bg-[#4752C4]",
       },
       size: {
         sm: "h-7 gap-1.5 px-2.5 text-xs [&_svg]:size-3.5",
@@ -80,46 +74,44 @@ const inlineVariants = cva(
       size: "default",
     },
   }
-)
+);
 
-type InlineVariant = NonNullable<VariantProps<typeof inlineVariants>["variant"]>
-type BadgeSize = NonNullable<VariantProps<typeof inlineVariants>["size"]>
+type InlineVariant = NonNullable<VariantProps<typeof inlineVariants>["variant"]>;
+type BadgeSize = NonNullable<VariantProps<typeof inlineVariants>["size"]>;
 
 interface DiscordBadgeBaseProps {
   /** Discord server/guild ID. */
-  serverId: string
+  serverId: string;
   /**
    * Icon color style:
    * - `"currentColor"` — inherits text color from the variant (default)
    * - `"discord"` — Discord blurple (#5865F2)
    */
-  iconStyle?: "currentColor" | "discord"
+  iconStyle?: "currentColor" | "discord";
   /** Override the invite link. By default uses the widget's instant invite URL. */
-  inviteUrl?: string
+  inviteUrl?: string;
   /** Show online member count. @default true for card, false for inline */
-  showOnline?: boolean
+  showOnline?: boolean;
   /** Pre-fetched server data. When provided, skips the Discord API call. */
-  data?: DiscordServerData
+  data?: DiscordServerData;
 }
 
 interface DiscordBadgeInlineProps
-  extends DiscordBadgeBaseProps,
-    Omit<React.ComponentProps<"a">, "children"> {
+  extends DiscordBadgeBaseProps, Omit<React.ComponentProps<"a">, "children"> {
   /** @default "inline" */
-  layout?: "inline"
-  variant?: InlineVariant
-  size?: BadgeSize
+  layout?: "inline";
+  variant?: InlineVariant;
+  size?: BadgeSize;
 }
 
 interface DiscordBadgeCardProps
-  extends DiscordBadgeBaseProps,
-    Omit<React.ComponentProps<"a">, "children"> {
-  layout: "card"
-  variant?: never
-  size?: never
+  extends DiscordBadgeBaseProps, Omit<React.ComponentProps<"a">, "children"> {
+  layout: "card";
+  variant?: never;
+  size?: never;
 }
 
-type DiscordBadgeProps = DiscordBadgeInlineProps | DiscordBadgeCardProps
+type DiscordBadgeProps = DiscordBadgeInlineProps | DiscordBadgeCardProps;
 
 function InlineLayout({
   server,
@@ -130,19 +122,17 @@ function InlineLayout({
   size,
   className,
 }: {
-  server: DiscordServerData
-  iconStyle: "currentColor" | "discord"
-  showOnline: boolean
-  inviteUrl: string | null
-  variant: InlineVariant
-  size: BadgeSize
-  className?: string
+  server: DiscordServerData;
+  iconStyle: "currentColor" | "discord";
+  showOnline: boolean;
+  inviteUrl: string | null;
+  variant: InlineVariant;
+  size: BadgeSize;
+  className?: string;
 }) {
-  const href = inviteUrl ?? server.instantInvite
-  const Comp = href ? "a" : "span"
-  const linkProps = href
-    ? { href, target: "_blank" as const, rel: "noopener noreferrer" }
-    : {}
+  const href = inviteUrl ?? server.instantInvite;
+  const Comp = href ? "a" : "span";
+  const linkProps = href ? { href, target: "_blank" as const, rel: "noopener noreferrer" } : {};
 
   return (
     <Comp
@@ -158,20 +148,17 @@ function InlineLayout({
       <span>{server.name}</span>
       {showOnline && (
         <>
-          <span
-            className="h-3.5 w-px shrink-0 bg-current opacity-20"
-            aria-hidden="true"
-          />
+          <span className="h-3.5 w-px shrink-0 bg-current opacity-20" aria-hidden="true" />
           <span className="flex items-center gap-1">
             <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-            <span className="tabular-nums text-[0.8em] opacity-70">
+            <span className="text-[0.8em] tabular-nums opacity-70">
               {formatMemberCount(server.onlineCount)} online
             </span>
           </span>
         </>
       )}
     </Comp>
-  )
+  );
 }
 
 function CardLayout({
@@ -181,35 +168,30 @@ function CardLayout({
   inviteUrl,
   className,
 }: {
-  server: DiscordServerData
-  iconStyle: "currentColor" | "discord"
-  showOnline: boolean
-  inviteUrl: string | null
-  className?: string
+  server: DiscordServerData;
+  iconStyle: "currentColor" | "discord";
+  showOnline: boolean;
+  inviteUrl: string | null;
+  className?: string;
 }) {
-  const href = inviteUrl ?? server.instantInvite
+  const href = inviteUrl ?? server.instantInvite;
 
   const content = (
     <>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <DiscordIcon
-            iconStyle={iconStyle}
-            className="size-5 shrink-0"
-          />
-          <span className="text-sm font-semibold truncate">
-            {server.name}
-          </span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <DiscordIcon iconStyle={iconStyle} className="size-5 shrink-0" />
+          <span className="truncate text-sm font-semibold">{server.name}</span>
         </div>
         {showOnline && (
-          <span className="inline-flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground">
+          <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1.5 text-xs">
             <span className="size-1.5 rounded-full bg-emerald-500" />
             {formatMemberCount(server.onlineCount)} online
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <span className="inline-flex items-center gap-1 tabular-nums">
           <span className="size-1.5 rounded-full bg-emerald-500" />
           {formatMemberCount(server.onlineCount)} online
@@ -222,7 +204,7 @@ function CardLayout({
         )}
       </div>
     </>
-  )
+  );
 
   if (href) {
     return (
@@ -233,13 +215,13 @@ function CardLayout({
         data-slot="discord-badge"
         aria-label={`Join ${server.name} on Discord`}
         className={cn(
-          "flex flex-col gap-2.5 rounded-lg border border-border bg-card p-4 shadow-xs transition-colors hover:border-foreground/20 hover:bg-accent/50",
+          "border-border bg-card hover:border-foreground/20 hover:bg-accent/50 flex flex-col gap-2.5 rounded-lg border p-4 shadow-xs transition-colors",
           className
         )}
       >
         {content}
       </a>
-    )
+    );
   }
 
   return (
@@ -247,13 +229,13 @@ function CardLayout({
       data-slot="discord-badge"
       aria-label={`${server.name} on Discord`}
       className={cn(
-        "flex flex-col gap-2.5 rounded-lg border border-border bg-card p-4 shadow-xs",
+        "border-border bg-card flex flex-col gap-2.5 rounded-lg border p-4 shadow-xs",
         className
       )}
     >
       {content}
     </div>
-  )
+  );
 }
 
 async function DiscordBadge(props: DiscordBadgeProps) {
@@ -264,15 +246,15 @@ async function DiscordBadge(props: DiscordBadgeProps) {
     inviteUrl,
     data: dataProp,
     className,
-  } = props
+  } = props;
 
-  const server = dataProp ?? (await fetchDiscordServer(serverId))
-  if (!server) return null
+  const server = dataProp ?? (await fetchDiscordServer(serverId));
+  if (!server) return null;
 
-  const resolvedInvite = inviteUrl ?? null
+  const resolvedInvite = inviteUrl ?? null;
 
   if (layout === "card") {
-    const { showOnline = true } = props
+    const { showOnline = true } = props;
     return (
       <CardLayout
         server={server}
@@ -281,14 +263,14 @@ async function DiscordBadge(props: DiscordBadgeProps) {
         inviteUrl={resolvedInvite}
         className={className}
       />
-    )
+    );
   }
 
   const {
     showOnline = false,
     variant = "default",
     size = "default",
-  } = props as DiscordBadgeInlineProps
+  } = props as DiscordBadgeInlineProps;
   return (
     <InlineLayout
       server={server}
@@ -299,13 +281,13 @@ async function DiscordBadge(props: DiscordBadgeProps) {
       size={size}
       className={className}
     />
-  )
+  );
 }
 
-export { DiscordBadge, inlineVariants as discordBadgeInlineVariants }
+export { DiscordBadge, inlineVariants as discordBadgeInlineVariants };
 export type {
   DiscordBadgeProps,
   DiscordBadgeInlineProps,
   DiscordBadgeCardProps,
   DiscordServerData,
-}
+};

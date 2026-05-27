@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
-
 interface ReactionsDialogProps {
   postId: string;
   isOpen: boolean;

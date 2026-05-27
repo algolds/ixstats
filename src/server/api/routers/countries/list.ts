@@ -31,6 +31,7 @@ export const listProcedures = {
           flag: true,
           coatOfArms: true,
           economicTier: true,
+          continent: true,
         },
       });
 
@@ -39,8 +40,10 @@ export const listProcedures = {
         name: country.name,
         slug: country.slug ?? undefined,
         flagUrl: normalizeFlagUrl(country.flag),
+        flag: country.flag, // support flag as string for backward-compatibility on components
         coatOfArmsUrl: country.coatOfArms ?? undefined,
         economicTier: country.economicTier ?? undefined,
+        continent: country.continent ?? undefined,
       }));
     }),
 

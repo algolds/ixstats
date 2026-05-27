@@ -60,11 +60,7 @@ export function DIPluginProvider({ children }: { children: React.ReactNode }) {
     registryRef.current = new DIPluginRegistry();
   }
 
-  return (
-    <DIPluginContext value={{ registry: registryRef.current }}>
-      {children}
-    </DIPluginContext>
-  );
+  return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
 }
 
 // ── Hooks ──
@@ -159,9 +155,7 @@ export function useAllDIPlugins(): DIPlugin[] {
 /**
  * Look up a specific expanded view component from the active plugin.
  */
-export function useDIPluginView(
-  viewName: string
-): React.ComponentType<DIViewProps> | null {
+export function useDIPluginView(viewName: string): React.ComponentType<DIViewProps> | null {
   const plugin = useActiveDIPlugin();
   if (!plugin?.expandedViews) return null;
   return plugin.expandedViews[viewName] ?? null;

@@ -56,7 +56,7 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
   return (
     <>
       {/* CSS to control main navigation visibility */}
-      <style {...{ jsx: "true", global: "true" } as any}>{`
+      <style {...({ jsx: "true", global: "true" } as any)}>{`
         /* Hide the main navigation by default in builder */
         body:has([data-builder-headless]) .navigation-bar {
           transform: translateY(-100%);

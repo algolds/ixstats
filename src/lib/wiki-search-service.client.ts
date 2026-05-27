@@ -110,10 +110,9 @@ export async function searchWiki(
       cmtitle: catFilter,
       cmlimit: "50",
     });
-    const cmresp = await fetch(
-      `${cfg.baseUrl}${cfg.apiEndpoint}?${cmparams.toString()}`,
-      { headers: { "User-Agent": "IxStats-Builder" } }
-    );
+    const cmresp = await fetch(`${cfg.baseUrl}${cfg.apiEndpoint}?${cmparams.toString()}`, {
+      headers: { "User-Agent": "IxStats-Builder" },
+    });
     if (!cmresp.ok) throw new Error(`HTTP ${cmresp.status}`);
     const cmdata = await cmresp.json();
     const members: { title: string }[] = cmdata?.query?.categorymembers || [];
@@ -126,10 +125,9 @@ export async function searchWiki(
       srwhat: "text",
       srlimit: "50",
     });
-    const sresp = await fetch(
-      `${cfg.baseUrl}${cfg.apiEndpoint}?${sp.toString()}`,
-      { headers: { "User-Agent": "IxStats-Builder" } }
-    );
+    const sresp = await fetch(`${cfg.baseUrl}${cfg.apiEndpoint}?${sp.toString()}`, {
+      headers: { "User-Agent": "IxStats-Builder" },
+    });
     if (!sresp.ok) throw new Error(`HTTP ${sresp.status}`);
     const sdata = await sresp.json();
     const results: { title: string; snippet: string }[] = sdata?.query?.search || [];

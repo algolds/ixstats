@@ -75,7 +75,8 @@ export function CountryAdminPanel() {
     if (!editId) return;
     setSaveStatus({ id: editId, status: "saving" });
     try {
-      const { name, continent, region, currentPopulation, currentGdpPerCapita, currentTotalGdp } = editData;
+      const { name, continent, region, currentPopulation, currentGdpPerCapita, currentTotalGdp } =
+        editData;
       await updateMutation.mutateAsync({
         id: editId,
         name,

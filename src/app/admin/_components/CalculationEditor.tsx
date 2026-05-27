@@ -18,10 +18,12 @@ import {
   HandshakeIcon,
   Scale,
   Loader2,
+  Code,
+  Terminal,
+  Search,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -604,8 +606,13 @@ normalized = clamp(diplomaticStanding, 0, 100)`,
 export function CalculationEditor() {
   const [selectedModule, setSelectedModule] = useState<CalculationModule | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, CalculationResult>>({});
   const [executionHistory, setExecutionHistory] = useState<any[]>([]);
+
+  // Sandbox simulation states
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [sandboxInputs, setSandboxInputs] = useState<Record<string, number>>({});
+  const [sandboxResult, setSandboxResult] = useState<CalculationResult | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   // Fetch formulas from API
   const { data: formulasData, isLoading } = api.formulas.getAll.useQuery();
@@ -661,9 +668,46 @@ export function CalculationEditor() {
     }
   }, [historyData]);
 
-  const runTestCase = async (moduleId: string, testCase: TestCase) => {
-    const startTime = performance.now();
+  // Initialize sandbox inputs when selectedModule changes
+  useEffect(() => {
+    if (selectedModule) {
+      const inputs: Record<string, number> = {};
+      Object.entries(selectedModule.variables).forEach(([key, value]) => {
+        inputs[key] = typeof value === "number" ? value : 0;
+      });
+      setSandboxInputs(inputs);
+      setSandboxResult(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModule?.id]);
 
+  const runSandboxSimulation = async () => {
+    if (!selectedModule) return;
+    setIsSimulating(true);
+    try {
+      const result = await testFormulaMutation.mutateAsync({
+        formulaId: selectedModule.id,
+        testInputs: sandboxInputs,
+      });
+
+      setSandboxResult({
+        success: result.passed ?? true,
+        result: result.result,
+        executionTime: result.executionTime,
+        intermediateSteps: result.intermediateSteps,
+      });
+    } catch (error) {
+      setSandboxResult({
+        success: false,
+        error: error instanceof Error ? error.message : "Calculation failed",
+        executionTime: 0,
+      });
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const runTestCase = async (moduleId: string, testCase: TestCase) => {
     try {
       // Use API mutation to test formula
       const result = await testFormulaMutation.mutateAsync({
@@ -679,18 +723,6 @@ export function CalculationEditor() {
         ),
         expectedOutput: testCase.expectedOutput,
       });
-
-      const calculationResult: CalculationResult = {
-        success: result.passed ?? true,
-        result: result.result,
-        executionTime: result.executionTime,
-        intermediateSteps: result.intermediateSteps,
-      };
-
-      setTestResults((prev) => ({
-        ...prev,
-        [testCase.id]: calculationResult,
-      }));
 
       // Update test case status
       setModules((prev) =>
@@ -711,17 +743,8 @@ export function CalculationEditor() {
             : module
         )
       );
-    } catch (error) {
-      const result: CalculationResult = {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        executionTime: performance.now() - startTime,
-      };
-
-      setTestResults((prev) => ({
-        ...prev,
-        [testCase.id]: result,
-      }));
+    } catch (_error) {
+      // Test execution failed
     }
   };
 
@@ -793,132 +816,176 @@ export function CalculationEditor() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Calculation Editor</h2>
+          <h2 className="text-2xl font-bold">Calculation Console IDE</h2>
           <p className="text-muted-foreground">
-            View and test {modules.length} system calculation formulas
+            Manage, edit, and simulate {modules.length} mathematical core modules.
           </p>
-        </div>
-        <div className="flex gap-2">
-          {selectedModule && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => runAllTests(selectedModule.id)}
-                className="flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Run All Tests
-              </Button>
-              <Button onClick={() => setIsEditing(!isEditing)} className="flex items-center gap-2">
-                <Edit3 className="h-4 w-4" />
-                {isEditing ? "Cancel" : "Edit"}
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        {/* Module List */}
+        {/* Module List Sidebar */}
         <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calculation Modules</CardTitle>
+          <Card className="glass-surface border-border/40">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-bold">
+                <Calculator className="h-4 w-4 text-indigo-500" />
+                Calculation Engines
+              </CardTitle>
+              <div className="relative mt-2">
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+                <Input
+                  placeholder="Filter modules..."
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 h-9 pl-10 text-xs focus:ring-1"
+                />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
+            <CardContent className="max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+              <div className="space-y-4">
                 {Object.entries(CALCULATION_CATEGORIES).map(([key, category]) => {
-                  const categoryModules = modules.filter((m) => m.category === key);
+                  const categoryModules = modules.filter(
+                    (m) =>
+                      m.category === key &&
+                      (m.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                        m.description.toLowerCase().includes(sidebarSearch.toLowerCase()))
+                  );
                   if (categoryModules.length === 0) return null;
 
                   return (
-                    <div key={key}>
-                      <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                        <category.icon className={`h-4 w-4 ${category.color}`} />
+                    <div key={key} className="space-y-1.5">
+                      <h4 className="text-muted-foreground flex items-center gap-2 px-1 text-[10px] font-bold tracking-wider uppercase">
+                        <category.icon className={`h-3 w-3 ${category.color}`} />
                         {category.label} ({categoryModules.length})
                       </h4>
-                      {categoryModules.map((module) => (
-                        <div
-                          key={module.id}
-                          onClick={() => setSelectedModule(module)}
-                          className={`cursor-pointer rounded-lg border p-3 transition-colors ${
-                            selectedModule?.id === module.id
-                              ? "bg-primary/10 border-primary"
-                              : "hover:bg-muted"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <h5 className="text-sm font-medium">{module.name}</h5>
-                            <Badge
-                              variant={module.isActive ? "default" : "secondary"}
-                              className="text-xs"
-                            >
-                              v{module.version}
-                            </Badge>
+                      <div className="space-y-1">
+                        {categoryModules.map((module) => (
+                          <div
+                            key={module.id}
+                            onClick={() => setSelectedModule(module)}
+                            className={`cursor-pointer rounded-lg border p-2.5 transition-all duration-200 ${
+                              selectedModule?.id === module.id
+                                ? "bg-primary/10 border-primary/40 shadow-sm"
+                                : "border-border/10 bg-card/5 hover:bg-card/10 hover:border-border/20"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <h5 className="max-w-[140px] truncate text-xs font-semibold">
+                                {module.name}
+                              </h5>
+                              <Badge
+                                variant={module.isActive ? "default" : "secondary"}
+                                className="bg-card/30 h-4 border-none px-1 py-0 text-[9px]"
+                              >
+                                v{module.version}
+                              </Badge>
+                            </div>
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[10px]">
+                              {module.description}
+                            </p>
                           </div>
-                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
-                            {module.description}
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            {module.testCases.length > 0 && (
-                              <div className="flex items-center gap-1">
-                                {module.testCases.some((tc) => tc.status === "passed") && (
-                                  <CheckCircle className="h-3 w-3 text-green-500" />
-                                )}
-                                {module.testCases.some((tc) => tc.status === "failed") && (
-                                  <AlertTriangle className="h-3 w-3 text-red-500" />
-                                )}
-                                <span className="text-muted-foreground text-xs">
-                                  {module.testCases.filter((tc) => tc.status === "passed").length}/
-                                  {module.testCases.length} tests
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   );
                 })}
+
+                {modules.filter(
+                  (m) =>
+                    m.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                    m.description.toLowerCase().includes(sidebarSearch.toLowerCase())
+                ).length === 0 && (
+                  <div className="text-muted-foreground py-8 text-center text-xs">
+                    No matching modules found.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Module Details */}
+        {/* IDE Workspace (width: 3/4) */}
         <div className="lg:col-span-3">
           {selectedModule ? (
-            <Tabs defaultValue="formula" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-                <TabsTrigger value="formula">Formula</TabsTrigger>
-                <TabsTrigger value="variables">Variables</TabsTrigger>
-                <TabsTrigger value="tests">Tests</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="formula" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{selectedModule.name}</CardTitle>
-                        <p className="text-muted-foreground text-sm">
+            <div className="animate-in fade-in grid grid-cols-1 gap-6 duration-200 xl:grid-cols-3">
+              {/* Left Column: Code Editor & Formula Spec (width: 2/3) */}
+              <div className="space-y-6 xl:col-span-2">
+                <Card className="glass-surface border-border/40">
+                  <CardHeader className="border-border/10 border-b pb-3">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <CardTitle className="text-base font-bold">
+                            {selectedModule.name}
+                          </CardTitle>
+                          <Badge
+                            variant={selectedModule.isActive ? "default" : "secondary"}
+                            className="h-4 text-[10px]"
+                          >
+                            {selectedModule.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                          <Badge variant="outline" className="h-4 text-[10px]">
+                            v{selectedModule.version}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground text-xs">
                           {selectedModule.description}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={selectedModule.isActive ? "default" : "secondary"}>
-                          {selectedModule.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                        <Badge variant="outline">v{selectedModule.version}</Badge>
+                        {isEditing ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={saveModule}
+                              className="flex h-8 items-center gap-1.5 bg-indigo-600 text-white hover:bg-indigo-700"
+                            >
+                              <Save className="h-3.5 w-3.5" />
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditing(false);
+                                // Reload original module
+                                const original = modules.find((m) => m.id === selectedModule.id);
+                                if (original) setSelectedModule(original);
+                              }}
+                              className="border-border/30 h-8"
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => setIsEditing(true)}
+                            className="border-border/30 bg-card/10 hover:bg-card/25 flex h-8 items-center gap-1.5"
+                            variant="outline"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                            Edit Formula
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {isEditing ? (
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="formula">Formula Code</Label>
+                  <CardContent className="space-y-4 pt-4">
+                    {/* Code Editor view */}
+                    <div className="space-y-1.5">
+                      <div className="text-muted-foreground flex items-center justify-between px-1 text-xs font-bold tracking-wider uppercase">
+                        <Label className="flex items-center gap-1 text-[10px]">
+                          <Code className="h-3.5 w-3.5 text-indigo-500" />
+                          Formula Source Code
+                        </Label>
+                        <span className="font-mono text-[9px]">
+                          javascript / mathematical syntax
+                        </span>
+                      </div>
+                      {isEditing ? (
+                        <div className="border-border/40 bg-card/10 focus-within:border-primary/50 focus-within:ring-primary/20 relative overflow-hidden rounded-lg border transition-all focus-within:ring-1">
                           <Textarea
                             id="formula"
                             value={selectedModule.formula}
@@ -928,67 +995,81 @@ export function CalculationEditor() {
                                 formula: e.target.value,
                               })
                             }
-                            className="min-h-[300px] font-mono text-sm"
-                            placeholder="Enter formula..."
+                            className="text-foreground min-h-[250px] resize-y border-0 bg-transparent p-4 font-mono text-xs leading-relaxed focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="Enter formula expression..."
                           />
                         </div>
-                        <div className="flex gap-2">
-                          <Button onClick={saveModule} className="flex items-center gap-2">
-                            <Save className="h-4 w-4" />
-                            Save Changes
-                          </Button>
-                          <Button variant="outline" onClick={() => setIsEditing(false)}>
-                            Cancel
-                          </Button>
+                      ) : (
+                        <div className="border-border/30 bg-card/20 text-foreground relative overflow-hidden rounded-lg border p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                          <div className="flex gap-4">
+                            <div className="text-muted-foreground/30 border-border/10 flex flex-col border-r pr-2 text-right font-mono text-[10px] select-none">
+                              {selectedModule.formula.split("\n").map((_, i) => (
+                                <span key={i}>{i + 1}</span>
+                              ))}
+                            </div>
+                            <pre className="text-foreground mt-0 flex-1 overflow-x-auto font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                              {selectedModule.formula}
+                            </pre>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <Label>Formula</Label>
-                        <pre className="bg-muted overflow-x-auto rounded-lg p-4 font-mono text-sm whitespace-pre-wrap">
-                          {selectedModule.formula}
-                        </pre>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
-                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                      <div>
-                        <Label>Dependencies</Label>
+                    {/* Metadata Specs & Dependencies */}
+                    <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Dependencies
+                        </Label>
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {selectedModule.dependencies.map((dep) => (
-                            <Badge key={dep} variant="outline" className="text-xs">
-                              {dep}
-                            </Badge>
-                          ))}
+                          {selectedModule.dependencies.length > 0 ? (
+                            selectedModule.dependencies.map((dep) => (
+                              <Badge
+                                key={dep}
+                                variant="outline"
+                                className="border-indigo-500/20 bg-indigo-500/5 text-[9px] text-indigo-400"
+                              >
+                                {dep}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">
+                              No dependencies
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div>
-                        <Label>Last Modified</Label>
-                        <p className="text-muted-foreground">
-                          {selectedModule.lastModified.toLocaleString()} by{" "}
-                          {selectedModule.modifiedBy}
-                        </p>
+                      <div className="space-y-1">
+                        <Label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Metadata Specs
+                        </Label>
+                        <div className="text-muted-foreground mt-1 space-y-0.5 font-mono text-[11px]">
+                          <div>Modified: {selectedModule.lastModified.toLocaleString()}</div>
+                          <div>User: {selectedModule.modifiedBy}</div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
 
-              <TabsContent value="variables" className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Variables</CardTitle>
-                      <p className="text-muted-foreground text-sm">
-                        Input variables that can be modified
-                      </p>
+                {/* Edit Mode Variables configuration */}
+                {isEditing && (
+                  <Card className="glass-surface border-border/40">
+                    <CardHeader className="border-border/10 border-b pb-3">
+                      <CardTitle className="text-sm font-bold">Edit Default Variables</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {Object.entries(selectedModule.variables).map(([key, value]) => (
-                          <div key={key} className="flex items-center justify-between">
-                            <Label className="font-mono text-sm">{key}</Label>
-                            {isEditing ? (
+                    <CardContent className="space-y-4 pt-4">
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        {/* Variables */}
+                        <div className="space-y-3">
+                          <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                            Variables
+                          </h4>
+                          {Object.entries(selectedModule.variables).map(([key, value]) => (
+                            <div key={key} className="flex items-center justify-between gap-4">
+                              <span className="max-w-[150px] truncate font-mono text-xs">
+                                {key}
+                              </span>
                               <Input
                                 type="number"
                                 step="0.0001"
@@ -1003,192 +1084,322 @@ export function CalculationEditor() {
                                     },
                                   });
                                 }}
-                                className="w-32 text-right"
+                                className="border-border/30 bg-card/10 h-8 w-28 text-right text-xs"
                               />
-                            ) : (
-                              <span className="font-medium">{String(value)}</span>
-                            )}
-                          </div>
-                        ))}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Constants */}
+                        <div className="space-y-3">
+                          <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                            Constants (Static)
+                          </h4>
+                          {Object.entries(selectedModule.constants).map(([key, value]) => (
+                            <div
+                              key={key}
+                              className="border-border/5 flex items-center justify-between gap-4 border-b py-1"
+                            >
+                              <span className="text-muted-foreground font-mono text-xs">{key}</span>
+                              <span className="font-mono text-xs font-semibold">
+                                {String(value)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
+                )}
+              </div>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Constants</CardTitle>
-                      <p className="text-muted-foreground text-sm">
-                        Fixed values used in calculations
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {Object.entries(selectedModule.constants).map(([key, value]) => (
-                          <div key={key} className="flex items-center justify-between">
-                            <Label className="font-mono text-sm">{key}</Label>
-                            <span className="text-muted-foreground font-medium">{value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="tests" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Test Cases</CardTitle>
-                    <p className="text-muted-foreground text-sm">
-                      Validate formula behavior with different inputs
-                    </p>
+              {/* Right Column: Sandbox & Test Suite (width: 1/3) */}
+              <div className="space-y-6 xl:col-span-1">
+                {/* Sandbox Simulator */}
+                <Card className="glass-surface border-border/40">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-1.5 text-sm font-bold">
+                      <Play className="h-4 w-4 fill-indigo-500/20 text-indigo-500" />
+                      Sandbox Simulator
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    {selectedModule.testCases.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedModule.testCases.map((testCase) => (
-                          <div key={testCase.id} className="rounded-lg border p-4">
-                            <div className="mb-3 flex items-center justify-between">
-                              <h4 className="font-medium">{testCase.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  variant={
-                                    testCase.status === "passed"
-                                      ? "default"
-                                      : testCase.status === "failed"
-                                        ? "destructive"
-                                        : "secondary"
-                                  }
-                                >
-                                  {testCase.status}
-                                </Badge>
-                                <Button
-                                  size="sm"
-                                  onClick={() => runTestCase(selectedModule.id, testCase)}
-                                  className="flex items-center gap-1"
-                                >
-                                  <Play className="h-3 w-3" />
-                                  Run
-                                </Button>
-                              </div>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {Object.keys(sandboxInputs).length > 0 ? (
+                        Object.entries(sandboxInputs).map(([key, value]) => (
+                          <div key={key} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground max-w-[150px] truncate font-mono">
+                                {key}
+                              </span>
+                              <span className="font-mono text-[11px] font-semibold">
+                                {value.toFixed(4)}
+                              </span>
                             </div>
+                            <Input
+                              type="number"
+                              step="0.0001"
+                              value={value}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setSandboxInputs((prev) => ({ ...prev, [key]: val }));
+                              }}
+                              className="border-border/30 bg-card/10 h-8 text-right font-mono text-xs"
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-muted-foreground py-2 text-center text-xs">
+                          No input variables configured.
+                        </div>
+                      )}
 
-                            <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                              <div>
-                                <Label>Inputs</Label>
-                                <div className="mt-1 space-y-1">
-                                  {Object.entries(testCase.inputs).map(([key, value]) => (
-                                    <div key={key} className="flex justify-between">
-                                      <span className="font-mono">{key}:</span>
-                                      <span>{String(value)}</span>
+                      {selectedModule.constants &&
+                        Object.keys(selectedModule.constants).length > 0 && (
+                          <div className="border-border/10 space-y-1 border-t pt-2">
+                            <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                              Constants
+                            </span>
+                            <div className="space-y-1 font-mono text-[10px]">
+                              {Object.entries(selectedModule.constants).map(
+                                ([constKey, constVal]) => (
+                                  <div
+                                    key={constKey}
+                                    className="text-muted-foreground flex justify-between"
+                                  >
+                                    <span>{constKey}:</span>
+                                    <span className="text-foreground">{String(constVal)}</span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+
+                    <Button
+                      onClick={runSandboxSimulation}
+                      disabled={isSimulating}
+                      className="h-9 w-full rounded-lg bg-indigo-600 text-xs font-bold text-white transition-all hover:bg-indigo-700"
+                    >
+                      {isSimulating ? (
+                        <>
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          Simulating...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-1.5 h-3.5 w-3.5" />
+                          Run Simulation
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Simulation Result Badge */}
+                    {sandboxResult && (
+                      <div className="border-border/20 bg-card/15 animate-in fade-in space-y-2 rounded-xl border p-3.5 duration-200">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Output:</span>
+                          <span className="text-muted-foreground font-mono text-xs font-semibold">
+                            {sandboxResult.executionTime.toFixed(1)}ms
+                          </span>
+                        </div>
+                        {sandboxResult.error ? (
+                          <Alert className="border-destructive/30 bg-destructive/10 text-destructive-foreground py-2">
+                            <AlertTriangle className="text-destructive h-3.5 w-3.5" />
+                            <AlertDescription className="text-[10px] leading-relaxed">
+                              {sandboxResult.error}
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <div className="text-primary bg-primary/10 border-primary/20 rounded-lg border py-2.5 text-center font-mono text-lg font-bold shadow-sm">
+                            {sandboxResult.result?.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 5,
+                            })}
+                          </div>
+                        )}
+
+                        {/* Intermediate steps */}
+                        {sandboxResult.intermediateSteps &&
+                          Object.keys(sandboxResult.intermediateSteps).length > 0 && (
+                            <div className="border-border/10 border-t pt-2">
+                              <span className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+                                Execution Steps
+                              </span>
+                              <div className="mt-1 space-y-1 font-mono text-[10px]">
+                                {Object.entries(sandboxResult.intermediateSteps).map(
+                                  ([stepKey, stepVal]) => (
+                                    <div
+                                      key={stepKey}
+                                      className="text-muted-foreground flex justify-between"
+                                    >
+                                      <span>{stepKey}:</span>
+                                      <span className="text-foreground">{String(stepVal)}</span>
                                     </div>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <Label>Expected Output</Label>
-                                <p className="mt-1 font-mono">{testCase.expectedOutput}</p>
-                              </div>
-                              <div>
-                                <Label>Actual Output</Label>
-                                <p className="mt-1 font-mono">
-                                  {testCase.actualOutput?.toFixed(4) || "Not run"}
-                                </p>
-                              </div>
-                            </div>
-
-                            {testResults[testCase.id] && (
-                              <div className="bg-muted mt-4 rounded p-3">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span>
-                                    Execution time:{" "}
-                                    {testResults[testCase.id].executionTime.toFixed(2)}ms
-                                  </span>
-                                  {testResults[testCase.id].success ? (
-                                    <span className="flex items-center gap-1 text-green-600">
-                                      <CheckCircle className="h-4 w-4" />
-                                      Passed
-                                    </span>
-                                  ) : (
-                                    <span className="flex items-center gap-1 text-red-600">
-                                      <AlertTriangle className="h-4 w-4" />
-                                      Failed
-                                    </span>
-                                  )}
-                                </div>
-                                {testResults[testCase.id].error && (
-                                  <Alert className="mt-2">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertDescription>
-                                      {testResults[testCase.id].error}
-                                    </AlertDescription>
-                                  </Alert>
+                                  )
                                 )}
                               </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground py-8 text-center">
-                        No test cases available for this formula
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="history" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Execution History</CardTitle>
-                    <p className="text-muted-foreground text-sm">
-                      Recent changes and test executions
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    {executionHistory.length > 0 ? (
-                      <div className="space-y-3">
-                        {executionHistory.map((entry) => (
-                          <div
-                            key={entry.id}
-                            className="flex items-center justify-between border-b py-2"
-                          >
-                            <div className="flex items-center gap-3">
-                              <History className="text-muted-foreground h-4 w-4" />
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {entry.action} - {entry.module}
-                                </p>
-                                <p className="text-muted-foreground text-xs">by {entry.user}</p>
-                              </div>
                             </div>
-                            <span className="text-muted-foreground text-xs">
-                              {new Date(entry.timestamp).toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
+                          )}
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Integrated Unit Tests */}
+                <Card className="glass-surface border-border/40">
+                  <CardHeader className="border-border/10 flex flex-row items-center justify-between border-b pb-3">
+                    <CardTitle className="flex items-center gap-1.5 text-sm font-bold">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      Verification Tests
+                    </CardTitle>
+                    {selectedModule.testCases.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => runAllTests(selectedModule.id)}
+                        className="hover:bg-card/10 h-7 text-xs font-semibold text-emerald-500 hover:text-emerald-600"
+                      >
+                        Run All
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-3">
+                    {selectedModule.testCases.length > 0 ? (
+                      selectedModule.testCases.map((testCase) => (
+                        <div
+                          key={testCase.id}
+                          className="border-border/20 bg-card/5 space-y-2 rounded-lg border p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="max-w-[150px] truncate text-xs font-semibold">
+                              {testCase.name}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <Badge
+                                variant={
+                                  testCase.status === "passed"
+                                    ? "default"
+                                    : testCase.status === "failed"
+                                      ? "destructive"
+                                      : "secondary"
+                                }
+                                className="h-4 border-none px-1 py-0 text-[9px]"
+                              >
+                                {testCase.status}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => runTestCase(selectedModule.id, testCase)}
+                                className="hover:bg-card/10 h-6 w-6 rounded-full p-0"
+                              >
+                                <Play className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="text-muted-foreground border-border/5 grid grid-cols-2 gap-2 border-t pt-1 font-mono text-[10px]">
+                            <div>
+                              Expected:{" "}
+                              <span className="text-foreground">{testCase.expectedOutput}</span>
+                            </div>
+                            <div>
+                              Actual:{" "}
+                              <span className="text-foreground">
+                                {testCase.actualOutput?.toFixed(4) || "—"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
                     ) : (
-                      <p className="text-muted-foreground py-8 text-center">
-                        No execution history available
+                      <p className="text-muted-foreground py-4 text-center text-[10px]">
+                        No unit test suites configured.
                       </p>
                     )}
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
           ) : (
-            <Card>
-              <CardContent className="flex h-64 items-center justify-center">
-                <div className="text-center">
-                  <Calculator className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
-                  <p className="text-muted-foreground">
-                    Select a calculation module to view details
+            /* Home Landing Dashboard */
+            <Card className="glass-surface border-border/40 animate-in fade-in duration-200">
+              <CardContent className="space-y-6 pt-8 pb-8">
+                <div className="mx-auto max-w-md space-y-3 text-center">
+                  <div className="inline-block rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-indigo-500">
+                    <Calculator className="h-10 w-10" />
+                  </div>
+                  <h3 className="text-lg font-bold">Calculation Console IDE</h3>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Welcome to the formula administration workspace. Select any module from the
+                    sidebar index to review mathematical expressions, configure default input
+                    parameters, and run live sandbox simulations.
                   </p>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    {modules.length} formulas available
-                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-3">
+                  <div className="bg-card/5 border-border/20 space-y-1 rounded-xl border p-4 text-center">
+                    <div className="font-mono text-xl font-bold text-indigo-400">
+                      {modules.length}
+                    </div>
+                    <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Total Engines
+                    </div>
+                  </div>
+                  <div className="bg-card/5 border-border/20 space-y-1 rounded-xl border p-4 text-center">
+                    <div className="font-mono text-xl font-bold text-emerald-400">
+                      {modules.filter((m) => m.isActive).length}
+                    </div>
+                    <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Active Formulas
+                    </div>
+                  </div>
+                  <div className="bg-card/5 border-border/20 space-y-1 rounded-xl border p-4 text-center">
+                    <div className="font-mono text-xl font-bold text-purple-400">
+                      {Object.keys(CALCULATION_CATEGORIES).length}
+                    </div>
+                    <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Categories
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collapsible history log summary */}
+                <div className="border-border/10 space-y-4 border-t pt-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                      <History className="text-muted-foreground h-4 w-4" />
+                      Recent Run Activity Logs
+                    </h4>
+                  </div>
+                  {executionHistory.length > 0 ? (
+                    <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
+                      {executionHistory.slice(0, 5).map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="border-border/10 bg-card/5 flex items-center justify-between rounded-lg border p-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Terminal className="text-muted-foreground h-3.5 w-3.5" />
+                            <div>
+                              <span className="text-foreground font-semibold">{entry.action}</span>
+                              <span className="text-muted-foreground ml-2 text-[10px]">
+                                by {entry.user}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-muted-foreground text-[10px]">
+                            {new Date(entry.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground py-4 text-center text-[10px]">
+                      No recent activity logged.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -59,8 +59,10 @@ export function useOverviewHealthRings({
     { countryId: countryId ?? "" },
     { enabled }
   );
-  const { data: intelligenceOverview, isLoading: l7 } =
-    api.intelCore.getOverview.useQuery({ countryId: countryId ?? "" }, { enabled });
+  const { data: intelligenceOverview, isLoading: l7 } = api.intelCore.getOverview.useQuery(
+    { countryId: countryId ?? "" },
+    { enabled }
+  );
 
   // ---- Defense data ----
   const { data: securityAssessment, isLoading: l8 } = api.security.getSecurityAssessment.useQuery(

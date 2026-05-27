@@ -37,10 +37,11 @@ export function DiplomacyMapWidget({
   );
 
   // Fetch embassies
-  const { data: embassies, isLoading: embassyLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId },
-    { enabled: !!countryId, staleTime: 5 * 60_000 }
-  );
+  const { data: embassies, isLoading: embassyLoading } =
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId },
+      { enabled: !!countryId, staleTime: 5 * 60_000 }
+    );
 
   // Get active partner country IDs
   const partnerIds = useMemo(() => {

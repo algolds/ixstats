@@ -84,20 +84,21 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col gap-1.5 text-left">
         <div className="flex items-center gap-2">
-          <div className="bg-sky-500/10 text-sky-500 rounded-lg p-1.5 dark:bg-sky-500/20">
+          <div className="rounded-lg bg-sky-500/10 p-1.5 text-sky-500 dark:bg-sky-500/20">
             <MessageSquare className="h-4 w-4" />
           </div>
-          <span className="text-foreground text-lg font-bold leading-none">Send Feedback</span>
+          <span className="text-foreground text-lg leading-none font-bold">Send Feedback</span>
         </div>
         <p className="text-muted-foreground text-xs leading-relaxed">
-          Have a suggestion, bug report, or query? Fill out the form below. Diagnostic logs and route metadata are attached automatically to help developers debug.
+          Have a suggestion, bug report, or query? Fill out the form below. Diagnostic logs and
+          route metadata are attached automatically to help developers debug.
         </p>
       </div>
 
       <div className="space-y-3">
         {/* Feedback Type */}
         <div className="space-y-1">
-          <Label htmlFor="feedback-type" className="text-xs font-semibold text-muted-foreground">
+          <Label htmlFor="feedback-type" className="text-muted-foreground text-xs font-semibold">
             Category
           </Label>
           <Select value={feedbackType} onValueChange={setFeedbackType}>
@@ -124,46 +125,44 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
         {/* Message */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <Label htmlFor="message" className="text-xs font-semibold text-muted-foreground">
+            <Label htmlFor="message" className="text-muted-foreground text-xs font-semibold">
               Message
             </Label>
-            <span className="text-[10px] text-muted-foreground/75">
-              {message.length} / 1000
-            </span>
+            <span className="text-muted-foreground/75 text-[10px]">{message.length} / 1000</span>
           </div>
           <Textarea
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
             placeholder="What's on your mind? Please describe any bugs or suggestions in detail..."
-            className="border-border bg-background/25 focus-visible:ring-sky-500/50 text-xs min-h-[100px] resize-none"
+            className="border-border bg-background/25 min-h-[100px] resize-none text-xs focus-visible:ring-sky-500/50"
             required
           />
         </div>
 
         {/* Collapsible Diagnostics */}
-        <div className="rounded-lg border border-border/40 bg-muted/20 overflow-hidden">
+        <div className="border-border/40 bg-muted/20 overflow-hidden rounded-lg border">
           <button
             type="button"
             onClick={() => setShowDiagnostics(!showDiagnostics)}
-            className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+            className="hover:bg-muted/30 flex w-full items-center justify-between px-3 py-2 text-left transition-colors"
           >
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+            <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold">
               <Terminal className="h-3.5 w-3.5 text-sky-500" />
               <span>Diagnostic Metadata Preview ({logs.length} logs)</span>
             </span>
             {showDiagnostics ? (
-              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+              <ChevronUp className="text-muted-foreground h-3.5 w-3.5" />
             ) : (
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
             )}
           </button>
 
           {showDiagnostics && (
-            <div className="border-t border-border/30 p-3 space-y-2 text-[10px] bg-background/30 max-h-[220px] overflow-y-auto">
+            <div className="border-border/30 bg-background/30 max-h-[220px] space-y-2 overflow-y-auto border-t p-3 text-[10px]">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="flex flex-col gap-0.5 rounded-md border border-border/20 bg-muted/40 p-1.5">
-                  <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <div className="border-border/20 bg-muted/40 flex flex-col gap-0.5 rounded-md border p-1.5">
+                  <span className="text-muted-foreground flex items-center gap-1 text-[8px] font-semibold tracking-wider uppercase">
                     <Globe className="h-2.5 w-2.5" />
                     Active URL
                   </span>
@@ -171,8 +170,8 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
                     {url || "Retrieving..."}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 rounded-md border border-border/20 bg-muted/40 p-1.5">
-                  <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <div className="border-border/20 bg-muted/40 flex flex-col gap-0.5 rounded-md border p-1.5">
+                  <span className="text-muted-foreground flex items-center gap-1 text-[8px] font-semibold tracking-wider uppercase">
                     <Cpu className="h-2.5 w-2.5" />
                     Browser Agent
                   </span>
@@ -183,34 +182,39 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
               </div>
 
               <div className="space-y-1">
-                <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                <span className="text-muted-foreground block text-[8px] font-semibold tracking-wider uppercase">
                   Console Log Stream (Last 50 Events)
                 </span>
                 {logs.length === 0 ? (
-                  <div className="flex items-center gap-1 rounded-md border border-dashed border-border/30 p-2 text-center bg-muted/10">
-                    <Info className="h-3 w-3 text-muted-foreground/60" />
-                    <span className="text-muted-foreground/60 text-[9px]">No console messages captured yet.</span>
+                  <div className="border-border/30 bg-muted/10 flex items-center gap-1 rounded-md border border-dashed p-2 text-center">
+                    <Info className="text-muted-foreground/60 h-3 w-3" />
+                    <span className="text-muted-foreground/60 text-[9px]">
+                      No console messages captured yet.
+                    </span>
                   </div>
                 ) : (
-                  <div className="space-y-1 max-h-[110px] overflow-y-auto rounded-md border border-border/30 bg-slate-950/80 p-2 font-mono text-[9px] leading-relaxed">
+                  <div className="border-border/30 max-h-[110px] space-y-1 overflow-y-auto rounded-md border bg-slate-950/80 p-2 font-mono text-[9px] leading-relaxed">
                     {logs.map((log, index) => (
-                      <div key={index} className="flex items-start gap-1.5 border-b border-white/5 pb-0.5 last:border-b-0">
+                      <div
+                        key={index}
+                        className="flex items-start gap-1.5 border-b border-white/5 pb-0.5 last:border-b-0"
+                      >
                         <span
                           className={cn(
-                            "text-[7px] px-1 rounded-sm font-bold uppercase select-none shrink-0",
+                            "shrink-0 rounded-sm px-1 text-[7px] font-bold uppercase select-none",
                             log.type === "error"
-                              ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                              ? "border border-red-500/30 bg-red-500/20 text-red-400"
                               : log.type === "warn"
-                              ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                              : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
+                                : "border border-blue-500/30 bg-blue-500/20 text-blue-400"
                           )}
                         >
                           {log.type}
                         </span>
-                        <span className="text-[8px] text-muted-foreground select-none shrink-0">
+                        <span className="text-muted-foreground shrink-0 text-[8px] select-none">
                           {new Date(log.timestamp).toLocaleTimeString()}
                         </span>
-                        <span className="text-slate-200 break-all select-all">{log.message}</span>
+                        <span className="break-all text-slate-200 select-all">{log.message}</span>
                       </div>
                     ))}
                   </div>
@@ -221,20 +225,20 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-3">
+      <div className="border-border/40 flex items-center justify-end gap-2 border-t pt-3">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
           disabled={submitMutation.isPending}
-          className="border-border text-xs px-3 h-8 shadow-xs"
+          className="border-border h-8 px-3 text-xs shadow-xs"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={submitMutation.isPending}
-          className="bg-sky-600 hover:bg-sky-500 text-white text-xs px-4 h-8 transition-colors border-0"
+          className="h-8 border-0 bg-sky-600 px-4 text-xs text-white transition-colors hover:bg-sky-500"
         >
           {submitMutation.isPending ? (
             <>

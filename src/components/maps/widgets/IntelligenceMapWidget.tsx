@@ -55,10 +55,11 @@ export function IntelligenceMapWidget({
     hasGeometry,
   } = useCountryMapEmbed(countryId);
 
-  const { data: relations, isLoading: relationsLoading } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled: !!countryId, staleTime: 5 * 60_000 }
-  );
+  const { data: relations, isLoading: relationsLoading } =
+    api.diplomaticCore.getRelationships.useQuery(
+      { countryId },
+      { enabled: !!countryId, staleTime: 5 * 60_000 }
+    );
 
   const isLoading = geoLoading || relationsLoading;
 

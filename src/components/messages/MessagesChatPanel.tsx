@@ -349,7 +349,7 @@ export function MessagesChatPanel({
       />
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
+      <div className="flex-1 scrollbar-none overflow-x-hidden overflow-y-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />

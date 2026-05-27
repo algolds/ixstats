@@ -4498,8 +4498,12 @@ export const diplomaticRouter = createTRPCRouter({
       let trade = await ctx.db.bilateralTrade.findUnique({
         where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },
         include: {
-          country1: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
-          country2: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
+          country1: {
+            select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+          },
+          country2: {
+            select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+          },
         },
       });
 

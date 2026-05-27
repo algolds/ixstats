@@ -318,11 +318,39 @@ export class NPCPersonalitySystem {
    */
   private static calculateTraits(data: ObservableData): PersonalityTraits {
     // Fallback/resiliency guards for all nested objects to prevent TypeError: Cannot read properties of undefined
-    const relationships = data.relationships || { hostile: 0, tense: 0, deterioratingCount: 0, friendly: 0, allied: 0, averageStrength: 50, total: 0 };
-    const historical = data.historical || { aggressiveActions: 0, totalActions: 0, cooperativeActions: 0, policyVolatility: 0, consistencyScore: 50 };
-    const economic = data.economic || { highValuePartners: 0, tradeTreatyCount: 0, totalTradeVolume: 0, tradeGrowthTrend: 0 };
-    const embassies = data.embassies || { securitySpecialized: 0, economicSpecialized: 0, culturalSpecialized: 0, total: 0 };
-    const cultural = data.cultural || { highExchangeCount: 0, mediumExchangeCount: 0, culturalTreatyCount: 0 };
+    const relationships = data.relationships || {
+      hostile: 0,
+      tense: 0,
+      deterioratingCount: 0,
+      friendly: 0,
+      allied: 0,
+      averageStrength: 50,
+      total: 0,
+    };
+    const historical = data.historical || {
+      aggressiveActions: 0,
+      totalActions: 0,
+      cooperativeActions: 0,
+      policyVolatility: 0,
+      consistencyScore: 50,
+    };
+    const economic = data.economic || {
+      highValuePartners: 0,
+      tradeTreatyCount: 0,
+      totalTradeVolume: 0,
+      tradeGrowthTrend: 0,
+    };
+    const embassies = data.embassies || {
+      securitySpecialized: 0,
+      economicSpecialized: 0,
+      culturalSpecialized: 0,
+      total: 0,
+    };
+    const cultural = data.cultural || {
+      highExchangeCount: 0,
+      mediumExchangeCount: 0,
+      culturalTreatyCount: 0,
+    };
     const treaties = data.treaties || { multilateral: 0, defensive: 0, total: 0 };
 
     // ASSERTIVENESS: Hostile relationships + weak relationships + aggressive actions

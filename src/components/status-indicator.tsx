@@ -1,6 +1,6 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "~/lib/utils"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "~/lib/utils";
 
 type Status =
   | "operational"
@@ -9,7 +9,7 @@ type Status =
   | "major-outage"
   | "maintenance"
   | "incident"
-  | "unknown"
+  | "unknown";
 
 const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }> = {
   operational: {
@@ -47,7 +47,7 @@ const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }
     dot: "bg-zinc-400 dark:bg-zinc-500",
     text: "text-zinc-600 dark:text-zinc-400",
   },
-}
+};
 
 const statusIndicatorVariants = cva(
   "inline-flex items-center gap-2 rounded-full border font-medium",
@@ -63,26 +63,21 @@ const statusIndicatorVariants = cva(
       size: "md",
     },
   }
-)
+);
 
 interface StatusIndicatorProps
-  extends Omit<React.ComponentProps<"span">, "children">,
+  extends
+    Omit<React.ComponentProps<"span">, "children">,
     VariantProps<typeof statusIndicatorVariants> {
   /** Current operational status. */
-  status: Status
+  status: Status;
   /** Custom label text. Auto-generated from status when omitted. */
-  label?: string
+  label?: string;
 }
 
-function StatusIndicator({
-  status,
-  label,
-  size,
-  className,
-  ...props
-}: StatusIndicatorProps) {
-  const config = STATUS_CONFIG[status]
-  const displayLabel = label ?? config.label
+function StatusIndicator({ status, label, size, className, ...props }: StatusIndicatorProps) {
+  const config = STATUS_CONFIG[status];
+  const displayLabel = label ?? config.label;
 
   return (
     <span
@@ -97,20 +92,16 @@ function StatusIndicator({
       )}
       {...props}
     >
-     <span
-       data-slot="status-dot"
+      <span
+        data-slot="status-dot"
         className={cn("relative shrink-0 rounded-full", config.dot)}
         aria-hidden="true"
       >
-        <span
-          className={cn("absolute inset-0 rounded-full animate-ping opacity-40", config.dot)}
-        />
+        <span className={cn("absolute inset-0 animate-ping rounded-full opacity-40", config.dot)} />
       </span>
-      <span className={cn("whitespace-nowrap", config.text)}>
-        {displayLabel}
-      </span>
+      <span className={cn("whitespace-nowrap", config.text)}>{displayLabel}</span>
     </span>
-  )
+  );
 }
 
 export {
@@ -119,4 +110,4 @@ export {
   STATUS_CONFIG,
   type StatusIndicatorProps,
   type Status,
-}
+};

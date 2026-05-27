@@ -310,7 +310,10 @@ export function ComparisonCharts({
         title: "GDP vs Population",
         description: "Scatter plot of GDP per capita vs population",
         component: (
-          <ScatterChart data={chartData as any} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+          <ScatterChart
+            data={chartData as any}
+            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis
               dataKey="x"

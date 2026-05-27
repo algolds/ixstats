@@ -136,7 +136,9 @@ export function AtomicIntegrationFeedback({
       return feedbackItem.suggestedComponents;
     }
 
-    const match = feedbackItem.message.match(/Consider adding: ([^.]+?)(?: for better governance)?$/);
+    const match = feedbackItem.message.match(
+      /Consider adding: ([^.]+?)(?: for better governance)?$/
+    );
     if (!match?.[1]) return [];
     return match[1].split(", ").map((component) => component.trim()) as ComponentType[];
   };

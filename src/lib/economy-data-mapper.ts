@@ -98,7 +98,7 @@ function readNumber(obj: Record<string, unknown>, field: string): number | null 
 
 function applyFiscalSystemPatches(
   base: EconomyData,
-  fiscal: Record<string, unknown> | null | undefined,
+  fiscal: Record<string, unknown> | null | undefined
 ) {
   if (!fiscal) return;
 
@@ -120,24 +120,27 @@ function applyFiscalSystemPatches(
   if (taxEfficiency != null) base.fiscal.taxEfficiency = taxEfficiency;
 
   const fiscalBalanceGDPPercent = readNumber(fiscal, "fiscalBalanceGDPPercent");
-  if (fiscalBalanceGDPPercent != null) base.fiscal.fiscalBalanceGDPPercent = fiscalBalanceGDPPercent;
+  if (fiscalBalanceGDPPercent != null)
+    base.fiscal.fiscalBalanceGDPPercent = fiscalBalanceGDPPercent;
 
   // JSON arrays
   const personalIncomeTaxRates = safeJsonParse(fiscal.personalIncomeTaxRates);
   if (Array.isArray(personalIncomeTaxRates)) {
-    base.fiscal.taxRates.personalIncomeTaxRates = personalIncomeTaxRates as FiscalSystemData["taxRates"]["personalIncomeTaxRates"];
+    base.fiscal.taxRates.personalIncomeTaxRates =
+      personalIncomeTaxRates as FiscalSystemData["taxRates"]["personalIncomeTaxRates"];
   }
 
   const corporateTaxRates = safeJsonParse(fiscal.corporateTaxRates);
   if (Array.isArray(corporateTaxRates)) {
-    base.fiscal.taxRates.corporateTaxRates = corporateTaxRates as FiscalSystemData["taxRates"]["corporateTaxRates"];
+    base.fiscal.taxRates.corporateTaxRates =
+      corporateTaxRates as FiscalSystemData["taxRates"]["corporateTaxRates"];
   }
 }
 
 function applyGovernmentBudgetPatches(
   base: EconomyData,
   govBudget: Record<string, unknown> | null | undefined,
-  totalGdp: number,
+  totalGdp: number
 ) {
   if (!govBudget) return;
 
@@ -145,12 +148,14 @@ function applyGovernmentBudgetPatches(
   const rawCategories = safeJsonParse(govBudget.spendingCategories);
   if (rawCategories && typeof rawCategories === "object" && !Array.isArray(rawCategories)) {
     const totalSpending = base.spending.totalSpending || totalGdp * 0.28;
-    base.spending.spendingCategories = Object.entries(rawCategories as Record<string, unknown>).map(([category, pct]) => ({
-      category,
-      amount: totalSpending * (Number(pct) / 100),
-      gdpPercent: Number(pct),
-      percent: Number(pct),
-    }));
+    base.spending.spendingCategories = Object.entries(rawCategories as Record<string, unknown>).map(
+      ([category, pct]) => ({
+        category,
+        amount: totalSpending * (Number(pct) / 100),
+        gdpPercent: Number(pct),
+        percent: Number(pct),
+      })
+    );
   }
 
   // Extended nullable fields
@@ -163,7 +168,7 @@ function applyGovernmentBudgetPatches(
 
 function applyIncomeDistributionPatches(
   base: EconomyData,
-  incomeDist: Record<string, unknown> | null | undefined,
+  incomeDist: Record<string, unknown> | null | undefined
 ) {
   if (!incomeDist) return;
 
@@ -194,19 +199,21 @@ function applyIncomeDistributionPatches(
       };
     });
   } else if (rawClasses && typeof rawClasses === "object") {
-    base.income.economicClasses = Object.entries(rawClasses as Record<string, unknown>).map(([name, pct]) => ({
-      name,
-      populationPercent: Number(pct),
-      wealthPercent: Number(pct),
-      averageIncome: 0,
-      color: "#000000",
-    }));
+    base.income.economicClasses = Object.entries(rawClasses as Record<string, unknown>).map(
+      ([name, pct]) => ({
+        name,
+        populationPercent: Number(pct),
+        wealthPercent: Number(pct),
+        averageIncome: 0,
+        color: "#000000",
+      })
+    );
   }
 }
 
 function applyEconomicProfilePatches(
   base: EconomyData,
-  econProfile: Record<string, unknown> | null | undefined,
+  econProfile: Record<string, unknown> | null | undefined
 ) {
   if (!econProfile) return;
 
@@ -248,7 +255,7 @@ function applyEconomicProfilePatches(
 
 function applyLaborMarketPatches(
   base: EconomyData,
-  laborMarket: Record<string, unknown> | null | undefined,
+  laborMarket: Record<string, unknown> | null | undefined
 ) {
   if (!laborMarket) return;
 
@@ -294,7 +301,7 @@ function applyLaborMarketPatches(
 function applyDemographicsPatches(
   base: EconomyData,
   demo: Record<string, unknown> | null | undefined,
-  currentPopulation: number,
+  currentPopulation: number
 ) {
   if (!demo) return;
 
@@ -303,12 +310,14 @@ function applyDemographicsPatches(
   if (Array.isArray(rawAge)) {
     base.demographics.ageDistribution = rawAge as DemographicsData["ageDistribution"];
   } else if (rawAge && typeof rawAge === "object") {
-    base.demographics.ageDistribution = Object.entries(rawAge as Record<string, unknown>).map(([group, val]) => ({
-      group,
-      percentage: Number(val),
-      percent: Number(val),
-      color: group.includes("0-14") ? "#3b82f6" : group.includes("65") ? "#f59e0b" : "#10b981",
-    }));
+    base.demographics.ageDistribution = Object.entries(rawAge as Record<string, unknown>).map(
+      ([group, val]) => ({
+        group,
+        percentage: Number(val),
+        percent: Number(val),
+        color: group.includes("0-14") ? "#3b82f6" : group.includes("65") ? "#f59e0b" : "#10b981",
+      })
+    );
   }
 
   // Education levels (JSON → array)
@@ -316,16 +325,23 @@ function applyDemographicsPatches(
   if (Array.isArray(rawEdu)) {
     base.demographics.educationLevels = rawEdu as DemographicsData["educationLevels"];
   } else if (rawEdu && typeof rawEdu === "object") {
-    base.demographics.educationLevels = Object.entries(rawEdu as Record<string, unknown>).map(([level, val]) => ({
-      level,
-      percentage: Number(val),
-      percent: Number(val),
-      color: level.toLowerCase().includes("tertiary") || level.toLowerCase().includes("bachelor") || level.toLowerCase().includes("graduate") || level.toLowerCase().includes("doctor")
-        ? "#10b981"
-        : level.toLowerCase().includes("secondary") || level.toLowerCase().includes("vocational")
-          ? "#f59e0b"
-          : "#ef4444",
-    }));
+    base.demographics.educationLevels = Object.entries(rawEdu as Record<string, unknown>).map(
+      ([level, val]) => ({
+        level,
+        percentage: Number(val),
+        percent: Number(val),
+        color:
+          level.toLowerCase().includes("tertiary") ||
+          level.toLowerCase().includes("bachelor") ||
+          level.toLowerCase().includes("graduate") ||
+          level.toLowerCase().includes("doctor")
+            ? "#10b981"
+            : level.toLowerCase().includes("secondary") ||
+                level.toLowerCase().includes("vocational")
+              ? "#f59e0b"
+              : "#ef4444",
+      })
+    );
   }
 
   // Regions (JSON → array)
@@ -347,9 +363,12 @@ function applyDemographicsPatches(
   // Citizenship statuses (JSON → array)
   const rawCitizenship = safeJsonParse(demo.citizenshipStatuses);
   if (Array.isArray(rawCitizenship)) {
-    base.demographics.citizenshipStatuses = rawCitizenship as DemographicsData["citizenshipStatuses"];
+    base.demographics.citizenshipStatuses =
+      rawCitizenship as DemographicsData["citizenshipStatuses"];
   } else if (rawCitizenship && typeof rawCitizenship === "object") {
-    base.demographics.citizenshipStatuses = Object.entries(rawCitizenship as Record<string, unknown>).map(([status, val]) => ({
+    base.demographics.citizenshipStatuses = Object.entries(
+      rawCitizenship as Record<string, unknown>
+    ).map(([status, val]) => ({
       status,
       percent: Number(val),
     }));
@@ -390,7 +409,7 @@ function applyDemographicsPatches(
  * @returns Validated EconomyData or undefined if country is null/undefined
  */
 export function mapCountryToEconomyData(
-  country: CountryWithEconomicRelations | null | undefined,
+  country: CountryWithEconomicRelations | null | undefined
 ): EconomyData | undefined {
   if (!country) return undefined;
 
@@ -412,7 +431,9 @@ export function mapCountryToEconomyData(
 
   // Labor
   base.labor.unemploymentRate = country.unemploymentRate ?? 0;
-  base.labor.employmentRate = country.employmentRate ?? (country.unemploymentRate != null ? 100 - country.unemploymentRate : 0);
+  base.labor.employmentRate =
+    country.employmentRate ??
+    (country.unemploymentRate != null ? 100 - country.unemploymentRate : 0);
   base.labor.laborForceParticipationRate = country.laborForceParticipationRate ?? 0;
   base.labor.totalWorkforce = country.totalWorkforce ?? 0;
   base.labor.averageWorkweekHours = country.averageWorkweekHours ?? 0;
@@ -431,7 +452,7 @@ export function mapCountryToEconomyData(
   base.fiscal.debtServiceCosts = country.debtServiceCosts ?? 0;
   // Compute derived fields
   if (population > 0) {
-    base.fiscal.taxRevenuePerCapita = (base.fiscal.governmentRevenueTotal) / population;
+    base.fiscal.taxRevenuePerCapita = base.fiscal.governmentRevenueTotal / population;
     base.fiscal.debtPerCapita = (totalGdp * (base.fiscal.totalDebtGDPRatio / 100)) / population;
   }
 

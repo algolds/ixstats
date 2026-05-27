@@ -68,14 +68,6 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       description: "Legislature",
       gradient: SECTION_THEME_CLASSES.politics.gradient,
     },
-    {
-      id: "map-editor" as const,
-      href: "/mycountry/map-editor",
-      icon: Map,
-      title: "Map Editor",
-      description: "Territory",
-      gradient: SECTION_THEME_CLASSES["map-editor"].gradient,
-    },
   ];
 
   // Filter out current page

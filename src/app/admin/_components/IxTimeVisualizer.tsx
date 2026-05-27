@@ -28,6 +28,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
+import { Switch } from "~/components/ui/switch";
 import { IxTime } from "~/lib/ixtime";
 import { IxTimeAccuracyVerifier, type TimeSimulationResult } from "~/lib/ixtime-accuracy";
 import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from "~/lib/ixtime-sync";
@@ -61,6 +62,7 @@ export function IxTimeVisualizer() {
   const [simulationResults, setSimulationResults] = useState<TimeSimulationResult | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Converter state
   const [converterMode, setConverterMode] = useState<"irl-to-ix" | "ix-to-irl">("irl-to-ix");
@@ -245,21 +247,42 @@ export function IxTimeVisualizer() {
   }
 
   return (
-    <Card className="glass-card-parent border-blue-500/10">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-blue-500" />
+    <Card className="glass-surface border-border/40">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-1.5 text-blue-500">
+              <Clock className="h-4 w-4" />
+            </div>
             IxTime Visualization
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setAutoRefresh(!autoRefresh)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
+              <Label
+                htmlFor="visualizer-advanced-mode"
+                className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+              >
+                Advanced
+              </Label>
+              <Switch
+                id="visualizer-advanced-mode"
+                checked={showAdvanced}
+                onCheckedChange={setShowAdvanced}
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+            >
               {autoRefresh ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
               {autoRefresh ? "Pause" : "Resume"}
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="h-8"
               onClick={() => {
                 updateTimeData();
                 updateAccuracyStatus();
@@ -276,39 +299,39 @@ export function IxTimeVisualizer() {
         {/* === TOP SECTION: Current Time Overview === */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Current IxTime */}
-          <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-blue-400">
+          <div className="rounded-lg border border-blue-500/10 bg-blue-500/5 p-4 transition-all duration-200 hover:border-blue-500/20">
+            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-blue-400">
               <Clock className="h-3.5 w-3.5" /> Current IxTime
             </div>
-            <div className="font-mono text-lg font-bold text-blue-500">
+            <div className="font-mono text-base leading-tight font-bold break-all text-blue-500">
               {timeData.formattedTime}
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">
+            <div className="text-muted-foreground mt-1 text-[10px] font-medium">
               Game Year {timeData.currentGameYear}
             </div>
           </div>
 
           {/* Multiplier + Rate */}
-          <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-green-400">
+          <div className="rounded-lg border border-green-500/10 bg-green-500/5 p-4 transition-all duration-200 hover:border-green-500/20">
+            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-green-400">
               <Activity className="h-3.5 w-3.5" /> Speed & Rate
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-green-500">{timeData.multiplier}x</span>
+              <span className="text-base font-bold text-green-500">{timeData.multiplier}x</span>
               {timeData.isPaused && (
-                <Badge variant="destructive" className="text-[10px]">
+                <Badge variant="destructive" className="px-1.5 py-0 text-[9px]">
                   PAUSED
                 </Badge>
               )}
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">
+            <div className="text-muted-foreground mt-1 text-[10px] font-medium">
               1 real day = {timeData.ixDaysPerRealDay} IxTime days
             </div>
           </div>
 
           {/* System Health */}
-          <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-purple-400">
+          <div className="rounded-lg border border-purple-500/10 bg-purple-500/5 p-4 transition-all duration-200 hover:border-purple-500/20">
+            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-purple-400">
               <Target className="h-3.5 w-3.5" /> System Health
             </div>
             <div className="flex items-center gap-2">
@@ -319,340 +342,407 @@ export function IxTimeVisualizer() {
               ) : (
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
               )}
-              <Badge variant={getStatusBadgeVariant(accuracyStatus.status)} className="text-[10px]">
+              <Badge
+                variant={getStatusBadgeVariant(accuracyStatus.status)}
+                className="px-1.5 py-0 text-[9px]"
+              >
                 {accuracyStatus.status.toUpperCase()}
               </Badge>
-              <span className="font-mono text-sm">{accuracyStatus.accuracy.toFixed(4)}%</span>
+              <span className="font-mono text-xs font-bold">
+                {accuracyStatus.accuracy.toFixed(4)}%
+              </span>
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">{accuracyStatus.message}</div>
+            <div className="text-muted-foreground mt-1 text-[10px] leading-tight font-medium">
+              {accuracyStatus.message}
+            </div>
           </div>
         </div>
 
         {/* Prediction row */}
-        <div className="border-border/50 bg-card/50 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border px-4 py-2.5 text-sm">
+        <div className="border-border/20 bg-card/20 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border px-4 py-2.5 text-xs font-medium">
           <div className="text-muted-foreground">
-            <span className="text-foreground font-medium">In 24 real hours:</span>{" "}
-            {timeData.predictedIxTime24h}
+            <span className="text-foreground font-semibold">In 24 real hours:</span>{" "}
+            <span className="font-mono">{timeData.predictedIxTime24h}</span>
           </div>
           <div className="text-muted-foreground">
-            <span className="text-foreground font-medium">IRL equivalent:</span>{" "}
-            {timeData.equivalentRealDate}
+            <span className="text-foreground font-semibold">IRL equivalent:</span>{" "}
+            <span>{timeData.equivalentRealDate}</span>
           </div>
         </div>
 
-        <Separator />
+        {showAdvanced && (
+          <div className="animate-in fade-in slide-in-from-top-2 space-y-6 pt-1 duration-200">
+            <Separator className="border-border/20 my-1" />
 
-        {/* === MIDDLE SECTION: IRL <-> IxTime Converter === */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <ArrowRightLeft className="h-4 w-4 text-blue-500" />
-            <span className="text-sm font-medium">IRL / IxTime Date Converter</span>
-          </div>
-
-          <div className="border-border/50 bg-card/50 rounded-lg border p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              {/* Mode toggle */}
-              <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-xs">Direction</Label>
-                <div className="flex gap-1">
-                  <Button
-                    variant={converterMode === "irl-to-ix" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setConverterMode("irl-to-ix");
-                      setConverterResult(null);
-                    }}
-                  >
-                    IRL → IX
-                  </Button>
-                  <Button
-                    variant={converterMode === "ix-to-irl" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setConverterMode("ix-to-irl");
-                      setConverterResult(null);
-                    }}
-                  >
-                    IX → IRL
-                  </Button>
-                </div>
-              </div>
-
-              {/* Date input */}
-              <div className="flex-1 space-y-1.5">
-                <Label className="text-muted-foreground text-xs">
-                  {converterMode === "irl-to-ix" ? "Enter IRL Date" : "Enter IxTime Date"}
-                </Label>
-                <Input
-                  type="date"
-                  value={converterInput}
-                  onChange={(e) => setConverterInput(e.target.value)}
-                  placeholder="YYYY-MM-DD"
-                />
-              </div>
-
-              <Button onClick={handleConvert} disabled={!converterInput}>
-                <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
-                Convert
-              </Button>
-            </div>
-
-            {converterResult && (
-              <div className="mt-3 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-2">
-                <span className="text-muted-foreground text-xs">
-                  {converterMode === "irl-to-ix" ? "IxTime Date:" : "IRL Date:"}
+            {/* === MIDDLE SECTION: IRL <-> IxTime Converter === */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  IRL / IxTime Date Converter
                 </span>
-                <div className="font-mono text-sm font-medium text-blue-500">{converterResult}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Reference Milestone Table */}
-          <div className="border-border/50 overflow-x-auto rounded-lg border">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-border/50 bg-muted/30 border-b">
-                  <th className="px-3 py-2 text-left font-medium">Milestone</th>
-                  <th className="px-3 py-2 text-left font-medium">IxTime Date</th>
-                  <th className="px-3 py-2 text-left font-medium">IRL Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dynamicMilestones.map((m, i) => (
-                  <tr
-                    key={i}
-                    className={`border-border/30 border-b ${m.label === "Current" ? "bg-blue-500/5 font-medium" : ""}`}
-                  >
-                    <td className="px-3 py-1.5">
-                      {m.label === "Current" && (
-                        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
-                      )}
-                      {m.label}
-                    </td>
-                    <td className="px-3 py-1.5 font-mono">{m.ixDate}</td>
-                    <td className="px-3 py-1.5 font-mono">{m.realDate}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* === VISUAL TIMELINE === */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            <div className="rounded-md border border-blue-500/20 bg-blue-500/5 px-2.5 py-2 text-center">
-              <div className="font-medium text-blue-500">Real World Epoch</div>
-              <div className="text-muted-foreground">Oct 4, 2020</div>
-            </div>
-            <div className="rounded-md border border-green-500/20 bg-green-500/5 px-2.5 py-2 text-center">
-              <div className="font-medium text-green-500">4x → 2x Transition</div>
-              <div className="text-muted-foreground">Jul 27, 2025 IRL</div>
-              <div className="text-muted-foreground">Jan 1, 2040 IX</div>
-            </div>
-            <div className="rounded-md border border-purple-500/20 bg-purple-500/5 px-2.5 py-2 text-center">
-              <div className="font-medium text-purple-500">Now</div>
-              <div className="text-muted-foreground">Year {timeData.currentGameYear}</div>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="relative h-2 rounded-full bg-gradient-to-r from-blue-200 via-green-200 to-purple-200">
-            {/* Pre-pivot progress (blue) - always full since we're past the pivot */}
-            <div
-              className="absolute top-0 left-0 h-2 rounded-l-full bg-blue-500"
-              style={{ width: "50%" }}
-            />
-            {/* Post-pivot progress (green) */}
-            {(() => {
-              const pivotReal = new Date("2025-07-27T00:00:00.000Z").getTime();
-              const now = Date.now();
-              if (now >= pivotReal) {
-                // Show relative progress in post-pivot era (50% = now, ~100% = far future)
-                const realElapsed = now - pivotReal;
-                const fiveYearsMs = 5 * 365.25 * 24 * 60 * 60 * 1000;
-                const pct = Math.min(50, (realElapsed / fiveYearsMs) * 50);
-                return (
-                  <div
-                    className="absolute top-0 left-1/2 h-2 bg-green-500"
-                    style={{ width: `${pct}%`, borderRadius: "0 4px 4px 0" }}
-                  />
-                );
-              }
-              return null;
-            })()}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* === BOTTOM SECTION: Collapsible Diagnostics === */}
-        <div>
-          <button
-            type="button"
-            onClick={() => setShowDiagnostics(!showDiagnostics)}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <span className="text-sm font-medium">Diagnostics & Testing</span>
-            {showDiagnostics ? (
-              <ChevronUp className="text-muted-foreground h-4 w-4" />
-            ) : (
-              <ChevronDown className="text-muted-foreground h-4 w-4" />
-            )}
-          </button>
-
-          {showDiagnostics && (
-            <div className="mt-4 space-y-6">
-              {/* Accuracy Section */}
-              <div className="space-y-3">
-                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
-                  <Activity className="h-3.5 w-3.5" /> Accuracy Verification
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xl font-bold">{accuracyStatus.accuracy.toFixed(6)}%</div>
-                    <div className="text-muted-foreground text-xs">Target: ≥99.9998%</div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={getStatusBadgeVariant(accuracyStatus.status)}>
-                      {accuracyStatus.status.toUpperCase()}
-                    </Badge>
-                    <div className="text-muted-foreground mt-1 text-xs">
-                      {accuracyStatus.isAccurate ? "PASSING" : "FAILING"}
-                    </div>
-                  </div>
-                </div>
-                <Progress value={Math.min(100, accuracyStatus.accuracy)} className="h-2" />
               </div>
 
-              <Separator />
-
-              {/* Sync Status Section */}
-              <div className="space-y-3">
-                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
-                  <RefreshCw className="h-3.5 w-3.5" /> Sync Targets
-                </div>
-                {syncStatuses.length === 0 ? (
-                  <div className="text-muted-foreground py-4 text-center text-xs">
-                    <Timer className="mx-auto mb-1 h-5 w-5 opacity-50" />
-                    No sync targets configured
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {syncStatuses.map((status) => (
-                      <div
-                        key={status.target}
-                        className="border-border/50 flex items-center justify-between rounded-md border px-3 py-2 text-xs"
+              <div className="border-border/20 bg-card/20 rounded-lg border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  {/* Mode toggle */}
+                  <div className="shrink-0 space-y-1.5">
+                    <Label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Direction
+                    </Label>
+                    <div className="flex gap-1">
+                      <Button
+                        variant={converterMode === "irl-to-ix" ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 px-3 text-xs font-semibold"
+                        onClick={() => {
+                          setConverterMode("irl-to-ix");
+                          setConverterResult(null);
+                        }}
                       >
-                        <div className="flex items-center gap-2">
-                          {status.status === "synced" ? (
-                            <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                          ) : status.status === "drift" ? (
-                            <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 text-red-500" />
-                          )}
-                          <span className="font-medium">{status.target}</span>
-                        </div>
-                        <div className="text-right font-mono">
-                          <span>
-                            {status.drift > 0 ? "+" : ""}
-                            {status.drift}ms
-                          </span>
-                          <span className="text-muted-foreground ml-2">
-                            {status.accuracy.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                        IRL → IX
+                      </Button>
+                      <Button
+                        variant={converterMode === "ix-to-irl" ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 px-3 text-xs font-semibold"
+                        onClick={() => {
+                          setConverterMode("ix-to-irl");
+                          setConverterResult(null);
+                        }}
+                      >
+                        IX → IRL
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Date input */}
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      {converterMode === "irl-to-ix" ? "Enter IRL Date" : "Enter IxTime Date"}
+                    </Label>
+                    <Input
+                      type="date"
+                      value={converterInput}
+                      onChange={(e) => setConverterInput(e.target.value)}
+                      placeholder="YYYY-MM-DD"
+                      className="bg-card/20 border-border/30 focus:border-primary/50 h-8 text-xs focus:ring-0"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleConvert}
+                    disabled={!converterInput}
+                    size="sm"
+                    className="h-8 shrink-0 text-xs font-semibold"
+                  >
+                    <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
+                    Convert
+                  </Button>
+                </div>
+
+                {converterResult && (
+                  <div className="animate-in fade-in slide-in-from-top-1 mt-3 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-2 duration-150">
+                    <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      {converterMode === "irl-to-ix" ? "IxTime Date:" : "IRL Date:"}
+                    </span>
+                    <div className="font-mono text-sm font-semibold text-blue-500">
+                      {converterResult}
+                    </div>
                   </div>
                 )}
-                <Button
-                  onClick={() => syncManager.forceSyncAll()}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  Force Sync All
-                </Button>
               </div>
 
-              <Separator />
-
-              {/* Simulation Section */}
-              <div className="space-y-3">
-                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
-                  <Zap className="h-3.5 w-3.5" /> Test Suite
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    onClick={runSimulation}
-                    disabled={isRunningSimulation}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {isRunningSimulation ? (
-                      <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Zap className="mr-1.5 h-3.5 w-3.5" />
-                    )}
-                    Accuracy Tests
-                  </Button>
-                  <Button
-                    onClick={() => syncManager.runComprehensiveSync()}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    Sync Verification
-                  </Button>
-                </div>
-
-                {simulationResults && (
-                  <div className="border-border/50 bg-card/50 rounded-lg border p-3">
-                    <div className="grid grid-cols-4 gap-3 text-center text-xs">
-                      <div>
-                        <div className="text-lg font-bold text-green-500">
-                          {simulationResults.passedTests}
-                        </div>
-                        <div className="text-muted-foreground">Passed</div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-bold text-red-500">
-                          {simulationResults.failedTests}
-                        </div>
-                        <div className="text-muted-foreground">Failed</div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-bold">
-                          {simulationResults.overallAccuracy.toFixed(1)}%
-                        </div>
-                        <div className="text-muted-foreground">Accuracy</div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-bold">
-                          {simulationResults.averageExecutionTime.toFixed(0)}ms
-                        </div>
-                        <div className="text-muted-foreground">Avg Time</div>
-                      </div>
-                    </div>
-                    {simulationResults.criticalIssues.length > 0 && (
-                      <div className="mt-2 rounded-md border border-red-500/20 bg-red-500/5 p-2 text-xs text-red-500">
-                        {simulationResults.criticalIssues.map((issue, idx) => (
-                          <div key={idx} className="flex items-start gap-1.5">
-                            <XCircle className="mt-0.5 h-3 w-3 shrink-0" />
-                            {issue.details}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+              {/* Reference Milestone Table */}
+              <div className="border-border/20 bg-card/10 overflow-x-auto rounded-lg border">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-border/20 bg-muted/20 border-b">
+                      <th className="text-muted-foreground px-3 py-2 text-left text-[10px] font-semibold tracking-wider uppercase">
+                        Milestone
+                      </th>
+                      <th className="text-muted-foreground px-3 py-2 text-left text-[10px] font-semibold tracking-wider uppercase">
+                        IxTime Date
+                      </th>
+                      <th className="text-muted-foreground px-3 py-2 text-left text-[10px] font-semibold tracking-wider uppercase">
+                        IRL Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dynamicMilestones.map((m, i) => (
+                      <tr
+                        key={i}
+                        className={`border-border/10 hover:bg-muted/5 border-b transition-colors last:border-b-0 ${m.label === "Current" ? "bg-blue-500/5 font-semibold text-blue-400" : ""}`}
+                      >
+                        <td className="px-3 py-2">
+                          {m.label === "Current" && (
+                            <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                          )}
+                          {m.label}
+                        </td>
+                        <td className="px-3 py-2 font-mono">{m.ixDate}</td>
+                        <td className="px-3 py-2 font-mono">{m.realDate}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
-        </div>
+
+            <Separator className="border-border/20 my-1" />
+
+            {/* === VISUAL TIMELINE === */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
+                <div className="rounded-md border border-blue-500/10 bg-blue-500/5 px-2.5 py-2 text-center transition-all hover:border-blue-500/20">
+                  <div className="font-semibold text-blue-400">Real World Epoch</div>
+                  <div className="text-muted-foreground mt-0.5 font-mono">Oct 4, 2020</div>
+                </div>
+                <div className="rounded-md border border-green-500/10 bg-green-500/5 px-2.5 py-2 text-center transition-all hover:border-green-500/20">
+                  <div className="font-semibold text-green-400">4x → 2x Transition</div>
+                  <div className="text-muted-foreground mt-0.5 font-mono">Jul 27, 2025 IRL</div>
+                  <div className="text-muted-foreground font-mono">Jan 1, 2040 IX</div>
+                </div>
+                <div className="rounded-md border border-purple-500/10 bg-purple-500/5 px-2.5 py-2 text-center transition-all hover:border-purple-500/20">
+                  <div className="font-semibold text-purple-400">Now</div>
+                  <div className="text-muted-foreground mt-0.5 font-semibold">
+                    Year {timeData.currentGameYear}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="border-border/20 relative h-2.5 rounded-full border bg-gradient-to-r from-blue-500/10 via-green-500/10 to-purple-500/10 p-[1px]">
+                {/* Pre-pivot progress (blue) - always full since we're past the pivot */}
+                <div
+                  className="absolute top-[1px] left-[1px] h-[8px] rounded-l-full bg-gradient-to-r from-blue-600 to-blue-500"
+                  style={{ width: "calc(50% - 1px)" }}
+                />
+                {/* Post-pivot progress (green) */}
+                {(() => {
+                  const pivotReal = new Date("2025-07-27T00:00:00.000Z").getTime();
+                  const now = Date.now();
+                  if (now >= pivotReal) {
+                    // Show relative progress in post-pivot era (50% = now, ~100% = far future)
+                    const realElapsed = now - pivotReal;
+                    const fiveYearsMs = 5 * 365.25 * 24 * 60 * 60 * 1000;
+                    const pct = Math.min(50, (realElapsed / fiveYearsMs) * 50);
+                    return (
+                      <div
+                        className="absolute top-[1px] left-1/2 h-[8px] bg-gradient-to-r from-green-500 to-purple-500"
+                        style={{ width: `calc(${pct}% - 1px)`, borderRadius: "0 9999px 9999px 0" }}
+                      />
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            </div>
+
+            <Separator className="border-border/20 my-1" />
+
+            {/* === BOTTOM SECTION: Collapsible Diagnostics === */}
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setShowDiagnostics(!showDiagnostics)}
+                className="hover:text-foreground group flex w-full items-center justify-between text-left transition-colors"
+              >
+                <span className="text-muted-foreground group-hover:text-foreground text-xs font-bold tracking-wider uppercase">
+                  Diagnostics & Testing
+                </span>
+                {showDiagnostics ? (
+                  <ChevronUp className="text-muted-foreground h-4 w-4" />
+                ) : (
+                  <ChevronDown className="text-muted-foreground h-4 w-4" />
+                )}
+              </button>
+
+              {showDiagnostics && (
+                <div className="animate-in fade-in slide-in-from-top-2 mt-2 grid grid-cols-1 gap-6 duration-200 md:grid-cols-3">
+                  {/* Accuracy Section */}
+                  <div className="border-border/20 bg-card/10 flex flex-col justify-between space-y-3 rounded-lg border p-4">
+                    <div className="space-y-3">
+                      <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
+                        <Activity className="h-3.5 w-3.5 text-blue-400" /> Accuracy Verification
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-mono text-xl font-bold">
+                            {accuracyStatus.accuracy.toFixed(6)}%
+                          </div>
+                          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                            Target: ≥99.9998%
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge
+                            variant={getStatusBadgeVariant(accuracyStatus.status)}
+                            className="px-1.5 py-0 text-[9px]"
+                          >
+                            {accuracyStatus.status.toUpperCase()}
+                          </Badge>
+                          <div className="text-muted-foreground mt-1 text-[10px] font-bold">
+                            {accuracyStatus.isAccurate ? "PASSING" : "FAILING"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <Progress
+                        value={Math.min(100, accuracyStatus.accuracy)}
+                        className="bg-muted/30 h-2"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sync Status Section */}
+                  <div className="border-border/20 bg-card/10 flex flex-col justify-between space-y-3 rounded-lg border p-4">
+                    <div className="space-y-3">
+                      <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
+                        <RefreshCw className="h-3.5 w-3.5 text-green-400" /> Sync Targets
+                      </div>
+                      {syncStatuses.length === 0 ? (
+                        <div className="text-muted-foreground flex flex-col items-center justify-center py-6 text-center text-xs">
+                          <Timer className="mb-1.5 h-5 w-5 animate-pulse opacity-40" />
+                          <span>No sync targets configured</span>
+                        </div>
+                      ) : (
+                        <div className="max-h-[140px] space-y-2 overflow-y-auto pr-1">
+                          {syncStatuses.map((status) => (
+                            <div
+                              key={status.target}
+                              className="border-border/10 bg-muted/5 flex items-center justify-between rounded-md border px-2.5 py-1.5 text-[11px]"
+                            >
+                              <div className="flex min-w-0 items-center gap-1.5">
+                                {status.status === "synced" ? (
+                                  <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                                ) : status.status === "drift" ? (
+                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+                                ) : (
+                                  <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                                )}
+                                <span className="truncate font-semibold">{status.target}</span>
+                              </div>
+                              <div className="ml-2 shrink-0 text-right font-mono text-[10px] font-semibold">
+                                <span
+                                  className={
+                                    status.drift > 50 ? "text-yellow-500" : "text-muted-foreground"
+                                  }
+                                >
+                                  {status.drift > 0 ? "+" : ""}
+                                  {status.drift}ms
+                                </span>
+                                <span className="ml-1.5 text-blue-400">
+                                  {status.accuracy.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-2">
+                      <Button
+                        onClick={() => syncManager.forceSyncAll()}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-full text-xs font-semibold"
+                      >
+                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                        Force Sync All
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Simulation Section */}
+                  <div className="border-border/20 bg-card/10 flex flex-col justify-between space-y-3 rounded-lg border p-4">
+                    <div className="space-y-3">
+                      <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
+                        <Zap className="h-3.5 w-3.5 text-purple-400" /> Test Suite
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          onClick={runSimulation}
+                          disabled={isRunningSimulation}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs font-semibold"
+                        >
+                          {isRunningSimulation ? (
+                            <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Zap className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          Accuracy
+                        </Button>
+                        <Button
+                          onClick={() => syncManager.runComprehensiveSync()}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs font-semibold"
+                        >
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                          Sync Verify
+                        </Button>
+                      </div>
+
+                      {simulationResults && (
+                        <div className="border-border/10 bg-card/30 animate-in fade-in slide-in-from-top-1 rounded-lg border p-2.5 duration-150">
+                          <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-semibold">
+                            <div>
+                              <div className="text-sm font-bold text-green-500">
+                                {simulationResults.passedTests}
+                              </div>
+                              <div className="text-muted-foreground text-[8px] tracking-wider uppercase">
+                                Passed
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-red-500">
+                                {simulationResults.failedTests}
+                              </div>
+                              <div className="text-muted-foreground text-[8px] tracking-wider uppercase">
+                                Failed
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-mono text-sm font-bold">
+                                {simulationResults.overallAccuracy.toFixed(1)}%
+                              </div>
+                              <div className="text-muted-foreground text-[8px] tracking-wider uppercase">
+                                Accuracy
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-mono text-sm font-bold">
+                                {simulationResults.averageExecutionTime.toFixed(0)}ms
+                              </div>
+                              <div className="text-muted-foreground text-[8px] tracking-wider uppercase">
+                                Avg Time
+                              </div>
+                            </div>
+                          </div>
+                          {simulationResults.criticalIssues.length > 0 && (
+                            <div className="mt-2 max-h-[60px] overflow-y-auto rounded border border-red-500/10 bg-red-500/5 p-1.5 text-[10px] font-medium text-red-400">
+                              {simulationResults.criticalIssues.map((issue, idx) => (
+                                <div key={idx} className="flex items-start gap-1">
+                                  <XCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                  <span className="truncate">{issue.details}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

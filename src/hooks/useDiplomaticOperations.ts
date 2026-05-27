@@ -168,7 +168,9 @@ export interface UseDiplomaticOperationsReturn {
   establishEmbassyMutation: ReturnType<typeof api.diplomaticEmbassies.establishEmbassy.useMutation>;
   startMissionMutation: ReturnType<typeof api.diplomaticEmbassies.startMission.useMutation>;
   completeMissionMutation: ReturnType<typeof api.diplomaticEmbassies.completeMission.useMutation>;
-  createExchangeMutation: ReturnType<typeof api.diplomaticCultural.createCulturalExchange.useMutation>;
+  createExchangeMutation: ReturnType<
+    typeof api.diplomaticCultural.createCulturalExchange.useMutation
+  >;
   allocateBudgetMutation: ReturnType<typeof api.diplomaticEmbassies.allocateBudget.useMutation>;
   upgradeEmbassyMutation: ReturnType<typeof api.diplomaticEmbassies.upgradeEmbassy.useMutation>;
 }

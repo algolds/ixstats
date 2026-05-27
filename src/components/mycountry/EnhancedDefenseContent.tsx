@@ -11,11 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { OperationsPanel } from "~/components/defense/OperationsPanel";
 import { DefenseCommandPanel } from "~/components/defense/DefenseCommandPanel";
-import {
-  useCountryData,
-  SectionHeaderBackground,
-  TabHeroBanner,
-} from "./primitives";
+import { useCountryData, SectionHeaderBackground, TabHeroBanner } from "./primitives";
 
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
@@ -67,8 +63,6 @@ export function EnhancedDefenseContent({
         )
       : 0;
   const securityScore = securityData?.overallSecurityScore ?? 0;
-
-
 
   if (isLoading || !country) {
     return null;
@@ -134,8 +128,6 @@ export function EnhancedDefenseContent({
     >
       {/* Defense Territory Map */}
       <DefenseMapWidget countryId={country.id} countryName={country.name} />
-
-
 
       {/* Compact stats strip (replaces 175-line security card) */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

@@ -91,10 +91,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   );
 
   // Alliances data
-  const { data: alliances, refetch: refetchAlliances } = api.diplomaticPolicies.getAlliances.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const { data: alliances, refetch: refetchAlliances } =
+    api.diplomaticPolicies.getAlliances.useQuery({ countryId }, { enabled: !!countryId });
 
   // Stats
   const stats = useMemo(() => {

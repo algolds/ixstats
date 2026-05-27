@@ -325,7 +325,8 @@ export function ForgeTab() {
 
   const handleDeleteAllRegions = useCallback(async () => {
     if (!selectedCountryId) return;
-    const countryName = countries?.find((c: any) => c.id === selectedCountryId)?.name ?? "this country";
+    const countryName =
+      countries?.find((c: any) => c.id === selectedCountryId)?.name ?? "this country";
     if (!confirm(`Delete ALL regions/subdivisions for ${countryName}? This cannot be undone.`))
       return;
     try {

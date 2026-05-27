@@ -4,7 +4,7 @@
 "use client";
 
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
-import { AdminSidebar } from "./_components/AdminSidebar";
+import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
 import { SignInButton, useUser, UserButton } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 
@@ -55,12 +55,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <AdminErrorBoundary>
-      <div className="bg-background text-foreground flex min-h-screen">
-        <AdminSidebar />
-        <main className="min-h-screen flex-1 px-4 py-6 md:px-8 lg:ml-0">
-          <div className="mx-auto max-w-[1400px]">{children}</div>
-        </main>
-      </div>
+      <AdminSidebarLayout>{children}</AdminSidebarLayout>
     </AdminErrorBoundary>
   );
 }

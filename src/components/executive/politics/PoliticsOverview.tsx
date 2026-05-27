@@ -252,7 +252,9 @@ export function PoliticsOverview({
   return (
     <div className="space-y-4">
       <TabHeroBanner
-        context="politics_overview" as any
+        context="politics_overview"
+        as
+        any
         title="Political Overview"
         subtitle="Government system, parliament, and party landscape"
         icon={Vote}

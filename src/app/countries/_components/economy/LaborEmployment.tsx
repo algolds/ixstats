@@ -150,7 +150,11 @@ export function LaborEmployment({
     onLaborDataChangeAction(next);
   }
 
-  function handleNestedField(section: keyof ExtendedLaborEmploymentData, field: string, value: number) {
+  function handleNestedField(
+    section: keyof ExtendedLaborEmploymentData,
+    field: string,
+    value: number
+  ) {
     const next = { ...laborData };
     if (typeof next[section] === "object" && next[section] !== null) {
       (next[section] as any)[field] = value;
@@ -522,8 +526,7 @@ export function LaborEmployment({
                         <span>Unemployment Rate:</span>
                         <div className="space-x-2">
                           <span className="font-medium">
-                            {data.unemploymentRate !== null &&
-                            data.unemploymentRate !== undefined
+                            {data.unemploymentRate !== null && data.unemploymentRate !== undefined
                               ? formatPercentage(data.unemploymentRate)
                               : "Missing data"}
                           </span>
@@ -795,17 +798,13 @@ export function LaborEmployment({
                       <div className="space-y-2">
                         <Label>Youth Unemployment (15-24)</Label>
                         <div className="text-2xl font-bold text-red-600">
-                          {formatPercentage(
-                            data.demographicsAndConditions.youthUnemploymentRate
-                          )}
+                          {formatPercentage(data.demographicsAndConditions.youthUnemploymentRate)}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Female Participation Rate</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(
-                            data.demographicsAndConditions.femaleParticipationRate
-                          )}
+                          {formatPercentage(data.demographicsAndConditions.femaleParticipationRate)}
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -881,17 +880,13 @@ export function LaborEmployment({
                             <div className="flex justify-between">
                               <span>Participation Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(
-                                  data.regionalEmployment.urban.participationRate
-                                )}
+                                {formatPercentage(data.regionalEmployment.urban.participationRate)}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Unemployment Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(
-                                  data.regionalEmployment.urban.unemploymentRate
-                                )}
+                                {formatPercentage(data.regionalEmployment.urban.unemploymentRate)}
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -910,17 +905,13 @@ export function LaborEmployment({
                             <div className="flex justify-between">
                               <span>Participation Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(
-                                  data.regionalEmployment.rural.participationRate
-                                )}
+                                {formatPercentage(data.regionalEmployment.rural.participationRate)}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Unemployment Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(
-                                  data.regionalEmployment.rural.unemploymentRate
-                                )}
+                                {formatPercentage(data.regionalEmployment.rural.unemploymentRate)}
                               </span>
                             </div>
                             <div className="flex justify-between">

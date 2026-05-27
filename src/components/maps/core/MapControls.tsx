@@ -306,12 +306,12 @@ function ToggleAllRow({
   return (
     <button
       onClick={handleToggleAll}
-      className="hover:bg-accent mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t border-border px-1.5 py-1.5 text-left transition-colors sm:py-1"
+      className="hover:bg-accent border-border mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t px-1.5 py-1.5 text-left transition-colors sm:py-1"
     >
       {anyFeatureOn ? (
-        <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+        <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
       ) : (
-        <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+        <Eye className="text-muted-foreground h-3.5 w-3.5" />
       )}
       <span className="text-foreground text-[12px] font-medium">
         {anyFeatureOn ? "Hide All Markers" : "Show All Markers"}

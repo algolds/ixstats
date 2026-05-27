@@ -44,13 +44,22 @@ export function CountryDiplomaticPanel({
   const [showAllEmbassies, setShowAllEmbassies] = useState(false);
 
   const { data: embassies = [], isLoading: embassiesLoading } =
-    api.diplomaticEmbassies.getEmbassies.useQuery({ countryId: country.id }, { enabled: !!country.id });
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId: country.id },
+      { enabled: !!country.id }
+    );
 
   const { data: relationships = [], isLoading: relationsLoading } =
-    api.diplomaticCore.getRelationships.useQuery({ countryId: country.id }, { enabled: !!country.id });
+    api.diplomaticCore.getRelationships.useQuery(
+      { countryId: country.id },
+      { enabled: !!country.id }
+    );
 
   const { data: alliances = [], isLoading: alliancesLoading } =
-    api.diplomaticPolicies.getAlliances.useQuery({ countryId: country.id }, { enabled: !!country.id });
+    api.diplomaticPolicies.getAlliances.useQuery(
+      { countryId: country.id },
+      { enabled: !!country.id }
+    );
 
   // Metrics
   const activeEmbassies = useMemo(

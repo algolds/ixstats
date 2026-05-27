@@ -47,19 +47,9 @@ export type SpendingCategory = z.infer<typeof SpendingCategorySchema>;
 
 export const TaxBracketSchema = z.enum(["Low", "Middle", "High", "Top"]);
 
-export const CorporateSizeSchema = z.enum([
-  "Small",
-  "Medium",
-  "Large",
-  "Multinational",
-]);
+export const CorporateSizeSchema = z.enum(["Small", "Medium", "Large", "Multinational"]);
 
-export const EconomicTierSchema = z.enum([
-  "Developing",
-  "Emerging",
-  "Developed",
-  "Advanced",
-]);
+export const EconomicTierSchema = z.enum(["Developing", "Emerging", "Developed", "Advanced"]);
 
 // ===============================
 // Core indicators

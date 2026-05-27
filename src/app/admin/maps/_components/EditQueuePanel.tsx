@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { JsonViewer } from "~/components/json-viewer";
 
 type StatusFilter = "pending" | "approved" | "rejected";
 
@@ -127,23 +128,27 @@ export function EditQueuePanel() {
                 <div className="border-border/50 border-t px-4 py-3">
                   {/* Proposed data */}
                   <div className="mb-3">
-                    <span className="text-muted-foreground text-xs font-medium uppercase">
+                    <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
                       Proposed Changes
                     </span>
-                    <pre className="bg-muted text-foreground mt-1 max-h-40 overflow-auto rounded-lg p-3 text-xs">
-                      {JSON.stringify(edit.proposedData as any, null, 2)}
-                    </pre>
+                    <JsonViewer
+                      data={edit.proposedData}
+                      defaultExpanded={2}
+                      className="border-border/30 bg-card/20 backdrop-blur-md"
+                    />
                   </div>
 
                   {/* Current data (if update/delete) */}
                   {edit.currentData && (
                     <div className="mb-3">
-                      <span className="text-muted-foreground text-xs font-medium uppercase">
+                      <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
                         Current Data
                       </span>
-                      <pre className="bg-muted text-foreground mt-1 max-h-40 overflow-auto rounded-lg p-3 text-xs">
-                        {JSON.stringify(edit.currentData as any, null, 2)}
-                      </pre>
+                      <JsonViewer
+                        data={edit.currentData}
+                        defaultExpanded={2}
+                        className="border-border/30 bg-card/20 backdrop-blur-md"
+                      />
                     </div>
                   )}
 

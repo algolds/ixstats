@@ -78,7 +78,7 @@ export function NavigationSettings() {
 
   if (isLoading) {
     return (
-      <Card className="glass-card-parent">
+      <Card className="glass-surface border-border/40">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Navigation className="h-5 w-5" />
@@ -95,7 +95,7 @@ export function NavigationSettings() {
   }
 
   return (
-    <Card className="glass-card-parent">
+    <Card className="glass-surface border-border/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5" />
@@ -108,7 +108,7 @@ export function NavigationSettings() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Wiki Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-2">
               {localSettings.showWikiTab ? (
@@ -132,7 +132,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Cards Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2">
               {localSettings.showCardsTab ? (
@@ -156,7 +156,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Labs Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-2">
               {localSettings.showLabsTab ? (
@@ -182,7 +182,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Intelligence Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
               {localSettings.showIntelligenceTab ? (
@@ -212,7 +212,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Defense Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2">
               {localSettings.showDefenseTab ? (
@@ -239,7 +239,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Maps Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2">
               {localSettings.showMapsTab ? (
@@ -263,7 +263,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Forum Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2">
               {localSettings.showForumTab ? (
@@ -287,7 +287,7 @@ export function NavigationSettings() {
         </div>
 
         {/* Help Tab Setting */}
-        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
               {localSettings.showHelpTab ? (
@@ -312,7 +312,7 @@ export function NavigationSettings() {
 
         {/* Save Button */}
         {hasChanges && (
-          <div className="border-border/50 border-t pt-4">
+          <div className="border-border/20 border-t pt-4">
             <Button onClick={handleSave} disabled={isSaving} className="w-full">
               {isSaving ? (
                 <>
@@ -330,7 +330,7 @@ export function NavigationSettings() {
         )}
 
         {!hasChanges && navigationSettings && (
-          <div className="border-border/50 border-t pt-4">
+          <div className="border-border/20 border-t pt-4">
             <div className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
               <Check className="h-4 w-4 text-green-500" />
               All changes saved

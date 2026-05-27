@@ -65,17 +65,15 @@ export const cardMarketRouter = createTRPCRouter({
 
         // Notification: auction listed (fire-and-forget)
         try {
-          await notificationAPI.create(
-            {
-              userId: ctx.auth.userId,
-              title: "Auction Listed",
-              message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
-              type: "info",
-              category: "economic",
-              priority: "low",
-              metadata: { auctionId: auction.id },
-            },
-          );
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            title: "Auction Listed",
+            message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
+            type: "info",
+            category: "economic",
+            priority: "low",
+            metadata: { auctionId: auction.id },
+          });
         } catch {}
 
         return {
@@ -136,17 +134,15 @@ export const cardMarketRouter = createTRPCRouter({
             },
           });
           if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
-            await notificationAPI.create(
-              {
-                userId: auction.User.clerkUserId,
-                title: "New Bid on Your Auction",
-                message: `Someone bid ${input.amount} IxC on your auction`,
-                type: "info",
-                category: "economic",
-                priority: "medium",
-                metadata: { auctionId: input.auctionId, amount: input.amount },
-              },
-            );
+            await notificationAPI.create({
+              userId: auction.User.clerkUserId,
+              title: "New Bid on Your Auction",
+              message: `Someone bid ${input.amount} IxC on your auction`,
+              type: "info",
+              category: "economic",
+              priority: "medium",
+              metadata: { auctionId: input.auctionId, amount: input.amount },
+            });
           }
         } catch {}
 
@@ -206,17 +202,15 @@ export const cardMarketRouter = createTRPCRouter({
             },
           });
           if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
-            await notificationAPI.create(
-              {
-                userId: auction.User.clerkUserId,
-                title: "Card Sold!",
-                message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
-                type: "info",
-                category: "economic",
-                priority: "high",
-                metadata: { auctionId: input.auctionId },
-              },
-            );
+            await notificationAPI.create({
+              userId: auction.User.clerkUserId,
+              title: "Card Sold!",
+              message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
+              type: "info",
+              category: "economic",
+              priority: "high",
+              metadata: { auctionId: input.auctionId },
+            });
           }
         } catch {}
 
@@ -282,17 +276,15 @@ export const cardMarketRouter = createTRPCRouter({
         // Notification: notify current bidder about cancellation
         try {
           if (currentBidderClerkId && currentBidderClerkId !== ctx.auth.userId) {
-            await notificationAPI.create(
-              {
-                userId: currentBidderClerkId,
-                title: "Auction Cancelled",
-                message: "An auction you bid on has been cancelled",
-                type: "info",
-                category: "economic",
-                priority: "medium",
-                metadata: { auctionId: input.auctionId },
-              },
-            );
+            await notificationAPI.create({
+              userId: currentBidderClerkId,
+              title: "Auction Cancelled",
+              message: "An auction you bid on has been cancelled",
+              type: "info",
+              category: "economic",
+              priority: "medium",
+              metadata: { auctionId: input.auctionId },
+            });
           }
         } catch {}
 

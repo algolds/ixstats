@@ -60,7 +60,7 @@ function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
       role="switch"
       aria-checked={enabled}
       onClick={onToggle}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none ${
         enabled ? "bg-blue-500" : "bg-muted-foreground/25"
       }`}
     >
@@ -77,7 +77,7 @@ function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-muted-foreground px-1 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider">
+    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
       {children}
     </div>
   );
@@ -231,9 +231,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             <SectionLabel>Wiki</SectionLabel>
 
             <SettingsRow
-              icon={
-                <MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-              }
+              icon={<MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
               iconBg="bg-purple-500/15"
               label="Citation Tooltips"
               description="Hover footnotes to preview"
@@ -251,9 +249,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             </SettingsRow>
 
             <SettingsRow
-              icon={
-                <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              }
+              icon={<ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />}
               iconBg="bg-emerald-500/15"
               label="Open in New Tab"
               description="Wiki links open in new tabs"
@@ -342,9 +338,7 @@ function SettingsHeader({
             title="Refresh data"
             className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40"
           >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
         )}
         <button
@@ -378,9 +372,7 @@ function SettingsRow({
       <div className={`shrink-0 rounded-md p-1.5 ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="text-foreground text-sm font-medium">{label}</div>
-        {description && (
-          <div className="text-muted-foreground text-xs">{description}</div>
-        )}
+        {description && <div className="text-muted-foreground text-xs">{description}</div>}
       </div>
       {children}
     </div>

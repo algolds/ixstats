@@ -44,10 +44,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import type {
-  CoreEconomicIndicatorsData,
-  GovernmentSpendingData,
-} from "~/types/economics";
+import type { CoreEconomicIndicatorsData, GovernmentSpendingData } from "~/types/economics";
 type SpendingCategory = string;
 import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 import { Button } from "~/components/ui/button";

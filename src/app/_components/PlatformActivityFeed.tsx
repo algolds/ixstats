@@ -37,7 +37,6 @@ import { formatCurrency } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
 
-
 interface TrendingTopic {
   id: string;
   title: string;

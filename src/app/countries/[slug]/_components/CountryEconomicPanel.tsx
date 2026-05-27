@@ -517,16 +517,28 @@ export function CountryEconomicPanel({
         label: "Agriculture",
         value: formatPercent((economicsData.labor as any).employmentBySector?.agriculture),
       },
-      { label: "Industry", value: formatPercent((economicsData.labor as any).employmentBySector?.industry) },
-      { label: "Services", value: formatPercent((economicsData.labor as any).employmentBySector?.services) },
+      {
+        label: "Industry",
+        value: formatPercent((economicsData.labor as any).employmentBySector?.industry),
+      },
+      {
+        label: "Services",
+        value: formatPercent((economicsData.labor as any).employmentBySector?.services),
+      },
     ],
     [(economicsData.labor as any).employmentBySector]
   );
 
   const laborTypeBreakdown = useMemo(
     () => [
-      { label: "Full Time", value: formatPercent((economicsData.labor as any).employmentByType?.fullTime) },
-      { label: "Part Time", value: formatPercent((economicsData.labor as any).employmentByType?.partTime) },
+      {
+        label: "Full Time",
+        value: formatPercent((economicsData.labor as any).employmentByType?.fullTime),
+      },
+      {
+        label: "Part Time",
+        value: formatPercent((economicsData.labor as any).employmentByType?.partTime),
+      },
       {
         label: "Self Employed",
         value: formatPercent((economicsData.labor as any).employmentByType?.selfEmployed),

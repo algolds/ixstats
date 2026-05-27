@@ -60,7 +60,9 @@ function MessagesRouterInner() {
     if (typeof window === "undefined") return DEFAULT_MESSAGES_SETTINGS;
     try {
       const stored = localStorage.getItem("ixstats:messages:settings");
-      return stored ? { ...DEFAULT_MESSAGES_SETTINGS, ...JSON.parse(stored) } : DEFAULT_MESSAGES_SETTINGS;
+      return stored
+        ? { ...DEFAULT_MESSAGES_SETTINGS, ...JSON.parse(stored) }
+        : DEFAULT_MESSAGES_SETTINGS;
     } catch {
       return DEFAULT_MESSAGES_SETTINGS;
     }
@@ -218,18 +220,19 @@ function MessagesRouterInner() {
                   content: data.content ?? "",
                   ixTimeTimestamp: new Date(data.timestamp),
                   createdAt: new Date(data.timestamp),
-                  account: data.accountId === currentUserId
-                    ? { id: currentUserId, displayName: user?.fullName ?? "Me" }
-                    : c.lastMessage?.account ?? { id: data.accountId, displayName: "User" },
+                  account:
+                    data.accountId === currentUserId
+                      ? { id: currentUserId, displayName: user?.fullName ?? "Me" }
+                      : (c.lastMessage?.account ?? { id: data.accountId, displayName: "User" }),
                 },
-                unreadCount: data.accountId !== currentUserId
-                  ? (c.unreadCount ?? 0) + 1
-                  : c.unreadCount,
+                unreadCount:
+                  data.accountId !== currentUserId ? (c.unreadCount ?? 0) + 1 : c.unreadCount,
               };
             });
             // Sort by lastActivity descending so the updated conversation bubbles up
-            updated.sort((a: any, b: any) =>
-              new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+            updated.sort(
+              (a: any, b: any) =>
+                new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
             );
             return { ...old, conversations: updated };
           });

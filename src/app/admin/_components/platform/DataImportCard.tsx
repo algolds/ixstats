@@ -1,7 +1,6 @@
-// src/app/admin/_components/platform/DataImportCard.tsx
 "use client";
 
-import { Database, AlertCircle } from "lucide-react";
+import { Database, AlertCircle, CheckCircle2, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FileUpload } from "../FileUpload";
@@ -22,20 +21,22 @@ export function DataImportCard({
   importError,
 }: DataImportCardProps) {
   return (
-    <Card className="glass-card-parent border-cyan-500/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5 text-cyan-500" />
+    <Card className="glass-surface border-border/40">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-bold">
+          <div className="rounded-lg bg-cyan-500/10 p-1.5 text-cyan-500 border border-cyan-500/20">
+            <Database className="h-4 w-4" />
+          </div>
           Country Data Import
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs">
           Import roster data from Excel with preview and change tracking
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="space-y-3">
-            <p className="text-foreground text-sm font-medium">Import Roster Data with Preview</p>
+            <p className="text-foreground text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upload Roster File</p>
             <FileUpload
               onFileSelect={onFileSelect}
               isUploading={isUploading}
@@ -43,33 +44,52 @@ export function DataImportCard({
             />
 
             {analyzeError && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="py-2.5">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>Error analyzing file: {analyzeError}</AlertDescription>
+                <AlertDescription className="text-xs">Error analyzing file: {analyzeError}</AlertDescription>
               </Alert>
             )}
 
             {importError && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="py-2.5">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>Error importing file: {importError}</AlertDescription>
+                <AlertDescription className="text-xs">Error importing file: {importError}</AlertDescription>
               </Alert>
             )}
           </div>
 
           <div className="space-y-3">
-            <p className="text-foreground text-sm font-medium">Import Guidelines</p>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <ul className="text-muted-foreground space-y-1.5 text-xs">
-                <li>· Supports Excel (.xlsx, .xls) formats only</li>
-                <li>· Upload shows a preview of changes before importing</li>
-                <li>· You can choose to update existing countries or skip them</li>
-                <li>· Historical data and storyteller effects are always preserved</li>
-                <li>· New countries are automatically added to the system</li>
-                <li>· Statistics are recalculated after successful import</li>
-                <li>· Required fields: Country, Population, GDP PC</li>
-                <li>· Only tracks 13 core fields from roster data</li>
-                <li>· Option to sync epoch time with imported data</li>
+            <p className="text-foreground text-xs font-semibold uppercase tracking-wider text-muted-foreground">Import Guidelines</p>
+            <div className="border border-border/20 bg-card/10 rounded-lg p-4">
+              <ul className="text-muted-foreground space-y-2.5 text-xs">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <span>Supports Excel (<code>.xlsx</code>, <code>.xls</code>) formats only.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <span>Shows a visual delta preview of all changed records before confirming.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <span>Option to update existing country records or skip them.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <span>Storyteller event modifiers and history are always preserved.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <span>New countries are automatically initialized and added.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Info className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                  <span>Required fields: <strong>Country</strong>, <strong>Population</strong>, <strong>GDP PC</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Info className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                  <span>Only updates the 13 core tracking properties from the spreadsheet.</span>
+                </li>
               </ul>
             </div>
           </div>

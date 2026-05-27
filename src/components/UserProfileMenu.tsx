@@ -41,7 +41,7 @@ export function UserProfileMenu({
 
   return (
     <Popover open={showUserPopover} onOpenChange={setShowUserPopover}>
-      <PopoverTrigger className="flex items-center gap-2 rounded-lg px-3 py-2 transition-colors duration-200 hover:bg-white/10">
+      <PopoverTrigger className="hover:bg-accent/10 flex items-center gap-2 rounded-lg px-3 py-2 transition-colors duration-200">
         {setupStatus === "complete" && userProfile?.country && userCountryFlag ? (
           <img
             src={userCountryFlag}
@@ -66,7 +66,7 @@ export function UserProfileMenu({
       <PopoverContent align="end" className="w-64 p-0">
         <div className="py-2">
           {/* User Info */}
-          <div className="border-border-white/10 border-b px-4 py-3">
+          <div className="border-border border-b px-4 py-3">
             <div className="flex items-center gap-3">
               {setupStatus === "complete" && userProfile?.country && userCountryFlag ? (
                 <img
@@ -114,21 +114,21 @@ export function UserProfileMenu({
             )}
             <Link
               href="/dashboard"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex items-center gap-3 px-4 py-2 text-sm transition-colors"
             >
               <Home className="h-4 w-4" />
               Dashboard
             </Link>
             <Link
               href="/profile"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex items-center gap-3 px-4 py-2 text-sm transition-colors"
             >
               <User className="h-4 w-4" />
               Profile Settings
             </Link>
             <Link
               href="/profile#ixnayid"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex items-center gap-3 px-4 py-2 text-sm transition-colors"
             >
               <Link2 className="h-4 w-4" />
               IxnayID Connections
@@ -137,7 +137,7 @@ export function UserProfileMenu({
               href="https://accounts.ixwiki.com/user"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex items-center gap-3 px-4 py-2 text-sm transition-colors"
             >
               <Settings className="h-4 w-4" />
               Account Management

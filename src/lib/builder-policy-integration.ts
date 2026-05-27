@@ -725,8 +725,8 @@ export class BuilderPolicyIntegrationService {
       },
       {
         name: "Services",
-        gdpContribution: totalWorkforce * 0.60,
-        employment: totalWorkforce * 0.60,
+        gdpContribution: totalWorkforce * 0.6,
+        employment: totalWorkforce * 0.6,
         growthRate: 4.0,
         productivity: 80,
       },

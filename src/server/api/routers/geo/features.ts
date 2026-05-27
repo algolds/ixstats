@@ -860,7 +860,12 @@ export const geoFeaturesRouter = createTRPCRouter({
       }
 
       // Validate containment + name uniqueness
-      await validatePolygonContainment(ctx.db as any, input.countryId, input.geometry, "Subdivision");
+      await validatePolygonContainment(
+        ctx.db as any,
+        input.countryId,
+        input.geometry,
+        "Subdivision"
+      );
       await checkNameUniqueness(ctx.db as any, input.countryId, input.name, "subdivision");
 
       const subdivision = await ctx.db.subdivision.create({
@@ -880,7 +885,10 @@ export const geoFeaturesRouter = createTRPCRouter({
       // Get terrain breakdown for the subdivision (informational)
       let terrainInfo: Awaited<ReturnType<typeof getTerrainForArea>> | null = null;
       try {
-        terrainInfo = await getTerrainForArea(ctx.db as any, input.geometry as unknown as import("geojson").Geometry);
+        terrainInfo = await getTerrainForArea(
+          ctx.db as any,
+          input.geometry as unknown as import("geojson").Geometry
+        );
       } catch {
         // Terrain query failed — non-blocking
       }
@@ -926,7 +934,12 @@ export const geoFeaturesRouter = createTRPCRouter({
 
       // Validate new geometry if provided
       if (input.geometry) {
-        await validatePolygonContainment(ctx.db as any, input.countryId, input.geometry, "Subdivision");
+        await validatePolygonContainment(
+          ctx.db as any,
+          input.countryId,
+          input.geometry,
+          "Subdivision"
+        );
       }
       if (input.name) {
         await checkNameUniqueness(
@@ -1528,7 +1541,13 @@ export const geoFeaturesRouter = createTRPCRouter({
         );
       }
       if (input.title) {
-        await checkNameUniqueness(ctx.db as any, input.countryId, input.title, "storyPin", input.pinId);
+        await checkNameUniqueness(
+          ctx.db as any,
+          input.countryId,
+          input.title,
+          "storyPin",
+          input.pinId
+        );
       }
 
       const updated = await ctx.db.storyPin.update({

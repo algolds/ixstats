@@ -7,7 +7,7 @@ export const useWebGLErrorHandler = () => {
 
     const handleWebGLError = (event: ErrorEvent) => {
       // Check if this is a WebGL-related error
-      const isWebGL = 
+      const isWebGL =
         event.error?.message?.includes("WebGL") ||
         event.error?.message?.includes("THREE") ||
         event.message?.includes("WebGL") ||
@@ -26,10 +26,13 @@ export const useWebGLErrorHandler = () => {
           })
         );
 
-        toast.error("Graphics rendering error detected. Please ensure WebGL and hardware acceleration are enabled in your browser settings.", {
-          id: "webgl-error-toast",
-          duration: 8000,
-        });
+        toast.error(
+          "Graphics rendering error detected. Please ensure WebGL and hardware acceleration are enabled in your browser settings.",
+          {
+            id: "webgl-error-toast",
+            duration: 8000,
+          }
+        );
       }
     };
 

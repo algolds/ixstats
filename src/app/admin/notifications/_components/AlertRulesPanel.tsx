@@ -69,7 +69,7 @@ export function AlertRulesPanel() {
   const [form, setForm] = useState<ThresholdForm>(emptyForm);
 
   const { data, isLoading, refetch } = api.notifications.getAlertThresholds.useQuery();
-  const { data: countries } = api.countries.getAll.useQuery();
+  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
 
   const updateMutation = api.notifications.updateAlertThreshold.useMutation({
     onSuccess: () => {
@@ -197,7 +197,7 @@ export function AlertRulesPanel() {
                   </TableRow>
                 ) : (
                   data?.thresholds.map((t) => {
-                    const country = countries?.countries?.find((c) => c.id === t.countryId);
+                    const country = countries?.find((c: any) => c.id === t.countryId);
                     return (
                       <TableRow
                         key={t.id}

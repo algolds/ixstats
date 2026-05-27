@@ -1,20 +1,8 @@
 "use client";
 
 import React from "react";
-import {
-  DollarSign,
-  TrendingUp,
-  Building2,
-  Users,
-  Crown,
-  Globe,
-  Landmark,
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "~/components/ui/tooltip";
+import { DollarSign, TrendingUp, Building2, Users, Crown, Globe, Landmark } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
 // ── Economic Tier Config — solid colors, no gradients ──
@@ -168,27 +156,13 @@ interface LocationBadgeProps {
 
 // ── Sidebar compact mini progress ──
 
-function MiniProgressArc({
-  progress,
-  color,
-}: {
-  progress: number;
-  color: string;
-}) {
+function MiniProgressArc({ progress, color }: { progress: number; color: string }) {
   const radius = 5;
   const circumference = 2 * Math.PI * radius;
-  const offset =
-    circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference;
+  const offset = circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference;
   return (
-    <svg className="h-3.5 w-3.5 -rotate-90 shrink-0" viewBox="0 0 14 14">
-      <circle
-        cx="7"
-        cy="7"
-        r={radius}
-        fill="none"
-        className="stroke-white/10"
-        strokeWidth="2"
-      />
+    <svg className="h-3.5 w-3.5 shrink-0 -rotate-90" viewBox="0 0 14 14">
+      <circle cx="7" cy="7" r={radius} fill="none" className="stroke-white/10" strokeWidth="2" />
       <circle
         cx="7"
         cy="7"
@@ -238,13 +212,8 @@ export function EconomicTierBadge({
             </div>
             {showProgress && (
               <div className="flex items-center gap-1 text-white/80">
-                <span className="text-[7px] font-semibold">
-                  {Math.round(progress)}%
-                </span>
-                <MiniProgressArc
-                  progress={progress}
-                  color="rgba(255,255,255,0.9)"
-                />
+                <span className="text-[7px] font-semibold">{Math.round(progress)}%</span>
+                <MiniProgressArc progress={progress} color="rgba(255,255,255,0.9)" />
               </div>
             )}
           </div>
@@ -252,9 +221,7 @@ export function EconomicTierBadge({
         <TooltipContent side="right" className="max-w-xs">
           <div className="space-y-1">
             <div className="font-semibold">{tier} Economy</div>
-            <div className="text-muted-foreground text-xs">
-              {style.description}
-            </div>
+            <div className="text-muted-foreground text-xs">{style.description}</div>
           </div>
         </TooltipContent>
       </Tooltip>
@@ -272,7 +239,7 @@ export function EconomicTierBadge({
             "border",
             style.border,
             style.text,
-            "cursor-help hover:brightness-110 hover:scale-105",
+            "cursor-help hover:scale-105 hover:brightness-110",
             className
           )}
         >
@@ -283,9 +250,7 @@ export function EconomicTierBadge({
       <TooltipContent side="top" className="max-w-xs">
         <div className="space-y-1">
           <div className="font-semibold">{tier} Economy</div>
-          <div className="text-muted-foreground text-xs">
-            {style.description}
-          </div>
+          <div className="text-muted-foreground text-xs">{style.description}</div>
         </div>
       </TooltipContent>
     </Tooltip>
@@ -324,25 +289,16 @@ export function PopulationTierBadge({
             </div>
             {showProgress && (
               <div className="flex items-center gap-1 text-white/80">
-                <span className="text-[7px] font-semibold">
-                  {Math.round(progress)}%
-                </span>
-                <MiniProgressArc
-                  progress={progress}
-                  color="rgba(255,255,255,0.9)"
-                />
+                <span className="text-[7px] font-semibold">{Math.round(progress)}%</span>
+                <MiniProgressArc progress={progress} color="rgba(255,255,255,0.9)" />
               </div>
             )}
           </div>
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-xs">
           <div className="space-y-1">
-            <div className="font-semibold">
-              Population Tier {tier}
-            </div>
-            <div className="text-muted-foreground text-xs">
-              {style.label} population range
-            </div>
+            <div className="font-semibold">Population Tier {tier}</div>
+            <div className="text-muted-foreground text-xs">{style.label} population range</div>
           </div>
         </TooltipContent>
       </Tooltip>
@@ -362,8 +318,7 @@ export function PopulationTierBadge({
             className
           )}
         >
-          <Users className="h-2.5 w-2.5" />
-          T{tier}
+          <Users className="h-2.5 w-2.5" />T{tier}
         </span>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
@@ -399,7 +354,7 @@ export function LocationBadge({ type, value, className }: LocationBadgeProps) {
         className={cn(
           "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium",
           continent.bg,
-          "border border-white/8 text-foreground/80",
+          "text-foreground/80 border border-white/8",
           "transition-all duration-200 hover:border-white/15 hover:brightness-110",
           className
         )}
@@ -415,7 +370,7 @@ export function LocationBadge({ type, value, className }: LocationBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-md bg-indigo-500/12 px-2 py-1 text-[10px] font-medium",
-        "border border-white/8 text-foreground/80",
+        "text-foreground/80 border border-white/8",
         "transition-all duration-200 hover:border-white/15 hover:brightness-110",
         className
       )}
@@ -435,12 +390,7 @@ interface VaultLevelBadgeProps {
   className?: string;
 }
 
-export function VaultLevelBadge({
-  level,
-  xp,
-  xpPerLevel = 1000,
-  className,
-}: VaultLevelBadgeProps) {
+export function VaultLevelBadge({ level, xp, xpPerLevel = 1000, className }: VaultLevelBadgeProps) {
   const progress = ((xp % xpPerLevel) / xpPerLevel) * 100;
 
   return (
@@ -470,18 +420,13 @@ export function VaultLevelBadge({
                 d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
               />
             </svg>
-            <span className="font-bold text-purple-200">
-              Lv.{level}
-            </span>
+            <span className="font-bold text-purple-200">Lv.{level}</span>
           </div>
           <div className="flex items-center gap-1 text-purple-200/80">
             <span className="text-[7px]">
               {xp % xpPerLevel}/{xpPerLevel >= 1000 ? "1k" : xpPerLevel}
             </span>
-            <MiniProgressArc
-              progress={progress}
-              color="rgba(168,85,247,0.9)"
-            />
+            <MiniProgressArc progress={progress} color="rgba(168,85,247,0.9)" />
           </div>
         </div>
       </TooltipTrigger>

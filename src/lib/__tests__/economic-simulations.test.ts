@@ -2,7 +2,11 @@ import { IxStatsCalculator, EconomicTier, PopulationTier } from "../calculations
 import { IxTime } from "../ixtime";
 import { EnhancedEconomicCalculator } from "../enhanced-economic-calculations";
 import { EconomicCalculationGroups } from "../economic-calculation-groups";
-import { calculateModelHealth, validateModelParameters, calculateGdpProjections } from "../economic-modeling-engine";
+import {
+  calculateModelHealth,
+  validateModelParameters,
+  calculateGdpProjections,
+} from "../economic-modeling-engine";
 import type { BaseCountryData, CountryStats, EconomicConfig } from "../../types/ixstats";
 import type { EconomyData } from "../../types/economics";
 
@@ -154,9 +158,27 @@ const mockEconomyData: EconomyData = {
   },
   income: {
     economicClasses: [
-      { name: "Upper Class", populationPercent: 10, wealthPercent: 40, averageIncome: 120000, color: "blue" },
-      { name: "Middle Class", populationPercent: 60, wealthPercent: 50, averageIncome: 45000, color: "green" },
-      { name: "Lower Class", populationPercent: 30, wealthPercent: 10, averageIncome: 18000, color: "red" },
+      {
+        name: "Upper Class",
+        populationPercent: 10,
+        wealthPercent: 40,
+        averageIncome: 120000,
+        color: "blue",
+      },
+      {
+        name: "Middle Class",
+        populationPercent: 60,
+        wealthPercent: 50,
+        averageIncome: 45000,
+        color: "green",
+      },
+      {
+        name: "Lower Class",
+        populationPercent: 30,
+        wealthPercent: 10,
+        averageIncome: 18000,
+        color: "red",
+      },
     ],
     povertyRate: 12,
     incomeInequalityGini: 0.35,
@@ -278,7 +300,7 @@ describe("Active Economic Simulation Engine (calculations.ts)", () => {
     it("should correctly compute GDP per capita tier (7-tier classification)", () => {
       const stats = calculator.initializeCountryStats(mockBaseCountry);
       expect(stats.economicTier).toBe(EconomicTier.DEVELOPED); // 30k range
-      
+
       const impoverishedStats = calculator.initializeCountryStats({
         ...mockBaseCountry,
         gdpPerCapita: 8000,
@@ -301,7 +323,7 @@ describe("Active Economic Simulation Engine (calculations.ts)", () => {
       const baseWithExtremeRates = {
         ...mockBaseCountry,
         adjustedGdpGrowth: 0.95, // 95% is too high, should clamp to 50%
-        populationGrowthRate: -0.80, // -80% is too low, should clamp to -50%
+        populationGrowthRate: -0.8, // -80% is too low, should clamp to -50%
       };
       const stats = calculator.initializeCountryStats(baseWithExtremeRates);
       expect(stats.adjustedGdpGrowth).toBe(0.5);
@@ -314,9 +336,9 @@ describe("Active Economic Simulation Engine (calculations.ts)", () => {
       // 1 year progression
       const baselineStats = calculator.initializeCountryStats(mockBaseCountry);
       const targetTime = IxTime.addYears(calculator.getBaselineDate(), 1);
-      
+
       const result = calculator.calculateTimeProgression(baselineStats, targetTime);
-      
+
       // Expected growth: base rate (0.03) * global growth factor (1.0321) = 0.030963
       // Compounded: 30000 * (1 + 0.030963)^1 = 30928.89
       expect(result.newStats.currentGdpPerCapita).toBeCloseTo(30928.89, 1);
@@ -327,17 +349,17 @@ describe("Active Economic Simulation Engine (calculations.ts)", () => {
       const developingBase = {
         ...mockBaseCountry,
         gdpPerCapita: 15000,
-        adjustedGdpGrowth: 0.10, // 10% base rate is set
+        adjustedGdpGrowth: 0.1, // 10% base rate is set
       };
-      
+
       const baselineStats = calculator.initializeCountryStats(developingBase);
       const targetTime = IxTime.addYears(calculator.getBaselineDate(), 1);
-      
+
       const result = calculator.calculateTimeProgression(baselineStats, targetTime);
-      
+
       // Since it's developing, max cap is 0.075. 10% * global factor would exceed this.
       // Expected growth: 15000 * (1 + 0.075)^1 = 16125.00
-      expect(result.newStats.currentGdpPerCapita).toBeCloseTo(16125.00, 1);
+      expect(result.newStats.currentGdpPerCapita).toBeCloseTo(16125.0, 1);
     });
 
     it("should apply diminishing returns logarithmic reduction for ultra high GDP", () => {
@@ -347,12 +369,12 @@ describe("Active Economic Simulation Engine (calculations.ts)", () => {
         gdpPerCapita: 90000,
         adjustedGdpGrowth: 0.004, // 0.4% base growth (under extravagant cap of 0.5%)
       };
-      
+
       const baselineStats = calculator.initializeCountryStats(ultraHighBase);
       const targetTime = IxTime.addYears(calculator.getBaselineDate(), 1);
-      
+
       const result = calculator.calculateTimeProgression(baselineStats, targetTime);
-      
+
       // effective growth = 0.004 * 1.0321 = 0.0041284
       // diminishingFactor = log2(90000 / 60000 + 1) = log2(2.5) = 1.3219
       // divisor = 1 + 1.3219 * 0.5 = 1.66095
@@ -472,12 +494,14 @@ describe("Calculation Groups Compatibility & Refactoring Verification (economic-
     // Emerging should run in the high growth sustainability case
     const emergingStats = { ...baseStats, economicTier: "Emerging" as any };
     const emergingDynamics = groups.calculateGrowthDynamics(emergingStats, mockEconomyData);
-    
+
     // Advanced should run in the mature default case
     const advancedStats = { ...baseStats, economicTier: "Advanced" as any };
     const advancedDynamics = groups.calculateGrowthDynamics(advancedStats, mockEconomyData);
 
     // Emerging (high potential growth rate) should score higher or equal to Advanced (mature low rate)
-    expect(emergingDynamics.components.growthSustainability).toBeGreaterThan(advancedDynamics.components.growthSustainability);
+    expect(emergingDynamics.components.growthSustainability).toBeGreaterThan(
+      advancedDynamics.components.growthSustainability
+    );
   });
 });

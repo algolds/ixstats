@@ -42,14 +42,9 @@ export function CountryMapWidget({
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Globe className="text-muted-foreground h-3.5 w-3.5" />
-          <span className="text-foreground text-xs font-medium">Territory Map</span>
+          <span className="text-foreground text-xs font-medium">Country Map</span>
         </div>
-        <Badge
-          variant="outline"
-          className="h-4 border-emerald-500/30 px-1.5 text-[9px] text-emerald-500"
-        >
-          LIVE
-        </Badge>
+       
       </div>
 
       {/* Map */}

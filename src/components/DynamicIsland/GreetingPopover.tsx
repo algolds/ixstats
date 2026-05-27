@@ -32,8 +32,10 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
   const { user, isLoaded } = useUser();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const { data: userProfile, isLoading: profileLoading } =
-    api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
+  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!user?.id }
+  );
 
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
     { countryId: userProfile?.countryId ?? "" },
@@ -48,17 +50,15 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
   })();
 
   // Compute composite vitality
-  const vitalityScore =
-    activityRingsData
-      ? Math.round(
-          (
-            (activityRingsData.economicVitality || 0) +
-            (activityRingsData.populationWellbeing || 0) +
-            (activityRingsData.diplomaticStanding || 0) +
-            (activityRingsData.governmentalEfficiency || 0)
-          ) / 4
-        )
-      : null;
+  const vitalityScore = activityRingsData
+    ? Math.round(
+        ((activityRingsData.economicVitality || 0) +
+          (activityRingsData.populationWellbeing || 0) +
+          (activityRingsData.diplomaticStanding || 0) +
+          (activityRingsData.governmentalEfficiency || 0)) /
+          4
+      )
+    : null;
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -78,15 +78,13 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
           <div>
             {/* ── Your Country ─────────────────────────────────── */}
             <div className="border-border/40 border-b px-4 py-3">
-              <div className="text-muted-foreground/60 mb-2 text-[10px] font-semibold uppercase tracking-wider">
+              <div className="text-muted-foreground/60 mb-2 text-[10px] font-semibold tracking-wider uppercase">
                 MyCountry
               </div>
               <button
                 onClick={() =>
                   userProfile.country &&
-                  (window.location.href = createAbsoluteUrl(
-                    getNationUrl(userProfile.country.name)
-                  ))
+                  (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))
                 }
                 className="hover:bg-accent/10 -mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 rounded-lg px-1 py-1.5 transition-colors"
               >
@@ -136,10 +134,30 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
               {activityRingsData && (
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   {[
-                    { value: activityRingsData.economicVitality || 0, color: "#22c55e", label: "Economy", labelClass: "text-green-600 dark:text-green-400" },
-                    { value: activityRingsData.populationWellbeing || 0, color: "#3b82f6", label: "Population", labelClass: "text-blue-600 dark:text-blue-400" },
-                    { value: activityRingsData.diplomaticStanding || 0, color: "#a855f7", label: "Diplomacy", labelClass: "text-purple-600 dark:text-purple-400" },
-                    { value: activityRingsData.governmentalEfficiency || 0, color: "#f97316", label: "Government", labelClass: "text-orange-600 dark:text-orange-400" },
+                    {
+                      value: activityRingsData.economicVitality || 0,
+                      color: "#22c55e",
+                      label: "Economy",
+                      labelClass: "text-green-600 dark:text-green-400",
+                    },
+                    {
+                      value: activityRingsData.populationWellbeing || 0,
+                      color: "#3b82f6",
+                      label: "Population",
+                      labelClass: "text-blue-600 dark:text-blue-400",
+                    },
+                    {
+                      value: activityRingsData.diplomaticStanding || 0,
+                      color: "#a855f7",
+                      label: "Diplomacy",
+                      labelClass: "text-purple-600 dark:text-purple-400",
+                    },
+                    {
+                      value: activityRingsData.governmentalEfficiency || 0,
+                      color: "#f97316",
+                      label: "Government",
+                      labelClass: "text-orange-600 dark:text-orange-400",
+                    },
                   ].map((ring) => (
                     <div key={ring.label} className="flex flex-col items-center gap-1">
                       <HealthRing
@@ -162,9 +180,7 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
               <button
                 onClick={() =>
                   userProfile.country &&
-                  (window.location.href = createAbsoluteUrl(
-                    getNationUrl(userProfile.country.name)
-                  ))
+                  (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))
                 }
                 className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
               >
@@ -175,9 +191,7 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
 
               {!isStandalone && (
                 <button
-                  onClick={() =>
-                    (window.location.href = createAbsoluteUrl("/mycountry"))
-                  }
+                  onClick={() => (window.location.href = createAbsoluteUrl("/mycountry"))}
                   className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
                 >
                   <Crown className="h-3.5 w-3.5 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.5)] transition-all group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
@@ -194,7 +208,7 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                 }}
                 className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
               >
-                <Settings className="h-3.5 w-3.5 text-blue-400 drop-shadow-[0_0_4px_rgba(59,130,246,0.5)] transition-all group-hover:rotate-45 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.7)]" />
+                <Settings className="h-3.5 w-3.5 text-blue-400 drop-shadow-[0_0_4px_rgba(59,130,246,0.5)] transition-all group-hover:scale-110 group-hover:rotate-45 group-hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.7)]" />
                 <span className="flex-1 text-left">Appearance & Preferences</span>
                 <ChevronRight className="text-muted-foreground/30 h-3 w-3" />
               </button>
@@ -225,8 +239,7 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
             <button
               onClick={() =>
                 (window.location.href =
-                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ||
-                  createAbsoluteUrl("/sign-in"))
+                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
               }
               className="text-foreground border-border hover:bg-accent/10 rounded-lg border px-4 py-2 text-xs font-medium transition-colors"
             >

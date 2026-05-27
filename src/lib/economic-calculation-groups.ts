@@ -619,7 +619,10 @@ export class EconomicCalculationGroups {
       factors.push({ factor: "Price stability", impact: "positive" as const, weight: 0.2 });
     }
 
-    if (countryStats.economicTier === EconomicTier.STRONG || countryStats.economicTier === EconomicTier.VERY_STRONG) {
+    if (
+      countryStats.economicTier === EconomicTier.STRONG ||
+      countryStats.economicTier === EconomicTier.VERY_STRONG
+    ) {
       factors.push({ factor: "High income status", impact: "positive" as const, weight: 0.25 });
     }
 

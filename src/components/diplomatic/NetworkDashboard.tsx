@@ -38,9 +38,10 @@ export default function NetworkDashboard({ countryId, countryName }: NetworkDash
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Fetch data
-  const { data: embassies = [], refetch: refetchEmbassies } = api.diplomaticEmbassies.getEmbassies.useQuery({
-    countryId,
-  });
+  const { data: embassies = [], refetch: refetchEmbassies } =
+    api.diplomaticEmbassies.getEmbassies.useQuery({
+      countryId,
+    });
   const { data: relationships = [], refetch: refetchRelationships } =
     api.diplomaticCore.getRelationships.useQuery({ countryId });
   const { data: culturalExchanges = [], refetch: refetchExchanges } =

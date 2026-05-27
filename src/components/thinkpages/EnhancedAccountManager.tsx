@@ -232,7 +232,9 @@ export function EnhancedAccountManager({
 
         {/* Account Bio Preview */}
         {account.bio && (
-          <PreText className="text-muted-foreground mt-2 line-clamp-2 text-xs">{account.bio}</PreText>
+          <PreText className="text-muted-foreground mt-2 line-clamp-2 text-xs">
+            {account.bio}
+          </PreText>
         )}
       </motion.div>
     );

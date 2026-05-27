@@ -81,7 +81,7 @@ export function StorytellerHistory() {
               return (
                 <div
                   key={log.id}
-                  className="border-border/30 hover:bg-muted/10 rounded-lg border p-3 transition-colors"
+                  className="glass-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

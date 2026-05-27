@@ -152,17 +152,15 @@ export const cardPacksRouter = createTRPCRouter({
 
         // Notification: pack purchased (fire-and-forget)
         try {
-          await notificationAPI.create(
-            {
-              userId: ctx.user.id,
-              title: "Pack Purchased",
-              message: "Your card pack is ready to open!",
-              type: "info",
-              category: "achievement",
-              priority: "medium",
-              metadata: { packId: input.packId },
-            },
-          );
+          await notificationAPI.create({
+            userId: ctx.user.id,
+            title: "Pack Purchased",
+            message: "Your card pack is ready to open!",
+            type: "info",
+            category: "achievement",
+            priority: "medium",
+            metadata: { packId: input.packId },
+          });
         } catch {}
 
         return {
@@ -244,18 +242,15 @@ export const cardPacksRouter = createTRPCRouter({
             const order = ["COMMON", "UNCOMMON", "RARE", "EPIC", "ULTRA_RARE", "LEGENDARY"];
             return order.indexOf(c.rarity) > order.indexOf(best) ? c.rarity : best;
           }, "COMMON");
-          await notificationAPI.create(
-            {
-              userId: ctx.user.id,
-              title: "Cards Revealed!",
-              message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
-              type: "info",
-              category: "achievement",
-              priority:
-                bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
-              metadata: { cardCount: cards.length, bestRarity },
-            },
-          );
+          await notificationAPI.create({
+            userId: ctx.user.id,
+            title: "Cards Revealed!",
+            message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
+            type: "info",
+            category: "achievement",
+            priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
+            metadata: { cardCount: cards.length, bestRarity },
+          });
         } catch {}
 
         return {
@@ -463,17 +458,15 @@ export const cardPacksRouter = createTRPCRouter({
         // Trigger notification if requested
         if (input.sendNotification) {
           try {
-            await notificationAPI.create(
-              {
-                userId: input.targetUserId,
-                title: "Pack Received!",
-                message: `You have been awarded a ${userPack.pack.name} by an Administrator!`,
-                type: "info",
-                category: "achievement",
-                priority: "high",
-                metadata: { packId: input.packId, userPackId: userPack.id },
-              },
-            );
+            await notificationAPI.create({
+              userId: input.targetUserId,
+              title: "Pack Received!",
+              message: `You have been awarded a ${userPack.pack.name} by an Administrator!`,
+              type: "info",
+              category: "achievement",
+              priority: "high",
+              metadata: { packId: input.packId, userPackId: userPack.id },
+            });
           } catch (e) {
             console.error("[CardPacks] Failed to send pack award notification:", e);
           }

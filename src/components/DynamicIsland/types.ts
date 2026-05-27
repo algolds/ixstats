@@ -87,6 +87,7 @@ export type SetupStatus = "loading" | "unauthenticated" | "needs-setup" | "compl
 
 // Component prop interfaces
 export interface CompactViewProps {
+  mode?: ViewMode;
   isSticky?: boolean;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
@@ -102,15 +103,27 @@ export interface CompactViewProps {
   pluginBadge?: DIBadge;
 }
 
-export interface CountriesData {
-  countries: Array<{
-    id: string;
-    name: string;
-    // Add other properties if needed, based on how countriesData.countries is used
-    // For example, if you access currentGdpPerCapita, add it here:
-    currentGdpPerCapita?: number | null;
-  }>;
-}
+export type CountriesData =
+  | Array<{
+      id: string;
+      name: string;
+      slug?: string;
+      flagUrl?: string;
+      coatOfArmsUrl?: string;
+      economicTier?: string;
+      currentGdpPerCapita?: number | null;
+    }>
+  | {
+      countries: Array<{
+        id: string;
+        name: string;
+        slug?: string;
+        flagUrl?: string;
+        coatOfArmsUrl?: string;
+        economicTier?: string;
+        currentGdpPerCapita?: number | null;
+      }>;
+    };
 
 export interface SearchViewProps {
   searchQuery: string;

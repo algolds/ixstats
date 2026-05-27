@@ -123,6 +123,7 @@ import { blurbsRouter } from "./routers/blurbs";
 // ─── Social ──────────────────────────────────────────────────────────────────
 import { thinkpagesRouter } from "./routers/thinkpages";
 import { messagesRouter } from "./routers/messages";
+import { pollsRouter } from "./routers/polls";
 
 // ─── Forum & Identity ────────────────────────────────────────────────────────
 import { forumRouter } from "./routers/forum";
@@ -242,6 +243,7 @@ export const appRouter = createTRPCRouter({
   // ─── Social ────────────────────────────────────────────────────────────────
   thinkpages: safeRouter("thinkpages", () => thinkpagesRouter),
   messages: safeRouter("messages", () => messagesRouter),
+  polls: safeRouter("polls", () => pollsRouter),
 
   // ─── Forum & Identity ──────────────────────────────────────────────────────
   forum: safeRouter("forum", () => forumRouter),

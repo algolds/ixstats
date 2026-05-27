@@ -332,7 +332,10 @@ export default async function middleware(req: NextRequest, event: any) {
     try {
       return await clerk(req, event);
     } catch (error) {
-      console.error("[Middleware] Clerk middleware execution failed, falling back to simple middleware:", error);
+      console.error(
+        "[Middleware] Clerk middleware execution failed, falling back to simple middleware:",
+        error
+      );
       return simpleMiddleware(req);
     }
   }

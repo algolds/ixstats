@@ -360,25 +360,26 @@ function calculateCompleteness(data: UnifiedInfoboxData): {
     governmentType: data.government_type as string | undefined,
     leaderTitle,
     leaderName,
-    currency: (typeof data.currency === "string" ? data.currency : undefined),
-    currencyCode: (typeof data.currency_code === "string" ? data.currency_code : undefined),
-    languages: (typeof data.official_languages === "string" 
-      ? data.official_languages 
-      : typeof data.languages === "string" 
-      ? data.languages 
-      : undefined),
+    currency: typeof data.currency === "string" ? data.currency : undefined,
+    currencyCode: typeof data.currency_code === "string" ? data.currency_code : undefined,
+    languages:
+      typeof data.official_languages === "string"
+        ? data.official_languages
+        : typeof data.languages === "string"
+          ? data.languages
+          : undefined,
     areaKm2,
-    demonym: (typeof data.demonym === "string" ? data.demonym : undefined),
+    demonym: typeof data.demonym === "string" ? data.demonym : undefined,
     lifeExpectancy,
     literacyRate,
     urbanization,
-    internetTld: (typeof data.internet_tld === "string" ? data.internet_tld : undefined),
-    callingCode: (typeof data.calling_code === "string" ? data.calling_code : undefined),
-    anthem: (typeof data.national_anthem === "string" ? data.national_anthem : undefined),
-    motto: (typeof data.national_motto === "string" ? data.national_motto : undefined),
-    coordinates: (typeof data.coordinates === "string" ? data.coordinates : undefined),
-    largestCity: (typeof data.largest_city === "string" ? data.largest_city : undefined),
-    officialName: (typeof data.official_name === "string" ? data.official_name : undefined),
+    internetTld: typeof data.internet_tld === "string" ? data.internet_tld : undefined,
+    callingCode: typeof data.calling_code === "string" ? data.calling_code : undefined,
+    anthem: typeof data.national_anthem === "string" ? data.national_anthem : undefined,
+    motto: typeof data.national_motto === "string" ? data.national_motto : undefined,
+    coordinates: typeof data.coordinates === "string" ? data.coordinates : undefined,
+    largestCity: typeof data.largest_city === "string" ? data.largest_city : undefined,
+    officialName: typeof data.official_name === "string" ? data.official_name : undefined,
   };
 }
 

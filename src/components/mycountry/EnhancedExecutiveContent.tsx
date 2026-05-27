@@ -37,8 +37,6 @@ export function EnhancedExecutiveContent({
     { enabled: !!country?.id }
   );
 
-
-
   if (isLoading || !country) {
     return null;
   }
@@ -72,7 +70,6 @@ export function EnhancedExecutiveContent({
       onNavigate={onNavigate}
       notifications={notifications}
     >
-
       {/* Cross-Pillar Effects */}
       <CrossPillarBanner section="executive" countryId={country.id} onNavigate={onNavigate} />
 

@@ -14,7 +14,7 @@ interface SaveConfigCardProps {
 
 export function SaveConfigCard({ lastUpdate, onSaveConfig, savePending }: SaveConfigCardProps) {
   return (
-    <Card className="glass-card-parent border-emerald-500/20">
+    <Card className="glass-surface border-border/40">
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <p className="text-foreground text-sm font-medium">Save Configuration</p>

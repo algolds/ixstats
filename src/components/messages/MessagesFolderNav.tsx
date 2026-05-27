@@ -203,7 +203,7 @@ export function MessagesFolderNav({
 
               {/* Tooltip (collapsed mode only) */}
               {!expanded && (
-                <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 bg-[#f8fafc] text-[#0f172a] dark:bg-[#1e293b] dark:text-[#f1f5f9]">
+                <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-[#0f172a] opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-[#1e293b] dark:text-[#f1f5f9]">
                   {folder.title}
                   {count > 0 && ` (${count})`}
                   <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
@@ -228,7 +228,7 @@ export function MessagesFolderNav({
             <Settings className="h-[18px] w-[18px] shrink-0 transition-transform duration-150 group-hover/tip:scale-110" />
             {expanded && <span className="min-w-0 truncate text-sm font-medium">Settings</span>}
             {!expanded && (
-              <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 bg-[#f8fafc] text-[#0f172a] dark:bg-[#1e293b] dark:text-[#f1f5f9]">
+              <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-[#0f172a] opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-[#1e293b] dark:text-[#f1f5f9]">
                 Settings
                 <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
               </span>
@@ -290,7 +290,7 @@ export function MessagesFolderNav({
           )}
           {expanded && <span className="min-w-0 truncate text-sm font-medium">Collapse</span>}
           {!expanded && (
-            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 bg-[#f8fafc] text-[#0f172a] dark:bg-[#1e293b] dark:text-[#f1f5f9]">
+            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-[#0f172a] opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-[#1e293b] dark:text-[#f1f5f9]">
               Expand
               <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
             </span>

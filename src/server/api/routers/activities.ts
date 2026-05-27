@@ -92,6 +92,19 @@ export const activitiesRouter = createTRPCRouter({
         where,
         orderBy: { createdAt: "desc" },
         take: mergeCap,
+        include: {
+          poll: {
+            include: {
+              options: {
+                include: {
+                  _count: {
+                    select: { votes: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       // Get ThinkPages posts (only if not filtering by specific type that excludes social)
@@ -194,6 +207,23 @@ export const activitiesRouter = createTRPCRouter({
       const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
       const countryMap = new Map(countries.map((c) => [c.id, c]));
 
+      const pollIds = activityFeedEntries.filter((a) => a.pollId).map((a) => a.pollId!) as string[];
+      const userVotedPollOptionsMap = new Map<string, string[]>();
+      if (ctx.auth?.userId && pollIds.length > 0) {
+        const userVotes = await ctx.db.pollVote.findMany({
+          where: {
+            pollId: { in: pollIds },
+            userId: ctx.auth.userId,
+          },
+          select: { pollId: true, optionId: true },
+        });
+        for (const vote of userVotes) {
+          const list = userVotedPollOptionsMap.get(vote.pollId) || [];
+          list.push(vote.optionId);
+          userVotedPollOptionsMap.set(vote.pollId, list);
+        }
+      }
+
       // Transform ActivityFeed entries
       for (const activity of activityFeedEntries) {
         // Parse metadata if it exists
@@ -262,6 +292,30 @@ export const activitiesRouter = createTRPCRouter({
             description: activity.description,
             metadata,
           },
+          poll: (activity as any).poll ? {
+            id: (activity as any).poll.id,
+            question: (activity as any).poll.question,
+            description: (activity as any).poll.description,
+            pollType: (activity as any).poll.pollType,
+            multiple: (activity as any).poll.multiple,
+            isActive: (activity as any).poll.isActive,
+            endDate: (activity as any).poll.endDate,
+            options: (activity as any).poll.options.map((o: any) => ({
+              id: o.id,
+              label: o.label,
+              description: o.description,
+            })),
+            votes: (() => {
+              const v: Record<string, number> = {};
+              (activity as any).poll.options.forEach((opt: any) => {
+                v[opt.id] = opt._count.votes;
+              });
+              return v;
+            })(),
+            totalVotes: (activity as any).poll.options.reduce((sum: number, o: any) => sum + o._count.votes, 0),
+            hasVoted: userVotedPollOptionsMap.has((activity as any).poll.id),
+            userVotedOptionIds: userVotedPollOptionsMap.get((activity as any).poll.id) || [],
+          } : null,
           engagement: {
             likes: activity.likes,
             comments: activity.comments,
@@ -493,6 +547,19 @@ export const activitiesRouter = createTRPCRouter({
         where: { countryId: { in: followedIds } },
         orderBy: { createdAt: "desc" },
         take: input.limit,
+        include: {
+          poll: {
+            include: {
+              options: {
+                include: {
+                  _count: {
+                    select: { votes: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       // Fetch ThinkPages posts from followed countries
@@ -570,6 +637,23 @@ export const activitiesRouter = createTRPCRouter({
           : [];
       const countryMap = new Map(countries.map((c) => [c.id, c]));
 
+      const pollIds = activityFeedEntries.filter((a) => a.pollId).map((a) => a.pollId!) as string[];
+      const userVotedPollOptionsMap = new Map<string, string[]>();
+      if (ctx.auth?.userId && pollIds.length > 0) {
+        const userVotes = await ctx.db.pollVote.findMany({
+          where: {
+            pollId: { in: pollIds },
+            userId: ctx.auth.userId,
+          },
+          select: { pollId: true, optionId: true },
+        });
+        for (const vote of userVotes) {
+          const list = userVotedPollOptionsMap.get(vote.pollId) || [];
+          list.push(vote.optionId);
+          userVotedPollOptionsMap.set(vote.pollId, list);
+        }
+      }
+
       const combinedActivities: any[] = [];
 
       // Transform ActivityFeed entries
@@ -600,6 +684,30 @@ export const activitiesRouter = createTRPCRouter({
             description: activity.description,
             metadata,
           },
+          poll: (activity as any).poll ? {
+            id: (activity as any).poll.id,
+            question: (activity as any).poll.question,
+            description: (activity as any).poll.description,
+            pollType: (activity as any).poll.pollType,
+            multiple: (activity as any).poll.multiple,
+            isActive: (activity as any).poll.isActive,
+            endDate: (activity as any).poll.endDate,
+            options: (activity as any).poll.options.map((o: any) => ({
+              id: o.id,
+              label: o.label,
+              description: o.description,
+            })),
+            votes: (() => {
+              const v: Record<string, number> = {};
+              (activity as any).poll.options.forEach((opt: any) => {
+                v[opt.id] = opt._count.votes;
+              });
+              return v;
+            })(),
+            totalVotes: (activity as any).poll.options.reduce((sum: number, o: any) => sum + o._count.votes, 0),
+            hasVoted: userVotedPollOptionsMap.has((activity as any).poll.id),
+            userVotedOptionIds: userVotedPollOptionsMap.get((activity as any).poll.id) || [],
+          } : null,
           engagement: {
             likes: activity.likes,
             comments: activity.comments,

@@ -56,10 +56,11 @@ export function DiplomaticOperationsCard({
     ) || { data: null };
 
   // Fetch live embassy network data
-  const { data: liveEmbassies, isLoading: embassiesLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId, refetchInterval: 60000 }
-  );
+  const { data: liveEmbassies, isLoading: embassiesLoading } =
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId: userProfile?.countryId || "" },
+      { enabled: !!userProfile?.countryId, refetchInterval: 60000 }
+    );
 
   // Use live embassy data or show empty state
   const embassyNetworks = useMemo(() => {

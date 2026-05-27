@@ -151,11 +151,7 @@ async function performCountryEconomicAnalysis(
     income: {
       incomeInequalityGini: country.incomeInequalityGini || 0.35,
       socialMobilityIndex: country.socialMobilityIndex || 60,
-      economicClasses: [
-        { wealthPercent: 40 },
-        { wealthPercent: 30 },
-        { wealthPercent: 30 },
-      ],
+      economicClasses: [{ wealthPercent: 40 }, { wealthPercent: 30 }, { wealthPercent: 30 }],
     },
     spending: {
       spendingGDPPercent: country.governmentBudgetGDPPercent || 35,
@@ -174,12 +170,11 @@ async function performCountryEconomicAnalysis(
     },
   } as unknown as EconomyData;
 
-  const historicalData: HistoricalDataPoint[] = country.historicalData.map(
-    (h: any) => ({
-      ...h,
-      ixTimeTimestamp: h.ixTimeTimestamp instanceof Date ? h.ixTimeTimestamp.getTime() : h.ixTimeTimestamp,
-    })
-  );
+  const historicalData: HistoricalDataPoint[] = country.historicalData.map((h: any) => ({
+    ...h,
+    ixTimeTimestamp:
+      h.ixTimeTimestamp instanceof Date ? h.ixTimeTimestamp.getTime() : h.ixTimeTimestamp,
+  }));
 
   switch (analysisType) {
     case "health":

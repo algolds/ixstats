@@ -4,28 +4,147 @@
 
 "use client";
 
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Search, Clock, ArrowRight } from "lucide-react";
+import {
+  MessageSquare,
+  Search,
+  Clock,
+  ChevronRight,
+  Plus,
+  Layout,
+  Bookmark,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
+import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
 
 interface ForumViewProps {
   onClose: () => void;
 }
 
-function formatTimeAgo(unixTimestamp: number): string {
-  const now = Date.now() / 1000;
-  const diff = now - unixTimestamp;
+// ─── Section label ───────────────────────────────────────────────────────────
 
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}d`;
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
+      {children}
+    </div>
+  );
 }
+
+// ─── Reusable forum row item ─────────────────────────────────────────────────
+
+function ForumRow({
+  icon,
+  iconBg,
+  label,
+  description,
+  onClick,
+  rightElement,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  description?: string;
+  onClick?: () => void;
+  rightElement?: React.ReactNode;
+}) {
+  const Component = onClick ? "button" : "div";
+  return (
+    <Component
+      onClick={onClick}
+      className={`group hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
+        onClick ? "cursor-pointer" : "cursor-default"
+      }`}
+    >
+      <div className={`shrink-0 rounded-md p-1.5 transition-colors ${iconBg}`}>{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-foreground truncate text-sm leading-normal font-medium">{label}</div>
+        {description && (
+          <div className="text-muted-foreground truncate text-xs leading-normal">{description}</div>
+        )}
+      </div>
+      {rightElement !== undefined ? (
+        rightElement
+      ) : onClick ? (
+        <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
+      ) : null}
+    </Component>
+  );
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+function ForumHeader({
+  onClose,
+  onRefresh,
+  isRefreshing,
+}: {
+  onClose: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+}) {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
+        <MessageSquare className="h-4 w-4 text-orange-400" />
+        <span>Forum</span>
+      </div>
+      <div className="flex items-center gap-1">
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            title="Refresh data"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export function ForumView({ onClose }: ForumViewProps) {
   const router = useRouter();
   const { currentThread, currentForum, recentThreads, unreadAlerts } = useForumContext();
+  const { isSignedIn } = useUser();
+  const [activeTab, setActiveTab] = useState<"recent" | "stash">("recent");
+
+  // Fetch stashed threads if the user is signed in
+  const {
+    data: stashedThreads,
+    isLoading: loadingStashed,
+    refetch: refetchStash,
+  } = api.forum.getStashedThreads.useQuery({ limit: 5 }, { enabled: !!isSignedIn });
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      if (isSignedIn) {
+        await refetchStash();
+      }
+    } catch (e) {
+      console.error("Refetch stash failed:", e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isSignedIn, refetchStash]);
 
   const navigate = (href: string) => {
     onClose();
@@ -33,99 +152,159 @@ export function ForumView({ onClose }: ForumViewProps) {
   };
 
   return (
-    <div className="w-full max-w-sm p-3">
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-orange-400" />
-          <span className="text-xs font-semibold text-orange-400">Forum</span>
-          {unreadAlerts > 0 && (
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
-              {unreadAlerts}
-            </span>
+    <div className="p-4">
+      <ForumHeader
+        onClose={onClose}
+        onRefresh={isSignedIn ? handleRefresh : undefined}
+        isRefreshing={isRefreshing}
+      />
+
+      <div className="space-y-1">
+        {/* ── Current Context ─────────────────────────────────────────── */}
+        {(currentThread || currentForum) && (
+          <>
+            <SectionLabel>Current Context</SectionLabel>
+            {currentThread && (
+              <ForumRow
+                icon={<MessageSquare className="h-3.5 w-3.5 text-orange-500" />}
+                iconBg="bg-orange-500/15"
+                label={currentThread.title}
+                description={`Viewing thread in ${currentThread.forumName}`}
+                onClick={() => navigate(`/forum/thread/${currentThread.id}`)}
+              />
+            )}
+            {currentForum && !currentThread && (
+              <ForumRow
+                icon={<Layout className="h-3.5 w-3.5 text-orange-500" />}
+                iconBg="bg-orange-500/15"
+                label={currentForum.title}
+                description="Browsing forum category"
+              />
+            )}
+          </>
+        )}
+
+        {/* ── Quick Actions ───────────────────────────────────────────── */}
+        <SectionLabel>Actions</SectionLabel>
+
+        <ForumRow
+          icon={<Layout className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
+          iconBg="bg-blue-500/15"
+          label="All Forums"
+          description="Browse categories and boards"
+          onClick={() => navigate("/forum")}
+        />
+
+        <ForumRow
+          icon={<Plus className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />}
+          iconBg="bg-orange-500/15"
+          label="New Thread"
+          description="Start a new forum discussion"
+          onClick={() => navigate("/forum/new-thread")}
+        />
+
+        <ForumRow
+          icon={<MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
+          iconBg="bg-purple-500/15"
+          label="Messages"
+          description="Private conversations and inbox"
+          onClick={() => navigate("/forum/conversations")}
+          rightElement={
+            unreadAlerts > 0 ? (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                {unreadAlerts}
+              </span>
+            ) : undefined
+          }
+        />
+
+        {/* ── Discussions ────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-1 pt-2 pb-1">
+          <SectionLabel>Discussions</SectionLabel>
+
+          {/* Segmented control for tabs */}
+          {isSignedIn && (
+            <div className="bg-accent/15 flex max-w-[140px] flex-1 rounded-lg p-0.5">
+              <button
+                onClick={() => setActiveTab("recent")}
+                className={`flex-1 rounded-md py-0.5 text-center text-[9px] font-bold tracking-wide uppercase transition-all ${
+                  activeTab === "recent"
+                    ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Recent
+              </button>
+              <button
+                onClick={() => setActiveTab("stash")}
+                className={`flex-1 rounded-md py-0.5 text-center text-[9px] font-bold tracking-wide uppercase transition-all ${
+                  activeTab === "stash"
+                    ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Stash
+              </button>
+            </div>
           )}
         </div>
-        <button
-          onClick={() => navigate("/forum/search")}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          <Search className="h-3 w-3" />
-          Search
-        </button>
+
+        <div className="space-y-0.5">
+          {activeTab === "recent" && (
+            <>
+              {recentThreads.length > 0 ? (
+                recentThreads
+                  .slice(0, 5)
+                  .map((thread) => (
+                    <ForumRow
+                      key={thread.id}
+                      icon={
+                        <MessageSquare className="text-muted-foreground h-3.5 w-3.5 transition-colors group-hover:text-orange-500" />
+                      }
+                      iconBg="bg-accent/10 group-hover:bg-orange-500/10 transition-colors"
+                      label={thread.title}
+                      description="Recently visited thread"
+                      onClick={() => navigate(`/forum/thread/${thread.id}`)}
+                    />
+                  ))
+              ) : (
+                <div className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs">
+                  No recent threads visited.
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === "stash" && (
+            <>
+              {loadingStashed ? (
+                <div className="text-muted-foreground animate-pulse py-8 text-center text-xs">
+                  Loading stashed threads…
+                </div>
+              ) : stashedThreads && stashedThreads.length > 0 ? (
+                stashedThreads
+                  .slice(0, 5)
+                  .map((item) => (
+                    <ForumRow
+                      key={item.id}
+                      icon={
+                        <Bookmark className="text-muted-foreground h-3.5 w-3.5 transition-colors group-hover:text-orange-500" />
+                      }
+                      iconBg="bg-accent/10 group-hover:bg-orange-500/10 transition-colors"
+                      label={item.title}
+                      description={`Saved on ${new Date(item.savedAt).toLocaleDateString()}`}
+                      onClick={() => navigate(item.slug)}
+                    />
+                  ))
+              ) : (
+                <div className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs">
+                  Stash is empty. Bookmark threads to see them here!
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
-
-      {/* Current context */}
-      {currentThread && (
-        <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-2.5">
-          <div className="mb-1 text-[10px] tracking-wider text-orange-400/70 uppercase">
-            Currently viewing
-          </div>
-          <div className="truncate text-xs font-medium text-white">{currentThread.title}</div>
-          <div className="mt-0.5 text-[10px] text-zinc-400">in {currentThread.forumName}</div>
-        </div>
-      )}
-
-      {currentForum && !currentThread && (
-        <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-2.5">
-          <div className="mb-1 text-[10px] tracking-wider text-orange-400/70 uppercase">
-            Browsing
-          </div>
-          <div className="text-xs font-medium text-white">{currentForum.title}</div>
-        </div>
-      )}
-
-      {/* Quick actions */}
-      <div className="mb-3 flex gap-1.5">
-        <button
-          onClick={() => navigate("/forum")}
-          className="flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-medium text-zinc-300 transition-colors hover:bg-white/10"
-        >
-          All Forums
-        </button>
-        <button
-          onClick={() => navigate("/forum/new-thread")}
-          className="flex-1 rounded-lg bg-orange-500/15 px-2 py-1.5 text-[10px] font-medium text-orange-400 transition-colors hover:bg-orange-500/25"
-        >
-          New Thread
-        </button>
-        <button
-          onClick={() => navigate("/forum/conversations")}
-          className="flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-medium text-zinc-300 transition-colors hover:bg-white/10"
-        >
-          Messages
-        </button>
-      </div>
-
-      {/* Recent threads */}
-      {recentThreads.length > 0 && (
-        <div>
-          <div className="mb-1.5 flex items-center gap-1 text-[10px] text-zinc-500">
-            <Clock className="h-3 w-3" />
-            Recent threads
-          </div>
-          <div className="space-y-0.5">
-            {recentThreads.slice(0, 5).map((thread) => (
-              <button
-                key={thread.id}
-                onClick={() => navigate(`/forum/thread/${thread.id}`)}
-                className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-white/5"
-              >
-                <MessageSquare className="h-3 w-3 shrink-0 text-zinc-500 group-hover:text-orange-400" />
-                <span className="truncate text-xs text-zinc-300 group-hover:text-white">
-                  {thread.title}
-                </span>
-                <ArrowRight className="ml-auto h-3 w-3 shrink-0 text-zinc-600 opacity-0 group-hover:opacity-100" />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {recentThreads.length === 0 && !currentThread && !currentForum && (
-        <div className="py-3 text-center text-[11px] text-zinc-500">
-          Browse forums to see recent threads here
-        </div>
-      )}
     </div>
   );
 }

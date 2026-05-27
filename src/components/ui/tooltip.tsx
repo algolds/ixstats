@@ -44,13 +44,13 @@ function TooltipContent({
         className={cn(
           "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           "z-[100020] w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-lg px-3 py-2 text-xs text-balance",
-          "bg-popover text-popover-foreground border border-border/60 shadow-md",
+          "bg-popover text-popover-foreground border-border/60 border shadow-md",
           className
         )}
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="z-[100020] size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] fill-popover" />
+        <TooltipPrimitive.Arrow className="fill-popover z-[100020] size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

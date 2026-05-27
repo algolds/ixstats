@@ -207,10 +207,11 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     { enabled: !!primaryCountry.id && viewMode === "game" }
   );
 
-  const { data: embassyList, refetch: refetchEmbassyList } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId: primaryCountry.id },
-    { enabled: !!primaryCountry.id, refetchInterval: 60000 }
-  );
+  const { data: embassyList, refetch: refetchEmbassyList } =
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId: primaryCountry.id },
+      { enabled: !!primaryCountry.id, refetchInterval: 60000 }
+    );
 
   const { data: countryOptionsData, isLoading: countryOptionsLoading } =
     api.countries.getSelectList.useQuery({});

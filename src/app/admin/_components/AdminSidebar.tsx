@@ -21,6 +21,7 @@ import {
   Wallet,
   Package,
   Bell,
+  Vote,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -106,6 +107,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/blurbs",
     icon: MessageCircle,
     description: "Topic Prompts & Responses",
+  },
+  {
+    label: "Polls",
+    href: "/admin/polls",
+    icon: Vote,
+    description: "Create & Manage Feed Polls",
   },
 ];
 

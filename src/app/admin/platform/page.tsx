@@ -3,7 +3,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { ImportPreviewDialog } from "../_components";
@@ -12,14 +12,22 @@ import { NavigationSettings } from "../_components/NavigationSettings";
 import { IxTimeVisualizer } from "../_components/IxTimeVisualizer";
 import { FlagCacheManager } from "~/components/FlagCacheManager";
 import { SystemValidationDashboard } from "../_components/SystemValidationDashboard";
-import { SystemLogs } from "../_components/SystemLogs";
 import { DatabaseExplorer } from "../_components/DatabaseExplorer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
 import { useBotSync } from "../_hooks/useBotSync";
-import { Settings, Clock, TrendingUp, HeartPulse, Wrench, Bell } from "lucide-react";
+import {
+  Settings,
+  Clock,
+  TrendingUp,
+  HeartPulse,
+  Wrench,
+  Bell,
+  Navigation,
+  Database,
+} from "lucide-react";
+import { cn } from "~/lib/utils";
 
 import { TimeControlCard } from "../_components/platform/TimeControlCard";
 import { BotControlCard } from "../_components/platform/BotControlCard";
@@ -155,6 +163,8 @@ export default function PlatformPage() {
     refetchBotStatus,
   });
 
+  const [activeTab, setActiveTab] = useState("time-bot");
+
   return (
     <div className="space-y-6">
       <AdminHeader
@@ -163,154 +173,221 @@ export default function PlatformPage() {
         description="Time management, economy settings, bot controls, and system monitoring"
       />
 
-      <Tabs defaultValue="time-bot" className="w-full">
-        <TabsList className="mb-4 w-full justify-start overflow-x-auto">
-          <TabsTrigger value="time-bot" className="gap-1.5">
-            <Clock className="h-4 w-4" />
-            Time & Bot
-          </TabsTrigger>
-          <TabsTrigger value="economy-import" className="gap-1.5">
-            <TrendingUp className="h-4 w-4" />
-            Economy & Import
-          </TabsTrigger>
-          <TabsTrigger value="system-health" className="gap-1.5">
-            <HeartPulse className="h-4 w-4" />
-            System Health
-          </TabsTrigger>
-          <TabsTrigger value="formulas-settings" className="gap-1.5">
-            <Wrench className="h-4 w-4" />
-            Formulas & Settings
-          </TabsTrigger>
-          <TabsTrigger value="notification-tests" className="gap-1.5">
-            <Bell className="h-4 w-4" />
-            Notification Tests
-          </TabsTrigger>
-        </TabsList>
+      {/* Premium Glassmorphic Tab Switcher */}
+      <div className="glass-surface border-border/40 mb-6 flex w-full max-w-full flex-wrap justify-start gap-2 rounded-xl p-1.5 shadow-sm backdrop-blur-md">
+        {[
+          {
+            id: "time-bot",
+            label: "Time & Bot",
+            icon: Clock,
+            color: "text-blue-500 border-blue-500/20 bg-blue-500/5 hover:border-blue-500/30",
+          },
+          {
+            id: "economy-import",
+            label: "Economy & Import",
+            icon: TrendingUp,
+            color:
+              "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/30",
+          },
+          {
+            id: "system-health",
+            label: "System Health",
+            icon: HeartPulse,
+            color: "text-rose-500 border-rose-500/20 bg-rose-500/5 hover:border-rose-500/30",
+          },
+          {
+            id: "calculation-editor",
+            label: "Calculation Editor",
+            icon: Wrench,
+            color:
+              "text-purple-500 border-purple-500/20 bg-purple-500/5 hover:border-purple-500/30",
+          },
+          {
+            id: "navigation-settings",
+            label: "Navigation Settings",
+            icon: Navigation,
+            color: "text-cyan-500 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/30",
+          },
+          {
+            id: "database-explorer",
+            label: "Database Explorer",
+            icon: Database,
+            color:
+              "text-indigo-500 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/30",
+          },
+          {
+            id: "notification-tests",
+            label: "Notification Tests",
+            icon: Bell,
+            color: "text-amber-500 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/30",
+          },
+        ].map((tab) => {
+          const TabIcon = tab.icon;
+          const isActive = activeTab === tab.id;
 
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-bold transition-all duration-200 select-none hover:scale-[1.02]",
+                isActive
+                  ? cn("shadow-sm", tab.color)
+                  : "hover:bg-muted/10 hover:border-border/30 text-muted-foreground hover:text-foreground border-transparent bg-transparent"
+              )}
+            >
+              <TabIcon className="h-4 w-4" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Contents with animations */}
+      <div className="w-full">
         {/* Tab 1: Time & Bot */}
-        <TabsContent value="time-bot" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <TimeControlCard
-              timeMultiplier={config.timeMultiplier}
-              customDate={timeState.customDate}
-              customTime={timeState.customTime}
-              onTimeMultiplierChange={handleTimeMultiplierChange}
-              onCustomDateChange={(value) =>
-                setTimeState((prev) => ({ ...prev, customDate: value }))
-              }
-              onCustomTimeChange={(value) =>
-                setTimeState((prev) => ({ ...prev, customTime: value }))
-              }
-              onSetCustomTime={handleSetCustomTime}
-              onResetToRealTime={handleResetToRealTime}
-              setTimePending={actionState.setTimePending}
-            />
-            <BotControlCard
-              botStatus={botStatus}
-              onPauseBot={handlePauseBot}
-              onResumeBot={handleResumeBot}
-              onClearOverrides={handleClearOverrides}
-              onSyncFromBot={handleSyncFromBot}
-              onSyncEpoch={handleSyncEpoch}
-              pausePending={actionState.pausePending}
-              resumePending={actionState.resumePending}
-              clearPending={actionState.clearPending}
-              autoSyncPending={actionState.autoSyncPending}
-              syncEpochPending={actionState.syncEpochPending}
-              lastBotSync={actionState.lastBotSync}
-            />
+        {activeTab === "time-bot" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <TimeControlCard
+                timeMultiplier={config.timeMultiplier}
+                customDate={timeState.customDate}
+                customTime={timeState.customTime}
+                onTimeMultiplierChange={handleTimeMultiplierChange}
+                onCustomDateChange={(value) =>
+                  setTimeState((prev) => ({ ...prev, customDate: value }))
+                }
+                onCustomTimeChange={(value) =>
+                  setTimeState((prev) => ({ ...prev, customTime: value }))
+                }
+                onSetCustomTime={handleSetCustomTime}
+                onResetToRealTime={handleResetToRealTime}
+                setTimePending={actionState.setTimePending}
+              />
+              <BotControlCard
+                botStatus={botStatus}
+                onPauseBot={handlePauseBot}
+                onResumeBot={handleResumeBot}
+                onClearOverrides={handleClearOverrides}
+                onSyncFromBot={handleSyncFromBot}
+                onSyncEpoch={handleSyncEpoch}
+                pausePending={actionState.pausePending}
+                resumePending={actionState.resumePending}
+                clearPending={actionState.clearPending}
+                autoSyncPending={actionState.autoSyncPending}
+                syncEpochPending={actionState.syncEpochPending}
+                lastBotSync={actionState.lastBotSync}
+              />
+            </div>
+            <IxTimeVisualizer />
           </div>
-          <IxTimeVisualizer />
-        </TabsContent>
+        )}
 
         {/* Tab 2: Economy & Import */}
-        <TabsContent value="economy-import" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <EconomicControlCard
-              globalGrowthFactor={config.globalGrowthFactor}
-              autoUpdate={config.autoUpdate}
-              botSyncEnabled={config.botSyncEnabled}
-              onGlobalGrowthFactorChange={(value) =>
-                setConfig((prev) => ({ ...prev, globalGrowthFactor: value }))
-              }
-              onAutoUpdateChange={(value) => setConfig((prev) => ({ ...prev, autoUpdate: value }))}
-              onBotSyncEnabledChange={(value) =>
-                setConfig((prev) => ({ ...prev, botSyncEnabled: value }))
-              }
-              onForceCalculation={handleForceCalculation}
-              calculationPending={actionState.calculationPending}
-              baseInflationRate={config.baseInflationRate}
-              onBaseInflationRateChange={(value) =>
-                setConfig((prev) => ({ ...prev, baseInflationRate: value }))
-              }
-              tierGrowthModifiers={config.tierGrowthModifiers}
-              onTierGrowthModifierChange={(tier, value) =>
-                setConfig((prev) => ({
-                  ...prev,
-                  tierGrowthModifiers: { ...prev.tierGrowthModifiers, [tier]: value },
-                }))
-              }
-              diminishingReturnsThreshold={config.diminishingReturnsThreshold}
-              onDiminishingReturnsThresholdChange={(value) =>
-                setConfig((prev) => ({ ...prev, diminishingReturnsThreshold: value }))
-              }
-              diminishingReturnsFactor={config.diminishingReturnsFactor}
-              onDiminishingReturnsFactorChange={(value) =>
-                setConfig((prev) => ({ ...prev, diminishingReturnsFactor: value }))
-              }
-              minGrowthFloor={config.minGrowthFloor}
-              onMinGrowthFloorChange={(value) =>
-                setConfig((prev) => ({ ...prev, minGrowthFloor: value }))
-              }
-            />
-            <DataImportCard
-              onFileSelect={handleFileSelect}
-              isUploading={importState.isUploading}
-              isAnalyzing={importState.isAnalyzing}
-              analyzeError={importState.analyzeError}
-              importError={importState.importError}
+        {activeTab === "economy-import" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <EconomicControlCard
+                globalGrowthFactor={config.globalGrowthFactor}
+                autoUpdate={config.autoUpdate}
+                botSyncEnabled={config.botSyncEnabled}
+                onGlobalGrowthFactorChange={(value) =>
+                  setConfig((prev) => ({ ...prev, globalGrowthFactor: value }))
+                }
+                onAutoUpdateChange={(value) =>
+                  setConfig((prev) => ({ ...prev, autoUpdate: value }))
+                }
+                onBotSyncEnabledChange={(value) =>
+                  setConfig((prev) => ({ ...prev, botSyncEnabled: value }))
+                }
+                onForceCalculation={handleForceCalculation}
+                calculationPending={actionState.calculationPending}
+                baseInflationRate={config.baseInflationRate}
+                onBaseInflationRateChange={(value) =>
+                  setConfig((prev) => ({ ...prev, baseInflationRate: value }))
+                }
+                tierGrowthModifiers={config.tierGrowthModifiers}
+                onTierGrowthModifierChange={(tier, value) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    tierGrowthModifiers: { ...prev.tierGrowthModifiers, [tier]: value },
+                  }))
+                }
+                diminishingReturnsThreshold={config.diminishingReturnsThreshold}
+                onDiminishingReturnsThresholdChange={(value) =>
+                  setConfig((prev) => ({ ...prev, diminishingReturnsThreshold: value }))
+                }
+                diminishingReturnsFactor={config.diminishingReturnsFactor}
+                onDiminishingReturnsFactorChange={(value) =>
+                  setConfig((prev) => ({ ...prev, diminishingReturnsFactor: value }))
+                }
+                minGrowthFloor={config.minGrowthFloor}
+                onMinGrowthFloorChange={(value) =>
+                  setConfig((prev) => ({ ...prev, minGrowthFloor: value }))
+                }
+              />
+              <DataImportCard
+                onFileSelect={handleFileSelect}
+                isUploading={importState.isUploading}
+                isAnalyzing={importState.isAnalyzing}
+                analyzeError={importState.analyzeError}
+                importError={importState.importError}
+              />
+            </div>
+            {importState.showPreview && importState.previewData && (
+              <ImportPreviewDialog
+                isOpen={importState.showPreview}
+                onClose={handleImportClose}
+                onConfirm={handleImportConfirm}
+                changes={importState.previewData.changes}
+                isLoading={importState.isUploading}
+              />
+            )}
+            <CalculationLogsCard
+              logs={calculationLogs}
+              isLoading={logsLoading}
+              error={logsError?.message}
             />
           </div>
-          {importState.showPreview && importState.previewData && (
-            <ImportPreviewDialog
-              isOpen={importState.showPreview}
-              onClose={handleImportClose}
-              onConfirm={handleImportConfirm}
-              changes={importState.previewData.changes}
-              isLoading={importState.isUploading}
-            />
-          )}
-          <CalculationLogsCard
-            logs={calculationLogs}
-            isLoading={logsLoading}
-            error={logsError?.message}
-          />
-        </TabsContent>
+        )}
 
         {/* Tab 3: System Health */}
-        <TabsContent value="system-health" className="space-y-6">
-          <SystemMetricsCard />
-          <SystemValidationDashboard />
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {activeTab === "system-health" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+            <SystemMetricsCard />
+            <SystemValidationDashboard />
             <FlagCacheManager />
-            <SystemLogs />
           </div>
-        </TabsContent>
+        )}
 
-        {/* Tab 4: Formulas & Settings */}
-        <TabsContent value="formulas-settings" className="space-y-6">
-          <CalculationEditor />
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {/* Tab 4: Calculation Editor */}
+        {activeTab === "calculation-editor" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+            <CalculationEditor />
+          </div>
+        )}
+
+        {/* Tab 5: Navigation Settings */}
+        {activeTab === "navigation-settings" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
             <NavigationSettings />
+          </div>
+        )}
+
+        {/* Tab 6: Database Explorer */}
+        {activeTab === "database-explorer" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
             <DatabaseExplorer />
           </div>
-        </TabsContent>
+        )}
 
-        {/* Tab 5: Notification Tests */}
-        <TabsContent value="notification-tests" className="space-y-6">
-          <NotificationTestCard />
-        </TabsContent>
-      </Tabs>
+        {/* Tab 7: Notification Tests */}
+        {activeTab === "notification-tests" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+            <NotificationTestCard />
+          </div>
+        )}
+      </div>
 
       <SaveConfigCard
         lastUpdate={actionState.lastUpdate}

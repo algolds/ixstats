@@ -659,9 +659,7 @@ function AuthSection({
 
   return (
     <Popover>
-      <PopoverTrigger
-        className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors"
-      >
+      <PopoverTrigger className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
         {user.imageUrl ? (
           <img
             src={user.imageUrl}

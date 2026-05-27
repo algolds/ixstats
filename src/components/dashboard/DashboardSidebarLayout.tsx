@@ -25,9 +25,10 @@ export function DashboardSidebarLayout({
 }: DashboardSidebarLayoutProps) {
   return (
     <div className="relative min-h-screen space-y-0">
-
       {/* Hero Section */}
-      {heroSection && <div className="relative z-10 container mx-auto px-4 pt-4 sm:pt-6">{heroSection}</div>}
+      {heroSection && (
+        <div className="relative z-10 container mx-auto px-4 pt-4 sm:pt-6">{heroSection}</div>
+      )}
 
       <div className="relative z-10 container mx-auto px-4 py-4 sm:py-6 md:py-8">
         {/* Alerts */}
@@ -37,7 +38,7 @@ export function DashboardSidebarLayout({
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed icon rail */}
           <div className="relative z-30 hidden shrink-0 lg:block">
-            <div className="sticky top-6 space-y-3">
+            <div className="sticky top-6 space-y-4">
               <DashboardPlayerWidget heroCollapsed={heroCollapsed} onHeroExpand={onHeroExpand} />
               <VaultWidget />
               <DashboardQuickLinks discordBadge={discordBadge} />

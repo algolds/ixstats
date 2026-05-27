@@ -279,6 +279,7 @@ export interface SystemStatus {
     countriesUpdated: number;
     executionTimeMs: number;
   } | null;
+  warnings?: string[];
 }
 
 // Calculation result types

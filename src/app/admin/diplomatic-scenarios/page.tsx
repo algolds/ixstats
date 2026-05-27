@@ -30,6 +30,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
+import { JsonViewer } from "~/components/json-viewer";
 import {
   Plus,
   Pencil,
@@ -1585,6 +1586,43 @@ function ChoicesTab({
                         Skill: {choice.skillRequired} ({choice.skillLevel})
                       </span>
                     </div>
+
+                    {((choice.effects && Object.keys(choice.effects).length > 0) ||
+                      (choice.predictedOutcomes &&
+                        Object.keys(choice.predictedOutcomes).length > 0)) && (
+                      <details className="mt-2">
+                        <summary className="text-muted-foreground hover:text-foreground mb-1 cursor-pointer text-[10px] font-semibold tracking-wider uppercase select-none">
+                          View Effects & Outcomes
+                        </summary>
+                        <div className="mt-1.5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                          {choice.effects && Object.keys(choice.effects).length > 0 && (
+                            <div>
+                              <span className="text-muted-foreground mb-1 block text-[10px] font-medium uppercase">
+                                Effects
+                              </span>
+                              <JsonViewer
+                                data={choice.effects}
+                                defaultExpanded={1}
+                                className="border-border/30 bg-card/20 backdrop-blur-md"
+                              />
+                            </div>
+                          )}
+                          {choice.predictedOutcomes &&
+                            Object.keys(choice.predictedOutcomes).length > 0 && (
+                              <div>
+                                <span className="text-muted-foreground mb-1 block text-[10px] font-medium uppercase">
+                                  Predicted Outcomes
+                                </span>
+                                <JsonViewer
+                                  data={choice.predictedOutcomes}
+                                  defaultExpanded={1}
+                                  className="border-border/30 bg-card/20 backdrop-blur-md"
+                                />
+                              </div>
+                            )}
+                        </div>
+                      </details>
+                    )}
                   </div>
                   <div className="ml-2 flex items-center gap-1">
                     <Button

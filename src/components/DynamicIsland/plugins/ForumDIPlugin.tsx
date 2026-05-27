@@ -12,14 +12,21 @@ import { MessageSquare } from "lucide-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { ForumView } from "~/components/DynamicIsland/ForumView";
+import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
 
 function ForumBreadcrumb() {
   const { currentThread, currentForum, unreadAlerts } = useForumContext();
+  const { state } = useDynamicIslandSize();
+  const isCollapsed = state.size === SIZE_PRESETS.WIKI_COMPACT;
 
   const label = currentThread?.title ?? currentForum?.title ?? "Forum";
 
   return (
-    <span className="flex max-w-[200px] items-center gap-1.5 overflow-hidden">
+    <span
+      className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ${
+        isCollapsed ? "max-w-[100px]" : "max-w-[220px]"
+      }`}
+    >
       <MessageSquare className="h-3 w-3 shrink-0 text-orange-400 opacity-70" />
       <span className="text-foreground/80 truncate text-xs font-medium">{label}</span>
       {unreadAlerts > 0 && (

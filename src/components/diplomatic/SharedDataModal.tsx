@@ -102,10 +102,11 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   }, []);
 
   // Fetch embassy details
-  const { data: embassy, isLoading: isLoadingEmbassy } = api.diplomaticEmbassies.getEmbassyDetails.useQuery(
-    { embassyId },
-    { enabled: !!embassyId, refetchInterval: 30000 } // Refetch every 30s for real-time updates
-  );
+  const { data: embassy, isLoading: isLoadingEmbassy } =
+    api.diplomaticEmbassies.getEmbassyDetails.useQuery(
+      { embassyId },
+      { enabled: !!embassyId, refetchInterval: 30000 } // Refetch every 30s for real-time updates
+    );
 
   // Get current user's country ID (from session or context)
   // For now, we'll determine access based on isOwner and embassy data

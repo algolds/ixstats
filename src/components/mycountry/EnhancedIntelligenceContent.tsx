@@ -91,8 +91,6 @@ export function EnhancedIntelligenceContent({
     { enabled: !!country?.id }
   );
 
-
-
   if (isLoading || !country) {
     return null;
   }
@@ -175,7 +173,6 @@ export function EnhancedIntelligenceContent({
       >
         {/* Geopolitical Map */}
         <IntelligenceMapWidget countryId={country.id} countryName={country.name} />
-
 
         {/* Stats strip */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

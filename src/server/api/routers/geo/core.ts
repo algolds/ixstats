@@ -257,16 +257,16 @@ export async function warmGeoCacheDev(db: any): Promise<void> {
   const criticalLayers = ["background", "altitudes", "political", "country_labels"];
   const defaultZoom: ZoomBucket = 1;
 
-  console.log(`[GeoCache] Dev warm-up: ${criticalLayers.length} critical layers at z${defaultZoom}...`);
+  console.log(
+    `[GeoCache] Dev warm-up: ${criticalLayers.length} critical layers at z${defaultZoom}...`
+  );
 
   await Promise.all(
     criticalLayers.map(async (layerType) => {
       try {
         const result = await loadLayerFromDB(db, layerType, defaultZoom);
         if (result) {
-          console.log(
-            `[GeoCache]   ${layerType}: ${result.features.length} features`
-          );
+          console.log(`[GeoCache]   ${layerType}: ${result.features.length} features`);
         }
       } catch (err) {
         console.warn(`[GeoCache] Failed to warm ${layerType}:`, err);
@@ -662,9 +662,7 @@ async function loadLayerFromDB(
   // Merge decorative layers by fill color — these don't need individual feature identity.
   // Reduces 4000+ small Polygons to ~9 MultiPolygons (one per color), cutting payload ~30%.
   const DECORATIVE_LAYERS = new Set(["altitudes", "climate"]);
-  const result = DECORATIVE_LAYERS.has(layerType)
-    ? mergeFeaturesByColor(split)
-    : split;
+  const result = DECORATIVE_LAYERS.has(layerType) ? mergeFeaturesByColor(split) : split;
 
   setCache(cacheKey, result);
   return result;
@@ -681,7 +679,7 @@ function mergeFeaturesByColor(fc: FeatureCollection): FeatureCollection {
   const colorGroups = new Map<string, import("geojson").Position[][][]>();
 
   for (const feature of fc.features) {
-    const color = (feature.properties as Record<string, unknown>)?._fillColor as string ?? "none";
+    const color = ((feature.properties as Record<string, unknown>)?._fillColor as string) ?? "none";
     if (!colorGroups.has(color)) colorGroups.set(color, []);
     const polygons = colorGroups.get(color)!;
 
@@ -1311,11 +1309,11 @@ export const geoCoreRouter = createTRPCRouter({
    * Get available layer types and their metadata.
    */
   getLayerInfo: cachedPublicProcedure.query(async ({ ctx }) => {
-    const counts = await (ctx.db as any).mapLayer.groupBy({
+    const counts = (await (ctx.db as any).mapLayer.groupBy({
       by: ["layerType"],
       where: { isActive: true },
       _count: { id: true },
-    }) as Array<{ layerType: string; _count: { id: number } }>;
+    })) as Array<{ layerType: string; _count: { id: number } }>;
 
     const countMap = new Map(
       counts.map((c: { layerType: string; _count: { id: number } }) => [c.layerType, c._count.id])
@@ -2627,10 +2625,8 @@ export const geoCoreRouter = createTRPCRouter({
             where: { countryId: country.id },
             create: {
               countryId: country.id,
-              climateDistribution:
-                climateDistribution as any,
-              elevationProfile:
-                elevationProfile as any,
+              climateDistribution: climateDistribution as any,
+              elevationProfile: elevationProfile as any,
               arableLandPercent: profile.arableLandPercent,
               coastlineKm,
               isLandlocked: profile.isLandlocked,
@@ -2648,10 +2644,8 @@ export const geoCoreRouter = createTRPCRouter({
               lastCalculatedAt: new Date(),
             },
             update: {
-              climateDistribution:
-                climateDistribution as any,
-              elevationProfile:
-                elevationProfile as any,
+              climateDistribution: climateDistribution as any,
+              elevationProfile: elevationProfile as any,
               arableLandPercent: profile.arableLandPercent,
               coastlineKm,
               isLandlocked: profile.isLandlocked,

@@ -108,7 +108,10 @@ interface StorytellerEffectData {
   createdBy: string | null; // Prisma returns null, not undefined
 }
 
-interface CountryDto { id: string; name: string; }
+interface CountryDto {
+  id: string;
+  name: string;
+}
 
 function DmDashboardContent() {
   const [showForm, setShowForm] = useState(false);

@@ -925,25 +925,23 @@ export const geoEditorRouter = createTRPCRouter({
       ]);
 
       return {
-        edits: (edits as any).map(
-          (e: any) => ({
-            id: e.id,
-            countryId: e.countryId,
-            countryName: e.country.name,
-            countryFlag: e.country?.flag ?? null,
-            userId: e.userId,
-            editType: e.editType,
-            targetId: e.targetId,
-            operation: e.operation,
-            proposedData: e.proposedData,
-            currentData: e.currentData,
-            status: e.status,
-            reviewedBy: e.reviewedBy,
-            reviewedAt: e.reviewedAt,
-            reviewNote: e.reviewNote,
-            createdAt: e.createdAt,
-          })
-        ),
+        edits: (edits as any).map((e: any) => ({
+          id: e.id,
+          countryId: e.countryId,
+          countryName: e.country.name,
+          countryFlag: e.country?.flag ?? null,
+          userId: e.userId,
+          editType: e.editType,
+          targetId: e.targetId,
+          operation: e.operation,
+          proposedData: e.proposedData,
+          currentData: e.currentData,
+          status: e.status,
+          reviewedBy: e.reviewedBy,
+          reviewedAt: e.reviewedAt,
+          reviewNote: e.reviewNote,
+          createdAt: e.createdAt,
+        })),
         total,
         hasMore: offset + limit < total,
       };

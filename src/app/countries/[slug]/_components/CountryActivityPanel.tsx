@@ -76,12 +76,11 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
   // Single backend query — same endpoint used by the dashboard feed.
   // Already merges ActivityFeed entries + ThinkPages posts server-side.
-  const { data: activityData, isLoading } =
-    api.activities.getCountryActivity.useQuery({
-      countryId,
-      limit: showMore ? 50 : 20,
-      timeRange,
-    });
+  const { data: activityData, isLoading } = api.activities.getCountryActivity.useQuery({
+    countryId,
+    limit: showMore ? 50 : 20,
+    timeRange,
+  });
 
   // Normalize and filter the backend response
   const feed = useMemo(() => {
@@ -269,7 +268,9 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                         {getSourceBadge(item.source)}
                       </div>
                       <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
-                        <span dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }} />
+                        <span
+                          dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }}
+                        />
                       </p>
                       <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-xs">
                         <div className="flex items-center gap-1">

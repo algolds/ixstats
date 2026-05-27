@@ -94,7 +94,7 @@ export function NotificationsAdmin() {
     unreadOnly: false,
   });
 
-  const { data: countries } = api.countries.getAll.useQuery();
+  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
 
   // Mutations
   const createNotificationMutation = api.notifications.createNotification.useMutation({
@@ -576,7 +576,7 @@ export function NotificationsAdmin() {
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
-                      {countries?.countries?.map((country) => (
+                      {countries?.map((country: any) => (
                         <SelectItem key={country.id} value={country.id}>
                           {country.name}
                         </SelectItem>

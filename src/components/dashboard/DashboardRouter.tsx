@@ -14,7 +14,6 @@ import {
   ChevronUp,
   Wallet,
   Flame,
-
   Bell,
   FileText,
   Layers,
@@ -28,7 +27,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Users,
-
 } from "lucide-react";
 import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
@@ -39,17 +37,9 @@ import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
-import {
-  EconomicTierBadge,
-  PopulationTierBadge,
-  LocationBadge,
-} from "~/components/ui/tier-badge";
-import {
-  getEconomicTierFromGdpPerCapita,
-  getPopulationTierFromPopulation,
-} from "~/types/ixstats";
+import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
+import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
-
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -60,7 +50,12 @@ const CountryMapEmbed = dynamic(
 );
 
 const HERO_NAV = [
-  { section: "Overview" as const, icon: Crown, label: "Overview", theme: SECTION_THEME_CLASSES.overview },
+  {
+    section: "Overview" as const,
+    icon: Crown,
+    label: "Overview",
+    theme: SECTION_THEME_CLASSES.overview,
+  },
   {
     section: "Executive" as const,
     icon: Briefcase,
@@ -113,14 +108,20 @@ function StatPill({
     <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5">
       <Icon className={cn("h-3 w-3 shrink-0", color)} />
       <div className="min-w-0">
-        <p className="text-muted-foreground/60 text-[8px] uppercase tracking-wider">{label}</p>
+        <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">{label}</p>
         <p className="text-foreground text-[11px] font-bold">{value}</p>
       </div>
     </div>
   );
 }
 
-function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; onCollapsedChange: (v: boolean) => void }) {
+function DashboardHero({
+  collapsed,
+  onCollapsedChange,
+}: {
+  collapsed: boolean;
+  onCollapsedChange: (v: boolean) => void;
+}) {
   const { user, isSignedIn } = useUser();
   const [activeSection, setActiveSection] = useState<HeroSection>("Overview");
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -203,7 +204,13 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
       const elapsed = Date.now() - lastInteractionRef.current;
       if (elapsed >= 60_000) {
         setActiveSection((prev) => {
-          const sections: HeroSection[] = ["Overview", "Executive", "Diplomacy", "Intelligence", "Defense"];
+          const sections: HeroSection[] = [
+            "Overview",
+            "Executive",
+            "Diplomacy",
+            "Intelligence",
+            "Defense",
+          ];
           const idx = sections.indexOf(prev);
           return sections[(idx + 1) % sections.length]!;
         });
@@ -214,23 +221,29 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
     };
   }, []);
 
-  const handlePillHover = useCallback((label: HeroSection) => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = setTimeout(() => {
-      setActiveSection(label);
-    }, 400);
-    resetAutoCycle();
-  }, [resetAutoCycle]);
+  const handlePillHover = useCallback(
+    (label: HeroSection) => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = setTimeout(() => {
+        setActiveSection(label);
+      }, 400);
+      resetAutoCycle();
+    },
+    [resetAutoCycle]
+  );
 
   const handlePillLeave = useCallback(() => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
   }, []);
 
-  const handlePillClick = useCallback((label: HeroSection) => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    setActiveSection(label);
-    resetAutoCycle();
-  }, [resetAutoCycle]);
+  const handlePillClick = useCallback(
+    (label: HeroSection) => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      setActiveSection(label);
+      resetAutoCycle();
+    },
+    [resetAutoCycle]
+  );
 
   if (!isSignedIn || !hasCountry || !country) return null;
 
@@ -257,12 +270,8 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
     maxGdpGrowthRate: newStats.maxGdpGrowthRate ?? 0,
   };
 
-  const econTier = stats.gdpPerCapita
-    ? getEconomicTierFromGdpPerCapita(stats.gdpPerCapita)
-    : null;
-  const popTier = stats.population
-    ? getPopulationTierFromPopulation(stats.population)
-    : null;
+  const econTier = stats.gdpPerCapita ? getEconomicTierFromGdpPerCapita(stats.gdpPerCapita) : null;
+  const popTier = stats.population ? getPopulationTierFromPopulation(stats.population) : null;
 
   // ── Section snapshot renderers ──
   const renderSectionContent = () => {
@@ -299,7 +308,7 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
             }
             className="rounded-lg bg-white/[0.04] p-2 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
           >
-            <p className="text-muted-foreground/60 text-[8px] font-medium uppercase tracking-wider">
+            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
             </p>
             <div className="mt-0.5 flex items-center gap-1">
@@ -336,7 +345,7 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
             }
             className="rounded-lg bg-white/[0.04] p-2 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
           >
-            <p className="text-muted-foreground/60 text-[8px] font-medium uppercase tracking-wider">
+            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               {metricView.population === "total" ? "Population" : "Density"}
             </p>
             <div className="mt-0.5 flex items-center gap-1">
@@ -371,7 +380,7 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
               stats.areaSqMi && stats.landArea && "hover:bg-white/[0.07] active:scale-[0.98]"
             )}
           >
-            <p className="text-muted-foreground/60 text-[8px] font-medium uppercase tracking-wider">
+            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               Land Area
             </p>
             <p className="text-foreground mt-0.5 text-sm font-bold tracking-tight">
@@ -399,12 +408,7 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
 
     return (
       <div className="grid grid-cols-3 gap-1.5 py-1">
-        <StatPill
-          icon={Bell}
-          label="Issues"
-          value="Pending"
-          color="text-amber-500"
-        />
+        <StatPill icon={Bell} label="Issues" value="Pending" color="text-amber-500" />
         <StatPill
           icon={FileText}
           label="Policies"
@@ -434,10 +438,30 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
 
     return (
       <div className="grid grid-cols-4 gap-1 py-1">
-        <StatPill icon={Building2} label="Embassies" value={`${activeEmbs}`} color="text-cyan-500" />
-        <StatPill icon={Handshake} label="Relations" value={`${totalRelations}`} color="text-blue-500" />
-        <StatPill icon={Globe} label="Avg Str." value={`${avgStrength}%`} color="text-emerald-500" />
-        <StatPill icon={Sparkles} label="Allies" value={`${strongTies}`} color={strongTies > 0 ? "text-purple-500" : "text-slate-500"} />
+        <StatPill
+          icon={Building2}
+          label="Embassies"
+          value={`${activeEmbs}`}
+          color="text-cyan-500"
+        />
+        <StatPill
+          icon={Handshake}
+          label="Relations"
+          value={`${totalRelations}`}
+          color="text-blue-500"
+        />
+        <StatPill
+          icon={Globe}
+          label="Avg Str."
+          value={`${avgStrength}%`}
+          color="text-emerald-500"
+        />
+        <StatPill
+          icon={Sparkles}
+          label="Allies"
+          value={`${strongTies}`}
+          color={strongTies > 0 ? "text-purple-500" : "text-slate-500"}
+        />
       </div>
     );
   };
@@ -458,7 +482,12 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
           value={critAlerts > 0 ? `${critAlerts} critical` : "Clear"}
           color={critAlerts > 0 ? "text-red-500" : "text-emerald-500"}
         />
-        <StatPill icon={Globe} label="Network" value={`${activeEmbs} active`} color="text-blue-500" />
+        <StatPill
+          icon={Globe}
+          label="Network"
+          value={`${activeEmbs} active`}
+          color="text-blue-500"
+        />
       </div>
     );
   };
@@ -481,7 +510,13 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
           icon={Shield}
           label="Security"
           value={`${secScore}/100`}
-          color={secScore >= 75 ? "text-emerald-500" : secScore >= 50 ? "text-blue-500" : "text-orange-500"}
+          color={
+            secScore >= 75
+              ? "text-emerald-500"
+              : secScore >= 50
+                ? "text-blue-500"
+                : "text-orange-500"
+          }
         />
         <StatPill icon={Sword} label="Branches" value={`${branchCount}`} color="text-red-500" />
         <StatPill
@@ -559,7 +594,9 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
               </span>
             )}
             {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
-            {stats.governmentType && <LocationBadge type="government" value={stats.governmentType} />}
+            {stats.governmentType && (
+              <LocationBadge type="government" value={stats.governmentType} />
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-1">
@@ -574,7 +611,7 @@ function DashboardHero({ collapsed, onCollapsedChange }: { collapsed: boolean; o
                   onMouseLeave={handlePillLeave}
                   onClick={() => handlePillClick(item.label)}
                   className={cn(
-                    "flex items-center gap-1 rounded-md px-2 py-1 text-[9px] transition-all cursor-pointer",
+                    "flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[9px] transition-all",
                     isActive
                       ? cn("font-semibold", colors.bg, colors.text)
                       : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
@@ -612,7 +649,11 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
 
   return (
     <DashboardSidebarLayout
-      heroSection={!heroCollapsed ? <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} /> : undefined}
+      heroSection={
+        !heroCollapsed ? (
+          <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
+        ) : undefined
+      }
       heroCollapsed={heroCollapsed}
       onHeroExpand={() => setHeroCollapsed(false)}
       discordBadge={discordBadge}

@@ -295,8 +295,8 @@ export function AutosaveMonitoringDashboard() {
             users={
               activeUsers?.users.map((u) => ({
                 userId: u.userId ?? "",
-                userName: (u as Record<string, unknown>).userName as string | null ?? null,
-                section: (u as Record<string, unknown>).section as string | null ?? null,
+                userName: ((u as Record<string, unknown>).userName as string | null) ?? null,
+                section: ((u as Record<string, unknown>).section as string | null) ?? null,
                 lastAutosave:
                   u.lastAutosave instanceof Date
                     ? u.lastAutosave.toISOString()

@@ -17,6 +17,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatDistanceToNow } from "date-fns";
+import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 
 interface ActivityData {
   id: string;
@@ -43,6 +44,7 @@ interface ActivityData {
   priority: string;
   visibility: string;
   relatedCountries: string[];
+  poll?: any;
 }
 
 interface ActivityFeedItemProps {
@@ -121,39 +123,50 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
                 <span className="hidden sm:inline">•</span>
               </>
             )}
-            <span className="max-w-[100px] truncate sm:max-w-none">{activity.user.name}</span>
-            <span className="hidden sm:inline">•</span>
+            {(!activity.poll || activity.user.name !== "User") && (
+              <>
+                <span className="max-w-[100px] truncate sm:max-w-none">{activity.user.name}</span>
+                <span className="hidden sm:inline">•</span>
+              </>
+            )}
             <Clock className="h-3 w-3 shrink-0" />
             <span className="text-xs">
               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
             </span>
           </div>
 
-          {/* Description */}
-          <p
-            className={`text-muted-foreground text-sm ${
-              !expanded && activity.content.description.length > 150 ? "line-clamp-2" : ""
-            }`}
-          >
-            {activity.content.description}
-          </p>
+          {/* Description or Poll */}
+          {activity.poll ? (
+            <FeedPollWidget poll={activity.poll} />
+          ) : (
+            <>
+              {/* Description */}
+              <p
+                className={`text-muted-foreground text-sm ${
+                  !expanded && activity.content.description.length > 150 ? "line-clamp-2" : ""
+                }`}
+              >
+                {activity.content.description}
+              </p>
 
-          {/* Expand Button */}
-          {activity.content.description.length > 150 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-primary mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
-            >
-              {expanded ? (
-                <>
-                  <ChevronUp className="h-3 w-3" /> Show less
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-3 w-3" /> Show more
-                </>
+              {/* Expand Button */}
+              {activity.content.description.length > 150 && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-primary mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
+                >
+                  {expanded ? (
+                    <>
+                      <ChevronUp className="h-3 w-3" /> Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3" /> Show more
+                    </>
+                  )}
+                </button>
               )}
-            </button>
+            </>
           )}
 
           {/* Metadata */}

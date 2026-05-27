@@ -71,26 +71,42 @@ export function EconomicControlCard({
   onMinGrowthFloorChange,
 }: EconomicControlCardProps) {
   const [showTierModifiers, setShowTierModifiers] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const growthPercent = ((globalGrowthFactor - 1) * 100).toFixed(2);
 
   return (
-    <Card className="glass-card-parent border-indigo-500/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-indigo-500" />
-          Global Economic Controls
-        </CardTitle>
-        <CardDescription>
-          Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on next
-          calculation cycle.
-        </CardDescription>
+    <Card className="glass-surface border-border/40">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="rounded-lg bg-indigo-500/10 p-1.5 text-indigo-500 border border-indigo-500/20">
+                <Globe className="h-4 w-4" />
+              </div>
+              Global Economic Controls
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on next calculation cycle.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2 border border-border/20 bg-card/20 px-2.5 py-1.5 rounded-lg shrink-0">
+            <Label htmlFor="econ-advanced-mode" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">
+              Advanced
+            </Label>
+            <Switch
+              id="econ-advanced-mode"
+              checked={showAdvanced}
+              onCheckedChange={setShowAdvanced}
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Growth Factor Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label>Global Growth Factor</Label>
-            <Badge variant="outline" className="tabular-nums">
+            <Label className="text-xs font-semibold text-foreground">Global Growth Factor</Label>
+            <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
               {globalGrowthFactor.toFixed(4)} ({growthPercent}%)
             </Badge>
           </div>
@@ -100,42 +116,41 @@ export function EconomicControlCard({
             min={0.5}
             max={2.0}
             step={0.001}
+            className="py-1 cursor-grab active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
             <span>-50%</span>
             <span>0%</span>
             <span>+3.21%</span>
             <span>+100%</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {GROWTH_PRESETS.map((preset) => (
-              <Button
-                key={preset.label}
-                variant={
-                  Math.abs(globalGrowthFactor - preset.value) < 0.001 ? "default" : "outline"
-                }
-                size="sm"
-                onClick={() => onGlobalGrowthFactorChange(preset.value)}
-              >
-                <span
-                  className={
-                    Math.abs(globalGrowthFactor - preset.value) < 0.001 ? "" : preset.color
-                  }
+            {GROWTH_PRESETS.map((preset) => {
+              const isActive = Math.abs(globalGrowthFactor - preset.value) < 0.001;
+              return (
+                <Button
+                  key={preset.label}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onGlobalGrowthFactorChange(preset.value)}
+                  className="text-xs font-semibold h-8 px-3"
                 >
-                  {preset.label}
-                </span>
-              </Button>
-            ))}
+                  <span className={isActive ? "" : preset.color}>
+                    {preset.label}
+                  </span>
+                </Button>
+              );
+            })}
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-border/20" />
 
         {/* Base Inflation Rate */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label>Base Inflation Rate</Label>
-            <Badge variant="outline" className="tabular-nums">
+            <Label className="text-xs font-semibold text-foreground">Base Inflation Rate</Label>
+            <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-blue-500/20 text-blue-500 bg-blue-500/5 px-2.5 py-0.5 rounded-full">
               {(baseInflationRate * 100).toFixed(1)}%
             </Badge>
           </div>
@@ -145,8 +160,9 @@ export function EconomicControlCard({
             min={0}
             max={0.1}
             step={0.001}
+            className="py-1 cursor-grab active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
             <span>0%</span>
             <span>2% (default)</span>
             <span>5%</span>
@@ -154,186 +170,201 @@ export function EconomicControlCard({
           </div>
         </div>
 
-        <Separator />
+        {showAdvanced && (
+          <div className="space-y-6 pt-1 animate-in fade-in slide-in-from-top-2 duration-200">
+            <Separator className="border-border/20 my-1" />
 
-        {/* Diminishing Returns */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium">Diminishing Returns</Label>
-            <Info className="text-muted-foreground h-3.5 w-3.5" />
-          </div>
-          <p className="text-muted-foreground text-xs">
-            Countries above the GDP/capita threshold experience reduced growth rates.
-          </p>
+            {/* Diminishing Returns */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Diminishing Returns</Label>
+                <Info className="text-muted-foreground h-3.5 w-3.5" />
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Countries above the GDP/capita threshold experience reduced growth rates.
+              </p>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Threshold</Label>
-              <Badge variant="outline" className="tabular-nums">
-                ${(diminishingReturnsThreshold / 1000).toFixed(0)}k
-              </Badge>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-foreground">Threshold</Label>
+                  <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+                    ${(diminishingReturnsThreshold / 1000).toFixed(0)}k
+                  </Badge>
+                </div>
+                <Slider
+                  value={[diminishingReturnsThreshold]}
+                  onValueChange={([v]) => v !== undefined && onDiminishingReturnsThresholdChange(v)}
+                  min={40000}
+                  max={100000}
+                  step={1000}
+                  className="py-1 cursor-grab active:cursor-grabbing"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-foreground">Factor (strength)</Label>
+                  <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+                    {diminishingReturnsFactor.toFixed(2)}
+                  </Badge>
+                </div>
+                <Slider
+                  value={[diminishingReturnsFactor]}
+                  onValueChange={([v]) => v !== undefined && onDiminishingReturnsFactorChange(v)}
+                  min={0.1}
+                  max={1.0}
+                  step={0.01}
+                  className="py-1 cursor-grab active:cursor-grabbing"
+                />
+                <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
+                  <span>Weak (0.1)</span>
+                  <span>Default (0.5)</span>
+                  <span>Strong (1.0)</span>
+                </div>
+              </div>
             </div>
-            <Slider
-              value={[diminishingReturnsThreshold]}
-              onValueChange={([v]) => v !== undefined && onDiminishingReturnsThresholdChange(v)}
-              min={40000}
-              max={100000}
-              step={1000}
-            />
-          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Factor (strength)</Label>
-              <Badge variant="outline" className="tabular-nums">
-                {diminishingReturnsFactor.toFixed(2)}
-              </Badge>
+            <Separator className="border-border/20 my-1" />
+
+            {/* Min Growth Floor */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-foreground">Minimum Growth Floor</Label>
+                <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+                  {(minGrowthFloor * 100).toFixed(1)}%
+                </Badge>
+              </div>
+              <Slider
+                value={[minGrowthFloor]}
+                onValueChange={([v]) => v !== undefined && onMinGrowthFloorChange(v)}
+                min={-0.2}
+                max={0}
+                step={0.005}
+                className="py-1 cursor-grab active:cursor-grabbing"
+              />
+              <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
+                <span>-20%</span>
+                <span>-10% (default)</span>
+                <span>0%</span>
+              </div>
             </div>
-            <Slider
-              value={[diminishingReturnsFactor]}
-              onValueChange={([v]) => v !== undefined && onDiminishingReturnsFactorChange(v)}
-              min={0.1}
-              max={1.0}
-              step={0.01}
-            />
-            <div className="text-muted-foreground flex justify-between text-xs">
-              <span>Weak (0.1)</span>
-              <span>Default (0.5)</span>
-              <span>Strong (1.0)</span>
-            </div>
-          </div>
-        </div>
 
-        <Separator />
+            <Separator className="border-border/20 my-1" />
 
-        {/* Min Growth Floor */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Minimum Growth Floor</Label>
-            <Badge variant="outline" className="tabular-nums">
-              {(minGrowthFloor * 100).toFixed(1)}%
-            </Badge>
-          </div>
-          <Slider
-            value={[minGrowthFloor]}
-            onValueChange={([v]) => v !== undefined && onMinGrowthFloorChange(v)}
-            min={-0.2}
-            max={0}
-            step={0.005}
-          />
-          <div className="text-muted-foreground flex justify-between text-xs">
-            <span>-20%</span>
-            <span>-10% (default)</span>
-            <span>0%</span>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Tier Growth Modifiers (Collapsible) */}
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => setShowTierModifiers(!showTierModifiers)}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <Label className="cursor-pointer text-sm font-medium">Tier Growth Modifiers</Label>
-            {showTierModifiers ? (
-              <ChevronUp className="text-muted-foreground h-4 w-4" />
-            ) : (
-              <ChevronDown className="text-muted-foreground h-4 w-4" />
-            )}
-          </button>
-          <p className="text-muted-foreground text-xs">
-            Per-tier multipliers applied to base growth rates. 1.0x = no change.
-          </p>
-
-          {showTierModifiers && (
-            <div className="border-border/50 bg-card/50 space-y-3 rounded-lg border p-3">
-              {TIER_INFO.map(({ tier, range, maxGrowth }) => {
-                const value = tierGrowthModifiers[tier] ?? 1.0;
-                return (
-                  <div key={tier} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium">{tier}</span>
-                      <span className="text-muted-foreground">
-                        {range} | max {maxGrowth} |{" "}
-                        <span className="text-foreground font-medium tabular-nums">
-                          {value.toFixed(2)}x
-                        </span>
-                      </span>
-                    </div>
-                    <Slider
-                      value={[value]}
-                      onValueChange={([v]) =>
-                        v !== undefined && onTierGrowthModifierChange(tier, v)
-                      }
-                      min={0.5}
-                      max={2.0}
-                      step={0.01}
-                    />
-                  </div>
-                );
-              })}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() =>
-                  TIER_INFO.forEach(({ tier }) => onTierGrowthModifierChange(tier, 1.0))
-                }
+            {/* Tier Growth Modifiers (Collapsible) */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowTierModifiers(!showTierModifiers)}
+                className="flex w-full items-center justify-between text-left group hover:text-foreground transition-colors"
               >
-                Reset All to 1.0x
-              </Button>
-            </div>
-          )}
-        </div>
+                <Label className="cursor-pointer text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Tier Growth Modifiers</Label>
+                {showTierModifiers ? (
+                  <ChevronUp className="text-muted-foreground h-4 w-4" />
+                ) : (
+                  <ChevronDown className="text-muted-foreground h-4 w-4" />
+                )}
+              </button>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Per-tier multipliers applied to base growth rates. 1.0x = no change.
+              </p>
 
-        <Separator />
+              {showTierModifiers && (
+                <div className="border border-border/20 bg-card/10 rounded-lg p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {TIER_INFO.map(({ tier, range, maxGrowth }) => {
+                      const value = tierGrowthModifiers[tier] ?? 1.0;
+                      return (
+                        <div key={tier} className="space-y-2 border border-border/10 rounded-lg p-3 bg-card/5">
+                          <div className="flex items-center justify-between text-xs font-medium">
+                            <span className="font-semibold text-foreground">{tier}</span>
+                            <span className="text-muted-foreground text-[10px]">
+                              {range} | max {maxGrowth} |{" "}
+                              <span className="text-blue-500 font-bold font-mono">
+                                {value.toFixed(2)}x
+                              </span>
+                            </span>
+                          </div>
+                          <Slider
+                            value={[value]}
+                            onValueChange={([v]) =>
+                              v !== undefined && onTierGrowthModifierChange(tier, v)
+                            }
+                            min={0.5}
+                            max={2.0}
+                            step={0.01}
+                            className="py-1 cursor-grab active:cursor-grabbing"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-semibold h-8"
+                    onClick={() =>
+                      TIER_INFO.forEach(({ tier }) => onTierGrowthModifierChange(tier, 1.0))
+                    }
+                  >
+                    Reset All to 1.0x
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <Separator className="border-border/20" />
 
         {/* Toggle Settings */}
-        <div className="space-y-4">
-          <div className="border-border/50 bg-card/50 flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="auto-update" className="text-sm font-medium">
-                Auto Calculations
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Enable automatic economic calculations
-              </p>
+        <div className="space-y-3">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block">
+            Calculation Automation
+          </span>
+          <div className="space-y-3">
+            <div className="border border-border/10 bg-card/5 flex items-center justify-between rounded-lg p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-update" className="text-xs font-semibold text-foreground">
+                  Auto Calculations
+                </Label>
+                <p className="text-muted-foreground text-[10px]">
+                  Enable automatic economic calculations
+                </p>
+              </div>
+              <Switch id="auto-update" checked={autoUpdate} onCheckedChange={onAutoUpdateChange} />
             </div>
-            <Switch id="auto-update" checked={autoUpdate} onCheckedChange={onAutoUpdateChange} />
-          </div>
 
-          <div className="border-border/50 bg-card/50 flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="bot-sync" className="text-sm font-medium">
-                Discord Bot Sync
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Enable time synchronization with Discord bot
-              </p>
+            <div className="border border-border/10 bg-card/5 flex items-center justify-between rounded-lg p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="bot-sync" className="text-xs font-semibold text-foreground">
+                  Discord Bot Sync
+                </Label>
+                <p className="text-muted-foreground text-[10px]">
+                  Enable time synchronization with Discord bot
+                </p>
+              </div>
+              <Switch
+                id="bot-sync"
+                checked={botSyncEnabled}
+                onCheckedChange={onBotSyncEnabledChange}
+              />
             </div>
-            <Switch
-              id="bot-sync"
-              checked={botSyncEnabled}
-              onCheckedChange={onBotSyncEnabledChange}
-            />
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-border/20" />
 
         {/* Force Recalculation */}
         <Button
           onClick={onForceCalculation}
           disabled={calculationPending}
-          className="w-full bg-orange-600 text-white hover:bg-orange-700"
+          className="w-full h-10 font-bold text-xs transition-all duration-250 hover:scale-[1.01]"
         >
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <Zap className="mr-2 h-4 w-4" />
+            <Zap className="mr-2 h-4 w-4 fill-current" />
           )}
           {calculationPending ? "Calculating..." : "Force Recalculation"}
         </Button>

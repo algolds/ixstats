@@ -24,9 +24,7 @@ function WikiBreadcrumb() {
     <span className="flex max-w-[220px] items-center gap-1.5 overflow-hidden">
       <BookOpen className="h-3 w-3 shrink-0 text-blue-400 opacity-70" />
       <span className="di-wiki-title">
-        <span className="di-wiki-title-text">
-          {articleTitle || "IxWiki"}
-        </span>
+        <span className="di-wiki-title-text">{articleTitle || "IxWiki"}</span>
       </span>
       {activeSectionName && (
         <>

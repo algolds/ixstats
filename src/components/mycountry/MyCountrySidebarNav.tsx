@@ -117,19 +117,12 @@ export const NAV_ITEMS: {
     gradient: SECTION_THEME_CLASSES.politics.gradient,
     activeGlow: SECTION_THEME_CLASSES.politics.activeGlow,
   },
-  {
-    id: "map-editor",
-    href: "/mycountry/map-editor",
-    icon: Map,
-    title: "Map Editor",
-    gradient: SECTION_THEME_CLASSES["map-editor"].gradient,
-    activeGlow: SECTION_THEME_CLASSES["map-editor"].activeGlow,
-  },
 ];
 
 export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
   if (pathname === "/mycountry" || pathname === "/mycountry/") return "overview";
+  if (pathname.startsWith("/mycountry/map-editor")) return "map-editor";
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
   }

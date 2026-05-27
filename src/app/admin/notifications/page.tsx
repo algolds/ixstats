@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
+import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -15,6 +16,7 @@ import {
 
 export default function NotificationsAdminPage() {
   usePageTitle({ title: "Admin - Notifications" });
+  const [activeTab, setActiveTab] = useState("events");
 
   return (
     <div className="space-y-6">
@@ -24,7 +26,7 @@ export default function NotificationsAdminPage() {
         description="Notification event hooks, logs, alert rules, and system tests"
       />
 
-      <Tabs defaultValue="events" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4 w-full justify-start">
           <TabsTrigger value="events">
             <ListTree className="mr-2 h-4 w-4" />
@@ -49,23 +51,23 @@ export default function NotificationsAdminPage() {
         </TabsList>
 
         <TabsContent value="events">
-          <EventsRegistryPanel />
+          {activeTab === "events" && <EventsRegistryPanel />}
         </TabsContent>
 
         <TabsContent value="log">
-          <NotificationBrowser />
+          {activeTab === "log" && <NotificationBrowser />}
         </TabsContent>
 
         <TabsContent value="compose">
-          <NotificationComposer />
+          {activeTab === "compose" && <NotificationComposer />}
         </TabsContent>
 
         <TabsContent value="rules">
-          <AlertRulesPanel />
+          {activeTab === "rules" && <AlertRulesPanel />}
         </TabsContent>
 
         <TabsContent value="tests">
-          <TestSuitePanel />
+          {activeTab === "tests" && <TestSuitePanel />}
         </TabsContent>
       </Tabs>
     </div>

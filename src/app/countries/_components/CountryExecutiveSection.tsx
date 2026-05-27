@@ -43,25 +43,16 @@ export function CountryExecutiveSection({
 
   // Get unified intelligence data for this country
   const { data: cabinetMeetings, isLoading: meetingsLoading } =
-    api.intelCore.getCabinetMeetings.useQuery(
-      { countryId: countryId },
-      { enabled: !!countryId }
-    );
+    api.intelCore.getCabinetMeetings.useQuery({ countryId: countryId }, { enabled: !!countryId });
   const { data: economicPolicies, isLoading: policiesLoading } =
     api.intelAnalytics.getEconomicPolicies.useQuery(
       { countryId: countryId },
       { enabled: !!countryId }
     );
   const { data: strategicPlans, isLoading: plansLoading } =
-    api.intelCore.getStrategicPlans.useQuery(
-      { countryId: countryId },
-      { enabled: !!countryId }
-    );
+    api.intelCore.getStrategicPlans.useQuery({ countryId: countryId }, { enabled: !!countryId });
   const { data: securityThreats, isLoading: threatsLoading } =
-    api.intelAlerts.getSecurityThreats.useQuery(
-      { countryId: countryId },
-      { enabled: !!countryId }
-    );
+    api.intelAlerts.getSecurityThreats.useQuery({ countryId: countryId }, { enabled: !!countryId });
   const { data: realTimeMetrics, isLoading: metricsLoading } =
     api.intelAnalytics.getRealTimeMetrics.useQuery(
       { countryId: countryId },

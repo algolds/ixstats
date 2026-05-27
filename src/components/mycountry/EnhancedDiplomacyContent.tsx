@@ -80,8 +80,6 @@ export function EnhancedDiplomacyContent({
       onNavigate={onNavigate}
       notifications={notifications}
     >
-
-
       {/* Cross-Pillar Effects */}
       <CrossPillarBanner section="diplomacy" countryId={country.id} onNavigate={onNavigate} />
 

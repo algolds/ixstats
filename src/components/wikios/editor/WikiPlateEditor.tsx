@@ -536,7 +536,7 @@ function isBlockActive(editor: any, type: string, level?: number): boolean {
 
 function toggleBlock(editor: any, type: string, props?: Record<string, any>) {
   const isActive = isBlockActive(editor, type, props?.level);
-  Transforms.setNodes(editor, isActive ? { type: "p" } : { type, ...props } as any, {
+  Transforms.setNodes(editor, isActive ? { type: "p" } : ({ type, ...props } as any), {
     match: (n: any) => Editor.isBlock(editor, n),
   });
 }
@@ -604,22 +604,27 @@ export function WikiPlateEditor({
         .filter(([, v]) => v.trim())
         .map(([k, v]) => `|${k}=${v}`);
       const wikitext = `{{${templateName}${paramParts.join("")}}}`;
-      Transforms.insertNodes(editor as any, {
-        type: "template",
-        templateName,
-        wikitext,
-        dataMw: JSON.stringify({
-          parts: [
-            {
-              template: {
-                target: { wt: templateName },
-                params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, { wt: v }])),
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "template",
+          templateName,
+          wikitext,
+          dataMw: JSON.stringify({
+            parts: [
+              {
+                template: {
+                  target: { wt: templateName },
+                  params: Object.fromEntries(
+                    Object.entries(params).map(([k, v]) => [k, { wt: v }])
+                  ),
+                },
               },
-            },
-          ],
-        }),
-        children: [{ text: "" }],
-      } as any);
+            ],
+          }),
+          children: [{ text: "" }],
+        } as any
+      );
     },
     [editor]
   );

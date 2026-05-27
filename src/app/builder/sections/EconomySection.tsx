@@ -96,7 +96,8 @@ export function EconomySection({
 
     const components = economyBuilderState.selectedAtomicComponents;
     const totalEffectiveness = components.reduce(
-      (sum: number, comp: any) => sum + ((ATOMIC_ECONOMIC_COMPONENTS as any)[comp]?.effectiveness || 0),
+      (sum: number, comp: any) =>
+        sum + ((ATOMIC_ECONOMIC_COMPONENTS as any)[comp]?.effectiveness || 0),
       0
     );
 

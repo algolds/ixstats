@@ -60,9 +60,7 @@ export class MarketWebSocketServerInstance {
 
       ws.on("message", (raw: Buffer | string) => {
         try {
-          const message = JSON.parse(
-            typeof raw === "string" ? raw : raw.toString("utf-8")
-          );
+          const message = JSON.parse(typeof raw === "string" ? raw : raw.toString("utf-8"));
 
           // Handle ping/pong heartbeat from client
           if (message.type === "ping") {
@@ -137,10 +135,7 @@ export class MarketWebSocketServerInstance {
   /**
    * Broadcast a price update event
    */
-  public broadcastPriceUpdate(data: {
-    cardId: string;
-    newPrice: number;
-  }): void {
+  public broadcastPriceUpdate(data: { cardId: string; newPrice: number }): void {
     this.broadcast({ type: "price_update", data });
   }
 

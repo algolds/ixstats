@@ -878,7 +878,7 @@ export function Navigation() {
         }`}
         style={{
           opacity: 1 - morphProgress * 0.6,
-          transition: 'opacity 0.05s linear',
+          transition: "opacity 0.05s linear",
         }}
       >
         {!isWikiPage && (
@@ -893,8 +893,8 @@ export function Navigation() {
               style={{
                 transform: `translateX(${morphProgress * 30}%) scale(${1 - morphProgress * 0.3})`,
                 opacity: 1 - morphProgress,
-                pointerEvents: morphProgress > 0.8 ? 'none' : 'auto',
-                transition: 'transform 0.05s linear, opacity 0.05s linear',
+                pointerEvents: morphProgress > 0.8 ? "none" : "auto",
+                transition: "transform 0.05s linear, opacity 0.05s linear",
               }}
             >
               <NavigationMenu>
@@ -1092,8 +1092,8 @@ export function Navigation() {
               style={{
                 transform: `translateX(${-morphProgress * 30}%) scale(${1 - morphProgress * 0.3})`,
                 opacity: 1 - morphProgress,
-                pointerEvents: morphProgress > 0.8 ? 'none' : 'auto',
-                transition: 'transform 0.05s linear, opacity 0.05s linear',
+                pointerEvents: morphProgress > 0.8 ? "none" : "auto",
+                transition: "transform 0.05s linear, opacity 0.05s linear",
               }}
             >
               <NavigationMenu>

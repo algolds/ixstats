@@ -702,7 +702,13 @@ export const thinkpagesRouter = createTRPCRouter({
       },
       include: {
         account: {
-          select: { id: true, username: true, displayName: true, profileImageUrl: true, clerkUserId: true },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            profileImageUrl: true,
+            clerkUserId: true,
+          },
         },
         parentPost: {
           include: {

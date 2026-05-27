@@ -24,10 +24,11 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
   const [activeTab, setActiveTab] = useState("network");
 
   // Fetch embassies
-  const { data: embassies, isLoading: embassiesLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId: country?.id || "" },
-    { enabled: !!country?.id }
-  );
+  const { data: embassies, isLoading: embassiesLoading } =
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId: country?.id || "" },
+      { enabled: !!country?.id }
+    );
 
   // Fetch active embassy missions
   const { data: missions = [], isLoading: missionsLoading } =

@@ -440,9 +440,18 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
             currentPopulation: userCountry.calculatedStats?.currentPopulation || 0,
             populationGrowthRate: userCountry.populationGrowthRate || 0,
             adjustedGdpGrowth: userCountry.adjustedGdpGrowth || 0,
-            economicTier: (userCountry as any).economicTier || (userCountry as any).calculatedStats?.economicTier || "Unknown",
-            populationTier: (userCountry as any).populationTier || (userCountry as any).calculatedStats?.populationTier || "Unknown",
-            populationDensity: (userCountry as any).populationDensity || (userCountry as any).calculatedStats?.populationDensity || 0,
+            economicTier:
+              (userCountry as any).economicTier ||
+              (userCountry as any).calculatedStats?.economicTier ||
+              "Unknown",
+            populationTier:
+              (userCountry as any).populationTier ||
+              (userCountry as any).calculatedStats?.populationTier ||
+              "Unknown",
+            populationDensity:
+              (userCountry as any).populationDensity ||
+              (userCountry as any).calculatedStats?.populationDensity ||
+              0,
             landArea: userCountry.landArea || 0,
             continent: userCountry.continent || null,
             region: userCountry.region || null,

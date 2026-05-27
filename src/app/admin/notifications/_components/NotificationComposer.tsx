@@ -151,7 +151,7 @@ export function NotificationComposer() {
   const notify = useNotify();
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  const { data: countries } = api.countries.getAll.useQuery();
+  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
 
   const createMutation = api.notifications.createNotification.useMutation({
     onSuccess: () => {
@@ -317,7 +317,7 @@ export function NotificationComposer() {
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
-                    {countries?.countries?.map((c) => (
+                    {countries?.map((c: any) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
                       </SelectItem>

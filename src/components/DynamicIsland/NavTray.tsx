@@ -114,10 +114,10 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
             transition={{ type: "spring", stiffness: 400, damping: 28 }}
           >
             <div
-              className="overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+              className="overflow-hidden rounded-2xl border shadow-2xl"
               style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)",
+                background: "var(--color-glass)",
+                borderColor: "var(--color-border-primary)",
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
               }}
@@ -151,29 +151,21 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                         onClick={onClose}
                         className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-all duration-200 ${
                           active
-                            ? "bg-white/15 text-white shadow-sm"
-                            : "text-white/70 hover:bg-white/10 hover:text-white"
+                            ? "bg-foreground/10 text-foreground shadow-sm"
+                            : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                         }`}
                       >
                         <div
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
-                            active
-                              ? "shadow-sm"
-                              : "bg-white/5 group-hover:bg-white/10"
+                            active ? "shadow-sm" : "bg-foreground/5 group-hover:bg-foreground/10"
                           }`}
-                          style={
-                            active
-                              ? { backgroundColor: `${item.accent}30` }
-                              : undefined
-                          }
+                          style={active ? { backgroundColor: `${item.accent}30` } : undefined}
                         >
                           <div
                             className="flex items-center justify-center"
                             style={active ? { color: item.accent } : undefined}
                           >
-                            <Icon
-                              className="h-4 w-4 transition-transform duration-200 group-hover:scale-110"
-                            />
+                            <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                           </div>
                         </div>
                         <span className="text-xs font-medium">{item.name}</span>
@@ -190,9 +182,9 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
               </div>
 
               {/* Secondary nav — compact row */}
-              <div className="relative z-10 border-t border-white/10 px-3 py-2">
+              <div className="border-border relative z-10 border-t px-3 py-2">
                 <div className="flex items-center gap-1">
-                  <MoreHorizontal className="mr-1 h-3 w-3 text-white/30" />
+                  <MoreHorizontal className="text-foreground/30 mr-1 h-3 w-3" />
                   {SECONDARY_NAV.map((item) => (
                     <Link
                       key={item.name}
@@ -200,8 +192,8 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                       onClick={onClose}
                       className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
                         isActive(item.href)
-                          ? "bg-white/15 text-white"
-                          : "text-white/50 hover:bg-white/10 hover:text-white/80"
+                          ? "bg-foreground/10 text-foreground"
+                          : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                       }`}
                     >
                       {item.name}

@@ -142,8 +142,10 @@ export const resourcesRouter = createTRPCRouter({
           // Build profile from stored data or use defaults
           const profile = geoProfile
             ? buildGeoProfile({
-                climateDistribution: (geoProfile.climateDistribution as unknown as ClimateZoneEntry[]) ?? [],
-                elevationProfile: (geoProfile.elevationProfile as unknown as ElevationZoneEntry[]) ?? [],
+                climateDistribution:
+                  (geoProfile.climateDistribution as unknown as ClimateZoneEntry[]) ?? [],
+                elevationProfile:
+                  (geoProfile.elevationProfile as unknown as ElevationZoneEntry[]) ?? [],
                 coastlineKm: geoProfile.coastlineKm,
                 neighborCount: geoProfile.neighborCount,
                 totalRiverLengthKm: geoProfile.riverKm,

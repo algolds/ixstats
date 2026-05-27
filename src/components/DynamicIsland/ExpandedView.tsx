@@ -56,14 +56,15 @@ export function ExpandedView({
           {mode === "notifications" && <NotificationsView onClose={onClose} />}
           {mode === "settings" && <SettingsView onClose={onClose} />}
 
-
           {/* Plugin-provided expanded views */}
-          {typeof mode === "string" && mode.startsWith("plugin:") && (() => {
-            const viewName = mode.slice(7); // strip "plugin:" prefix
-            const PluginView = activePlugin?.expandedViews?.[viewName];
-            if (!PluginView) return null;
-            return <PluginView onClose={onClose} />;
-          })()}
+          {typeof mode === "string" &&
+            mode.startsWith("plugin:") &&
+            (() => {
+              const viewName = mode.slice(7); // strip "plugin:" prefix
+              const PluginView = activePlugin?.expandedViews?.[viewName];
+              if (!PluginView) return null;
+              return <PluginView onClose={onClose} />;
+            })()}
         </div>
       </div>
     </div>

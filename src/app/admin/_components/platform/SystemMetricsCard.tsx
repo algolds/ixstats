@@ -22,7 +22,7 @@ export function SystemMetricsCard() {
 
   if (!systemStatus || !systemHealth) {
     return (
-      <Card className="glass-card-parent border-purple-500/20">
+      <Card className="glass-surface border-border/40">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Server className="h-5 w-5 text-purple-500" />
@@ -42,7 +42,7 @@ export function SystemMetricsCard() {
   }
 
   return (
-    <Card className="glass-card-parent border-purple-500/20">
+    <Card className="glass-surface border-border/40">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -151,13 +151,13 @@ function StatusCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="border-border/50 bg-card/50 rounded-lg border p-3">
+    <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 hover:bg-card/15 transition-all duration-200">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-xs">{label}</p>
         {icon}
       </div>
-      <p className="text-foreground mt-1 text-lg font-bold">{value}</p>
-      <p className="text-muted-foreground/70 mt-0.5 text-xs">{detail}</p>
+      <p className="text-foreground mt-1 text-base font-bold">{value}</p>
+      <p className="text-muted-foreground/75 mt-0.5 text-[10px] font-medium leading-tight">{detail}</p>
     </div>
   );
 }

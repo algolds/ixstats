@@ -90,7 +90,7 @@ function CountryInterventionRow({
     detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
 
   return (
-    <div className="border-border/50 hover:border-border rounded-xl border transition-colors">
+    <div className="glass-surface border-border/30 hover:border-border/60 rounded-xl border shadow-sm transition-all duration-200">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between p-3 text-left"
@@ -126,7 +126,7 @@ function CountryInterventionRow({
               }) => (
                 <div
                   key={dm.id}
-                  className="bg-muted/20 flex items-center justify-between rounded-lg px-3 py-2"
+                  className="glass-hierarchy-child border-border/20 flex items-center justify-between rounded-lg border px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

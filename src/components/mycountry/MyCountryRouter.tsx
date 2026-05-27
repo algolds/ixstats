@@ -34,30 +34,24 @@ function SectionSkeleton() {
 }
 
 // Error fallback for failed section loads
-function SectionErrorFallback({
-  sectionName,
-  retry,
-}: {
-  sectionName: string;
-  retry: () => void;
-}) {
+function SectionErrorFallback({ sectionName, retry }: { sectionName: string; retry: () => void }) {
   return (
     <div className="space-y-4 p-6">
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-        <h3 className="font-semibold text-red-400 mb-2">Couldn't Load {sectionName}</h3>
-        <p className="text-sm text-red-300 mb-4">
+        <h3 className="mb-2 font-semibold text-red-400">Couldn't Load {sectionName}</h3>
+        <p className="mb-4 text-sm text-red-300">
           There was an issue loading this section. Try again or refresh the page.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={retry}
-            className="rounded px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-medium transition-colors"
+            className="rounded bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/30"
           >
             Retry
           </button>
           <button
             onClick={() => window.location.reload()}
-            className="rounded px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-medium transition-colors"
+            className="rounded bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/30"
           >
             Refresh Page
           </button>
@@ -85,21 +79,21 @@ const EnhancedIntelligenceContent = dynamic(
     import("./EnhancedIntelligenceContent").then((m) => ({
       default: m.EnhancedIntelligenceContent,
     })),
-  { 
+  {
     loading: () => <SectionSkeleton />,
     ssr: false,
   }
 );
 const EnhancedDefenseContent = dynamic(
   () => import("./EnhancedDefenseContent").then((m) => ({ default: m.EnhancedDefenseContent })),
-  { 
+  {
     loading: () => <SectionSkeleton />,
     ssr: false,
   }
 );
 const EnhancedMapEditorContent = dynamic(
   () => import("./EnhancedMapEditorContent").then((m) => ({ default: m.EnhancedMapEditorContent })),
-  { 
+  {
     loading: () => <SectionSkeleton />,
     ssr: false,
   }

@@ -18,8 +18,6 @@ import {
 import { api } from "~/trpc/react";
 import { Loader2, Shield, Activity, Factory, TrendingUp, AlertTriangle } from "lucide-react";
 
-
-
 /**
  * Military Equipment Analytics Dashboard
  *
@@ -401,8 +399,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
                 </thead>
                 <tbody>
                   {deprecationCandidates.map((equipment, index) => {
-                    const manufacturerName =
-                      (equipment as any).manufacturer ?? "N/A";
+                    const manufacturerName = (equipment as any).manufacturer ?? "N/A";
                     const techLevel =
                       (equipment as any).technologyLevel ??
                       (equipment as any).technologyTier ??

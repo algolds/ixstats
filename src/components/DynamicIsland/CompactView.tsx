@@ -47,6 +47,7 @@ const getTimeDisplay = (ixTime: number): string => {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 function CompactViewComponent({
+  mode,
   isSticky,
   isCollapsed,
   setIsCollapsed,
@@ -60,7 +61,9 @@ function CompactViewComponent({
   pluginBadge,
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
-  const pluginViewKey = activePlugin?.expandedViews ? Object.keys(activePlugin.expandedViews)[0] : null;
+  const pluginViewKey = activePlugin?.expandedViews
+    ? Object.keys(activePlugin.expandedViews)[0]
+    : null;
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
   const router = useRouter();
   const diPathname = usePathname();
@@ -111,7 +114,12 @@ function CompactViewComponent({
 
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
     { limit: 5, unreadOnly: false },
-    { enabled: !!user?.id, staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, refetchOnMount: false }
+    {
+      enabled: !!user?.id,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }
   );
 
   const unreadNotifications = notificationsData?.unreadCount || 0;
@@ -161,13 +169,15 @@ function CompactViewComponent({
     <TooltipProvider>
       <div
         onMouseEnter={() => {
-          if (isSticky) {
+          if (isSticky || activePlugin?.id === "forum") {
             setIsCollapsed(false);
             setIsUserInteracting(true);
           }
         }}
         onMouseLeave={() => {
-          if (isSticky) setIsUserInteracting(false);
+          if (isSticky || activePlugin?.id === "forum") {
+            setIsUserInteracting(false);
+          }
         }}
       >
         <div className="h-full w-full">
@@ -220,10 +230,19 @@ function CompactViewComponent({
                   </motion.div>
                 </AnimatePresence>
               )}
-              {isSticky && !peekText && activePlugin && pluginCenter && (
-                pluginViewKey ? (
+              {isSticky &&
+                !peekText &&
+                activePlugin &&
+                pluginCenter &&
+                (pluginViewKey ? (
                   <button
-                    onClick={() => onSwitchMode(`plugin:${pluginViewKey}`)}
+                    onClick={() => {
+                      if (mode === `plugin:${pluginViewKey}`) {
+                        onSwitchMode("compact");
+                      } else {
+                        onSwitchMode(`plugin:${pluginViewKey}`);
+                      }
+                    }}
                     className="flex max-w-[160px] cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
                     title={`Open ${activePlugin.id} mode`}
                   >
@@ -233,8 +252,7 @@ function CompactViewComponent({
                   <div className="flex max-w-[160px] items-center gap-1.5 px-1.5 py-0.5">
                     {pluginCenter}
                   </div>
-                )
-              )}
+                ))}
 
               {/* Non-sticky: peek or time/context */}
               {!isSticky && (
@@ -317,7 +335,13 @@ function CompactViewComponent({
                       {activePlugin && pluginCenter ? (
                         pluginViewKey ? (
                           <button
-                            onClick={() => onSwitchMode(`plugin:${pluginViewKey}`)}
+                            onClick={() => {
+                              if (mode === `plugin:${pluginViewKey}`) {
+                                onSwitchMode("compact");
+                              } else {
+                                onSwitchMode(`plugin:${pluginViewKey}`);
+                              }
+                            }}
                             className="flex max-w-[220px] cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
                             title={`Open ${activePlugin.id} mode`}
                           >
@@ -354,7 +378,9 @@ function CompactViewComponent({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onSwitchMode(activePlugin?.id === "wiki" ? "plugin:wiki" : "search")}
+                    onClick={() =>
+                      onSwitchMode(activePlugin?.id === "wiki" ? "plugin:wiki" : "search")
+                    }
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
                       isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}

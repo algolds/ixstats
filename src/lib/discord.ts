@@ -1,14 +1,14 @@
 export interface DiscordServerData {
   /** Server/guild ID. */
-  id: string
+  id: string;
   /** Server name. */
-  name: string
+  name: string;
   /** Instant invite URL (if widget is enabled). */
-  instantInvite: string | null
+  instantInvite: string | null;
   /** Number of members currently online (from widget API). */
-  onlineCount: number
+  onlineCount: number;
   /** Total member count. Only available if provided manually — the widget API does not expose this. */
-  memberCount?: number
+  memberCount?: number;
 }
 
 /**
@@ -20,27 +20,24 @@ export interface DiscordServerData {
  *
  * Returns `null` if the request fails or the widget is disabled.
  */
-export async function fetchDiscordServer(
-  serverId: string
-): Promise<DiscordServerData | null> {
+export async function fetchDiscordServer(serverId: string): Promise<DiscordServerData | null> {
   try {
-    const response = await fetch(
-      `https://discord.com/api/guilds/${serverId}/widget.json`,
-      { next: { revalidate: 3600 } }
-    )
-    if (!response.ok) return null
-    const data = await response.json()
+    const response = await fetch(`https://discord.com/api/guilds/${serverId}/widget.json`, {
+      next: { revalidate: 3600 },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
 
-    if (typeof data.name !== "string") return null
+    if (typeof data.name !== "string") return null;
 
     return {
       id: data.id,
       name: data.name,
       instantInvite: data.instant_invite ?? null,
       onlineCount: data.presence_count ?? 0,
-    }
+    };
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -53,12 +50,12 @@ export async function fetchDiscordServer(
  */
 export function formatMemberCount(count: number): string {
   if (count >= 1_000_000) {
-    const value = count / 1_000_000
-    return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}M`
+    const value = count / 1_000_000;
+    return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}M`;
   }
   if (count >= 1_000) {
-    const value = count / 1_000
-    return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}K`
+    const value = count / 1_000;
+    return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}K`;
   }
-  return count.toLocaleString("en-US")
+  return count.toLocaleString("en-US");
 }

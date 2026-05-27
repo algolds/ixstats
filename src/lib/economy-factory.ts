@@ -235,11 +235,7 @@ export function createEmptyEconomyData(): EconomyData {
 // Shared helpers for presets
 // ===============================
 
-function spendingCategory(
-  category: string,
-  amount: number,
-  percent: number,
-) {
+function spendingCategory(category: string, amount: number, percent: number) {
   return { category, amount, percent };
 }
 
@@ -370,11 +366,41 @@ function createDevelopedPreset(): EconomyData {
     },
     income: {
       economicClasses: [
-        { name: "LowerClass", populationPercent: 20, wealthPercent: 5, averageIncome: 18_000, color: "#d32f2f" },
-        { name: "WorkingClass", populationPercent: 35, wealthPercent: 15, averageIncome: 32_000, color: "#f57c00" },
-        { name: "MiddleClass", populationPercent: 30, wealthPercent: 35, averageIncome: 52_000, color: "#1976d2" },
-        { name: "UpperMiddleClass", populationPercent: 12, wealthPercent: 25, averageIncome: 90_000, color: "#512da8" },
-        { name: "UpperClass", populationPercent: 3, wealthPercent: 20, averageIncome: 250_000, color: "#2e7d32" },
+        {
+          name: "LowerClass",
+          populationPercent: 20,
+          wealthPercent: 5,
+          averageIncome: 18_000,
+          color: "#d32f2f",
+        },
+        {
+          name: "WorkingClass",
+          populationPercent: 35,
+          wealthPercent: 15,
+          averageIncome: 32_000,
+          color: "#f57c00",
+        },
+        {
+          name: "MiddleClass",
+          populationPercent: 30,
+          wealthPercent: 35,
+          averageIncome: 52_000,
+          color: "#1976d2",
+        },
+        {
+          name: "UpperMiddleClass",
+          populationPercent: 12,
+          wealthPercent: 25,
+          averageIncome: 90_000,
+          color: "#512da8",
+        },
+        {
+          name: "UpperClass",
+          populationPercent: 3,
+          wealthPercent: 20,
+          averageIncome: 250_000,
+          color: "#2e7d32",
+        },
       ],
       povertyRate: 11,
       incomeInequalityGini: 0.32,
@@ -503,7 +529,13 @@ function createEmergingPreset(): EconomyData {
       averageAnnualIncome: 9_500,
       laborProtections: true,
       employmentBySector: { agriculture: 25, industry: 30, services: 45 },
-      employmentByType: { fullTime: 55, partTime: 10, temporary: 8, selfEmployed: 15, informal: 20 },
+      employmentByType: {
+        fullTime: 55,
+        partTime: 10,
+        temporary: 8,
+        selfEmployed: 15,
+        informal: 20,
+      },
       skillsAndProductivity: {
         averageEducationYears: 10,
         tertiaryEducationRate: 25,
@@ -579,11 +611,41 @@ function createEmergingPreset(): EconomyData {
     },
     income: {
       economicClasses: [
-        { name: "LowerClass", populationPercent: 35, wealthPercent: 8, averageIncome: 2_500, color: "#d32f2f" },
-        { name: "WorkingClass", populationPercent: 30, wealthPercent: 15, averageIncome: 6_000, color: "#f57c00" },
-        { name: "MiddleClass", populationPercent: 22, wealthPercent: 25, averageIncome: 12_000, color: "#1976d2" },
-        { name: "UpperMiddleClass", populationPercent: 10, wealthPercent: 27, averageIncome: 25_000, color: "#512da8" },
-        { name: "UpperClass", populationPercent: 3, wealthPercent: 25, averageIncome: 80_000, color: "#2e7d32" },
+        {
+          name: "LowerClass",
+          populationPercent: 35,
+          wealthPercent: 8,
+          averageIncome: 2_500,
+          color: "#d32f2f",
+        },
+        {
+          name: "WorkingClass",
+          populationPercent: 30,
+          wealthPercent: 15,
+          averageIncome: 6_000,
+          color: "#f57c00",
+        },
+        {
+          name: "MiddleClass",
+          populationPercent: 22,
+          wealthPercent: 25,
+          averageIncome: 12_000,
+          color: "#1976d2",
+        },
+        {
+          name: "UpperMiddleClass",
+          populationPercent: 10,
+          wealthPercent: 27,
+          averageIncome: 25_000,
+          color: "#512da8",
+        },
+        {
+          name: "UpperClass",
+          populationPercent: 3,
+          wealthPercent: 25,
+          averageIncome: 80_000,
+          color: "#2e7d32",
+        },
       ],
       povertyRate: 22,
       incomeInequalityGini: 0.42,
@@ -624,7 +686,12 @@ function createEmergingPreset(): EconomyData {
       regions: [
         { name: "Capital Region", population: 16_000_000, urbanPercent: 90, type: "Developed" },
         { name: "Industrial Corridor", population: 24_000_000, urbanPercent: 65, type: "Emerging" },
-        { name: "Agricultural Heartland", population: 24_000_000, urbanPercent: 35, type: "Developing" },
+        {
+          name: "Agricultural Heartland",
+          population: 24_000_000,
+          urbanPercent: 35,
+          type: "Developing",
+        },
         { name: "Border Regions", population: 16_000_000, urbanPercent: 40, type: "Developing" },
       ],
       educationLevels: [
@@ -739,11 +806,41 @@ function createDevelopingPreset(): EconomyData {
     },
     income: {
       economicClasses: [
-        { name: "LowerClass", populationPercent: 50, wealthPercent: 10, averageIncome: 500, color: "#d32f2f" },
-        { name: "WorkingClass", populationPercent: 25, wealthPercent: 15, averageIncome: 1_500, color: "#f57c00" },
-        { name: "MiddleClass", populationPercent: 15, wealthPercent: 20, averageIncome: 4_000, color: "#1976d2" },
-        { name: "UpperMiddleClass", populationPercent: 7, wealthPercent: 25, averageIncome: 12_000, color: "#512da8" },
-        { name: "UpperClass", populationPercent: 3, wealthPercent: 30, averageIncome: 50_000, color: "#2e7d32" },
+        {
+          name: "LowerClass",
+          populationPercent: 50,
+          wealthPercent: 10,
+          averageIncome: 500,
+          color: "#d32f2f",
+        },
+        {
+          name: "WorkingClass",
+          populationPercent: 25,
+          wealthPercent: 15,
+          averageIncome: 1_500,
+          color: "#f57c00",
+        },
+        {
+          name: "MiddleClass",
+          populationPercent: 15,
+          wealthPercent: 20,
+          averageIncome: 4_000,
+          color: "#1976d2",
+        },
+        {
+          name: "UpperMiddleClass",
+          populationPercent: 7,
+          wealthPercent: 25,
+          averageIncome: 12_000,
+          color: "#512da8",
+        },
+        {
+          name: "UpperClass",
+          populationPercent: 3,
+          wealthPercent: 30,
+          averageIncome: 50_000,
+          color: "#2e7d32",
+        },
       ],
       povertyRate: 40,
       incomeInequalityGini: 0.48,

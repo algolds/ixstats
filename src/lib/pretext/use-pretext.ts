@@ -11,28 +11,34 @@
  * Powered by Pretext by Cheng Lou — github.com/chenglou/pretext
  */
 
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import type {
   PreparedText,
   PreparedTextWithSegments,
   LayoutResult,
   LayoutLinesResult,
   PrepareOptions,
-} from "@chenglou/pretext"
+} from "@chenglou/pretext";
 
-export type { PreparedText, PreparedTextWithSegments, LayoutResult, LayoutLinesResult, PrepareOptions }
+export type {
+  PreparedText,
+  PreparedTextWithSegments,
+  LayoutResult,
+  LayoutLinesResult,
+  PrepareOptions,
+};
 
-const isBrowser = typeof window !== "undefined"
+const isBrowser = typeof window !== "undefined";
 
 function getPretext() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require("@chenglou/pretext") as typeof import("@chenglou/pretext")
+  return require("@chenglou/pretext") as typeof import("@chenglou/pretext");
 }
 
-const EMPTY_LAYOUT: LayoutResult = { lineCount: 0, height: 0 }
-const EMPTY_LINES: LayoutLinesResult = { lineCount: 0, height: 0, lines: [] }
+const EMPTY_LAYOUT: LayoutResult = { lineCount: 0, height: 0 };
+const EMPTY_LINES: LayoutLinesResult = { lineCount: 0, height: 0, lines: [] };
 
 /**
  * Prepare text for Pretext measurement. Runs `prepare()` once and caches
@@ -43,15 +49,15 @@ const EMPTY_LINES: LayoutLinesResult = { lineCount: 0, height: 0, lines: [] }
 export function usePretext(
   text: string,
   font: string,
-  options?: PrepareOptions,
+  options?: PrepareOptions
 ): PreparedText | null {
-  const whiteSpace = options?.whiteSpace ?? "normal"
+  const whiteSpace = options?.whiteSpace ?? "normal";
 
   return React.useMemo(() => {
-    if (!isBrowser) return null
-    return getPretext().prepare(text, font, options)
+    if (!isBrowser) return null;
+    return getPretext().prepare(text, font, options);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, font, whiteSpace])
+  }, [text, font, whiteSpace]);
 }
 
 /**
@@ -61,15 +67,15 @@ export function usePretext(
 export function usePretextWithSegments(
   text: string,
   font: string,
-  options?: PrepareOptions,
+  options?: PrepareOptions
 ): PreparedTextWithSegments | null {
-  const whiteSpace = options?.whiteSpace ?? "normal"
+  const whiteSpace = options?.whiteSpace ?? "normal";
 
   return React.useMemo(() => {
-    if (!isBrowser) return null
-    return getPretext().prepareWithSegments(text, font, options)
+    if (!isBrowser) return null;
+    return getPretext().prepareWithSegments(text, font, options);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, font, whiteSpace])
+  }, [text, font, whiteSpace]);
 }
 
 /**
@@ -81,12 +87,12 @@ export function usePretextWithSegments(
 export function usePretextLayout(
   prepared: PreparedText | null,
   maxWidth: number,
-  lineHeight: number,
+  lineHeight: number
 ): LayoutResult {
   return React.useMemo(() => {
-    if (!prepared) return EMPTY_LAYOUT
-    return getPretext().layout(prepared, maxWidth, lineHeight)
-  }, [prepared, maxWidth, lineHeight])
+    if (!prepared) return EMPTY_LAYOUT;
+    return getPretext().layout(prepared, maxWidth, lineHeight);
+  }, [prepared, maxWidth, lineHeight]);
 }
 
 /**
@@ -97,12 +103,12 @@ export function usePretextLayout(
 export function usePretextLines(
   prepared: PreparedTextWithSegments | null,
   maxWidth: number,
-  lineHeight: number,
+  lineHeight: number
 ): LayoutLinesResult {
   return React.useMemo(() => {
-    if (!prepared) return EMPTY_LINES
-    return getPretext().layoutWithLines(prepared, maxWidth, lineHeight)
-  }, [prepared, maxWidth, lineHeight])
+    if (!prepared) return EMPTY_LINES;
+    return getPretext().layoutWithLines(prepared, maxWidth, lineHeight);
+  }, [prepared, maxWidth, lineHeight]);
 }
 
 /**
@@ -111,40 +117,43 @@ export function usePretextLines(
  *
  * Returns the shrinkwrapped width in pixels.
  */
-export function useShrinkwrap(
-  prepared: PreparedTextWithSegments | null,
-  maxWidth: number,
-): number {
+export function useShrinkwrap(prepared: PreparedTextWithSegments | null, maxWidth: number): number {
   return React.useMemo(() => {
-    if (!prepared || maxWidth <= 0) return 0
+    if (!prepared || maxWidth <= 0) return 0;
 
-    const { walkLineRanges } = getPretext()
+    const { walkLineRanges } = getPretext();
 
-    let baseLineCount = 0
-    walkLineRanges(prepared, maxWidth, () => { baseLineCount++ })
+    let baseLineCount = 0;
+    walkLineRanges(prepared, maxWidth, () => {
+      baseLineCount++;
+    });
     if (baseLineCount <= 1) {
-      let singleLineWidth = 0
-      walkLineRanges(prepared, maxWidth, (line) => { singleLineWidth = line.width })
-      return Math.ceil(singleLineWidth) || 0
+      let singleLineWidth = 0;
+      walkLineRanges(prepared, maxWidth, (line) => {
+        singleLineWidth = line.width;
+      });
+      return Math.ceil(singleLineWidth) || 0;
     }
 
-    let lo = 1
-    let hi = Math.ceil(maxWidth)
+    let lo = 1;
+    let hi = Math.ceil(maxWidth);
 
     while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2)
-      let midLineCount = 0
-      walkLineRanges(prepared, mid, () => { midLineCount++ })
+      const mid = Math.floor((lo + hi) / 2);
+      let midLineCount = 0;
+      walkLineRanges(prepared, mid, () => {
+        midLineCount++;
+      });
 
       if (midLineCount <= baseLineCount) {
-        hi = mid
+        hi = mid;
       } else {
-        lo = mid + 1
+        lo = mid + 1;
       }
     }
 
-    return lo
-  }, [prepared, maxWidth])
+    return lo;
+  }, [prepared, maxWidth]);
 }
 
 /**
@@ -157,32 +166,36 @@ export function useShrinkwrap(
  */
 export function useBalancedWidth(
   prepared: PreparedTextWithSegments | null,
-  maxWidth: number,
+  maxWidth: number
 ): number {
   return React.useMemo(() => {
-    if (!prepared || maxWidth <= 0) return 0
+    if (!prepared || maxWidth <= 0) return 0;
 
-    const { walkLineRanges } = getPretext()
+    const { walkLineRanges } = getPretext();
 
-    let baseLineCount = 0
-    walkLineRanges(prepared, maxWidth, () => { baseLineCount++ })
-    if (baseLineCount <= 1) return maxWidth
+    let baseLineCount = 0;
+    walkLineRanges(prepared, maxWidth, () => {
+      baseLineCount++;
+    });
+    if (baseLineCount <= 1) return maxWidth;
 
-    let lo = 1
-    let hi = Math.ceil(maxWidth)
+    let lo = 1;
+    let hi = Math.ceil(maxWidth);
 
     while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2)
-      let midLineCount = 0
-      walkLineRanges(prepared, mid, () => { midLineCount++ })
+      const mid = Math.floor((lo + hi) / 2);
+      let midLineCount = 0;
+      walkLineRanges(prepared, mid, () => {
+        midLineCount++;
+      });
 
       if (midLineCount <= baseLineCount) {
-        hi = mid
+        hi = mid;
       } else {
-        lo = mid + 1
+        lo = mid + 1;
       }
     }
 
-    return lo
-  }, [prepared, maxWidth])
+    return lo;
+  }, [prepared, maxWidth]);
 }

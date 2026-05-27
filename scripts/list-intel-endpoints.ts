@@ -4,5 +4,7 @@ const sourceFile = project.getSourceFileOrThrow("src/server/api/routers/unified-
 const routerDecl = sourceFile.getVariableDeclarationOrThrow("unifiedIntelligenceRouter");
 const callExpr = routerDecl.getInitializerIfKindOrThrow(SyntaxKind.CallExpression);
 const objExpr = callExpr.getArguments()[0] as ObjectLiteralExpression;
-const endpoints = objExpr.getProperties().filter(p => p.isKind(SyntaxKind.PropertyAssignment)) as PropertyAssignment[];
-console.log(endpoints.map(p => p.getName()).join(", "));
+const endpoints = objExpr
+  .getProperties()
+  .filter((p) => p.isKind(SyntaxKind.PropertyAssignment)) as PropertyAssignment[];
+console.log(endpoints.map((p) => p.getName()).join(", "));

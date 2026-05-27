@@ -85,9 +85,7 @@ export interface UseUnifiedIntelligenceReturn {
   quickActions: ReturnType<typeof api.intelCore.getQuickActions.useQuery>["data"];
   intelligenceFeed: ReturnType<typeof api.intelCore.getIntelligenceFeed.useQuery>["data"];
   analytics: ReturnType<typeof api.intelAnalytics.getAnalytics.useQuery>["data"];
-  diplomaticChannels: ReturnType<
-    typeof api.intelCore.getDiplomaticChannels.useQuery
-  >["data"];
+  diplomaticChannels: ReturnType<typeof api.intelCore.getDiplomaticChannels.useQuery>["data"];
 
   // Loading states
   isLoading: boolean;

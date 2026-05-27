@@ -37,7 +37,8 @@ describe("Stability Guardrails", () => {
 
       // Trigger a simulated WebGL error event
       const webglErrorEvent = new ErrorEvent("error", {
-        message: "WebGL: INVALID_OPERATION: drawElements: texture bound to texture unit 0 is not renderable",
+        message:
+          "WebGL: INVALID_OPERATION: drawElements: texture bound to texture unit 0 is not renderable",
         error: new Error("WebGL error context"),
       });
       window.dispatchEvent(webglErrorEvent);

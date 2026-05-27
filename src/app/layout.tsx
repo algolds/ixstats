@@ -23,6 +23,7 @@ import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
+import { DIPluginProvider } from "~/components/DynamicIsland";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -63,21 +64,23 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
               <ToastProvider>
                 <NotificationBadgeProvider>
                   <GlobalNotificationSystem>
-                    <WebGLErrorHandler />
-                    <MapPrefetcher />
-                    {isStandalone ? (
-                      <div className="flex min-h-screen flex-col">
-                        <Navigation />
-                        <main className="flex-1">{children}</main>
-                      </div>
-                    ) : (
-                      <div className="flex min-h-screen flex-col">
-                        <Navigation />
-                        {/* <GlobalActivityMarquee /> */}
-                        <SetupRedirect />
-                        <main className="flex-1">{children}</main>
-                      </div>
-                    )}
+                    <DIPluginProvider>
+                      <WebGLErrorHandler />
+                      <MapPrefetcher />
+                      {isStandalone ? (
+                        <div className="flex min-h-screen flex-col">
+                          <Navigation />
+                          <main className="flex-1">{children}</main>
+                        </div>
+                      ) : (
+                        <div className="flex min-h-screen flex-col">
+                          <Navigation />
+                          {/* <GlobalActivityMarquee /> */}
+                          <SetupRedirect />
+                          <main className="flex-1">{children}</main>
+                        </div>
+                      )}
+                    </DIPluginProvider>
                   </GlobalNotificationSystem>
                 </NotificationBadgeProvider>
               </ToastProvider>
@@ -97,7 +100,6 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
-
         <ChunkLoadErrorHandler />
         <ChunkLoadErrorBoundary>
           <ClerkProvider

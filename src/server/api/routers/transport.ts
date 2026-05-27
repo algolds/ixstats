@@ -204,7 +204,9 @@ export const transportRouter = createTRPCRouter({
           select: { geometry: true },
         });
         if (countryGeo?.geometry) {
-          const coords = extractBoundaryCoords(countryGeo.geometry as unknown as import("geojson").Geometry);
+          const coords = extractBoundaryCoords(
+            countryGeo.geometry as unknown as import("geojson").Geometry
+          );
           cityNodes = estimateCoastalCities(cityNodes, coords, 50);
         }
       }

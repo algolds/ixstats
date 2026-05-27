@@ -172,29 +172,29 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Info className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Participants
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <BellOff className="mr-2 h-4 w-4" />
-                Mute Notifications
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Archive className="mr-2 h-4 w-4" />
-                Archive Chat
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Conversation
-              </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Info className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Participants
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <BellOff className="mr-2 h-4 w-4" />
+                  Mute Notifications
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive Chat
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Conversation
+                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>

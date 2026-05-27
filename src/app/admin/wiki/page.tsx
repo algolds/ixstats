@@ -43,14 +43,9 @@ interface ScanResult {
 
 // ── Wiki Link Status Section ──────────────────────────────────────────────────
 
-function WikiLinkStatusSection() {
+function WikiLinkStatusSection({ countriesData, isLoading }: { countriesData: any; isLoading: boolean }) {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const { data: countriesData, isLoading } = api.countries.getAll.useQuery(
-    { limit: 500 },
-    { refetchOnWindowFocus: false }
-  );
 
   const countries = useMemo(() => {
     const list = countriesData?.countries ?? countriesData ?? [];
@@ -213,7 +208,7 @@ function WikiLinkStatusSection() {
 
 // ── Manual Link Editor Section ────────────────────────────────────────────────
 
-function ManualLinkEditorSection() {
+function ManualLinkEditorSection({ countriesData }: { countriesData: any }) {
   const [countrySearch, setCountrySearch] = useState("");
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const [wikiPageTitle, setWikiPageTitle] = useState("");
@@ -221,11 +216,6 @@ function ManualLinkEditorSection() {
   const [testResult, setTestResult] = useState<{ success: boolean; intro?: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-
-  const { data: countriesData } = api.countries.getAll.useQuery(
-    { limit: 500 },
-    { refetchOnWindowFocus: false }
-  );
 
   const countries = useMemo(() => {
     const list = countriesData?.countries ?? countriesData ?? [];
@@ -265,9 +255,7 @@ function ManualLinkEditorSection() {
         setTestResult({
           success: true,
           intro:
-            typeof result.data === "string"
-              ? result.data
-              : (result.data.text ?? "Article found"),
+            typeof result.data === "string" ? result.data : (result.data.text ?? "Article found"),
         });
       } else {
         setTestResult({ success: false });
@@ -428,16 +416,11 @@ function ManualLinkEditorSection() {
 
 // ── Bulk Scanner Section ──────────────────────────────────────────────────────
 
-function BulkScannerSection() {
+function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [scanComplete, setScanComplete] = useState(false);
-
-  const { data: countriesData } = api.countries.getAll.useQuery(
-    { limit: 500 },
-    { refetchOnWindowFocus: false }
-  );
 
   const countries = useMemo(() => {
     const list = countriesData?.countries ?? countriesData ?? [];
@@ -704,6 +687,11 @@ function BulkScannerSection() {
 export default function AdminWikiPage() {
   usePageTitle({ title: "Admin - Wiki Management" });
 
+  const { data: countriesData, isLoading } = api.countries.getAll.useQuery(
+    { limit: 500 },
+    { refetchOnWindowFocus: false }
+  );
+
   return (
     <div className="space-y-6">
       <AdminHeader
@@ -712,9 +700,9 @@ export default function AdminWikiPage() {
         description="Manage wiki page links, scan for matches, and configure lore integration"
       />
 
-      <WikiLinkStatusSection />
-      <ManualLinkEditorSection />
-      <BulkScannerSection />
+      <WikiLinkStatusSection countriesData={countriesData} isLoading={isLoading} />
+      <ManualLinkEditorSection countriesData={countriesData} />
+      <BulkScannerSection countriesData={countriesData} />
     </div>
   );
 }

@@ -66,10 +66,8 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
   const [activeSheet, setActiveSheet] = useState<SheetView>(null);
   const [embassyCreatorOpen, setEmbassyCreatorOpen] = useState(false);
 
-  const { data: embassies, refetch: refetchEmbassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const { data: embassies, refetch: refetchEmbassies } =
+    api.diplomaticEmbassies.getEmbassies.useQuery({ countryId }, { enabled: !!countryId });
   const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }

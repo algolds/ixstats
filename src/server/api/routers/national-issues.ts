@@ -608,7 +608,10 @@ export const nationalIssuesRouter = createTRPCRouter({
         });
       }
 
-      const snapshot = await NationalIssuesEngine.buildCountrySnapshot(input.countryId, ctx.db as any);
+      const snapshot = await NationalIssuesEngine.buildCountrySnapshot(
+        input.countryId,
+        ctx.db as any
+      );
       if (!snapshot) {
         throw new TRPCError({
           code: "NOT_FOUND",

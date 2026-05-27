@@ -248,6 +248,10 @@ const createPrismaClient = () => {
     // Blurbs — Topic Tuesday prompts & user responses
     "BlurbPrompt",
     "BlurbResponse",
+    // Polls system
+    "Poll",
+    "PollOption",
+    "PollVote",
   ]);
 
   // In read-only mode, extend the client to block write operations

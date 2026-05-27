@@ -153,8 +153,6 @@ interface EquipmentFormData {
   isActive: boolean;
 }
 
-
-
 // Manufacturer specialties
 const SPECIALTIES = [
   "aircraft",
@@ -1375,7 +1373,9 @@ export default function MilitaryEquipmentPage() {
                 )}
 
                 {/* Equipment Display */}
-                {smallArmsEquipment && smallArmsEquipment.equipment && smallArmsEquipment.equipment.length > 0 ? (
+                {smallArmsEquipment &&
+                smallArmsEquipment.equipment &&
+                smallArmsEquipment.equipment.length > 0 ? (
                   <div className="glass-card-child rounded-xl border border-white/10 p-6">
                     <p className="text-foreground text-sm">
                       {smallArmsEquipment.equipment.length} equipment items available
@@ -2186,7 +2186,8 @@ function AnalyticsContent({
   const totalManufacturers = manufacturerStats.totalManufacturers;
   const avgTechLevel =
     totalEquipment > 0
-      ? allEquipment.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
+      ? allEquipment.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) /
+        totalEquipment
       : 0;
 
   // Prepare chart data
@@ -2490,12 +2491,10 @@ function AnalyticsContent({
                 </thead>
                 <tbody>
                   {deprecationCandidates.map((equipment: any, index: number) => {
-                    const manufacturerName =
-                      (equipment as any).manufacturer ?? "N/A";
+                    const manufacturerName = (equipment as any).manufacturer ?? "N/A";
                     const techLevel =
                       (equipment as any).technologyLevel ??
-                      (equipment as any & { technologyTier?: number })
-                        .technologyTier ??
+                      (equipment as any & { technologyTier?: number }).technologyTier ??
                       null;
 
                     return (

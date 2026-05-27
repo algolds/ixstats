@@ -84,14 +84,15 @@ export function DiplomaticIntelligenceHub({
   >("overview");
 
   // Fetch diplomatic data with periodic refresh
-  const { data: embassies, isLoading: embassiesLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId },
-    {
-      refetchInterval: 60000,
-      staleTime: 30000,
-      enabled: !!countryId,
-    }
-  );
+  const { data: embassies, isLoading: embassiesLoading } =
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId },
+      {
+        refetchInterval: 60000,
+        staleTime: 30000,
+        enabled: !!countryId,
+      }
+    );
 
   const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },

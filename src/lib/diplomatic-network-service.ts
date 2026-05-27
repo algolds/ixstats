@@ -259,10 +259,12 @@ export class DiplomaticNetworkService {
     // Economic Multiplier (1.0 - 2.0)
     // Based on trade relationships and embassy economic specializations
     const tradeRelationships = relationships.filter(
-      (r: any) => (r as any)?.treaties?.includes("Trade Agreement") || (r as any)?.tradeVolume > 100000
+      (r: any) =>
+        (r as any)?.treaties?.includes("Trade Agreement") || (r as any)?.tradeVolume > 100000
     ).length;
     const economicEmbassies = embassies.filter(
-      (e: any) => (e as any)?.specialization === "economic" || (e as any)?.specialization === "trade"
+      (e: any) =>
+        (e as any)?.specialization === "economic" || (e as any)?.specialization === "trade"
     ).length;
 
     const baseEconomicBonus = Math.min(0.5, tradeRelationships * 0.05 + economicEmbassies * 0.08);
@@ -448,9 +450,7 @@ export class DiplomaticNetworkService {
 
     if (
       allianceCandidates.length > 0 &&
-      relationships.filter((r: any) =>
-        (r as any)?.relationship === "alliance"
-      ).length < 3
+      relationships.filter((r: any) => (r as any)?.relationship === "alliance").length < 3
     ) {
       const target = allianceCandidates.sort((a: any, b: any) => b.strength - a.strength)[0];
       opportunities.push({

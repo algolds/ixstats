@@ -251,18 +251,19 @@ export function AccountCreationModal({
     } catch (error: any) {
       // Provide more specific error messages
       let errorMessage = "Failed to create account";
-      
+
       if (error?.data?.code === "CONFLICT") {
         errorMessage = "An account with this username already exists";
       } else if (error?.data?.code === "BAD_REQUEST") {
-        errorMessage = error?.data?.message || "Invalid account information. Please check your entries.";
+        errorMessage =
+          error?.data?.message || "Invalid account information. Please check your entries.";
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       console.error("[Account Creation] Error:", error);
       notify.error(errorMessage);
-      
+
       // Set form error if username conflict
       if (error?.data?.code === "CONFLICT" && error?.data?.field === "username") {
         setErrors((prev) => ({ ...prev, username: "This username is already taken" }));

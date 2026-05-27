@@ -34,19 +34,10 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 ];
 
 /** Critical layers load first — altitudes are the terrain base, must render with map */
-const CRITICAL_LAYERS: MapLayerType[] = [
-  "background",
-  "altitudes",
-  "political",
-  "country_labels",
-];
+const CRITICAL_LAYERS: MapLayerType[] = ["background", "altitudes", "political", "country_labels"];
 
 /** Decorative layers load in a deferred second request */
-const DECORATIVE_LAYERS: MapLayerType[] = [
-  "rivers",
-  "lakes",
-  "icecaps",
-];
+const DECORATIVE_LAYERS: MapLayerType[] = ["rivers", "lakes", "icecaps"];
 
 export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
@@ -83,10 +74,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
   const extraDecorativeLayers = useMemo(() => {
     const extra: MapLayerType[] = [];
     for (const layer of visibleLayers) {
-      if (
-        !CRITICAL_LAYERS.includes(layer) &&
-        !DECORATIVE_LAYERS.includes(layer)
-      ) {
+      if (!CRITICAL_LAYERS.includes(layer) && !DECORATIVE_LAYERS.includes(layer)) {
         extra.push(layer);
       }
     }
@@ -114,10 +102,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     [extraDecorativeLayers]
   );
 
-  const {
-    data: decorativeData,
-    isLoading: _decorativeLoading,
-  } = api.geoCore.getWorldMap.useQuery(
+  const { data: decorativeData, isLoading: _decorativeLoading } = api.geoCore.getWorldMap.useQuery(
     { layers: decorativeLayersToFetch, zoom: zoomParam },
     {
       ...MAP_QUERY_OPTIONS,
@@ -204,4 +189,3 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     capitalsGeoJson,
   };
 }
-

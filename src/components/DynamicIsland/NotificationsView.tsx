@@ -184,7 +184,12 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   // Group by time
   const groups: { label: string; items: any[] }[] = [];
-  const buckets = { Recent: [] as any[], "Earlier Today": [] as any[], "This Week": [] as any[], Earlier: [] as any[] };
+  const buckets = {
+    Recent: [] as any[],
+    "Earlier Today": [] as any[],
+    "This Week": [] as any[],
+    Earlier: [] as any[],
+  };
 
   for (const n of allNotifications) {
     const hrs = (Date.now() - new Date(n.timestamp || n.createdAt || 0).getTime()) / 3600000;
@@ -290,13 +295,11 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                     >
                       <ChevronRight className="text-muted-foreground/40 h-3 w-3" />
                     </motion.div>
-                    <span className="text-muted-foreground/60 text-[11px] font-semibold uppercase tracking-wider">
+                    <span className="text-muted-foreground/60 text-[11px] font-semibold tracking-wider uppercase">
                       {group.label}
                     </span>
                   </div>
-                  <span className="text-muted-foreground/40 text-[10px]">
-                    {group.items.length}
-                  </span>
+                  <span className="text-muted-foreground/40 text-[10px]">{group.items.length}</span>
                 </button>
 
                 {/* Items */}
@@ -382,9 +385,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
             <div className="text-muted-foreground text-sm font-medium">
               {isExecutiveMode ? "Situation stable" : "All caught up"}
             </div>
-            <div className="text-muted-foreground/50 mt-1 text-xs">
-              No notifications right now
-            </div>
+            <div className="text-muted-foreground/50 mt-1 text-xs">No notifications right now</div>
           </div>
         )}
       </div>

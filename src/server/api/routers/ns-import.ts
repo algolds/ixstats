@@ -413,7 +413,8 @@ export const nsImportRouter = createTRPCRouter({
         if (msg === "RATE_LIMIT") {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
-            message: "NationStates API rate limit exceeded. Please wait a few minutes and try again.",
+            message:
+              "NationStates API rate limit exceeded. Please wait a few minutes and try again.",
           });
         }
         if (msg === "SERVER_ERROR") {
@@ -656,7 +657,7 @@ export const nsImportRouter = createTRPCRouter({
         });
       }
 
-       const nationName = verification.nationName;
+      const nationName = verification.nationName;
       // Fetch deck from NS API
       let deckData;
       try {
@@ -666,7 +667,8 @@ export const nsImportRouter = createTRPCRouter({
         if (msg === "RATE_LIMIT") {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
-            message: "NationStates API rate limit exceeded. Please wait a few minutes and try again.",
+            message:
+              "NationStates API rate limit exceeded. Please wait a few minutes and try again.",
           });
         }
         if (msg === "SERVER_ERROR") {

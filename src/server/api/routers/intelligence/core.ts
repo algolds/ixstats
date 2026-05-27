@@ -27,7 +27,17 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notification-api";
 import type { CrisisEvent, EconomicIndicator } from "~/types/sdi";
-import { classificationSchema, prioritySchema, actionTypeSchema, cabinetMeetingSchema, quickActionSchema, diplomaticMessageSchema, securityThreatSchema, strategicPlanSchema, economicPolicySchema } from "../../schemas/intelligence";
+import {
+  classificationSchema,
+  prioritySchema,
+  actionTypeSchema,
+  cabinetMeetingSchema,
+  quickActionSchema,
+  diplomaticMessageSchema,
+  securityThreatSchema,
+  strategicPlanSchema,
+  economicPolicySchema,
+} from "../../schemas/intelligence";
 
 // ===== SCHEMAS =====
 // ===== UNIFIED INTELLIGENCE ROUTER =====
@@ -1464,7 +1474,9 @@ function calculateVolatility(data: Record<string, unknown>[]) {
   if (data.length < 2) return { gdp: 0, population: 0, overall: 0 };
 
   const gdpValues = data.map((d) => d.totalGdp).filter((v): v is number => typeof v === "number");
-  const populationValues = data.map((d) => d.population).filter((v): v is number => typeof v === "number");
+  const populationValues = data
+    .map((d) => d.population)
+    .filter((v): v is number => typeof v === "number");
 
   return {
     gdp: calculateStandardDeviation(gdpValues),
@@ -1483,8 +1495,12 @@ function calculateTrends(data: Record<string, unknown>[]) {
   const recent = data.slice(0, 10);
   const older = data.slice(10, 20);
 
-  const recentAvgGdp = recent.reduce((sum, d) => sum + (typeof d.totalGdp === "number" ? d.totalGdp : 0), 0) / recent.length;
-  const olderAvgGdp = older.reduce((sum, d) => sum + (typeof d.totalGdp === "number" ? d.totalGdp : 0), 0) / older.length;
+  const recentAvgGdp =
+    recent.reduce((sum, d) => sum + (typeof d.totalGdp === "number" ? d.totalGdp : 0), 0) /
+    recent.length;
+  const olderAvgGdp =
+    older.reduce((sum, d) => sum + (typeof d.totalGdp === "number" ? d.totalGdp : 0), 0) /
+    older.length;
 
   const gdpTrend =
     recentAvgGdp > olderAvgGdp * 1.02
@@ -1583,24 +1599,27 @@ function generatePredictiveModels(
   const periods = timeframePeriods[input.timeframe as keyof typeof timeframePeriods] || 12;
   const baseGrowthRate = (country.adjustedGdpGrowth as number) || 0.03;
 
-  const scenarios = (Array.isArray(input.scenarios) ? input.scenarios : []).map((scenario: string) => {
-    const multiplier = scenario === "optimistic" ? 1.5 : scenario === "pessimistic" ? 0.5 : 1.0;
+  const scenarios = (Array.isArray(input.scenarios) ? input.scenarios : []).map(
+    (scenario: string) => {
+      const multiplier = scenario === "optimistic" ? 1.5 : scenario === "pessimistic" ? 0.5 : 1.0;
 
-    const projectedGdp =
-      (country.currentTotalGdp as number) * Math.pow(1 + baseGrowthRate * multiplier, periods / 12);
-    const projectedPopulation =
-      (country.currentPopulation as number) *
-      Math.pow(1 + ((country.populationGrowthRate as number) || 0.01), periods / 12);
-    const projectedGdpPerCapita = projectedGdp / projectedPopulation;
+      const projectedGdp =
+        (country.currentTotalGdp as number) *
+        Math.pow(1 + baseGrowthRate * multiplier, periods / 12);
+      const projectedPopulation =
+        (country.currentPopulation as number) *
+        Math.pow(1 + ((country.populationGrowthRate as number) || 0.01), periods / 12);
+      const projectedGdpPerCapita = projectedGdp / projectedPopulation;
 
-    return {
-      scenario,
-      projectedGdp,
-      projectedPopulation,
-      projectedGdpPerCapita,
-      confidence: scenario === "realistic" ? 85 : scenario === "optimistic" ? 65 : 70,
-    };
-  });
+      return {
+        scenario,
+        projectedGdp,
+        projectedPopulation,
+        projectedGdpPerCapita,
+        confidence: scenario === "realistic" ? 85 : scenario === "optimistic" ? 65 : 70,
+      };
+    }
+  );
 
   return {
     timeframe: input.timeframe,

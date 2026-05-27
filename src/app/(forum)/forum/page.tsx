@@ -89,7 +89,7 @@ export default function ForumIndexPage() {
         <div className="mb-4 flex items-center gap-2">
           <Link
             href={withBasePath("/forum")}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--forum-text-dim)] transition-colors hover:text-[var(--forum-text-muted)]"
           >
             <HomeIcon className="h-3.5 w-3.5" />
             All Forums

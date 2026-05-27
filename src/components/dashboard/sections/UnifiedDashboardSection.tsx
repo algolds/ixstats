@@ -27,6 +27,7 @@ import {
   Map as MapIcon,
   ChevronDown,
   Settings,
+  X,
 } from "lucide-react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -58,6 +59,7 @@ import { RepostModal } from "~/components/thinkpages/RepostModal";
 import { renderDiscordEmojis } from "~/lib/text-formatter";
 import { sanitizeUserContent } from "~/lib/sanitize-html";
 
+import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
 import { SimpleFlag } from "~/components/SimpleFlag";
@@ -89,20 +91,70 @@ const SOURCE_CONFIG: Record<
 };
 
 // Contextual label for IxStats activities based on metadata/category
-function getActivityLabel(activity: any): { label: string; icon: typeof Rss; color: string; bg: string } {
+function getActivityLabel(activity: any): {
+  label: string;
+  icon: typeof Rss;
+  color: string;
+  bg: string;
+} {
   const cat = activity.category ?? activity.content?.metadata?.category ?? "";
   const title = (activity.content?.title ?? "").toLowerCase();
   // Specific map feature types (check before generic "map")
-  if (title.includes("point of interest") || title.includes("poi")) return { label: "POI", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (title.includes("city") || title.includes("settlement")) return { label: "City", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (title.includes("subdivision") || title.includes("province") || title.includes("state") || title.includes("region")) return { label: "Subdivision", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (cat === "map" || title.includes("map") || title.includes("claim")) return { label: "Maps", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (cat === "economic" || title.includes("gdp") || title.includes("econom") || title.includes("trade")) return { label: "Economy", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (cat === "diplomatic" || title.includes("embassy") || title.includes("diplom") || title.includes("treaty")) return { label: "Diplomacy", icon: Globe, color: "text-cyan-400", bg: "bg-cyan-500/10" };
-  if (cat === "military" || title.includes("military") || title.includes("defense") || title.includes("deploy")) return { label: "Defense", icon: Shield, color: "text-red-400", bg: "bg-red-500/10" };
-  if (cat === "political" || title.includes("govern") || title.includes("politic") || title.includes("election")) return { label: "Politics", icon: Landmark, color: "text-purple-400", bg: "bg-purple-500/10" };
-  if (cat === "crisis" || title.includes("crisis")) return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
-  if (cat === "achievement" || title.includes("tier") || title.includes("achieve")) return { label: "Achievement", icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" };
+  if (title.includes("point of interest") || title.includes("poi"))
+    return { label: "POI", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (title.includes("city") || title.includes("settlement"))
+    return { label: "City", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (
+    title.includes("subdivision") ||
+    title.includes("province") ||
+    title.includes("state") ||
+    title.includes("region")
+  )
+    return {
+      label: "Subdivision",
+      icon: MapIcon,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+    };
+  if (cat === "map" || title.includes("map") || title.includes("claim"))
+    return { label: "Maps", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+  if (
+    cat === "economic" ||
+    title.includes("gdp") ||
+    title.includes("econom") ||
+    title.includes("trade")
+  )
+    return {
+      label: "Economy",
+      icon: TrendingUp,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+    };
+  if (
+    cat === "diplomatic" ||
+    title.includes("embassy") ||
+    title.includes("diplom") ||
+    title.includes("treaty")
+  )
+    return { label: "Diplomacy", icon: Globe, color: "text-cyan-400", bg: "bg-cyan-500/10" };
+  if (
+    cat === "military" ||
+    title.includes("military") ||
+    title.includes("defense") ||
+    title.includes("deploy")
+  )
+    return { label: "Defense", icon: Shield, color: "text-red-400", bg: "bg-red-500/10" };
+  if (
+    cat === "political" ||
+    title.includes("govern") ||
+    title.includes("politic") ||
+    title.includes("election")
+  )
+    return { label: "Politics", icon: Landmark, color: "text-purple-400", bg: "bg-purple-500/10" };
+  if (cat === "crisis" || title.includes("crisis"))
+    return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
+  if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
+    return { label: "Achievement", icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" };
   return { label: "Activity", icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10" };
 }
 
@@ -183,7 +235,8 @@ function groupRepeatedActivities(activities: any[]): any[] {
         const b = activities[j];
         if (
           b.source === "activity" &&
-          (b.user?.countryName ?? b.user?.countryId ?? b.user?.name ?? b.user?.id ?? "") === groupKey &&
+          (b.user?.countryName ?? b.user?.countryId ?? b.user?.name ?? b.user?.id ?? "") ===
+            groupKey &&
           getActivityLabel(b).label === label &&
           Math.abs(new Date(b.timestamp).getTime() - aTime) < ACTIVITY_GROUP_WINDOW_MS
         ) {
@@ -363,6 +416,21 @@ export function UnifiedDashboardSection({
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
+  const [isNoticeDismissed, setIsNoticeDismissed] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const dismissed = localStorage.getItem("ixstats:dismissed:thinkpages-notice") === "true";
+      setIsNoticeDismissed(dismissed);
+    }
+  }, []);
+
+  const handleDismissNotice = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ixstats:dismissed:thinkpages-notice", "true");
+    }
+    setIsNoticeDismissed(true);
+  };
 
   const TRENDING_LIMIT = 5;
 
@@ -606,62 +674,94 @@ export function UnifiedDashboardSection({
       animate="show"
       className="space-y-4 sm:space-y-6"
     >
-      {/* Feed Tab Bar */}
-      <motion.div variants={staggerItem}>
-        <div className="glass-surface glass-refraction relative flex gap-1 rounded-xl p-1">
-          {/* Sliding indicator behind active tab */}
-          <motion.div
-            className="absolute inset-y-1 rounded-lg bg-white/8"
-            layout
-            layoutId="feed-tab-indicator"
-            style={{
-              width: `${100 / TABS.length}%`,
-              left: `${(TABS.findIndex((t) => t.id === activeTab) / TABS.length) * 100}%`,
-            }}
-            transition={{ type: "spring", stiffness: 350, damping: 30 }}
-          />
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <motion.button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-200",
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              >
-                <Icon
-                  className={cn(
-                    "h-3.5 w-3.5 transition-colors duration-200",
-                    isActive && "text-indigo-400"
-                  )}
-                />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </motion.button>
-            );
-          })}
-          {/* Settings gear */}
-          <button
-            onClick={() => setIsAccountModalOpen(true)}
-            className="text-muted-foreground hover:text-foreground hover:bg-white/5 relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors"
-            title="Feed & Account Settings"
-          >
-            <Settings className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </motion.div>
-
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
           {/* Feed stream (left 2/3) */}
           <div className="space-y-4 lg:col-span-2">
+            {/* Feed Tab Bar */}
+            <motion.div variants={staggerItem}>
+              <div className="glass-surface glass-refraction relative flex gap-1 rounded-xl p-1">
+                {/* Sliding indicator behind active tab */}
+                <motion.div
+                  className="absolute inset-y-1 rounded-lg bg-white/8"
+                  layout
+                  layoutId="feed-tab-indicator"
+                  style={{
+                    width: `${100 / TABS.length}%`,
+                    left: `${(TABS.findIndex((t) => t.id === activeTab) / TABS.length) * 100}%`,
+                  }}
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                />
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <motion.button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-200",
+                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      )}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-3.5 w-3.5 transition-colors duration-200",
+                          isActive && "text-indigo-400"
+                        )}
+                      />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </motion.button>
+                  );
+                })}
+                {/* Settings gear */}
+                <button
+                  onClick={() => setIsAccountModalOpen(true)}
+                  className="text-muted-foreground hover:text-foreground relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-white/5"
+                  title="Feed & Account Settings"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </motion.div>
+
+            {/* ThinkPages Account Creation Dismissible Notice */}
+            {isSignedIn && hasCountry && accounts.length === 0 && !isNoticeDismissed && (
+              <motion.div
+                variants={staggerItem}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-surface glass-refraction flex items-center justify-between gap-3 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Newspaper className="h-4.5 w-4.5 shrink-0 text-purple-400" />
+                  <div>
+                    <p className="text-foreground text-xs font-medium">
+                      Create a ThinkPages Account to publish posts.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAccountCreation(true)}
+                    className="h-7 shrink-0 text-xs"
+                  >
+                    Create Account
+                  </Button>
+                  <button
+                    onClick={handleDismissNotice}
+                    className="text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors hover:bg-white/5"
+                    title="Dismiss notice"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
             {/* ThinkPages Composer integrated on top of the stream */}
             {activeTab !== "community" && isSignedIn && (
               <div className="mb-4">
@@ -687,23 +787,7 @@ export function UnifiedDashboardSection({
                       </Link>
                     </CardContent>
                   </Card>
-                ) : accounts.length === 0 ? (
-                  <div className="flex items-center justify-between gap-3 rounded-lg border border-purple-500/20 bg-purple-500/5 px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <Newspaper className="h-4 w-4 shrink-0 text-purple-400" />
-                      <p className="text-foreground text-xs font-medium">
-                        Create a ThinkPages Account to publish posts.
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => setShowAccountCreation(true)}
-                      className="h-7 shrink-0 text-xs"
-                    >
-                      Create Account
-                    </Button>
-                  </div>
-                ) : selectedAccount ? (
+                ) : accounts.length === 0 ? null : selectedAccount ? (
                   <div className="space-y-2">
                     <GlassCanvasComposer
                       account={selectedAccount}
@@ -792,19 +876,26 @@ export function UnifiedDashboardSection({
           {/* Sidebar (right 1/3): Community widgets */}
           <div className="space-y-4 md:sticky md:top-6 md:self-start lg:col-span-1">
             {/* Trending Now — Compact */}
-            <CutoutCard className={cn(cutoutCardSurfaceClassName, "no-wiki-tooltip rounded-xl overflow-hidden")}
+            <CutoutCard
+              className={cn(
+                cutoutCardSurfaceClassName,
+                "no-wiki-tooltip overflow-hidden rounded-xl"
+              )}
               trackPointerHover={false}
             >
               {/* Cutout tab header */}
               <div className="relative bg-orange-500/10 px-4 pt-3 pb-5">
-                <div className="flex items-center gap-2 text-sm font-bold text-card-foreground">
+                <div className="text-card-foreground flex items-center gap-2 text-sm font-bold">
                   <Flame className="h-4.5 w-4.5 text-orange-400" />
                   Trending
                 </div>
-                <CutoutCorner className="absolute -bottom-px left-0 text-card" size={20} />
-                <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={20} />
+                <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
+                <CutoutCorner
+                  className="text-card absolute right-0 -bottom-px -scale-x-100"
+                  size={20}
+                />
               </div>
-              <CutoutCardContent className="px-4 pb-4 pt-0 space-y-3">
+              <CutoutCardContent className="space-y-3 px-4 pt-0 pb-4">
                 <div className="space-y-1">
                   {trendingItems.length === 0 && (
                     <p className="text-muted-foreground py-6 text-center text-[11px]">
@@ -915,19 +1006,23 @@ export function UnifiedDashboardSection({
 
             {/* Economic Tier Distribution */}
             {globalStats?.economicTierDistribution && (
-              <CutoutCard className={cn(cutoutCardSurfaceClassName, "rounded-xl overflow-hidden")}
+              <CutoutCard
+                className={cn(cutoutCardSurfaceClassName, "overflow-hidden rounded-xl")}
                 trackPointerHover={false}
               >
                 {/* Cutout tab header */}
                 <div className="relative bg-emerald-500/10 px-4 pt-3 pb-5">
-                  <div className="flex items-center gap-2 text-sm font-bold text-card-foreground">
+                  <div className="text-card-foreground flex items-center gap-2 text-sm font-bold">
                     <Globe className="h-4.5 w-4.5 text-emerald-500" />
                     Economic Tiers
                   </div>
-                  <CutoutCorner className="absolute -bottom-px left-0 text-card" size={20} />
-                  <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={20} />
+                  <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
+                  <CutoutCorner
+                    className="text-card absolute right-0 -bottom-px -scale-x-100"
+                    size={20}
+                  />
                 </div>
-                <CutoutCardContent className="px-4 pb-4 pt-0">
+                <CutoutCardContent className="px-4 pt-0 pb-4">
                   <div className="flex flex-wrap items-center gap-1">
                     {Object.entries(globalStats.economicTierDistribution).map(([tier, count]) => (
                       <div
@@ -1341,19 +1436,20 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
   if (!randomCountries || randomCountries.length === 0) return null;
 
   return (
-    <CutoutCard className={cn(cutoutCardSurfaceClassName, "rounded-xl overflow-hidden")}
+    <CutoutCard
+      className={cn(cutoutCardSurfaceClassName, "overflow-hidden rounded-xl")}
       trackPointerHover={false}
     >
       {/* Cutout tab header */}
       <div className="relative bg-blue-500/10 px-4 pt-3 pb-5">
-        <div className="flex items-center gap-2 text-sm font-bold text-card-foreground">
+        <div className="text-card-foreground flex items-center gap-2 text-sm font-bold">
           <Users className="h-4.5 w-4.5 text-blue-400" />
           Countries to Explore
         </div>
-        <CutoutCorner className="absolute -bottom-px left-0 text-card" size={20} />
-        <CutoutCorner className="absolute -bottom-px right-0 -scale-x-100 text-card" size={20} />
+        <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
+        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={20} />
       </div>
-      <CutoutCardContent className="px-4 pb-4 pt-0">
+      <CutoutCardContent className="px-4 pt-0 pb-4">
         <div className="space-y-1.5">
           {randomCountries.map((c) => {
             const isFollowed = followedIds.has(c.id);
@@ -1437,7 +1533,9 @@ function BlurbSection() {
       <div className="border-border/20 border-t pt-2.5">
         <div className="mb-1.5 flex items-center gap-1.5">
           <MessageCircle className="h-3 w-3 text-purple-400" />
-          <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Blurb of the Day</span>
+          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Blurb of the Day
+          </span>
         </div>
         <div className="border-border/30 bg-muted/20 rounded-lg border p-2.5">
           <p className="text-foreground text-[11px] leading-relaxed italic">
@@ -1457,11 +1555,7 @@ function BlurbSection() {
         </div>
       </div>
 
-      <BlurbResponseModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        prompt={prompt}
-      />
+      <BlurbResponseModal open={modalOpen} onClose={() => setModalOpen(false)} prompt={prompt} />
     </>
   );
 }
@@ -1473,7 +1567,13 @@ function BlurbResponseModal({
 }: {
   open: boolean;
   onClose: () => void;
-  prompt: { id: string; title?: string; question: string; slug?: string; _count?: { responses: number } };
+  prompt: {
+    id: string;
+    title?: string;
+    question: string;
+    slug?: string;
+    _count?: { responses: number };
+  };
 }) {
   const {
     data: responsesData,
@@ -1610,9 +1710,14 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
 
   const titleText = activity.content?.title ?? "";
   // For wiki items, strip the "Wiki edit: " or "New wiki page: " prefix — we show the page title as a link
-  const displayTitle = isWiki && wikiPageTitle
-    ? (activity._isNew ? "New page created" : isGrouped ? "" : titleText.replace(/^(Wiki edit|New wiki page):\s*/i, ""))
-    : titleText;
+  const displayTitle =
+    isWiki && wikiPageTitle
+      ? activity._isNew
+        ? "New page created"
+        : isGrouped
+          ? ""
+          : titleText.replace(/^(Wiki edit|New wiki page):\s*/i, "")
+      : titleText;
   const titleHtml = displayTitle ? sanitizeUserContent(renderDiscordEmojis(displayTitle)) : "";
 
   const descHtml = activity.content?.description
@@ -1630,11 +1735,7 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
           )}
         >
           {isWiki ? (
-            <img
-              src="https://cdn.simpleicons.org/wikipedia/teal"
-              alt="Wiki"
-              className="h-4 w-4"
-            />
+            <img src="https://cdn.simpleicons.org/wikipedia/teal" alt="Wiki" className="h-4 w-4" />
           ) : (
             <Icon className={cn("h-4 w-4", resolvedConfig.color)} />
           )}
@@ -1666,7 +1767,7 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               </Badge>
             )}
             {activity._isNew && (
-              <Badge className="shrink-0 bg-teal-500/15 text-[9px] text-teal-500 border-teal-500/30">
+              <Badge className="shrink-0 border-teal-500/30 bg-teal-500/15 text-[9px] text-teal-500">
                 NEW
               </Badge>
             )}
@@ -1678,24 +1779,33 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               {isWiki ? (
                 /* Wiki: byte-count summary */
                 <p className="text-muted-foreground text-xs">
-                  <span className="text-foreground font-medium">{activity._editCount}</span> edits by{" "}
+                  <span className="text-foreground font-medium">{activity._editCount}</span> edits
+                  by{" "}
                   <span className="text-foreground font-medium">
                     {activity._editors.length === 1
                       ? activity._editors[0]
                       : `${activity._editors.length} editors`}
                   </span>
                   {" · "}
-                  <span className={cn(
-                    "font-medium",
-                    activity._totalBytes > 0 ? "text-emerald-500" : activity._totalBytes < 0 ? "text-red-500" : "text-muted-foreground"
-                  )}>
-                    {activity._totalBytes > 0 ? "+" : ""}{activity._totalBytes} bytes
+                  <span
+                    className={cn(
+                      "font-medium",
+                      activity._totalBytes > 0
+                        ? "text-emerald-500"
+                        : activity._totalBytes < 0
+                          ? "text-red-500"
+                          : "text-muted-foreground"
+                    )}
+                  >
+                    {activity._totalBytes > 0 ? "+" : ""}
+                    {activity._totalBytes} bytes
                   </span>
                 </p>
               ) : (
                 /* IxStats activity: count summary */
                 <p className="text-muted-foreground text-xs">
-                  <span className="text-foreground font-medium">{activity._editCount}</span> updates by{" "}
+                  <span className="text-foreground font-medium">{activity._editCount}</span> updates
+                  by{" "}
                   <span className="text-foreground font-medium">
                     {activity._editors?.[0] ?? "unknown"}
                   </span>
@@ -1705,10 +1815,13 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               {activity._subEdits.length > 1 && (
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="text-muted-foreground hover:text-foreground mt-1 flex items-center gap-0.5 text-[10px] transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground mt-1 flex cursor-pointer items-center gap-0.5 text-[10px] transition-colors"
                 >
-                  <ChevronDown className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")} />
-                  {expanded ? "Hide" : "Show"} {activity._subEdits.length} {isWiki ? "edits" : "items"}
+                  <ChevronDown
+                    className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")}
+                  />
+                  {expanded ? "Hide" : "Show"} {activity._subEdits.length}{" "}
+                  {isWiki ? "edits" : "items"}
                 </button>
               )}
               {expanded && (
@@ -1719,7 +1832,9 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
                     const display = isWiki ? subDesc.slice(0, 80) : subTitle.slice(0, 80);
                     return (
                       <div key={i} className="text-muted-foreground text-[10px]">
-                        <span className="text-foreground/70 font-medium">{sub.user?.name ?? "?"}</span>
+                        <span className="text-foreground/70 font-medium">
+                          {sub.user?.name ?? "?"}
+                        </span>
                         {" · "}
                         <span>{display}</span>
                         {" · "}
@@ -1730,6 +1845,8 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
                 </div>
               )}
             </div>
+          ) : activity.poll ? (
+            <FeedPollWidget poll={activity.poll} />
           ) : descHtml ? (
             <p
               className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
@@ -1743,13 +1860,13 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               <Clock className="h-3 w-3" />
               {formatTimeAgo(new Date(activity.timestamp))}
             </span>
-            {!isGrouped && activity.user?.name && (
-              isWiki ? (
+            {!isGrouped &&
+              activity.user?.name &&
+              (isWiki ? (
                 <WikiAuthorPopover username={activity.user.name} />
-              ) : (
+              ) : activity.poll && activity.user.name === "User" ? null : (
                 <span>by {activity.user.name}</span>
-              )
-            )}
+              ))}
             {isGrouped && activity._editors.length <= 3 && (
               <span className="flex items-center gap-1">
                 {activity._editors.map((editor: string, idx: number) => (
@@ -1819,7 +1936,7 @@ function WikiAuthorPopover({ username }: { username: string }) {
           side="top"
           align="start"
           sideOffset={4}
-          className="bg-popover border-border/50 z-50 w-56 rounded-xl border p-3 shadow-lg animate-in fade-in-0 zoom-in-95"
+          className="bg-popover border-border/50 animate-in fade-in-0 zoom-in-95 z-50 w-56 rounded-xl border p-3 shadow-lg"
         >
           {isLoading ? (
             <div className="space-y-2">
@@ -1831,7 +1948,11 @@ function WikiAuthorPopover({ username }: { username: string }) {
               {/* Header */}
               <div className="flex items-center gap-2">
                 {author?.country?.flag ? (
-                  <SimpleFlag countryName={author.country.name ?? ""} size="sm" className="shrink-0" />
+                  <SimpleFlag
+                    countryName={author.country.name ?? ""}
+                    size="sm"
+                    className="shrink-0"
+                  />
                 ) : (
                   <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-teal-500/10">
                     <Users className="h-3 w-3 text-teal-400" />
@@ -1851,7 +1972,9 @@ function WikiAuthorPopover({ username }: { username: string }) {
               {/* Country info badge */}
               {author?.country?.economicTier && (
                 <div className="text-muted-foreground text-[10px]">
-                  <span className="text-foreground/70 font-medium">{author.country.economicTier}</span>
+                  <span className="text-foreground/70 font-medium">
+                    {author.country.economicTier}
+                  </span>
                   {author.country.leader && <span> · Led by {author.country.leader}</span>}
                 </div>
               )}
@@ -1908,4 +2031,3 @@ function WikiAuthorPopover({ username }: { username: string }) {
     </HoverCardPrimitive.Root>
   );
 }
-

@@ -402,6 +402,8 @@ model ActivityFeed {
   activityComments ActivityComment[]
   activityLikes    ActivityLike[]
   activityShares   ActivityShare[]
+  pollId           String?
+  poll             Poll?             @relation(fields: [pollId], references: [id], onDelete: Cascade)
 
   @@index([type])
   @@index([category])
@@ -410,6 +412,7 @@ model ActivityFeed {
   @@index([priority])
   @@index([createdAt])
   @@index([visibility])
+  @@index([pollId])
 }
 
 model ActivityLike {
@@ -447,5 +450,52 @@ model ActivityShare {
 
   @@unique([activityId, userId])
   @@index([activityId])
+  @@index([userId])
+}
+
+model Poll {
+  id               String         @id @default(cuid())
+  question         String
+  description      String?
+  pollType         String         @default("choice") // "choice", "feature-poll", "feature-voting"
+  multiple         Boolean        @default(false)
+  isActive         Boolean        @default(true)
+  endDate          DateTime?
+  countryId        String?        // Target country (optional, if null, global)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  options          PollOption[]
+  votes            PollVote[]
+  activityFeeds    ActivityFeed[]
+
+  country          Country?       @relation("CountryPolls", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([isActive])
+}
+
+model PollOption {
+  id          String     @id @default(cuid())
+  pollId      String
+  label       String
+  description String?
+  votes       PollVote[]
+  poll        Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id         String     @id @default(cuid())
+  pollId     String
+  optionId   String
+  userId     String     // clerkUserId
+  createdAt  DateTime   @default(now())
+  poll       Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option     PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, optionId, userId])
+  @@index([pollId])
+  @@index([optionId])
   @@index([userId])
 }

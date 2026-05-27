@@ -17,43 +17,40 @@
  * Powered by Pretext by Cheng Lou — github.com/chenglou/pretext
  */
 
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "~/lib/utils"
-import {
-  usePretextWithSegments,
-  useShrinkwrap,
-} from "~/lib/pretext/use-pretext"
+import * as React from "react";
+import { cn } from "~/lib/utils";
+import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
 
 interface ChatMessage {
   /** Message text content. */
-  text: string
+  text: string;
   /** Whether the message was sent by the current user. */
-  sent?: boolean
+  sent?: boolean;
   /** Timestamp string (e.g. "2:34 PM"). */
-  timestamp?: string
+  timestamp?: string;
 }
 
 interface ChatBubbleProps extends Omit<React.ComponentProps<"div">, "children"> {
   /** Message text. */
-  text: string
+  text: string;
   /** Sent by current user. @default false */
-  sent?: boolean
+  sent?: boolean;
   /** Timestamp label. */
-  timestamp?: string
+  timestamp?: string;
   /** Enable Pretext shrinkwrap to eliminate dead space. @default true */
-  shrinkwrap?: boolean
+  shrinkwrap?: boolean;
   /** Maximum bubble width in pixels. @default 280 */
-  maxWidth?: number
+  maxWidth?: number;
   /** CSS font shorthand for Pretext measurement. Must match the rendered font.
    * @default '15px/20px ui-sans-serif, system-ui, sans-serif' */
-  font?: string
+  font?: string;
 }
 
-const BUBBLE_PADDING_X = 24
-const DEFAULT_MAX_WIDTH = 280
-const DEFAULT_FONT = "15px ui-sans-serif, system-ui, sans-serif"
+const BUBBLE_PADDING_X = 24;
+const DEFAULT_MAX_WIDTH = 280;
+const DEFAULT_FONT = "15px ui-sans-serif, system-ui, sans-serif";
 
 function ChatBubble({
   text,
@@ -65,25 +62,22 @@ function ChatBubble({
   className,
   ...props
 }: ChatBubbleProps) {
-  const textMaxWidth = Math.max(1, maxWidth - BUBBLE_PADDING_X)
+  const textMaxWidth = Math.max(1, maxWidth - BUBBLE_PADDING_X);
 
-  const prepared = usePretextWithSegments(text, font)
-  const shrinkwrappedWidth = useShrinkwrap(prepared, textMaxWidth)
+  const prepared = usePretextWithSegments(text, font);
+  const shrinkwrappedWidth = useShrinkwrap(prepared, textMaxWidth);
 
-  const bubbleWidth = shrinkwrap && shrinkwrappedWidth > 0
-    ? Math.min(maxWidth, shrinkwrappedWidth + BUBBLE_PADDING_X)
-    : undefined
+  const bubbleWidth =
+    shrinkwrap && shrinkwrappedWidth > 0
+      ? Math.min(maxWidth, shrinkwrappedWidth + BUBBLE_PADDING_X)
+      : undefined;
 
   return (
     <div
       data-slot="chat-bubble"
       data-sent={sent ? "" : undefined}
       data-received={!sent ? "" : undefined}
-      className={cn(
-        "flex flex-col gap-1",
-        sent ? "items-end" : "items-start",
-        className,
-      )}
+      className={cn("flex flex-col gap-1", sent ? "items-end" : "items-start", className)}
       {...props}
     >
       <div
@@ -91,7 +85,7 @@ function ChatBubble({
           "rounded-2xl px-3 py-2 text-[15px] leading-5 break-words",
           sent
             ? "bg-primary text-primary-foreground rounded-br-sm"
-            : "bg-muted text-foreground rounded-bl-sm",
+            : "bg-muted text-foreground rounded-bl-sm"
         )}
         style={{
           maxWidth,
@@ -100,24 +94,20 @@ function ChatBubble({
       >
         {text}
       </div>
-      {timestamp && (
-        <span className="px-1 text-[11px] text-muted-foreground">
-          {timestamp}
-        </span>
-      )}
+      {timestamp && <span className="text-muted-foreground px-1 text-[11px]">{timestamp}</span>}
     </div>
-  )
+  );
 }
 
 interface ChatThreadProps extends Omit<React.ComponentProps<"div">, "children"> {
   /** Array of messages to display. */
-  messages: ChatMessage[]
+  messages: ChatMessage[];
   /** Enable Pretext shrinkwrap on all bubbles. @default true */
-  shrinkwrap?: boolean
+  shrinkwrap?: boolean;
   /** Maximum bubble width in pixels. @default 280 */
-  maxWidth?: number
+  maxWidth?: number;
   /** CSS font shorthand for Pretext measurement. @default '15px ui-sans-serif, system-ui, sans-serif' */
-  font?: string
+  font?: string;
 }
 
 function ChatThread({
@@ -129,11 +119,7 @@ function ChatThread({
   ...props
 }: ChatThreadProps) {
   return (
-    <div
-      data-slot="chat-thread"
-      className={cn("flex flex-col gap-2", className)}
-      {...props}
-    >
+    <div data-slot="chat-thread" className={cn("flex flex-col gap-2", className)} {...props}>
       {messages.map((msg, i) => (
         <ChatBubble
           key={i}
@@ -146,13 +132,7 @@ function ChatThread({
         />
       ))}
     </div>
-  )
+  );
 }
 
-export {
-  ChatBubble,
-  ChatThread,
-  type ChatBubbleProps,
-  type ChatThreadProps,
-  type ChatMessage,
-}
+export { ChatBubble, ChatThread, type ChatBubbleProps, type ChatThreadProps, type ChatMessage };

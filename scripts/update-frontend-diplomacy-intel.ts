@@ -3,52 +3,115 @@ import * as path from "path";
 
 const dipGroups: Record<string, string[]> = {
   diplomaticCore: [
-    "getRelationships", "getRecentChanges", "updateRelationship", "createRelationship",
-    "deleteRelationship", "getInfluenceBreakdown", "updateRelationshipStrength",
-    "getInfluenceLeaderboard", "getFollowStatus", "followCountry", "unfollowCountry",
-    "getSharedData", "shareData", "revokeSharedData", "getDiplomaticOptions",
-    "getAllDiplomaticOptions", "getOptionUsageStats"
+    "getRelationships",
+    "getRecentChanges",
+    "updateRelationship",
+    "createRelationship",
+    "deleteRelationship",
+    "getInfluenceBreakdown",
+    "updateRelationshipStrength",
+    "getInfluenceLeaderboard",
+    "getFollowStatus",
+    "followCountry",
+    "unfollowCountry",
+    "getSharedData",
+    "shareData",
+    "revokeSharedData",
+    "getDiplomaticOptions",
+    "getAllDiplomaticOptions",
+    "getOptionUsageStats",
   ],
   diplomaticEmbassies: [
-    "getEmbassies", "establishEmbassy", "getEmbassyDetails", "calculateEstablishmentCost",
-    "upgradeEmbassy", "getAvailableUpgrades", "getAvailableMissions", "startMission",
-    "completeMission", "payMaintenance", "allocateBudget", "updateEmbassyProfile",
-    "closeEmbassy", "getActiveMissions"
+    "getEmbassies",
+    "establishEmbassy",
+    "getEmbassyDetails",
+    "calculateEstablishmentCost",
+    "upgradeEmbassy",
+    "getAvailableUpgrades",
+    "getAvailableMissions",
+    "startMission",
+    "completeMission",
+    "payMaintenance",
+    "allocateBudget",
+    "updateEmbassyProfile",
+    "closeEmbassy",
+    "getActiveMissions",
   ],
   diplomaticCultural: [
-    "getCulturalExchanges", "createCulturalExchange", "joinCulturalExchange",
-    "linkExchangeToMission", "voteOnExchange", "uploadCulturalArtifact",
-    "generateCulturalScenario", "getNPCCulturalResponse", "calculateExchangeImpact",
-    "getCulturalCompatibility", "getRecommendedPartners", "updateCulturalExchange",
-    "cancelCulturalExchange", "getNPCCulturalResponses"
+    "getCulturalExchanges",
+    "createCulturalExchange",
+    "joinCulturalExchange",
+    "linkExchangeToMission",
+    "voteOnExchange",
+    "uploadCulturalArtifact",
+    "generateCulturalScenario",
+    "getNPCCulturalResponse",
+    "calculateExchangeImpact",
+    "getCulturalCompatibility",
+    "getRecommendedPartners",
+    "updateCulturalExchange",
+    "cancelCulturalExchange",
+    "getNPCCulturalResponses",
   ],
   diplomaticPolicies: [
-    "getActiveForeignPolicies", "getBilateralTrade", "previewForeignPolicyImpact",
-    "proposeForeignPolicyAction", "liftForeignPolicyAction", "getAlliances",
-    "getAllianceDashboard", "createAlliance", "inviteMember", "leaveAlliance",
-    "proposeAllianceAction", "voteOnAllianceAction", "createAllianceDocument",
-    "getAllianceDocuments"
-  ]
+    "getActiveForeignPolicies",
+    "getBilateralTrade",
+    "previewForeignPolicyImpact",
+    "proposeForeignPolicyAction",
+    "liftForeignPolicyAction",
+    "getAlliances",
+    "getAllianceDashboard",
+    "createAlliance",
+    "inviteMember",
+    "leaveAlliance",
+    "proposeAllianceAction",
+    "voteOnAllianceAction",
+    "createAllianceDocument",
+    "getAllianceDocuments",
+  ],
 };
 
 const intelGroups: Record<string, string[]> = {
   intelCore: [
-    "getOverview", "getQuickActions", "executeAction", "getDiplomaticChannels",
-    "sendSecureMessage", "getIntelligenceFeed", "getCabinetMeetings",
-    "createCabinetMeeting", "getEnhancedDiplomaticIntelligence", "getStrategicPlans",
-    "getKeyFindings"
+    "getOverview",
+    "getQuickActions",
+    "executeAction",
+    "getDiplomaticChannels",
+    "sendSecureMessage",
+    "getIntelligenceFeed",
+    "getCabinetMeetings",
+    "createCabinetMeeting",
+    "getEnhancedDiplomaticIntelligence",
+    "getStrategicPlans",
+    "getKeyFindings",
   ],
   intelAlerts: [
-    "acknowledgeAlert", "archiveAlert", "getAlertThresholds", "updateAlertThreshold",
-    "deleteAlertThreshold", "getActiveCrises", "getCrisisEvents", "getResponseTeams",
-    "getSecurityThreats", "getSecurityDashboard", "createSecurityThreat"
+    "acknowledgeAlert",
+    "archiveAlert",
+    "getAlertThresholds",
+    "updateAlertThreshold",
+    "deleteAlertThreshold",
+    "getActiveCrises",
+    "getCrisisEvents",
+    "getResponseTeams",
+    "getSecurityThreats",
+    "getSecurityDashboard",
+    "createSecurityThreat",
   ],
   intelAnalytics: [
-    "getAnalytics", "getAdvancedAnalytics", "getAIRecommendations",
-    "getPredictiveModels", "getRealTimeMetrics", "createBriefing",
-    "getEconomicPolicies", "createEconomicPolicy", "implementEconomicPolicy",
-    "getPolicyEffectiveness", "getEconomicIndicators", "getCommodityPrices"
-  ]
+    "getAnalytics",
+    "getAdvancedAnalytics",
+    "getAIRecommendations",
+    "getPredictiveModels",
+    "getRealTimeMetrics",
+    "createBriefing",
+    "getEconomicPolicies",
+    "createEconomicPolicy",
+    "implementEconomicPolicy",
+    "getPolicyEffectiveness",
+    "getEconomicIndicators",
+    "getCommodityPrices",
+  ],
 };
 
 function walk(dir: string, callback: (filepath: string) => void) {
@@ -85,7 +148,7 @@ walk("src", (filepath) => {
       }
     }
   }
-  
+
   for (const [subRouter, endpoints] of Object.entries(intelGroups)) {
     for (const ep of endpoints) {
       const regex = new RegExp(`\\.unifiedIntelligence\\.${ep}\\b`, "g");

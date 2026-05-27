@@ -4,10 +4,7 @@ import React, { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { cn } from "~/lib/utils";
-import {
-  usePretextWithSegments,
-  useShrinkwrap,
-} from "~/lib/pretext/use-pretext";
+import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
 
 interface MessageAccount {
   id: string;
@@ -163,7 +160,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
           <div
             className={cn(
-              "overflow-hidden rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm break-words",
+              "overflow-hidden rounded-2xl px-3 py-2 text-sm leading-relaxed break-words shadow-sm",
               isOwn
                 ? "bg-primary text-primary-foreground rounded-br-sm"
                 : "bg-muted text-foreground rounded-bl-sm",
@@ -179,7 +176,9 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             <div
               className={cn(
                 "mt-1 flex items-center gap-1.5 text-[9px]",
-                isOwn ? "justify-end text-primary-foreground/60" : "text-muted-foreground/70 justify-start"
+                isOwn
+                  ? "text-primary-foreground/60 justify-end"
+                  : "text-muted-foreground/70 justify-start"
               )}
             >
               <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>

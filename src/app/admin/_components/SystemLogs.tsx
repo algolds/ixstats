@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { formatDistanceToNow } from "date-fns";
+import { JsonViewer } from "~/components/json-viewer";
 
 interface SystemLog {
   id: string;
@@ -383,12 +384,14 @@ export function SystemLogs() {
 
                           {log.details && (
                             <details className="mt-2">
-                              <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-xs">
+                              <summary className="text-muted-foreground hover:text-foreground mb-2 cursor-pointer text-xs">
                                 Show details
                               </summary>
-                              <pre className="bg-muted mt-2 overflow-x-auto rounded p-2 text-xs">
-                                {JSON.stringify(log.details, null, 2)}
-                              </pre>
+                              <JsonViewer
+                                data={log.details}
+                                defaultExpanded={1}
+                                className="border-border/30 bg-card/20 mt-2 backdrop-blur-md"
+                              />
                             </details>
                           )}
                         </div>

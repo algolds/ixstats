@@ -169,9 +169,7 @@ export function SearchView({
           <div className="py-10 text-center">
             <div className="text-muted-foreground/60 mb-3 text-sm">
               Type to search{" "}
-              {searchFilter === "all"
-                ? "countries, commands, and features"
-                : searchFilter}
+              {searchFilter === "all" ? "countries, commands, and features" : searchFilter}
             </div>
             <div className="text-muted-foreground/40 flex items-center justify-center gap-3 text-[11px]">
               <span className="flex items-center gap-1">

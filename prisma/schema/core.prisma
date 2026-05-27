@@ -110,6 +110,7 @@ model Country {
   followers                   CountryFollow[]           @relation("CountryFollowing")
   following                   CountryFollow[]           @relation("CountryFollowers")
   moodMetrics                 CountryMoodMetric[]
+  polls                       Poll[]                    @relation("CountryPolls")
   crossBuilderSynergies       CrossBuilderSynergy[]     @relation("CountryCrossBuilderSynergies")
   defenseBudget               DefenseBudget?            @relation("CountryDefenseBudget")
   demographics                Demographics?

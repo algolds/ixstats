@@ -16,10 +16,10 @@ interface CalculationLogsCardProps {
 
 export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsCardProps) {
   return (
-    <Card className="glass-card-parent">
+    <Card className="glass-surface glass-refraction border-border/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
+          <Database className="h-5 w-5 text-indigo-500" />
           Recent Calculation Logs
           {logs && logs.length > 0 && (
             <Badge variant="secondary" className="ml-auto">
@@ -57,9 +57,12 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
         )}
 
         {!isLoading && !error && logs && logs.length > 0 && (
-          <div className="max-h-80 space-y-2 overflow-y-auto">
+          <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
             {logs.map((log) => (
-              <div key={log.id} className="border-border/50 bg-muted/50 rounded-lg border p-3">
+              <div
+                key={log.id}
+                className="glass-hierarchy-child border-border/30 rounded-lg border p-3"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-green-500" />

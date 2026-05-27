@@ -41,6 +41,7 @@ import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { renderDiscordEmojis, formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
 import { sanitizeUserContent } from "~/lib/sanitize-html";
 
@@ -531,10 +532,14 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               {config.label}
             </Badge>
           </div>
-          <p
-            className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: descHtml }}
-          />
+          {activity.poll ? (
+            <FeedPollWidget poll={activity.poll} />
+          ) : (
+            <p
+              className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: descHtml }}
+            />
+          )}
           {/* Media Attachments */}
           {activity.content?.mediaAttachments && activity.content.mediaAttachments.length > 0 && (
             <div
@@ -624,7 +629,7 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               <Clock className="h-3 w-3" />
               {formatTimeAgo(new Date(activity.timestamp))}
             </span>
-            {activity.user?.name && <span>by {activity.user.name}</span>}
+            {activity.user?.name && (activity.poll && activity.user.name === "User" ? null : <span>by {activity.user.name}</span>)}
             {externalUrl && <FeedExternalLink url={externalUrl} title={activity.content?.title} />}
           </div>
         </div>

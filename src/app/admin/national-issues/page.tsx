@@ -76,8 +76,8 @@ export default function NationalIssuesAdminPage() {
   });
 
   // Fetch countries for preview/force-gen
-  const { data: countriesData } = api.countries.getAll.useQuery(undefined);
-  const countries = countriesData?.countries;
+  const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const countries = countriesData;
 
   // Fetch stats
   const { data: stats } = api.nationalIssues.getGenerationStats.useQuery(

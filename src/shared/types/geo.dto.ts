@@ -59,4 +59,3 @@ export interface LayerInfoItemDto {
   centroidLat: number;
   isClaimed: boolean;
 }
-

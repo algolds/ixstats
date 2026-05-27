@@ -543,10 +543,7 @@ export function ExecutiveCommandCenter({
 
   // Get live quick actions from unified intelligence API
   const { data: quickActionsData, refetch: refetchActions } =
-    api.intelCore.getQuickActions.useQuery(
-      { countryId: countryId },
-      { enabled: !!countryId }
-    );
+    api.intelCore.getQuickActions.useQuery({ countryId: countryId }, { enabled: !!countryId });
 
   // Execute quick action mutation using unified intelligence API
   const executeAction = api.intelCore.executeAction.useMutation({
