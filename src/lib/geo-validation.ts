@@ -174,6 +174,98 @@ export async function validatePolygonContainment(
   }
 }
 
+/**
+ * Helper to clean a PostGIS-returned GeoJSON geometry to a Polygon or MultiPolygon.
+ * Filters out line strings, points, and other non-polygon components.
+ */
+export function cleanPostGISGeometry(geometry: any): any {
+  if (!geometry) return null;
+  if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
+    return geometry;
+  }
+  if (geometry.type === "GeometryCollection") {
+    const polygons: any[] = [];
+    for (const g of geometry.geometries || []) {
+      if (g.type === "Polygon") {
+        polygons.push(g.coordinates);
+      } else if (g.type === "MultiPolygon") {
+        polygons.push(...g.coordinates);
+      }
+    }
+    if (polygons.length === 0) return null;
+    if (polygons.length === 1) {
+      return { type: "Polygon", coordinates: polygons[0] };
+    }
+    return { type: "MultiPolygon", coordinates: polygons };
+  }
+  return null;
+}
+
+/**
+ * Clip a polygon to the country border and validate it contains geometry.
+ * Returns the clipped/trimmed geometry.
+ * Throws TRPCError BAD_REQUEST if no overlap exists (the subdivision lies entirely outside).
+ */
+export async function clipAndValidatePolygon(
+  db: PrismaClient,
+  countryId: string,
+  geometry: Geometry | Record<string, unknown>,
+  featureLabel = "Subdivision"
+): Promise<any> {
+  // Validate coordinate bounds first
+  if ("coordinates" in geometry) {
+    validateGeometryBounds(geometry as Geometry);
+  }
+
+  if (!(await isPostGISAvailable(db))) {
+    console.warn(
+      `[geo-validation] PostGIS not available — skipping clipping/containment check for ${featureLabel}`
+    );
+    return geometry;
+  }
+
+  try {
+    const geoJson = JSON.stringify(geometry);
+    const result = await db.$queryRawUnsafe<Array<{ clipped: string }>>(
+      `SELECT ST_AsGeoJSON(
+         ST_Intersection(
+           (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
+           ST_SetSRID(ST_GeomFromGeoJSON($2), 4326)
+         )
+       ) as clipped`,
+      countryId,
+      geoJson
+    );
+
+    const clippedGeoJson = result[0]?.clipped;
+    if (!clippedGeoJson) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `${featureLabel} must overlap with your country's borders.`,
+      });
+    }
+
+    const parsedClipped = JSON.parse(clippedGeoJson);
+    const cleaned = cleanPostGISGeometry(parsedClipped);
+    if (!cleaned) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `${featureLabel} must overlap with your country's borders.`,
+      });
+    }
+
+    return cleaned;
+  } catch (err) {
+    if (err instanceof TRPCError) throw err;
+    console.error(`[geo-validation] PostGIS ST_Intersection query failed:`, err);
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Spatial validation or clipping failed. Please try again.",
+    });
+  }
+}
+
+
 // ──────────────────────────────────────────────
 // Geometry Validity
 // ──────────────────────────────────────────────

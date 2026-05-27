@@ -898,6 +898,31 @@ const EditorMap = memo(
           },
         });
         map.addLayer({
+          id: "editor-points-story-pin",
+          type: "circle",
+          source: "editor-points",
+          filter: ["==", ["get", "featureType"], "storyPin"],
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#a855f7",
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 1.5,
+          },
+        });
+        map.addLayer({
+          id: "editor-points-map-label",
+          type: "circle",
+          source: "editor-points",
+          filter: ["==", ["get", "featureType"], "mapLabel"],
+          paint: {
+            "circle-radius": 4,
+            "circle-color": "#94a3b8",
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 1,
+            "circle-opacity": 0.6,
+          },
+        });
+        map.addLayer({
           id: "editor-points-labels",
           type: "symbol",
           source: "editor-points",
@@ -1233,6 +1258,9 @@ const EditorMap = memo(
       if (!map || !isLoaded) return;
 
       const onClick = (e: any) => {
+        // Skip if a route was clicked
+        if (e.routeClicked || e.defaultPrevented) return;
+
         // Skip if vertex editing is active
         if (vertexEditRef.current) return;
 
@@ -1372,6 +1400,8 @@ const EditorMap = memo(
         "editor-points-capital",
         "editor-points-city",
         "editor-points-poi",
+        "editor-points-story-pin",
+        "editor-points-map-label",
       ];
 
       const onMouseMove = (e: any) => {
@@ -1403,6 +1433,7 @@ const EditorMap = memo(
       };
 
       const onClickFeature = (e: any) => {
+        if (e.routeClicked || e.defaultPrevented) return;
         if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
           return;
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });

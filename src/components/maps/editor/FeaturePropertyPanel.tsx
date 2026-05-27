@@ -61,12 +61,28 @@ interface FeaturePropertyPanelProps {
   pendingPointInfo?: PointInfo | null;
   isPendingPointInfoLoading?: boolean;
   countryId?: string;
+  routeWaypoints?: [number, number][];
+  finishRoute?: (routeType?: string, name?: string) => Promise<void>;
+  undoLastWaypoint?: () => void;
+  clearRouteWaypoints?: () => void;
+  selectedRouteId?: string | null;
+  onSelectRouteId?: (id: string | null) => void;
 }
 
 export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
   props: FeaturePropertyPanelProps
 ) {
-  const { mode, onCancel, countryId } = props;
+  const {
+    mode,
+    onCancel,
+    countryId,
+    routeWaypoints,
+    finishRoute,
+    undoLastWaypoint,
+    clearRouteWaypoints,
+    selectedRouteId,
+    onSelectRouteId,
+  } = props;
 
   if (mode === "view") return null;
 
@@ -75,7 +91,18 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     return <PaintPropertyForm countryId={countryId} onCancel={onCancel} />;
   }
   if (mode === "add-route") {
-    return <TransportPropertyForm countryId={countryId} onCancel={onCancel} />;
+    return (
+      <TransportPropertyForm
+        countryId={countryId}
+        onCancel={onCancel}
+        routeWaypoints={routeWaypoints}
+        finishRoute={finishRoute}
+        undoLastWaypoint={undoLastWaypoint}
+        clearRouteWaypoints={clearRouteWaypoints}
+        selectedRouteId={selectedRouteId}
+        onSelectRouteId={onSelectRouteId}
+      />
+    );
   }
 
   const isEdit = mode.startsWith("edit-");

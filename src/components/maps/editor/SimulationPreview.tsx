@@ -93,19 +93,60 @@ export function SimulationPreview({ countryId, visible }: SimulationPreviewProps
       </div>
 
       {/* Transport stats */}
-      {transportStats && transportStats.totalRoutes > 0 && (
-        <div className="border-border mt-2 border-t pt-2">
+      {transportStats && (transportStats.totalRoutes > 0 || (transportStats.totalMaintenanceCost ?? 0) > 0) && (
+        <div className="border-border mt-2 border-t pt-2 space-y-1">
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground">Transport Routes</span>
             <span className="text-foreground font-medium tabular-nums">
-              {transportStats.totalRoutes}
+              {transportStats.totalRoutes} ({transportStats.operationalCount ?? 0} active)
             </span>
           </div>
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground">Network Length</span>
             <span className="text-foreground font-medium tabular-nums">
-              {transportStats.totalKm.toLocaleString()} km
+              {(transportStats.totalKm ?? 0).toLocaleString()} km
             </span>
+          </div>
+          {transportStats.totalMaintenanceCost !== undefined && transportStats.totalMaintenanceCost > 0 && (
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Maintenance Cost</span>
+              <span className="text-amber-500 font-medium tabular-nums">
+                -{transportStats.totalMaintenanceCost.toFixed(3)}B IxCredits
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Resource POIs stats */}
+      {transportStats?.resources && transportStats.resources.length > 0 && (
+        <div className="border-border mt-2 border-t pt-2 space-y-1.5">
+          <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
+            <span>Resource Pools</span>
+            <span className="tabular-nums">
+              {transportStats.resources.filter((r: any) => r.isConnected).length}/
+              {transportStats.resources.length} Connected
+            </span>
+          </div>
+          <div className="max-h-28 overflow-y-auto pr-1 space-y-1">
+            {transportStats.resources.map((res: any) => (
+              <div key={res.id} className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center gap-1.5 truncate">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                      res.isConnected ? "bg-emerald-500" : "bg-red-500"
+                    }`}
+                  />
+                  <span className="text-foreground font-medium truncate">{res.name}</span>
+                  <span className="text-muted-foreground text-[9px] uppercase">
+                    ({res.resourceType})
+                  </span>
+                </div>
+                <span className="text-muted-foreground shrink-0 tabular-nums">
+                  Q: {res.quality.toFixed(2)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}

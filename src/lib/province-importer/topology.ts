@@ -528,6 +528,45 @@ export interface ConformanceResult {
 }
 
 /**
+ * Extract Polygons from Geometry/GeometryCollection, keeping only
+ * Polygon/MultiPolygon components. Returns a clean Polygon or MultiPolygon,
+ * or null if no polygon component exists.
+ */
+export function cleanToPolygonOrMultiPolygon(
+  geometry: any
+): Polygon | MultiPolygon | null {
+  if (!geometry) return null;
+
+  if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
+    return geometry as Polygon | MultiPolygon;
+  }
+
+  if (geometry.type === "GeometryCollection") {
+    const polygons: any[] = [];
+    for (const g of geometry.geometries || []) {
+      if (g.type === "Polygon") {
+        polygons.push(g.coordinates);
+      } else if (g.type === "MultiPolygon") {
+        polygons.push(...g.coordinates);
+      }
+    }
+    if (polygons.length === 0) return null;
+    if (polygons.length === 1) {
+      return {
+        type: "Polygon",
+        coordinates: polygons[0]
+      };
+    }
+    return {
+      type: "MultiPolygon",
+      coordinates: polygons
+    };
+  }
+
+  return null;
+}
+
+/**
  * Clip all included province geometries to fit within the country border.
  * Uses turf.intersect to produce the intersection of each province with the country.
  */
@@ -558,9 +597,16 @@ export function clipProvincesToBorder(
         return { ...p, included: false };
       }
 
+      const cleaned = cleanToPolygonOrMultiPolygon(clipped.geometry);
+      if (!cleaned) {
+        clippedIndices.push(i);
+        clippedNames.push(p.name);
+        return { ...p, included: false };
+      }
+
       // Check if geometry was actually modified
       const originalArea = area(provFeat);
-      const clippedArea = area(clipped);
+      const clippedArea = area(makeFeature(cleaned));
       if (originalArea > 0 && Math.abs(originalArea - clippedArea) / originalArea > 0.001) {
         clippedIndices.push(i);
         clippedNames.push(p.name);
@@ -568,7 +614,7 @@ export function clipProvincesToBorder(
 
       return {
         ...p,
-        geometry: clipped.geometry as Polygon | MultiPolygon,
+        geometry: cleaned,
       };
     } catch {
       // If intersection fails, keep original
@@ -599,12 +645,16 @@ export function clipGeometryToBorder(
 
     if (!clipped) return { geometry, wasClipped: true };
 
+    const cleaned = cleanToPolygonOrMultiPolygon(clipped.geometry);
+    if (!cleaned) return { geometry, wasClipped: true };
+
     const origArea = area(feat);
-    const clipArea = area(clipped);
+    const clipArea = area(makeFeature(cleaned));
     const wasClipped = origArea > 0 && Math.abs(origArea - clipArea) / origArea > 0.001;
 
-    return { geometry: clipped.geometry as Polygon | MultiPolygon, wasClipped };
+    return { geometry: cleaned, wasClipped };
   } catch {
     return { geometry, wasClipped: false };
   }
 }
+

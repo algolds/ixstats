@@ -687,6 +687,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const createRoute = api.transport.createRoute.useMutation({
     onSuccess: () => {
       setRouteWaypoints([]);
+      void utils.transport.getCountryRoutes.invalidate();
+      void utils.transport.getAllRoutesGeoJSON.invalidate();
+      void utils.transport.getTransportStats.invalidate();
     },
   });
 

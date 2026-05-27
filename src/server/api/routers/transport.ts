@@ -14,6 +14,144 @@ import {
   type CityNode,
   type RouteType,
 } from "~/lib/transport-generator";
+import { syncResourcePoolModifiers } from "./geo/features";
+
+function calculateRouteCosts(routeType: string, lengthKm: number, terrainDifficulty: number) {
+  let baseCostPerKm = 0.01; // default road
+  switch (routeType) {
+    case "rail":
+      baseCostPerKm = 0.04;
+      break;
+    case "highway":
+      baseCostPerKm = 0.05;
+      break;
+    case "shipping_lane":
+      baseCostPerKm = 0.001;
+      break;
+    case "canal":
+      baseCostPerKm = 0.1;
+      break;
+    case "road":
+      baseCostPerKm = 0.01;
+      break;
+  }
+  const costBillion = lengthKm * baseCostPerKm * (1 + terrainDifficulty * 1.5);
+  const maintenanceCost = costBillion * 0.02; // 2% annual maintenance
+  return {
+    costBillion: Math.round(costBillion * 1000) / 1000,
+    maintenanceCost: Math.round(maintenanceCost * 1000) / 1000,
+  };
+}
+
+export async function syncTransportEconomicModifiers(db: any, countryId: string) {
+  const routes = await db.transportRoute.findMany({
+    where: { countryId, status: "operational" }
+  });
+
+  const hubs = await db.transportHub.findMany({
+    where: { countryId }
+  });
+
+  let totalLengthKm = 0;
+  let totalMaintenanceCost = 0;
+
+  for (const route of routes) {
+    totalLengthKm += route.lengthKm ?? 0;
+    const props = (route.properties as Record<string, any>) || {};
+    totalMaintenanceCost += props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
+  }
+
+  const gdpBonus = Math.min(0.15, totalLengthKm * 0.0001 + hubs.length * 0.01);
+  const tradeBonus = Math.min(0.20, totalLengthKm * 0.00015 + hubs.length * 0.015);
+  const syncDate = new Date();
+
+  // GDP modifier effect
+  const gdpEffectName = "transport_gdp_bonus";
+  const existingGdp = await db.storytellerEffect.findFirst({
+    where: { countryId, inputType: gdpEffectName, createdBy: "system_transport_sync" }
+  });
+  if (existingGdp) {
+    await db.storytellerEffect.update({
+      where: { id: existingGdp.id },
+      data: {
+        value: gdpBonus,
+        description: `GDP growth bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
+        isActive: gdpBonus > 0,
+        ixTimeTimestamp: syncDate
+      }
+    });
+  } else if (gdpBonus > 0) {
+    await db.storytellerEffect.create({
+      data: {
+        countryId,
+        inputType: gdpEffectName,
+        value: gdpBonus,
+        description: `GDP growth bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
+        isActive: true,
+        createdBy: "system_transport_sync",
+        ixTimeTimestamp: syncDate
+      }
+    });
+  }
+
+  // Trade modifier effect
+  const tradeEffectName = "transport_trade_bonus";
+  const existingTrade = await db.storytellerEffect.findFirst({
+    where: { countryId, inputType: tradeEffectName, createdBy: "system_transport_sync" }
+  });
+  if (existingTrade) {
+    await db.storytellerEffect.update({
+      where: { id: existingTrade.id },
+      data: {
+        value: tradeBonus,
+        description: `Trade efficiency bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
+        isActive: tradeBonus > 0,
+        ixTimeTimestamp: syncDate
+      }
+    });
+  } else if (tradeBonus > 0) {
+    await db.storytellerEffect.create({
+      data: {
+        countryId,
+        inputType: tradeEffectName,
+        value: tradeBonus,
+        description: `Trade efficiency bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
+        isActive: true,
+        createdBy: "system_transport_sync",
+        ixTimeTimestamp: syncDate
+      }
+    });
+  }
+
+  // Maintenance cost effect
+  const maintenanceEffectName = "transport_infra_maintenance";
+  const existingMaintenance = await db.storytellerEffect.findFirst({
+    where: { countryId, inputType: maintenanceEffectName, createdBy: "system_transport_sync" }
+  });
+  if (existingMaintenance) {
+    await db.storytellerEffect.update({
+      where: { id: existingMaintenance.id },
+      data: {
+        value: -totalMaintenanceCost,
+        description: `Annual transport network maintenance cost (${totalMaintenanceCost.toFixed(3)} billion IxCredits)`,
+        isActive: totalMaintenanceCost > 0,
+        ixTimeTimestamp: syncDate
+      }
+    });
+  } else if (totalMaintenanceCost > 0) {
+    await db.storytellerEffect.create({
+      data: {
+        countryId,
+        inputType: maintenanceEffectName,
+        value: -totalMaintenanceCost,
+        description: `Annual transport network maintenance cost (${totalMaintenanceCost.toFixed(3)} billion IxCredits)`,
+        isActive: true,
+        createdBy: "system_transport_sync",
+        ixTimeTimestamp: syncDate
+      }
+    });
+  }
+}
 
 export const transportRouter = createTRPCRouter({
   /**
@@ -117,7 +255,7 @@ export const transportRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const routes = await ctx.db.transportRoute.findMany({
         where: { countryId: input.countryId },
-        select: { routeType: true, lengthKm: true, status: true },
+        select: { routeType: true, lengthKm: true, status: true, properties: true },
       });
 
       const hubs = await ctx.db.transportHub.count({
@@ -125,14 +263,35 @@ export const transportRouter = createTRPCRouter({
       });
 
       const byType: Record<string, { count: number; totalKm: number }> = {};
+      let totalMaintenanceCost = 0;
       for (const r of routes) {
         if (!byType[r.routeType]) byType[r.routeType] = { count: 0, totalKm: 0 };
         byType[r.routeType]!.count++;
         byType[r.routeType]!.totalKm += r.lengthKm ?? 0;
+        if (r.status === "operational") {
+          const props = (r.properties as Record<string, any>) || {};
+          totalMaintenanceCost += props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
+        }
       }
 
       const totalKm = routes.reduce((s, r) => s + (r.lengthKm ?? 0), 0);
       const operationalCount = routes.filter((r) => r.status === "operational").length;
+
+      const rawResources = await ctx.db.pointOfInterest.findMany({
+        where: { countryId: input.countryId, category: "resource", status: "approved" },
+        select: { id: true, name: true, metadata: true },
+      });
+
+      const resources = rawResources.map((res) => {
+        const meta = (res.metadata as Record<string, any>) || {};
+        return {
+          id: res.id,
+          name: res.name,
+          isConnected: meta.isConnected === true,
+          resourceType: (meta.resourceType as string) || "minerals",
+          quality: meta.quality !== undefined ? Number(meta.quality) : 0.5,
+        };
+      });
 
       return {
         totalRoutes: routes.length,
@@ -140,6 +299,8 @@ export const transportRouter = createTRPCRouter({
         totalHubs: hubs,
         operationalCount,
         byType,
+        totalMaintenanceCost,
+        resources,
       };
     }),
 
@@ -228,6 +389,7 @@ export const transportRouter = createTRPCRouter({
       const hubCityIds = new Set<string>();
 
       for (const route of generated) {
+        const { costBillion, maintenanceCost } = calculateRouteCosts(route.routeType, route.lengthKm, route.terrainDifficulty);
         await ctx.db.transportRoute.create({
           data: {
             countryId: input.countryId,
@@ -235,7 +397,11 @@ export const transportRouter = createTRPCRouter({
             name: route.name,
             geometry: route.geometry,
             stops: route.stops,
-            properties: route.properties as any,
+            properties: {
+              ...((route.properties as Record<string, any>) || {}),
+              costBillion,
+              maintenanceCost
+            },
             isInternational: route.isInternational,
             status: "operational",
             terrainDifficulty: route.terrainDifficulty,
@@ -277,6 +443,9 @@ export const transportRouter = createTRPCRouter({
         });
       }
 
+      await syncTransportEconomicModifiers(ctx.db, input.countryId);
+      await syncResourcePoolModifiers(ctx.db, input.countryId);
+
       return {
         routesCreated: created,
         hubsCreated: hubCityIds.size,
@@ -284,9 +453,6 @@ export const transportRouter = createTRPCRouter({
       };
     }),
 
-  /**
-   * Create a single transport route manually.
-   */
   createRoute: standardMutationCountryOwnerProcedure
     .input(
       z.object({
@@ -299,17 +465,47 @@ export const transportRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.transportRoute.create({
+      const coords = (input.geometry as { coordinates?: number[][] })?.coordinates ?? [];
+      let lengthKm = 0;
+      for (let i = 1; i < coords.length; i++) {
+        const [lon1, lat1] = coords[i - 1]!;
+        const [lon2, lat2] = coords[i]!;
+        if (lon1 !== undefined && lat1 !== undefined && lon2 !== undefined && lat2 !== undefined) {
+          lengthKm += haversineKm(lat1, lon1, lat2, lon2);
+        }
+      }
+      const roundedLength = Math.round(lengthKm * 10) / 10;
+
+      const geoProfile = await ctx.db.countryGeoProfile.findUnique({
+        where: { countryId: input.countryId },
+        select: { terrainRoughness: true }
+      });
+      const terrainDifficulty = geoProfile?.terrainRoughness ?? 0.2;
+
+      const { costBillion, maintenanceCost } = calculateRouteCosts(input.routeType, roundedLength, terrainDifficulty);
+
+      const route = await ctx.db.transportRoute.create({
         data: {
           countryId: input.countryId,
           routeType: input.routeType,
           name: input.name,
           geometry: input.geometry,
-          properties: input.properties ?? {},
+          properties: {
+            ...((input.properties as Record<string, any>) || {}),
+            costBillion,
+            maintenanceCost
+          },
           isInternational: input.isInternational,
           status: "operational",
+          lengthKm: roundedLength,
+          terrainDifficulty
         },
       });
+
+      await syncTransportEconomicModifiers(ctx.db, input.countryId);
+      await syncResourcePoolModifiers(ctx.db, input.countryId);
+
+      return route;
     }),
 
   /**
@@ -318,7 +514,10 @@ export const transportRouter = createTRPCRouter({
   deleteRoute: standardMutationCountryOwnerProcedure
     .input(z.object({ id: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.transportRoute.delete({ where: { id: input.id } });
+      const deleted = await ctx.db.transportRoute.delete({ where: { id: input.id } });
+      await syncTransportEconomicModifiers(ctx.db, input.countryId);
+      await syncResourcePoolModifiers(ctx.db, input.countryId);
+      return deleted;
     }),
 
   /**
@@ -363,9 +562,6 @@ export const transportRouter = createTRPCRouter({
       };
     }),
 
-  /**
-   * Update route properties (name, type, status, etc).
-   */
   updateRoute: standardMutationCountryOwnerProcedure
     .input(
       z.object({
@@ -381,16 +577,40 @@ export const transportRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, countryId: _cid, ...data } = input;
+      const { id, countryId, ...data } = input;
       // Filter undefined values
       const updates: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(data)) {
         if (v !== undefined) updates[k] = v;
       }
-      return ctx.db.transportRoute.update({
+
+      // If routeType changed or properties edited, recalculate costs
+      const route = await ctx.db.transportRoute.findUnique({
+        where: { id },
+        select: { routeType: true, lengthKm: true, terrainDifficulty: true, properties: true }
+      });
+      if (route) {
+        const type = (updates.routeType as string) || route.routeType;
+        const length = route.lengthKm ?? 0;
+        const diff = route.terrainDifficulty ?? 0.2;
+        const { costBillion, maintenanceCost } = calculateRouteCosts(type, length, diff);
+        updates.properties = {
+          ...((route.properties as Record<string, any>) || {}),
+          ...((updates.properties as Record<string, any>) || {}),
+          costBillion,
+          maintenanceCost
+        };
+      }
+
+      const updated = await ctx.db.transportRoute.update({
         where: { id },
         data: updates,
       });
+
+      await syncTransportEconomicModifiers(ctx.db, countryId);
+      await syncResourcePoolModifiers(ctx.db, countryId);
+
+      return updated;
     }),
 
   /**
@@ -411,16 +631,45 @@ export const transportRouter = createTRPCRouter({
       for (let i = 1; i < coords.length; i++) {
         const [lon1, lat1] = coords[i - 1]!;
         const [lon2, lat2] = coords[i]!;
-        lengthKm += haversineKm(lat1!, lon1!, lat2!, lon2!);
+        if (lon1 !== undefined && lat1 !== undefined && lon2 !== undefined && lat2 !== undefined) {
+          lengthKm += haversineKm(lat1, lon1, lat2, lon2);
+        }
       }
+      const roundedLength = Math.round(lengthKm * 10) / 10;
 
-      return ctx.db.transportRoute.update({
+      const geoProfile = await ctx.db.countryGeoProfile.findUnique({
+        where: { countryId: input.countryId },
+        select: { terrainRoughness: true }
+      });
+      const terrainDifficulty = geoProfile?.terrainRoughness ?? 0.2;
+
+      // Fetch route to get its type and existing properties
+      const route = await ctx.db.transportRoute.findUnique({
+        where: { id: input.id },
+        select: { routeType: true, properties: true }
+      });
+      const routeType = route?.routeType ?? "road";
+      const existingProps = (route?.properties as Record<string, any>) || {};
+      const { costBillion, maintenanceCost } = calculateRouteCosts(routeType, roundedLength, terrainDifficulty);
+
+      const updated = await ctx.db.transportRoute.update({
         where: { id: input.id },
         data: {
           geometry: input.geometry,
-          lengthKm: Math.round(lengthKm * 10) / 10,
+          lengthKm: roundedLength,
+          terrainDifficulty,
+          properties: {
+            ...existingProps,
+            costBillion,
+            maintenanceCost
+          }
         },
       });
+
+      await syncTransportEconomicModifiers(ctx.db, input.countryId);
+      await syncResourcePoolModifiers(ctx.db, input.countryId);
+
+      return updated;
     }),
 
   // ── Hub Management ──

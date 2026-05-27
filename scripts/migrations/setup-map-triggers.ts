@@ -51,7 +51,34 @@ async function main() {
   `);
   console.log("Created sync_map_layer_geom() function");
 
-  // Create trigger
+  // Create sync trigger function for coordinates (cities, POIs)
+  await prisma.$executeRawUnsafe(`
+    CREATE OR REPLACE FUNCTION sync_coordinate_geom()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF NEW.coordinates IS NOT NULL AND NEW.coordinates->>0 IS NOT NULL AND NEW.coordinates->>1 IS NOT NULL THEN
+        BEGIN
+          NEW.geom_postgis = ST_SetSRID(
+            ST_MakePoint(
+              (NEW.coordinates->>0)::double precision,
+              (NEW.coordinates->>1)::double precision
+            ),
+            4326
+          );
+        EXCEPTION WHEN OTHERS THEN
+          NEW.geom_postgis = NULL;
+          RAISE WARNING 'Invalid coordinates for feature: %', SQLERRM;
+        END;
+      ELSE
+        NEW.geom_postgis = NULL;
+      END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+  console.log("Created sync_coordinate_geom() function");
+
+  // Create triggers
   await prisma.$executeRawUnsafe(`
     DROP TRIGGER IF EXISTS map_layer_geom_sync ON map_layers;
   `);
@@ -61,6 +88,36 @@ async function main() {
       FOR EACH ROW EXECUTE FUNCTION sync_map_layer_geom();
   `);
   console.log("Created map_layer_geom_sync trigger");
+
+  await prisma.$executeRawUnsafe(`
+    DROP TRIGGER IF EXISTS subdivision_geom_sync ON subdivisions;
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TRIGGER subdivision_geom_sync
+      BEFORE INSERT OR UPDATE OF geometry ON subdivisions
+      FOR EACH ROW EXECUTE FUNCTION sync_map_layer_geom();
+  `);
+  console.log("Created subdivision_geom_sync trigger");
+
+  await prisma.$executeRawUnsafe(`
+    DROP TRIGGER IF EXISTS city_geom_sync ON cities;
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TRIGGER city_geom_sync
+      BEFORE INSERT OR UPDATE OF coordinates ON cities
+      FOR EACH ROW EXECUTE FUNCTION sync_coordinate_geom();
+  `);
+  console.log("Created city_geom_sync trigger");
+
+  await prisma.$executeRawUnsafe(`
+    DROP TRIGGER IF EXISTS poi_geom_sync ON points_of_interest;
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TRIGGER poi_geom_sync
+      BEFORE INSERT OR UPDATE OF coordinates ON points_of_interest
+      FOR EACH ROW EXECUTE FUNCTION sync_coordinate_geom();
+  `);
+  console.log("Created poi_geom_sync trigger");
 
   // Verify existing triggers on Country table
   const existingTriggers = await prisma.$queryRawUnsafe<

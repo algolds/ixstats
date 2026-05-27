@@ -253,6 +253,18 @@ export default function MapEditorOverlay({
     { staleTime: 60_000, gcTime: 5 * 60_000 }
   );
 
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  useEffect(() => {
+    if (editor.mode !== "add-route") {
+      setSelectedRouteId(null);
+    }
+  }, [editor.mode]);
+
+  const handleRouteClick = useCallback((routeId: string) => {
+    setSelectedRouteId(routeId);
+    editor.setMode("add-route");
+  }, [editor]);
+
   // Paint mode: fetch subdivision stats
   const { data: subdivisionStats } = api.geoFeatures.getSubdivisionStats.useQuery(
     { countryId },
@@ -317,6 +329,7 @@ export default function MapEditorOverlay({
   // Feature interaction callbacks
   const handleSelectFeature = useCallback(
     (feature: (typeof editor.allFeatures)[number]) => {
+      setSelectedRouteId(null);
       editor.setSelectedFeature(feature);
       // In paint mode, just select — don't open edit form
       if (editor.mode !== "paint") {
@@ -1002,8 +1015,14 @@ export default function MapEditorOverlay({
               )}
 
             {/* Transport routes overlay */}
-            {transportRouteData && transportRouteData.features.length > 0 && mapInstance && (
-              <TransportOverlay map={mapInstance} routeData={transportRouteData} visible />
+            {transportRouteData && mapInstance && (
+              <TransportOverlay
+                map={mapInstance}
+                routeData={transportRouteData}
+                visible={layerStates.routes?.visible ?? true}
+                selectedRouteId={selectedRouteId}
+                onRouteClick={handleRouteClick}
+              />
             )}
           </EditorErrorBoundary>
         </div>
@@ -1040,6 +1059,12 @@ export default function MapEditorOverlay({
                   pointInfo={editor.pointInfo}
                   isPointInfoLoading={editor.isPendingPointInfoLoading}
                   countryId={countryId}
+                  routeWaypoints={editor.routeWaypoints}
+                  finishRoute={editor.finishRoute}
+                  undoLastWaypoint={editor.undoLastWaypoint}
+                  clearRouteWaypoints={editor.clearRouteWaypoints}
+                  selectedRouteId={selectedRouteId}
+                  onSelectRouteId={setSelectedRouteId}
                 />
               }
               featureListContent={
@@ -1261,6 +1286,12 @@ export default function MapEditorOverlay({
               pointInfo={editor.pointInfo}
               isPointInfoLoading={editor.isPendingPointInfoLoading}
               countryId={countryId}
+              routeWaypoints={editor.routeWaypoints}
+              finishRoute={editor.finishRoute}
+              undoLastWaypoint={editor.undoLastWaypoint}
+              clearRouteWaypoints={editor.clearRouteWaypoints}
+              selectedRouteId={selectedRouteId}
+              onSelectRouteId={setSelectedRouteId}
             />
           </MobileEditorSheet>
         </div>

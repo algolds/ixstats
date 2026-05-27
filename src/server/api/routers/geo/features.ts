@@ -46,6 +46,7 @@ import { getZoneByColor } from "~/lib/elevation-config";
 import {
   validatePointContainment,
   validatePolygonContainment,
+  clipAndValidatePolygon,
   checkPointCollision,
   checkNameUniqueness,
 } from "~/lib/geo-validation";
@@ -640,6 +641,179 @@ function getColorForFeature(featureId: string, properties: Record<string, unknow
   return DEFAULT_COUNTRY_COLORS[Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length];
 }
 
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export async function syncGeographicDemographics(db: any, countryId: string, subdivisionId?: string | null) {
+  // 1. If subdivisionId is provided, sync subdivision population from its cities
+  if (subdivisionId) {
+    const citiesSum = await db.city.aggregate({
+      where: { subdivisionId, status: "approved" },
+      _sum: { population: true }
+    });
+    const subPop = citiesSum._sum.population ?? 0;
+    await db.subdivision.update({
+      where: { id: subdivisionId },
+      data: { population: subPop }
+    });
+  }
+
+  // 2. Sync country population from all subdivisions
+  const subdivisionsSum = await db.subdivision.aggregate({
+    where: { countryId, status: "approved" },
+    _sum: { population: true }
+  });
+  const totalSubPop = subdivisionsSum._sum.population ?? 0;
+  if (totalSubPop > 0) {
+    await db.country.update({
+      where: { id: countryId },
+      data: { currentPopulation: totalSubPop }
+    });
+  }
+}
+
+export async function syncResourcePoolModifiers(db: any, countryId: string) {
+  // 1. Get all points of interest for this country with category "resource"
+  const resources = await db.pointOfInterest.findMany({
+    where: { countryId, category: "resource", status: "approved" }
+  });
+
+  // 2. Get all operational transport routes and hubs for this country
+  const routes = await db.transportRoute.findMany({
+    where: { countryId, status: "operational" }
+  });
+  const hubs = await db.transportHub.findMany({
+    where: { countryId }
+  });
+
+  for (const resource of resources) {
+    const resCoords = resource.coordinates as [number, number] | null;
+    if (!resCoords || !Array.isArray(resCoords) || resCoords.length < 2) continue;
+    const [resLng, resLat] = resCoords;
+
+    let isConnected = false;
+
+    // Check distance to hubs
+    for (const hub of hubs) {
+      const hubCoords = hub.coordinates as [number, number] | null;
+      if (hubCoords && Array.isArray(hubCoords) && hubCoords.length >= 2) {
+        const dist = calculateDistanceKm(resLat, resLng, hubCoords[1], hubCoords[0]);
+        if (dist <= 15) {
+          isConnected = true;
+          break;
+        }
+      }
+    }
+
+    // Check distance to routes
+    if (!isConnected) {
+      for (const route of routes) {
+        const geom = route.geometry as any;
+        const coords = geom?.coordinates as [number, number][] | undefined;
+        if (Array.isArray(coords)) {
+          for (const pt of coords) {
+            const dist = calculateDistanceKm(resLat, resLng, pt[1], pt[0]);
+            if (dist <= 15) {
+              isConnected = true;
+              break;
+            }
+          }
+        }
+        if (isConnected) break;
+      }
+    }
+
+    // 3. Update POI metadata with connection status
+    const existingMeta = (resource.metadata as Record<string, any>) || {};
+    const resourceType = existingMeta.resourceType || "minerals";
+    const quality = existingMeta.quality !== undefined ? Number(existingMeta.quality) : 0.5;
+
+    await db.pointOfInterest.update({
+      where: { id: resource.id },
+      data: {
+        metadata: {
+          ...existingMeta,
+          isConnected,
+          resourceType,
+          quality
+        }
+      }
+    });
+
+    // 4. Create/update StorytellerEffect (DmInput)
+    const inputType = `resource_${resourceType}_output`;
+    const effectValue = isConnected ? quality * 100 : 0;
+    const description = `Resource output for ${resource.name} (${resourceType}, quality: ${quality.toFixed(2)}, connected: ${isConnected})`;
+
+    // Check if a StorytellerEffect already exists for this resource POI
+    const existingEffect = await db.storytellerEffect.findFirst({
+      where: {
+        countryId,
+        inputType,
+        createdBy: `resource_node_${resource.id}`
+      }
+    });
+
+    if (existingEffect) {
+      await db.storytellerEffect.update({
+        where: { id: existingEffect.id },
+        data: {
+          value: effectValue,
+          description,
+          isActive: isConnected,
+          ixTimeTimestamp: new Date()
+        }
+      });
+    } else {
+      await db.storytellerEffect.create({
+        data: {
+          countryId,
+          inputType,
+          value: effectValue,
+          description,
+          isActive: isConnected,
+          createdBy: `resource_node_${resource.id}`,
+          ixTimeTimestamp: new Date()
+        }
+      });
+    }
+  }
+
+  // Deactivate storyteller effects for any deleted resource POIs
+  const activeResourcePoiIds = resources.map((r: any) => r.id);
+  const obsoleteEffects = await db.storytellerEffect.findMany({
+    where: {
+      countryId,
+      createdBy: { startsWith: "resource_node_" },
+      isActive: true
+    }
+  });
+
+  for (const eff of obsoleteEffects) {
+    const poiId = eff.createdBy.replace("resource_node_", "");
+    if (!activeResourcePoiIds.includes(poiId)) {
+      await db.storytellerEffect.update({
+        where: { id: eff.id },
+        data: {
+          isActive: false,
+          value: 0,
+          description: "Resource POI deleted",
+          ixTimeTimestamp: new Date()
+        }
+      });
+    }
+  }
+}
+
 // ──────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────
@@ -726,6 +900,10 @@ export const geoFeaturesRouter = createTRPCRouter({
       }
       broadcastMapUpdate("city", input.countryId);
 
+      if (city.subdivisionId) {
+        await syncGeographicDemographics(ctx.db, input.countryId, city.subdivisionId);
+      }
+
       return { id: city.id, name: city.name, status: "approved" as const };
     }),
 
@@ -801,6 +979,11 @@ export const geoFeaturesRouter = createTRPCRouter({
 
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("city", input.countryId);
+
+      if (updated.subdivisionId) {
+        await syncGeographicDemographics(ctx.db, input.countryId, updated.subdivisionId);
+      }
+
       return { id: updated.id, name: updated.name };
     }),
 
@@ -834,6 +1017,11 @@ export const geoFeaturesRouter = createTRPCRouter({
         await invalidateCache(["geo.getCapitalCities"]);
       }
       broadcastMapUpdate("city", input.countryId);
+
+      if (city.subdivisionId) {
+        await syncGeographicDemographics(ctx.db, input.countryId, city.subdivisionId);
+      }
+
       return { id: input.cityId, deleted: true };
     }),
 
@@ -859,8 +1047,8 @@ export const geoFeaturesRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
       }
 
-      // Validate containment + name uniqueness
-      await validatePolygonContainment(
+      // Validate containment + clip polygon to country borders
+      const clippedGeometry = await clipAndValidatePolygon(
         ctx.db as any,
         input.countryId,
         input.geometry,
@@ -874,7 +1062,7 @@ export const geoFeaturesRouter = createTRPCRouter({
           countryId: input.countryId,
           type: input.type,
           level: input.level,
-          geometry: input.geometry as any,
+          geometry: clippedGeometry,
           capital: input.capital,
           population: input.population,
           status: "approved",
@@ -887,7 +1075,7 @@ export const geoFeaturesRouter = createTRPCRouter({
       try {
         terrainInfo = await getTerrainForArea(
           ctx.db as any,
-          input.geometry as unknown as import("geojson").Geometry
+          clippedGeometry as unknown as import("geojson").Geometry
         );
       } catch {
         // Terrain query failed — non-blocking
@@ -895,6 +1083,9 @@ export const geoFeaturesRouter = createTRPCRouter({
 
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("subdivision", input.countryId);
+
+      await syncGeographicDemographics(ctx.db, input.countryId);
+
       return {
         id: subdivision.id,
         name: subdivision.name,
@@ -933,8 +1124,9 @@ export const geoFeaturesRouter = createTRPCRouter({
       }
 
       // Validate new geometry if provided
+      let clippedGeometry = undefined;
       if (input.geometry) {
-        await validatePolygonContainment(
+        clippedGeometry = await clipAndValidatePolygon(
           ctx.db as any,
           input.countryId,
           input.geometry,
@@ -957,7 +1149,7 @@ export const geoFeaturesRouter = createTRPCRouter({
           ...(input.name && { name: input.name }),
           ...(input.type && { type: input.type }),
           ...(input.level !== undefined && { level: input.level }),
-          ...(input.geometry && { geometry: input.geometry as any }),
+          ...(clippedGeometry && { geometry: clippedGeometry }),
           ...(input.capital !== undefined && { capital: input.capital }),
           ...(input.population !== undefined && { population: input.population }),
         },
@@ -965,6 +1157,9 @@ export const geoFeaturesRouter = createTRPCRouter({
 
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("subdivision", input.countryId);
+
+      await syncGeographicDemographics(ctx.db, input.countryId);
+
       return { id: updated.id, name: updated.name };
     }),
 
@@ -994,6 +1189,9 @@ export const geoFeaturesRouter = createTRPCRouter({
       await ctx.db.subdivision.delete({ where: { id: input.subdivisionId } });
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("subdivision", input.countryId);
+
+      await syncGeographicDemographics(ctx.db, input.countryId);
+
       return { id: input.subdivisionId, deleted: true };
     }),
 
@@ -1218,6 +1416,7 @@ export const geoFeaturesRouter = createTRPCRouter({
         description: z.string().max(500).optional(),
         icon: z.string().optional(),
         wikiPageTitle: z.string().max(200).optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1254,6 +1453,7 @@ export const geoFeaturesRouter = createTRPCRouter({
           wikiPageTitle: input.wikiPageTitle,
           status: "approved",
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+          metadata: (input.metadata ?? {}) as any,
         },
       });
 
@@ -1284,6 +1484,11 @@ export const geoFeaturesRouter = createTRPCRouter({
 
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("poi", input.countryId);
+
+      if (poi.category === "resource") {
+        await syncResourcePoolModifiers(ctx.db, input.countryId);
+      }
+
       return { id: poi.id, name: poi.name, status: "approved" as const };
     }),
 
@@ -1301,6 +1506,7 @@ export const geoFeaturesRouter = createTRPCRouter({
         description: z.string().max(500).optional(),
         icon: z.string().optional(),
         wikiPageTitle: z.string().max(200).nullable().optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1346,11 +1552,17 @@ export const geoFeaturesRouter = createTRPCRouter({
           ...(input.description !== undefined && { description: input.description }),
           ...(input.icon !== undefined && { icon: input.icon }),
           ...(input.wikiPageTitle !== undefined && { wikiPageTitle: input.wikiPageTitle }),
+          ...(input.metadata !== undefined && { metadata: input.metadata as any }),
         },
       });
 
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("poi", input.countryId);
+
+      if (poi.category === "resource" || updated.category === "resource") {
+        await syncResourcePoolModifiers(ctx.db, input.countryId);
+      }
+
       return { id: updated.id, name: updated.name };
     }),
 
@@ -1380,6 +1592,11 @@ export const geoFeaturesRouter = createTRPCRouter({
       await ctx.db.pointOfInterest.delete({ where: { id: input.poiId } });
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("poi", input.countryId);
+
+      if (poi.category === "resource") {
+        await syncResourcePoolModifiers(ctx.db, input.countryId);
+      }
+
       return { id: input.poiId, deleted: true };
     }),
 
