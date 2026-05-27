@@ -6,6 +6,7 @@ import { DevCountryViewProvider } from "~/context/DevCountryViewContext";
 import { DemoModeProvider, useDemoMode } from "~/context/DemoModeContext";
 import { DevCountryViewToolbar, ViewingAsBanner } from "~/components/dev";
 import { AlertTriangle } from "lucide-react";
+import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
 
 interface MyCountryLayoutProps {
   children: ReactNode;
@@ -28,6 +29,7 @@ export default function MyCountryLayout({ children }: MyCountryLayoutProps) {
     <Suspense fallback={null}>
       <DemoModeProvider>
         <DevCountryViewProvider>
+          <MyCountryDIPlugin />
           <DemoModeBanner />
           <ViewingAsBanner />
           {children}

@@ -24,9 +24,10 @@ import {
 } from "lucide-react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { IxTime } from "~/lib/ixtime";
+import { IXWORLD_VERSION } from "~/lib/buildVersion";
 
 /** IxWorld version — bump this to re-show welcome on major updates */
-export const IXWORLD_VERSION = "2.1.7";
+export { IXWORLD_VERSION };
 const STORAGE_KEY = "ixworld-welcome-seen";
 
 interface MapWelcomeModalProps {

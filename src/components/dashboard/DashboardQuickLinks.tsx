@@ -3,8 +3,7 @@ import Link from "next/link";
 import { BookOpen, MessageSquare } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/status-indicator";
-import { IXWORLD_VERSION } from "~/components/maps/core/MapWelcomeModal";
-import { BUILD_VERSION } from "~/lib/buildVersion";
+import { BUILD_VERSION, IXWORLD_VERSION } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/modals/FeedbackModal";
 import {

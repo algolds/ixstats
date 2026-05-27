@@ -23,6 +23,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import type { SettingsViewProps } from "./types";
+import { useActiveDIPlugin } from "./plugin-context";
 
 // ─── Local toggle hook ───────────────────────────────────────────────────────
 
@@ -86,14 +87,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function SettingsView({ onClose }: SettingsViewProps) {
   const { user, isLoaded, isSignedIn } = useUser();
-  const { effectiveTheme, compactMode, toggleCompactMode } = useTheme();
-  const pathname = usePathname();
-  const normalizedPathname = stripBasePath(pathname || "");
-  const isOnWikiPage =
-    normalizedPathname.startsWith("/w/") ||
-    normalizedPathname.startsWith("/w/special/") ||
-    normalizedPathname.startsWith("/blurbs") ||
-    false;
+  const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
+  const activePlugin = useActiveDIPlugin();
+  const isOnWikiPage = activePlugin?.id === "wiki";
 
   // Wiki-specific toggles
   const [showCiteTooltips, toggleCiteTooltips] = useLocalToggle(
@@ -211,7 +207,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
           <div className="min-w-0 flex-1">
             <div className="text-foreground text-sm font-medium">Theme</div>
             <div className="text-muted-foreground text-xs">
-              {effectiveTheme === "dark" ? "Dark" : "Light"}
+              {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
             </div>
           </div>
           <AnimatedThemeToggler className="h-8 w-8" />

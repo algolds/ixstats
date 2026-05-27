@@ -36,6 +36,7 @@ import { useWikiOSShortcuts } from "~/components/wikios/shared/useWikiOSShortcut
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
+import { WIKIOS_VERSION } from "~/lib/buildVersion";
 
 // ---------------------------------------------------------------------------
 // Nav items (Search removed — handled by modal)
@@ -463,7 +464,7 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
       </div>
 
       <footer className="wikios-main-footer">
-        Powered by <strong>WikiOS</strong> v0.98-alpha
+        Powered by <strong>WikiOS</strong> v{WIKIOS_VERSION}
       </footer>
 
       {/* Search Modal */}

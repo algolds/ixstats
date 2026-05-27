@@ -7,6 +7,7 @@ import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";
 import { ThinkPagesIcon } from "./ThinkPagesIcon";
+import { THINKPAGES_VERSION } from "~/lib/buildVersion";
 
 interface ThinkPagesStatusWidgetProps {
   countryId?: string;
@@ -105,7 +106,7 @@ export function ThinkPagesStatusWidget({
         </div>
         <div className="flex items-center gap-2">
           <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-          <span className="text-muted-foreground text-xs">Platform v1.0</span>
+          <span className="text-muted-foreground text-xs">Platform v{THINKPAGES_VERSION}</span>
         </div>
       </div>
 

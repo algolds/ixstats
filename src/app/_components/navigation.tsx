@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useTransform, useSpring } from "motion/react";
 import {
   Activity,
   BarChart3,
@@ -460,8 +460,8 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
     ],
   },
   default: {
-    title: "IxStats Platform",
-    description: "Quick links into the primary platform areas.",
+    title: "IxStats",
+    description: "Quick links",
     groups: [
       {
         title: "Primary Areas",
@@ -854,13 +854,16 @@ export function Navigation() {
 
   // Intelligent balancing: ensure visual symmetry around dynamic island
   const totalItems = visibleNavItems.length;
-
-  // For better visual balance, try to keep sides equal or left-heavy by 1
   const leftCount = Math.ceil(totalItems / 2);
-
-  // Create balanced arrays ensuring both sides have similar visual weight
   const leftNavItems = visibleNavItems.slice(0, leftCount);
   const rightNavItems = visibleNavItems.slice(leftCount);
+
+  // ── Physics morph progress: 0 = full tabs, 1 = tabs fully absorbed ──
+  const morphProgress = useMemo(() => {
+    const start = 40;
+    const end = 100;
+    return Math.min(1, Math.max(0, (scrollY - start) / (end - start)));
+  }, [scrollY]);
 
   // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
   if (pathname?.startsWith("/maps")) return null;
@@ -873,6 +876,10 @@ export function Navigation() {
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
             : "from-background/95 via-secondary/95 to-background/95 border-border bg-gradient-to-r shadow-2xl"
         }`}
+        style={{
+          opacity: 1 - morphProgress * 0.6,
+          transition: 'opacity 0.05s linear',
+        }}
       >
         {!isWikiPage && (
           <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
@@ -880,8 +887,16 @@ export function Navigation() {
 
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="relative hidden h-16 w-full items-center justify-between lg:flex">
-            {/* Left Side Navigation */}
-            <div className="z-[var(--z-floating)] flex flex-1 items-center justify-start gap-2 xl:gap-3">
+            {/* Left Side Navigation — morphs toward center */}
+            <div
+              className="z-[var(--z-floating)] flex flex-1 items-center justify-start gap-2 xl:gap-3"
+              style={{
+                transform: `translateX(${morphProgress * 30}%) scale(${1 - morphProgress * 0.3})`,
+                opacity: 1 - morphProgress,
+                pointerEvents: morphProgress > 0.8 ? 'none' : 'auto',
+                transition: 'transform 0.05s linear, opacity 0.05s linear',
+              }}
+            >
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {leftNavItems.map((item) => {
@@ -1064,12 +1079,23 @@ export function Navigation() {
 
             {/* Desktop Command Palette */}
             <div className="absolute top-1/2 left-1/2 z-[var(--z-command)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 transform">
-              <div className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 opacity-60 blur-3xl" />
+              <div
+                className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl"
+                style={{ opacity: 0.6 * (1 - morphProgress) }}
+              />
               {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
             </div>
 
-            {/* Right Side Navigation */}
-            <div className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3">
+            {/* Right Side Navigation — morphs toward center */}
+            <div
+              className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3"
+              style={{
+                transform: `translateX(${-morphProgress * 30}%) scale(${1 - morphProgress * 0.3})`,
+                opacity: 1 - morphProgress,
+                pointerEvents: morphProgress > 0.8 ? 'none' : 'auto',
+                transition: 'transform 0.05s linear, opacity 0.05s linear',
+              }}
+            >
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {rightNavItems.map((item) => {
@@ -1264,7 +1290,7 @@ export function Navigation() {
             </div>
           </div>
 
-          {/* Mobile Title Bar */}
+          {/* Mobile Title Bar — DI pill replaces hamburger */}
           <div className="flex h-14 w-full items-center justify-between py-2 lg:hidden">
             <div className="flex min-w-0 flex-1 flex-col pr-3">
               <span className="text-muted-foreground/80 text-[10px] tracking-wide uppercase sm:text-[11px]">
@@ -1274,16 +1300,23 @@ export function Navigation() {
                 {contextMenu.title}
               </span>
             </div>
-            <button
-              type="button"
-              className="border-border/60 bg-background/80 text-foreground inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-expanded={mobileMenuOpen}
-              aria-controls="ixstats-mobile-navigation"
-              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* DI pill on mobile */}
+              <div className="max-w-[200px]">
+                <CommandPalette isSticky={false} scrollY={0} />
+              </div>
+              {/* Compact nav trigger */}
+              <button
+                type="button"
+                className="border-border/60 bg-background/80 text-foreground inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="ixstats-mobile-navigation"
+                aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
         </div>
       </nav>

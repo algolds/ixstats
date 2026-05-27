@@ -1,7 +1,7 @@
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, type PanInfo } from "motion/react";
 import {
   DynamicIsland,
   useDynamicIslandSize,
@@ -10,7 +10,9 @@ import {
 } from "../ui/dynamic-island";
 import { CompactView } from "./CompactView";
 import { ExpandedView } from "./ExpandedView";
+import { NavTray, getSectionForPath } from "./NavTray";
 import { useDynamicIslandState } from "./hooks";
+import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 
@@ -22,6 +24,10 @@ export {
   SIZE_PRESETS,
   DynamicIslandProvider,
 } from "../ui/dynamic-island";
+
+// Re-export plugin system for page-level consumption
+export { useDIPlugin, useActiveDIPlugin, useAllDIPlugins, useDIPluginView, DIPluginProvider } from "./plugin-context";
+export type { DIPlugin, DIAction, DIViewProps, DIBadge } from "./types";
 
 interface CommandPaletteProps {
   className?: string;
@@ -40,6 +46,8 @@ function CommandPaletteContent({
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diPulseClass, setDiPulseClass] = useState("");
+  const [navTrayOpen, setNavTrayOpen] = useState(false);
+  const [pillBounce, setPillBounce] = useState(false);
 
   // Use shared state management
   const {
@@ -53,7 +61,6 @@ function CommandPaletteContent({
     timeDisplayMode,
     searchResults,
     countriesData,
-    isOnWikiPage,
     setMode,
     setIsExpanded,
     setExpandedMode,
@@ -64,10 +71,19 @@ function CommandPaletteContent({
     switchMode,
   } = useDynamicIslandState();
 
+  const diPathname = usePathname();
+  const prevNavRef = useRef(diPathname);
+  const sectionInfo = getSectionForPath(diPathname || "/");
+
+  // ── Plugin system: read active plugin ──
+  const activePlugin = useActiveDIPlugin();
+  const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
+  const isWikiActive = activePlugin?.id === "wiki";
+
   // Dynamic size based on sticky/collapsed state + wiki context
   useEffect(() => {
     let newSize: string;
-    if (isOnWikiPage) {
+    if (isWikiActive) {
       if (isSticky && isCollapsed) {
         newSize = SIZE_PRESETS.WIKI_COMPACT; // 170x32 — compact wiki pill
       } else if (isSticky) {
@@ -85,21 +101,36 @@ function CommandPaletteContent({
       }
     }
     setSize(newSize);
-  }, [setSize, isSticky, isCollapsed, isOnWikiPage]);
-
-  // DI glow pulse on wiki page navigation
-  const diPathname = usePathname();
-  const prevNavRef = useRef(diPathname);
+  }, [setSize, isSticky, isCollapsed, isWikiActive]);
 
   useEffect(() => {
-    if (isOnWikiPage && diPathname !== prevNavRef.current) {
+    if (isWikiActive && diPathname !== prevNavRef.current) {
       prevNavRef.current = diPathname;
       setDiPulseClass("animate-di-nav-pulse");
       const timer = setTimeout(() => setDiPulseClass(""), 400);
       return () => clearTimeout(timer);
     }
     return;
-  }, [diPathname, isOnWikiPage]);
+  }, [diPathname, isWikiActive]);
+
+  // Close nav tray when navigating
+  useEffect(() => {
+    setNavTrayOpen(false);
+  }, [diPathname]);
+
+  // Swipe-up gesture handler
+  const handleDragEnd = useCallback(
+    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      if (info.offset.y < -30 || info.velocity.y < -200) {
+        if (!isExpanded) {
+          setPillBounce(true);
+          setTimeout(() => setPillBounce(false), 300);
+          setNavTrayOpen(true);
+        }
+      }
+    },
+    [isExpanded]
+  );
 
   // Initialize notification store
   const initialize = useNotificationStore((state) => state.initialize);
@@ -182,11 +213,20 @@ function CommandPaletteContent({
           )}
         </AnimatePresence>
 
-        {/* DI pill with scale bump */}
+        {/* DI pill — draggable for swipe-up nav tray */}
         <motion.div
           className={`rounded-full ${diPulseClass}`}
-          animate={{ scale: ringActive ? 1.04 : 1 }}
+          animate={{
+            scale: ringActive ? 1.04 : 1,
+            y: pillBounce ? -4 : 0,
+          }}
           transition={{ type: "spring", stiffness: 500, damping: 20 }}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.15}
+          dragMomentum={false}
+          onDragEnd={handleDragEnd}
+          style={{ touchAction: "none" }}
         >
           <DynamicIsland id="command-palette">
             <CompactView
@@ -198,10 +238,30 @@ function CommandPaletteContent({
               setTimeDisplayMode={setTimeDisplayMode}
               onSwitchMode={switchMode}
               scrollY={scrollY}
-              isOnWikiPage={isOnWikiPage}
+              activePlugin={activePlugin}
+              pluginCenter={activePlugin?.center}
+              pluginActions={activePlugin?.actions}
+              pluginBadge={activePlugin?.badge}
             />
           </DynamicIsland>
+
+          {/* Section accent line — visible when sticky */}
+          {isSticky && (
+            <motion.div
+              className="pointer-events-none absolute -bottom-0.5 left-1/4 right-1/4 h-[2px] rounded-full"
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 0.8, scaleX: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+              style={{ backgroundColor: pluginAccentColor }}
+            />
+          )}
         </motion.div>
+
+        {/* Nav tray dropdown */}
+        <NavTray
+          isOpen={navTrayOpen && !isExpanded}
+          onClose={() => setNavTrayOpen(false)}
+        />
       </div>
 
       {/* Expanded dropdown content - only on desktop */}
@@ -216,6 +276,7 @@ function CommandPaletteContent({
           debouncedSearchQuery={debouncedSearchQuery}
           searchResults={searchResults}
           countriesData={countriesData}
+          activePlugin={activePlugin}
         />
       )}
     </>
@@ -237,7 +298,9 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
       }}
     >
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
+        <DIPluginProvider>
+          <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
+        </DIPluginProvider>
       </DynamicIslandProvider>
     </div>
   );

@@ -28,7 +28,7 @@ export interface SearchResult {
   action: () => void;
 }
 
-// View modes
+// View modes — includes plugin-provided views via template literal
 export type ViewMode =
   | "compact"
   | "search"
@@ -36,9 +36,43 @@ export type ViewMode =
   | "settings"
   | "mycountry"
   | "cycling"
-  | "wiki";
+  | `plugin:${string}`;
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 export type TimeDisplayMode = "time" | "date" | "both";
+
+// ── Plugin System Types ─────────────────────────────────────────────
+
+/** Props passed to plugin-provided expanded views */
+export interface DIViewProps {
+  onClose: () => void;
+}
+
+/** An action button a plugin can inject into the pill */
+export interface DIAction {
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  badge?: number;
+}
+
+/** A badge indicator (colored dot) on the pill */
+export interface DIBadge {
+  color: string;
+  pulse?: boolean;
+}
+
+/** A plugin registration object — pages call useDIPlugin() with this */
+export interface DIPlugin {
+  id: string;
+  priority?: number;
+  center?: React.ReactNode;
+  actions?: DIAction[];
+  expandedViews?: Record<string, React.ComponentType<DIViewProps>>;
+  badge?: DIBadge;
+  accentColor?: string;
+  stickyLabel?: string;
+}
 
 // Current time state interface
 export interface CurrentTimeState {
@@ -61,7 +95,11 @@ export interface CompactViewProps {
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
   onSwitchMode: (mode: ViewMode) => void;
   scrollY?: number;
-  isOnWikiPage?: boolean;
+  activePlugin?: DIPlugin | null;
+  // Plugin system props
+  pluginCenter?: React.ReactNode;
+  pluginActions?: DIAction[];
+  pluginBadge?: DIBadge;
 }
 
 export interface CountriesData {

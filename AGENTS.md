@@ -139,6 +139,20 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 | Jest | 30.4.2 |
 | Express | 5.2.1 |
 
+## Subsystem Versions
+
+Subsystem versions are centralized in [src/lib/buildVersion.ts](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts):
+
+| Subsystem | Constant | Version | Location / Usage |
+|-----------|----------|---------|------------------|
+| Application | `APP_VERSION` | `1.42` | Main platform version (matches `package.json`) |
+| WikiOS | `WIKIOS_VERSION` | `1.0-alpha` | [WikiOSLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/shared/WikiOSLayout.tsx) footer |
+| IxWorld Maps | `IXWORLD_VERSION` | `2.1.7` | [MapWelcomeModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/MapWelcomeModal.tsx) version check |
+| IxForum | `IXFORUM_VERSION` | `1.0-alpha` | [ForumLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/forum/shared/ForumLayout.tsx) footer |
+| ThinkPages | `THINKPAGES_VERSION` | `1.0` | [ThinkPagesStatusWidget.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/ThinkPagesStatusWidget.tsx) stats widget |
+| Nation Builder | `BUILDER_VERSION` | `1.5` | [BuilderHeader.tsx](file:///ixwiki/public/projects/ixstats/src/app/builder/components/enhanced/sections/BuilderHeader.tsx) header badge |
+
+
 ## Gotchas
 
 - **Turbopack**: Next.js 16 defaults to Turbopack. Dev script uses `bun run next dev` (no `--webpack` flag).

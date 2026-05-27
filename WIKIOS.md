@@ -1,4 +1,4 @@
-# WikiOS v0.1-alpha
+# WikiOS v1.0-alpha
 
 **A modern wiki frontend replacing MediaWiki's UI** — built with Next.js 16, React 19, PlateJS, CodeMirror 6, and Parsoid.
 
@@ -295,7 +295,7 @@ prisma/
 | **Icon Rail Sidebar** | Desktop: vertical icon rail with tooltips |
 | **Mobile Pills** | Mobile: horizontal scrollable pill navigation |
 | **Keyboard Shortcuts** | Cmd+K (search), Cmd+E (edit), and more |
-| **Footer** | "Powered by WikiOS v0.1-alpha" on all pages |
+| **Footer** | "Powered by WikiOS v{WIKIOS_VERSION}" (defined in [src/lib/buildVersion.ts](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts)) |
 
 ## API Endpoints
 

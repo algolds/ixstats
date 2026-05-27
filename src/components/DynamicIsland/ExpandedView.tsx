@@ -2,8 +2,7 @@ import React from "react";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
-import { WikiView } from "./WikiView";
-import type { ExpandedViewProps } from "./types";
+import type { ExpandedViewProps, DIPlugin } from "./types";
 
 export function ExpandedView({
   mode,
@@ -15,7 +14,8 @@ export function ExpandedView({
   debouncedSearchQuery,
   searchResults,
   countriesData,
-}: ExpandedViewProps) {
+  activePlugin,
+}: ExpandedViewProps & { activePlugin?: DIPlugin | null }) {
   // Don't render if mode is compact or cycling
   if (mode === "compact" || mode === "cycling") {
     return null;
@@ -55,7 +55,15 @@ export function ExpandedView({
           )}
           {mode === "notifications" && <NotificationsView onClose={onClose} />}
           {mode === "settings" && <SettingsView onClose={onClose} />}
-          {mode === "wiki" && <WikiView onClose={onClose} />}
+
+
+          {/* Plugin-provided expanded views */}
+          {typeof mode === "string" && mode.startsWith("plugin:") && (() => {
+            const viewName = mode.slice(7); // strip "plugin:" prefix
+            const PluginView = activePlugin?.expandedViews?.[viewName];
+            if (!PluginView) return null;
+            return <PluginView onClose={onClose} />;
+          })()}
         </div>
       </div>
     </div>

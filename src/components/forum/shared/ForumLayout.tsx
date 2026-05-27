@@ -25,6 +25,7 @@ import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { api } from "~/trpc/react";
+import { IXFORUM_VERSION } from "~/lib/buildVersion";
 
 // ---------------------------------------------------------------------------
 // Nav items
@@ -286,7 +287,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
       </div>
 
       <footer className="forum-main-footer relative z-10">
-        Powered by <strong>IxForum</strong> v0.1-alpha
+        Powered by <strong>IxForum</strong> v{IXFORUM_VERSION}
       </footer>
 
       {/* Search Modal */}

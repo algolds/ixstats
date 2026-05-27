@@ -24,6 +24,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult } from "./types";
+import { useActiveDIPlugin } from "./plugin-context";
 
 // Development-only logger to suppress Dynamic Island logs in production
 const devLog = (...args: any[]) => {
@@ -131,13 +132,8 @@ export function useCommandItems(userProfile?: UserProfile) {
 export function useDynamicIslandState() {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
-  const normalizedPathname = stripBasePath(pathname || "");
-  const isOnWikiPage =
-    normalizedPathname.startsWith("/w/") ||
-    normalizedPathname.startsWith("/w/special/") ||
-    normalizedPathname.startsWith("/blurbs") ||
-    false;
-  const isOnForumPage = pathname?.startsWith("/forum") || false;
+  const activePlugin = useActiveDIPlugin();
+  const isWikiActive = activePlugin?.id === "wiki";
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
@@ -395,7 +391,7 @@ export function useDynamicIslandState() {
       clearTimeout(cyclingTimeoutRef.current);
     }
 
-    if (mode === "compact" && !isUserInteracting && !isOnWikiPage) {
+    if (mode === "compact" && !isUserInteracting && !activePlugin) {
       cyclingTimeoutRef.current = setTimeout(() => {
         switchMode("cycling");
       }, idleMs);
@@ -406,14 +402,17 @@ export function useDynamicIslandState() {
         clearTimeout(cyclingTimeoutRef.current);
       }
     };
-  }, [mode, isUserInteracting, isOnWikiPage, switchMode]);
+  }, [mode, isUserInteracting, activePlugin, switchMode]);
 
-  // On wiki pages, default expanded mode to wiki view
+  // When active plugin changes, default expanded mode to plugin view
   useEffect(() => {
-    if (isOnWikiPage) {
-      setExpandedMode("wiki");
+    if (activePlugin?.expandedViews) {
+      const firstViewKey = Object.keys(activePlugin.expandedViews)[0];
+      if (firstViewKey) {
+        setExpandedMode(`plugin:${firstViewKey}`);
+      }
     }
-  }, [isOnWikiPage]);
+  }, [activePlugin]);
 
   // Forum pages use their own ForumLayout sidebar — no DI forum mode needed.
 
@@ -550,7 +549,7 @@ export function useDynamicIslandState() {
       }
 
       // Tab (no modifiers, not in input) — wiki mode toggle only
-      // Only activates on wiki pages. Forum pages use their own sidebar.
+      // Only activates when wiki plugin is active.
       // Double-tap Tab within 400ms on wiki — enter editor mode
       if (
         e.key === "Tab" &&
@@ -560,7 +559,7 @@ export function useDynamicIslandState() {
         !isInputFocused &&
         mode !== "search" &&
         !isProcessingShortcut &&
-        isOnWikiPage
+        isWikiActive
       ) {
         e.preventDefault();
         e.stopPropagation();
@@ -569,7 +568,7 @@ export function useDynamicIslandState() {
         const timeSinceLastTab = now - (lastTabTimestampRef.current ?? 0);
         lastTabTimestampRef.current = now;
 
-        if (timeSinceLastTab < 400 && mode === "wiki") {
+        if (timeSinceLastTab < 400 && mode === "plugin:wiki") {
           // Double-tap on wiki: close wiki mode
           setIsProcessingShortcut(true);
           switchMode("compact");
@@ -580,7 +579,7 @@ export function useDynamicIslandState() {
         } else {
           // Single tap: toggle wiki mode
           setIsProcessingShortcut(true);
-          switchMode(mode === "wiki" ? "compact" : "wiki");
+          switchMode(mode === "plugin:wiki" ? "compact" : "plugin:wiki");
           if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
           shortcutTimeoutRef.current = setTimeout(() => {
             setIsProcessingShortcut(false);
@@ -642,7 +641,6 @@ export function useDynamicIslandState() {
     timeDisplayMode,
     searchResults,
     countriesData,
-    isOnWikiPage,
 
     // Actions
     setMode,

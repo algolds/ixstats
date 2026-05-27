@@ -46,6 +46,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
 - [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
 - [`systems/maps.md`](systems/maps.md) – IxWorld interactive map, MapLibre GL JS, procedural world generation, border editor
+- [`systems/dynamic-island.md`](systems/dynamic-island.md) – Dynamic Island plugin-driven system architecture, registry, and custom layouts
 - [`systems/ixcredits.md`](systems/ixcredits.md) – IxCredits economy and premium features
 
 ### Operations

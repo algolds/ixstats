@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { AutosaveHistoryPanel } from "~/components/builder/AutosaveHistoryPanel";
+import { BUILDER_VERSION } from "~/lib/buildVersion";
 
 interface BuilderHeaderProps {
   onBackToIntro?: () => void;
@@ -59,7 +60,7 @@ export function BuilderHeader({
               className="hidden items-center gap-1 border-amber-500/20 md:flex"
             >
               <Zap className="h-3 w-3 text-amber-500" />
-              {isEditMode ? "Editor" : "Builder"} v1.5
+              {isEditMode ? "Editor" : "Builder"} v{BUILDER_VERSION}
             </Badge>
           </div>
           <div className="flex items-center gap-3">
