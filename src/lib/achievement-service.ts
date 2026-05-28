@@ -2,34 +2,139 @@
  * Achievement Auto-Unlock Service
  *
  * Provides centralized logic for checking and auto-unlocking achievements
- * when country data changes. Used by routers to automatically award achievements
- * when users meet the criteria.
+ * when country data changes. Now processes unlocks asynchronously via a queue
+ * backed by Redis (with local fallback).
  *
  * Usage:
  *   import { achievementService } from '~/lib/achievement-service';
- *   await achievementService.checkAndUnlock(userId, countryId, db);
+ *   // Now triggered via events or checkAndUnlock directly
  */
 
 import { type PrismaClient } from "@prisma/client";
 import {
-  checkAchievements,
   getAchievementById,
   type ExtendedAchievementData,
 } from "./achievement-definitions";
 import { vaultService } from "./vault-service";
 import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
 import { awardAchievementCard } from "./card-service";
+import { eventBus } from "./event-bus";
+import { Redis } from "ioredis";
+import { ActivityHooks } from "~/lib/activity-hooks";
+import { notificationHooks } from "~/lib/notification-hooks";
 
-/**
- * Achievement Service
- * Handles auto-unlocking of achievements based on country data
- */
+// Redis client (lazy initialized)
+let redisClient: Redis | null = null;
+function getRedisClient(): Redis | null {
+  if (redisClient) return redisClient;
+  const redisUrl = process.env.REDIS_URL;
+  const redisEnabled = process.env.REDIS_ENABLED === "true";
+  if (redisUrl && redisEnabled) {
+    try {
+      redisClient = new Redis(redisUrl, {
+        maxRetriesPerRequest: 1,
+      });
+      redisClient.on("error", (err) => {
+        console.warn("[Achievement Service] Redis connection error:", err.message);
+      });
+      return redisClient;
+    } catch (err) {
+      console.warn("[Achievement Service] Failed to initialize Redis client:", err);
+    }
+  }
+  return null;
+}
+
 export class AchievementService {
+  private inMemoryQueue: Array<{ userId: string; countryId: string }> = [];
+  private processingSet = new Set<string>();
+  private workerInterval: any = null;
+
+  constructor() {
+    // Only subscribe and start background worker if we are on server-side
+    if (typeof window === "undefined") {
+      const events = [
+        "country:updated",
+        "military:updated",
+        "diplomacy:updated",
+        "thinkpages:updated",
+        "user:login",
+        "user:signup"
+      ];
+      
+      for (const eventName of events) {
+        eventBus.subscribe(eventName, (payload: any) => {
+          if (payload && payload.userId && payload.countryId) {
+            this.enqueue(payload.userId, payload.countryId);
+          }
+        });
+      }
+      
+      this.startWorker();
+    }
+  }
+
   /**
-   * Calculate IxCredits reward based on achievement rarity
-   * @param rarity Achievement rarity tier
-   * @returns IxCredits amount to award
+   * Enqueue user country for achievement evaluation
    */
+  enqueue(userId: string, countryId: string) {
+    const key = `${userId}:${countryId}`;
+    if (this.processingSet.has(key)) {
+      return;
+    }
+    
+    this.processingSet.add(key);
+    
+    const redis = getRedisClient();
+    if (redis) {
+      redis.rpush("achievements:queue", JSON.stringify({ userId, countryId }))
+        .catch((err) => {
+          console.warn("[Achievement Service] Redis enqueue failed, falling back to memory:", err);
+          this.inMemoryQueue.push({ userId, countryId });
+        });
+    } else {
+      this.inMemoryQueue.push({ userId, countryId });
+    }
+  }
+
+  private startWorker() {
+    this.workerInterval = setInterval(async () => {
+      await this.processNextQueueItem();
+    }, 1000);
+  }
+
+  private async processNextQueueItem() {
+    let item: { userId: string; countryId: string } | null = null;
+    const redis = getRedisClient();
+    
+    if (redis) {
+      try {
+        const data = await redis.lpop("achievements:queue");
+        if (data) {
+          item = JSON.parse(data);
+        }
+      } catch (err) {
+        console.warn("[Achievement Service] Redis lpop failed, fallback to memory:", err);
+      }
+    }
+    
+    if (!item && this.inMemoryQueue.length > 0) {
+      item = this.inMemoryQueue.shift() || null;
+    }
+    
+    if (!item) return;
+    
+    const key = `${item.userId}:${item.countryId}`;
+    try {
+      const { db } = await import("~/server/db");
+      await this.checkAndUnlock(item.userId, item.countryId, db);
+    } catch (err) {
+      console.error("[Achievement Service] Error in queue worker:", err);
+    } finally {
+      this.processingSet.delete(key);
+    }
+  }
+
   private getCreditsForRarity(rarity: string): number {
     const rarityRewards: Record<string, number> = {
       Common: 5,
@@ -40,16 +145,84 @@ export class AchievementService {
     };
     return rarityRewards[rarity] || 5;
   }
+
+  /**
+   * Evaluate conditions using hybrid JSON rules engine + hardcoded definitions fallback
+   */
+  private evaluateCondition(
+    achievement: { key: string; triggerType: string; conditionJson: string | null },
+    data: ExtendedAchievementData
+  ): boolean {
+    if (achievement.conditionJson) {
+      try {
+        const rule = JSON.parse(achievement.conditionJson);
+        if (rule && rule.metric) {
+          return this.evaluateRule(rule, data);
+        }
+      } catch (err) {
+        console.error(`[Achievement Service] Failed to evaluate rules for ${achievement.key}:`, err);
+      }
+    }
+
+    const hardcoded = getAchievementById(achievement.key);
+    if (hardcoded && hardcoded.condition) {
+      try {
+        return hardcoded.condition(data);
+      } catch (err) {
+        console.error(`[Achievement Service] Failed hardcoded condition check for ${achievement.key}:`, err);
+      }
+    }
+
+    return false;
+  }
+
+  private evaluateRule(
+    rule: { metric: string; operator: string; value: any },
+    data: ExtendedAchievementData
+  ): boolean {
+    const { metric, operator, value } = rule;
+    let currentValue: any = undefined;
+
+    if (metric in data) {
+      currentValue = (data as any)[metric];
+    } else if (data.country && metric in data.country) {
+      currentValue = (data.country as any)[metric];
+    }
+
+    if (currentValue === undefined) {
+      return false;
+    }
+
+    switch (operator) {
+      case ">=":
+        return currentValue >= value;
+      case ">":
+        return currentValue > value;
+      case "<=":
+        return currentValue <= value;
+      case "<":
+        return currentValue < value;
+      case "==":
+      case "===":
+        return currentValue === value;
+      case "!=":
+      case "!==":
+        return currentValue !== value;
+      case "contains":
+        if (typeof currentValue === "string" && typeof value === "string") {
+          return currentValue.toLowerCase().includes(value.toLowerCase());
+        }
+        return false;
+      default:
+        return false;
+    }
+  }
+
   /**
    * Check and auto-unlock achievements for a user/country
-   * @param userId Clerk user ID
-   * @param countryId Country ID
-   * @param db Prisma database client
-   * @returns Array of newly unlocked achievement IDs
    */
   async checkAndUnlock(userId: string, countryId: string, db: PrismaClient): Promise<string[]> {
     try {
-      // Fetch country data
       const country = await db.country.findUnique({
         where: { id: countryId },
       });
@@ -59,7 +232,7 @@ export class AchievementService {
         return [];
       }
 
-      // Fetch extended data (diplomatic, military, social counts)
+      // Relational counts fetching
       const [
         embassyCount,
         militaryBranchCount,
@@ -69,25 +242,18 @@ export class AchievementService {
         existingAchievements,
         user,
       ] = await Promise.all([
-        // Count embassies (both hosted and owned)
         db.embassy.count({
           where: {
             OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }],
             status: "active",
           },
         }),
-
-        // Count military branches
         db.militaryBranch.count({
           where: { countryId },
         }),
-
-        // Count government components (atomic system)
         db.governmentComponent.count({
           where: { countryId },
         }),
-
-        // Count ThinkPages by clerkUserId (via account relation)
         db.thinkpagesPost
           .count({
             where: {
@@ -96,34 +262,26 @@ export class AchievementService {
               },
             },
           })
-          .catch(() => 0), // Gracefully handle if ThinkPages account doesn't exist
-
-        // Count followers
+          .catch(() => 0),
         db.countryFollow.count({
           where: { followedCountryId: countryId },
         }),
-
-        // Get already unlocked achievements
         db.userAchievement.findMany({
           where: { userId },
           select: { achievementId: true },
         }),
-
-        // Get user for days active calculation
         db.user.findUnique({
           where: { clerkUserId: userId },
           select: { createdAt: true },
         }),
       ]);
 
-      // Calculate additional metrics
       const daysActive = user
         ? Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
 
       const totalAchievements = existingAchievements.length;
 
-      // Calculate military spending from branches (sum of all branch budgets)
       const militaryBranches = await db.militaryBranch.findMany({
         where: { countryId },
         select: {
@@ -147,9 +305,7 @@ export class AchievementService {
       const militarySpendingPercent =
         country.currentTotalGdp > 0 ? (totalMilitaryBudget / country.currentTotalGdp) * 100 : 0;
 
-      // Get diplomatic counts from database
       const [treatyCount, tradePartnerCount, allianceCount] = await Promise.all([
-        // Count treaties where this country is a party (parties is a JSON/text field containing country IDs)
         db.treaty
           .count({
             where: {
@@ -158,8 +314,6 @@ export class AchievementService {
             },
           })
           .catch(() => 0),
-
-        // Count trade partners via diplomatic relations with non-zero trade volume
         db.diplomaticRelation
           .count({
             where: {
@@ -169,8 +323,6 @@ export class AchievementService {
             },
           })
           .catch(() => 0),
-
-        // Count alliance memberships
         db.allianceMember
           .count({
             where: {
@@ -181,7 +333,6 @@ export class AchievementService {
           .catch(() => 0),
       ]);
 
-      // Build extended achievement data
       const achievementData: ExtendedAchievementData = {
         country: {
           id: country.id,
@@ -222,101 +373,143 @@ export class AchievementService {
         totalAchievements,
       };
 
-      // Get already unlocked achievement IDs
       const alreadyUnlocked = new Set<string>(existingAchievements.map((a) => a.achievementId));
 
-      // Check which achievements should be unlocked
-      const toUnlock = checkAchievements(achievementData, alreadyUnlocked);
+      const activeAchievements = await db.achievement.findMany({
+        where: { isActive: true },
+      });
 
-      // Unlock each achievement
+      const achievementsToCheck = activeAchievements.filter((a) => !alreadyUnlocked.has(a.key));
+
       const unlocked: string[] = [];
-      for (const achievementId of toUnlock) {
-        const definition = getAchievementById(achievementId);
-        if (!definition) {
-          console.error(`[Achievement Service] Definition not found for ${achievementId}`);
-          continue;
-        }
-
-        try {
-          // Create UserAchievement record
-          await db.userAchievement.create({
-            data: {
-              userId,
-              achievementId: definition.id,
-              title: definition.title,
-              description: definition.description,
-              category: definition.category,
-              rarity: definition.rarity,
-              iconUrl: definition.iconUrl,
-              metadata: JSON.stringify({
-                points: definition.points,
-                unlockedAt: new Date().toISOString(),
-              }),
-            },
-          });
-
-          unlocked.push(achievementId);
-          console.log(`[Achievement Service] Unlocked: ${definition.title} for user ${userId}`);
-
-          // 💰 Award IxCredits for achievement unlock
+      for (const achievement of achievementsToCheck) {
+        if (this.evaluateCondition(achievement, achievementData)) {
           try {
-            const creditReward = this.getCreditsForRarity(definition.rarity);
-            const earnResult = await vaultService.earnCredits(
-              userId,
-              creditReward,
-              "EARN_ACTIVE",
-              "achievement_unlock",
-              db,
-              {
-                achievementId: definition.id,
-                achievementName: definition.title,
-                achievementTier: definition.rarity,
-                achievementCategory: definition.category,
+            // Parse rewards JSON
+            let creditReward = this.getCreditsForRarity(achievement.rarity);
+            let cardIds: string[] = [];
+            let packIds: string[] = [];
+            let titles: string[] = [];
+
+            if (achievement.rewardsJson) {
+              try {
+                const rewards = JSON.parse(achievement.rewardsJson);
+                if (rewards) {
+                  if (typeof rewards.credits === "number") creditReward = rewards.credits;
+                  if (Array.isArray(rewards.cardIds)) cardIds = rewards.cardIds;
+                  if (Array.isArray(rewards.cardPacks)) packIds = rewards.cardPacks;
+                  if (Array.isArray(rewards.titles)) titles = rewards.titles;
+                }
+              } catch (err) {
+                console.error(`[Achievement Service] Failed to parse rewards for ${achievement.key}:`, err);
               }
-            );
-
-            if (earnResult.success) {
-              console.log(
-                `[Achievement Service] Awarded ${creditReward} IxC for "${definition.title}" ` +
-                  `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
-              );
-            } else {
-              console.warn(
-                `[Achievement Service] Failed to award IxCredits for "${definition.title}": ${earnResult.message}`
-              );
             }
-          } catch (creditError) {
-            // Don't block achievement unlock if credits fail
-            console.error(
-              `[Achievement Service] Error awarding IxCredits for "${definition.title}":`,
-              creditError
-            );
-          }
 
-          // 🎴 Award commemorative card if achievement has card reward
-          if (hasCardReward(achievementId)) {
-            try {
-              const cardId = getCardRewardForAchievement(achievementId);
-              if (cardId) {
-                await awardAchievementCard(db, userId, cardId, achievementId, definition.title);
-                console.log(
-                  `[Achievement Service] Awarded commemorative card "${cardId}" for "${definition.title}"`
+            // Create UserAchievement record (references Achievement.key)
+            await db.userAchievement.create({
+              data: {
+                userId,
+                achievementId: achievement.key,
+                title: achievement.title,
+                description: achievement.description,
+                category: achievement.category,
+                rarity: achievement.rarity,
+                iconUrl: achievement.iconUrl,
+                metadata: JSON.stringify({
+                  points: achievement.points,
+                  unlockedAt: new Date().toISOString(),
+                  titles,
+                  rewards: {
+                    credits: creditReward,
+                    cardIds,
+                    packIds,
+                    titles,
+                  },
+                }),
+              },
+            });
+
+            unlocked.push(achievement.key);
+            console.log(`[Achievement Service] Unlocked: ${achievement.title} for user ${userId}`);
+
+            // Award IxCredits
+            if (creditReward > 0) {
+              try {
+                await vaultService.earnCredits(
+                  userId,
+                  creditReward,
+                  "EARN_ACTIVE",
+                  "achievement_unlock",
+                  db,
+                  {
+                    achievementId: achievement.key,
+                    achievementName: achievement.title,
+                    achievementTier: achievement.rarity,
+                    achievementCategory: achievement.category,
+                  }
                 );
+              } catch (creditError) {
+                console.error(`[Achievement Service] Error awarding credits for "${achievement.title}":`, creditError);
               }
-            } catch (cardError) {
-              // Don't block achievement unlock if card award fails
-              console.error(
-                `[Achievement Service] Error awarding card for "${definition.title}":`,
-                cardError
-              );
             }
+
+            // Award Commemorative Cards
+            for (const cardId of cardIds) {
+              try {
+                await awardAchievementCard(db, userId, cardId, achievement.key, achievement.title);
+              } catch (cardError) {
+                console.error(`[Achievement Service] Error awarding card ${cardId}:`, cardError);
+              }
+            }
+
+            // Award Card Packs
+            for (const packId of packIds) {
+              try {
+                await db.userPack.create({
+                  data: {
+                    userId,
+                    packId,
+                    isOpened: false,
+                    acquiredMethod: "ACHIEVEMENT",
+                  },
+                });
+              } catch (packError) {
+                console.error(`[Achievement Service] Error awarding pack ${packId}:`, packError);
+              }
+            }
+
+            // Generate Activity Feed Entry
+            const userRecord = await db.user.findUnique({
+              where: { clerkUserId: userId },
+              select: { countryId: true },
+            });
+
+            if (userRecord?.countryId) {
+              await ActivityHooks.User.onAchievementUnlocked(
+                userId,
+                userRecord.countryId,
+                achievement.title,
+                achievement.description || `Unlocked ${achievement.rarity} achievement`
+              ).catch((err) => console.error("Failed to create achievement activity:", err));
+            }
+
+            // Notify user via notificationHooks / websocket
+            try {
+              await notificationHooks.onAchievementUnlock({
+                userId,
+                achievementId: achievement.key,
+                name: achievement.title,
+                description: achievement.description || `You've unlocked a ${achievement.rarity} achievement!`,
+                category: achievement.category,
+                rarity: (achievement.rarity.toLowerCase() as any) || "common",
+              });
+            } catch (error) {
+              console.error("[Achievements] Failed to send achievement notification:", error);
+            }
+
+          } catch (error) {
+            console.error(`[Achievement Service] Failed to unlock ${achievement.key}:`, error);
           }
-        } catch (error) {
-          // Silently handle duplicates (user may have unlocked via manual trigger)
-          if (error instanceof Error && error.message.includes("Unique constraint")) {
-            continue;
-          }
-          console.error(`[Achievement Service] Failed to unlock ${achievementId}:`, error);
         }
       }
 
@@ -327,43 +520,29 @@ export class AchievementService {
     }
   }
 
-  /**
-   * Check and unlock achievements for specific category
-   * Useful for targeted checks after specific actions
-   * @param userId Clerk user ID
-   * @param countryId Country ID
-   * @param db Prisma database client
-   * @param category Specific category to check
-   * @returns Array of newly unlocked achievement IDs
-   */
   async checkAndUnlockCategory(
     userId: string,
     countryId: string,
     db: PrismaClient,
-    category: "Economic" | "Military" | "Diplomatic" | "Government" | "Social" | "General"
+    _category: string
   ): Promise<string[]> {
-    // For now, just run full check
-    // Could be optimized to only check specific category
     return this.checkAndUnlock(userId, countryId, db);
   }
 
   /**
-   * Manually unlock a specific achievement
-   * Useful for special events or admin actions
-   * @param userId Clerk user ID
-   * @param achievementId Achievement ID to unlock
-   * @param db Prisma database client
-   * @returns True if unlocked successfully
+   * Manually unlock a specific achievement (e.g. via admin or special event)
    */
   async unlockSpecific(userId: string, achievementId: string, db: PrismaClient): Promise<boolean> {
     try {
-      const definition = getAchievementById(achievementId);
-      if (!definition) {
-        console.error(`[Achievement Service] Definition not found for ${achievementId}`);
+      const achievement = await db.achievement.findUnique({
+        where: { key: achievementId },
+      });
+
+      if (!achievement) {
+        console.error(`[Achievement Service] Master definition not found for ${achievementId}`);
         return false;
       }
 
-      // Check if already unlocked
       const existing = await db.userAchievement.findFirst({
         where: {
           userId,
@@ -372,96 +551,98 @@ export class AchievementService {
       });
 
       if (existing) {
-        console.log(`[Achievement Service] Achievement ${achievementId} already unlocked`);
         return false;
       }
 
-      // Create UserAchievement record
+      let creditReward = this.getCreditsForRarity(achievement.rarity);
+      let cardIds: string[] = [];
+      let packIds: string[] = [];
+      let titles: string[] = [];
+
+      if (achievement.rewardsJson) {
+        try {
+          const rewards = JSON.parse(achievement.rewardsJson);
+          if (rewards) {
+            if (typeof rewards.credits === "number") creditReward = rewards.credits;
+            if (Array.isArray(rewards.cardIds)) cardIds = rewards.cardIds;
+            if (Array.isArray(rewards.cardPacks)) packIds = rewards.cardPacks;
+            if (Array.isArray(rewards.titles)) titles = rewards.titles;
+          }
+        } catch (err) {
+          console.error(`[Achievement Service] Failed to parse rewards for ${achievement.key}:`, err);
+        }
+      }
+
       await db.userAchievement.create({
         data: {
           userId,
-          achievementId: definition.id,
-          title: definition.title,
-          description: definition.description,
-          category: definition.category,
-          rarity: definition.rarity,
-          iconUrl: definition.iconUrl,
+          achievementId: achievement.key,
+          title: achievement.title,
+          description: achievement.description,
+          category: achievement.category,
+          rarity: achievement.rarity,
+          iconUrl: achievement.iconUrl,
           metadata: JSON.stringify({
-            points: definition.points,
+            points: achievement.points,
             unlockedAt: new Date().toISOString(),
-            manualUnlock: true,
+            titles,
+            rewards: {
+              credits: creditReward,
+              cardIds,
+              packIds,
+              titles,
+            },
           }),
         },
       });
 
-      console.log(
-        `[Achievement Service] Manually unlocked: ${definition.title} for user ${userId}`
-      );
-
-      // 💰 Award IxCredits for manual unlock
-      try {
-        const creditReward = this.getCreditsForRarity(definition.rarity);
-        const earnResult = await vaultService.earnCredits(
-          userId,
-          creditReward,
-          "EARN_ACTIVE",
-          "achievement_unlock",
-          db,
-          {
-            achievementId: definition.id,
-            achievementName: definition.title,
-            achievementTier: definition.rarity,
-            achievementCategory: definition.category,
-            manualUnlock: true,
-          }
-        );
-
-        if (earnResult.success) {
-          console.log(
-            `[Achievement Service] Awarded ${creditReward} IxC for manual unlock of "${definition.title}" ` +
-              `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
-          );
-        } else {
-          console.warn(
-            `[Achievement Service] Failed to award IxCredits for manual unlock: ${earnResult.message}`
-          );
+      // Award credits
+      if (creditReward > 0) {
+        try {
+          await vaultService.earnCredits(userId, creditReward, "EARN_ACTIVE", "achievement_unlock", db, {
+            achievementId,
+            achievementName: achievement.title,
+            achievementTier: achievement.rarity,
+          });
+        } catch (creditError) {
+          console.error(`[Achievement Service] Error awarding credits:`, creditError);
         }
-      } catch (creditError) {
-        // Don't block achievement unlock if credits fail
-        console.error(
-          `[Achievement Service] Error awarding IxCredits for manual unlock:`,
-          creditError
-        );
       }
 
-      // 🎴 Award commemorative card if achievement has card reward
-      if (hasCardReward(achievementId)) {
+      // Award cards
+      for (const cardId of cardIds) {
         try {
-          const cardId = getCardRewardForAchievement(achievementId);
-          if (cardId) {
-            await awardAchievementCard(db, userId, cardId, achievementId, definition.title);
-            console.log(
-              `[Achievement Service] Awarded commemorative card "${cardId}" for manual unlock of "${definition.title}"`
-            );
-          }
+          await awardAchievementCard(db, userId, cardId, achievementId, achievement.title);
         } catch (cardError) {
-          // Don't block achievement unlock if card award fails
-          console.error(`[Achievement Service] Error awarding card for manual unlock:`, cardError);
+          console.error(`[Achievement Service] Error awarding card ${cardId}:`, cardError);
+        }
+      }
+
+      // Award packs
+      for (const packId of packIds) {
+        try {
+          await db.userPack.create({
+            data: {
+              userId,
+              packId,
+              isOpened: false,
+              acquiredMethod: "ACHIEVEMENT",
+            },
+          });
+        } catch (packError) {
+          console.error(`[Achievement Service] Error awarding pack ${packId}:`, packError);
         }
       }
 
       return true;
-    } catch (error) {
-      console.error(`[Achievement Service] Failed to manually unlock ${achievementId}:`, error);
+    } catch (err) {
+      console.error("[Achievement Service] Error in unlockSpecific:", err);
       return false;
     }
   }
 
   /**
    * Get user's achievement progress
-   * @param userId Clerk user ID
-   * @param db Prisma database client
-   * @returns Achievement progress statistics
    */
   async getProgress(userId: string, db: PrismaClient) {
     try {
@@ -469,8 +650,8 @@ export class AchievementService {
         where: { userId },
       });
 
-      const totalPoints = unlocked.reduce((sum, achievement) => {
-        const metadata = achievement.metadata ? JSON.parse(achievement.metadata) : {};
+      const totalPoints = unlocked.reduce((sum, u) => {
+        const metadata = u.metadata ? JSON.parse(u.metadata) : {};
         return sum + (metadata.points || 10);
       }, 0);
 
@@ -519,5 +700,4 @@ export class AchievementService {
   }
 }
 
-// Export singleton instance
 export const achievementService = new AchievementService();

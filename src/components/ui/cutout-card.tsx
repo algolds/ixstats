@@ -14,6 +14,7 @@ import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "~/lib/utils";
+import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 
 // ============================================================================
 // Tokens — optional chrome for demos / quick styling
@@ -116,6 +117,10 @@ export type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultVa
    * Set false if you only drive hover programmatically or via CSS.
    */
   trackPointerHover?: boolean;
+  /** Tactile texture overlay to render inside the card. */
+  texture?: TextureType;
+  /** Opacity override for the texture overlay. */
+  textureOpacity?: number;
 };
 
 export function CutoutCard({
@@ -126,6 +131,8 @@ export function CutoutCard({
   trackPointerHover = true,
   onMouseEnter,
   onMouseLeave,
+  texture,
+  textureOpacity,
   children,
   ...props
 }: CutoutCardProps) {
@@ -171,7 +178,7 @@ export function CutoutCard({
     <CutoutCardContext.Provider value={ctx}>
       <motion.div
         animate={{ opacity: 1 }}
-        className={cn(className)}
+        className={cn("relative", className)}
         data-slot="cutout-card"
         data-state={ctx.hovered ? "hovered" : "idle"}
         initial={{ opacity: 0 }}
@@ -184,6 +191,9 @@ export function CutoutCard({
         }
         {...props}
       >
+        {texture && texture !== "none" && (
+          <TextureOverlay texture={texture} opacity={textureOpacity ?? 0.05} />
+        )}
         {children}
       </motion.div>
     </CutoutCardContext.Provider>

@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { Label } from "~/components/ui/label";
+import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import type { MapLabelFormData } from "~/hooks/useMapEditor";
 
 const MAP_LABEL_TYPES = [
@@ -66,15 +68,12 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
           className="w-full"
         />
       </div>
-      <div className="flex items-center gap-2">
-        <label className="text-foreground/80 text-xs">Color</label>
-        <input
-          type="color"
+      <div className="space-y-1.5">
+        <Label className="text-foreground/80 text-xs">Color</Label>
+        <ColorPickerInput
           value={form.color}
-          onChange={(e) => onChange({ ...form, color: e.target.value })}
-          className="border-border bg-background h-7 w-10 cursor-pointer rounded border"
+          onChange={(val) => onChange({ ...form, color: val })}
         />
-        <span className="text-muted-foreground text-xs">{form.color}</span>
       </div>
       <div className="space-y-1.5">
         <label className="text-foreground/80 flex items-center justify-between text-xs">

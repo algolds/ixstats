@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -440,23 +441,11 @@ export function DepartmentForm({
           <Label htmlFor="color" className="text-sm font-medium text-[var(--color-text-secondary)]">
             Theme Color
           </Label>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              id="color"
-              value={data.color}
-              onChange={(e) => handleChange("color", e.target.value)}
-              disabled={isReadOnly}
-              className="h-8 w-12 cursor-pointer rounded border border-[var(--color-border-primary)]"
-            />
-            <Input
-              value={data.color}
-              onChange={(e) => handleChange("color", e.target.value)}
-              placeholder="#6366f1"
-              disabled={isReadOnly}
-              className="max-w-32"
-            />
-          </div>
+          <ColorPickerInput
+            value={data.color}
+            onChange={(val) => handleChange("color", val)}
+            disabled={isReadOnly}
+          />
           {errors.color && <p className="text-xs text-red-500">{errors.color[0]}</p>}
         </div>
 

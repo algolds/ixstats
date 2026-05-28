@@ -22,12 +22,12 @@ export default function PollsAdminPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4 w-full justify-start bg-card/40 backdrop-blur-md border border-border/40 p-1 rounded-xl">
-          <TabsTrigger value="manager" className="rounded-lg gap-2 text-xs font-semibold">
+        <TabsList className="bg-card/40 border-border/40 mb-4 w-full justify-start rounded-xl border p-1 backdrop-blur-md">
+          <TabsTrigger value="manager" className="gap-2 rounded-lg text-xs font-semibold">
             <Settings className="h-4 w-4" />
             Manage Polls
           </TabsTrigger>
-          <TabsTrigger value="composer" className="rounded-lg gap-2 text-xs font-semibold">
+          <TabsTrigger value="composer" className="gap-2 rounded-lg text-xs font-semibold">
             <PlusCircle className="h-4 w-4" />
             Create Poll
           </TabsTrigger>

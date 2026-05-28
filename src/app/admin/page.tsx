@@ -28,6 +28,7 @@ import {
   Activity,
   Wallet,
   Package,
+  Coins,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -64,8 +65,15 @@ const QUICK_ACTIONS = [
   {
     icon: Package,
     label: "Card Management",
-    description: "Sync, Packs, Lore & Vaults",
+    description: "Sync, Packs & Lore",
     href: "/admin/cards",
+    color: "amber",
+  },
+  {
+    icon: Coins,
+    label: "Vault & Economy",
+    description: "Balances, Streaks & Store CRUD",
+    href: "/admin/vault",
     color: "amber",
   },
   {

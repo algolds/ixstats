@@ -219,7 +219,7 @@ export const cardPacksRouter = createTRPCRouter({
           });
         }
 
-        const cards = await openPack(ctx.db, ctx.user.id, input.userPackId);
+        const results = await openPack(ctx.db, ctx.user.id, input.userPackId);
 
         // Sync to forum profile (fire-and-forget)
         syncUserToForum(ctx.user.id).catch((err: unknown) => {
@@ -227,8 +227,9 @@ export const cardPacksRouter = createTRPCRouter({
         });
 
         // Format cards with rarity reveal data
-        const revealData = cards.map((card) => ({
+        const revealData = results.map(({ card, ownershipId }) => ({
           id: card.id,
+          ownershipId,
           name: card.title,
           rarity: card.rarity,
           cardType: card.cardType,
@@ -238,24 +239,24 @@ export const cardPacksRouter = createTRPCRouter({
 
         // Notification: cards revealed (fire-and-forget)
         try {
-          const bestRarity = cards.reduce((best, c) => {
+          const bestRarity = results.reduce((best, r) => {
             const order = ["COMMON", "UNCOMMON", "RARE", "EPIC", "ULTRA_RARE", "LEGENDARY"];
-            return order.indexOf(c.rarity) > order.indexOf(best) ? c.rarity : best;
+            return order.indexOf(r.card.rarity) > order.indexOf(best) ? r.card.rarity : best;
           }, "COMMON");
           await notificationAPI.create({
             userId: ctx.user.id,
             title: "Cards Revealed!",
-            message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
+            message: `${results.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
             type: "info",
             category: "achievement",
             priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
-            metadata: { cardCount: cards.length, bestRarity },
+            metadata: { cardCount: results.length, bestRarity },
           });
         } catch {}
 
         return {
           success: true,
-          message: `Opened pack and received ${cards.length} cards!`,
+          message: `Opened pack and received ${results.length} cards!`,
           cards: revealData,
         };
       } catch (error) {

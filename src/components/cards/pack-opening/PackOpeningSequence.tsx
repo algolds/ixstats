@@ -44,13 +44,27 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
     const [error, setError] = useState<string | null>(null);
     const service = getPackOpeningService();
 
+    const utils = api.useUtils();
+
+    // Junk cards mutation
+    const junkCardsMutation = api.cards.junkCards.useMutation({
+      onSuccess: (data) => {
+        utils.vault.getBalance.invalidate();
+        utils.cards.getMyCards.invalidate();
+      },
+      onError: (err) => {
+        console.error("[PackOpening] Failed to junk cards:", err);
+      },
+    });
+
     // Open pack mutation
     const openPackMutation = api.cardPacks.openPack.useMutation({
       onSuccess: (data) => {
         if (data.success && data.cards) {
           // Map API response to CardInstance format
           const cardInstances: CardInstance[] = data.cards.map((card) => ({
-            id: card.id,
+            id: card.ownershipId || card.id, // unique identifier for the grid selection/key
+            ownershipId: card.ownershipId,
             name: card.name,
             title: card.name,
             rarity: card.rarity as CardRarity,
@@ -92,15 +106,19 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
 
     // Handle quick actions
     const handleQuickAction = useCallback((event: QuickActionEvent) => {
-      // TODO: Integrate with card action APIs
-      // For now, just log the action
       console.log("[PackOpening] Quick action:", event);
-
+      
+      if (event.action === "junk") {
+        const ids = event.cardIds || (event.cardId ? [event.cardId] : []);
+        if (ids.length > 0) {
+          junkCardsMutation.mutate({ ownershipIds: ids });
+        }
+      }
+      
       // Future integration:
-      // - api.cards.markAsJunk.mutate({ cardId: event.cardId })
       // - api.cards.addToCollection.mutate({ cardId: event.cardId })
       // - api.marketplace.createListing.mutate({ cardId: event.cardId })
-    }, []);
+    }, [junkCardsMutation]);
 
     // Cleanup on unmount
     useEffect(() => {

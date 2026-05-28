@@ -114,4 +114,13 @@ export const vaultNotify = {
       priority: "high",
       category: "system",
     }),
+
+  success: (message: string, title: string = "Success") =>
+    sendVaultNotification({
+      title,
+      message,
+      type: "success",
+      priority: "medium",
+      category: "achievement",
+    }),
 };

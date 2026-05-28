@@ -57,10 +57,48 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, children, onPointerDownOutside, onFocusOutside, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
+    <SheetPrimitive.Content
+      ref={ref}
+      className={cn(sheetVariants({ side }), className)}
+      onPointerDownOutside={(e) => {
+        const target = e.target as HTMLElement;
+        if (
+          target &&
+          (target.closest("[data-radix-select-content]") ||
+            target.closest("[data-radix-dropdown-menu-content]") ||
+            target.closest("[data-radix-popover-content]") ||
+            target.closest('[role="listbox"]') ||
+            target.closest('[data-slot="popover-content"]') ||
+            target.closest('[data-slot="popover-positioner"]') ||
+            target.closest('[data-slot="select-content"]'))
+        ) {
+          e.preventDefault();
+        } else {
+          onPointerDownOutside?.(e);
+        }
+      }}
+      onFocusOutside={(e) => {
+        const target = e.target as HTMLElement;
+        if (
+          target &&
+          (target.closest("[data-radix-select-content]") ||
+            target.closest("[data-radix-dropdown-menu-content]") ||
+            target.closest("[data-radix-popover-content]") ||
+            target.closest('[role="listbox"]') ||
+            target.closest('[data-slot="popover-content"]') ||
+            target.closest('[data-slot="popover-positioner"]') ||
+            target.closest('[data-slot="select-content"]'))
+        ) {
+          e.preventDefault();
+        } else {
+          onFocusOutside?.(e);
+        }
+      }}
+      {...props}
+    >
       {children}
       <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none">
         <X className="h-4 w-4" />

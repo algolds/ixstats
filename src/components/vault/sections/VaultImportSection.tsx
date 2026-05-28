@@ -119,6 +119,7 @@ function ImportDeckTab() {
   const notify = useNotify();
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [nationName, setNationName] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
   const [verificationId, setVerificationId] = useState("");
   const [verificationUrl, setVerificationUrl] = useState("");
   const [checksum, setChecksum] = useState("");
@@ -138,7 +139,6 @@ function ImportDeckTab() {
   } | null>(null);
 
   const { data: importStats } = api.nsImport.getImportStats.useQuery();
-  const { data: importHistory } = api.nsImport.getMyImportHistory.useQuery({ limit: 5 });
 
   const requestVerification = api.nsImport.requestVerification.useMutation({
     onSuccess: (data) => {
@@ -193,90 +193,6 @@ function ImportDeckTab() {
 
   return (
     <div className="space-y-6">
-      {/* Stats header — only visible for returning importers or during/after an active import */}
-      <AnimatePresence>
-        {importStats &&
-          (importStats.totalImports > 0 ||
-            currentStep === "importing" ||
-            currentStep === "complete") && (
-            <motion.div
-              className="grid grid-cols-2 gap-3 sm:grid-cols-4"
-              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-              animate={{ opacity: 1, height: "auto", marginBottom: 24 }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {[
-                {
-                  label: "Total Imports",
-                  value: importStats.totalImports,
-                  icon: Download,
-                  color: "rose",
-                  gradient: "from-rose-500/20 to-orange-500/20",
-                  border: "border-rose-400/30",
-                },
-                {
-                  label: "Cards Imported",
-                  value: importStats.totalCards,
-                  icon: Layers,
-                  color: "amber",
-                  gradient: "from-amber-500/20 to-yellow-500/20",
-                  border: "border-amber-400/30",
-                },
-                {
-                  label: "Total Value",
-                  value: `${importStats.totalValue.toLocaleString()}`,
-                  icon: Coins,
-                  color: "green",
-                  gradient: "from-green-500/20 to-emerald-500/20",
-                  border: "border-green-400/30",
-                },
-                {
-                  label: "Last Import",
-                  value: importStats.lastImport
-                    ? new Date(importStats.lastImport).toLocaleDateString()
-                    : "Never",
-                  icon: Clock,
-                  color: "cyan",
-                  gradient: "from-cyan-500/20 to-blue-500/20",
-                  border: "border-cyan-400/30",
-                },
-              ].map((stat, idx) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.08 }}
-                >
-                  <Card className={cn("glass-hierarchy-child overflow-hidden border", stat.border)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("rounded-lg bg-gradient-to-br p-2.5", stat.gradient)}>
-                          <stat.icon className={cn("h-4 w-4", `text-${stat.color}-400`)} />
-                        </div>
-                        <div className="min-w-0">
-                          <p
-                            className={cn("truncate text-lg font-black", `text-${stat.color}-400`)}
-                          >
-                            {typeof stat.value === "number" ? (
-                              <NumberFlow value={stat.value} />
-                            ) : (
-                              stat.value
-                            )}
-                          </p>
-                          <p className="text-muted-foreground text-[11px] leading-tight">
-                            {stat.label}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-      </AnimatePresence>
-
       {/* Wizard container */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -284,8 +200,34 @@ function ImportDeckTab() {
         transition={{ delay: 0.1 }}
       >
         <Card className="glass-hierarchy-parent relative overflow-hidden border border-white/10">
-          {/* Subtle gradient accent along the top */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-500/50 to-transparent" />
+          {/* NS Header Banner */}
+          <div
+            style={{
+              margin: 0,
+              padding: 0,
+              width: "100%",
+              height: "60px",
+              whiteSpace: "nowrap",
+              zIndex: 50,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              position: "relative",
+              boxShadow: "0 1px 2px #666",
+              backgroundColor: "#EAEAE2",
+              backgroundImage: "url(https://www.nationstates.net/images/globegreenslim2.jpg)",
+              backgroundPosition: "100% 0%",
+              backgroundRepeat: "no-repeat",
+              paddingLeft: "15px",
+            }}
+            className="border-b border-white/10"
+          >
+            <img
+              src="https://www.nationstates.net/images/bannertitle.png"
+              alt="NationStates Logo"
+              className="h-9 w-auto object-contain"
+            />
+          </div>
 
           <CardContent className="space-y-8 p-5 sm:p-8">
             {/* Step indicator */}
@@ -325,22 +267,27 @@ function ImportDeckTab() {
                 {/* ── Step: Intro ─────────────────────────── */}
                 {currentStep === "intro" && (
                   <div className="space-y-6">
-                    {/* Hero visual */}
+                    {/* Hero visual / Header */}
                     <div className="flex flex-col items-center py-4 text-center">
-                      <div className="relative mb-5">
-                        <motion.div
-                          className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-500/20 to-orange-500/20 blur-2xl"
-                          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
-                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        />
-                        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-rose-400/30 bg-gradient-to-br from-rose-500/10 to-orange-500/10 backdrop-blur-sm">
-                          <Globe className="h-12 w-12 text-rose-400" />
+                      <div className="flex items-center justify-center gap-2.5 mb-2.5">
+                        <h2 className="text-foreground text-3xl font-black sm:text-4xl tracking-tight select-none">
+                          Trading Cards
+                        </h2>
+                        {/* Custom 3-cards icon next to title */}
+                        <div className="relative h-7 w-10 shrink-0 select-none">
+                          {/* Card 1 (Back left) */}
+                          <div className="absolute left-0 top-0.5 h-6.5 w-4 rounded-[4px] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-950 shadow-sm -rotate-12" />
+                          {/* Card 2 (Middle) */}
+                          <div className="absolute left-3 top-0 h-6.5 w-4 rounded-[4px] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-950 shadow-sm flex items-center justify-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-white" />
+                          </div>
+                          {/* Card 3 (Right) */}
+                          <div className="absolute left-6 top-0.5 h-6.5 w-4 rounded-[4px] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-950 shadow-sm rotate-12 flex items-center justify-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-white" />
+                          </div>
                         </div>
                       </div>
-                      <h2 className="text-foreground text-2xl font-black sm:text-3xl">
-                        Import Your NS Deck
-                      </h2>
-                      <p className="text-muted-foreground mt-2 max-w-md text-sm">
+                      <p className="text-muted-foreground max-w-md text-sm">
                         Bring your NationStates trading cards into IxCards. Verify nation ownership
                         and import in minutes.
                       </p>
@@ -401,43 +348,102 @@ function ImportDeckTab() {
                       ))}
                     </div>
 
-                    {/* Nation name input */}
-                    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-5">
-                      <label className="text-foreground text-sm font-semibold">
-                        Your Nation Name
-                      </label>
-                      <div className="relative">
-                        <Globe className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                        <Input
-                          value={nationName}
-                          onChange={(e) => setNationName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && nationName.trim()) {
+                    {/* Safety Disclaimer */}
+                    <div className="glass-hierarchy-child border-border/50 flex items-start gap-2.5 rounded-xl border bg-white/5 p-4 text-xs text-muted-foreground select-none">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-foreground">Important</p>
+                        <p className="leading-relaxed">
+                          Verification uses the official{" "}
+                          <a
+                            href="https://www.nationstates.net/page=api"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-500"
+                          >
+                             NationStates API
+                          </a>{" "}
+                          and only grants read-only access to verify public deck contents. We will never ask for your NationStates password or account credentials.
+                        </p>
+                      </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {!showNameInput ? (
+                        <motion.div
+                          key="start-btn"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Button
+                            onClick={() => setShowNameInput(true)}
+                            className="h-12 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 text-base"
+                            size="lg"
+                          >
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Get Started
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="name-input"
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -15 }}
+                          transition={{ duration: 0.2 }}
+                          className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <label className="text-foreground text-sm font-semibold">
+                              Your Nation Name
+                            </label>
+                            <button
+                              onClick={() => {
+                                setNationName("");
+                                setShowNameInput(false);
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <Globe className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                            <Input
+                              value={nationName}
+                              onChange={(e) => setNationName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && nationName.trim()) {
+                                  setErrorMessage("");
+                                  requestVerification.mutate({ nationName });
+                                }
+                              }}
+                              placeholder="e.g. Testlandia"
+                              className="glass-hierarchy-interactive h-12 pl-10 text-base"
+                              autoFocus
+                            />
+                          </div>
+                          <Button
+                            onClick={() => {
                               setErrorMessage("");
                               requestVerification.mutate({ nationName });
-                            }
-                          }}
-                          placeholder="e.g. Testlandia"
-                          className="glass-hierarchy-interactive h-12 pl-10 text-base"
-                        />
-                      </div>
-                      <Button
-                        onClick={() => {
-                          setErrorMessage("");
-                          requestVerification.mutate({ nationName });
-                        }}
-                        disabled={!nationName.trim() || requestVerification.isPending}
-                        className="h-11 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600"
-                        size="lg"
-                      >
-                        {requestVerification.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <ArrowRight className="mr-2 h-4 w-4" />
-                        )}
-                        Start Verification
-                      </Button>
-                    </div>
+                            }}
+                            disabled={!nationName.trim() || requestVerification.isPending}
+                            className="h-11 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600"
+                            size="lg"
+                          >
+                            {requestVerification.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ArrowRight className="mr-2 h-4 w-4" />
+                            )}
+                            Start Verification
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
 
@@ -824,6 +830,7 @@ function ImportDeckTab() {
                         onClick={() => {
                           setCurrentStep("intro");
                           setNationName("");
+                          setShowNameInput(false);
                           setChecksum("");
                           setImportResult(null);
                           setErrorMessage("");
@@ -841,52 +848,6 @@ function ImportDeckTab() {
           </CardContent>
         </Card>
       </motion.div>
-
-      {/* Import History */}
-      {importHistory && importHistory.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="glass-hierarchy-child border-border border">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="text-muted-foreground h-4 w-4" />
-                Recent Imports
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {importHistory.map((entry: any, idx: number) => (
-                  <motion.div
-                    key={entry.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="glass-hierarchy-interactive border-border flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10">
-                        <Globe className="h-4 w-4 text-rose-400" />
-                      </div>
-                      <div>
-                        <p className="text-foreground text-sm font-semibold">{entry.nationName}</p>
-                        <p className="text-muted-foreground text-[11px]">
-                          {new Date(entry.importedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="border-purple-400/30 text-purple-400">
-                      {entry.cardsImported} cards
-                    </Badge>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
     </div>
   );
 }

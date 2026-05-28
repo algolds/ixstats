@@ -628,6 +628,29 @@ model UserConnection {
   @@index([connectionType])
 }
 
+model Achievement {
+  id            String   @id @default(cuid())
+  key           String   @unique // e.g. "econ-first-million"
+  title         String
+  description   String
+  category      String   // "Economic", "Military", "Diplomatic", etc.
+  rarity        String   // "Common", "Uncommon", "Rare", "Epic", "Legendary"
+  points        Int      @default(10)
+  iconUrl       String?
+  triggerType   String   // e.g. "GDP_REACHED", "TREATY_SIGNED", "POST_TRENDING"
+  conditionJson String?  // Simple JSON condition rule
+  rewardsJson   String?  // JSON for credits, packs, badges, titles
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userUnlocks   UserAchievement[]
+
+  @@index([category])
+  @@index([rarity])
+  @@index([isActive])
+}
+
 model UserAchievement {
   id            String   @id @default(cuid())
   userId        String
@@ -640,7 +663,12 @@ model UserAchievement {
   metadata      String?
   unlockedAt    DateTime @default(now())
 
+  // Relation to Master Achievement model
+  achievement   Achievement @relation(fields: [achievementId], references: [key], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
   @@index([userId])
+  @@index([achievementId])
   @@index([category])
   @@index([rarity])
   @@index([unlockedAt])

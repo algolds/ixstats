@@ -145,9 +145,7 @@ async function fetchWikiSections(
 }
 
 /** Fetch images from a country's wiki page with thumbnail URLs. */
-async function fetchWikiPageImages(
-  name: string
-): Promise<Array<{
+async function fetchWikiPageImages(name: string): Promise<Array<{
   title: string;
   url: string;
   thumbUrl: string;
@@ -284,9 +282,7 @@ async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unkn
 /**
  * Fetch wiki sections with plain-text previews for level-2 headers.
  */
-async function fetchWikiSectionPreviews(
-  name: string
-): Promise<Array<{
+async function fetchWikiSectionPreviews(name: string): Promise<Array<{
   level: number;
   line: string;
   number: string;

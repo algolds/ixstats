@@ -25,6 +25,17 @@ import {
   Paintbrush,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Label } from "~/components/ui/label";
+import {
+  ColorPicker,
+  ColorPickerSelection,
+  ColorPickerHue,
+  ColorPickerAlpha,
+  ColorPickerEyeDropper,
+  ColorPickerOutput,
+  ColorPickerFormat,
+} from "~/components/kibo-ui/color-picker";
 
 interface ToolOptionsBarProps {
   mode: EditorMode;
@@ -278,12 +289,50 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           <span className="text-muted-foreground w-6 text-[11px] tabular-nums">
             {props.labelFontSize ?? 14}
           </span>
-          <input
-            type="color"
-            value={props.labelColor ?? "#374151"}
-            onChange={(e) => props.onLabelColorChange?.(e.target.value)}
-            className="border-border h-5 w-5 cursor-pointer rounded border"
-          />
+          <Popover>
+            <PopoverTrigger
+              className="h-5 w-5 cursor-pointer rounded border border-border/40 shrink-0 relative overflow-hidden"
+              title="Pick Color"
+            >
+              <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')] bg-center -z-10" />
+              <div
+                className="w-full h-full"
+                style={{ backgroundColor: props.labelColor ?? "#374151" }}
+              />
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3 bg-popover border-border/50 text-foreground">
+              <ColorPicker
+                value={props.labelColor ?? "#374151"}
+                onChange={(rgbaArray) => {
+                  let colorStr = "#000000";
+                  if (rgbaArray[3] < 1) {
+                    colorStr = `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${rgbaArray[3]})`;
+                  } else {
+                    const r = rgbaArray[0].toString(16).padStart(2, "0");
+                    const g = rgbaArray[1].toString(16).padStart(2, "0");
+                    const b = rgbaArray[2].toString(16).padStart(2, "0");
+                    colorStr = `#${r}${g}${b}`;
+                  }
+                  props.onLabelColorChange?.(colorStr);
+                }}
+              >
+                <ColorPickerSelection className="h-32 mb-2" />
+                <div className="space-y-1 mb-2">
+                  <Label className="text-[10px] text-muted-foreground">Hue</Label>
+                  <ColorPickerHue />
+                </div>
+                <div className="space-y-1 mb-2">
+                  <Label className="text-[10px] text-muted-foreground">Alpha</Label>
+                  <ColorPickerAlpha />
+                </div>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <ColorPickerOutput />
+                  <ColorPickerFormat />
+                  <ColorPickerEyeDropper />
+                </div>
+              </ColorPicker>
+            </PopoverContent>
+          </Popover>
           <button
             onClick={() => props.onLabelBoldChange?.(!props.labelBold)}
             className={props.labelBold ? activeBtnClass : btnClass}

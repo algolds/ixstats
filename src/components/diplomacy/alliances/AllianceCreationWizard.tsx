@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Shield, DollarSign, Landmark, MapPin } from "lucide-react";
+import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -137,11 +138,9 @@ export function AllianceCreationWizard({ onSuccess }: AllianceCreationWizardProp
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Color</Label>
-              <Input
-                type="color"
+              <ColorPickerInput
                 value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="h-10 cursor-pointer"
+                onChange={(val) => setColor(val)}
               />
             </div>
             <div>

@@ -112,7 +112,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <Card className="border border-border/40 bg-card/30 backdrop-blur-md">
+        <Card className="border-border/40 bg-card/30 border backdrop-blur-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-bold">
               <Plus className="h-5 w-5 text-purple-500" />
@@ -149,7 +149,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-foreground text-sm font-semibold">Poll Type</Label>
                   <Select
@@ -207,10 +207,13 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="endDate" className="text-foreground text-sm font-semibold flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Label
+                    htmlFor="endDate"
+                    className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
+                  >
+                    <Calendar className="text-muted-foreground h-4 w-4" />
                     Expiry Date (optional)
                   </Label>
                   <Input
@@ -224,12 +227,11 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
                 {pollType !== "feature-voting" && (
                   <div className="flex items-center gap-2 pt-6">
-                    <Switch
-                      id="multiple"
-                      checked={multiple}
-                      onCheckedChange={setMultiple}
-                    />
-                    <Label htmlFor="multiple" className="text-foreground text-sm font-semibold cursor-pointer">
+                    <Switch id="multiple" checked={multiple} onCheckedChange={setMultiple} />
+                    <Label
+                      htmlFor="multiple"
+                      className="text-foreground cursor-pointer text-sm font-semibold"
+                    >
                       Allow Multiple Choices
                     </Label>
                   </div>
@@ -237,16 +239,14 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
               </div>
 
               <div className="space-y-3 pt-2">
-                <div className="flex justify-between items-center">
-                  <Label className="text-foreground text-sm font-bold">
-                    Poll Options *
-                  </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-foreground text-sm font-bold">Poll Options *</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleAddOption}
-                    className="h-8 gap-1 border-purple-500/35 hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold"
+                    className="h-8 gap-1 border-purple-500/35 font-semibold text-purple-600 hover:bg-purple-500/10 dark:text-purple-400"
                   >
                     <Plus className="h-3.5 w-3.5" /> Add Option
                   </Button>
@@ -254,8 +254,8 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
                 <div className="space-y-2">
                   {options.map((option, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <span className="text-muted-foreground/60 text-xs font-bold w-6 text-center">
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-muted-foreground/60 w-6 text-center text-xs font-bold">
                         {idx + 1}.
                       </span>
                       <Input
@@ -271,7 +271,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveOption(idx)}
-                          className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 shrink-0"
+                          className="shrink-0 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -281,13 +281,15 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                 </div>
               </div>
 
-              <div className="border-t border-border/40 pt-4 flex justify-end gap-3">
+              <div className="border-border/40 flex justify-end gap-3 border-t pt-4">
                 <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center gap-1.5 px-6"
+                  className="flex items-center gap-1.5 bg-purple-600 px-6 font-semibold text-white hover:bg-purple-700"
                 >
-                  {createMutation.isPending ? "Creating..." : (
+                  {createMutation.isPending ? (
+                    "Creating..."
+                  ) : (
                     <>
                       <Send className="h-4 w-4" /> Create & Publish
                     </>
@@ -300,29 +302,33 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
       </div>
 
       <div className="space-y-4">
-        <Card className="border border-border/40 bg-card/30 backdrop-blur-md">
+        <Card className="border-border/40 bg-card/30 border backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-bold">
               🗳️ Poll Creation Guide
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-xs leading-relaxed text-muted-foreground">
+          <CardContent className="text-muted-foreground space-y-3 text-xs leading-relaxed">
             <p>
-              <strong>Standard Choice Poll:</strong> Classic single or multiple choice query. Displays bar charts and counts to voters.
-            </p>
-            <p>
-              <strong>Feature Priority Poll:</strong> Designed to gauge preference across proposed items/features using a specialized layout.
+              <strong>Standard Choice Poll:</strong> Classic single or multiple choice query.
+              Displays bar charts and counts to voters.
             </p>
             <p>
-              <strong>Feature Upvoting Board:</strong> Lists cards with upvote tallies, letting users upvote or unvote features at any time.
-            </p>
-            <p className="border-t border-border/20 pt-3">
-              <strong>Targeting:</strong> Specifying a targeted country limits voting permissions strictly to verified citizens of that country.
+              <strong>Feature Priority Poll:</strong> Designed to gauge preference across proposed
+              items/features using a specialized layout.
             </p>
             <p>
-              <strong>Feeds:</strong> Creating a poll automatically injects an announcement post into the Activity Feed. Deleting a poll removes the feed item automatically.
+              <strong>Feature Upvoting Board:</strong> Lists cards with upvote tallies, letting
+              users upvote or unvote features at any time.
             </p>
-           
+            <p className="border-border/20 border-t pt-3">
+              <strong>Targeting:</strong> Specifying a targeted country limits voting permissions
+              strictly to verified citizens of that country.
+            </p>
+            <p>
+              <strong>Feeds:</strong> Creating a poll automatically injects an announcement post
+              into the Activity Feed. Deleting a poll removes the feed item automatically.
+            </p>
           </CardContent>
         </Card>
       </div>

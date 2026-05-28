@@ -738,6 +738,7 @@ export const usersRouter = createTRPCRouter({
                 economicTier: true,
                 currentTotalGdp: true,
                 currentPopulation: true,
+                flag: true,
               },
             },
           },
@@ -755,6 +756,7 @@ export const usersRouter = createTRPCRouter({
           population: user.country?.currentPopulation || 0,
           lastActive: user.updatedAt,
           joinedAt: user.createdAt,
+          flag: user.country?.flag || null,
         }));
       } catch (error) {
         console.error("Error fetching active users:", error);

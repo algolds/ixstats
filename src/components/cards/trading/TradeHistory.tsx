@@ -7,6 +7,7 @@
 "use client";
 
 import React from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "motion/react";
 import { CheckCircle, XCircle, Clock, ArrowRightLeft, ChevronRight } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -45,6 +46,7 @@ export interface TradeHistoryProps {
  * ```
  */
 export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTradeClick }) => {
+  const { userId } = useAuth();
   const [page, setPage] = React.useState(0);
   const limit = 20;
 
@@ -134,8 +136,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
         const StatusIcon = statusConfig.icon;
 
         // Determine if current user was initiator or recipient
-        // Note: In real implementation, you'd compare with current user ID
-        const isInitiator = true; // Placeholder
+        const isInitiator = trade.initiator?.clerkUserId === userId;
         const partner = isInitiator ? trade.recipient : trade.initiator;
 
         return (

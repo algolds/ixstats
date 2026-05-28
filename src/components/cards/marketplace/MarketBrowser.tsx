@@ -12,7 +12,6 @@ import { MarketAnalyticsPanel } from "./MarketAnalytics";
 import { CreateAuctionModal } from "./CreateAuctionModal";
 import { useMarketData } from "~/hooks/marketplace/useMarketData";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
-import { useSoundService } from "~/lib/sound-service";
 import { cn } from "~/lib/utils";
 import type { MarketFilters as IMarketFilters, MarketSort } from "~/types/marketplace";
 
@@ -76,9 +75,6 @@ export const MarketBrowser = memo<MarketBrowserProps>(
     // Bid hook
     const { placeBid, isPlacing } = useAuctionBid();
 
-    // Sound service
-    const soundService = useSoundService();
-
     // UI state
     const [showFilters, setShowFilters] = useState(true);
     const [showAnalyticsPanel, setShowAnalyticsPanel] = useState(showAnalytics);
@@ -121,10 +117,9 @@ export const MarketBrowser = memo<MarketBrowserProps>(
     const handleSubmitBid = useCallback(
       async (auctionId: string, amount: number) => {
         await placeBid({ auctionId, amount });
-        soundService?.play("auction-bid"); // Play bid sound on success
         await refetch(); // Refresh auctions after bid
       },
-      [placeBid, refetch, soundService]
+      [placeBid, refetch]
     );
 
     /**

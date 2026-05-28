@@ -1077,15 +1077,6 @@ export function Navigation() {
               </NavigationMenu>
             </div>
 
-            {/* Desktop Command Palette */}
-            <div className="absolute top-1/2 left-1/2 z-[var(--z-command)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 transform">
-              <div
-                className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl"
-                style={{ opacity: 0.6 * (1 - morphProgress) }}
-              />
-              {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
-            </div>
-
             {/* Right Side Navigation — morphs toward center */}
             <div
               className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3"
@@ -1566,19 +1557,32 @@ export function Navigation() {
       </AnimatePresence>
 
       {!isMobile && (
-        <div
-          className={`fixed z-[var(--z-command)] will-change-transform ${
-            isSticky ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+        <motion.div
+          className="fixed top-0 left-1/2 z-[var(--z-command)]"
+          animate={{
+            x: "-50%",
+            y: isSticky ? 8 : Math.max(-100, 10 - scrollY),
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30,
+            mass: 1,
+          }}
           style={{
-            top: isSticky ? "8px" : "64px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            transition: "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            width: "100%",
+            maxWidth: "400px",
           }}
         >
+          {/* Large blur-3xl glow that moves and morphs with the DI */}
+          <div
+            className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl"
+            style={{
+              opacity: 0.6 * Math.max(0.2, 1 - morphProgress),
+            }}
+          />
           <CommandPalette isSticky={isSticky} scrollY={scrollY} />
-        </div>
+        </motion.div>
       )}
     </>
   );

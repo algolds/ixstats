@@ -629,7 +629,10 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               <Clock className="h-3 w-3" />
               {formatTimeAgo(new Date(activity.timestamp))}
             </span>
-            {activity.user?.name && (activity.poll && activity.user.name === "User" ? null : <span>by {activity.user.name}</span>)}
+            {activity.user?.name &&
+              (activity.poll && activity.user.name === "User" ? null : (
+                <span>by {activity.user.name}</span>
+              ))}
             {externalUrl && <FeedExternalLink url={externalUrl} title={activity.content?.title} />}
           </div>
         </div>

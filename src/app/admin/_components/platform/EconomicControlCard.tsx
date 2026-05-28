@@ -77,20 +77,24 @@ export function EconomicControlCard({
   return (
     <Card className="glass-surface border-border/40">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <div className="rounded-lg bg-indigo-500/10 p-1.5 text-indigo-500 border border-indigo-500/20">
+              <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-1.5 text-indigo-500">
                 <Globe className="h-4 w-4" />
               </div>
               Global Economic Controls
             </CardTitle>
             <CardDescription className="text-xs">
-              Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on next calculation cycle.
+              Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on
+              next calculation cycle.
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 border border-border/20 bg-card/20 px-2.5 py-1.5 rounded-lg shrink-0">
-            <Label htmlFor="econ-advanced-mode" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">
+          <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
+            <Label
+              htmlFor="econ-advanced-mode"
+              className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+            >
               Advanced
             </Label>
             <Switch
@@ -105,8 +109,11 @@ export function EconomicControlCard({
         {/* Growth Factor Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold text-foreground">Global Growth Factor</Label>
-            <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+            <Label className="text-foreground text-xs font-semibold">Global Growth Factor</Label>
+            <Badge
+              variant="outline"
+              className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
+            >
               {globalGrowthFactor.toFixed(4)} ({growthPercent}%)
             </Badge>
           </div>
@@ -116,9 +123,9 @@ export function EconomicControlCard({
             min={0.5}
             max={2.0}
             step={0.001}
-            className="py-1 cursor-grab active:cursor-grabbing"
+            className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
+          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
             <span>-50%</span>
             <span>0%</span>
             <span>+3.21%</span>
@@ -133,11 +140,9 @@ export function EconomicControlCard({
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   onClick={() => onGlobalGrowthFactorChange(preset.value)}
-                  className="text-xs font-semibold h-8 px-3"
+                  className="h-8 px-3 text-xs font-semibold"
                 >
-                  <span className={isActive ? "" : preset.color}>
-                    {preset.label}
-                  </span>
+                  <span className={isActive ? "" : preset.color}>{preset.label}</span>
                 </Button>
               );
             })}
@@ -149,8 +154,11 @@ export function EconomicControlCard({
         {/* Base Inflation Rate */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold text-foreground">Base Inflation Rate</Label>
-            <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-blue-500/20 text-blue-500 bg-blue-500/5 px-2.5 py-0.5 rounded-full">
+            <Label className="text-foreground text-xs font-semibold">Base Inflation Rate</Label>
+            <Badge
+              variant="outline"
+              className="rounded-full border-blue-500/20 bg-blue-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-blue-500 tabular-nums"
+            >
               {(baseInflationRate * 100).toFixed(1)}%
             </Badge>
           </div>
@@ -160,9 +168,9 @@ export function EconomicControlCard({
             min={0}
             max={0.1}
             step={0.001}
-            className="py-1 cursor-grab active:cursor-grabbing"
+            className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
+          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
             <span>0%</span>
             <span>2% (default)</span>
             <span>5%</span>
@@ -171,13 +179,15 @@ export function EconomicControlCard({
         </div>
 
         {showAdvanced && (
-          <div className="space-y-6 pt-1 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="animate-in fade-in slide-in-from-top-2 space-y-6 pt-1 duration-200">
             <Separator className="border-border/20 my-1" />
 
             {/* Diminishing Returns */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Diminishing Returns</Label>
+                <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  Diminishing Returns
+                </Label>
                 <Info className="text-muted-foreground h-3.5 w-3.5" />
               </div>
               <p className="text-muted-foreground text-[11px] leading-relaxed">
@@ -186,8 +196,11 @@ export function EconomicControlCard({
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-foreground">Threshold</Label>
-                  <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+                  <Label className="text-foreground text-xs font-semibold">Threshold</Label>
+                  <Badge
+                    variant="outline"
+                    className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
+                  >
                     ${(diminishingReturnsThreshold / 1000).toFixed(0)}k
                   </Badge>
                 </div>
@@ -197,14 +210,17 @@ export function EconomicControlCard({
                   min={40000}
                   max={100000}
                   step={1000}
-                  className="py-1 cursor-grab active:cursor-grabbing"
+                  className="cursor-grab py-1 active:cursor-grabbing"
                 />
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-foreground">Factor (strength)</Label>
-                  <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+                  <Label className="text-foreground text-xs font-semibold">Factor (strength)</Label>
+                  <Badge
+                    variant="outline"
+                    className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
+                  >
                     {diminishingReturnsFactor.toFixed(2)}
                   </Badge>
                 </div>
@@ -214,9 +230,9 @@ export function EconomicControlCard({
                   min={0.1}
                   max={1.0}
                   step={0.01}
-                  className="py-1 cursor-grab active:cursor-grabbing"
+                  className="cursor-grab py-1 active:cursor-grabbing"
                 />
-                <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
+                <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
                   <span>Weak (0.1)</span>
                   <span>Default (0.5)</span>
                   <span>Strong (1.0)</span>
@@ -229,8 +245,13 @@ export function EconomicControlCard({
             {/* Min Growth Floor */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-foreground">Minimum Growth Floor</Label>
-                <Badge variant="outline" className="font-mono text-xs font-semibold tabular-nums border-indigo-500/20 text-indigo-500 bg-indigo-500/5 px-2.5 py-0.5 rounded-full">
+                <Label className="text-foreground text-xs font-semibold">
+                  Minimum Growth Floor
+                </Label>
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
+                >
                   {(minGrowthFloor * 100).toFixed(1)}%
                 </Badge>
               </div>
@@ -240,9 +261,9 @@ export function EconomicControlCard({
                 min={-0.2}
                 max={0}
                 step={0.005}
-                className="py-1 cursor-grab active:cursor-grabbing"
+                className="cursor-grab py-1 active:cursor-grabbing"
               />
-              <div className="text-muted-foreground flex justify-between text-[10px] font-semibold uppercase tracking-wider">
+              <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
                 <span>-20%</span>
                 <span>-10% (default)</span>
                 <span>0%</span>
@@ -256,9 +277,11 @@ export function EconomicControlCard({
               <button
                 type="button"
                 onClick={() => setShowTierModifiers(!showTierModifiers)}
-                className="flex w-full items-center justify-between text-left group hover:text-foreground transition-colors"
+                className="group hover:text-foreground flex w-full items-center justify-between text-left transition-colors"
               >
-                <Label className="cursor-pointer text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Tier Growth Modifiers</Label>
+                <Label className="text-muted-foreground group-hover:text-foreground cursor-pointer text-xs font-bold tracking-wider uppercase">
+                  Tier Growth Modifiers
+                </Label>
                 {showTierModifiers ? (
                   <ChevronUp className="text-muted-foreground h-4 w-4" />
                 ) : (
@@ -270,17 +293,20 @@ export function EconomicControlCard({
               </p>
 
               {showTierModifiers && (
-                <div className="border border-border/20 bg-card/10 rounded-lg p-4 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border-border/20 bg-card/10 space-y-4 rounded-lg border p-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {TIER_INFO.map(({ tier, range, maxGrowth }) => {
                       const value = tierGrowthModifiers[tier] ?? 1.0;
                       return (
-                        <div key={tier} className="space-y-2 border border-border/10 rounded-lg p-3 bg-card/5">
+                        <div
+                          key={tier}
+                          className="border-border/10 bg-card/5 space-y-2 rounded-lg border p-3"
+                        >
                           <div className="flex items-center justify-between text-xs font-medium">
-                            <span className="font-semibold text-foreground">{tier}</span>
+                            <span className="text-foreground font-semibold">{tier}</span>
                             <span className="text-muted-foreground text-[10px]">
                               {range} | max {maxGrowth} |{" "}
-                              <span className="text-blue-500 font-bold font-mono">
+                              <span className="font-mono font-bold text-blue-500">
                                 {value.toFixed(2)}x
                               </span>
                             </span>
@@ -293,7 +319,7 @@ export function EconomicControlCard({
                             min={0.5}
                             max={2.0}
                             step={0.01}
-                            className="py-1 cursor-grab active:cursor-grabbing"
+                            className="cursor-grab py-1 active:cursor-grabbing"
                           />
                         </div>
                       );
@@ -302,7 +328,7 @@ export function EconomicControlCard({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full text-xs font-semibold h-8"
+                    className="h-8 w-full text-xs font-semibold"
                     onClick={() =>
                       TIER_INFO.forEach(({ tier }) => onTierGrowthModifierChange(tier, 1.0))
                     }
@@ -319,13 +345,13 @@ export function EconomicControlCard({
 
         {/* Toggle Settings */}
         <div className="space-y-3">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block">
+          <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
             Calculation Automation
           </span>
           <div className="space-y-3">
-            <div className="border border-border/10 bg-card/5 flex items-center justify-between rounded-lg p-3">
+            <div className="border-border/10 bg-card/5 flex items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
-                <Label htmlFor="auto-update" className="text-xs font-semibold text-foreground">
+                <Label htmlFor="auto-update" className="text-foreground text-xs font-semibold">
                   Auto Calculations
                 </Label>
                 <p className="text-muted-foreground text-[10px]">
@@ -335,9 +361,9 @@ export function EconomicControlCard({
               <Switch id="auto-update" checked={autoUpdate} onCheckedChange={onAutoUpdateChange} />
             </div>
 
-            <div className="border border-border/10 bg-card/5 flex items-center justify-between rounded-lg p-3">
+            <div className="border-border/10 bg-card/5 flex items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
-                <Label htmlFor="bot-sync" className="text-xs font-semibold text-foreground">
+                <Label htmlFor="bot-sync" className="text-foreground text-xs font-semibold">
                   Discord Bot Sync
                 </Label>
                 <p className="text-muted-foreground text-[10px]">
@@ -359,7 +385,7 @@ export function EconomicControlCard({
         <Button
           onClick={onForceCalculation}
           disabled={calculationPending}
-          className="w-full h-10 font-bold text-xs transition-all duration-250 hover:scale-[1.01]"
+          className="h-10 w-full text-xs font-bold transition-all duration-250 hover:scale-[1.01]"
         >
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

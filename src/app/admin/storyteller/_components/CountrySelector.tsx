@@ -24,9 +24,12 @@ export function CountrySelector({
   allowSelectAll = true,
 }: CountrySelectorProps) {
   const [search, setSearch] = useState("");
-  const { data } = api.countries.getSelectList.useQuery({ limit: 250 }, {
-    refetchOnWindowFocus: false,
-  });
+  const { data } = api.countries.getSelectList.useQuery(
+    { limit: 250 },
+    {
+      refetchOnWindowFocus: false,
+    }
+  );
 
   const countries = useMemo(() => data ?? [], [data]);
 

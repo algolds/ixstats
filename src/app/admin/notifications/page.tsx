@@ -54,21 +54,15 @@ export default function NotificationsAdminPage() {
           {activeTab === "events" && <EventsRegistryPanel />}
         </TabsContent>
 
-        <TabsContent value="log">
-          {activeTab === "log" && <NotificationBrowser />}
-        </TabsContent>
+        <TabsContent value="log">{activeTab === "log" && <NotificationBrowser />}</TabsContent>
 
         <TabsContent value="compose">
           {activeTab === "compose" && <NotificationComposer />}
         </TabsContent>
 
-        <TabsContent value="rules">
-          {activeTab === "rules" && <AlertRulesPanel />}
-        </TabsContent>
+        <TabsContent value="rules">{activeTab === "rules" && <AlertRulesPanel />}</TabsContent>
 
-        <TabsContent value="tests">
-          {activeTab === "tests" && <TestSuitePanel />}
-        </TabsContent>
+        <TabsContent value="tests">{activeTab === "tests" && <TestSuitePanel />}</TabsContent>
       </Tabs>
     </div>
   );

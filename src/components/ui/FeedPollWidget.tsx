@@ -165,7 +165,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   // 1. Choice Poll Render
   if (poll.pollType === "choice") {
     return (
-      <div className="glass-hierarchy-child/40 rounded-xl border p-4 sm:p-5 mt-4">
+      <div className="glass-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
         <ChoicePoll.Root
           value={selectedOptionIds}
           onValueChange={(val) => {
@@ -178,11 +178,11 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           hasVoted={pollState.hasVoted}
         >
           <ChoicePoll.Header>
-            <ChoicePoll.Title className="text-foreground font-semibold text-base sm:text-lg">
+            <ChoicePoll.Title className="text-foreground text-base font-semibold sm:text-lg">
               {poll.question}
             </ChoicePoll.Title>
             {poll.description && (
-              <ChoicePoll.Description className="text-muted-foreground/80 text-xs sm:text-sm mt-1">
+              <ChoicePoll.Description className="text-muted-foreground/80 mt-1 text-xs sm:text-sm">
                 {poll.description}
               </ChoicePoll.Description>
             )}
@@ -205,7 +205,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           </ChoicePoll.Options>
 
           {!pollState.hasVoted && isSignedIn && (
-            <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
+            <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-3">
               <span className="text-muted-foreground text-xs">
                 {poll.multiple ? "Select multiple options" : "Select one option"}
               </span>
@@ -213,7 +213,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 size="sm"
                 disabled={selectedOptionIds.length === 0 || isDisabled}
                 onClick={handleVoteSubmit}
-                className="bg-purple-600 text-white hover:bg-purple-700 font-medium px-4 h-8 text-xs shrink-0 flex items-center gap-1.5"
+                className="flex h-8 shrink-0 items-center gap-1.5 bg-purple-600 px-4 text-xs font-medium text-white hover:bg-purple-700"
               >
                 {isDisabled ? (
                   <>
@@ -227,12 +227,15 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           )}
 
           {!isSignedIn && (
-            <p className="text-muted-foreground/60 text-[11px] text-center mt-3">
+            <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
               Sign in to participate in this poll
             </p>
           )}
 
-          <ChoicePoll.Footer className="mt-3 border-t border-border/40 pt-2.5 text-xs text-muted-foreground/60" totalVotes={pollState.totalVotes} />
+          <ChoicePoll.Footer
+            className="border-border/40 text-muted-foreground/60 mt-3 border-t pt-2.5 text-xs"
+            totalVotes={pollState.totalVotes}
+          />
         </ChoicePoll.Root>
       </div>
     );
@@ -241,7 +244,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   // 2. Feature Poll Render
   if (poll.pollType === "feature-poll") {
     return (
-      <div className="glass-hierarchy-child/40 rounded-xl border p-4 sm:p-5 mt-4">
+      <div className="glass-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
         <FeaturePoll.Root
           value={selectedOptionIds}
           onValueChange={(val) => {
@@ -254,11 +257,11 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           hasVoted={pollState.hasVoted}
         >
           <FeaturePoll.Header>
-            <FeaturePoll.Title className="text-foreground font-semibold text-base sm:text-lg">
+            <FeaturePoll.Title className="text-foreground text-base font-semibold sm:text-lg">
               {poll.question}
             </FeaturePoll.Title>
             {poll.description && (
-              <FeaturePoll.Description className="text-muted-foreground/80 text-xs sm:text-sm mt-1">
+              <FeaturePoll.Description className="text-muted-foreground/80 mt-1 text-xs sm:text-sm">
                 {poll.description}
               </FeaturePoll.Description>
             )}
@@ -273,7 +276,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 {showResults && (
                   <>
                     <FeaturePoll.Progress className="bg-purple-600/15" />
-                    <FeaturePoll.Percentage className="text-purple-600 dark:text-purple-400 text-xs font-semibold" />
+                    <FeaturePoll.Percentage className="text-xs font-semibold text-purple-600 dark:text-purple-400" />
                   </>
                 )}
               </FeaturePoll.Option>
@@ -281,7 +284,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           </FeaturePoll.Options>
 
           {!pollState.hasVoted && isSignedIn && (
-            <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
+            <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-3">
               <span className="text-muted-foreground text-xs">
                 {poll.multiple ? "Select multiple features" : "Select one feature"}
               </span>
@@ -289,7 +292,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 size="sm"
                 disabled={selectedOptionIds.length === 0 || isDisabled}
                 onClick={handleVoteSubmit}
-                className="bg-purple-600 text-white hover:bg-purple-700 font-medium px-4 h-8 text-xs shrink-0 flex items-center gap-1.5"
+                className="flex h-8 shrink-0 items-center gap-1.5 bg-purple-600 px-4 text-xs font-medium text-white hover:bg-purple-700"
               >
                 {isDisabled ? (
                   <>
@@ -303,12 +306,15 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           )}
 
           {!isSignedIn && (
-            <p className="text-muted-foreground/60 text-[11px] text-center mt-3">
+            <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
               Sign in to participate in this feature poll
             </p>
           )}
 
-          <FeaturePoll.Footer className="mt-3 border-t border-border/40 pt-2.5 text-xs text-muted-foreground/60" totalVotes={pollState.totalVotes} />
+          <FeaturePoll.Footer
+            className="border-border/40 text-muted-foreground/60 mt-3 border-t pt-2.5 text-xs"
+            totalVotes={pollState.totalVotes}
+          />
         </FeaturePoll.Root>
       </div>
     );
@@ -316,9 +322,9 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // 3. Feature Voting Render
   return (
-    <div className="glass-hierarchy-child/40 rounded-xl border p-4 sm:p-5 mt-4 space-y-4">
+    <div className="glass-hierarchy-child/40 mt-4 space-y-4 rounded-xl border p-4 sm:p-5">
       <div className="flex flex-col gap-1">
-        <h3 className="text-foreground font-semibold text-base sm:text-lg">{poll.question}</h3>
+        <h3 className="text-foreground text-base font-semibold sm:text-lg">{poll.question}</h3>
         {poll.description && (
           <p className="text-muted-foreground/80 text-xs sm:text-sm">{poll.description}</p>
         )}
@@ -328,7 +334,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
         value={pollState.votes}
         votedFeatures={new Set(pollState.userVotedOptionIds)}
         disabled={isDisabled || !isSignedIn}
-        className="space-y-2.5 pl-0 mt-3"
+        className="mt-3 space-y-2.5 pl-0"
       >
         {poll.options.map((opt) => {
           const hasVotedOpt = pollState.userVotedOptionIds.includes(opt.id);
@@ -338,18 +344,18 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
               key={opt.id}
               value={opt.id}
               className={cn(
-                "flex items-center justify-between gap-4 rounded-xl border p-3 sm:p-4 text-left transition-all duration-200",
+                "flex items-center justify-between gap-4 rounded-xl border p-3 text-left transition-all duration-200 sm:p-4",
                 hasVotedOpt
                   ? "border-purple-500 bg-purple-500/5 shadow-sm"
                   : "border-border/60 bg-card/40 hover:bg-muted/30"
               )}
             >
-              <div className="flex-1 min-w-0">
-                <FeatureVoting.Title className="font-semibold text-foreground text-sm sm:text-base block truncate">
+              <div className="min-w-0 flex-1">
+                <FeatureVoting.Title className="text-foreground block truncate text-sm font-semibold sm:text-base">
                   {opt.label}
                 </FeatureVoting.Title>
                 {opt.description && (
-                  <FeatureVoting.Description className="text-muted-foreground/75 text-xs mt-1 block line-clamp-2">
+                  <FeatureVoting.Description className="text-muted-foreground/75 mt-1 line-clamp-2 block text-xs">
                     {opt.description}
                   </FeatureVoting.Description>
                 )}
@@ -359,14 +365,14 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 onClick={() => handleFeatureToggleVote(opt.id)}
                 disabled={isDisabled || !isSignedIn}
                 className={cn(
-                  "flex flex-col items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold gap-1 min-w-[3.5rem] h-12 transition-all duration-200",
+                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200",
                   hasVotedOpt
                     ? "border-purple-600 bg-purple-600 text-white hover:bg-purple-700"
                     : "border-border/80 bg-background hover:bg-muted text-muted-foreground hover:text-foreground"
                 )}
               >
                 <ArrowUp className="h-3.5 w-3.5" />
-                <FeatureVoting.Count className="font-bold tabular-nums text-xs" />
+                <FeatureVoting.Count className="text-xs font-bold tabular-nums" />
               </FeatureVoting.Trigger>
             </FeatureVoting.Item>
           );
@@ -374,12 +380,12 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
       </FeatureVoting.Root>
 
       {!isSignedIn && (
-        <p className="text-muted-foreground/60 text-[11px] text-center mt-3">
+        <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
           Sign in to upvote features
         </p>
       )}
 
-      <div className="border-t border-border/40 pt-2.5 flex items-center justify-between text-xs text-muted-foreground/60">
+      <div className="border-border/40 text-muted-foreground/60 flex items-center justify-between border-t pt-2.5 text-xs">
         <span>Total interest: {pollState.totalVotes} upvotes</span>
         {isExpired && <span className="text-rose-500">Voting closed</span>}
       </div>

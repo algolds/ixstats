@@ -1,5 +1,7 @@
-import { VaultRouter } from "~/components/vault/VaultRouter";
+"use client";
+
+import { VaultImportSection } from "~/components/vault/sections/VaultImportSection";
 
 export default function VaultImportPage() {
-  return <VaultRouter />;
+  return <VaultImportSection />;
 }

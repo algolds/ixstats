@@ -260,10 +260,13 @@ export default function MapEditorOverlay({
     }
   }, [editor.mode]);
 
-  const handleRouteClick = useCallback((routeId: string) => {
-    setSelectedRouteId(routeId);
-    editor.setMode("add-route");
-  }, [editor]);
+  const handleRouteClick = useCallback(
+    (routeId: string) => {
+      setSelectedRouteId(routeId);
+      editor.setMode("add-route");
+    },
+    [editor]
+  );
 
   // Paint mode: fetch subdivision stats
   const { data: subdivisionStats } = api.geoFeatures.getSubdivisionStats.useQuery(

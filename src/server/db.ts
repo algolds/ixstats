@@ -86,6 +86,8 @@ const createPrismaClient = () => {
     "CardCollection",
     "CardCollectionItem",
     "CraftingRecipe",
+    "VaultStoreItem",
+    "VaultStorePriceHistory",
     // NS sync management
     "SyncLog",
     "SyncCheckpoint",
@@ -232,6 +234,7 @@ const createPrismaClient = () => {
     // Activity feed & achievements (seeded/cleaned by demo seed system)
     "ActivityFeed",
     "UserAchievement",
+    "Achievement",
     // Wiki cache (written by WikiCacheService for 3-layer caching)
     "WikiCache",
     "ExternalApiCache",
@@ -362,5 +365,16 @@ export { db as prisma };
 
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
+
+if (typeof window === "undefined" && !isReadOnlyMode) {
+  // Asynchronously synchronize baseline achievements in background on server start
+  import("~/lib/achievement-sync")
+    .then(({ syncAchievements }) => {
+      syncAchievements(db).catch((err) =>
+        console.error("[DATABASE] Baseline achievements sync failed:", err)
+      );
+    })
+    .catch((err) => console.error("[DATABASE] Failed to load achievement-sync:", err));
+}
 
 if (env.NODE_ENV !== "production") globalForPrisma.prisma = undefined;

@@ -71,9 +71,18 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
 
     // Handle bulk action
     const handleBulkAction = (action: QuickActionType) => {
-      selectedCards.forEach((cardId) => {
-        handleCardAction(cardId, action);
+      const cardIdList = Array.from(selectedCards);
+      
+      // Update local state for all selected cards
+      setCardActions((prev) => {
+        const next = new Map(prev);
+        cardIdList.forEach((id) => next.set(id, action));
+        return next;
       });
+
+      // Call onAction once with all cardIds
+      onAction({ cardIds: cardIdList, action });
+
       setSelectedCards(new Set());
       setBulkMode(false);
       service.triggerHaptic("medium");

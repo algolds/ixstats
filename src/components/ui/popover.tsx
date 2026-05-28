@@ -29,17 +29,16 @@ interface PopoverContentProps extends Omit<
 function PopoverContent({ className, sideOffset = 4, children, ...props }: PopoverContentProps) {
   return (
     <PopoverPortal>
-      <PopoverBackdrop />
       <PopoverPrimitive.Positioner
         data-slot="popover-positioner"
         sideOffset={sideOffset}
-        className="z-[var(--z-tooltip)] size-auto"
+        className="z-[100050] size-auto pointer-events-auto"
         {...props}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "max-h-[var(--available-height)] w-72 max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out",
+            "pointer-events-auto max-h-[var(--available-height)] w-72 max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out",
             "origin-[var(--transform-origin)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             // Default glass styling with contextual depth detection
             !(typeof className === "string" && className.includes("glass-")) &&

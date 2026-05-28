@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Grid3x3, Package, ArrowRightLeft, Download } from "lucide-react";
+import { Home, Grid3x3, ShoppingCart, Download } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
 
-export type VaultSection = "dashboard" | "cards" | "acquire" | "create" | "import";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
+
+export type VaultSection = "dashboard" | "cards" | "marketplace" | "import" | "achievements";
 
 export const VAULT_NAV_ITEMS: {
   id: VaultSection;
@@ -33,20 +40,12 @@ export const VAULT_NAV_ITEMS: {
     activeGlow: "shadow-amber-500/30",
   },
   {
-    id: "acquire",
-    href: "/vault/acquire",
-    icon: Package,
-    title: "Acquire",
+    id: "marketplace",
+    href: "/vault/marketplace",
+    icon: ShoppingCart,
+    title: "Marketplace",
     gradient: "from-blue-500 to-cyan-500",
     activeGlow: "shadow-blue-500/30",
-  },
-  {
-    id: "create",
-    href: "/vault/create",
-    icon: ArrowRightLeft,
-    title: "Trade & Sell",
-    gradient: "from-emerald-500 to-teal-500",
-    activeGlow: "shadow-emerald-500/30",
   },
   {
     id: "import",
@@ -74,20 +73,22 @@ export function getSectionFromPathname(rawPathname: string): VaultSection {
   )
     return "cards";
 
-  // Acquire section: /vault/acquire, /vault/packs
-  if (pathname.startsWith("/vault/acquire") || pathname.startsWith("/vault/packs"))
-    return "acquire";
-
-  // Trade & Sell section: /vault/create, /vault/trading, /vault/market
+  // Marketplace section: /vault/marketplace, /vault/acquire, /vault/create, /vault/packs, /vault/trading, /vault/market
   if (
+    pathname.startsWith("/vault/marketplace") ||
+    pathname.startsWith("/vault/acquire") ||
+    pathname.startsWith("/vault/packs") ||
     pathname.startsWith("/vault/create") ||
     pathname.startsWith("/vault/trading") ||
     pathname.startsWith("/vault/market")
   )
-    return "create";
+    return "marketplace";
 
   // Import section: /vault/import
   if (pathname.startsWith("/vault/import")) return "import";
+
+  // Achievements section: /achievements
+  if (pathname.startsWith("/achievements")) return "achievements";
 
   return "dashboard";
 }
@@ -106,12 +107,14 @@ export function getSubTabFromPathname(rawPathname: string): string | null {
   if (pathname.startsWith("/vault/inventory") || pathname.startsWith("/vault/cards"))
     return "inventory";
 
-  // Acquire section sub-tabs
-  if (pathname.startsWith("/vault/packs") || pathname.startsWith("/vault/acquire")) return "packs";
-
-  // Trade & Sell section sub-tabs
-  if (pathname.startsWith("/vault/market")) return "market";
-  if (pathname.startsWith("/vault/trading") || pathname.startsWith("/vault/create"))
+  // Marketplace section sub-tabs
+  if (pathname.startsWith("/vault/packs") || pathname.startsWith("/vault/acquire")) return "store";
+  if (pathname.startsWith("/vault/market")) return "auctions";
+  if (
+    pathname.startsWith("/vault/trading") ||
+    pathname.startsWith("/vault/create") ||
+    pathname.startsWith("/vault/marketplace")
+  )
     return "trading";
 
   // Import section sub-tabs
@@ -123,7 +126,7 @@ export function getSubTabFromPathname(rawPathname: string): string | null {
 interface VaultSidebarNavProps {
   activeSection?: VaultSection;
   onNavigate?: (section: VaultSection) => void;
-  /** "desktop" (default) = icon rail with tooltips, "mobile" = horizontal pill bar */
+  /** "desktop" (default) = cutout widget, "mobile" = horizontal pill bar */
   variant?: "desktop" | "mobile";
 }
 
@@ -178,59 +181,75 @@ export function VaultSidebarNav({
     );
   }
 
-  /* ── Desktop: icon rail with tooltip labels ── */
+  /* ── Desktop: cutout card navigation ── */
   return (
-    <nav className="glass-hierarchy-parent border-border flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm">
-      {VAULT_NAV_ITEMS.map((item) => {
-        const isActive = item.id === activeId;
-        const Icon = item.icon;
-
-        const iconEl = (
-          <div
-            className={cn(
-              "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200",
-              isActive
-                ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
+    <CutoutCard
+      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
+      trackPointerHover={false}
+      texture="dots"
+      textureOpacity={0.06}
+    >
+      {/* Cutout tab header */}
+      <div className="relative bg-purple-500/10 px-3 pt-2.5 pb-4">
+        <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
+          <svg
+            className="h-3.5 w-3.5 animate-pulse text-purple-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            <Icon
-              className={cn(
-                "h-[18px] w-[18px] transition-transform duration-150",
-                !isActive && "group-hover/tip:scale-110"
-              )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
             />
+          </svg>
+          Vault Sections
+        </div>
+        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
+        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+      </div>
+      <CutoutCardContent className="space-y-1.5 p-2.5 pt-1">
+        {VAULT_NAV_ITEMS.map((item) => {
+          const isActive = item.id === activeId;
+          const Icon = item.icon;
 
-            {/* Tooltip — appears to the right */}
-            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-gray-100 dark:text-gray-900">
-              {item.title}
-              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100" />
-            </span>
-          </div>
-        );
+          const rowEl = (
+            <div
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
+                isActive
+                  ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate text-xs font-medium">{item.title}</span>
+            </div>
+          );
 
-        return isControlled ? (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
-            aria-label={item.title}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {iconEl}
-          </button>
-        ) : (
-          <Link
-            key={item.id}
-            href={item.href}
-            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
-            aria-label={item.title}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {iconEl}
-          </Link>
-        );
-      })}
-    </nav>
+          return isControlled ? (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className="w-full rounded-lg border-none bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+              aria-current={isActive ? "page" : undefined}
+            >
+              {rowEl}
+            </button>
+          ) : (
+            <Link
+              key={item.id}
+              href={item.href}
+              className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+              aria-current={isActive ? "page" : undefined}
+            >
+              {rowEl}
+            </Link>
+          );
+        })}
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

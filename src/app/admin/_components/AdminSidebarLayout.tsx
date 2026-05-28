@@ -55,7 +55,7 @@ export function AdminSidebarLayout({ children }: AdminSidebarLayoutProps) {
         {/* Main Layout — rail + content */}
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop: Sticky rail */}
-          <div className="sticky top-6 z-30 hidden w-72 shrink-0 self-start space-y-4 lg:block">
+          <div className="sticky top-6 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
             <SystemStatusWidget />
             <AdminSidebarNavWidget />
           </div>

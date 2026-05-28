@@ -22,6 +22,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Card, CardContent } from "~/components/ui/card";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -390,7 +391,11 @@ export function GlassCanvasComposer({
   const remainingChars = characterLimit - content.length;
 
   return (
-    <Card ref={composerRef} className="glass-hierarchy-child border-blue-500/30 bg-blue-500/5">
+    <Card
+      ref={composerRef}
+      className="glass-hierarchy-child relative overflow-hidden border-blue-500/30 bg-blue-500/5"
+    >
+      <TextureOverlay texture="paperGrain" opacity={0.06} />
       {/* ── Collapsed bar ── */}
       <AnimatePresence mode="wait">
         {!isExpanded ? (

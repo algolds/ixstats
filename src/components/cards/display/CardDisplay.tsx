@@ -29,7 +29,6 @@ import {
   getMetallicGradient,
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
-import { useSoundService } from "~/lib/sound-service";
 import { CardHolographicCover } from "./CardHolographicCover";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 
@@ -91,7 +90,6 @@ export const CardDisplay = React.memo<CardDisplayProps>(
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
-    const soundService = useSoundService();
 
     const rarityConfig = getRarityConfig(card.rarity);
     const stats = formatCardStats(card);
@@ -143,7 +141,6 @@ export const CardDisplay = React.memo<CardDisplayProps>(
      * Handle card click
      */
     const handleClick = () => {
-      soundService?.play("card-select");
       if (onClick) {
         onClick(card);
       }
@@ -154,7 +151,6 @@ export const CardDisplay = React.memo<CardDisplayProps>(
      */
     const handleMouseEnter = () => {
       setIsHovered(true);
-      soundService?.play("card-hover", 0.3); // Lower volume for hover
     };
 
     const handleMouseLeave = () => {
@@ -306,20 +302,28 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
-              {card.cardType && (
-                <span
-                  className={cn(
-                    "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
-                    fonts.type,
-                    "border border-white/20 text-white"
-                  )}
-                  style={{
-                    textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
-                  }}
-                >
-                  {getCardTypeLabel(card.cardType)}
-                </span>
-              )}
+              {card.cardType &&
+                (card.cardType === "NS_IMPORT" ? (
+                  <img
+                    src="https://www.nationstates.net/images/island_small.png"
+                    alt="NationStates"
+                    className="h-5 w-5 rounded-sm shadow-lg"
+                    title="NationStates Import"
+                  />
+                ) : (
+                  <span
+                    className={cn(
+                      "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
+                      fonts.type,
+                      "border border-white/20 text-white"
+                    )}
+                    style={{
+                      textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
+                    }}
+                  >
+                    {getCardTypeLabel(card.cardType)}
+                  </span>
+                ))}
             </div>
 
             {/* Bottom section - Card info */}

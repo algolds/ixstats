@@ -35,6 +35,7 @@ export interface PackOpeningState {
  */
 export interface CardInstance {
   id: string;
+  ownershipId?: string;
   name?: string;
   title?: string;
   rarity: CardRarity;
@@ -52,7 +53,8 @@ export type QuickActionType = "junk" | "keep" | "list" | "collect";
  * Quick action event data
  */
 export interface QuickActionEvent {
-  cardId: string;
+  cardId?: string;
+  cardIds?: string[];
   action: QuickActionType;
 }
 

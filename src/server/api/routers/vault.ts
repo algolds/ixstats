@@ -949,6 +949,51 @@ export const vaultRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * Get list of purchased items for current user (profile customization, upgrades, etc.)
+   */
+  getPurchasedItems: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.auth?.userId) {
+        throw new Error("Unauthorized");
+      }
+      const transactions = await ctx.db.vaultTransaction.findMany({
+        where: {
+          vault: { userId: ctx.auth.userId },
+          type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
+        },
+        select: {
+          metadata: true,
+        },
+      });
+
+      const purchasedItemIds = new Set<string>();
+      for (const tx of transactions) {
+        if (tx.metadata && typeof tx.metadata === "object") {
+          const meta = tx.metadata as Record<string, any>;
+          if (meta.itemId && typeof meta.itemId === "string") {
+            purchasedItemIds.add(meta.itemId);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        purchasedItemIds: Array.from(purchasedItemIds),
+      };
+    } catch (error) {
+      console.error("[Vault Router] Error getting purchased items:", error);
+      throw new Error("Failed to retrieve purchased items");
+    }
+  }),
+
+  /**
+   * Get vault configuration for store prices and caps (accessible to all authenticated users)
+   */
+  getStoreConfig: protectedProcedure.query(async ({ ctx }) => {
+    return getVaultConfig(ctx.db as any);
+  }),
+
   // Get vault configuration (DB-backed)
   adminGetVaultConfig: adminProcedure.query(async ({ ctx }) => {
     return getVaultConfig(ctx.db);
@@ -963,6 +1008,19 @@ export const vaultRouter = createTRPCRouter({
         xpPerLevel: z.number().min(100).max(100000),
         maxStreakBonus: z.number().min(1).max(365),
         premiumMultiplier: z.number().min(0.1).max(10),
+        priceGoldenProfileGlow: z.number().min(0).max(100000),
+        priceNeonCyberFrame: z.number().min(0).max(100000),
+        priceEliteChatBadge: z.number().min(0).max(100000),
+        priceLoreRequestToken: z.number().min(0).max(100000),
+        priceCardCapacity: z.number().min(0).max(100000),
+        pricePassiveYieldBoost: z.number().min(0).max(100000),
+        isEarningEnabled: z.boolean(),
+        isTradingEnabled: z.boolean(),
+        isAuctionsEnabled: z.boolean(),
+        isStoreEnabled: z.boolean(),
+        isCraftingEnabled: z.boolean(),
+        isPacksEnabled: z.boolean(),
+        isMaintenanceMode: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -973,6 +1031,19 @@ export const vaultRouter = createTRPCRouter({
           { key: "vault_xpPerLevel", value: input.xpPerLevel.toString() },
           { key: "vault_maxStreakBonus", value: input.maxStreakBonus.toString() },
           { key: "vault_premiumMultiplier", value: input.premiumMultiplier.toString() },
+          { key: "vault_priceGoldenProfileGlow", value: input.priceGoldenProfileGlow.toString() },
+          { key: "vault_priceNeonCyberFrame", value: input.priceNeonCyberFrame.toString() },
+          { key: "vault_priceEliteChatBadge", value: input.priceEliteChatBadge.toString() },
+          { key: "vault_priceLoreRequestToken", value: input.priceLoreRequestToken.toString() },
+          { key: "vault_priceCardCapacity", value: input.priceCardCapacity.toString() },
+          { key: "vault_pricePassiveYieldBoost", value: input.pricePassiveYieldBoost.toString() },
+          { key: "vault_isEarningEnabled", value: input.isEarningEnabled.toString() },
+          { key: "vault_isTradingEnabled", value: input.isTradingEnabled.toString() },
+          { key: "vault_isAuctionsEnabled", value: input.isAuctionsEnabled.toString() },
+          { key: "vault_isStoreEnabled", value: input.isStoreEnabled.toString() },
+          { key: "vault_isCraftingEnabled", value: input.isCraftingEnabled.toString() },
+          { key: "vault_isPacksEnabled", value: input.isPacksEnabled.toString() },
+          { key: "vault_isMaintenanceMode", value: input.isMaintenanceMode.toString() },
         ];
 
         await ctx.db.$transaction(
@@ -997,4 +1068,363 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("Failed to save vault configuration");
       }
     }),
+
+  /**
+   * Public/Protected: List active store items. Seeds if database table is empty.
+   */
+  listStoreItems: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      let items = await ctx.db.vaultStoreItem.findMany({
+        where: { isActive: true },
+        orderBy: { price: "asc" },
+      });
+      if (items.length === 0) {
+        await seedVaultStoreItems(ctx.db);
+        items = await ctx.db.vaultStoreItem.findMany({
+          where: { isActive: true },
+          orderBy: { price: "asc" },
+        });
+      }
+      return items;
+    } catch (error) {
+      console.error("[Vault Router] listStoreItems error:", error);
+      throw new Error("Failed to retrieve store items");
+    }
+  }),
+
+  /**
+   * Admin: List all store items, including inactive ones. Seeds if empty.
+   */
+  adminListStoreItemsAll: adminProcedure.query(async ({ ctx }) => {
+    try {
+      let items = await ctx.db.vaultStoreItem.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+      if (items.length === 0) {
+        await seedVaultStoreItems(ctx.db);
+        items = await ctx.db.vaultStoreItem.findMany({
+          orderBy: { createdAt: "desc" },
+        });
+      }
+      return items;
+    } catch (error) {
+      console.error("[Vault Router] adminListStoreItemsAll error:", error);
+      throw new Error("Failed to retrieve admin store items");
+    }
+  }),
+
+  /**
+   * Admin: Create a new store item.
+   */
+  adminCreateStoreItem: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1, "Name is required"),
+        description: z.string().optional(),
+        price: z.number().min(0, "Price must be non-negative"),
+        icon: z.string().default("Sparkles"),
+        glowColor: z.string().optional(),
+        quality: z.string().default("COMMON"),
+        badgeText: z.string().optional(),
+        category: z.string().default("cosmetics"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (!ctx.auth?.userId) {
+          throw new Error("Unauthorized");
+        }
+
+        const newItem = await ctx.db.vaultStoreItem.create({
+          data: {
+            name: input.name,
+            description: input.description,
+            price: input.price,
+            icon: input.icon,
+            glowColor: input.glowColor ?? "rgba(245,158,11,0.35)",
+            quality: input.quality,
+            badgeText: input.badgeText ?? "Custom Item",
+            category: input.category,
+            isActive: true,
+          },
+        });
+
+        await ctx.db.vaultStorePriceHistory.create({
+          data: {
+            itemId: newItem.id,
+            price: newItem.price,
+            adminId: ctx.auth.userId,
+            adminName: "Admin",
+          },
+        });
+
+        return { success: true, item: newItem };
+      } catch (error) {
+        console.error("[Vault Router] adminCreateStoreItem error:", error);
+        throw new Error("Failed to create store item");
+      }
+    }),
+
+  /**
+   * Admin: Update an existing store item.
+   */
+  adminUpdateStoreItem: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1, "Name is required"),
+        description: z.string().optional(),
+        price: z.number().min(0, "Price must be non-negative"),
+        icon: z.string().default("Sparkles"),
+        glowColor: z.string().optional(),
+        quality: z.string().default("COMMON"),
+        badgeText: z.string().optional(),
+        category: z.string().default("cosmetics"),
+        isActive: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (!ctx.auth?.userId) {
+          throw new Error("Unauthorized");
+        }
+
+        const existing = await ctx.db.vaultStoreItem.findUnique({
+          where: { id: input.id },
+        });
+
+        if (!existing) {
+          throw new Error("Store item not found");
+        }
+
+        const updated = await ctx.db.vaultStoreItem.update({
+          where: { id: input.id },
+          data: {
+            name: input.name,
+            description: input.description,
+            price: input.price,
+            icon: input.icon,
+            glowColor: input.glowColor ?? "rgba(245,158,11,0.35)",
+            quality: input.quality,
+            badgeText: input.badgeText ?? "Custom Item",
+            category: input.category,
+            isActive: input.isActive,
+          },
+        });
+
+        if (existing.price !== input.price) {
+          await ctx.db.vaultStorePriceHistory.create({
+            data: {
+              itemId: updated.id,
+              price: updated.price,
+              adminId: ctx.auth.userId,
+              adminName: "Admin",
+            },
+          });
+        }
+
+
+        return { success: true, item: updated };
+      } catch (error) {
+        console.error("[Vault Router] adminUpdateStoreItem error:", error);
+        throw new Error("Failed to update store item");
+      }
+    }),
+
+  /**
+   * Admin: Delete or soft-delete a store item.
+   */
+  adminDeleteStoreItem: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        hardDelete: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (input.hardDelete) {
+          await ctx.db.vaultStoreItem.delete({
+            where: { id: input.id },
+          });
+        } else {
+          await ctx.db.vaultStoreItem.update({
+            where: { id: input.id },
+            data: { isActive: false },
+          });
+        }
+        return { success: true };
+      } catch (error) {
+        console.error("[Vault Router] adminDeleteStoreItem error:", error);
+        throw new Error("Failed to delete store item");
+      }
+    }),
+
+  /**
+   * Admin: Get price history log for a store item.
+   */
+  adminGetPriceHistory: adminProcedure
+    .input(z.object({ itemId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await ctx.db.vaultStorePriceHistory.findMany({
+          where: { itemId: input.itemId },
+          orderBy: { changedAt: "desc" },
+        });
+      } catch (error) {
+        console.error("[Vault Router] adminGetPriceHistory error:", error);
+        throw new Error("Failed to retrieve price history");
+      }
+    }),
+
+  /**
+   * Admin: Get all storefront purchase transactions.
+   */
+  adminGetPurchaseLogs: adminProcedure.query(async ({ ctx }) => {
+    try {
+      const txs = await ctx.db.vaultTransaction.findMany({
+        where: {
+          type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
+        },
+        include: {
+          vault: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  wikiUsername: true,
+                  clerkUserId: true,
+                  country: {
+                    select: {
+                      name: true,
+                      flag: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return txs.map((tx: any) => {
+        let itemId = "";
+        if (tx.metadata && typeof tx.metadata === "object") {
+          const meta = tx.metadata as Record<string, any>;
+          itemId = meta.itemId || "";
+        }
+        return {
+          id: tx.id,
+          credits: tx.credits,
+          balanceAfter: tx.balanceAfter,
+          type: tx.type,
+          source: tx.source,
+          itemId,
+          createdAt: tx.createdAt,
+          user: {
+            id: tx.vault.user?.id,
+            displayName:
+              tx.vault.user?.country?.name ??
+              tx.vault.user?.wikiUsername ??
+              tx.vault.user?.clerkUserId ??
+              "Unknown User",
+            flag: tx.vault.user?.country?.flag,
+          },
+        };
+      });
+    } catch (error) {
+      console.error("[Vault Router] adminGetPurchaseLogs error:", error);
+      throw new Error("Failed to retrieve purchase logs");
+    }
+  }),
 });
+
+/**
+ * Helper function to seed dynamic VaultStoreItem database table if empty.
+ */
+async function seedVaultStoreItems(db: any) {
+  const standardItems = [
+    {
+      id: "cosmetic_gold_glow",
+      name: "Golden Profile Glow",
+      description: "Adds a premium golden aura surrounding your user badges and avatar.",
+      price: 500,
+      icon: "Sparkles",
+      glowColor: "rgba(245,158,11,0.35)",
+      quality: "EPIC",
+      badgeText: "Badge Custom",
+      category: "cosmetics",
+      isActive: true,
+    },
+    {
+      id: "cosmetic_neon_frame",
+      name: "Neon Cyber Frame",
+      description: "Wraps your card profiles with a neon-glowing futuristic cybernetic border.",
+      price: 750,
+      icon: "Cpu",
+      glowColor: "rgba(59,130,246,0.35)",
+      quality: "RARE",
+      badgeText: "Card Border",
+      category: "cosmetics",
+      isActive: true,
+    },
+    {
+      id: "cosmetic_chat_badge",
+      name: "Elite Chat Badge",
+      description: "Displays a premium golden crown symbol next to your name in community grids.",
+      price: 1000,
+      icon: "Crown",
+      glowColor: "rgba(168,85,247,0.35)",
+      quality: "EPIC",
+      badgeText: "Profile Title",
+      category: "cosmetics",
+      isActive: true,
+    },
+    {
+      id: "upgrade_lore_token",
+      name: "Lore Request Token",
+      description: "Grants 1 submission token to request a custom lore card using any Wiki Article.",
+      price: 2500,
+      icon: "BookOpen",
+      glowColor: "rgba(59,130,246,0.35)",
+      quality: "RARE",
+      badgeText: "Lore Token",
+      category: "upgrades",
+      isActive: true,
+    },
+    {
+      id: "upgrade_card_capacity",
+      name: "Card Capacity +50",
+      description: "Permanently expands your personal vault collection limit by +50 cards.",
+      price: 5000,
+      icon: "Database",
+      glowColor: "rgba(245,158,11,0.35)",
+      quality: "LEGENDARY",
+      badgeText: "Capacity Boost",
+      category: "upgrades",
+      isActive: true,
+    },
+    {
+      id: "upgrade_yield_boost",
+      name: "Passive Yield Boost (+5%)",
+      description: "Adds a permanent +5% multiplier to all passive daily credit allowance earnings.",
+      price: 5000,
+      icon: "TrendingUp",
+      glowColor: "rgba(245,158,11,0.35)",
+      quality: "LEGENDARY",
+      badgeText: "Yield Multiplier",
+      category: "upgrades",
+      isActive: true,
+    },
+  ];
+
+  for (const item of standardItems) {
+    await db.vaultStoreItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: item,
+    });
+  }
+}
+

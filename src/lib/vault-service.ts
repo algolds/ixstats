@@ -169,6 +169,14 @@ export class VaultService {
     metadata?: Record<string, any>
   ): Promise<{ success: boolean; newBalance: number; message?: string }> {
     try {
+      const config = await getVaultConfig(db);
+      if (config.isMaintenanceMode) {
+        return { success: false, newBalance: 0, message: "Vault economy is currently in maintenance mode." };
+      }
+      if (!config.isEarningEnabled && (type === "EARN_ACTIVE" || type === "EARN_SOCIAL" || type === "EARN_PASSIVE")) {
+        return { success: false, newBalance: 0, message: "Earning credits is currently disabled globally." };
+      }
+
       // Validate amount
       if (amount <= 0) {
         return { success: false, newBalance: 0, message: "Amount must be positive" };
@@ -257,6 +265,19 @@ export class VaultService {
     metadata?: Record<string, any>
   ): Promise<{ success: boolean; newBalance: number; message?: string }> {
     try {
+      const config = await getVaultConfig(db);
+      if (config.isMaintenanceMode) {
+        return { success: false, newBalance: 0, message: "Vault economy is currently in maintenance mode." };
+      }
+
+      if (!config.isStoreEnabled && (type === "SPEND_COSMETIC" || type === "SPEND_BOOST")) {
+        return { success: false, newBalance: 0, message: "Storefront purchases are currently disabled globally." };
+      }
+
+      if (!config.isPacksEnabled && type === "SPEND_PACKS") {
+        return { success: false, newBalance: 0, message: "Card pack purchases are currently disabled globally." };
+      }
+
       // Validate amount
       if (amount <= 0) {
         return { success: false, newBalance: 0, message: "Amount must be positive" };
@@ -661,6 +682,19 @@ export interface VaultConfig {
   xpPerLevel: number;
   maxStreakBonus: number;
   premiumMultiplier: number;
+  priceGoldenProfileGlow: number;
+  priceNeonCyberFrame: number;
+  priceEliteChatBadge: number;
+  priceLoreRequestToken: number;
+  priceCardCapacity: number;
+  pricePassiveYieldBoost: number;
+  isEarningEnabled: boolean;
+  isTradingEnabled: boolean;
+  isAuctionsEnabled: boolean;
+  isStoreEnabled: boolean;
+  isCraftingEnabled: boolean;
+  isPacksEnabled: boolean;
+  isMaintenanceMode: boolean;
 }
 
 const VAULT_CONFIG_DEFAULTS: VaultConfig = {
@@ -669,6 +703,19 @@ const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   xpPerLevel: 1000,
   maxStreakBonus: 7,
   premiumMultiplier: 1.0,
+  priceGoldenProfileGlow: 500,
+  priceNeonCyberFrame: 750,
+  priceEliteChatBadge: 1000,
+  priceLoreRequestToken: 2500,
+  priceCardCapacity: 5000,
+  pricePassiveYieldBoost: 5000,
+  isEarningEnabled: true,
+  isTradingEnabled: true,
+  isAuctionsEnabled: true,
+  isStoreEnabled: true,
+  isCraftingEnabled: true,
+  isPacksEnabled: true,
+  isMaintenanceMode: false,
 };
 
 const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
@@ -677,6 +724,19 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   xpPerLevel: "vault_xpPerLevel",
   maxStreakBonus: "vault_maxStreakBonus",
   premiumMultiplier: "vault_premiumMultiplier",
+  priceGoldenProfileGlow: "vault_priceGoldenProfileGlow",
+  priceNeonCyberFrame: "vault_priceNeonCyberFrame",
+  priceEliteChatBadge: "vault_priceEliteChatBadge",
+  priceLoreRequestToken: "vault_priceLoreRequestToken",
+  priceCardCapacity: "vault_priceCardCapacity",
+  pricePassiveYieldBoost: "vault_pricePassiveYieldBoost",
+  isEarningEnabled: "vault_isEarningEnabled",
+  isTradingEnabled: "vault_isTradingEnabled",
+  isAuctionsEnabled: "vault_isAuctionsEnabled",
+  isStoreEnabled: "vault_isStoreEnabled",
+  isCraftingEnabled: "vault_isCraftingEnabled",
+  isPacksEnabled: "vault_isPacksEnabled",
+  isMaintenanceMode: "vault_isMaintenanceMode",
 };
 
 const vaultConfigCache = new Cache({
@@ -727,6 +787,31 @@ export async function getVaultConfig(db: {
       premiumMultiplier: parseFloat(
         m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)
       ),
+      priceGoldenProfileGlow: parseFloat(
+        m.vault_priceGoldenProfileGlow ?? String(VAULT_CONFIG_DEFAULTS.priceGoldenProfileGlow)
+      ),
+      priceNeonCyberFrame: parseFloat(
+        m.vault_priceNeonCyberFrame ?? String(VAULT_CONFIG_DEFAULTS.priceNeonCyberFrame)
+      ),
+      priceEliteChatBadge: parseFloat(
+        m.vault_priceEliteChatBadge ?? String(VAULT_CONFIG_DEFAULTS.priceEliteChatBadge)
+      ),
+      priceLoreRequestToken: parseFloat(
+        m.vault_priceLoreRequestToken ?? String(VAULT_CONFIG_DEFAULTS.priceLoreRequestToken)
+      ),
+      priceCardCapacity: parseFloat(
+        m.vault_priceCardCapacity ?? String(VAULT_CONFIG_DEFAULTS.priceCardCapacity)
+      ),
+      pricePassiveYieldBoost: parseFloat(
+        m.vault_pricePassiveYieldBoost ?? String(VAULT_CONFIG_DEFAULTS.pricePassiveYieldBoost)
+      ),
+      isEarningEnabled: m.vault_isEarningEnabled !== undefined ? m.vault_isEarningEnabled === "true" : VAULT_CONFIG_DEFAULTS.isEarningEnabled,
+      isTradingEnabled: m.vault_isTradingEnabled !== undefined ? m.vault_isTradingEnabled === "true" : VAULT_CONFIG_DEFAULTS.isTradingEnabled,
+      isAuctionsEnabled: m.vault_isAuctionsEnabled !== undefined ? m.vault_isAuctionsEnabled === "true" : VAULT_CONFIG_DEFAULTS.isAuctionsEnabled,
+      isStoreEnabled: m.vault_isStoreEnabled !== undefined ? m.vault_isStoreEnabled === "true" : VAULT_CONFIG_DEFAULTS.isStoreEnabled,
+      isCraftingEnabled: m.vault_isCraftingEnabled !== undefined ? m.vault_isCraftingEnabled === "true" : VAULT_CONFIG_DEFAULTS.isCraftingEnabled,
+      isPacksEnabled: m.vault_isPacksEnabled !== undefined ? m.vault_isPacksEnabled === "true" : VAULT_CONFIG_DEFAULTS.isPacksEnabled,
+      isMaintenanceMode: m.vault_isMaintenanceMode !== undefined ? m.vault_isMaintenanceMode === "true" : VAULT_CONFIG_DEFAULTS.isMaintenanceMode,
     };
 
     vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);

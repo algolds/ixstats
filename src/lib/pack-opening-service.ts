@@ -45,71 +45,24 @@ export class PackOpeningService {
   private audioContext: Map<string, HTMLAudioElement> = new Map();
 
   /**
-   * Preload sound files for smoother playback
+   * Preload sound files for smoother playback (silenced)
    */
   preloadSounds(): void {
-    try {
-      // Preload pack open sound
-      const packSound = new Audio("/sounds/pack-open.mp3");
-      packSound.preload = "auto";
-      this.audioContext.set("pack-open", packSound);
-
-      // Preload rarity sounds
-      Object.entries(RARITY_SOUNDS).forEach(([rarity, path]) => {
-        const audio = new Audio(path);
-        audio.preload = "auto";
-        this.audioContext.set(`rarity-${rarity}`, audio);
-      });
-    } catch (error) {
-      console.warn("[PackOpening] Failed to preload sounds:", error);
-    }
+    // Silenced for compliance with no-audio constraints
   }
 
   /**
-   * Play rarity-specific sound effect
+   * Play rarity-specific sound effect (silenced)
    */
   playRaritySound(rarity: CardRarity): void {
-    try {
-      const key = `rarity-${rarity}`;
-      let audio = this.audioContext.get(key);
-
-      // Fallback to creating new audio if not preloaded
-      if (!audio) {
-        audio = new Audio(RARITY_SOUNDS[rarity]);
-        this.audioContext.set(key, audio);
-      }
-
-      // Reset and play
-      audio.currentTime = 0;
-      audio.volume = 0.5;
-      audio.play().catch((err) => {
-        console.warn(`[PackOpening] Failed to play ${rarity} sound:`, err);
-      });
-    } catch (error) {
-      console.warn(`[PackOpening] Sound playback error:`, error);
-    }
+    // Silenced for compliance with no-audio constraints
   }
 
   /**
-   * Play pack opening sound
+   * Play pack opening sound (silenced)
    */
   playPackOpenSound(): void {
-    try {
-      let audio = this.audioContext.get("pack-open");
-
-      if (!audio) {
-        audio = new Audio("/sounds/pack-open.mp3");
-        this.audioContext.set("pack-open", audio);
-      }
-
-      audio.currentTime = 0;
-      audio.volume = 0.6;
-      audio.play().catch((err) => {
-        console.warn("[PackOpening] Failed to play pack open sound:", err);
-      });
-    } catch (error) {
-      console.warn("[PackOpening] Pack open sound error:", error);
-    }
+    // Silenced for compliance with no-audio constraints
   }
 
   /**

@@ -22,6 +22,7 @@ import {
 } from "~/components/ui/dialog";
 import { Plus, Users, Trash2, Pencil } from "lucide-react";
 import { api } from "~/trpc/react";
+import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 
 const IDEOLOGY_OPTIONS = [
   { value: "far_left", label: "Far Left", color: "#dc2626" },
@@ -204,20 +205,10 @@ export function PartyManager({ countryId }: PartyManagerProps) {
                   </div>
                   <div>
                     <Label>Party Color</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        className="h-9 w-12 cursor-pointer rounded border"
-                      />
-                      <Input
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        className="font-mono text-xs"
-                        maxLength={7}
-                      />
-                    </div>
+                    <ColorPickerInput
+                      value={formData.color}
+                      onChange={(val) => setFormData({ ...formData, color: val })}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

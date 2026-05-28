@@ -13,7 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService, getVaultConfig } from "~/lib/vault-service";
 import { type CardType } from "@prisma/client";
 
 /**
@@ -272,6 +272,21 @@ export const craftingRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
+
+      // Check crafting switch or maintenance mode
+      const config = await getVaultConfig(ctx.db);
+      if (config.isMaintenanceMode) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Vault economy is currently in maintenance mode.",
+        });
+      }
+      if (!config.isCraftingEnabled) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Card crafting is currently disabled globally.",
+        });
+      }
 
       // Fetch recipe
       const recipe = await ctx.db.craftingRecipe.findUnique({

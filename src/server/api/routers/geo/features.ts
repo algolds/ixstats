@@ -643,40 +643,46 @@ function getColorForFeature(featureId: string, properties: Record<string, unknow
 
 function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
-export async function syncGeographicDemographics(db: any, countryId: string, subdivisionId?: string | null) {
+export async function syncGeographicDemographics(
+  db: any,
+  countryId: string,
+  subdivisionId?: string | null
+) {
   // 1. If subdivisionId is provided, sync subdivision population from its cities
   if (subdivisionId) {
     const citiesSum = await db.city.aggregate({
       where: { subdivisionId, status: "approved" },
-      _sum: { population: true }
+      _sum: { population: true },
     });
     const subPop = citiesSum._sum.population ?? 0;
     await db.subdivision.update({
       where: { id: subdivisionId },
-      data: { population: subPop }
+      data: { population: subPop },
     });
   }
 
   // 2. Sync country population from all subdivisions
   const subdivisionsSum = await db.subdivision.aggregate({
     where: { countryId, status: "approved" },
-    _sum: { population: true }
+    _sum: { population: true },
   });
   const totalSubPop = subdivisionsSum._sum.population ?? 0;
   if (totalSubPop > 0) {
     await db.country.update({
       where: { id: countryId },
-      data: { currentPopulation: totalSubPop }
+      data: { currentPopulation: totalSubPop },
     });
   }
 }
@@ -684,15 +690,15 @@ export async function syncGeographicDemographics(db: any, countryId: string, sub
 export async function syncResourcePoolModifiers(db: any, countryId: string) {
   // 1. Get all points of interest for this country with category "resource"
   const resources = await db.pointOfInterest.findMany({
-    where: { countryId, category: "resource", status: "approved" }
+    where: { countryId, category: "resource", status: "approved" },
   });
 
   // 2. Get all operational transport routes and hubs for this country
   const routes = await db.transportRoute.findMany({
-    where: { countryId, status: "operational" }
+    where: { countryId, status: "operational" },
   });
   const hubs = await db.transportHub.findMany({
-    where: { countryId }
+    where: { countryId },
   });
 
   for (const resource of resources) {
@@ -744,9 +750,9 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
           ...existingMeta,
           isConnected,
           resourceType,
-          quality
-        }
-      }
+          quality,
+        },
+      },
     });
 
     // 4. Create/update StorytellerEffect (DmInput)
@@ -759,8 +765,8 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
       where: {
         countryId,
         inputType,
-        createdBy: `resource_node_${resource.id}`
-      }
+        createdBy: `resource_node_${resource.id}`,
+      },
     });
 
     if (existingEffect) {
@@ -770,8 +776,8 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
           value: effectValue,
           description,
           isActive: isConnected,
-          ixTimeTimestamp: new Date()
-        }
+          ixTimeTimestamp: new Date(),
+        },
       });
     } else {
       await db.storytellerEffect.create({
@@ -782,8 +788,8 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
           description,
           isActive: isConnected,
           createdBy: `resource_node_${resource.id}`,
-          ixTimeTimestamp: new Date()
-        }
+          ixTimeTimestamp: new Date(),
+        },
       });
     }
   }
@@ -794,8 +800,8 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
     where: {
       countryId,
       createdBy: { startsWith: "resource_node_" },
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   for (const eff of obsoleteEffects) {
@@ -807,8 +813,8 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
           isActive: false,
           value: 0,
           description: "Resource POI deleted",
-          ixTimeTimestamp: new Date()
-        }
+          ixTimeTimestamp: new Date(),
+        },
       });
     }
   }

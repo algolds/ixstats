@@ -5,6 +5,26 @@ import { db } from "~/server/db";
 import { ActivityGenerator } from "./activity-generator";
 import { formatCurrency, formatPopulation } from "./chart-utils";
 import { notificationHooks } from "./notification-hooks";
+import { eventBus } from "./event-bus";
+
+// Helper to asynchronously queue achievement evaluation from activity hooks
+async function triggerAchievementCheck(countryId: string, eventName: string, userId?: string) {
+  try {
+    let activeUserId = userId;
+    if (!activeUserId && countryId) {
+      const user = await db.user.findFirst({
+        where: { countryId },
+        select: { clerkUserId: true }
+      });
+      if (user) activeUserId = user.clerkUserId;
+    }
+    if (activeUserId && countryId) {
+      eventBus.publish(eventName, { userId: activeUserId, countryId });
+    }
+  } catch (err) {
+    console.error(`[Activity Hooks] Failed to trigger achievement check for ${eventName}:`, err);
+  }
+}
 
 /**
  * Activity hooks for diplomatic operations
@@ -20,6 +40,9 @@ export class DiplomaticActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(country1Id, "diplomacy:updated", userId).catch(console.error);
+      triggerAchievementCheck(country2Id, "diplomacy:updated").catch(console.error);
+
       const [country1, country2] = await Promise.all([
         db.country.findUnique({ where: { id: country1Id }, select: { name: true } }),
         db.country.findUnique({ where: { id: country2Id }, select: { name: true } }),
@@ -72,6 +95,8 @@ export class DiplomaticActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "diplomacy:updated", userId).catch(console.error);
+
       const [country, targetCountry] = await Promise.all([
         db.country.findUnique({ where: { id: countryId }, select: { name: true } }),
         db.country.findUnique({ where: { id: targetCountryId }, select: { name: true } }),
@@ -114,6 +139,9 @@ export class DiplomaticActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(country1Id, "diplomacy:updated", userId).catch(console.error);
+      triggerAchievementCheck(country2Id, "diplomacy:updated").catch(console.error);
+
       const [country1, country2] = await Promise.all([
         db.country.findUnique({ where: { id: country1Id }, select: { name: true } }),
         db.country.findUnique({ where: { id: country2Id }, select: { name: true } }),
@@ -153,6 +181,9 @@ export class DiplomaticActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(country1Id, "diplomacy:updated", userId).catch(console.error);
+      triggerAchievementCheck(country2Id, "diplomacy:updated").catch(console.error);
+
       const [country1, country2] = await Promise.all([
         db.country.findUnique({ where: { id: country1Id }, select: { name: true } }),
         db.country.findUnique({ where: { id: country2Id }, select: { name: true } }),
@@ -199,6 +230,8 @@ export class GovernmentActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -241,6 +274,8 @@ export class GovernmentActivityHooks {
   ): Promise<void> {
     try {
       if (Math.abs(newEffectiveness - oldEffectiveness) < 10) return; // Only significant changes
+
+      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
 
       const country = await db.country.findUnique({
         where: { id: countryId },
@@ -286,6 +321,8 @@ export class GovernmentActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -331,6 +368,8 @@ export class EconomicActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -372,6 +411,8 @@ export class EconomicActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -414,6 +455,8 @@ export class EconomicActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -463,6 +506,8 @@ export class SecurityActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "military:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -505,6 +550,8 @@ export class SecurityActivityHooks {
     userId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "military:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -555,6 +602,8 @@ export class SocialActivityHooks {
     visibility: "public" | "followers" | "friends"
   ): Promise<void> {
     try {
+      triggerAchievementCheck(countryId, "thinkpages:updated", userId).catch(console.error);
+
       const country = await db.country.findUnique({
         where: { id: countryId },
         select: { name: true },
@@ -593,6 +642,9 @@ export class SocialActivityHooks {
     userCountryId?: string
   ): Promise<void> {
     try {
+      triggerAchievementCheck(userCountryId || countryId, "thinkpages:updated", userId).catch(console.error);
+      triggerAchievementCheck(countryId, "thinkpages:updated").catch(console.error);
+
       const [country, userCountry] = await Promise.all([
         db.country.findUnique({ where: { id: countryId }, select: { name: true } }),
         userCountryId
@@ -629,6 +681,10 @@ export class SocialActivityHooks {
    */
   static async onUserJoined(userId: string, countryId?: string): Promise<void> {
     try {
+      if (countryId) {
+        triggerAchievementCheck(countryId, "user:signup", userId).catch(console.error);
+      }
+
       const country = countryId
         ? await db.country.findUnique({
             where: { id: countryId },
@@ -671,6 +727,7 @@ export class UserActivityHooks {
     countryId: string,
     isNewCountry: boolean
   ): Promise<void> {
+    triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
     await ActivityGenerator.createCountryLinkActivity(userId, countryId, isNewCountry);
   }
 

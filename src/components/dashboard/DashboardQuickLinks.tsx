@@ -18,7 +18,7 @@ const EXTERNAL_LINKS = [
     label: "Getting Started",
     href: "/help/getting-started",
     icon: BookOpen,
-    color: "text-amber-500",
+    color: "text-amber-600 dark:text-amber-500",
   },
 ] as const;
 
@@ -34,6 +34,8 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
     <CutoutCard
       className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
       trackPointerHover={false}
+      texture="dots"
+      textureOpacity={0.06}
     >
       {/* Cutout tab header */}
       <div className="relative bg-cyan-500/10 px-3 pt-2.5 pb-4">

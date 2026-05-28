@@ -3,10 +3,12 @@ import {
   createTRPCRouter,
   protectedProcedure,
   rateLimitedPublicProcedure,
+  adminProcedure,
 } from "~/server/api/trpc";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationHooks } from "~/lib/notification-hooks";
 import { vaultService } from "~/lib/vault-service";
+import { achievementService } from "~/lib/achievement-service";
 
 export const achievementsRouter = createTRPCRouter({
   // Get recent achievements for a country
@@ -19,7 +21,6 @@ export const achievementsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Get users for this country
         const users = await ctx.db.user.findMany({
           where: { countryId: input.countryId },
           select: { clerkUserId: true },
@@ -43,7 +44,7 @@ export const achievementsRouter = createTRPCRouter({
           unlockedAt: achievement.unlockedAt.toISOString(),
           category: achievement.category,
           rarity: achievement.rarity,
-          points: 10, // Default points
+          points: 10,
         }));
       } catch (error) {
         console.error("Error fetching recent achievements:", error);
@@ -60,7 +61,6 @@ export const achievementsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Get users for this country
         const users = await ctx.db.user.findMany({
           where: { countryId: input.countryId },
           select: { clerkUserId: true },
@@ -84,8 +84,8 @@ export const achievementsRouter = createTRPCRouter({
           unlockedAt: achievement.unlockedAt.toISOString(),
           category: achievement.category,
           rarity: achievement.rarity,
-          points: 10, // Default points
-          progress: 100, // Default progress
+          points: 10,
+          progress: 100,
         }));
       } catch (error) {
         return [];
@@ -102,7 +102,6 @@ export const achievementsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Get all countries with user
         const countries = await ctx.db.country.findMany({
           include: {
             users: {
@@ -128,7 +127,7 @@ export const achievementsRouter = createTRPCRouter({
               },
             });
 
-            const totalPoints = achievements.length * 10; // Default 10 points per achievement
+            const totalPoints = achievements.length * 10;
             const achievementCount = achievements.length;
 
             return {
@@ -138,7 +137,7 @@ export const achievementsRouter = createTRPCRouter({
               achievementCount,
               rareAchievements: achievements.filter(
                 (a: { rarity?: string | null }) =>
-                  a.rarity === "rare" || a.rarity === "epic" || a.rarity === "legendary"
+                  a.rarity === "Rare" || a.rarity === "Epic" || a.rarity === "Legendary"
               ).length,
             };
           })
@@ -157,7 +156,120 @@ export const achievementsRouter = createTRPCRouter({
       }
     }),
 
-  // Unlock achievement (internal use)
+  // Get current user's achievement progress statistics
+  getProgress: protectedProcedure.query(async ({ ctx }) => {
+    return achievementService.getProgress(ctx.user.clerkUserId, ctx.db);
+  }),
+
+  getAllWithStatus: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        countryId: z.string().optional(),
+        userId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        let targetUserId = input.userId;
+
+        // If no user specified but countryId is provided, find country's owner/first user
+        if (!targetUserId && input.countryId) {
+          const user = await ctx.db.user.findFirst({
+            where: { countryId: input.countryId },
+            select: { clerkUserId: true },
+          });
+          if (user) targetUserId = user.clerkUserId;
+        }
+
+        // Fallback to logged-in user
+        if (!targetUserId) {
+          targetUserId = ctx.user?.clerkUserId || undefined;
+        }
+
+        // Get all active master achievements
+        let masterAchievements = await ctx.db.achievement.findMany({
+          where: { isActive: true },
+          orderBy: { key: "asc" },
+        });
+
+        // Auto-sync if database achievements count doesn't match definitions registry
+        const { ACHIEVEMENT_DEFINITIONS } = await import("~/lib/achievement-definitions");
+        if (masterAchievements.length < ACHIEVEMENT_DEFINITIONS.length) {
+          const { syncAchievements } = await import("~/lib/achievement-sync");
+          await syncAchievements(ctx.db);
+          // Re-fetch master achievements after sync
+          masterAchievements = await ctx.db.achievement.findMany({
+            where: { isActive: true },
+            orderBy: { key: "asc" },
+          });
+        }
+
+        // Get user's unlocked achievements if target user is known
+        const userUnlocks = targetUserId
+          ? await ctx.db.userAchievement.findMany({
+              where: { userId: targetUserId },
+            })
+          : [];
+
+        const unlockMap = new Map(userUnlocks.map((u) => [u.achievementId, u]));
+
+        // Calculate global unlock stats
+        const totalUsersCount = await ctx.db.user.count() || 1;
+        const globalUnlocksGroup = await ctx.db.userAchievement.groupBy({
+          by: ["achievementId"],
+          _count: {
+            achievementId: true,
+          },
+        });
+        const countMap = new Map(
+          globalUnlocksGroup.map((g) => [g.achievementId, g._count.achievementId])
+        );
+
+        return masterAchievements.map((m) => {
+          const unlock = unlockMap.get(m.key);
+          let rewards = null;
+          if (m.rewardsJson) {
+            try {
+              rewards = JSON.parse(m.rewardsJson);
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          const globalUnlocks = countMap.get(m.key) || 0;
+          const globalUnlockPercent = parseFloat(((globalUnlocks / totalUsersCount) * 100).toFixed(1));
+
+          return {
+            key: m.key,
+            title: m.title,
+            description: m.description,
+            category: m.category,
+            rarity: m.rarity,
+            points: m.points,
+            iconUrl: m.iconUrl || "🏆",
+            triggerType: m.triggerType,
+            conditionJson: m.conditionJson,
+            isUnlocked: !!unlock,
+            unlockedAt: unlock ? unlock.unlockedAt.toISOString() : null,
+            metadata: unlock ? unlock.metadata : null,
+            rewards,
+            globalUnlockPercent,
+          };
+        });
+      } catch (error) {
+        console.error("Error in getAllWithStatus:", error);
+        return [];
+      }
+    }),
+
+  // Admin action: Manually trigger baseline sync
+  adminSync: adminProcedure.mutation(async ({ ctx }) => {
+    const { syncAchievements } = await import("~/lib/achievement-sync");
+    await syncAchievements(ctx.db);
+    return { success: true };
+  }),
+
+  // Unlock achievement (internal use & backward compatibility)
   unlock: protectedProcedure
     .input(
       z.object({
@@ -172,101 +284,24 @@ export const achievementsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if already unlocked
-      const existing = await ctx.db.userAchievement.findFirst({
+      const success = await achievementService.unlockSpecific(
+        input.userId,
+        input.achievementId,
+        ctx.db
+      );
+
+      const achievement = await ctx.db.userAchievement.findUnique({
         where: {
-          userId: input.userId,
-          achievementId: input.achievementId,
-        },
-      });
-
-      if (existing) {
-        return existing;
-      }
-
-      const achievement = await ctx.db.userAchievement.create({
-        data: {
-          userId: input.userId,
-          achievementId: input.achievementId,
-          title: input.title,
-          description: input.description || "",
-          iconUrl: input.icon || "🏆",
-          category: input.category || "General",
-          rarity: input.rarity || "Common",
-          unlockedAt: new Date(),
-        },
-      });
-
-      // Get user's country for activity feed
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: input.userId },
-        select: { countryId: true, clerkUserId: true },
-      });
-
-      // Generate activity feed entry (non-blocking)
-      if (user?.countryId) {
-        await ActivityHooks.User.onAchievementUnlocked(
-          user.clerkUserId,
-          user.countryId,
-          input.title,
-          input.description ||
-            `Unlocked ${input.rarity || "Common"} achievement worth ${input.points || 10} points`
-        ).catch((err) => console.error("Failed to create achievement activity:", err));
-      }
-
-      // 🔔 Notify user about achievement unlock
-      try {
-        await notificationHooks.onAchievementUnlock({
-          userId: input.userId,
-          achievementId: input.achievementId,
-          name: input.title,
-          description:
-            input.description || `You've unlocked a ${input.rarity || "Common"} achievement!`,
-          category: input.category || "General",
-          rarity:
-            (input.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
-        });
-      } catch (error) {
-        console.error("[Achievements] Failed to send achievement notification:", error);
-      }
-
-      // 💰 Award IxCredits for achievement unlock
-      let creditsEarned = 0;
-      try {
-        // Calculate reward based on rarity
-        const rarityRewards: Record<string, number> = {
-          Common: 5,
-          Uncommon: 10,
-          Rare: 25,
-          Epic: 50,
-          Legendary: 100,
-        };
-        const creditReward = rarityRewards[input.rarity || "Common"] || 5;
-
-        const earnResult = await vaultService.earnCredits(
-          input.userId,
-          creditReward,
-          "EARN_ACTIVE",
-          "ACHIEVEMENT_UNLOCK",
-          ctx.db,
-          {
+          userId_achievementId: {
+            userId: input.userId,
             achievementId: input.achievementId,
-            achievementTitle: input.title,
-            achievementRarity: input.rarity,
-          }
-        );
-
-        if (earnResult.success) {
-          creditsEarned = creditReward;
-        }
-      } catch (error) {
-        // Don't block achievement unlock if earning fails
-        console.error("[Achievements] Failed to award achievement credits:", error);
-      }
+          },
+        },
+      });
 
       return {
         ...achievement,
-        creditsEarned,
+        creditsEarned: success ? 5 : 0,
       };
     }),
 });

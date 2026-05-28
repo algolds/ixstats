@@ -151,13 +151,15 @@ function StatusCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 hover:bg-card/15 transition-all duration-200">
+    <div className="border-border/20 bg-card/10 hover:border-border/30 hover:bg-card/15 rounded-lg border p-3 transition-all duration-200">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-xs">{label}</p>
         {icon}
       </div>
       <p className="text-foreground mt-1 text-base font-bold">{value}</p>
-      <p className="text-muted-foreground/75 mt-0.5 text-[10px] font-medium leading-tight">{detail}</p>
+      <p className="text-muted-foreground/75 mt-0.5 text-[10px] leading-tight font-medium">
+        {detail}
+      </p>
     </div>
   );
 }

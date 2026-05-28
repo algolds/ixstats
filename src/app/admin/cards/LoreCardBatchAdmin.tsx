@@ -4,6 +4,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -72,6 +73,57 @@ interface ArticlePreview {
 
 export function LoreCardBatchAdmin() {
   const notify = useNotify();
+
+  const [activeSubTab, setActiveSubTab] = useState<"generator" | "requests">("generator");
+  const [requestStatusFilter, setRequestStatusFilter] = useState<string>("ALL");
+  const [rejectionRequestId, setRejectionRequestId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  const utils = api.useUtils();
+  const requestStats = api.loreCards.getRequestStats.useQuery(undefined, {
+    enabled: activeSubTab === "requests",
+  });
+  
+  const statusParam = requestStatusFilter === "ALL" ? undefined : (requestStatusFilter as any);
+  const requestQueue = api.loreCards.getRequestQueue.useQuery(
+    { status: statusParam, limit: 50 },
+    { enabled: activeSubTab === "requests" }
+  );
+
+  const approveMutation = api.loreCards.approveRequest.useMutation({
+    onSuccess: (data) => {
+      notify.success("Request Approved", data.message || "Request approved.");
+      utils.loreCards.getRequestQueue.invalidate();
+      utils.loreCards.getRequestStats.invalidate();
+    },
+    onError: (err) => {
+      notify.error("Error", err.message);
+    },
+  });
+
+  const rejectMutation = api.loreCards.rejectRequest.useMutation({
+    onSuccess: (data) => {
+      notify.success("Request Rejected", data.message || "Request rejected and refunded.");
+      setRejectionRequestId(null);
+      setRejectionReason("");
+      utils.loreCards.getRequestQueue.invalidate();
+      utils.loreCards.getRequestStats.invalidate();
+    },
+    onError: (err) => {
+      notify.error("Error", err.message);
+    },
+  });
+
+  const generateCardMutation = api.loreCards.generateRequestedCard.useMutation({
+    onSuccess: (data) => {
+      notify.success("Card Generated", data.message || "Lore card generated successfully.");
+      utils.loreCards.getRequestQueue.invalidate();
+      utils.loreCards.getRequestStats.invalidate();
+    },
+    onError: (err) => {
+      notify.error("Generation Failed", err.message);
+    },
+  });
 
   const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki" | "both">("both");
   const [articleCount, setArticleCount] = useState<number>(20);
@@ -261,206 +313,449 @@ export function LoreCardBatchAdmin() {
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
-      <div className="glass-card-child rounded-xl border border-purple-500/20 p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Wiki Source</label>
-            <Select
-              value={wikiSource}
-              onValueChange={(value: any) => setWikiSource(value)}
-              disabled={isFetching || isGenerating}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {WIKI_SOURCES.map((source) => (
-                  <SelectItem key={source.value} value={source.value}>
-                    {source.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
-              Number of Articles (10-100)
-            </label>
-            <Input
-              type="number"
-              min={10}
-              max={100}
-              value={articleCount}
-              onChange={(e) => setArticleCount(parseInt(e.target.value) || 20)}
-              disabled={isFetching || isGenerating}
-            />
-          </div>
-
-          <div className="flex items-end">
-            <Button
-              onClick={handleFetchArticles}
-              disabled={isFetching || isGenerating}
-              className="w-full bg-purple-500/20 text-purple-500 hover:bg-purple-500/30"
-            >
-              {isFetching ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Fetching...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Fetch Articles
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="flex items-end">
-            <Button
-              onClick={() => setShowConfirmDialog(true)}
-              disabled={approvedCount === 0 || isFetching || isGenerating}
-              className="w-full bg-green-500/20 text-green-500 hover:bg-green-500/30"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate ({approvedCount})
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+      {/* Sub-Tabs Nav */}
+      <div className="flex border-b border-white/10 pb-2">
+        <button
+          onClick={() => setActiveSubTab("generator")}
+          className={`px-4 py-2 text-sm font-semibold transition-colors ${
+            activeSubTab === "generator"
+              ? "border-b-2 border-purple-500 text-purple-400"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Batch Generator
+        </button>
+        <button
+          onClick={() => setActiveSubTab("requests")}
+          className={`px-4 py-2 text-sm font-semibold transition-colors ${
+            activeSubTab === "requests"
+              ? "border-b-2 border-purple-500 text-purple-400"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          User Requests Queue
+        </button>
       </div>
 
-      {/* Stats */}
-      {articles.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-5">
-          <Card className="glass-card-child p-4">
-            <p className="text-muted-foreground text-sm">Total Articles</p>
-            <p className="text-foreground mt-2 text-3xl font-bold">{articles.length}</p>
-          </Card>
-          <Card className="glass-card-child p-4">
-            <p className="text-muted-foreground text-sm">Approved</p>
-            <p className="mt-2 text-3xl font-bold text-green-400">{approvedCount}</p>
-          </Card>
-          <Card className="glass-card-child p-4">
-            <p className="text-muted-foreground text-sm">Generated</p>
-            <p className="mt-2 text-3xl font-bold text-blue-400">{generatedCount}</p>
-          </Card>
-          <Card className="glass-card-child p-4">
-            <p className="text-muted-foreground text-sm">Success</p>
-            <p className="mt-2 text-3xl font-bold text-green-400">{generationResults.success}</p>
-          </Card>
-          <Card className="glass-card-child p-4">
-            <p className="text-muted-foreground text-sm">Failed/Skipped</p>
-            <p className="mt-2 text-3xl font-bold text-red-400">
-              {generationResults.failed + generationResults.skipped}
-            </p>
-          </Card>
+      {activeSubTab === "generator" ? (
+        <div className="space-y-6">
+          {/* Controls */}
+          <div className="glass-card-child rounded-xl border border-purple-500/20 p-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="text-foreground mb-2 block text-sm font-medium">Wiki Source</label>
+                <Select
+                  value={wikiSource}
+                  onValueChange={(value: any) => setWikiSource(value)}
+                  disabled={isFetching || isGenerating}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WIKI_SOURCES.map((source) => (
+                      <SelectItem key={source.value} value={source.value}>
+                        {source.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-foreground mb-2 block text-sm font-medium">
+                  Number of Articles (10-100)
+                </label>
+                <Input
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={articleCount}
+                  onChange={(e) => setArticleCount(parseInt(e.target.value) || 20)}
+                  disabled={isFetching || isGenerating}
+                />
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  onClick={handleFetchArticles}
+                  disabled={isFetching || isGenerating}
+                  className="w-full bg-purple-500/20 text-purple-500 hover:bg-purple-500/30"
+                >
+                  {isFetching ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Fetch Articles
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  onClick={() => setShowConfirmDialog(true)}
+                  disabled={approvedCount === 0 || isFetching || isGenerating}
+                  className="w-full bg-green-500/20 text-green-500 hover:bg-green-500/30"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate ({approvedCount})
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          {articles.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-5">
+              <Card className="glass-card-child p-4">
+                <p className="text-muted-foreground text-sm">Total Articles</p>
+                <p className="text-foreground mt-2 text-3xl font-bold">{articles.length}</p>
+              </Card>
+              <Card className="glass-card-child p-4">
+                <p className="text-muted-foreground text-sm">Approved</p>
+                <p className="mt-2 text-3xl font-bold text-green-400">{approvedCount}</p>
+              </Card>
+              <Card className="glass-card-child p-4">
+                <p className="text-muted-foreground text-sm">Generated</p>
+                <p className="mt-2 text-3xl font-bold text-blue-400">{generatedCount}</p>
+              </Card>
+              <Card className="glass-card-child p-4">
+                <p className="text-muted-foreground text-sm">Success</p>
+                <p className="mt-2 text-3xl font-bold text-green-400">{generationResults.success}</p>
+              </Card>
+              <Card className="glass-card-child p-4">
+                <p className="text-muted-foreground text-sm">Failed/Skipped</p>
+                <p className="mt-2 text-3xl font-bold text-red-400">
+                  {generationResults.failed + generationResults.skipped}
+                </p>
+              </Card>
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          {isGenerating && (
+            <Card className="glass-card-parent p-6">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-foreground text-lg font-semibold">Generation Progress</h3>
+                <span className="text-muted-foreground text-sm">
+                  {generationProgress.current} / {generationProgress.total}
+                </span>
+              </div>
+              <div className="bg-muted/50 h-2 w-full overflow-hidden rounded-full">
+                <div
+                  className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
+                  style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
+                />
+              </div>
+            </Card>
+          )}
+
+          {/* Filters */}
+          {articles.length > 0 && (
+            <div className="glass-card-parent rounded-xl border border-purple-500/20 p-4">
+              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                <div className="relative">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    placeholder="Search articles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div>
+                  <Select
+                    value={qualityFilter.toString()}
+                    onValueChange={(value) => setQualityFilter(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Min Quality Score" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">All Quality Levels</SelectItem>
+                      <SelectItem value="20">Quality &gt;= 20</SelectItem>
+                      <SelectItem value="40">Quality &gt;= 40</SelectItem>
+                      <SelectItem value="60">Quality &gt;= 60</SelectItem>
+                      <SelectItem value="80">Quality &gt;= 80</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkApprove}
+                    disabled={isGenerating}
+                    className="flex-1"
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Approve All
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkReject}
+                    disabled={isGenerating}
+                    className="flex-1"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Reject All
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Articles Grid */}
+          {articles.length === 0 ? (
+            <Card className="glass-card-parent p-12 text-center">
+              <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <p className="text-muted-foreground mb-2">No articles fetched yet</p>
+              <p className="text-muted-foreground text-sm">
+                Configure your settings above and click &quot;Fetch Articles&quot; to begin
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredArticles.map((article) => (
+                <ArticlePreviewCard
+                  key={`${article.wikiSource}-${article.title}`}
+                  article={article}
+                  onToggleApproval={() => toggleApproval(article.title)}
+                  disabled={isGenerating}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Progress Bar */}
-      {isGenerating && (
-        <Card className="glass-card-parent p-6">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-foreground text-lg font-semibold">Generation Progress</h3>
-            <span className="text-muted-foreground text-sm">
-              {generationProgress.current} / {generationProgress.total}
-            </span>
-          </div>
-          <div className="bg-muted/50 h-2 w-full overflow-hidden rounded-full">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
-              style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
-            />
-          </div>
-        </Card>
-      )}
-
-      {/* Filters */}
-      {articles.length > 0 && (
-        <div className="glass-card-parent rounded-xl border border-purple-500/20 p-4">
-          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <div className="relative">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                placeholder="Search articles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div>
-              <Select
-                value={qualityFilter.toString()}
-                onValueChange={(value) => setQualityFilter(parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Min Quality Score" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">All Quality Levels</SelectItem>
-                  <SelectItem value="20">Quality &gt;= 20</SelectItem>
-                  <SelectItem value="40">Quality &gt;= 40</SelectItem>
-                  <SelectItem value="60">Quality &gt;= 60</SelectItem>
-                  <SelectItem value="80">Quality &gt;= 80</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleBulkApprove}
-                disabled={isGenerating}
-                className="flex-1"
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Approve All
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleBulkReject}
-                disabled={isGenerating}
-                className="flex-1"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Reject All
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Articles Grid */}
-      {articles.length === 0 ? (
-        <Card className="glass-card-parent p-12 text-center">
-          <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-          <p className="text-muted-foreground mb-2">No articles fetched yet</p>
-          <p className="text-muted-foreground text-sm">
-            Configure your settings above and click &quot;Fetch Articles&quot; to begin
-          </p>
-        </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredArticles.map((article) => (
-            <ArticlePreviewCard
-              key={`${article.wikiSource}-${article.title}`}
-              article={article}
-              onToggleApproval={() => toggleApproval(article.title)}
-              disabled={isGenerating}
-            />
-          ))}
+        <div className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-5">
+            <Card className="glass-card-child p-4">
+              <p className="text-muted-foreground text-sm">Total Requests</p>
+              <p className="text-foreground mt-2 text-3xl font-bold">
+                {requestStats.isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+                ) : (
+                  requestStats.data?.total ?? 0
+                )}
+              </p>
+            </Card>
+            <Card className="glass-card-child p-4">
+              <p className="text-muted-foreground text-sm">Pending</p>
+              <p className="mt-2 text-3xl font-bold text-yellow-400">
+                {requestStats.isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-yellow-400" />
+                ) : (
+                  requestStats.data?.pending ?? 0
+                )}
+              </p>
+            </Card>
+            <Card className="glass-card-child p-4">
+              <p className="text-muted-foreground text-sm">Approved</p>
+              <p className="mt-2 text-3xl font-bold text-blue-400">
+                {requestStats.isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                ) : (
+                  requestStats.data?.approved ?? 0
+                )}
+              </p>
+            </Card>
+            <Card className="glass-card-child p-4">
+              <p className="text-muted-foreground text-sm">Generated</p>
+              <p className="mt-2 text-3xl font-bold text-green-400">
+                {requestStats.isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-green-400" />
+                ) : (
+                  requestStats.data?.generated ?? 0
+                )}
+              </p>
+            </Card>
+            <Card className="glass-card-child p-4">
+              <p className="text-muted-foreground text-sm">Rejected</p>
+              <p className="mt-2 text-3xl font-bold text-red-400">
+                {requestStats.isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-red-400" />
+                ) : (
+                  requestStats.data?.rejected ?? 0
+                )}
+              </p>
+            </Card>
+          </div>
+
+          {/* Status Filter */}
+          <div className="glass-card-parent rounded-xl border border-purple-500/20 p-4">
+            <div className="flex flex-wrap gap-2">
+              {["ALL", "PENDING", "APPROVED", "GENERATED", "REJECTED"].map((status) => (
+                <Button
+                  key={status}
+                  size="sm"
+                  variant={requestStatusFilter === status ? "default" : "outline"}
+                  onClick={() => setRequestStatusFilter(status)}
+                  className={
+                    requestStatusFilter === status
+                      ? "bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                      : ""
+                  }
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Requests Queue Table */}
+          {requestQueue.isLoading ? (
+            <Card className="glass-card-parent p-12 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-purple-400" />
+              <p className="text-muted-foreground mt-2 text-sm">Loading request queue...</p>
+            </Card>
+          ) : !requestQueue.data?.requests || requestQueue.data.requests.length === 0 ? (
+            <Card className="glass-card-parent p-12 text-center">
+              <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <p className="text-muted-foreground mb-2">No requests found</p>
+            </Card>
+          ) : (
+            <div className="glass-card-parent overflow-hidden rounded-xl border border-purple-500/20">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-black/40 text-xs font-semibold tracking-wider text-white/60 uppercase">
+                      <th className="px-6 py-4">Article Title</th>
+                      <th className="px-6 py-4">Source</th>
+                      <th className="px-6 py-4">Requester</th>
+                      <th className="px-6 py-4">Requested At</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 bg-black/10">
+                    {requestQueue.data.requests.map((request: any) => {
+                      const isPending = request.status === "PENDING";
+                      const isApproved = request.status === "APPROVED";
+                      const isRejected = request.status === "REJECTED";
+                      const isGenerated = request.status === "GENERATED";
+
+                      return (
+                        <tr key={request.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-semibold text-white">
+                            {request.articleTitle}
+                          </td>
+                          <td className="px-6 py-4 text-white/80">
+                            <span className="flex items-center gap-1.5">
+                              {request.wikiSource === "ixwiki" ? (
+                                <>
+                                  <Globe className="h-3.5 w-3.5 text-purple-400" />
+                                  IxWiki
+                                </>
+                              ) : (
+                                <>
+                                  <BookOpen className="h-3.5 w-3.5 text-blue-400" />
+                                  IIWiki
+                                </>
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-white/60 font-mono text-xs">
+                            {request.userId.substring(0, 12)}...
+                          </td>
+                          <td className="px-6 py-4 text-white/60">
+                            {new Date(request.requestedAt).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-0.5">
+                              <span
+                                className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${
+                                  isPending
+                                    ? "bg-yellow-500/20 text-yellow-400"
+                                    : isApproved
+                                      ? "bg-blue-500/20 text-blue-400"
+                                      : isGenerated
+                                        ? "bg-green-500/20 text-green-400"
+                                        : "bg-red-500/20 text-red-400"
+                                }`}
+                              >
+                                {request.status}
+                              </span>
+                              {isRejected && request.rejectionReason && (
+                                <span className="text-[10px] text-red-400/80 max-w-[200px] truncate" title={request.rejectionReason}>
+                                  Reason: {request.rejectionReason}
+                                </span>
+                              )}
+                              {isGenerated && request.cardId && (
+                                <span className="text-[10px] text-green-400/80 font-mono">
+                                  ID: {request.cardId.substring(0, 10)}...
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              {isPending && (
+                                <>
+                                  <Button
+                                    size="xs"
+                                    onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                    disabled={approveMutation.isPending}
+                                    className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs h-7"
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="xs"
+                                    variant="destructive"
+                                    onClick={() => setRejectionRequestId(request.id)}
+                                    className="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs h-7"
+                                  >
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                              {isApproved && (
+                                <Button
+                                  size="xs"
+                                  onClick={() => generateCardMutation.mutate({ requestId: request.id })}
+                                  disabled={generateCardMutation.isPending}
+                                  className="bg-green-600/20 hover:bg-green-600/30 text-green-400 text-xs h-7 font-semibold"
+                                >
+                                  {generateCardMutation.isPending ? (
+                                    <>
+                                      <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                                      Generating...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="mr-1.5 h-3 w-3" />
+                                      Generate Card
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -497,6 +792,45 @@ export function LoreCardBatchAdmin() {
             >
               <Sparkles className="mr-2 h-4 w-4" />
               Generate {approvedCount} Cards
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Reason Dialog */}
+      <Dialog open={!!rejectionRequestId} onOpenChange={(open) => !open && setRejectionRequestId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Lore Card Request</DialogTitle>
+            <DialogDescription>
+              Please enter the reason for rejecting this request. The user will be fully refunded 50 IxCredits.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g. Article does not meet quality requirements or is too stub-like."
+              maxLength={200}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRejectionRequestId(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (rejectionRequestId) {
+                  rejectMutation.mutate({
+                    requestId: rejectionRequestId,
+                    reason: rejectionReason || "Article does not meet requirements",
+                  });
+                }
+              }}
+              disabled={rejectMutation.isPending}
+              variant="destructive"
+            >
+              Reject & Refund
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -307,7 +307,8 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  background: linear-gradient(
+  background-color: hsl(var(--popover));
+  background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, var(--refraction-strong)) 0%,
     rgba(255, 255, 255, 0.12) 100%
@@ -347,7 +348,8 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-tooltip);
-  background: linear-gradient(
+  background-color: hsl(var(--popover));
+  background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, var(--refraction-medium)) 0%,
     rgba(255, 255, 255, 0.08) 100%
@@ -364,7 +366,8 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(
+  background-color: hsl(var(--card));
+  background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, var(--refraction-intense)) 0%,
     rgba(255, 255, 255, 0.12) 100%
@@ -1206,7 +1209,8 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode contextual popover variants */
 .dark .glass-contextual-popover {
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(
+  background-color: hsl(var(--popover));
+  background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, calc(var(--refraction-strong) * 0.8)) 0%,
     rgba(255, 255, 255, 0.06) 100%
@@ -1247,7 +1251,8 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode popover and modal variants */
 .dark .glass-popover {
   border: 1px solid rgba(255, 255, 255, 0.15);
-  background: linear-gradient(
+  background-color: hsl(var(--popover));
+  background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%,
     rgba(255, 255, 255, 0.04) 100%
@@ -1260,10 +1265,11 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .dark .glass-modal {
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(
+  background-color: hsl(var(--card));
+  background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, calc(var(--refraction-intense) * 0.8)) 0%,
-    rgba(255, 255, 255, 0.06) 100%
+    rgba(255, 255, 255, 0.08) 100%
   );
   box-shadow:
     0 32px 128px rgba(0, 0, 0, 0.5),

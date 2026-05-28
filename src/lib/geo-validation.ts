@@ -265,7 +265,6 @@ export async function clipAndValidatePolygon(
   }
 }
 
-
 // ──────────────────────────────────────────────
 // Geometry Validity
 // ──────────────────────────────────────────────

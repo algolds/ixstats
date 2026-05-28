@@ -32,9 +32,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { CardPacksAdmin } from "./CardPacksAdmin";
 import { LoreCardBatchAdmin } from "./LoreCardBatchAdmin";
-import { VaultAdmin } from "./VaultAdmin";
 
-type AdminTab = "sync" | "packs" | "lore" | "vault";
+type AdminTab = "sync" | "packs" | "lore";
 
 function SeedDemoAuctionsButton() {
   const seedMutation = api.cardMarket.seedDemoAuctions.useMutation({
@@ -355,7 +354,6 @@ export default function CardAdminDashboardPage() {
               { id: "sync" as AdminTab, label: "NS Sync Monitor", icon: Database },
               { id: "packs" as AdminTab, label: "Card Packs CRUD", icon: Package },
               { id: "lore" as AdminTab, label: "Lore Card Generator", icon: BookOpen },
-              { id: "vault" as AdminTab, label: "Vault & Credits", icon: Wallet },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -387,9 +385,6 @@ export default function CardAdminDashboardPage() {
 
         {/* Lore Cards Tab */}
         {activeTab === "lore" && <LoreCardBatchAdmin />}
-
-        {/* Vault & Credits Tab */}
-        {activeTab === "vault" && <VaultAdmin />}
 
         {/* NS Sync Tab Content */}
         {activeTab === "sync" && (

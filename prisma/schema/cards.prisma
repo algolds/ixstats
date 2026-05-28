@@ -413,3 +413,34 @@ model TradeOffer {
   @@index([expiresAt])
   @@index([createdAt])
 }
+
+model VaultStoreItem {
+  id           String                   @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  icon         String                   @default("Sparkles")
+  glowColor    String?
+  quality      String                   @default("COMMON") // COMMON | RARE | EPIC | LEGENDARY
+  badgeText    String?
+  category     String                   @default("cosmetics") // cosmetics | upgrades
+  isActive     Boolean                  @default(true)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  priceHistory VaultStorePriceHistory[]
+
+  @@map("vault_store_items")
+}
+
+model VaultStorePriceHistory {
+  id        String         @id @default(cuid())
+  itemId    String
+  price     Float
+  changedAt DateTime       @default(now())
+  adminId   String
+  adminName String
+  item      VaultStoreItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("vault_store_price_history")
+}

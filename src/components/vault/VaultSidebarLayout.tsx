@@ -1,7 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { VaultSidebarNav, type VaultSection } from "./VaultSidebarNav";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
+import type { VaultSection } from "./VaultSidebarNav";
+import { DashboardPlayerWidget } from "~/components/dashboard/DashboardPlayerWidget";
+import { VaultWidget } from "~/components/mycountry/VaultWidget";
+import { DashboardQuickLinks } from "~/components/dashboard/DashboardQuickLinks";
 
 interface VaultSidebarLayoutProps {
   children: ReactNode;
@@ -22,6 +29,8 @@ export function VaultSidebarLayout({
   activeSection,
   onNavigate,
 }: VaultSidebarLayoutProps) {
+  const pathname = usePathname();
+
   return (
     <div className="space-y-0">
       {/* Hero Section */}
@@ -31,12 +40,14 @@ export function VaultSidebarLayout({
         {/* Alerts */}
         {alerts && <div className="mb-4 space-y-3 sm:mb-6">{alerts}</div>}
 
-        {/* Main Layout — icon rail + content */}
+        {/* Main Layout — sidebar widgets + content */}
         <div className="flex gap-4 sm:gap-6">
-          {/* Desktop: Fixed icon rail */}
+          {/* Desktop: Fixed sidebar widgets */}
           <div className="relative z-30 hidden shrink-0 lg:block">
-            <div className="sticky top-6">
-              <VaultSidebarNav activeSection={activeSection} onNavigate={onNavigate} />
+            <div className="sticky top-6 space-y-4">
+              <DashboardPlayerWidget />
+              <VaultWidget />
+              <DashboardQuickLinks />
             </div>
           </div>
 
@@ -44,11 +55,57 @@ export function VaultSidebarLayout({
           <div className="min-w-0 flex-1">
             {/* Mobile: Horizontal nav strip */}
             <div className="mb-4 lg:hidden">
-              <VaultSidebarNav
-                activeSection={activeSection}
-                onNavigate={onNavigate}
-                variant="mobile"
-              />
+              <div className="glass-hierarchy-child scrollbar-none overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1.5 backdrop-blur-md">
+                <div className="flex min-w-max gap-1.5">
+                  {[
+                    { id: "dashboard", href: "/vault", label: "Wallet" },
+                    { id: "cards", href: "/vault/cards", label: "Collection" },
+                    { id: "marketplace", href: "/vault/marketplace", label: "Marketplace" },
+                    { id: "import", href: "/vault/import", label: "Import" },
+                    {
+                      id: "achievements",
+                      href: withBasePath("/achievements"),
+                      label: "Achievements",
+                    },
+                  ].map((item) => {
+                    const isActive =
+                      item.id === "dashboard"
+                        ? pathname === "/vault" || pathname === "/vault/"
+                        : item.id === "achievements"
+                          ? pathname.startsWith("/achievements")
+                          : item.id === "cards"
+                            ? pathname.startsWith("/vault/cards") ||
+                              pathname.startsWith("/vault/inventory") ||
+                              pathname.startsWith("/vault/collections") ||
+                              pathname.startsWith("/vault/gallery") ||
+                              pathname.startsWith("/vault/lore-gallery") ||
+                              pathname.startsWith("/vault/ns-library")
+                            : item.id === "marketplace"
+                              ? pathname.startsWith("/vault/marketplace") ||
+                                pathname.startsWith("/vault/acquire") ||
+                                pathname.startsWith("/vault/packs") ||
+                                pathname.startsWith("/vault/create") ||
+                                pathname.startsWith("/vault/trading") ||
+                                pathname.startsWith("/vault/market")
+                              : pathname.startsWith(`/vault/${item.id}`);
+
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all duration-200",
+                          isActive
+                            ? "border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 shadow-sm"
+                            : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-4 sm:space-y-6">{children}</div>

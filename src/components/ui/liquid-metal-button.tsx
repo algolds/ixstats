@@ -1,19 +1,29 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Sparkles, type LucideIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { cn } from "~/lib/utils";
 
 interface LiquidMetalButtonProps {
   label?: string;
   onClick?: () => void;
   viewMode?: "text" | "icon";
+  disabled?: boolean;
+  className?: string;
+  chromatic?: boolean;
+  icon?: LucideIcon;
 }
 
 export function LiquidMetalButton({
   label = "Get Started",
   onClick,
   viewMode = "text",
+  disabled = false,
+  className,
+  chromatic = false,
+  icon: IconComponent = Sparkles,
 }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -88,14 +98,14 @@ export function LiquidMetalButton({
             shaderRef.current,
             liquidMetalFragmentShader,
             {
-              u_repetition: 4,
+              u_repetition: chromatic ? 6 : 4,
               u_softness: 0.5,
-              u_shiftRed: 0.3,
-              u_shiftBlue: 0.3,
-              u_distortion: 0,
-              u_contour: 0,
+              u_shiftRed: chromatic ? 0.95 : 0.3,
+              u_shiftBlue: chromatic ? 0.95 : 0.3,
+              u_distortion: chromatic ? 0.35 : 0,
+              u_contour: chromatic ? 0.55 : 0,
               u_angle: 45,
-              u_scale: 8,
+              u_scale: chromatic ? 12 : 8,
               u_shape: 1,
               u_offsetX: 0.1,
               u_offsetY: -0.1,
@@ -117,20 +127,23 @@ export function LiquidMetalButton({
         shaderMount.current = null;
       }
     };
-  }, []);
+  }, [chromatic]);
 
   const handleMouseEnter = () => {
+    if (disabled) return;
     setIsHovered(true);
     shaderMount.current?.setSpeed?.(1);
   };
 
   const handleMouseLeave = () => {
+    if (disabled) return;
     setIsHovered(false);
     setIsPressed(false);
     shaderMount.current?.setSpeed?.(0.6);
   };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
     if (shaderMount.current?.setSpeed) {
       shaderMount.current.setSpeed(2.4);
       setTimeout(() => {
@@ -158,7 +171,13 @@ export function LiquidMetalButton({
   };
 
   return (
-    <div className="relative inline-block">
+    <div
+      className={cn(
+        "relative inline-block",
+        className,
+        disabled && "pointer-events-none opacity-40"
+      )}
+    >
       <div
         style={{
           perspective: "1000px",
@@ -195,11 +214,11 @@ export function LiquidMetalButton({
               pointerEvents: "none",
             }}
           >
-            {viewMode === "icon" && (
-              <Sparkles
+            {viewMode === "icon" && IconComponent && (
+              <IconComponent
                 size={16}
                 style={{
-                  color: "#666666",
+                  color: chromatic ? "#eeeeee" : "#666666",
                   filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
                   transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                   transform: "scale(1)",
@@ -303,8 +322,9 @@ export function LiquidMetalButton({
             onClick={handleClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            onMouseDown={() => setIsPressed(true)}
+            onMouseDown={() => !disabled && setIsPressed(true)}
             onMouseUp={() => setIsPressed(false)}
+            disabled={disabled}
             style={{
               position: "absolute",
               top: 0,
@@ -313,7 +333,7 @@ export function LiquidMetalButton({
               height: `${dimensions.height}px`,
               background: "transparent",
               border: "none",
-              cursor: "pointer",
+              cursor: disabled ? "not-allowed" : "pointer",
               outline: "none",
               zIndex: 40,
               transformStyle: "preserve-3d",

@@ -175,13 +175,13 @@ export function FlagCacheManager() {
       <Card className="glass-surface border-border/40 w-full animate-pulse">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <div className="rounded-lg bg-purple-500/10 p-1.5 text-purple-500 border border-purple-500/20">
+            <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-1.5 text-purple-500">
               <Database className="h-4 w-4" />
             </div>
             Flag Cache Manager
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-12 text-muted-foreground text-xs">
+        <CardContent className="text-muted-foreground flex items-center justify-center py-12 text-xs">
           <Loader2 className="mr-2 h-4 w-4 animate-spin text-purple-500" />
           <span>Loading cache status...</span>
         </CardContent>
@@ -193,7 +193,7 @@ export function FlagCacheManager() {
     <Card className="glass-surface border-border/40 w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base font-bold">
-          <div className="rounded-lg bg-purple-500/10 p-1.5 text-purple-500 border border-purple-500/20">
+          <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-1.5 text-purple-500">
             <Database className="h-4 w-4" />
           </div>
           Flag Cache Manager
@@ -202,7 +202,7 @@ export function FlagCacheManager() {
       <CardContent className="space-y-6">
         {error && (
           <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-xs font-semibold text-red-500">
-            <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
             <span>{error}</span>
           </div>
         )}
@@ -211,42 +211,52 @@ export function FlagCacheManager() {
           <>
             {/* Server Flag Cache Stats (Primary) */}
             <div className="space-y-4">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block border-b border-border/10 pb-1.5">
+              <span className="text-muted-foreground border-border/10 block border-b pb-1.5 text-[10px] font-bold tracking-wider uppercase">
                 Server Flag Cache (Local Storage)
               </span>
 
               <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-foreground font-mono">{status.serverFlagCache.totalCountries}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Total Countries</div>
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground font-mono text-lg font-bold">
+                    {status.serverFlagCache.totalCountries}
+                  </div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Total Countries
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-green-500 font-mono">
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="font-mono text-lg font-bold text-green-500">
                     {status.serverFlagCache.cachedFlags}
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Downloaded Flags</div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Downloaded Flags
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-foreground font-mono">
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground font-mono text-lg font-bold">
                     {status.serverFlagCache.diskUsage.totalSizeMB.toFixed(1)} MB
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Disk Usage</div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Disk Usage
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-foreground font-mono">
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground font-mono text-lg font-bold">
                     {status.serverFlagCache.diskUsage.totalFiles}
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Files Stored</div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Files Stored
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex flex-wrap items-center gap-4">
                 <Badge
                   variant={status.serverFlagCache.isUpdating ? "destructive" : "default"}
-                  className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0"
+                  className="flex items-center gap-1 px-1.5 py-0 text-[8px] font-bold tracking-wider uppercase"
                 >
                   {status.serverFlagCache.isUpdating ? (
                     <>
@@ -262,7 +272,7 @@ export function FlagCacheManager() {
                 </Badge>
 
                 {status.serverFlagCache.lastUpdateTime && (
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium">
                     <Clock className="h-3 w-3" />
                     Last updated: {formatTime(status.serverFlagCache.lastUpdateTime)}
                   </div>
@@ -270,15 +280,15 @@ export function FlagCacheManager() {
               </div>
 
               {status.serverFlagCache.isUpdating && (
-                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 animate-in fade-in duration-200">
+                <div className="animate-in fade-in rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 duration-200">
                   <div className="mb-2 flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground">Download Progress</span>
+                    <span className="text-foreground font-semibold">Download Progress</span>
                     <span className="font-mono font-bold text-blue-500">
                       {status.serverFlagCache.updateProgress.current} /{" "}
                       {status.serverFlagCache.updateProgress.total}
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-muted/30 p-[1px]">
+                  <div className="bg-muted/30 h-2 w-full rounded-full p-[1px]">
                     <div
                       className="h-[6px] rounded-full bg-blue-500 transition-all duration-300"
                       style={{ width: `${status.serverFlagCache.updateProgress.percentage}%` }}
@@ -290,32 +300,40 @@ export function FlagCacheManager() {
 
             {/* In-Memory Flag Cache Stats */}
             <div className="space-y-4 pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block border-b border-border/10 pb-1.5">
+              <span className="text-muted-foreground border-border/10 block border-b pb-1.5 text-[10px] font-bold tracking-wider uppercase">
                 In-Memory Flag Cache
               </span>
 
               <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-foreground font-mono">{status.flagCache.totalCountries}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Total Countries</div>
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground font-mono text-lg font-bold">
+                    {status.flagCache.totalCountries}
+                  </div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Total Countries
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-green-500 font-mono">
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="font-mono text-lg font-bold text-green-500">
                     {status.flagCache.cachedFlags}
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Cached Flags</div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Cached Flags
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-red-500 font-mono">
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="font-mono text-lg font-bold text-red-500">
                     {status.flagCache.failedFlags}
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Failed Flags</div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Failed Flags
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-foreground font-mono">
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground font-mono text-lg font-bold">
                     {status.flagCache.totalCountries > 0
                       ? Math.round(
                           (status.flagCache.cachedFlags / status.flagCache.totalCountries) * 100
@@ -323,14 +341,16 @@ export function FlagCacheManager() {
                       : 0}
                     %
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Cache Rate</div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Cache Rate
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex flex-wrap items-center gap-4">
                 <Badge
                   variant={getStatusColor(status.flagCache) === "green" ? "default" : "destructive"}
-                  className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0"
+                  className="flex items-center gap-1 px-1.5 py-0 text-[8px] font-bold tracking-wider uppercase"
                 >
                   {status.flagCache.isUpdating ? (
                     <>
@@ -346,7 +366,7 @@ export function FlagCacheManager() {
                 </Badge>
 
                 {status.flagCache.lastUpdateTime && (
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium">
                     <Clock className="h-3 w-3" />
                     Last updated: {formatTime(status.flagCache.lastUpdateTime)}
                   </div>
@@ -356,34 +376,46 @@ export function FlagCacheManager() {
 
             {/* MediaWiki Cache Stats */}
             <div className="space-y-4 pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block border-b border-border/10 pb-1.5">
+              <span className="text-muted-foreground border-border/10 block border-b pb-1.5 text-[10px] font-bold tracking-wider uppercase">
                 MediaWiki Cache
               </span>
 
               <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-foreground font-mono">{status.mediaWiki.cacheSize}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Cache Size</div>
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground font-mono text-lg font-bold">
+                    {status.mediaWiki.cacheSize}
+                  </div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Cache Size
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-lg font-bold text-blue-500 font-mono">{status.mediaWiki.hitRate.toFixed(1)}%</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">Hit Rate</div>
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="font-mono text-lg font-bold text-blue-500">
+                    {status.mediaWiki.hitRate.toFixed(1)}%
+                  </div>
+                  <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Hit Rate
+                  </div>
                 </div>
 
-                <div className="border border-border/20 bg-card/10 rounded-lg p-3 hover:border-border/30 transition-all">
-                  <div className="text-xs font-semibold text-foreground">{formatTime(status.mediaWiki.lastCleared)}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-1">Last Cleared</div>
+                <div className="border-border/20 bg-card/10 hover:border-border/30 rounded-lg border p-3 transition-all">
+                  <div className="text-foreground text-xs font-semibold">
+                    {formatTime(status.mediaWiki.lastCleared)}
+                  </div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-bold tracking-wider uppercase">
+                    Last Cleared
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2.5 border-t border-border/10 pt-4">
+            <div className="border-border/10 flex flex-wrap gap-2.5 border-t pt-4">
               <Button
                 onClick={updateCache}
                 disabled={updating || status.flagCache.isUpdating}
-                className="flex items-center gap-1.5 text-xs font-bold h-9 px-4"
+                className="flex h-9 items-center gap-1.5 px-4 text-xs font-bold"
               >
                 {updating ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -397,7 +429,7 @@ export function FlagCacheManager() {
                 variant="outline"
                 onClick={clearCache}
                 disabled={clearing}
-                className="flex items-center gap-1.5 text-xs font-bold h-9 px-4 border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:border-red-500/30"
+                className="flex h-9 items-center gap-1.5 border-red-500/20 bg-red-500/5 px-4 text-xs font-bold text-red-500 hover:border-red-500/30 hover:bg-red-500/10"
               >
                 {clearing ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -411,7 +443,7 @@ export function FlagCacheManager() {
                 variant="ghost"
                 onClick={fetchStatus}
                 disabled={loading}
-                className="flex items-center gap-1.5 text-xs font-bold h-9 px-3"
+                className="flex h-9 items-center gap-1.5 px-3 text-xs font-bold"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Refresh Status

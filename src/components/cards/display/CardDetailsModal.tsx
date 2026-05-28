@@ -151,19 +151,19 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
         <DialogContent
           showCloseButton={false}
           className={cn(
-            // Glass modal styling without position conflicts
-            "bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl",
-            "border-2 border-white/20 shadow-2xl",
+            // Glass modal styling with theme compatibility
+            "bg-card/90 dark:bg-black/75 backdrop-blur-xl",
+            "border-2 border-border/55 dark:border-white/10 shadow-2xl",
             "max-w-[95vw] p-0 sm:max-w-2xl md:max-w-3xl lg:max-w-5xl",
             // Responsive sizing
             "max-h-[90vh] w-[98vw] overflow-hidden sm:w-[95vw]"
           )}
         >
           {/* Header with actions */}
-          <div className="relative border-b border-white/10 bg-black/40 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4">
+          <div className="relative border-b border-border/40 dark:border-white/10 bg-muted/40 dark:bg-black/40 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <DialogTitle className="text-lg font-bold text-white sm:text-xl">
+                <DialogTitle className="text-lg font-bold text-foreground sm:text-xl">
                   {card.title}
                 </DialogTitle>
                 <RarityBadge rarity={card.rarity} size="medium" animated />
@@ -172,30 +172,30 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 {/* Share button */}
                 <button
                   onClick={handleShare}
-                  className="rounded-full bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-white/20"
+                  className="rounded-full bg-muted/50 dark:bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-muted/80 dark:hover:bg-white/20"
                   title="Share card"
                 >
-                  <Share2 className="h-4 w-4 text-white" />
+                  <Share2 className="h-4 w-4 text-foreground" />
                 </button>
                 {/* Download button */}
                 {onDownloadImage && (
                   <button
                     onClick={handleDownload}
-                    className="rounded-full bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-white/20"
+                    className="rounded-full bg-muted/50 dark:bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-muted/80 dark:hover:bg-white/20"
                     title="Download as image"
                   >
-                    <Download className="h-4 w-4 text-white" />
+                    <Download className="h-4 w-4 text-foreground" />
                   </button>
                 )}
                 {/* Close button */}
-                <DialogClose className="rounded-full bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-white/20">
-                  <X className="h-5 w-5 text-white" />
+                <DialogClose className="rounded-full bg-muted/50 dark:bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-muted/80 dark:hover:bg-white/20">
+                  <X className="h-5 w-5 text-foreground" />
                 </DialogClose>
               </div>
             </div>
 
             {/* Card metadata */}
-            <div className="mt-2 flex items-center gap-2 text-xs text-white/70 sm:gap-3 sm:text-sm">
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:gap-3 sm:text-sm">
               {card.country && (
                 <span className="flex items-center gap-1">
                   {card.country.flag && <span className="text-base">{card.country.flag}</span>}
@@ -203,7 +203,18 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 </span>
               )}
               <span>•</span>
-              <span>{getCardTypeLabel(card.cardType)}</span>
+              <span>
+                {card.cardType === "NS_IMPORT" ? (
+                  <img
+                    src="https://www.nationstates.net/images/island_small.png"
+                    alt="NationStates"
+                    className="inline h-4 w-4 rounded-sm align-text-bottom"
+                    title="NationStates Import"
+                  />
+                ) : (
+                  getCardTypeLabel(card.cardType)
+                )}
+              </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
@@ -224,8 +235,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 className={cn(
                   "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "overview"
-                    ? "glass-hierarchy-interactive text-white"
-                    : "text-white/60 hover:text-white/80"
+                    ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -236,8 +247,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 className={cn(
                   "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "3d-view"
-                    ? "glass-hierarchy-interactive text-white"
-                    : "text-white/60 hover:text-white/80"
+                    ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Sparkles className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -248,8 +259,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 className={cn(
                   "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "market"
-                    ? "glass-hierarchy-interactive text-white"
-                    : "text-white/60 hover:text-white/80"
+                    ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <BarChart3 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -260,8 +271,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 className={cn(
                   "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "stats"
-                    ? "glass-hierarchy-interactive text-white"
-                    : "text-white/60 hover:text-white/80"
+                    ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Star className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -273,8 +284,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   className={cn(
                     "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                     activeTab === "lore"
-                      ? "glass-hierarchy-interactive text-white"
-                      : "text-white/60 hover:text-white/80"
+                      ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <ScrollText className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -287,8 +298,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   className={cn(
                     "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                     activeTab === "compare"
-                      ? "glass-hierarchy-interactive text-white"
-                      : "text-white/60 hover:text-white/80"
+                      ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Compare
@@ -350,7 +361,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Market value & ownership */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="glass-hierarchy-child rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-xs text-white/70">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <TrendingUp className="h-4 w-4" />
                           Market Value
                         </div>
@@ -360,11 +371,11 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       </div>
 
                       <div className="glass-hierarchy-child rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-xs text-white/70">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Users className="h-4 w-4" />
                           Ownership
                         </div>
-                        <div className="mt-1 text-lg font-semibold text-white">
+                        <div className="mt-1 text-lg font-semibold text-foreground">
                           {getOwnerCount(card.owners)}
                         </div>
                       </div>
@@ -381,23 +392,23 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Description */}
                     {card.description && (
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h3 className="mb-2 text-sm font-semibold text-white">Description</h3>
-                        <p className="text-sm text-white/80">{card.description}</p>
+                        <h3 className="mb-2 text-sm font-semibold text-foreground">Description</h3>
+                        <p className="text-sm text-muted-foreground">{card.description}</p>
                       </div>
                     )}
 
                     {/* Quick stats */}
                     <div className="glass-hierarchy-child rounded-lg p-4">
-                      <h3 className="mb-3 text-sm font-semibold text-white">Quick Stats</h3>
+                      <h3 className="mb-3 text-sm font-semibold text-foreground">Quick Stats</h3>
                       <div className="grid grid-cols-2 gap-3">
                         {Object.entries(stats).map(([key, stat]) => (
                           <div key={key}>
-                            <div className="text-xs text-white/60">{stat.label}</div>
+                            <div className="text-xs text-muted-foreground">{stat.label}</div>
                             <div className="mt-1 flex items-baseline gap-2">
                               <span className={cn("text-xl font-bold", stat.color)}>
                                 {stat.value}
                               </span>
-                              <span className="text-xs text-white/40">/100</span>
+                              <span className="text-xs text-muted-foreground/50">/100</span>
                             </div>
                           </div>
                         ))}
@@ -408,8 +419,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {card.level > 1 && (
                       <div className="glass-hierarchy-child rounded-lg p-3">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-white/70">Enhancement Level</span>
-                          <span className="font-bold text-amber-400">Level {card.level}</span>
+                          <span className="text-muted-foreground">Enhancement Level</span>
+                          <span className="font-bold text-amber-500 dark:text-amber-400">Level {card.level}</span>
                         </div>
                       </div>
                     )}
@@ -421,7 +432,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           onClick={() => onTrade(card)}
                           className={cn(
                             "glass-hierarchy-interactive rounded-lg px-4 py-3",
-                            "text-sm font-semibold text-white",
+                            "text-sm font-semibold text-foreground dark:text-white",
                             "transition-all hover:scale-105"
                           )}
                         >
@@ -433,7 +444,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           onClick={() => onList(card)}
                           className={cn(
                             "glass-hierarchy-interactive rounded-lg px-4 py-3",
-                            "text-sm font-semibold text-white",
+                            "text-sm font-semibold text-foreground dark:text-white",
                             "transition-all hover:scale-105"
                           )}
                         >
@@ -445,7 +456,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           onClick={() => onViewCollection(card.countryId!)}
                           className={cn(
                             "glass-hierarchy-interactive col-span-2 rounded-lg px-4 py-3",
-                            "text-sm font-semibold text-white",
+                            "text-sm font-semibold text-foreground dark:text-white",
                             "transition-all hover:scale-105"
                           )}
                         >
@@ -476,8 +487,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     enableMouseTracking={true}
                   />
                   <div className="space-y-2 text-center">
-                    <p className="text-sm text-white/70">Drag to rotate • Click to flip</p>
-                    <p className="text-xs text-white/50">Experience the card in interactive 3D</p>
+                    <p className="text-sm text-muted-foreground">Drag to rotate • Click to flip</p>
+                    <p className="text-xs text-muted-foreground/60">Experience the card in interactive 3D</p>
                   </div>
                 </motion.div>
               </TabsContent>
@@ -490,7 +501,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                 >
                   <div className="glass-hierarchy-child rounded-lg p-6">
-                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
                       <BarChart3 className="h-5 w-5" />
                       Market History
                     </h3>
@@ -498,33 +509,33 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Market stats */}
                     <div className="mb-6 grid grid-cols-3 gap-4">
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="mb-1 text-xs text-white/60">Current Value</p>
+                        <p className="mb-1 text-xs text-muted-foreground">Current Value</p>
                         <p className={cn("text-2xl font-bold", rarityConfig.color)}>
                           {formatMarketValue(card.marketValue)}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="mb-1 text-xs text-white/60">Total Supply</p>
-                        <p className="text-2xl font-bold text-white">
+                        <p className="mb-1 text-xs text-muted-foreground">Total Supply</p>
+                        <p className="text-2xl font-bold text-foreground">
                           {card.totalSupply.toLocaleString()}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="mb-1 text-xs text-white/60">Last Trade</p>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="mb-1 text-xs text-muted-foreground">Last Trade</p>
+                        <p className="text-sm font-semibold text-foreground">
                           {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
                         </p>
                       </div>
                     </div>
 
                     {/* Placeholder chart */}
-                    <div className="flex h-64 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                    <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-muted/20">
                       <div className="text-center">
-                        <BarChart3 className="mx-auto mb-3 h-12 w-12 text-white/20" />
-                        <p className="text-sm text-white/40">
+                        <BarChart3 className="mx-auto mb-3 h-12 w-12 text-muted-foreground/35" />
+                        <p className="text-sm text-muted-foreground">
                           Market chart will display trade history
                         </p>
-                        <p className="mt-2 text-xs text-white/30">
+                        <p className="mt-2 text-xs text-muted-foreground/50">
                           Coming soon: Price trends, volume analysis
                         </p>
                       </div>
@@ -541,7 +552,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                   className="glass-hierarchy-child rounded-lg p-6"
                 >
-                  <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-white">
+                  <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-foreground">
                     <Star className="h-5 w-5" />
                     Detailed Statistics
                   </h3>
@@ -550,16 +561,16 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {Object.entries(stats).map(([key, stat]) => (
                       <div key={key} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <div className="text-sm text-white/80">{stat.label}</div>
+                          <div className="text-sm text-muted-foreground">{stat.label}</div>
                           <div className="flex items-baseline gap-2">
                             <span className={cn("text-3xl font-bold", stat.color)}>
                               {stat.value}
                             </span>
-                            <span className="text-sm text-white/40">/100</span>
+                            <span className="text-sm text-muted-foreground/50">/100</span>
                           </div>
                         </div>
                         {/* Progress bar */}
-                        <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="h-3 w-full overflow-hidden rounded-full bg-muted/20">
                           <motion.div
                             className={cn(
                               "h-full rounded-full",
@@ -571,7 +582,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           />
                         </div>
                         {/* Stat description */}
-                        <p className="text-xs text-white/50">
+                        <p className="text-xs text-muted-foreground/75">
                           {key === "economic" && "Economic power and resource generation"}
                           {key === "diplomatic" && "International influence and relations"}
                           {key === "military" && "Defense capabilities and force projection"}
@@ -610,7 +621,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                             : "Wiki"}
                       </span>
                       {(card.metadata as Record<string, unknown>)?.category && (
-                        <span className="rounded-md border border-purple-400/30 bg-purple-600/50 px-3 py-1 text-sm text-purple-200">
+                        <span className="rounded-md border border-purple-500/30 bg-purple-600/80 px-3 py-1 text-sm font-bold text-white">
                           {String((card.metadata as Record<string, unknown>).category)}
                         </span>
                       )}
@@ -628,25 +639,25 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       if (!loreStats) return null;
                       return (
                         <div className="glass-hierarchy-child mb-4 rounded-lg p-4">
-                          <h4 className="mb-3 text-sm font-semibold text-white">
+                          <h4 className="mb-3 text-sm font-semibold text-foreground">
                             Historical Metrics
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <div className="text-xs text-white/60">Historical Significance</div>
-                              <div className="text-xl font-bold text-amber-400">
+                              <div className="text-xs text-muted-foreground">Historical Significance</div>
+                              <div className="text-xl font-bold text-amber-500 dark:text-amber-400">
                                 {loreStats.historicalSignificance ?? 0}/100
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-white/60">Cultural Impact</div>
-                              <div className="text-xl font-bold text-purple-400">
+                              <div className="text-xs text-muted-foreground">Cultural Impact</div>
+                              <div className="text-xl font-bold text-purple-500 dark:text-purple-400">
                                 {loreStats.culturalImpact ?? 0}/100
                               </div>
                             </div>
                           </div>
                           {meta?.qualityScore != null && (
-                            <div className="mt-3 text-xs text-white/50">
+                            <div className="mt-3 text-xs text-muted-foreground/60">
                               Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
                             </div>
                           )}
@@ -671,11 +682,11 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       {/* Original card */}
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h4 className="mb-4 text-sm font-semibold text-white">{card.title}</h4>
+                        <h4 className="mb-4 text-sm font-semibold text-foreground">{card.title}</h4>
                         <div className="space-y-3">
                           {Object.entries(stats).map(([key, stat]) => (
                             <div key={key}>
-                              <div className="text-xs text-white/60">{stat.label}</div>
+                              <div className="text-xs text-muted-foreground">{stat.label}</div>
                               <div className={cn("text-2xl font-bold", stat.color)}>
                                 {stat.value}
                               </div>
@@ -686,13 +697,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
                       {/* Comparison card */}
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h4 className="mb-4 text-sm font-semibold text-white">
+                        <h4 className="mb-4 text-sm font-semibold text-foreground">
                           {comparisonCard.title}
                         </h4>
                         <div className="space-y-3">
                           {Object.entries(comparisonStats).map(([key, stat]) => (
                             <div key={key}>
-                              <div className="text-xs text-white/60">{stat.label}</div>
+                              <div className="text-xs text-muted-foreground">{stat.label}</div>
                               <div className={cn("text-2xl font-bold", stat.color)}>
                                 {stat.value}
                               </div>

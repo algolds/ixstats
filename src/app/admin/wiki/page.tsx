@@ -43,7 +43,13 @@ interface ScanResult {
 
 // ── Wiki Link Status Section ──────────────────────────────────────────────────
 
-function WikiLinkStatusSection({ countriesData, isLoading }: { countriesData: any; isLoading: boolean }) {
+function WikiLinkStatusSection({
+  countriesData,
+  isLoading,
+}: {
+  countriesData: any;
+  isLoading: boolean;
+}) {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
 

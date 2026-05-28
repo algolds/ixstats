@@ -1,5 +1,7 @@
-import { VaultRouter } from "~/components/vault/VaultRouter";
+"use client";
+
+import { VaultCreateSection } from "~/components/vault/sections/VaultCreateSection";
 
 export default function VaultMarketPage() {
-  return <VaultRouter />;
+  return <VaultCreateSection />;
 }

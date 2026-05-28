@@ -21,7 +21,6 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault-notifications";
-import { useSoundService } from "~/lib/sound-service";
 import { formatDistanceToNow } from "date-fns";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 
@@ -60,9 +59,6 @@ export interface TradeNegotiationProps {
  */
 export const TradeNegotiation = React.memo<TradeNegotiationProps>(
   ({ tradeId, isRecipient, onRefresh }) => {
-    // Sound service
-    const soundService = useSoundService();
-
     // Fetch trade details
     const { data: trade, isLoading } = api.trading.getTradeById.useQuery({ tradeId });
 
@@ -70,7 +66,6 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const respondToTrade = api.trading.respondToTrade.useMutation({
       onSuccess: (data, variables) => {
         if (variables.action === "ACCEPT") {
-          soundService?.play("trade-complete");
           vaultNotify.tradeCompleted("Trade accepted! Cards have been exchanged.");
         } else if (variables.action === "REJECT") {
           vaultNotify.tradeCompleted("Trade declined.");

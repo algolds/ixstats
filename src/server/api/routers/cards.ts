@@ -15,6 +15,8 @@ import {
 } from "~/lib/card-service";
 import { CardRarity, CardType } from "@prisma/client";
 import { searchForumThreads } from "~/modules/forum";
+import { vaultService } from "~/lib/vault-service";
+
 
 /**
  * Cards router for IxCards system
@@ -188,10 +190,22 @@ export const cardsRouter = createTRPCRouter({
           }
         }
 
+        // Resolve clerkUserId to database CUID if needed
+        let targetDbUserId = input.userId;
+        if (input.userId.startsWith("user_")) {
+          const targetUser = await ctx.db.user.findUnique({
+            where: { clerkUserId: input.userId },
+            select: { id: true },
+          });
+          if (targetUser) {
+            targetDbUserId = targetUser.id;
+          }
+        }
+
         // Get user's cards (respecting limit)
         const ownerships = await ctx.db.cardOwnership.findMany({
           where: {
-            ownerId: input.userId,
+            ownerId: targetDbUserId,
             ...(filterRarity && {
               cards: {
                 rarity: filterRarity,
@@ -776,4 +790,135 @@ export const cardsRouter = createTRPCRouter({
       );
       return { extract: result?.text ?? null };
     }),
+
+  /**
+   * Junk cards for credits payout based on rarity
+   */
+  junkCards: protectedProcedure
+    .input(
+      z.object({
+        ownershipIds: z.array(z.string()).min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const userId = ctx.user?.id;
+        if (!userId) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "User ID not found",
+          });
+        }
+
+        const JUNK_VALUES: Record<CardRarity, number> = {
+          COMMON: 10,
+          UNCOMMON: 25,
+          RARE: 75,
+          ULTRA_RARE: 200,
+          EPIC: 500,
+          LEGENDARY: 1500,
+        };
+
+        // Fetch ownership records along with card rarity
+        const ownerships = await ctx.db.cardOwnership.findMany({
+          where: {
+            id: { in: input.ownershipIds },
+            ownerId: userId,
+          },
+          include: {
+            cards: true,
+          },
+        });
+
+        if (ownerships.length === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No owned cards found for the provided IDs",
+          });
+        }
+
+        // Check if any card is locked
+        const lockedCards = ownerships.filter((o) => o.isLocked);
+        if (lockedCards.length > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot junk locked cards: ${lockedCards.map((l) => l.cards.title).join(", ")}`,
+          });
+        }
+
+        // Calculate total credits to pay out
+        let totalCredits = 0;
+        for (const ownership of ownerships) {
+          const rarity = ownership.cards.rarity as CardRarity;
+          const payoutPerCard = JUNK_VALUES[rarity] ?? 10;
+          const qty = ownership.quantity ?? 1;
+          totalCredits += payoutPerCard * qty;
+        }
+
+        // Run db transaction to delete ownerships and payout credits
+        const result = await ctx.db.$transaction(async (tx) => {
+          // Delete CardOwnership records
+          await tx.cardOwnership.deleteMany({
+            where: {
+              id: { in: ownerships.map((o) => o.id) },
+            },
+          });
+
+          // Payout credits using vaultService
+          const vault = await tx.myVault.findUnique({
+            where: { userId },
+          });
+
+          if (!vault) {
+            throw new Error("Vault not found. Please initialize your vault first.");
+          }
+
+          // Update vault balance
+          const updatedVault = await tx.myVault.update({
+            where: { id: vault.id },
+            data: {
+              credits: { increment: totalCredits },
+              lifetimeEarned: { increment: totalCredits },
+            },
+          });
+
+          // Create vault transaction log
+          await tx.vaultTransaction.create({
+            data: {
+              vaultId: vault.id,
+              credits: totalCredits,
+              balanceAfter: updatedVault.credits,
+              type: "EARN_CARDS",
+              source: `JUNK_CARDS`,
+              metadata: {
+                cardNames: ownerships.map((o) => o.cards.title),
+                ownershipIds: ownerships.map((o) => o.id),
+              },
+            },
+          });
+
+          return {
+            success: true,
+            newBalance: updatedVault.credits,
+          };
+        });
+
+        return {
+          success: true,
+          payout: totalCredits,
+          newBalance: result.newBalance,
+          message: `Successfully junked ${ownerships.length} card(s) and received ${totalCredits} IxC!`,
+        };
+      } catch (error) {
+        console.error("[CARDS_ROUTER] Error in junkCards:", error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to junk cards",
+        });
+      }
+    }),
 });
+

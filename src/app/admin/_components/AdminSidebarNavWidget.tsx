@@ -16,6 +16,7 @@ import {
   Bell,
   Package,
   Vote,
+  Coins,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -94,10 +95,17 @@ const NAV_ITEMS: NavItem[] = [
     activeColor: "text-orange-500 dark:text-orange-400 border-l-orange-500",
   },
   {
+    label: "Vault & Economy",
+    href: "/admin/vault",
+    icon: Coins,
+    description: "Balances, Streaks & Store CRUD",
+    activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
+  },
+  {
     label: "Reference Data",
     href: "/admin/reference-data",
     icon: Database,
-    description: "Unified Data Manager",
+    description: "Data Manager",
     activeColor: "text-cyan-500 dark:text-cyan-400 border-l-cyan-500",
   },
   {
@@ -111,14 +119,14 @@ const NAV_ITEMS: NavItem[] = [
     label: "Blurbs",
     href: "/admin/blurbs",
     icon: MessageCircle,
-    description: "Topic Prompts & Responses",
+    description: "Topic Prompts",
     activeColor: "text-violet-500 dark:text-violet-400 border-l-violet-500",
   },
   {
     label: "Polls",
     href: "/admin/polls",
     icon: Vote,
-    description: "Create & Manage Feed Polls",
+    description: "Create & Manage Polls",
     activeColor: "text-purple-500 dark:text-purple-400 border-l-purple-500",
   },
 ];
@@ -138,11 +146,11 @@ export function AdminSidebarNavWidget({ onNavigate }: AdminSidebarNavWidgetProps
   const pathname = usePathname();
 
   return (
-    <nav className="border-border/30 bg-card/40 w-full space-y-1 rounded-xl border p-2 shadow-sm backdrop-blur-md">
-      <div className="text-muted-foreground/80 px-3 py-1.5 text-[9px] font-bold tracking-wider uppercase">
-        Navigation
+    <nav className="border-border/30 bg-card/40 w-full rounded-xl border p-2 shadow-sm backdrop-blur-md flex flex-col max-h-[calc(100vh-320px)]">
+      <div className="text-muted-foreground/80 px-3 py-1.5 text-[9px] font-bold tracking-wider uppercase shrink-0">
+        Admin Control Suite
       </div>
-      <div className="space-y-1 pr-1">
+      <div className="space-y-1 overflow-y-auto pr-1.5 thin-scrollbar [scrollbar-width:thin] flex-1 mt-1">
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, withBasePath(item.href), item.exact);
           return (
@@ -159,7 +167,7 @@ export function AdminSidebarNavWidget({ onNavigate }: AdminSidebarNavWidgetProps
             >
               <item.icon className="h-4.5 w-4.5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] leading-tight font-semibold tracking-wide">
+                <div className="text-[11px] leading-tight font-semibold tracking-wide truncate whitespace-nowrap">
                   {item.label}
                 </div>
                 {item.description && !active && (

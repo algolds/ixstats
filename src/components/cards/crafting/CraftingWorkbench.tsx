@@ -10,7 +10,6 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { useSoundService } from "~/lib/sound-service";
 import { CometCard } from "~/components/ui/comet-card";
 import { CardDisplay } from "../display/CardDisplay";
 import { CraftingAnimation } from "./CraftingAnimation";
@@ -70,9 +69,6 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
   const [crafting, setCrafting] = useState(false);
   const [craftingResult, setCraftingResult] = useState<any>(null);
 
-  // Sound service
-  const soundService = useSoundService();
-
   // Fetch recipe details
   const { data: recipeData, isLoading: recipeLoading } = api.crafting.getRecipeById.useQuery(
     { recipeId: recipeId! },
@@ -85,16 +81,13 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
     { enabled: !!recipeId }
   );
 
-  // Crafting mutation
   const craftMutation = api.crafting.craftCard.useMutation({
     onSuccess: (result) => {
-      soundService?.play("craft-success"); // Play success sound
       setCraftingResult(result);
       setCrafting(false);
       onCraftComplete?.(result);
     },
     onError: (error) => {
-      soundService?.play("craft-fail"); // Play fail sound
       alert(`Crafting failed: ${error.message}`);
       setCrafting(false);
     },

@@ -38,6 +38,7 @@ import {
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
+import { DistortedGlass } from "~/components/ui/distorted-glass";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
@@ -882,7 +883,10 @@ export function UnifiedDashboardSection({
                 "no-wiki-tooltip overflow-hidden rounded-xl"
               )}
               trackPointerHover={false}
+              texture="diagonal"
+              textureOpacity={0.06}
             >
+              <DistortedGlass asBackground className="bg-black/20" />
               {/* Cutout tab header */}
               <div className="relative bg-orange-500/10 px-4 pt-3 pb-5">
                 <div className="text-card-foreground flex items-center gap-2 text-sm font-bold">

@@ -5,11 +5,41 @@
 
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
-import { SignInButton, useUser, UserButton } from "~/context/auth-context";
+import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
+import { Button } from "~/components/ui/button";
+import Link from "next/link";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+}
+
+function AccessDeniedScreen() {
+  const { signOut } = useAuth();
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+      <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg max-w-sm w-full">
+        <h1 className="mb-4 text-2xl font-bold text-red-650 dark:text-red-500">Access Denied</h1>
+        <p className="text-muted-foreground mb-6 text-sm">
+          You do not have permission to view the Administration console.
+        </p>
+        <div className="flex justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              void signOut();
+            }}
+            className="border-border/60 hover:bg-muted text-foreground"
+          >
+            Sign Out
+          </Button>
+          <Button asChild className="bg-indigo-650 hover:bg-indigo-700 text-white font-semibold">
+            <Link href="/">Go to Home</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -40,17 +70,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
   if (!isSystemOwnerUser && !hasAdminRole) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg">
-          <h1 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h1>
-          <p className="text-muted-foreground mb-6">
-            You do not have permission to view this page.
-          </p>
-          <UserButton signOutUrl="/" />
-        </div>
-      </div>
-    );
+    return <AccessDeniedScreen />;
   }
 
   return (

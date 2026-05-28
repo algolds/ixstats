@@ -22,6 +22,7 @@ import {
   Package,
   Bell,
   Vote,
+  Coins,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -89,6 +90,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/cards",
     icon: Package,
     description: "Sync, Packs, Lore & Vaults",
+  },
+  {
+    label: "Vault & Economy",
+    href: "/admin/vault",
+    icon: Coins,
+    description: "Balances, Streaks & Store CRUD",
   },
   {
     label: "Reference Data",

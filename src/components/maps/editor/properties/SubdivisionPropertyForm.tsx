@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { Label } from "~/components/ui/label";
+import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
@@ -83,17 +85,12 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
           className={inputClasses}
         />
       </div>
-      <div className="flex items-center gap-2">
-        <label className="text-muted-foreground text-xs whitespace-nowrap">Color</label>
-        <input
-          type="color"
+      <div className="space-y-1.5">
+        <Label className="text-muted-foreground text-xs">Color</Label>
+        <ColorPickerInput
           value={form.color ?? "#a78bfa"}
-          onChange={(e) => onChange({ ...form, color: e.target.value })}
-          className="border-border h-7 w-10 cursor-pointer rounded border bg-transparent p-0.5"
+          onChange={(val) => onChange({ ...form, color: val })}
         />
-        <span className="text-muted-foreground font-mono text-[10px]">
-          {form.color ?? "default"}
-        </span>
       </div>
       <WikiLinkWizard
         value={form.wikiPageTitle}

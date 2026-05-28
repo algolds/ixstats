@@ -292,30 +292,35 @@ export const activitiesRouter = createTRPCRouter({
             description: activity.description,
             metadata,
           },
-          poll: (activity as any).poll ? {
-            id: (activity as any).poll.id,
-            question: (activity as any).poll.question,
-            description: (activity as any).poll.description,
-            pollType: (activity as any).poll.pollType,
-            multiple: (activity as any).poll.multiple,
-            isActive: (activity as any).poll.isActive,
-            endDate: (activity as any).poll.endDate,
-            options: (activity as any).poll.options.map((o: any) => ({
-              id: o.id,
-              label: o.label,
-              description: o.description,
-            })),
-            votes: (() => {
-              const v: Record<string, number> = {};
-              (activity as any).poll.options.forEach((opt: any) => {
-                v[opt.id] = opt._count.votes;
-              });
-              return v;
-            })(),
-            totalVotes: (activity as any).poll.options.reduce((sum: number, o: any) => sum + o._count.votes, 0),
-            hasVoted: userVotedPollOptionsMap.has((activity as any).poll.id),
-            userVotedOptionIds: userVotedPollOptionsMap.get((activity as any).poll.id) || [],
-          } : null,
+          poll: (activity as any).poll
+            ? {
+                id: (activity as any).poll.id,
+                question: (activity as any).poll.question,
+                description: (activity as any).poll.description,
+                pollType: (activity as any).poll.pollType,
+                multiple: (activity as any).poll.multiple,
+                isActive: (activity as any).poll.isActive,
+                endDate: (activity as any).poll.endDate,
+                options: (activity as any).poll.options.map((o: any) => ({
+                  id: o.id,
+                  label: o.label,
+                  description: o.description,
+                })),
+                votes: (() => {
+                  const v: Record<string, number> = {};
+                  (activity as any).poll.options.forEach((opt: any) => {
+                    v[opt.id] = opt._count.votes;
+                  });
+                  return v;
+                })(),
+                totalVotes: (activity as any).poll.options.reduce(
+                  (sum: number, o: any) => sum + o._count.votes,
+                  0
+                ),
+                hasVoted: userVotedPollOptionsMap.has((activity as any).poll.id),
+                userVotedOptionIds: userVotedPollOptionsMap.get((activity as any).poll.id) || [],
+              }
+            : null,
           engagement: {
             likes: activity.likes,
             comments: activity.comments,
@@ -684,30 +689,35 @@ export const activitiesRouter = createTRPCRouter({
             description: activity.description,
             metadata,
           },
-          poll: (activity as any).poll ? {
-            id: (activity as any).poll.id,
-            question: (activity as any).poll.question,
-            description: (activity as any).poll.description,
-            pollType: (activity as any).poll.pollType,
-            multiple: (activity as any).poll.multiple,
-            isActive: (activity as any).poll.isActive,
-            endDate: (activity as any).poll.endDate,
-            options: (activity as any).poll.options.map((o: any) => ({
-              id: o.id,
-              label: o.label,
-              description: o.description,
-            })),
-            votes: (() => {
-              const v: Record<string, number> = {};
-              (activity as any).poll.options.forEach((opt: any) => {
-                v[opt.id] = opt._count.votes;
-              });
-              return v;
-            })(),
-            totalVotes: (activity as any).poll.options.reduce((sum: number, o: any) => sum + o._count.votes, 0),
-            hasVoted: userVotedPollOptionsMap.has((activity as any).poll.id),
-            userVotedOptionIds: userVotedPollOptionsMap.get((activity as any).poll.id) || [],
-          } : null,
+          poll: (activity as any).poll
+            ? {
+                id: (activity as any).poll.id,
+                question: (activity as any).poll.question,
+                description: (activity as any).poll.description,
+                pollType: (activity as any).poll.pollType,
+                multiple: (activity as any).poll.multiple,
+                isActive: (activity as any).poll.isActive,
+                endDate: (activity as any).poll.endDate,
+                options: (activity as any).poll.options.map((o: any) => ({
+                  id: o.id,
+                  label: o.label,
+                  description: o.description,
+                })),
+                votes: (() => {
+                  const v: Record<string, number> = {};
+                  (activity as any).poll.options.forEach((opt: any) => {
+                    v[opt.id] = opt._count.votes;
+                  });
+                  return v;
+                })(),
+                totalVotes: (activity as any).poll.options.reduce(
+                  (sum: number, o: any) => sum + o._count.votes,
+                  0
+                ),
+                hasVoted: userVotedPollOptionsMap.has((activity as any).poll.id),
+                userVotedOptionIds: userVotedPollOptionsMap.get((activity as any).poll.id) || [],
+              }
+            : null,
           engagement: {
             likes: activity.likes,
             comments: activity.comments,

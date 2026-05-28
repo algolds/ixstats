@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Shield, DollarSign, Landmark, MapPin, Users, Loader2 } from "lucide-react";
+import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 
 interface AllianceCreatorSheetProps {
   countryId: string;
@@ -148,11 +149,9 @@ export function AllianceCreatorSheet({
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label className="mb-1.5 block text-xs font-medium">Color</Label>
-              <Input
-                type="color"
+              <ColorPickerInput
                 value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="h-10 cursor-pointer"
+                onChange={(val) => setColor(val)}
               />
             </div>
             <div>

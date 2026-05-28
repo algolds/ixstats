@@ -100,27 +100,27 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 22,
   },
   [SIZE_PRESETS.COMPACT]: {
-    width: 220,
-    height: 36,
-    aspectRatio: 36 / 220,
-    borderRadius: 44,
+    width: 240,
+    height: 40,
+    aspectRatio: 40 / 240,
+    borderRadius: 9999,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,
-    height: 40,
-    aspectRatio: 40 / 300,
-    borderRadius: 44,
+    height: 44,
+    aspectRatio: 44 / 300,
+    borderRadius: 9999,
   },
   [SIZE_PRESETS.COMPACT_TALL]: {
     width: 340,
-    height: 42,
-    aspectRatio: 42 / 340,
-    borderRadius: 44,
+    height: 44,
+    aspectRatio: 44 / 340,
+    borderRadius: 9999,
   },
   [SIZE_PRESETS.COMPACT_MEDIUM]: {
     width: 351,
-    aspectRatio: 64 / 371,
-    borderRadius: 44,
+    aspectRatio: 44 / 351,
+    borderRadius: 9999,
   },
   [SIZE_PRESETS.LONG]: {
     width: 371,
@@ -165,15 +165,15 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
   },
   [SIZE_PRESETS.WIKI_INLINE]: {
     width: 260,
-    height: 38,
-    aspectRatio: 38 / 260,
-    borderRadius: 44,
+    height: 44,
+    aspectRatio: 44 / 260,
+    borderRadius: 9999,
   },
   [SIZE_PRESETS.WIKI_COMPACT]: {
     width: 180,
-    height: 32,
-    aspectRatio: 32 / 180,
-    borderRadius: 44,
+    height: 40,
+    aspectRatio: 40 / 180,
+    borderRadius: 9999,
   },
 };
 
@@ -512,7 +512,7 @@ const DynamicIslandContent = ({
       {/* Main dynamic island */}
       <motion.div
         id={id}
-        className="focus-within:bg-accent/80 hover:shadow-primary/20 relative mx-auto items-center justify-center overflow-visible border border-white/20 text-center transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10"
+        className="focus-within:bg-accent/80 hover:shadow-primary/20 hover:shadow-primary/20 relative mx-auto items-center justify-center overflow-visible border border-white/20 text-center shadow-2xl shadow-black/40 transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10"
         initial={{
           width: dimensions.width,
           height: dimensions.height === "auto" ? "auto" : dimensions.height,
@@ -563,6 +563,28 @@ const DynamicIslandContent = ({
           <AnimatePresence>{children}</AnimatePresence>
         </div>
       </motion.div>
+
+      {/* Global Refraction SVG Filter */}
+      <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
+        <defs>
+          <filter id="fractal-noise-glass">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.05 0.05"
+              numOctaves="2"
+              result="noise"
+            />
+            <feGaussianBlur in="noise" stdDeviation="1.5" result="blurredNoise" />
+            <feDisplacementMap
+              xChannelSelector="R"
+              yChannelSelector="G"
+              scale="15"
+              in="SourceGraphic"
+              in2="blurredNoise"
+            />
+          </filter>
+        </defs>
+      </svg>
     </div>
   );
 };

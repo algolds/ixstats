@@ -37,9 +37,12 @@ import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { DistortedGlass } from "~/components/ui/distorted-glass";
 import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -536,7 +539,7 @@ function DashboardHero({
   };
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-xl shadow-sm">
+    <div className="glass-surface glass-refraction relative overflow-hidden rounded-xl shadow-sm">
       <button
         onClick={() => onCollapsedChange(true)}
         className="text-muted-foreground hover:bg-muted/30 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
@@ -556,7 +559,8 @@ function DashboardHero({
           />
         </div>
 
-        <div className="flex flex-col justify-between gap-3 md:col-span-2">
+        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-3 md:col-span-2">
+          <TextureOverlay texture="paperGrain" opacity={0.09} />
           <div>
             <div className="mb-2 flex items-center gap-2.5">
               <SimpleFlag countryName={stats.countryName} size="lg" className="shrink-0" />
@@ -587,9 +591,10 @@ function DashboardHero({
           <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
             {vaultData && (
               <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-400">
-                <Wallet className="h-3 w-3" />
-                {vaultData.credits.toLocaleString()} IxC
-                <Flame className="ml-0.5 h-2.5 w-2.5" />
+                <Wallet className="h-3 w-3 shrink-0" />
+                <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+                {vaultData.credits.toLocaleString()}
+                <Flame className="ml-0.5 h-2.5 w-2.5 shrink-0" />
                 {vaultData.loginStreak}d
               </span>
             )}

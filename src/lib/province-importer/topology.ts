@@ -532,9 +532,7 @@ export interface ConformanceResult {
  * Polygon/MultiPolygon components. Returns a clean Polygon or MultiPolygon,
  * or null if no polygon component exists.
  */
-export function cleanToPolygonOrMultiPolygon(
-  geometry: any
-): Polygon | MultiPolygon | null {
+export function cleanToPolygonOrMultiPolygon(geometry: any): Polygon | MultiPolygon | null {
   if (!geometry) return null;
 
   if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
@@ -554,12 +552,12 @@ export function cleanToPolygonOrMultiPolygon(
     if (polygons.length === 1) {
       return {
         type: "Polygon",
-        coordinates: polygons[0]
+        coordinates: polygons[0],
       };
     }
     return {
       type: "MultiPolygon",
-      coordinates: polygons
+      coordinates: polygons,
     };
   }
 
@@ -657,4 +655,3 @@ export function clipGeometryToBorder(
     return { geometry, wasClipped: false };
   }
 }
-

@@ -62,10 +62,29 @@ function DialogContent({
         onPointerDownOutside={(e) => {
           const target = e.target as HTMLElement;
           if (
-            target.closest("[data-radix-select-content]") ||
-            target.closest("[data-radix-dropdown-menu-content]") ||
-            target.closest("[data-radix-popover-content]") ||
-            target.closest('[role="listbox"]')
+            target &&
+            (target.closest("[data-radix-select-content]") ||
+              target.closest("[data-radix-dropdown-menu-content]") ||
+              target.closest("[data-radix-popover-content]") ||
+              target.closest('[role="listbox"]') ||
+              target.closest('[data-slot="popover-content"]') ||
+              target.closest('[data-slot="popover-positioner"]') ||
+              target.closest('[data-slot="select-content"]'))
+          ) {
+            e.preventDefault();
+          }
+        }}
+        onFocusOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (
+            target &&
+            (target.closest("[data-radix-select-content]") ||
+              target.closest("[data-radix-dropdown-menu-content]") ||
+              target.closest("[data-radix-popover-content]") ||
+              target.closest('[role="listbox"]') ||
+              target.closest('[data-slot="popover-content"]') ||
+              target.closest('[data-slot="popover-positioner"]') ||
+              target.closest('[data-slot="select-content"]'))
           ) {
             e.preventDefault();
           }

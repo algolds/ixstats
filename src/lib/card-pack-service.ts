@@ -3,6 +3,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { PackType, CardRarity } from "@prisma/client";
+import { getVaultConfig } from "./vault-service";
 
 /**
  * Pack odds validation - ensures all rarity odds sum to 100%
@@ -135,6 +136,14 @@ export async function createPack(
  */
 export async function purchasePack(db: PrismaClient, userId: string, packId: string) {
   return db.$transaction(async (tx) => {
+    const config = await getVaultConfig(tx as any);
+    if (config.isMaintenanceMode) {
+      throw new Error("Vault economy is currently in maintenance mode.");
+    }
+    if (!config.isPacksEnabled) {
+      throw new Error("Card pack purchases are currently disabled globally.");
+    }
+
     // 1. Get pack details
     const pack = await tx.cardPack.findUnique({
       where: { id: packId },
@@ -294,7 +303,7 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
     const rarities = generatePackCards(userPack.pack);
 
     // 5. Select actual cards from pool based on rarities
-    const cards = [];
+    const cardsWithOwnership = [];
     for (const rarity of rarities) {
       // Build where clause
       const where: {
@@ -331,8 +340,6 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
         throw new Error(`Failed to select card for rarity: ${rarity}`);
       }
 
-      cards.push(card);
-
       // 6. Create CardOwnership record
       const maxSerial = await tx.cardOwnership.findFirst({
         where: { cardId: card.id },
@@ -341,7 +348,7 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       });
       const nextSerial = (maxSerial?.serialNumber || 0) + 1;
 
-      await tx.cardOwnership.create({
+      const ownership = await tx.cardOwnership.create({
         data: {
           id: `co_${Date.now()}_${userId}_${card.id}`,
           userId,
@@ -352,6 +359,8 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
           experience: 0,
         },
       });
+
+      cardsWithOwnership.push({ card, ownershipId: ownership.id });
     }
 
     // 7. Mark pack as opened
@@ -363,7 +372,7 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       },
     });
 
-    return cards;
+    return cardsWithOwnership;
   });
 }
 

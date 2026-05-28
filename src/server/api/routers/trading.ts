@@ -15,6 +15,7 @@ import { TRPCError } from "@trpc/server";
 import { TradeStatus, type Prisma } from "@prisma/client";
 import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
+import { getVaultConfig } from "~/lib/vault-service";
 
 /**
  * Trade offer creation schema
@@ -56,16 +57,42 @@ export const tradingRouter = createTRPCRouter({
         ctx,
         input,
       }: {
-        ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any };
+        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
         input: CreateTradeOfferInput;
       }) => {
-        const userId = ctx.auth.userId;
+        const initiatorDbId = ctx.user.id;
+
+        const config = await getVaultConfig(ctx.db);
+        if (config.isMaintenanceMode) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Vault economy is currently in maintenance mode.",
+          });
+        }
+        if (!config.isTradingEnabled) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "P2P card trading is currently disabled globally.",
+          });
+        }
+
+        // Resolve recipient's clerkUserId to database CUID
+        const recipientUser = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.recipientId },
+        });
+        if (!recipientUser) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Recipient user not found",
+          });
+        }
+        const recipientDbId = recipientUser.id;
 
         // Verify initiator owns the cards they're offering
         const initiatorCards = await ctx.db.cardOwnership.findMany({
           where: {
             id: { in: input.initiatorCardIds },
-            ownerId: userId,
+            ownerId: initiatorDbId,
             isLocked: false,
           },
           include: {
@@ -84,7 +111,7 @@ export const tradingRouter = createTRPCRouter({
         const recipientCards = await ctx.db.cardOwnership.findMany({
           where: {
             id: { in: input.recipientCardIds },
-            ownerId: input.recipientId,
+            ownerId: recipientDbId,
             isLocked: false,
           },
           include: {
@@ -102,7 +129,7 @@ export const tradingRouter = createTRPCRouter({
         // Verify initiator has enough credits if offering any
         if (input.initiatorCredits > 0) {
           const vault = await ctx.db.myVault.findUnique({
-            where: { userId },
+            where: { userId: initiatorDbId },
           });
 
           if (!vault || vault.credits < input.initiatorCredits) {
@@ -129,8 +156,8 @@ export const tradingRouter = createTRPCRouter({
 
         const trade = await ctx.db.tradeOffer.create({
           data: {
-            initiatorId: userId,
-            recipientId: input.recipientId,
+            initiatorId: initiatorDbId,
+            recipientId: recipientDbId,
             initiatorCardIds: input.initiatorCardIds,
             recipientCardIds: input.recipientCardIds,
             initiatorCredits: input.initiatorCredits,
@@ -200,10 +227,24 @@ export const tradingRouter = createTRPCRouter({
         ctx,
         input,
       }: {
-        ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any };
+        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
         input: RespondToTradeInput;
       }) => {
-        const userId = ctx.auth.userId;
+        const userId = ctx.user.id;
+
+        const config = await getVaultConfig(ctx.db);
+        if (config.isMaintenanceMode) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Vault economy is currently in maintenance mode.",
+          });
+        }
+        if (!config.isTradingEnabled) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "P2P card trading is currently disabled globally.",
+          });
+        }
 
         // Get the trade offer
         const trade = await ctx.db.tradeOffer.findUnique({
@@ -420,7 +461,7 @@ export const tradingRouter = createTRPCRouter({
           await notificationAPI.create({
             title: "Trade Accepted",
             message: "Your trade offer has been accepted! Cards have been exchanged.",
-            userId: trade.initiatorId,
+            userId: trade.initiator.clerkUserId,
             category: "economic",
             priority: "high",
             type: "success",
@@ -440,8 +481,8 @@ export const tradingRouter = createTRPCRouter({
    * Get active trades (sent and received)
    */
   getActiveTrades: protectedProcedure.query(
-    async ({ ctx }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any } }) => {
-      const userId = ctx.auth.userId;
+    async ({ ctx }: { ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any } }) => {
+      const userId = ctx.user.id;
 
       const trades = await ctx.db.tradeOffer.findMany({
         where: {
@@ -497,10 +538,10 @@ export const tradingRouter = createTRPCRouter({
         ctx,
         input,
       }: {
-        ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any };
+        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
         input: { limit: number; offset: number };
       }) => {
-        const userId = ctx.auth.userId;
+        const userId = ctx.user.id;
 
         const trades = await ctx.db.tradeOffer.findMany({
           where: {
@@ -577,10 +618,10 @@ export const tradingRouter = createTRPCRouter({
         ctx,
         input,
       }: {
-        ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any };
+        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
         input: { tradeId: string };
       }) => {
-        const userId = ctx.auth.userId;
+        const userId = ctx.user.id;
 
         const trade = await ctx.db.tradeOffer.findUnique({
           where: { id: input.tradeId },
@@ -625,10 +666,10 @@ export const tradingRouter = createTRPCRouter({
         ctx,
         input,
       }: {
-        ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any };
+        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
         input: { tradeId: string };
       }) => {
-        const userId = ctx.auth.userId;
+        const userId = ctx.user.id;
 
         const trade = await ctx.db.tradeOffer.findUnique({
           where: { id: input.tradeId },
@@ -690,11 +731,83 @@ export const tradingRouter = createTRPCRouter({
           },
         });
 
+        const initiatorValue = initiatorCards.reduce(
+          (sum: number, c: any) => sum + (c.cards.marketValue || 0),
+          0
+        ) + trade.initiatorCredits;
+
+        const recipientValue = recipientCards.reduce(
+          (sum: number, c: any) => sum + (c.cards.marketValue || 0),
+          0
+        ) + trade.recipientCredits;
+
         return {
           ...trade,
           initiatorCardsData: initiatorCards,
           recipientCardsData: recipientCards,
+          initiatorValue,
+          recipientValue,
         };
       }
     ),
+
+  /**
+   * Search potential trading partners by country name or username
+   */
+  searchTradingPartners: protectedProcedure
+    .input(z.object({ query: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const query = input.query.trim();
+      if (query.length < 2) return [];
+
+      const currentUserId = ctx.user.id;
+
+      const users = await ctx.db.user.findMany({
+        where: {
+          id: { not: currentUserId },
+          isActive: true,
+          OR: [
+            {
+              country: {
+                OR: [
+                  { name: { contains: query, mode: "insensitive" } },
+                  { leader: { contains: query, mode: "insensitive" } },
+                ],
+              },
+            },
+            {
+              forumUsername: { contains: query, mode: "insensitive" },
+            },
+            {
+              wikiUsername: { contains: query, mode: "insensitive" },
+            },
+            {
+              discordUsername: { contains: query, mode: "insensitive" },
+            },
+          ],
+        },
+        include: {
+          country: {
+            select: {
+              id: true,
+              name: true,
+              leader: true,
+              economicTier: true,
+              flag: true,
+            },
+          },
+        },
+        take: 15,
+      });
+
+      return users.map((user) => ({
+        id: user.clerkUserId,
+        dbId: user.id,
+        countryName: user.country?.name || "Unknown Country",
+        leader: user.country?.leader || "Unknown Leader",
+        economicTier: user.country?.economicTier || "Unknown",
+        username: user.forumUsername || user.wikiUsername || user.discordUsername || "Unnamed Player",
+        flag: user.country?.flag || null,
+      }));
+    }),
 });

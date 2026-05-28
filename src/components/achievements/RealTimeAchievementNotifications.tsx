@@ -95,7 +95,7 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
   maxNotifications = 3,
   autoHideDuration = 5000,
   showParticleEffects = true,
-  playSound = true,
+  playSound = false,
   className,
 }) => {
   const enableRealTime = false; // Disable real-time by default

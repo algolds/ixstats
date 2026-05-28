@@ -92,11 +92,8 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
         trackPointerHover={false}
       >
-        <div className="relative bg-indigo-500/10 px-3 pt-2.5 pb-4">
-          <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
-            <Skeleton className="h-4 w-4 rounded-sm" />
-            <Skeleton className="h-3 w-20" />
-          </div>
+        <div className="relative flex min-h-[80px] flex-col items-center justify-center bg-indigo-500/10 px-3 pt-3 pb-6">
+          <Skeleton className="h-4 w-24 rounded-sm" />
           <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
           <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
         </div>
@@ -123,23 +120,41 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
+      className={cn(cutoutCardSurfaceClassName, "group w-48 overflow-hidden rounded-xl")}
       trackPointerHover={false}
+      texture="dots"
+      textureOpacity={0.06}
     >
       {/* Cutout tab header */}
-      <div className="relative bg-indigo-500/10 px-3 pt-2.5 pb-5">
-        <div className="flex items-center gap-1.5">
-          <UnifiedCountryFlag
-            countryName={userProfile?.country?.name ?? ""}
-            size="xs"
-            className="shrink-0"
-          />
-        </div>
-        <PreText className="text-card-foreground/80 mt-1 text-center text-sm">
+      <div className="relative flex min-h-[80px] flex-col items-center justify-center overflow-hidden bg-indigo-500/10 px-3 pt-3 pb-6">
+        {/* Background flag filling the top */}
+        {userProfile?.country?.name && (
+          <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
+            <UnifiedCountryFlag
+              countryName={userProfile.country.name}
+              fitContainer={true}
+              showTooltip={false}
+              rounded={false}
+              className="h-full w-full object-cover opacity-45 brightness-75 transition-all duration-300 group-hover:scale-105"
+            />
+            {/* Soft overlay gradient to ensure text readability */}
+            <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/10 via-black/25 to-black/50" />
+          </div>
+        )}
+
+        {/* Country Name Link */}
+        <Link
+          href={createUrl(`/countries/${userProfile?.country?.slug ?? ""}`)}
+          className="relative z-20 text-center text-sm font-bold tracking-wide text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] hover:text-white/80 hover:underline"
+        >
           {userProfile?.country?.name ?? "My Country"}
-        </PreText>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+        </Link>
+
+        <CutoutCorner className="text-card absolute -bottom-px left-0 z-20" size={16} />
+        <CutoutCorner
+          className="text-card absolute right-0 -bottom-px z-20 -scale-x-100"
+          size={16}
+        />
       </div>
       <CutoutCardContent className="space-y-2.5 p-3 pt-1">
         {/* Condensed hero stats — visible when hero is collapsed */}
@@ -148,7 +163,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                  <Users className="h-3 w-3 text-blue-400" /> Pop
+                  <Users className="h-3 w-3 text-blue-500 dark:text-blue-400" /> Pop
                 </span>
                 <span className="text-foreground text-[10px] font-semibold">
                   {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
@@ -156,7 +171,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                  <DollarSign className="h-3 w-3 text-emerald-400" /> GDP
+                  <DollarSign className="h-3 w-3 text-emerald-500 dark:text-emerald-400" /> GDP
                 </span>
                 <span className="text-foreground text-[10px] font-semibold">
                   {formatCompactCurrency((country as any)?.newStats?.currentTotalGdp ?? 0)}
@@ -165,7 +180,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               {(country as any)?.newStats?.landArea && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                    <MapIcon className="h-3 w-3 text-amber-400" /> Area
+                    <MapIcon className="h-3 w-3 text-amber-500 dark:text-amber-400" /> Area
                   </span>
                   <span className="text-foreground text-[10px] font-semibold">
                     {formatCompactNumber((country as any)?.newStats?.landArea)} km²
@@ -233,7 +248,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 href={createUrl("/mycountry/executive")}
                 className="group flex items-center justify-between rounded-md bg-amber-500/5 px-2 py-1.5 transition-colors hover:bg-amber-500/10"
               >
-                <span className="flex items-center gap-1.5 text-[10px] font-medium text-amber-500">
+                <span className="flex items-center gap-1.5 text-[10px] font-medium text-amber-600 dark:text-amber-500">
                   <ClipboardList className="h-3 w-3" />
                   Issues
                 </span>
@@ -252,7 +267,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 href={createUrl("/mycountry/executive")}
                 className="group flex items-center justify-between rounded-md bg-blue-500/5 px-2 py-1.5 transition-colors hover:bg-blue-500/10"
               >
-                <span className="flex items-center gap-1.5 text-[10px] font-medium text-blue-500">
+                <span className="flex items-center gap-1.5 text-[10px] font-medium text-blue-600 dark:text-blue-500">
                   <FileText className="h-3 w-3" />
                   Policies
                 </span>
@@ -266,12 +281,12 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 href={createUrl("/mycountry/executive")}
                 className="group flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1.5 transition-colors hover:bg-emerald-500/10"
               >
-                <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-500">
+                <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-500">
                   <Layers className="h-3 w-3" />
                   Actions
                 </span>
                 <span
-                  className={`text-[9px] font-medium ${pendingActions > 0 ? "text-orange-500" : "text-emerald-500"}`}
+                  className={`text-[9px] font-medium ${pendingActions > 0 ? "text-orange-600 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"}`}
                 >
                   {pendingActions > 0 ? `${pendingActions} pending` : "All clear"}
                 </span>
@@ -287,10 +302,12 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium">
-                  <AlertTriangle className="h-3 w-3 text-red-400" />
+                  <AlertTriangle className="h-3 w-3 text-red-500 dark:text-red-400" />
                   Crises
                 </span>
-                <span className="text-[10px] font-semibold text-red-500">{crisesCount}</span>
+                <span className="text-[10px] font-semibold text-red-600 dark:text-red-500">
+                  {crisesCount}
+                </span>
               </div>
               {activeCrisesList.length > 0 && (
                 <p className="text-muted-foreground truncate text-[10px]">

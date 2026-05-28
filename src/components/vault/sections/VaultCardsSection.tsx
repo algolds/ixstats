@@ -1,17 +1,16 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { getSubTabFromPathname } from "../VaultSidebarNav";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Layers,
-  TrendingUp,
   CheckSquare,
   Folder,
   ShoppingBag,
   Trash2,
-  Filter,
   SortAsc,
   Copy,
   Grid3x3,
@@ -19,7 +18,6 @@ import {
   Maximize2,
   Search,
   X,
-  ChevronDown,
   AlertCircle,
   Globe,
   Plus,
@@ -27,10 +25,17 @@ import {
   MapPin,
   Loader2,
   Coins,
+  Sparkles,
+  Calendar,
+  FileText,
+  Settings,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { vaultNotify } from "~/lib/vault-notifications";
 import { api } from "~/trpc/react";
+import { IxCreditsSymbol } from "../IxCreditsSymbol";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -50,9 +55,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { CardDisplay } from "~/components/cards/display";
-import { useSoundService } from "~/lib/sound-service";
+import { VaultCardsFilterSidebar } from "./VaultCardsFilterSidebar";
 import NumberFlow from "~/components/ui/number-flow";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import type { CardInstance } from "~/types/cards-display";
 import type { CardRarity, CardType } from "@prisma/client";
 
@@ -69,13 +81,8 @@ const SUB_TABS: { id: SubTab; label: string; icon: typeof Layers }[] = [
   { id: "gallery", label: "Card Gallery", icon: Globe },
 ];
 
-interface VaultCardsSectionProps {
-  initialTab?: string | null;
-}
-
-// ─── Inventory Tab ───────────────────────────────────────────────
-
 type ViewMode = "grid" | "list" | "compact";
+type GallerySource = "all" | "ns" | "lore";
 
 interface FilterState {
   search: string;
@@ -88,62 +95,461 @@ interface FilterState {
   maxValue: number;
 }
 
-function InventoryTab() {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [selectMode, setSelectMode] = useState(false);
+interface VaultCardsSectionProps {
+  initialTab?: string | null;
+}
+
+// ─── Sidebar: Inventory filters ──────────────────────────────────
+
+function InventorySidebarContent({
+  totalCards,
+  totalValue,
+  filters,
+  setFilters,
+  sortBy,
+  setSortBy,
+  viewMode,
+  setViewMode,
+  selectMode,
+  setSelectMode,
+  onResetFilters,
+}: {
+  totalCards: number;
+  totalValue: number;
+  filters: FilterState;
+  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+  sortBy: string;
+  setSortBy: (v: string) => void;
+  viewMode: ViewMode;
+  setViewMode: (v: ViewMode) => void;
+  selectMode: boolean;
+  setSelectMode: (v: boolean) => void;
+  onResetFilters: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Stats */}
+      <div className="rounded-lg bg-cyan-500/5 p-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+            My Cards
+          </span>
+          <Layers className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
+        </div>
+        <div className="mt-1.5 flex items-baseline gap-1">
+          <span className="text-xl font-extrabold tracking-tighter text-cyan-600 dark:text-cyan-400">
+            <NumberFlow value={totalCards} />
+          </span>
+          <span className="text-muted-foreground text-[10px]">cards</span>
+        </div>
+        <div className="mt-1.5 flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <IxCreditsSymbol className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span className="font-bold text-amber-600 dark:text-amber-400">
+              <NumberFlow value={totalValue} />
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Copy className="h-3 w-3 shrink-0 text-purple-600 dark:text-purple-400" />
+            <span className="font-bold text-purple-600 dark:text-purple-400">0</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+        <Input
+          value={filters.search}
+          onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+          placeholder="Search cards..."
+          className="border-border/50 placeholder:text-muted-foreground/50 h-7 bg-transparent pr-6 pl-6.5 text-xs"
+        />
+        {filters.search && (
+          <button
+            onClick={() => setFilters((prev) => ({ ...prev, search: "" }))}
+            className="absolute top-1/2 right-1.5 -translate-y-1/2"
+          >
+            <X className="text-muted-foreground hover:text-foreground h-3 w-3 transition-colors" />
+          </button>
+        )}
+      </div>
+
+      {/* Rarity */}
+      <Select
+        value={filters.rarity}
+        onValueChange={(val) => setFilters((prev) => ({ ...prev, rarity: val as any }))}
+      >
+        <SelectTrigger
+          className={cn(
+            "h-7 w-full px-2 text-xs",
+            filters.rarity !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-100"
+          )}
+        >
+          <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
+          <SelectValue placeholder="Rarity" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Rarities</SelectItem>
+          <SelectItem value="COMMON">Common</SelectItem>
+          <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+          <SelectItem value="RARE">Rare</SelectItem>
+          <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+          <SelectItem value="EPIC">Epic</SelectItem>
+          <SelectItem value="LEGENDARY">Legendary</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Card Type */}
+      <Select
+        value={filters.cardType}
+        onValueChange={(val) => setFilters((prev) => ({ ...prev, cardType: val as any }))}
+      >
+        <SelectTrigger
+          className={cn(
+            "h-7 w-full px-2 text-xs",
+            filters.cardType !== "all" && "border-cyan-500/30 bg-cyan-500/20 text-cyan-100"
+          )}
+        >
+          <FileText className="mr-1.5 h-3 w-3 shrink-0" />
+          <SelectValue placeholder="Type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Types</SelectItem>
+          <SelectItem value="NS_IMPORT">NationStates Import</SelectItem>
+          <SelectItem value="LORE_CARD">Lore Card</SelectItem>
+          <SelectItem value="EVENT_CARD">Event Card</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Season */}
+      <Select
+        value={filters.season.toString()}
+        onValueChange={(val) =>
+          setFilters((prev) => ({ ...prev, season: val === "all" ? "all" : parseInt(val) }))
+        }
+      >
+        <SelectTrigger
+          className={cn(
+            "h-7 w-full px-2 text-xs",
+            filters.season !== "all" && "border-purple-500/30 bg-purple-500/20 text-purple-100"
+          )}
+        >
+          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
+          <SelectValue placeholder="Season" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Seasons</SelectItem>
+          <SelectItem value="1">Season 1</SelectItem>
+          <SelectItem value="2">Season 2</SelectItem>
+          <SelectItem value="3">Season 3</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <div className="border-border/40 space-y-3 border-t pt-3">
+        {/* Sort */}
+        <div>
+          <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+            Sort By
+          </p>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-7 w-full text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="acquired">Recently Acquired</SelectItem>
+              <SelectItem value="rarity">Rarity (High to Low)</SelectItem>
+              <SelectItem value="value">Market Value (High to Low)</SelectItem>
+              <SelectItem value="name">Alphabetical</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* View Mode */}
+        <div>
+          <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+            View
+          </p>
+          <div className="flex gap-1">
+            {(["grid", "list", "compact"] as ViewMode[]).map((mode) => (
+              <Button
+                key={mode}
+                variant={viewMode === mode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode(mode)}
+                className="h-6 flex-1 text-[10px] font-semibold"
+              >
+                {mode === "grid" ? (
+                  <>
+                    <Grid3x3 className="mr-1 h-3 w-3" /> Grid
+                  </>
+                ) : mode === "list" ? (
+                  <>
+                    <List className="mr-1 h-3 w-3" /> List
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="mr-1 h-3 w-3" /> Cmpt
+                  </>
+                )}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Multi-Select */}
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/5">
+          <Checkbox
+            checked={selectMode}
+            onCheckedChange={(checked) => setSelectMode(checked as boolean)}
+            className="h-3.5 w-3.5"
+          />
+          <span className="text-xs font-medium">Multi-Select Mode</span>
+        </label>
+      </div>
+
+      {/* Clear Filters */}
+      {(filters.search ||
+        filters.rarity !== "all" ||
+        filters.cardType !== "all" ||
+        filters.season !== "all") && (
+        <button
+          onClick={onResetFilters}
+          className="border-border/50 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
+        >
+          <X className="h-3 w-3" /> Clear Filters
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Sidebar: Collections actions ────────────────────────────────
+
+function CollectionsSidebarContent({ onCreateCollection }: { onCreateCollection: () => void }) {
+  return (
+    <div className="space-y-3">
+      <Button size="sm" onClick={onCreateCollection} className="h-8 w-full text-xs">
+        <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Collection
+      </Button>
+
+      <div className="rounded-lg bg-amber-500/5 p-2.5">
+        <div className="flex items-center gap-1.5">
+          <BookOpen className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+            Tip
+          </span>
+        </div>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+          Use <span className="text-foreground font-semibold">Multi-Select Mode</span> in the
+          Inventory tab to select cards and add them to your collections.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sidebar: Gallery filters ────────────────────────────────────
+
+function GallerySidebarContent({
+  source,
+  setSource,
+  search,
+  setSearch,
+  season,
+  setSeason,
+  rarity,
+  setRarity,
+  sortBy,
+  setSortBy,
+  onClearFilters,
+  onRequestLoreCard,
+}: {
+  source: GallerySource;
+  setSource: (v: GallerySource) => void;
+  search: string;
+  setSearch: (v: string) => void;
+  season: number | "all";
+  setSeason: (v: number | "all") => void;
+  rarity: CardRarity | "all";
+  setRarity: (v: CardRarity | "all") => void;
+  sortBy: string;
+  setSortBy: (v: string) => void;
+  onClearFilters: () => void;
+  onRequestLoreCard: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Source Toggle */}
+      <div>
+        <p className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-widest uppercase">
+          Source
+        </p>
+        <div className="flex gap-1">
+          {(["all", "ns", "lore"] as GallerySource[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSource(s)}
+              className={cn(
+                "flex-1 rounded-md px-2 py-1 text-[10px] font-semibold transition-all",
+                source === s
+                  ? "bg-purple-500/20 text-purple-400"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              {s === "all" ? "All" : s === "ns" ? "NS" : "Lore"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search cards..."
+          className="border-border/50 placeholder:text-muted-foreground/50 h-7 bg-transparent pr-6 pl-6.5 text-xs"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute top-1/2 right-1.5 -translate-y-1/2"
+          >
+            <X className="text-muted-foreground hover:text-foreground h-3 w-3 transition-colors" />
+          </button>
+        )}
+      </div>
+
+      {/* Season */}
+      <Select
+        value={season.toString()}
+        onValueChange={(v) => setSeason(v === "all" ? "all" : parseInt(v))}
+      >
+        <SelectTrigger
+          className={cn(
+            "h-7 w-full px-2 text-xs",
+            season !== "all" && "border-purple-500/30 bg-purple-500/20 text-purple-100"
+          )}
+        >
+          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
+          <SelectValue placeholder="Season" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Seasons</SelectItem>
+          <SelectItem value="1">Season 1</SelectItem>
+          <SelectItem value="2">Season 2</SelectItem>
+          <SelectItem value="3">Season 3</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Rarity */}
+      <Select value={rarity} onValueChange={(v) => setRarity(v as CardRarity | "all")}>
+        <SelectTrigger
+          className={cn(
+            "h-7 w-full px-2 text-xs",
+            rarity !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-100"
+          )}
+        >
+          <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
+          <SelectValue placeholder="Rarity" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Rarities</SelectItem>
+          <SelectItem value="COMMON">Common</SelectItem>
+          <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+          <SelectItem value="RARE">Rare</SelectItem>
+          <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+          <SelectItem value="EPIC">Epic</SelectItem>
+          <SelectItem value="LEGENDARY">Legendary</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Sort */}
+      <div>
+        <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+          Sort By
+        </p>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="rarity">Rarity</SelectItem>
+            <SelectItem value="marketValue">Market Value</SelectItem>
+            <SelectItem value="recent">Recent</SelectItem>
+            <SelectItem value="name">Name</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Request Lore Card */}
+      {(source === "all" || source === "lore") && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onRequestLoreCard}
+          className="h-8 w-full border-purple-500/30 text-xs text-purple-600 hover:bg-purple-500/10 dark:text-purple-400"
+        >
+          <BookOpen className="mr-1.5 h-3 w-3" /> Request Lore Card
+          <span className="ml-1.5 flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0 text-[9px] font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+            <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+            50
+          </span>
+        </Button>
+      )}
+
+      {/* Clear */}
+      {(search || rarity !== "all" || season !== "all") && (
+        <button
+          onClick={onClearFilters}
+          className="border-border/50 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
+        >
+          <X className="h-3 w-3" /> Clear Filters
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Inventory Tab ───────────────────────────────────────────────
+
+function InventoryTab({
+  ownerships,
+  isLoading,
+  allCards,
+  viewMode,
+  selectMode,
+  setSelectMode,
+  filters,
+  onResetFilters,
+}: {
+  ownerships: any;
+  isLoading: boolean;
+  allCards: CardInstance[];
+  viewMode: ViewMode;
+  selectMode: boolean;
+  setSelectMode: (v: boolean) => void;
+  filters: FilterState;
+  onResetFilters: () => void;
+}) {
   const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
   const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<string>("acquired");
-  const [filters, setFilters] = useState<FilterState>({
-    search: "",
-    rarity: "all",
-    cardType: "all",
-    season: "all",
-    minLevel: 1,
-    maxLevel: 100,
-    minValue: 0,
-    maxValue: 999999,
+
+  const utils = api.useUtils();
+  const junkCardsMutation = api.cards.junkCards.useMutation({
+    onSuccess: (data) => {
+      vaultNotify.success(data.message || "Cards junked successfully!");
+      setSelectedCards(new Set());
+      setSelectMode(false);
+      utils.cards.getMyCards.invalidate();
+      utils.vault.getBalance.invalidate();
+    },
+    onError: (error) => {
+      vaultNotify.error(error.message);
+    },
   });
-
-  const soundService = useSoundService();
-
-  const { data: ownerships, isLoading } = api.cards.getMyCards.useQuery({
-    sortBy: sortBy as any,
-    filterRarity: filters.rarity !== "all" ? (filters.rarity as any) : undefined,
-  });
-
-  const allCards: CardInstance[] = useMemo(() => {
-    if (!ownerships) return [];
-    return ownerships.map((ownership: any) => ({
-      id: ownership.cards.id,
-      title: ownership.cards.title,
-      description: ownership.cards.description || "",
-      artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
-      artworkVariants: ownership.cards.artworkVariants || null,
-      cardType: ownership.cards.cardType,
-      rarity: ownership.cards.rarity,
-      season: ownership.cards.season,
-      nsCardId: ownership.cards.nsCardId || null,
-      nsSeason: ownership.cards.nsSeason || null,
-      nsData: ownership.cards.nsData || null,
-      wikiSource: ownership.cards.wikiSource || null,
-      wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
-      wikiUrl: ownership.cards.wikiUrl || null,
-      countryId: ownership.cards.countryId,
-      stats: ownership.cards.stats || {},
-      marketValue: ownership.cards.marketValue || 0,
-      totalSupply: ownership.cards.totalSupply || 0,
-      level: ownership.cards.level || 1,
-      evolutionStage: ownership.cards.evolutionStage || 0,
-      enhancements: ownership.cards.enhancements || null,
-      createdAt: ownership.cards.createdAt,
-      updatedAt: ownership.cards.updatedAt,
-      lastTrade: ownership.cards.lastTrade || null,
-      country: ownership.cards.country,
-      owners: [],
-    }));
-  }, [ownerships]);
 
   const filteredCards = useMemo(() => {
     return allCards.filter((card) => {
@@ -162,146 +568,42 @@ function InventoryTab() {
   }, [allCards, filters]);
 
   const totalCards = allCards.length;
-  const totalValue = allCards.reduce((sum, card) => sum + card.marketValue, 0);
-
-  const _handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
-  }, []);
-
-  const handleResetFilters = useCallback(() => {
-    setFilters({
-      search: "",
-      rarity: "all",
-      cardType: "all",
-      season: "all",
-      minLevel: 1,
-      maxLevel: 100,
-      minValue: 0,
-      maxValue: 999999,
-    });
-  }, []);
 
   const handleCardClick = useCallback(
     (card: CardInstance) => {
+      const key = card.ownershipId || card.id;
       if (selectMode) {
         setSelectedCards((prev) => {
           const newSet = new Set(prev);
-          if (newSet.has(card.id)) newSet.delete(card.id);
-          else newSet.add(card.id);
+          if (newSet.has(key)) newSet.delete(key);
+          else newSet.add(key);
           return newSet;
         });
-        soundService?.play("card-select", 0.5);
       } else {
         setSelectedCard(card);
-        soundService?.play("card-select");
       }
     },
-    [selectMode, soundService]
+    [selectMode]
   );
 
   return (
     <div className="space-y-4">
-      {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Total Cards", value: totalCards, icon: Layers, color: "text-purple-400" },
-          {
-            label: "Total Value",
-            value: totalValue,
-            icon: TrendingUp,
-            color: "text-amber-400",
-            suffix: " IxC",
-          },
-          { label: "Duplicates", value: 0, icon: Copy, color: "text-cyan-400" },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="glass-hierarchy-child flex items-center gap-2 rounded-lg p-2.5"
-          >
-            <stat.icon className={cn("h-3.5 w-3.5 shrink-0", stat.color)} />
-            <div className="min-w-0">
-              <p className="text-muted-foreground truncate text-[0.65rem]">{stat.label}</p>
-              <p className={cn("text-lg leading-tight font-bold", stat.color)}>
-                <NumberFlow value={stat.value} />
-                {stat.suffix ?? ""}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Toolbar */}
-      <Card className="glass-hierarchy-child">
-        <CardContent className="p-3">
-          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant={filtersOpen ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFiltersOpen(!filtersOpen)}
-              >
-                <Filter className="mr-2 h-4 w-4" /> Filters
-              </Button>
-              <div className="bg-border h-6 w-px" />
-              <label className="flex cursor-pointer items-center gap-2">
-                <Checkbox
-                  checked={selectMode}
-                  onCheckedChange={(checked) => setSelectMode(checked as boolean)}
-                />
-                <span className="text-muted-foreground text-sm font-medium">Select Mode</span>
-              </label>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="glass-hierarchy-child flex items-center gap-1 rounded-lg p-1">
-                {(["grid", "list", "compact"] as ViewMode[]).map((mode) => (
-                  <Button
-                    key={mode}
-                    variant={viewMode === mode ? "default" : "ghost"}
-                    size="icon"
-                    onClick={() => setViewMode(mode)}
-                    className="h-8 w-8"
-                  >
-                    {mode === "grid" ? (
-                      <Grid3x3 className="h-4 w-4" />
-                    ) : mode === "list" ? (
-                      <List className="h-4 w-4" />
-                    ) : (
-                      <Maximize2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                ))}
-              </div>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="glass-hierarchy-interactive w-[180px]">
-                  <SortAsc className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="acquired">Recently Acquired</SelectItem>
-                  <SelectItem value="rarity">Rarity (High to Low)</SelectItem>
-                  <SelectItem value="value">Market Value (High to Low)</SelectItem>
-                  <SelectItem value="name">Alphabetical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Bulk Actions */}
       <AnimatePresence>
         {selectMode && selectedCards.size > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed bottom-6 left-1/2 z-50 w-full max-w-2xl -translate-x-1/2 px-4"
           >
-            <Card className="glass-hierarchy-interactive border-amber-400/30">
-              <CardContent className="p-4">
-                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <Card className="glass-hierarchy-interactive rounded-2xl border-amber-400/30 bg-black/85 shadow-2xl shadow-black/80 backdrop-blur-xl">
+              <CardContent className="p-3.5">
+                <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
                   <div className="flex items-center gap-3">
-                    <CheckSquare className="h-5 w-5 text-amber-400" />
-                    <span className="text-foreground font-bold">
+                    <CheckSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <span className="text-foreground text-sm font-bold">
                       {selectedCards.size} card{selectedCards.size !== 1 ? "s" : ""} selected
                     </span>
                   </div>
@@ -314,8 +616,9 @@ function InventoryTab() {
                         setSelectedCards(new Set());
                         setSelectMode(false);
                       }}
+                      className="h-8 text-xs"
                     >
-                      <Folder className="mr-2 h-4 w-4" /> Collection
+                      <Folder className="mr-1.5 h-3.5 w-3.5" /> Collection
                     </Button>
                     <Button
                       variant="outline"
@@ -325,20 +628,30 @@ function InventoryTab() {
                         setSelectedCards(new Set());
                         setSelectMode(false);
                       }}
+                      className="h-8 text-xs"
                     >
-                      <ShoppingBag className="mr-2 h-4 w-4" /> List for Sale
+                      <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> Sell
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        vaultNotify.cardsBulkAction("Junked", selectedCards.size);
-                        setSelectedCards(new Set());
-                        setSelectMode(false);
+                        const ownershipIds = Array.from(selectedCards);
+                        junkCardsMutation.mutate({ ownershipIds });
                       }}
-                      className="text-red-400 hover:bg-red-500/10"
+                      disabled={junkCardsMutation.isPending}
+                      className="h-8 text-xs text-red-400 hover:bg-red-500/10"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" /> Junk
+                      {junkCardsMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          Junking...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Junk
+                        </>
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
@@ -347,6 +660,7 @@ function InventoryTab() {
                         setSelectedCards(new Set());
                         setSelectMode(false);
                       }}
+                      className="h-8 text-xs"
                     >
                       Cancel
                     </Button>
@@ -377,7 +691,7 @@ function InventoryTab() {
                   : "Import some NS cards or open a pack to get started!"}
               </p>
               {(filters.search || filters.rarity !== "all" || filters.cardType !== "all") && (
-                <Button onClick={handleResetFilters} className="mt-4" variant="outline">
+                <Button onClick={onResetFilters} className="mt-4" variant="outline">
                   Reset Filters
                 </Button>
               )}
@@ -395,7 +709,7 @@ function InventoryTab() {
           >
             {filteredCards.map((card) => (
               <motion.div
-                key={card.id}
+                key={card.ownershipId || card.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.2 }}
@@ -404,7 +718,7 @@ function InventoryTab() {
                 {selectMode && (
                   <div className="absolute top-2 left-2 z-20">
                     <Checkbox
-                      checked={selectedCards.has(card.id)}
+                      checked={selectedCards.has(card.ownershipId || card.id)}
                       onCheckedChange={() => handleCardClick(card)}
                       className="h-6 w-6 border-2 border-white bg-black/60 backdrop-blur-sm"
                     />
@@ -417,7 +731,7 @@ function InventoryTab() {
                   className={cn(
                     "transition-all",
                     selectMode &&
-                      selectedCards.has(card.id) &&
+                      selectedCards.has(card.ownershipId || card.id) &&
                       "ring-2 ring-amber-400 ring-offset-2 ring-offset-black"
                   )}
                 />
@@ -443,8 +757,13 @@ function InventoryTab() {
 
 // ─── Collections Tab ─────────────────────────────────────────────
 
-function CollectionsTab() {
-  const [createOpen, setCreateOpen] = useState(false);
+function CollectionsTab({
+  createOpen,
+  onCreateOpenChange,
+}: {
+  createOpen: boolean;
+  onCreateOpenChange: (v: boolean) => void;
+}) {
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newIsPublic, setNewIsPublic] = useState(false);
@@ -459,7 +778,7 @@ function CollectionsTab() {
   const createCollection = api.cards.createCollection.useMutation({
     onSuccess: () => {
       vaultNotify.success("Collection created!");
-      setCreateOpen(false);
+      onCreateOpenChange(false);
       setNewName("");
       setNewDescription("");
       setNewIsPublic(false);
@@ -481,16 +800,9 @@ function CollectionsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Folder className="h-3.5 w-3.5 text-amber-400" />
+          <Folder className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           <span className="text-xs font-bold">My Collections</span>
         </div>
-        <Button
-          size="sm"
-          onClick={() => setCreateOpen(true)}
-          className="glass-hierarchy-interactive text-xs"
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Collection
-        </Button>
       </div>
 
       {isLoading ? (
@@ -511,7 +823,7 @@ function CollectionsTab() {
               className="mt-4"
               variant="outline"
               size="sm"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => onCreateOpenChange(true)}
             >
               <Plus className="mr-2 h-3.5 w-3.5" />
               Create Collection
@@ -532,7 +844,7 @@ function CollectionsTab() {
                 )}
               >
                 <div className="flex items-center gap-2.5">
-                  <Folder className="h-4 w-4 text-amber-400" />
+                  <Folder className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <div>
                     <span className="text-xs font-bold">{collection.name}</span>
                     <p className="text-muted-foreground text-[0.6rem]">
@@ -598,7 +910,7 @@ function CollectionsTab() {
       )}
 
       {/* Create Collection Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog open={createOpen} onOpenChange={onCreateOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold">Create Collection</DialogTitle>
@@ -637,7 +949,7 @@ function CollectionsTab() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCreateOpen(false)}
+              onClick={() => onCreateOpenChange(false)}
               className="text-xs"
             >
               Cancel
@@ -665,26 +977,34 @@ function CollectionsTab() {
 
 // ─── Card Gallery Tab (NS Library + Lore Cards unified) ──────────
 
-type GallerySource = "all" | "ns" | "lore";
-
 const PAGE_SIZE = 50;
 
-function CardGalleryTab() {
-  const [source, setSource] = useState<GallerySource>("all");
-  const [search, setSearch] = useState("");
-  const [season, setSeason] = useState<number | "all">("all");
-  const [rarity, setRarity] = useState<CardRarity | "all">("all");
-  const [sortBy, setSortBy] = useState<string>("rarity");
+function CardGalleryTab({
+  source,
+  search,
+  season,
+  rarity,
+  sortBy,
+  onSourceChange,
+  onSearchChange,
+  onSeasonChange,
+  onRarityChange,
+  onSortByChange,
+}: {
+  source: GallerySource;
+  search: string;
+  season: number | "all";
+  rarity: CardRarity | "all";
+  sortBy: string;
+  onSourceChange: (v: GallerySource) => void;
+  onSearchChange: (v: string) => void;
+  onSeasonChange: (v: number | "all") => void;
+  onRarityChange: (v: CardRarity | "all") => void;
+  onSortByChange: (v: string) => void;
+}) {
   const [offset, setOffset] = useState(0);
   const [allNsCards, setAllNsCards] = useState<any[]>([]);
   const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
-
-  // Request lore card state
-  const [requestOpen, setRequestOpen] = useState(false);
-  const [articleTitle, setArticleTitle] = useState("");
-  const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
-
-  const soundService = useSoundService();
 
   // NS Cards query (when source is "all" or "ns")
   const nsQueryInput = useMemo(
@@ -724,16 +1044,6 @@ function CardGalleryTab() {
     },
     { enabled: source === "all" || source === "lore" }
   );
-
-  // Request lore card mutation
-  const requestLoreCard = api.loreCards.requestLoreCard.useMutation({
-    onSuccess: () => {
-      vaultNotify.success("Lore card requested! An admin will review it.");
-      setRequestOpen(false);
-      setArticleTitle("");
-    },
-    onError: (error) => vaultNotify.error(error.message),
-  });
 
   // Accumulate NS cards for load-more
   useEffect(() => {
@@ -814,41 +1124,6 @@ function CardGalleryTab() {
 
   return (
     <div className="space-y-4">
-      {/* Source toggle */}
-      <div className="flex items-center gap-2">
-        {(["all", "ns", "lore"] as GallerySource[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSource(s)}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
-              source === s
-                ? "bg-purple-500/20 text-purple-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-            )}
-          >
-            {s === "all" ? "All Cards" : s === "ns" ? "NS Cards" : "Lore Cards"}
-          </button>
-        ))}
-
-        <div className="flex-1" />
-
-        {/* Request Lore Card button */}
-        {(source === "all" || source === "lore") && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setRequestOpen(true)}
-            className="border-purple-400/30 text-xs text-purple-400 hover:bg-purple-500/10"
-          >
-            <BookOpen className="mr-1.5 h-3 w-3" /> Request Lore Card
-            <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0 text-[9px] font-semibold text-amber-400">
-              50 IxC
-            </span>
-          </Button>
-        )}
-      </div>
-
       {/* Library stats banner (NS source) */}
       {(source === "all" || source === "ns") && libraryStats && libraryStats.totalCards > 0 && (
         <div className="flex flex-wrap items-center gap-4 rounded-xl border border-purple-400/20 bg-gradient-to-r from-purple-500/5 to-blue-500/5 px-4 py-2.5">
@@ -872,83 +1147,6 @@ function CardGalleryTab() {
           )}
         </div>
       )}
-
-      {/* Filters */}
-      <Card className="glass-hierarchy-child">
-        <CardContent className="p-3">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search cards..."
-                className="glass-hierarchy-interactive h-8 pl-8 text-xs"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute top-1/2 right-2 -translate-y-1/2"
-                >
-                  <X className="text-muted-foreground h-3 w-3" />
-                </button>
-              )}
-            </div>
-            <Select
-              value={season.toString()}
-              onValueChange={(v) => setSeason(v === "all" ? "all" : parseInt(v))}
-            >
-              <SelectTrigger className="glass-hierarchy-interactive h-8 w-[120px] text-xs">
-                <SelectValue placeholder="Season" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Seasons</SelectItem>
-                <SelectItem value="1">Season 1</SelectItem>
-                <SelectItem value="2">Season 2</SelectItem>
-                <SelectItem value="3">Season 3</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={rarity} onValueChange={(v) => setRarity(v as CardRarity | "all")}>
-              <SelectTrigger className="glass-hierarchy-interactive h-8 w-[130px] text-xs">
-                <SelectValue placeholder="Rarity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Rarities</SelectItem>
-                <SelectItem value="COMMON">Common</SelectItem>
-                <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-                <SelectItem value="RARE">Rare</SelectItem>
-                <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
-                <SelectItem value="EPIC">Epic</SelectItem>
-                <SelectItem value="LEGENDARY">Legendary</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="glass-hierarchy-interactive h-8 w-[130px] text-xs">
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rarity">Rarity</SelectItem>
-                <SelectItem value="marketValue">Market Value</SelectItem>
-                <SelectItem value="recent">Recent</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-              </SelectContent>
-            </Select>
-            {(search || rarity !== "all" || season !== "all") && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setRarity("all");
-                  setSeason("all");
-                  setSortBy("rarity");
-                }}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-              >
-                <X className="h-3 w-3" /> Clear
-              </button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Cards grid */}
       {isLoading && offset === 0 ? (
@@ -981,7 +1179,6 @@ function CardGalleryTab() {
                 size="medium"
                 onClick={(c) => {
                   setSelectedCard(c);
-                  soundService?.play("card-select");
                 }}
               />
             ))}
@@ -1012,6 +1209,315 @@ function CardGalleryTab() {
         </>
       )}
 
+      <CardDetailsModal
+        card={selectedCard}
+        open={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
+      />
+    </div>
+  );
+}
+
+// ─── Main Section Component ──────────────────────────────────────
+
+function resolveInitialTab(initialTab: string | null | undefined): SubTab {
+  if (initialTab === "collections") return "collections";
+  if (initialTab === "gallery" || initialTab === "lore-gallery" || initialTab === "ns-library")
+    return "gallery";
+  return "inventory";
+}
+
+export function VaultCardsSection() {
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<SubTab>(() => {
+    const subTab = getSubTabFromPathname(pathname);
+    return resolveInitialTab(subTab);
+  });
+
+  // ─── Lifted Inventory State ───────────────────────────────────
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortBy, setSortBy] = useState<string>("acquired");
+  const [selectMode, setSelectMode] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    rarity: "all",
+    cardType: "all",
+    season: "all",
+    minLevel: 1,
+    maxLevel: 100,
+    minValue: 0,
+    maxValue: 999999,
+  });
+
+  const { data: ownerships, isLoading: cardsLoading } = api.cards.getMyCards.useQuery({
+    sortBy: sortBy as any,
+    filterRarity: filters.rarity !== "all" ? (filters.rarity as any) : undefined,
+  });
+
+  const allCards: CardInstance[] = useMemo(() => {
+    if (!ownerships) return [];
+    return ownerships.map((ownership: any) => ({
+      id: ownership.cards.id,
+      ownershipId: ownership.id,
+      isLocked: ownership.isLocked,
+      title: ownership.cards.title,
+      description: ownership.cards.description || "",
+      artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
+      artworkVariants: ownership.cards.artworkVariants || null,
+      cardType: ownership.cards.cardType,
+      rarity: ownership.cards.rarity,
+      season: ownership.cards.season,
+      nsCardId: ownership.cards.nsCardId || null,
+      nsSeason: ownership.cards.nsSeason || null,
+      nsData: ownership.cards.nsData || null,
+      wikiSource: ownership.cards.wikiSource || null,
+      wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
+      wikiUrl: ownership.cards.wikiUrl || null,
+      countryId: ownership.cards.countryId,
+      stats: ownership.cards.stats || {},
+      marketValue: ownership.cards.marketValue || 0,
+      totalSupply: ownership.cards.totalSupply || 0,
+      level: ownership.cards.level || 1,
+      evolutionStage: ownership.cards.evolutionStage || 0,
+      enhancements: ownership.cards.enhancements || null,
+      createdAt: ownership.cards.createdAt,
+      updatedAt: ownership.cards.updatedAt,
+      lastTrade: ownership.cards.lastTrade || null,
+      country: ownership.cards.country,
+      owners: [],
+    }));
+  }, [ownerships]);
+
+  const totalCards = allCards.length;
+  const totalValue = allCards.reduce((sum, card) => sum + card.marketValue, 0);
+
+  const handleResetFilters = useCallback(() => {
+    setFilters({
+      search: "",
+      rarity: "all",
+      cardType: "all",
+      season: "all",
+      minLevel: 1,
+      maxLevel: 100,
+      minValue: 0,
+      maxValue: 999999,
+    });
+  }, []);
+
+  // ─── Lifted Gallery State ─────────────────────────────────────
+  const [gallerySource, setGallerySource] = useState<GallerySource>("all");
+  const [gallerySearch, setGallerySearch] = useState("");
+  const [gallerySeason, setGallerySeason] = useState<number | "all">("all");
+  const [galleryRarity, setGalleryRarity] = useState<CardRarity | "all">("all");
+  const [gallerySortBy, setGallerySortBy] = useState<string>("rarity");
+
+  const handleGalleryClearFilters = useCallback(() => {
+    setGallerySearch("");
+    setGalleryRarity("all");
+    setGallerySeason("all");
+    setGallerySortBy("rarity");
+  }, []);
+
+  // ─── Request Lore Card State ──────────────────────────────────
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [articleTitle, setArticleTitle] = useState("");
+  const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
+  const requestLoreCard = api.loreCards.requestLoreCard.useMutation({
+    onSuccess: () => {
+      vaultNotify.success("Lore card requested! An admin will review it.");
+      setRequestOpen(false);
+      setArticleTitle("");
+    },
+    onError: (error) => vaultNotify.error(error.message),
+  });
+
+  // ─── Collections Create Dialog State ──────────────────────────
+  const [collectionsCreateOpen, setCollectionsCreateOpen] = useState(false);
+
+  // ─── Sidebar content (shared between desktop + mobile sheet) ───
+  const sidebarContent = (
+    <>
+      {activeTab === "inventory" && (
+        <InventorySidebarContent
+          totalCards={totalCards}
+          totalValue={totalValue}
+          filters={filters}
+          setFilters={setFilters}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          selectMode={selectMode}
+          setSelectMode={setSelectMode}
+          onResetFilters={handleResetFilters}
+        />
+      )}
+      {activeTab === "collections" && (
+        <CollectionsSidebarContent onCreateCollection={() => setCollectionsCreateOpen(true)} />
+      )}
+      {activeTab === "gallery" && (
+        <GallerySidebarContent
+          source={gallerySource}
+          setSource={setGallerySource}
+          search={gallerySearch}
+          setSearch={setGallerySearch}
+          season={gallerySeason}
+          setSeason={setGallerySeason}
+          rarity={galleryRarity}
+          setRarity={setGalleryRarity}
+          sortBy={gallerySortBy}
+          setSortBy={setGallerySortBy}
+          onClearFilters={handleGalleryClearFilters}
+          onRequestLoreCard={() => setRequestOpen(true)}
+        />
+      )}
+    </>
+  );
+
+  const hasActiveFilters = useMemo(() => {
+    if (activeTab === "inventory") {
+      return !!(
+        filters.search ||
+        filters.rarity !== "all" ||
+        filters.cardType !== "all" ||
+        filters.season !== "all"
+      );
+    }
+    if (activeTab === "gallery") {
+      return !!(gallerySearch || galleryRarity !== "all" || gallerySeason !== "all");
+    }
+    return false;
+  }, [activeTab, filters, gallerySearch, galleryRarity, gallerySeason]);
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Tab strip */}
+        <div className="glass-surface glass-refraction border-border/40 relative flex gap-1 overflow-hidden rounded-xl border p-1 shadow-sm backdrop-blur-md">
+          <motion.div
+            className="absolute inset-y-1 rounded-lg bg-white/8"
+            layout
+            layoutId="cards-tab-indicator"
+            style={{
+              width: `${100 / SUB_TABS.length}%`,
+              left: `${(SUB_TABS.findIndex((t) => t.id === activeTab) / SUB_TABS.length) * 100}%`,
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+          />
+          {SUB_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-none bg-transparent px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors duration-205",
+                  isActive
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-3.5 w-3.5 transition-colors duration-205",
+                    isActive && "text-amber-600 dark:text-amber-400"
+                  )}
+                />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mobile: filter button + sheet */}
+        <div className="lg:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-8 w-full text-xs",
+                  hasActiveFilters &&
+                    "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                )}
+              >
+                <Filter className="mr-1.5 h-3 w-3" />
+                Filters & Sort
+                {hasActiveFilters && (
+                  <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                    active
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader>
+                <SheetTitle className="text-sm">Filters</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">{sidebarContent}</div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Main layout: content + desktop sidebar */}
+        <div className="flex gap-4 sm:gap-6">
+          {/* Tab content */}
+          <div className="min-w-0 flex-1">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+              >
+                {activeTab === "inventory" && (
+                  <InventoryTab
+                    ownerships={ownerships}
+                    isLoading={cardsLoading}
+                    allCards={allCards}
+                    viewMode={viewMode}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    filters={filters}
+                    onResetFilters={handleResetFilters}
+                  />
+                )}
+                {activeTab === "collections" && (
+                  <CollectionsTab
+                    createOpen={collectionsCreateOpen}
+                    onCreateOpenChange={setCollectionsCreateOpen}
+                  />
+                )}
+                {activeTab === "gallery" && (
+                  <CardGalleryTab
+                    source={gallerySource}
+                    onSourceChange={setGallerySource}
+                    search={gallerySearch}
+                    onSearchChange={setGallerySearch}
+                    season={gallerySeason}
+                    onSeasonChange={setGallerySeason}
+                    rarity={galleryRarity}
+                    onRarityChange={setGalleryRarity}
+                    sortBy={gallerySortBy}
+                    onSortByChange={setGallerySortBy}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Desktop: right sidebar */}
+          <div className="relative z-30 hidden shrink-0 lg:block">
+            <div className="sticky top-6">
+              <VaultCardsFilterSidebar>{sidebarContent}</VaultCardsFilterSidebar>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Request Lore Card Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
         <DialogContent className="max-w-sm">
@@ -1021,7 +1527,11 @@ function CardGalleryTab() {
           <div className="space-y-3">
             <p className="text-muted-foreground text-xs">
               Submit a wiki article to be turned into a lore card. An admin will review your
-              request. Cost: <span className="font-semibold text-amber-400">50 IxC</span>
+              request. Cost:{" "}
+              <span className="inline-flex items-center gap-0.5 align-middle font-semibold text-amber-600 dark:text-amber-400">
+                <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                50
+              </span>
             </p>
             <div>
               <label className="text-muted-foreground mb-1 block text-xs font-semibold">
@@ -1070,73 +1580,12 @@ function CardGalleryTab() {
                 requestLoreCard.mutate({ articleTitle: articleTitle.trim(), wikiSource })
               }
             >
-              <Coins className="mr-1.5 h-3 w-3" />
-              {requestLoreCard.isPending ? "Requesting..." : "Request (50 IxC)"}
+              <IxCreditsSymbol className="mr-1.5 h-3 w-3 shrink-0 text-white" />
+              {requestLoreCard.isPending ? "Requesting..." : "Request (50)"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <CardDetailsModal
-        card={selectedCard}
-        open={!!selectedCard}
-        onClose={() => setSelectedCard(null)}
-      />
-    </div>
-  );
-}
-
-// ─── Main Section Component ──────────────────────────────────────
-
-function resolveInitialTab(initialTab: string | null | undefined): SubTab {
-  if (initialTab === "collections") return "collections";
-  if (initialTab === "gallery" || initialTab === "lore-gallery" || initialTab === "ns-library")
-    return "gallery";
-  return "inventory";
-}
-
-export function VaultCardsSection({ initialTab }: VaultCardsSectionProps) {
-  const [activeTab, setActiveTab] = useState<SubTab>(() => resolveInitialTab(initialTab));
-
-  return (
-    <div className="space-y-4">
-      {/* Tab strip */}
-      <div className="glass-hierarchy-child flex gap-1 overflow-x-auto rounded-lg p-1">
-        {SUB_TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all",
-                isActive
-                  ? "bg-amber-500/20 text-amber-400 shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.15 }}
-        >
-          {activeTab === "inventory" && <InventoryTab />}
-          {activeTab === "collections" && <CollectionsTab />}
-          {activeTab === "gallery" && <CardGalleryTab />}
-        </motion.div>
-      </AnimatePresence>
     </div>
   );
 }

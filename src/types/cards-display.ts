@@ -32,6 +32,8 @@ export interface CardInstance {
   countryId: string | null;
   stats: any;
   metadata?: any;
+  ownershipId?: string;
+  isLocked?: boolean;
   marketValue: number;
   totalSupply: number;
   level: number;

@@ -44,7 +44,6 @@ export function CountryMapWidget({
           <Globe className="text-muted-foreground h-3.5 w-3.5" />
           <span className="text-foreground text-xs font-medium">Country Map</span>
         </div>
-       
       </div>
 
       {/* Map */}

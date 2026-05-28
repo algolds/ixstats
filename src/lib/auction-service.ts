@@ -14,7 +14,7 @@
  * - Bid validation (5% minimum increment)
  */
 
-import { vaultService } from "./vault-service";
+import { vaultService, getVaultConfig } from "./vault-service";
 import { IxTime } from "./ixtime";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
@@ -40,6 +40,20 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
+    const config = await getVaultConfig(db);
+    if (config.isMaintenanceMode) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Vault economy is currently in maintenance mode.",
+      });
+    }
+    if (!config.isAuctionsEnabled) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "P2P card auctions are currently disabled globally.",
+      });
+    }
+
     // 1. Validate card ownership
     const ownership = await db.cardOwnership.findFirst({
       where: {
@@ -179,6 +193,20 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
+    const config = await getVaultConfig(db);
+    if (config.isMaintenanceMode) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Vault economy is currently in maintenance mode.",
+      });
+    }
+    if (!config.isAuctionsEnabled) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "P2P card auctions are currently disabled globally.",
+      });
+    }
+
     // 1. Fetch auction with current bid info
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
@@ -347,6 +375,20 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
+    const config = await getVaultConfig(db);
+    if (config.isMaintenanceMode) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Vault economy is currently in maintenance mode.",
+      });
+    }
+    if (!config.isAuctionsEnabled) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "P2P card auctions are currently disabled globally.",
+      });
+    }
+
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
       include: {
@@ -727,6 +769,20 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
+    const config = await getVaultConfig(db);
+    if (config.isMaintenanceMode) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Vault economy is currently in maintenance mode.",
+      });
+    }
+    if (!config.isAuctionsEnabled) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "P2P card auctions are currently disabled globally.",
+      });
+    }
+
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
       include: {

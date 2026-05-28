@@ -403,20 +403,28 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
-              {card.cardType && (
-                <span
-                  className={cn(
-                    "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
-                    fonts.type,
-                    "border border-white/20 text-white"
-                  )}
-                  style={{
-                    textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
-                  }}
-                >
-                  {getCardTypeLabel(card.cardType)}
-                </span>
-              )}
+              {card.cardType &&
+                (card.cardType === "NS_IMPORT" ? (
+                  <img
+                    src="https://www.nationstates.net/images/island_small.png"
+                    alt="NationStates"
+                    className="h-5 w-5 rounded-sm shadow-lg"
+                    title="NationStates Import"
+                  />
+                ) : (
+                  <span
+                    className={cn(
+                      "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
+                      fonts.type,
+                      "border border-white/20 text-white"
+                    )}
+                    style={{
+                      textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
+                    }}
+                  >
+                    {getCardTypeLabel(card.cardType)}
+                  </span>
+                ))}
             </div>
 
             {/* Bottom section - Card info */}

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, adminProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notification-api";
 import { discordWebhook } from "~/lib/discord-webhook";
 
@@ -75,7 +80,8 @@ export const pollsRouter = createTRPCRouter({
           await notificationAPI.notifyCountry({
             countryId: poll.countryId,
             title: `🗳️ New Poll: ${poll.question}`,
-            message: poll.description || "A new poll is open for voting in your country. Cast your vote!",
+            message:
+              poll.description || "A new poll is open for voting in your country. Cast your vote!",
             category: "social",
             priority: "medium",
           });
@@ -106,7 +112,12 @@ export const pollsRouter = createTRPCRouter({
             fields: [
               {
                 name: "Type",
-                value: poll.pollType === "choice" ? "Choice Poll" : poll.pollType === "feature-poll" ? "Feature Poll" : "Feature Voting",
+                value:
+                  poll.pollType === "choice"
+                    ? "Choice Poll"
+                    : poll.pollType === "feature-poll"
+                      ? "Feature Poll"
+                      : "Feature Voting",
                 inline: true,
               },
               {
@@ -152,7 +163,9 @@ export const pollsRouter = createTRPCRouter({
           );
 
           if (!res.ok) {
-            console.error(`[Polls Router] Discord Bot API failed to post: ${res.status} ${res.statusText}`);
+            console.error(
+              `[Polls Router] Discord Bot API failed to post: ${res.status} ${res.statusText}`
+            );
           }
         } catch (discordErr) {
           console.error("[Polls Router] Discord Bot notification failed:", discordErr);
@@ -167,7 +180,12 @@ export const pollsRouter = createTRPCRouter({
             fields: [
               {
                 name: "Type",
-                value: poll.pollType === "choice" ? "Choice Poll" : poll.pollType === "feature-poll" ? "Feature Poll" : "Feature Voting",
+                value:
+                  poll.pollType === "choice"
+                    ? "Choice Poll"
+                    : poll.pollType === "feature-poll"
+                      ? "Feature Poll"
+                      : "Feature Voting",
                 inline: true,
               },
               {
@@ -235,15 +253,13 @@ export const pollsRouter = createTRPCRouter({
     }),
 
   // Delete a poll (Admin only)
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // ActivityFeed entry will be deleted automatically due to CASCADE relation
-      await ctx.db.poll.delete({
-        where: { id: input.id },
-      });
-      return { success: true };
-    }),
+  delete: adminProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    // ActivityFeed entry will be deleted automatically due to CASCADE relation
+    await ctx.db.poll.delete({
+      where: { id: input.id },
+    });
+    return { success: true };
+  }),
 
   // Register user vote
   vote: protectedProcedure
@@ -323,7 +339,10 @@ export const pollsRouter = createTRPCRouter({
         });
 
         if (existingVote) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "You have already voted on this poll" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You have already voted on this poll",
+          });
         }
 
         // Enforce single-choice restriction if not multiple choice
@@ -395,11 +414,13 @@ export const pollsRouter = createTRPCRouter({
         isActive: poll.isActive,
         endDate: poll.endDate,
         countryId: poll.countryId,
-        options: poll.options.map((o: { id: string; label: string; description: string | null }) => ({
-          id: o.id,
-          label: o.label,
-          description: o.description,
-        })),
+        options: poll.options.map(
+          (o: { id: string; label: string; description: string | null }) => ({
+            id: o.id,
+            label: o.label,
+            description: o.description,
+          })
+        ),
         votes,
         totalVotes,
         hasVoted: userVotedOptionIds.length > 0,

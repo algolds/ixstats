@@ -101,16 +101,16 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
       </h3>
 
       {routeWaypoints.length > 0 ? (
-        <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+        <div className="border-primary/20 bg-primary/5 space-y-3 rounded-lg border p-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold text-primary">Drawing Manual Route</h4>
-            <span className="text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border">
+            <h4 className="text-primary text-xs font-semibold">Drawing Manual Route</h4>
+            <span className="text-muted-foreground bg-background border-border rounded border px-1.5 py-0.5 text-[10px]">
               {routeWaypoints.length} points
             </span>
           </div>
 
           <div className="space-y-2">
-            <label className="block text-[11px] font-medium text-muted-foreground">
+            <label className="text-muted-foreground block text-[11px] font-medium">
               Route Name
             </label>
             <input
@@ -118,12 +118,12 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
               value={routeName}
               onChange={(e) => setRouteName(e.target.value)}
               placeholder="e.g. Route 66, Trans-Valley..."
-              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
+              className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 text-xs focus:outline-none"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-[11px] font-medium text-muted-foreground">
+            <label className="text-muted-foreground block text-[11px] font-medium">
               Route Type
             </label>
             <div className="grid grid-cols-2 gap-1.5">
@@ -158,14 +158,14 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
             <button
               type="button"
               onClick={undoLastWaypoint}
-              className="flex-1 rounded border border-border bg-background py-1 text-xs text-foreground hover:bg-accent"
+              className="border-border bg-background text-foreground hover:bg-accent flex-1 rounded border py-1 text-xs"
             >
               Undo Point
             </button>
             <button
               type="button"
               onClick={clearRouteWaypoints}
-              className="flex-1 rounded border border-border bg-background py-1 text-xs text-red-600 hover:bg-red-55"
+              className="border-border bg-background hover:bg-red-55 flex-1 rounded border py-1 text-xs text-red-600"
             >
               Clear
             </button>
@@ -194,7 +194,11 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
             ) : (
               <CheckCircle2 className="h-3.5 w-3.5" />
             )}
-            {isSavingManual ? "Saving Route..." : routeWaypoints.length < 2 ? "Draw on Map (Min 2 points)" : "Save Route"}
+            {isSavingManual
+              ? "Saving Route..."
+              : routeWaypoints.length < 2
+                ? "Draw on Map (Min 2 points)"
+                : "Save Route"}
           </button>
         </div>
       ) : (
@@ -203,7 +207,9 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
           {stats && stats.totalRoutes > 0 && (
             <div className="flex gap-3 text-xs">
               <div className="text-center">
-                <div className="text-foreground font-semibold tabular-nums">{stats.totalRoutes}</div>
+                <div className="text-foreground font-semibold tabular-nums">
+                  {stats.totalRoutes}
+                </div>
                 <div className="text-muted-foreground text-[10px]">Routes</div>
               </div>
               <div className="text-center">
@@ -266,9 +272,9 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                             onSelectRouteId(isSelected ? null : (props.id as string));
                           }
                         }}
-                        className={`group cursor-pointer flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
+                        className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
                           isSelected
-                            ? "bg-primary/10 border-l-2 border-primary pl-1.5"
+                            ? "bg-primary/10 border-primary border-l-2 pl-1.5"
                             : "hover:bg-accent"
                         }`}
                       >
@@ -361,7 +367,10 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                           : "border-border bg-background text-muted-foreground hover:bg-accent"
                       }`}
                     >
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: rt.color }} />
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: rt.color }}
+                      />
                       {rt.label}
                     </button>
                   );
