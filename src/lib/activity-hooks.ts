@@ -14,7 +14,7 @@ async function triggerAchievementCheck(countryId: string, eventName: string, use
     if (!activeUserId && countryId) {
       const user = await db.user.findFirst({
         where: { countryId },
-        select: { clerkUserId: true }
+        select: { clerkUserId: true },
       });
       if (user) activeUserId = user.clerkUserId;
     }
@@ -642,7 +642,9 @@ export class SocialActivityHooks {
     userCountryId?: string
   ): Promise<void> {
     try {
-      triggerAchievementCheck(userCountryId || countryId, "thinkpages:updated", userId).catch(console.error);
+      triggerAchievementCheck(userCountryId || countryId, "thinkpages:updated", userId).catch(
+        console.error
+      );
       triggerAchievementCheck(countryId, "thinkpages:updated").catch(console.error);
 
       const [country, userCountry] = await Promise.all([

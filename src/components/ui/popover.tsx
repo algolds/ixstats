@@ -32,7 +32,7 @@ function PopoverContent({ className, sideOffset = 4, children, ...props }: Popov
       <PopoverPrimitive.Positioner
         data-slot="popover-positioner"
         sideOffset={sideOffset}
-        className="z-[100050] size-auto pointer-events-auto"
+        className="pointer-events-auto z-[100050] size-auto"
         {...props}
       >
         <PopoverPrimitive.Popup

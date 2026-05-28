@@ -9,7 +9,7 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
   for (const def of ACHIEVEMENT_DEFINITIONS) {
     const cardId = getCardRewardForAchievement(def.id);
     const credits = getCreditsForRarity(def.rarity);
-    
+
     // Rewards JSON structure
     let rewards: any = {
       credits,
@@ -59,7 +59,9 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
     }
   }
 
-  console.log(`[Achievement Sync] Completed syncing ${syncedCount}/${ACHIEVEMENT_DEFINITIONS.length} achievements.`);
+  console.log(
+    `[Achievement Sync] Completed syncing ${syncedCount}/${ACHIEVEMENT_DEFINITIONS.length} achievements.`
+  );
 }
 
 function getCreditsForRarity(rarity: string): number {
@@ -81,175 +83,331 @@ interface ConditionConfig {
 function determineCondition(id: string): ConditionConfig {
   if (id.startsWith("econ-")) {
     if (id === "econ-first-million") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000 },
+      };
     }
     if (id === "econ-millionaire-nation") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000_000 },
+      };
     }
     if (id === "econ-economic-powerhouse") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentTotalGdp", operator: ">=", value: 100_000_000_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentTotalGdp", operator: ">=", value: 100_000_000_000 },
+      };
     }
     if (id === "econ-trillion-club") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000_000_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000_000_000 },
+      };
     }
     if (id === "econ-global-titan") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentTotalGdp", operator: ">=", value: 10_000_000_000_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentTotalGdp", operator: ">=", value: 10_000_000_000_000 },
+      };
     }
     if (id === "econ-wealthy-citizens") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentGdpPerCapita", operator: ">=", value: 10_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 10_000 },
+      };
     }
     if (id === "econ-prosperity-nation") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentGdpPerCapita", operator: ">=", value: 25_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 25_000 },
+      };
     }
     if (id === "econ-first-world-status") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentGdpPerCapita", operator: ">=", value: 50_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 50_000 },
+      };
     }
     if (id === "econ-ultra-prosperity") {
-      return { triggerType: "ECONOMIC", rules: { metric: "currentGdpPerCapita", operator: ">=", value: 100_000 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 100_000 },
+      };
     }
     if (id === "econ-growth-rocket") {
-      return { triggerType: "ECONOMIC", rules: { metric: "adjustedGdpGrowth", operator: ">=", value: 10.0 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "adjustedGdpGrowth", operator: ">=", value: 10.0 },
+      };
     }
     if (id === "econ-boom-cycle") {
-      return { triggerType: "ECONOMIC", rules: { metric: "adjustedGdpGrowth", operator: ">=", value: 15.0 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "adjustedGdpGrowth", operator: ">=", value: 15.0 },
+      };
     }
     if (id === "econ-full-employment") {
-      return { triggerType: "ECONOMIC", rules: { metric: "unemploymentRate", operator: "<", value: 3.0 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "unemploymentRate", operator: "<", value: 3.0 },
+      };
     }
     if (id === "econ-price-stability") {
-      return { triggerType: "ECONOMIC", rules: { metric: "inflationRate", operator: "<", value: 2.0 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "inflationRate", operator: "<", value: 2.0 },
+      };
     }
     if (id === "econ-tax-efficiency") {
-      return { triggerType: "ECONOMIC", rules: { metric: "taxRevenueGDPPercent", operator: ">=", value: 30.0 } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "taxRevenueGDPPercent", operator: ">=", value: 30.0 },
+      };
     }
     if (id === "econ-tier-advancement") {
-      return { triggerType: "ECONOMIC", rules: { metric: "economicTier", operator: "==", value: "Tier 1" } };
+      return {
+        triggerType: "ECONOMIC",
+        rules: { metric: "economicTier", operator: "==", value: "Tier 1" },
+      };
     }
   }
 
   if (id.startsWith("mil-")) {
     if (id === "mil-first-branch") {
-      return { triggerType: "MILITARY", rules: { metric: "militaryBranchCount", operator: ">=", value: 1 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "militaryBranchCount", operator: ">=", value: 1 },
+      };
     }
     if (id === "mil-armed-forces") {
-      return { triggerType: "MILITARY", rules: { metric: "militaryBranchCount", operator: ">=", value: 3 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "militaryBranchCount", operator: ">=", value: 3 },
+      };
     }
     if (id === "mil-full-spectrum") {
-      return { triggerType: "MILITARY", rules: { metric: "militaryBranchCount", operator: ">=", value: 5 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "militaryBranchCount", operator: ">=", value: 5 },
+      };
     }
     if (id === "mil-defense-commitment") {
-      return { triggerType: "MILITARY", rules: { metric: "militarySpendingPercent", operator: ">=", value: 1.0 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "militarySpendingPercent", operator: ">=", value: 1.0 },
+      };
     }
     if (id === "mil-strong-defense") {
-      return { triggerType: "MILITARY", rules: { metric: "militarySpendingPercent", operator: ">=", value: 3.0 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "militarySpendingPercent", operator: ">=", value: 3.0 },
+      };
     }
     if (id === "mil-military-superpower") {
-      return { triggerType: "MILITARY", rules: { metric: "militarySpendingPercent", operator: ">=", value: 5.0 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "militarySpendingPercent", operator: ">=", value: 5.0 },
+      };
     }
     if (id === "mil-standing-army") {
-      return { triggerType: "MILITARY", rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 10_000 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 10_000 },
+      };
     }
     if (id === "mil-large-force") {
-      return { triggerType: "MILITARY", rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 100_000 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 100_000 },
+      };
     }
     if (id === "mil-massive-force") {
-      return { triggerType: "MILITARY", rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 1_000_000 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 1_000_000 },
+      };
     }
     if (id === "mil-global-force") {
-      return { triggerType: "MILITARY", rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 5_000_000 } };
+      return {
+        triggerType: "MILITARY",
+        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 5_000_000 },
+      };
     }
   }
 
   if (id.startsWith("dip-")) {
     if (id === "dip-first-embassy") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "embassyCount", operator: ">=", value: 1 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "embassyCount", operator: ">=", value: 1 },
+      };
     }
     if (id === "dip-diplomatic-network") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "embassyCount", operator: ">=", value: 5 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "embassyCount", operator: ">=", value: 5 },
+      };
     }
     if (id === "dip-global-presence") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "embassyCount", operator: ">=", value: 10 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "embassyCount", operator: ">=", value: 10 },
+      };
     }
     if (id === "dip-embassy-network") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "embassyCount", operator: ">=", value: 25 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "embassyCount", operator: ">=", value: 25 },
+      };
     }
     if (id === "dip-first-treaty") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "treatyCount", operator: ">=", value: 1 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "treatyCount", operator: ">=", value: 1 },
+      };
     }
     if (id === "dip-treaty-network") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "treatyCount", operator: ">=", value: 10 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "treatyCount", operator: ">=", value: 10 },
+      };
     }
     if (id === "dip-trade-partners") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "tradePartnerCount", operator: ">=", value: 25 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "tradePartnerCount", operator: ">=", value: 25 },
+      };
     }
     if (id === "dip-trade-hub") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "tradePartnerCount", operator: ">=", value: 50 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "tradePartnerCount", operator: ">=", value: 50 },
+      };
     }
     if (id === "dip-alliance-maker") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "allianceCount", operator: ">=", value: 5 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "allianceCount", operator: ">=", value: 5 },
+      };
     }
     if (id === "dip-alliance-network") {
-      return { triggerType: "DIPLOMATIC", rules: { metric: "allianceCount", operator: ">=", value: 10 } };
+      return {
+        triggerType: "DIPLOMATIC",
+        rules: { metric: "allianceCount", operator: ">=", value: 10 },
+      };
     }
   }
 
   if (id.startsWith("gov-")) {
     if (id === "gov-first-component") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "atomicComponentCount", operator: ">=", value: 1 } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "atomicComponentCount", operator: ">=", value: 1 },
+      };
     }
     if (id === "gov-building-blocks") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "atomicComponentCount", operator: ">=", value: 5 } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "atomicComponentCount", operator: ">=", value: 5 },
+      };
     }
     if (id === "gov-sophisticated") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "atomicComponentCount", operator: ">=", value: 10 } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "atomicComponentCount", operator: ">=", value: 10 },
+      };
     }
     if (id === "gov-complex-system") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "atomicComponentCount", operator: ">=", value: 15 } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "atomicComponentCount", operator: ">=", value: 15 },
+      };
     }
     if (id === "gov-democracy") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "governmentType", operator: "contains", value: "democracy" } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "governmentType", operator: "contains", value: "democracy" },
+      };
     }
     if (id === "gov-republic") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "governmentType", operator: "contains", value: "republic" } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "governmentType", operator: "contains", value: "republic" },
+      };
     }
     if (id === "gov-monarchy") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "governmentType", operator: "contains", value: "monarchy" } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "governmentType", operator: "contains", value: "monarchy" },
+      };
     }
     if (id === "gov-federation") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "governmentType", operator: "contains", value: "federal" } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "governmentType", operator: "contains", value: "federal" },
+      };
     }
     if (id === "gov-unitary") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "governmentType", operator: "contains", value: "unitary" } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "governmentType", operator: "contains", value: "unitary" },
+      };
     }
     if (id === "gov-parliamentary") {
-      return { triggerType: "GOVERNMENT", rules: { metric: "governmentType", operator: "contains", value: "parliament" } };
+      return {
+        triggerType: "GOVERNMENT",
+        rules: { metric: "governmentType", operator: "contains", value: "parliament" },
+      };
     }
   }
 
   if (id.startsWith("social-")) {
     if (id === "social-first-thinkpage") {
-      return { triggerType: "SOCIAL", rules: { metric: "thinkpageCount", operator: ">=", value: 1 } };
+      return {
+        triggerType: "SOCIAL",
+        rules: { metric: "thinkpageCount", operator: ">=", value: 1 },
+      };
     }
     if (id === "social-thinkpage-author") {
-      return { triggerType: "SOCIAL", rules: { metric: "thinkpageCount", operator: ">=", value: 10 } };
+      return {
+        triggerType: "SOCIAL",
+        rules: { metric: "thinkpageCount", operator: ">=", value: 10 },
+      };
     }
     if (id === "social-prolific-author") {
-      return { triggerType: "SOCIAL", rules: { metric: "thinkpageCount", operator: ">=", value: 50 } };
+      return {
+        triggerType: "SOCIAL",
+        rules: { metric: "thinkpageCount", operator: ">=", value: 50 },
+      };
     }
     if (id === "social-popular") {
-      return { triggerType: "SOCIAL", rules: { metric: "followerCount", operator: ">=", value: 100 } };
+      return {
+        triggerType: "SOCIAL",
+        rules: { metric: "followerCount", operator: ">=", value: 100 },
+      };
     }
     if (id === "social-trending") {
-      return { triggerType: "SOCIAL", rules: { metric: "trendingPostCount", operator: ">=", value: 1 } };
+      return {
+        triggerType: "SOCIAL",
+        rules: { metric: "trendingPostCount", operator: ">=", value: 1 },
+      };
     }
   }
 
   if (id.startsWith("gen-")) {
     if (id === "gen-welcome") {
-      return { triggerType: "GENERAL", rules: { metric: "always_true", operator: "==", value: true } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "always_true", operator: "==", value: true },
+      };
     }
     if (id === "gen-first-country") {
-      return { triggerType: "GENERAL", rules: { metric: "countryClaimed", operator: "==", value: true } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "countryClaimed", operator: "==", value: true },
+      };
     }
     if (id === "gen-one-week") {
       return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 7 } };
@@ -261,51 +419,93 @@ function determineCondition(id: string): ConditionConfig {
       return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 90 } };
     }
     if (id === "gen-one-year") {
-      return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 365 } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "daysActive", operator: ">=", value: 365 },
+      };
     }
     if (id === "gen-achievement-hunter") {
-      return { triggerType: "GENERAL", rules: { metric: "totalAchievements", operator: ">=", value: 10 } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "totalAchievements", operator: ">=", value: 10 },
+      };
     }
     if (id === "gen-achievement-master") {
-      return { triggerType: "GENERAL", rules: { metric: "totalAchievements", operator: ">=", value: 25 } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "totalAchievements", operator: ">=", value: 25 },
+      };
     }
     if (id === "gen-achievement-legend") {
-      return { triggerType: "GENERAL", rules: { metric: "totalAchievements", operator: ">=", value: 50 } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "totalAchievements", operator: ">=", value: 50 },
+      };
     }
     if (id === "gen-population-growth") {
-      return { triggerType: "GENERAL", rules: { metric: "currentPopulation", operator: ">=", value: 10_000_000 } };
+      return {
+        triggerType: "GENERAL",
+        rules: { metric: "currentPopulation", operator: ">=", value: 10_000_000 },
+      };
     }
     if (id.startsWith("vid-")) {
       if (id === "vid-end-of-days") {
-        return { triggerType: "GENERAL", rules: { metric: "totalAchievements", operator: ">=", value: 30 } };
+        return {
+          triggerType: "GENERAL",
+          rules: { metric: "totalAchievements", operator: ">=", value: 30 },
+        };
       }
       if (id === "vid-annual") {
-        return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 365 } };
+        return {
+          triggerType: "GENERAL",
+          rules: { metric: "daysActive", operator: ">=", value: 365 },
+        };
       }
       if (id === "vid-lightswitch") {
-        return { triggerType: "DIPLOMATIC", rules: { metric: "embassyCount", operator: ">=", value: 25 } };
+        return {
+          triggerType: "DIPLOMATIC",
+          rules: { metric: "embassyCount", operator: ">=", value: 25 },
+        };
       }
     }
     if (id.startsWith("meme-")) {
       if (id === "meme-stonks") {
-        return { triggerType: "ECONOMIC", rules: { metric: "adjustedGdpGrowth", operator: "<", value: 0 } };
+        return {
+          triggerType: "ECONOMIC",
+          rules: { metric: "adjustedGdpGrowth", operator: "<", value: 0 },
+        };
       }
       if (id === "meme-1337") {
-        return { triggerType: "GENERAL", rules: { metric: "currentGdpPerCapita", operator: "==", value: 1337 } };
+        return {
+          triggerType: "GENERAL",
+          rules: { metric: "currentGdpPerCapita", operator: "==", value: 1337 },
+        };
       }
       if (id === "meme-bankruptcy") {
-        return { triggerType: "ECONOMIC", rules: { metric: "currentGdpPerCapita", operator: "<=", value: 1.0 } };
+        return {
+          triggerType: "ECONOMIC",
+          rules: { metric: "currentGdpPerCapita", operator: "<=", value: 1.0 },
+        };
       }
       if (id === "meme-ns-ref") {
-        return { triggerType: "GENERAL", rules: { metric: "totalAchievements", operator: ">=", value: 40 } };
+        return {
+          triggerType: "GENERAL",
+          rules: { metric: "totalAchievements", operator: ">=", value: 40 },
+        };
       }
     }
     if (id.startsWith("lore-")) {
       if (id === "lore-scholar") {
-        return { triggerType: "SOCIAL", rules: { metric: "thinkpageCount", operator: ">=", value: 5 } };
+        return {
+          triggerType: "SOCIAL",
+          rules: { metric: "thinkpageCount", operator: ">=", value: 5 },
+        };
       }
       if (id === "lore-collector") {
-        return { triggerType: "SOCIAL", rules: { metric: "followerCount", operator: ">=", value: 30 } };
+        return {
+          triggerType: "SOCIAL",
+          rules: { metric: "followerCount", operator: ">=", value: 30 },
+        };
       }
     }
   }

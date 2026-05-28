@@ -12,6 +12,18 @@
 import * as DOMPurifyModule from "dompurify";
 const DOMPurify = DOMPurifyModule.default || DOMPurifyModule;
 
+// Register hook to block data: URIs in src/href attributes
+if (typeof window !== "undefined") {
+  DOMPurify.addHook("uponSanitizeAttribute", (node, event) => {
+    if (
+      (event.attrName === "src" || event.attrName === "href") &&
+      event.attrValue.trim().toLowerCase().startsWith("data:")
+    ) {
+      event.attrValue = "";
+    }
+  });
+}
+
 // Type definition for the sanitize function
 type SanitizeFunc = (html: string, config?: any) => string;
 
@@ -257,14 +269,12 @@ export function sanitizeHtml(html: string): string {
  */
 export function escapeHtml(text: string): string {
   if (!text) return "";
-
-  const div =
-    typeof document !== "undefined"
-      ? document.createElement("div")
-      : { textContent: text, innerHTML: "" };
-
-  div.textContent = text;
-  return div.innerHTML;
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 /**
@@ -296,6 +306,11 @@ export function stripHtml(html: string): string {
 export function validateNoXSS(content: string): { valid: boolean; reason?: string } {
   if (!content) return { valid: true };
 
+  // Check for data URLs (potential XSS vector) - Checked first to return specific reason before general tag/script check
+  if (/data:text\/html/i.test(content)) {
+    return { valid: false, reason: "Data URLs with HTML are not allowed" };
+  }
+
   // Check for script tags
   if (/<script[\s>]/i.test(content)) {
     return { valid: false, reason: "Script tags are not allowed" };
@@ -309,11 +324,6 @@ export function validateNoXSS(content: string): { valid: boolean; reason?: strin
   // Check for event handlers
   if (/on\w+\s*=/i.test(content)) {
     return { valid: false, reason: "Event handlers are not allowed" };
-  }
-
-  // Check for data URLs (potential XSS vector)
-  if (/data:text\/html/i.test(content)) {
-    return { valid: false, reason: "Data URLs with HTML are not allowed" };
   }
 
   // Check for iframe tags

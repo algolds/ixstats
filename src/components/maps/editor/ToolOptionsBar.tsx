@@ -291,16 +291,16 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           </span>
           <Popover>
             <PopoverTrigger
-              className="h-5 w-5 cursor-pointer rounded border border-border/40 shrink-0 relative overflow-hidden"
+              className="border-border/40 relative h-5 w-5 shrink-0 cursor-pointer overflow-hidden rounded border"
               title="Pick Color"
             >
-              <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')] bg-center -z-10" />
+              <div className="absolute inset-0 -z-10 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')] bg-center" />
               <div
-                className="w-full h-full"
+                className="h-full w-full"
                 style={{ backgroundColor: props.labelColor ?? "#374151" }}
               />
             </PopoverTrigger>
-            <PopoverContent className="w-64 p-3 bg-popover border-border/50 text-foreground">
+            <PopoverContent className="bg-popover border-border/50 text-foreground w-64 p-3">
               <ColorPicker
                 value={props.labelColor ?? "#374151"}
                 onChange={(rgbaArray) => {
@@ -316,13 +316,13 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   props.onLabelColorChange?.(colorStr);
                 }}
               >
-                <ColorPickerSelection className="h-32 mb-2" />
-                <div className="space-y-1 mb-2">
-                  <Label className="text-[10px] text-muted-foreground">Hue</Label>
+                <ColorPickerSelection className="mb-2 h-32" />
+                <div className="mb-2 space-y-1">
+                  <Label className="text-muted-foreground text-[10px]">Hue</Label>
                   <ColorPickerHue />
                 </div>
-                <div className="space-y-1 mb-2">
-                  <Label className="text-[10px] text-muted-foreground">Alpha</Label>
+                <div className="mb-2 space-y-1">
+                  <Label className="text-muted-foreground text-[10px]">Alpha</Label>
                   <ColorPickerAlpha />
                 </div>
                 <div className="flex items-center gap-1.5 pt-1">

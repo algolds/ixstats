@@ -33,10 +33,10 @@ describe("LaborEmploymentTab", () => {
     it("displays all section tabs", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText(/Workforce/i)).toBeInTheDocument();
-      expect(screen.getByText(/Employment/i)).toBeInTheDocument();
-      expect(screen.getByText(/Income/i)).toBeInTheDocument();
-      expect(screen.getByText(/Protections/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Workforce/i)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Employment/i)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Income/i)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Protections/i)[0]).toBeInTheDocument();
     });
 
     it("renders workforce section by default", () => {

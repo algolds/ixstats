@@ -284,6 +284,14 @@ function MyCountryRouterInner() {
             notifications={notifications}
           />
         );
+      case "politics":
+        return (
+          <EnhancedPoliticsContent
+            activeSection={activeSection}
+            onNavigate={handleNavigate}
+            notifications={notifications}
+          />
+        );
       case "map-editor":
         return (
           <EnhancedMapEditorContent

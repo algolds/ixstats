@@ -11,10 +11,7 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import {
-  getAchievementById,
-  type ExtendedAchievementData,
-} from "./achievement-definitions";
+import { getAchievementById, type ExtendedAchievementData } from "./achievement-definitions";
 import { vaultService } from "./vault-service";
 import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
 import { awardAchievementCard } from "./card-service";
@@ -59,9 +56,9 @@ export class AchievementService {
         "diplomacy:updated",
         "thinkpages:updated",
         "user:login",
-        "user:signup"
+        "user:signup",
       ];
-      
+
       for (const eventName of events) {
         eventBus.subscribe(eventName, (payload: any) => {
           if (payload && payload.userId && payload.countryId) {
@@ -69,7 +66,7 @@ export class AchievementService {
           }
         });
       }
-      
+
       this.startWorker();
     }
   }
@@ -82,16 +79,15 @@ export class AchievementService {
     if (this.processingSet.has(key)) {
       return;
     }
-    
+
     this.processingSet.add(key);
-    
+
     const redis = getRedisClient();
     if (redis) {
-      redis.rpush("achievements:queue", JSON.stringify({ userId, countryId }))
-        .catch((err) => {
-          console.warn("[Achievement Service] Redis enqueue failed, falling back to memory:", err);
-          this.inMemoryQueue.push({ userId, countryId });
-        });
+      redis.rpush("achievements:queue", JSON.stringify({ userId, countryId })).catch((err) => {
+        console.warn("[Achievement Service] Redis enqueue failed, falling back to memory:", err);
+        this.inMemoryQueue.push({ userId, countryId });
+      });
     } else {
       this.inMemoryQueue.push({ userId, countryId });
     }
@@ -106,7 +102,7 @@ export class AchievementService {
   private async processNextQueueItem() {
     let item: { userId: string; countryId: string } | null = null;
     const redis = getRedisClient();
-    
+
     if (redis) {
       try {
         const data = await redis.lpop("achievements:queue");
@@ -117,13 +113,13 @@ export class AchievementService {
         console.warn("[Achievement Service] Redis lpop failed, fallback to memory:", err);
       }
     }
-    
+
     if (!item && this.inMemoryQueue.length > 0) {
       item = this.inMemoryQueue.shift() || null;
     }
-    
+
     if (!item) return;
-    
+
     const key = `${item.userId}:${item.countryId}`;
     try {
       const { db } = await import("~/server/db");
@@ -160,7 +156,10 @@ export class AchievementService {
           return this.evaluateRule(rule, data);
         }
       } catch (err) {
-        console.error(`[Achievement Service] Failed to evaluate rules for ${achievement.key}:`, err);
+        console.error(
+          `[Achievement Service] Failed to evaluate rules for ${achievement.key}:`,
+          err
+        );
       }
     }
 
@@ -169,7 +168,10 @@ export class AchievementService {
       try {
         return hardcoded.condition(data);
       } catch (err) {
-        console.error(`[Achievement Service] Failed hardcoded condition check for ${achievement.key}:`, err);
+        console.error(
+          `[Achievement Service] Failed hardcoded condition check for ${achievement.key}:`,
+          err
+        );
       }
     }
 
@@ -401,7 +403,10 @@ export class AchievementService {
                   if (Array.isArray(rewards.titles)) titles = rewards.titles;
                 }
               } catch (err) {
-                console.error(`[Achievement Service] Failed to parse rewards for ${achievement.key}:`, err);
+                console.error(
+                  `[Achievement Service] Failed to parse rewards for ${achievement.key}:`,
+                  err
+                );
               }
             }
 
@@ -449,7 +454,10 @@ export class AchievementService {
                   }
                 );
               } catch (creditError) {
-                console.error(`[Achievement Service] Error awarding credits for "${achievement.title}":`, creditError);
+                console.error(
+                  `[Achievement Service] Error awarding credits for "${achievement.title}":`,
+                  creditError
+                );
               }
             }
 
@@ -499,14 +507,14 @@ export class AchievementService {
                 userId,
                 achievementId: achievement.key,
                 name: achievement.title,
-                description: achievement.description || `You've unlocked a ${achievement.rarity} achievement!`,
+                description:
+                  achievement.description || `You've unlocked a ${achievement.rarity} achievement!`,
                 category: achievement.category,
                 rarity: (achievement.rarity.toLowerCase() as any) || "common",
               });
             } catch (error) {
               console.error("[Achievements] Failed to send achievement notification:", error);
             }
-
           } catch (error) {
             console.error(`[Achievement Service] Failed to unlock ${achievement.key}:`, error);
           }
@@ -569,7 +577,10 @@ export class AchievementService {
             if (Array.isArray(rewards.titles)) titles = rewards.titles;
           }
         } catch (err) {
-          console.error(`[Achievement Service] Failed to parse rewards for ${achievement.key}:`, err);
+          console.error(
+            `[Achievement Service] Failed to parse rewards for ${achievement.key}:`,
+            err
+          );
         }
       }
 
@@ -599,11 +610,18 @@ export class AchievementService {
       // Award credits
       if (creditReward > 0) {
         try {
-          await vaultService.earnCredits(userId, creditReward, "EARN_ACTIVE", "achievement_unlock", db, {
-            achievementId,
-            achievementName: achievement.title,
-            achievementTier: achievement.rarity,
-          });
+          await vaultService.earnCredits(
+            userId,
+            creditReward,
+            "EARN_ACTIVE",
+            "achievement_unlock",
+            db,
+            {
+              achievementId,
+              achievementName: achievement.title,
+              achievementTier: achievement.rarity,
+            }
+          );
         } catch (creditError) {
           console.error(`[Achievement Service] Error awarding credits:`, creditError);
         }

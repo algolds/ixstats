@@ -2,7 +2,12 @@
 // Comprehensive Security & Defense System Router
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  premiumProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   calculateStabilityMetrics,
@@ -211,7 +216,7 @@ export const securityRouter = createTRPCRouter({
       };
     }),
 
-  updateSecurityAssessment: protectedProcedure
+  updateSecurityAssessment: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -309,7 +314,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  createMilitaryBranch: protectedProcedure
+  createMilitaryBranch: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -338,7 +343,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  updateMilitaryBranch: protectedProcedure
+  updateMilitaryBranch: premiumProcedure
     .input(
       z.object({
         id: z.string(),
@@ -377,7 +382,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  deleteMilitaryBranch: protectedProcedure
+  deleteMilitaryBranch: premiumProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the branch's country
@@ -415,7 +420,7 @@ export const securityRouter = createTRPCRouter({
   // Military Unit Endpoints
   // ===========================
 
-  createMilitaryUnit: protectedProcedure
+  createMilitaryUnit: premiumProcedure
     .input(
       z.object({
         branchId: z.string(),
@@ -456,7 +461,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  updateMilitaryUnit: protectedProcedure
+  updateMilitaryUnit: premiumProcedure
     .input(
       z.object({
         id: z.string(),
@@ -495,7 +500,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  deleteMilitaryUnit: protectedProcedure
+  deleteMilitaryUnit: premiumProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through branch
@@ -532,7 +537,7 @@ export const securityRouter = createTRPCRouter({
   // Military Asset Endpoints
   // ===========================
 
-  createMilitaryAsset: protectedProcedure
+  createMilitaryAsset: premiumProcedure
     .input(
       z.object({
         branchId: z.string(),
@@ -573,7 +578,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  updateMilitaryAsset: protectedProcedure
+  updateMilitaryAsset: premiumProcedure
     .input(
       z.object({
         id: z.string(),
@@ -612,7 +617,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  deleteMilitaryAsset: protectedProcedure
+  deleteMilitaryAsset: premiumProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through branch
@@ -667,7 +672,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  updateDefenseBudget: protectedProcedure
+  updateDefenseBudget: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -898,7 +903,7 @@ export const securityRouter = createTRPCRouter({
       return { metrics, activeEvents };
     }),
 
-  updateInternalStability: protectedProcedure
+  updateInternalStability: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -949,7 +954,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  generateStabilityEvent: protectedProcedure
+  generateStabilityEvent: premiumProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
@@ -1015,7 +1020,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  resolveSecurityEvent: protectedProcedure
+  resolveSecurityEvent: premiumProcedure
     .input(
       z.object({
         id: z.string(),
@@ -1104,7 +1109,7 @@ export const securityRouter = createTRPCRouter({
       return borderSecurity;
     }),
 
-  updateBorderSecurity: protectedProcedure
+  updateBorderSecurity: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -1155,7 +1160,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  createNeighborThreat: protectedProcedure
+  createNeighborThreat: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -1195,7 +1200,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  updateNeighborThreat: protectedProcedure
+  updateNeighborThreat: premiumProcedure
     .input(
       z.object({
         id: z.string(),
@@ -1237,7 +1242,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  deleteNeighborThreat: protectedProcedure
+  deleteNeighborThreat: premiumProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through border security
@@ -1297,7 +1302,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  createSecurityThreat: protectedProcedure
+  createSecurityThreat: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -1366,7 +1371,7 @@ export const securityRouter = createTRPCRouter({
       return threat;
     }),
 
-  updateSecurityThreat: protectedProcedure
+  updateSecurityThreat: premiumProcedure
     .input(
       z.object({
         id: z.string(),
@@ -1416,7 +1421,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  deleteSecurityThreat: protectedProcedure
+  deleteSecurityThreat: premiumProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
@@ -1450,7 +1455,7 @@ export const securityRouter = createTRPCRouter({
       });
     }),
 
-  createThreatIncident: protectedProcedure
+  createThreatIncident: premiumProcedure
     .input(
       z.object({
         threatId: z.string(),
@@ -1576,7 +1581,7 @@ export const securityRouter = createTRPCRouter({
       return getDefenseMetricsForIntelligence(input.countryId);
     }),
 
-  syncDefenseBudget: protectedProcedure
+  syncDefenseBudget: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -1606,7 +1611,7 @@ export const securityRouter = createTRPCRouter({
       return syncDefenseBudgetToGovernment(input);
     }),
 
-  createThreatIntelligence: protectedProcedure
+  createThreatIntelligence: premiumProcedure
     .input(
       z.object({
         threatId: z.string(),
@@ -1633,7 +1638,7 @@ export const securityRouter = createTRPCRouter({
       return createIntelligenceFromThreat(input);
     }),
 
-  notifyBranchUpdate: protectedProcedure
+  notifyBranchUpdate: premiumProcedure
     .input(
       z.object({
         branchId: z.string(),
@@ -1707,7 +1712,7 @@ export const securityRouter = createTRPCRouter({
     }),
 
   // Create a military operation and deploy units/assets
-  createOperation: protectedProcedure
+  createOperation: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -1858,7 +1863,7 @@ export const securityRouter = createTRPCRouter({
     }),
 
   // Recall a deployment / end an operation
-  endOperation: protectedProcedure
+  endOperation: premiumProcedure
     .input(
       z.object({
         operationId: z.string(),
@@ -1945,7 +1950,7 @@ export const securityRouter = createTRPCRouter({
     }),
 
   // Propose a PvP conflict (requires mutual acceptance)
-  proposePvPConflict: protectedProcedure
+  proposePvPConflict: premiumProcedure
     .input(
       z.object({
         defenderId: z.string(),
@@ -2036,7 +2041,7 @@ export const securityRouter = createTRPCRouter({
     }),
 
   // Accept or decline a PvP conflict
-  respondToConflict: protectedProcedure
+  respondToConflict: premiumProcedure
     .input(
       z.object({
         conflictId: z.string(),
@@ -2167,7 +2172,7 @@ export const securityRouter = createTRPCRouter({
     }),
 
   // Resolve a PvNPC conflict automatically
-  resolvePvNPCConflict: protectedProcedure
+  resolvePvNPCConflict: premiumProcedure
     .input(
       z.object({
         targetCountryId: z.string(),

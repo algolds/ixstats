@@ -101,8 +101,8 @@ export const SECTOR_TEMPLATES: Record<string, SectorTemplate> = {
  * ```
  */
 export function getSectorCategory(sectorType: string): "Primary" | "Secondary" | "Tertiary" {
-  if (["agriculture"].includes(sectorType)) return "Primary";
-  if (["manufacturing"].includes(sectorType)) return "Secondary";
+  if (["agriculture", "mining"].includes(sectorType)) return "Primary";
+  if (["manufacturing", "construction"].includes(sectorType)) return "Secondary";
   return "Tertiary";
 }
 
@@ -122,10 +122,16 @@ export function getSectorCategory(sectorType: string): "Primary" | "Secondary" |
  * ```
  */
 export function calculateSectorTotals(sectors: SectorConfiguration[]) {
+  const avgGrowthRate =
+    sectors.length > 0 ? sectors.reduce((sum, s) => sum + (s.growthRate || 0), 0) / sectors.length : 0;
+  const averageProductivity =
+    sectors.length > 0 ? sectors.reduce((sum, s) => sum + (s.productivity || 0), 0) / sectors.length : 0;
+
   return {
     totalGDP: sectors.reduce((sum, sector) => sum + sector.gdpContribution, 0),
     totalEmployment: sectors.reduce((sum, sector) => sum + sector.employmentShare, 0),
-    averageProductivity:
-      sectors.length > 0 ? sectors.reduce((sum, s) => sum + s.productivity, 0) / sectors.length : 0,
+    averageProductivity,
+    avgProductivity: averageProductivity,
+    avgGrowthRate,
   };
 }

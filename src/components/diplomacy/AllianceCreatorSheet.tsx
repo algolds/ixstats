@@ -149,10 +149,7 @@ export function AllianceCreatorSheet({
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label className="mb-1.5 block text-xs font-medium">Color</Label>
-              <ColorPickerInput
-                value={color}
-                onChange={(val) => setColor(val)}
-              />
+              <ColorPickerInput value={color} onChange={(val) => setColor(val)} />
             </div>
             <div>
               <Label className="mb-1.5 block text-xs font-medium">Visibility</Label>

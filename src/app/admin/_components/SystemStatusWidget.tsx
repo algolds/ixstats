@@ -66,7 +66,7 @@ export function SystemStatusWidget() {
     >
       {/* Cutout Header Tab (clickable to toggle collapse) */}
       <div
-        className="relative bg-indigo-500/10 px-4 pt-3 pb-5 cursor-pointer hover:bg-indigo-500/15 transition-colors select-none"
+        className="relative cursor-pointer bg-indigo-500/10 px-4 pt-3 pb-5 transition-colors select-none hover:bg-indigo-500/15"
         onClick={toggleCollapsed}
       >
         <div className="flex items-center justify-between">
@@ -78,7 +78,7 @@ export function SystemStatusWidget() {
               System Console
             </PreText>
           </div>
-          <div className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors mr-1">
+          <div className="text-muted-foreground hover:text-foreground mr-1 rounded p-0.5 transition-colors">
             {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </div>
         </div>
@@ -87,20 +87,41 @@ export function SystemStatusWidget() {
       </div>
 
       {isCollapsed ? (
-        <div className="flex items-center justify-between gap-1.5 px-3 py-2 text-[10px] bg-black/10 border-t border-border/10 overflow-hidden">
+        <div className="border-border/10 flex items-center justify-between gap-1.5 overflow-hidden border-t bg-black/10 px-3 py-2 text-[10px]">
           {/* IxTime */}
-          <span className="text-blue-600 dark:text-blue-400 font-mono font-bold truncate whitespace-nowrap max-w-[100px] shrink-0" title="Current IxTime">
+          <span
+            className="max-w-[100px] shrink-0 truncate font-mono font-bold whitespace-nowrap text-blue-600 dark:text-blue-400"
+            title="Current IxTime"
+          >
             {liveFormattedTime || systemStatus?.ixTime?.formattedIxTime || "Time"}
           </span>
           {/* Bot Connection */}
-          <span className="flex items-center gap-1 shrink-0 overflow-hidden" title={botAvailable ? "Bot Connected" : "Bot Offline"}>
-            <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", botAvailable ? "bg-green-500 animate-pulse" : "bg-red-500")} />
-            <span className="text-muted-foreground font-semibold truncate whitespace-nowrap">Bot</span>
+          <span
+            className="flex shrink-0 items-center gap-1 overflow-hidden"
+            title={botAvailable ? "Bot Connected" : "Bot Offline"}
+          >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 shrink-0 rounded-full",
+                botAvailable ? "animate-pulse bg-green-500" : "bg-red-500"
+              )}
+            />
+            <span className="text-muted-foreground truncate font-semibold whitespace-nowrap">
+              Bot
+            </span>
           </span>
           {/* System Status (warnings count) */}
-          <span className="flex items-center gap-1 shrink-0 overflow-hidden" title={warningCount > 0 ? `${warningCount} warnings active` : "System Health Ok"}>
-            <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", warningCount > 0 ? "bg-amber-500" : "bg-green-500")} />
-            <span className="text-muted-foreground font-semibold truncate whitespace-nowrap">
+          <span
+            className="flex shrink-0 items-center gap-1 overflow-hidden"
+            title={warningCount > 0 ? `${warningCount} warnings active` : "System Health Ok"}
+          >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 shrink-0 rounded-full",
+                warningCount > 0 ? "bg-amber-500" : "bg-green-500"
+              )}
+            />
+            <span className="text-muted-foreground truncate font-semibold whitespace-nowrap">
               {warningCount > 0 ? `${warningCount} Alert` : "Healthy"}
             </span>
           </span>
@@ -159,7 +180,11 @@ export function SystemStatusWidget() {
                 Countries
               </span>
               <span className="font-bold">
-                {statusLoading ? <Skeleton className="h-3 w-8" /> : (systemStatus?.countryCount ?? 0)}
+                {statusLoading ? (
+                  <Skeleton className="h-3 w-8" />
+                ) : (
+                  (systemStatus?.countryCount ?? 0)
+                )}
               </span>
             </div>
 

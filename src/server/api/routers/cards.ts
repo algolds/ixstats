@@ -17,7 +17,6 @@ import { CardRarity, CardType } from "@prisma/client";
 import { searchForumThreads } from "~/modules/forum";
 import { vaultService } from "~/lib/vault-service";
 
-
 /**
  * Cards router for IxCards system
  * Provides endpoints for card browsing, management, and market operations
@@ -921,4 +920,3 @@ export const cardsRouter = createTRPCRouter({
       }
     }),
 });
-

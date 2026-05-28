@@ -1,7 +1,5 @@
-"use client";
-
-import { VaultCreateSection } from "~/components/vault/sections/VaultCreateSection";
+import { redirect } from "next/navigation";
 
 export default function VaultMarketPage() {
-  return <VaultCreateSection />;
+  redirect("/vault/marketplace?tab=auctions");
 }

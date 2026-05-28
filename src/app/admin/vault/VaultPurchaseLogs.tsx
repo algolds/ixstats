@@ -59,11 +59,11 @@ export function VaultPurchaseLogs() {
           ))}
         </div>
       ) : filteredLogs.length === 0 ? (
-        <div className="text-muted-foreground border-border/40 py-12 text-center border rounded-xl bg-card/25">
+        <div className="text-muted-foreground border-border/40 bg-card/25 rounded-xl border py-12 text-center">
           {search ? "No matches found." : "No purchases recorded."}
         </div>
       ) : (
-        <div className="border-border/40 overflow-hidden rounded-xl border bg-card/10">
+        <div className="border-border/40 bg-card/10 overflow-hidden rounded-xl border">
           <Table>
             <TableHeader className="bg-muted/40">
               <TableRow>
@@ -88,17 +88,24 @@ export function VaultPurchaseLogs() {
                             className="h-4 w-6 shrink-0 rounded-sm object-cover"
                           />
                         )}
-                        <span className="font-semibold text-foreground" title={`ID: ${log.user.id}`}>
+                        <span
+                          className="text-foreground font-semibold"
+                          title={`ID: ${log.user.id}`}
+                        >
                           {log.user.displayName}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <ShoppingCart className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-medium text-slate-100">{log.source.replace("Purchase item: ", "")}</span>
+                        <ShoppingCart className="text-muted-foreground h-3.5 w-3.5" />
+                        <span className="font-medium text-slate-100">
+                          {log.source.replace("Purchase item: ", "")}
+                        </span>
                       </div>
-                      <div className="text-muted-foreground font-mono text-[9px]">ID: {log.itemId}</div>
+                      <div className="text-muted-foreground font-mono text-[9px]">
+                        ID: {log.itemId}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -118,7 +125,7 @@ export function VaultPurchaseLogs() {
                         {Math.abs(log.credits).toLocaleString()} IxC
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-right text-[10px] font-mono">
+                    <TableCell className="text-muted-foreground text-right font-mono text-[10px]">
                       <div className="flex items-center justify-end gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(log.createdAt).toLocaleString()}

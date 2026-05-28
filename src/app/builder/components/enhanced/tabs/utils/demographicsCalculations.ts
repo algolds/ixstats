@@ -102,5 +102,5 @@ export function getRegionColor(index: number): string {
     "indigo",
     "teal",
   ];
-  return colors[index % colors.length];
+  return colors[((index % colors.length) + colors.length) % colors.length];
 }

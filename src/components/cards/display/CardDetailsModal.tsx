@@ -152,18 +152,18 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
           showCloseButton={false}
           className={cn(
             // Glass modal styling with theme compatibility
-            "bg-card/90 dark:bg-black/75 backdrop-blur-xl",
-            "border-2 border-border/55 dark:border-white/10 shadow-2xl",
+            "bg-card/90 backdrop-blur-xl dark:bg-black/75",
+            "border-border/55 border-2 shadow-2xl dark:border-white/10",
             "max-w-[95vw] p-0 sm:max-w-2xl md:max-w-3xl lg:max-w-5xl",
             // Responsive sizing
             "max-h-[90vh] w-[98vw] overflow-hidden sm:w-[95vw]"
           )}
         >
           {/* Header with actions */}
-          <div className="relative border-b border-border/40 dark:border-white/10 bg-muted/40 dark:bg-black/40 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4">
+          <div className="border-border/40 bg-muted/40 relative border-b px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4 dark:border-white/10 dark:bg-black/40">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <DialogTitle className="text-lg font-bold text-foreground sm:text-xl">
+                <DialogTitle className="text-foreground text-lg font-bold sm:text-xl">
                   {card.title}
                 </DialogTitle>
                 <RarityBadge rarity={card.rarity} size="medium" animated />
@@ -172,30 +172,30 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 {/* Share button */}
                 <button
                   onClick={handleShare}
-                  className="rounded-full bg-muted/50 dark:bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-muted/80 dark:hover:bg-white/20"
+                  className="bg-muted/50 hover:bg-muted/80 rounded-full p-2 backdrop-blur-sm transition-colors dark:bg-white/10 dark:hover:bg-white/20"
                   title="Share card"
                 >
-                  <Share2 className="h-4 w-4 text-foreground" />
+                  <Share2 className="text-foreground h-4 w-4" />
                 </button>
                 {/* Download button */}
                 {onDownloadImage && (
                   <button
                     onClick={handleDownload}
-                    className="rounded-full bg-muted/50 dark:bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-muted/80 dark:hover:bg-white/20"
+                    className="bg-muted/50 hover:bg-muted/80 rounded-full p-2 backdrop-blur-sm transition-colors dark:bg-white/10 dark:hover:bg-white/20"
                     title="Download as image"
                   >
-                    <Download className="h-4 w-4 text-foreground" />
+                    <Download className="text-foreground h-4 w-4" />
                   </button>
                 )}
                 {/* Close button */}
-                <DialogClose className="rounded-full bg-muted/50 dark:bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-muted/80 dark:hover:bg-white/20">
-                  <X className="h-5 w-5 text-foreground" />
+                <DialogClose className="bg-muted/50 hover:bg-muted/80 rounded-full p-2 backdrop-blur-sm transition-colors dark:bg-white/10 dark:hover:bg-white/20">
+                  <X className="text-foreground h-5 w-5" />
                 </DialogClose>
               </div>
             </div>
 
             {/* Card metadata */}
-            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:gap-3 sm:text-sm">
+            <div className="text-muted-foreground mt-2 flex items-center gap-2 text-xs sm:gap-3 sm:text-sm">
               {card.country && (
                 <span className="flex items-center gap-1">
                   {card.country.flag && <span className="text-base">{card.country.flag}</span>}
@@ -361,7 +361,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Market value & ownership */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="glass-hierarchy-child rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
                           <TrendingUp className="h-4 w-4" />
                           Market Value
                         </div>
@@ -371,11 +371,11 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       </div>
 
                       <div className="glass-hierarchy-child rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
                           <Users className="h-4 w-4" />
                           Ownership
                         </div>
-                        <div className="mt-1 text-lg font-semibold text-foreground">
+                        <div className="text-foreground mt-1 text-lg font-semibold">
                           {getOwnerCount(card.owners)}
                         </div>
                       </div>
@@ -392,23 +392,23 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Description */}
                     {card.description && (
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h3 className="mb-2 text-sm font-semibold text-foreground">Description</h3>
-                        <p className="text-sm text-muted-foreground">{card.description}</p>
+                        <h3 className="text-foreground mb-2 text-sm font-semibold">Description</h3>
+                        <p className="text-muted-foreground text-sm">{card.description}</p>
                       </div>
                     )}
 
                     {/* Quick stats */}
                     <div className="glass-hierarchy-child rounded-lg p-4">
-                      <h3 className="mb-3 text-sm font-semibold text-foreground">Quick Stats</h3>
+                      <h3 className="text-foreground mb-3 text-sm font-semibold">Quick Stats</h3>
                       <div className="grid grid-cols-2 gap-3">
                         {Object.entries(stats).map(([key, stat]) => (
                           <div key={key}>
-                            <div className="text-xs text-muted-foreground">{stat.label}</div>
+                            <div className="text-muted-foreground text-xs">{stat.label}</div>
                             <div className="mt-1 flex items-baseline gap-2">
                               <span className={cn("text-xl font-bold", stat.color)}>
                                 {stat.value}
                               </span>
-                              <span className="text-xs text-muted-foreground/50">/100</span>
+                              <span className="text-muted-foreground/50 text-xs">/100</span>
                             </div>
                           </div>
                         ))}
@@ -420,7 +420,9 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       <div className="glass-hierarchy-child rounded-lg p-3">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Enhancement Level</span>
-                          <span className="font-bold text-amber-500 dark:text-amber-400">Level {card.level}</span>
+                          <span className="font-bold text-amber-500 dark:text-amber-400">
+                            Level {card.level}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -432,7 +434,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           onClick={() => onTrade(card)}
                           className={cn(
                             "glass-hierarchy-interactive rounded-lg px-4 py-3",
-                            "text-sm font-semibold text-foreground dark:text-white",
+                            "text-foreground text-sm font-semibold dark:text-white",
                             "transition-all hover:scale-105"
                           )}
                         >
@@ -444,7 +446,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           onClick={() => onList(card)}
                           className={cn(
                             "glass-hierarchy-interactive rounded-lg px-4 py-3",
-                            "text-sm font-semibold text-foreground dark:text-white",
+                            "text-foreground text-sm font-semibold dark:text-white",
                             "transition-all hover:scale-105"
                           )}
                         >
@@ -456,7 +458,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           onClick={() => onViewCollection(card.countryId!)}
                           className={cn(
                             "glass-hierarchy-interactive col-span-2 rounded-lg px-4 py-3",
-                            "text-sm font-semibold text-foreground dark:text-white",
+                            "text-foreground text-sm font-semibold dark:text-white",
                             "transition-all hover:scale-105"
                           )}
                         >
@@ -487,8 +489,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     enableMouseTracking={true}
                   />
                   <div className="space-y-2 text-center">
-                    <p className="text-sm text-muted-foreground">Drag to rotate • Click to flip</p>
-                    <p className="text-xs text-muted-foreground/60">Experience the card in interactive 3D</p>
+                    <p className="text-muted-foreground text-sm">Drag to rotate • Click to flip</p>
+                    <p className="text-muted-foreground/60 text-xs">
+                      Experience the card in interactive 3D
+                    </p>
                   </div>
                 </motion.div>
               </TabsContent>
@@ -501,7 +505,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                 >
                   <div className="glass-hierarchy-child rounded-lg p-6">
-                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                    <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
                       <BarChart3 className="h-5 w-5" />
                       Market History
                     </h3>
@@ -509,33 +513,33 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Market stats */}
                     <div className="mb-6 grid grid-cols-3 gap-4">
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="mb-1 text-xs text-muted-foreground">Current Value</p>
+                        <p className="text-muted-foreground mb-1 text-xs">Current Value</p>
                         <p className={cn("text-2xl font-bold", rarityConfig.color)}>
                           {formatMarketValue(card.marketValue)}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="mb-1 text-xs text-muted-foreground">Total Supply</p>
-                        <p className="text-2xl font-bold text-foreground">
+                        <p className="text-muted-foreground mb-1 text-xs">Total Supply</p>
+                        <p className="text-foreground text-2xl font-bold">
                           {card.totalSupply.toLocaleString()}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="mb-1 text-xs text-muted-foreground">Last Trade</p>
-                        <p className="text-sm font-semibold text-foreground">
+                        <p className="text-muted-foreground mb-1 text-xs">Last Trade</p>
+                        <p className="text-foreground text-sm font-semibold">
                           {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
                         </p>
                       </div>
                     </div>
 
                     {/* Placeholder chart */}
-                    <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-muted/20">
+                    <div className="border-border bg-muted/20 flex h-64 items-center justify-center rounded-lg border">
                       <div className="text-center">
-                        <BarChart3 className="mx-auto mb-3 h-12 w-12 text-muted-foreground/35" />
-                        <p className="text-sm text-muted-foreground">
+                        <BarChart3 className="text-muted-foreground/35 mx-auto mb-3 h-12 w-12" />
+                        <p className="text-muted-foreground text-sm">
                           Market chart will display trade history
                         </p>
-                        <p className="mt-2 text-xs text-muted-foreground/50">
+                        <p className="text-muted-foreground/50 mt-2 text-xs">
                           Coming soon: Price trends, volume analysis
                         </p>
                       </div>
@@ -552,7 +556,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                   className="glass-hierarchy-child rounded-lg p-6"
                 >
-                  <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <h3 className="text-foreground mb-6 flex items-center gap-2 text-lg font-semibold">
                     <Star className="h-5 w-5" />
                     Detailed Statistics
                   </h3>
@@ -561,16 +565,16 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {Object.entries(stats).map(([key, stat]) => (
                       <div key={key} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <div className="text-sm text-muted-foreground">{stat.label}</div>
+                          <div className="text-muted-foreground text-sm">{stat.label}</div>
                           <div className="flex items-baseline gap-2">
                             <span className={cn("text-3xl font-bold", stat.color)}>
                               {stat.value}
                             </span>
-                            <span className="text-sm text-muted-foreground/50">/100</span>
+                            <span className="text-muted-foreground/50 text-sm">/100</span>
                           </div>
                         </div>
                         {/* Progress bar */}
-                        <div className="h-3 w-full overflow-hidden rounded-full bg-muted/20">
+                        <div className="bg-muted/20 h-3 w-full overflow-hidden rounded-full">
                           <motion.div
                             className={cn(
                               "h-full rounded-full",
@@ -582,7 +586,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           />
                         </div>
                         {/* Stat description */}
-                        <p className="text-xs text-muted-foreground/75">
+                        <p className="text-muted-foreground/75 text-xs">
                           {key === "economic" && "Economic power and resource generation"}
                           {key === "diplomatic" && "International influence and relations"}
                           {key === "military" && "Defense capabilities and force projection"}
@@ -639,25 +643,27 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       if (!loreStats) return null;
                       return (
                         <div className="glass-hierarchy-child mb-4 rounded-lg p-4">
-                          <h4 className="mb-3 text-sm font-semibold text-foreground">
+                          <h4 className="text-foreground mb-3 text-sm font-semibold">
                             Historical Metrics
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <div className="text-xs text-muted-foreground">Historical Significance</div>
+                              <div className="text-muted-foreground text-xs">
+                                Historical Significance
+                              </div>
                               <div className="text-xl font-bold text-amber-500 dark:text-amber-400">
                                 {loreStats.historicalSignificance ?? 0}/100
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-muted-foreground">Cultural Impact</div>
+                              <div className="text-muted-foreground text-xs">Cultural Impact</div>
                               <div className="text-xl font-bold text-purple-500 dark:text-purple-400">
                                 {loreStats.culturalImpact ?? 0}/100
                               </div>
                             </div>
                           </div>
                           {meta?.qualityScore != null && (
-                            <div className="mt-3 text-xs text-muted-foreground/60">
+                            <div className="text-muted-foreground/60 mt-3 text-xs">
                               Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
                             </div>
                           )}
@@ -682,11 +688,11 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       {/* Original card */}
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h4 className="mb-4 text-sm font-semibold text-foreground">{card.title}</h4>
+                        <h4 className="text-foreground mb-4 text-sm font-semibold">{card.title}</h4>
                         <div className="space-y-3">
                           {Object.entries(stats).map(([key, stat]) => (
                             <div key={key}>
-                              <div className="text-xs text-muted-foreground">{stat.label}</div>
+                              <div className="text-muted-foreground text-xs">{stat.label}</div>
                               <div className={cn("text-2xl font-bold", stat.color)}>
                                 {stat.value}
                               </div>
@@ -697,13 +703,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
                       {/* Comparison card */}
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h4 className="mb-4 text-sm font-semibold text-foreground">
+                        <h4 className="text-foreground mb-4 text-sm font-semibold">
                           {comparisonCard.title}
                         </h4>
                         <div className="space-y-3">
                           {Object.entries(comparisonStats).map(([key, stat]) => (
                             <div key={key}>
-                              <div className="text-xs text-muted-foreground">{stat.label}</div>
+                              <div className="text-muted-foreground text-xs">{stat.label}</div>
                               <div className={cn("text-2xl font-bold", stat.color)}>
                                 {stat.value}
                               </div>

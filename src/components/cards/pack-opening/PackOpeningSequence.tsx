@@ -105,20 +105,23 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
     }, [onComplete]);
 
     // Handle quick actions
-    const handleQuickAction = useCallback((event: QuickActionEvent) => {
-      console.log("[PackOpening] Quick action:", event);
-      
-      if (event.action === "junk") {
-        const ids = event.cardIds || (event.cardId ? [event.cardId] : []);
-        if (ids.length > 0) {
-          junkCardsMutation.mutate({ ownershipIds: ids });
+    const handleQuickAction = useCallback(
+      (event: QuickActionEvent) => {
+        console.log("[PackOpening] Quick action:", event);
+
+        if (event.action === "junk") {
+          const ids = event.cardIds || (event.cardId ? [event.cardId] : []);
+          if (ids.length > 0) {
+            junkCardsMutation.mutate({ ownershipIds: ids });
+          }
         }
-      }
-      
-      // Future integration:
-      // - api.cards.addToCollection.mutate({ cardId: event.cardId })
-      // - api.marketplace.createListing.mutate({ cardId: event.cardId })
-    }, [junkCardsMutation]);
+
+        // Future integration:
+        // - api.cards.addToCollection.mutate({ cardId: event.cardId })
+        // - api.marketplace.createListing.mutate({ cardId: event.cardId })
+      },
+      [junkCardsMutation]
+    );
 
     // Cleanup on unmount
     useEffect(() => {

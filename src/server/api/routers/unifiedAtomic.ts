@@ -107,7 +107,12 @@ export const unifiedAtomicRouter = createTRPCRouter({
         });
       }
 
-      return synergies;
+      const synergiesList: any = synergies;
+      synergiesList.governmentSynergies = [];
+      synergiesList.governmentConflicts = [];
+      synergiesList.crossBuilderSynergies = [];
+
+      return synergiesList;
     }),
 
   // Detect conflicts between different builder types
@@ -194,10 +199,16 @@ export const unifiedAtomicRouter = createTRPCRouter({
 
       return {
         governmentScore: govScore,
+        governmentEffectiveness: govScore,
         economicScore: econScore,
+        economicEffectiveness: econScore,
         taxScore: taxScore,
+        taxEffectiveness: taxScore,
         synergyBonus,
         combinedScore: Math.min(100, Math.max(0, combinedScore)),
+        economicModifiers: {},
+        taxModifiers: {},
+        stabilityScore: 100,
         componentCounts: {
           government: governmentComponents.length,
           economic: economicComponents.length,

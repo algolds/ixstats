@@ -138,10 +138,7 @@ export function AllianceCreationWizard({ onSuccess }: AllianceCreationWizardProp
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Color</Label>
-              <ColorPickerInput
-                value={color}
-                onChange={(val) => setColor(val)}
-              />
+              <ColorPickerInput value={color} onChange={(val) => setColor(val)} />
             </div>
             <div>
               <Label>Visibility</Label>

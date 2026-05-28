@@ -500,12 +500,12 @@ export class UnifiedBuilderIntegrationService {
       ) || 0;
 
     // Calculate current revenue from tax categories
-    const taxRevenue = this.state.tax.builder.categories.reduce(
+    const taxRevenue = this.state.tax.builder.categories?.reduce(
       (sum, cat) =>
         sum +
         ((cat.baseRate || 0) * (this.state.economy.inputs?.coreIndicators.nominalGDP || 0)) / 100,
       0
-    );
+    ) || 0;
 
     // Store revenue data in taxSystem metadata (if taxSystem exists)
     if (this.state.tax.builder.taxSystem) {
@@ -541,14 +541,18 @@ export class UnifiedBuilderIntegrationService {
     if (!this.state.tax.builder || !this.state.government.builder) return;
 
     // Calculate tax revenue from categories
-    const taxRevenue = this.state.tax.builder.categories.reduce(
+    const taxRevenue = this.state.tax.builder.categories?.reduce(
       (sum, cat) =>
         sum +
         ((cat.baseRate || 0) * (this.state.economy.inputs?.coreIndicators.nominalGDP || 0)) / 100,
       0
-    );
+    ) || 0;
 
     // Update government revenue sources with tax data
+    if (!this.state.government.builder.revenueSources) {
+      this.state.government.builder.revenueSources = [];
+    }
+
     const taxRevenueSource = this.state.government.builder.revenueSources.find(
       (r) => r.name === "Tax Revenue"
     );

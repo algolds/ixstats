@@ -1,25 +1,20 @@
-/**
- * Tests for Unified Atomic API Router
- */
-
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { createTRPCMsw } from "msw-trpc";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { appRouter } from "../../root";
 import { createInnerTRPCContext } from "../../trpc";
 
 // Mock the database
 const mockDb = {
   governmentComponent: {
-    findMany: vi.fn(),
+    findMany: jest.fn(),
   },
   economicComponent: {
-    findMany: vi.fn(),
+    findMany: jest.fn(),
   },
   taxComponent: {
-    findMany: vi.fn(),
+    findMany: jest.fn(),
   },
   crossBuilderSynergy: {
-    findMany: vi.fn(),
+    findMany: jest.fn(),
   },
 };
 
@@ -32,7 +27,7 @@ describe("Unified Atomic API Router", () => {
   let ctx: any;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     ctx = {
       db: mockDb,
@@ -68,6 +63,7 @@ describe("Unified Atomic API Router", () => {
         government: mockGovernmentComponents,
         economic: mockEconomicComponents,
         tax: mockTaxComponents,
+        totalCount: 6,
       });
 
       expect(mockDb.governmentComponent.findMany).toHaveBeenCalledWith({
@@ -93,6 +89,7 @@ describe("Unified Atomic API Router", () => {
         government: [],
         economic: [],
         tax: [],
+        totalCount: 0,
       });
     });
   });

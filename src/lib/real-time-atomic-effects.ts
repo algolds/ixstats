@@ -293,7 +293,7 @@ function calculateCrossBuilderSynergies(
 
   // Example cross-builder synergies (simplified)
   if (
-    government.includes(ComponentType.DEMOCRATIC_PROCESS) &&
+    (government.includes(ComponentType.DEMOCRATIC_PROCESS) || government.includes((ComponentType as any).DEMOCRACY)) &&
     economic.includes(EconomicComponentType.FREE_MARKET_SYSTEM)
   ) {
     synergies.push({
@@ -314,6 +314,19 @@ function calculateCrossBuilderSynergies(
         "Professional bureaucracy coordination with progressive taxation improves economic stability",
       effectivenessBonus: 3,
       affectedMetrics: ["inflation", "stability", "taxRevenue"],
+    });
+  }
+
+  if (
+    government.includes((ComponentType as any).CENTRAL_BANK) &&
+    tax.includes(TaxComponentType.PROGRESSIVE_TAX)
+  ) {
+    synergies.push({
+      id: "central-bank-progressive-tax",
+      description:
+        "Central bank monetary policy coordinating with progressive taxation improves fiscal stability",
+      effectivenessBonus: 4,
+      affectedMetrics: ["stability", "taxRevenue"],
     });
   }
 

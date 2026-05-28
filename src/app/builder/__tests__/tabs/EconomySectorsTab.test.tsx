@@ -26,7 +26,7 @@ describe("EconomySectorsTab", () => {
     it("renders the sectors tab", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
-      expect(screen.getByText(/Economy/i) || screen.getByText(/Sectors/i)).toBeTruthy();
+      expect(screen.getByText("Economic Sectors Configuration")).toBeInTheDocument();
     });
 
     it("displays existing sectors", () => {

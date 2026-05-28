@@ -815,7 +815,7 @@ export const intelCoreRouter = createTRPCRouter({
   /**
    * Send encrypted diplomatic message
    */
-  sendSecureMessage: protectedProcedure
+  sendSecureMessage: premiumProcedure
     .input(diplomaticMessageSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -1051,7 +1051,7 @@ export const intelCoreRouter = createTRPCRouter({
    * Create a new cabinet meeting
    * Migrated from ECI router
    */
-  createCabinetMeeting: protectedProcedure
+  createCabinetMeeting: premiumProcedure
     .input(cabinetMeetingSchema)
     .mutation(async ({ ctx, input }) => {
       try {

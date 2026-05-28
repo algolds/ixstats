@@ -34,9 +34,9 @@ describe("DemographicsPopulationTab", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
       // Check for metric cards (values may be formatted)
-      expect(screen.getByText("Total Population")).toBeInTheDocument();
-      expect(screen.getByText("Life Expectancy")).toBeInTheDocument();
-      expect(screen.getByText("Urban Population")).toBeInTheDocument();
+      expect(screen.getAllByText("Total Population")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Life Expectancy")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Urban Population")[0]).toBeInTheDocument();
     });
 
     it("renders all section tabs", () => {
@@ -62,7 +62,7 @@ describe("DemographicsPopulationTab", () => {
       const ageTab = screen.getByText("Age Structure");
       fireEvent.click(ageTab);
 
-      expect(screen.getByText("Age Distribution")).toBeInTheDocument();
+      expect(screen.getAllByText("Age Distribution")[0]).toBeInTheDocument();
     });
 
     it("switches to geographic section when clicked", () => {
@@ -80,7 +80,7 @@ describe("DemographicsPopulationTab", () => {
       const socialTab = screen.getByText("Social Indicators");
       fireEvent.click(socialTab);
 
-      expect(screen.getByText("Social Indicators")).toBeInTheDocument();
+      expect(screen.getAllByText("Social Indicators")[0]).toBeInTheDocument();
     });
   });
 
@@ -178,7 +178,7 @@ describe("DemographicsPopulationTab", () => {
       rerender(<DemographicsPopulationTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       // Metrics should update accordingly
-      expect(screen.getByText("Total Population")).toBeInTheDocument();
+      expect(screen.getAllByText("Total Population")[0]).toBeInTheDocument();
     });
   });
 

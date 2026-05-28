@@ -2,7 +2,7 @@
  * Tests for Real-time Atomic Effects Integration
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import {
   calculateRealTimeAtomicEffects,
   applyRealTimeEffects,

@@ -1,7 +1,5 @@
-"use client";
-
-import { VaultAcquireSection } from "~/components/vault/sections/VaultAcquireSection";
+import { redirect } from "next/navigation";
 
 export default function VaultPacksPage() {
-  return <VaultAcquireSection />;
+  redirect("/vault/marketplace?tab=store");
 }

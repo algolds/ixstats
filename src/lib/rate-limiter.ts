@@ -5,7 +5,7 @@
  * Prevents API abuse and ensures fair resource allocation
  */
 
-import { env } from "../env";
+import { env } from "~/env";
 
 interface RateLimitResult {
   success: boolean;

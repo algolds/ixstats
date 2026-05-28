@@ -17,10 +17,7 @@ import {
   CutoutCardContent,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
-import {
-  TextureCard,
-  TextureCardContent,
-} from "~/components/ui/texture-card";
+import { TextureCard, TextureCardContent } from "~/components/ui/texture-card";
 
 export default function LeaderboardsPage() {
   useEffect(() => {
@@ -58,7 +55,12 @@ export default function LeaderboardsPage() {
   // Safely extract the list of countries (handling { countries, total } structure)
   const countriesList = useMemo(() => {
     if (!allCountries) return [];
-    if (allCountries && typeof allCountries === "object" && "countries" in allCountries && Array.isArray(allCountries.countries)) {
+    if (
+      allCountries &&
+      typeof allCountries === "object" &&
+      "countries" in allCountries &&
+      Array.isArray(allCountries.countries)
+    ) {
       return allCountries.countries;
     }
     if (Array.isArray(allCountries)) {
@@ -151,24 +153,34 @@ export default function LeaderboardsPage() {
 
     switch (metricId) {
       case "gdp": {
-        const sorted = [...countriesList].sort((a, b) => (b.currentTotalGdp || 0) - (a.currentTotalGdp || 0));
+        const sorted = [...countriesList].sort(
+          (a, b) => (b.currentTotalGdp || 0) - (a.currentTotalGdp || 0)
+        );
         return sorted.findIndex((c) => c.id === userProfile.countryId) + 1;
       }
       case "gdpPerCapita": {
-        const sorted = [...countriesList].sort((a, b) => (b.currentGdpPerCapita || 0) - (a.currentGdpPerCapita || 0));
+        const sorted = [...countriesList].sort(
+          (a, b) => (b.currentGdpPerCapita || 0) - (a.currentGdpPerCapita || 0)
+        );
         return sorted.findIndex((c) => c.id === userProfile.countryId) + 1;
       }
       case "population": {
-        const sorted = [...countriesList].sort((a, b) => (b.currentPopulation || 0) - (a.currentPopulation || 0));
+        const sorted = [...countriesList].sort(
+          (a, b) => (b.currentPopulation || 0) - (a.currentPopulation || 0)
+        );
         return sorted.findIndex((c) => c.id === userProfile.countryId) + 1;
       }
       case "achievements": {
         if (!achievementsLeaderboard) return 0;
-        return achievementsLeaderboard.findIndex((a: any) => a.countryId === userProfile.countryId) + 1;
+        return (
+          achievementsLeaderboard.findIndex((a: any) => a.countryId === userProfile.countryId) + 1
+        );
       }
       case "diplomatic": {
         if (!diplomaticLeaderboard) return 0;
-        return diplomaticLeaderboard.findIndex((d: any) => d.countryId === userProfile.countryId) + 1;
+        return (
+          diplomaticLeaderboard.findIndex((d: any) => d.countryId === userProfile.countryId) + 1
+        );
       }
       default:
         return 0;
@@ -186,18 +198,27 @@ export default function LeaderboardsPage() {
     <VaultSidebarLayout activeSection="achievements">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <GradientHeading variant="default" size="sm" weight="black" className="flex items-center gap-3">
-              <Medal className="h-8 w-8 text-amber-500 shrink-0" />
+            <GradientHeading
+              variant="default"
+              size="sm"
+              weight="black"
+              className="flex items-center gap-3"
+            >
+              <Medal className="h-8 w-8 shrink-0 text-amber-500" />
               Global Leaderboards
             </GradientHeading>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               Compare nations across economic, diplomatic, and cultural metrics.
             </p>
           </div>
           <Link href="/achievements">
-            <Button variant="outline" size="sm" className="h-9 border-border/50 hover:bg-muted text-muted-foreground hover:text-foreground">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-border/50 hover:bg-muted text-muted-foreground hover:text-foreground h-9"
+            >
               <Trophy className="mr-2 h-4 w-4 text-[--intel-gold]" />
               View Achievements
             </Button>
@@ -236,15 +257,16 @@ export default function LeaderboardsPage() {
             <TextureCard className="border-border/50 bg-black/5 dark:bg-black/25">
               <TextureCardContent className="p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
                     {metrics.find((m) => m.id === selectedMetric)?.icon &&
                       React.createElement(metrics.find((m) => m.id === selectedMetric)!.icon, {
                         className: "h-5 w-5 text-amber-500",
                       })}
                     {metrics.find((m) => m.id === selectedMetric)?.name} Leaderboard
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Top 20 nations ranked by {metrics.find((m) => m.id === selectedMetric)?.name.toLowerCase()}
+                  <p className="text-muted-foreground text-xs">
+                    Top 20 nations ranked by{" "}
+                    {metrics.find((m) => m.id === selectedMetric)?.name.toLowerCase()}
                   </p>
                 </div>
 
@@ -273,31 +295,31 @@ export default function LeaderboardsPage() {
                           <Link key={entry.id} href={createUrl(`/countries/${entry.slug || ""}`)}>
                             <div
                               className={cn(
-                                "flex items-center justify-between rounded-xl border p-3.5 backdrop-blur-md transition-all duration-300 relative overflow-hidden group/row",
+                                "group/row relative flex items-center justify-between overflow-hidden rounded-xl border p-3.5 backdrop-blur-md transition-all duration-300",
                                 index < 3
                                   ? "border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent dark:from-amber-500/5 dark:to-transparent"
                                   : isUserCountry
                                     ? "border-blue-500/20 bg-blue-500/10 dark:bg-blue-500/5"
-                                    : "border-border/50 bg-card/45 dark:border-white/5 dark:bg-black/20 hover:border-border hover:bg-card/75"
+                                    : "border-border/50 bg-card/45 hover:border-border hover:bg-card/75 dark:border-white/5 dark:bg-black/20"
                               )}
                             >
                               {/* Subtle background flag image */}
                               {entry.flagUrl && (
-                                <div className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none overflow-hidden select-none z-0">
-                                  <div className="absolute inset-0 bg-gradient-to-l from-card via-card/70 to-transparent dark:from-black/40 dark:via-black/20 dark:to-transparent z-10" />
+                                <div className="pointer-events-none absolute top-0 right-0 bottom-0 z-0 w-1/2 overflow-hidden select-none">
+                                  <div className="from-card via-card/70 absolute inset-0 z-10 bg-gradient-to-l to-transparent dark:from-black/40 dark:via-black/20 dark:to-transparent" />
                                   <img
                                     src={entry.flagUrl}
                                     alt=""
-                                    className="w-full h-full object-cover object-right opacity-[0.08] dark:opacity-[0.04] blur-[1px] transform scale-110 transition-transform duration-500 group-hover/row:scale-120"
+                                    className="h-full w-full scale-110 transform object-cover object-right opacity-[0.08] blur-[1px] transition-transform duration-500 group-hover/row:scale-120 dark:opacity-[0.04]"
                                   />
                                 </div>
                               )}
 
-                              <div className="flex flex-1 items-center gap-3 relative z-10">
+                              <div className="relative z-10 flex flex-1 items-center gap-3">
                                 {/* Rank */}
                                 <div
                                   className={cn(
-                                    "w-10 text-center text-2xl font-black shrink-0",
+                                    "w-10 shrink-0 text-center text-2xl font-black",
                                     index === 0
                                       ? "text-amber-500"
                                       : index === 1
@@ -308,33 +330,44 @@ export default function LeaderboardsPage() {
                                   )}
                                 >
                                   {index === 0 ? (
-                                    <Crown className="mx-auto h-7 w-7 text-amber-550 animate-pulse" />
+                                    <Crown className="text-amber-550 mx-auto h-7 w-7 animate-pulse" />
                                   ) : (
                                     index + 1
                                   )}
                                 </div>
 
                                 {/* Country Name */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 font-bold text-foreground">
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-foreground flex items-center gap-2 font-bold">
                                     {entry.flagUrl && (
                                       <img
                                         src={entry.flagUrl}
                                         alt=""
-                                        className="h-3.5 w-5 rounded border border-border/30 object-cover shrink-0 shadow-sm"
+                                        className="border-border/30 h-3.5 w-5 shrink-0 rounded border object-cover shadow-sm"
                                       />
                                     )}
                                     <span className="truncate">{entry.name}</span>
-                                    {isUserCountry && <Badge variant="default" className="text-[9px] py-0 px-1.5 leading-none">You</Badge>}
+                                    {isUserCountry && (
+                                      <Badge
+                                        variant="default"
+                                        className="px-1.5 py-0 text-[9px] leading-none"
+                                      >
+                                        You
+                                      </Badge>
+                                    )}
                                   </div>
                                   {entry.extra && (
-                                    <div className="text-muted-foreground text-xs mt-0.5">{entry.extra}</div>
+                                    <div className="text-muted-foreground mt-0.5 text-xs">
+                                      {entry.extra}
+                                    </div>
                                   )}
                                 </div>
 
                                 {/* Value */}
-                                <div className="text-right shrink-0 ml-4">
-                                  <div className="text-lg font-black text-foreground">{entry.formatted}</div>
+                                <div className="ml-4 shrink-0 text-right">
+                                  <div className="text-foreground text-lg font-black">
+                                    {entry.formatted}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -360,7 +393,7 @@ export default function LeaderboardsPage() {
               <CutoutCard
                 className={cn(
                   cutoutCardSurfaceClassName,
-                  "relative overflow-hidden rounded-2xl shadow-lg border-border/50 bg-card/65 backdrop-blur-md"
+                  "border-border/50 bg-card/65 relative overflow-hidden rounded-2xl shadow-lg backdrop-blur-md"
                 )}
                 texture="chevron"
                 textureOpacity={0.04}
@@ -370,15 +403,17 @@ export default function LeaderboardsPage() {
                 <CutoutCardContent className="relative z-10 p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Your Standings</h2>
-                      <p className="text-xs text-muted-foreground">{userProfile.country?.name}</p>
+                      <h2 className="text-foreground text-sm font-bold tracking-wider uppercase">
+                        Your Standings
+                      </h2>
+                      <p className="text-muted-foreground text-xs">{userProfile.country?.name}</p>
                     </div>
                     <Badge className="border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-[9px] font-bold tracking-wider text-blue-600 uppercase dark:text-blue-400">
                       Rankings
                     </Badge>
                   </div>
 
-                  <div className="space-y-4 border-t border-border/50 pt-4 dark:border-white/5">
+                  <div className="border-border/50 space-y-4 border-t pt-4 dark:border-white/5">
                     {metrics.map((metric) => {
                       const rank = getUserRankForMetric(metric.id);
                       const Icon = metric.icon;
@@ -386,12 +421,14 @@ export default function LeaderboardsPage() {
                       return (
                         <div key={metric.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600 dark:text-blue-400">
                               <Icon className="h-4 w-4" />
                             </div>
-                            <span className="text-xs font-semibold text-muted-foreground">{metric.name}</span>
+                            <span className="text-muted-foreground text-xs font-semibold">
+                              {metric.name}
+                            </span>
                           </div>
-                          <div className="text-sm font-black text-blue-650 dark:text-blue-400">
+                          <div className="text-blue-650 text-sm font-black dark:text-blue-400">
                             {rank > 0 ? `#${rank}` : "—"}
                           </div>
                         </div>
@@ -405,20 +442,23 @@ export default function LeaderboardsPage() {
             {/* Additional Info */}
             <TextureCard className="border-border/50 bg-black/5 dark:bg-black/25">
               <TextureCardContent className="p-6">
-                <h3 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wider">About Leaderboards</h3>
+                <h3 className="text-foreground mb-3 text-sm font-bold tracking-wider uppercase">
+                  About Leaderboards
+                </h3>
                 <div className="text-muted-foreground space-y-4 text-xs leading-relaxed">
                   <p>
-                    <strong>Economic Metrics:</strong> Total GDP and GDP per capita reflect your nation's
-                    economic power and citizen prosperity.
+                    <strong>Economic Metrics:</strong> Total GDP and GDP per capita reflect your
+                    nation's economic power and citizen prosperity.
                   </p>
                   <p>
-                    <strong>Achievements:</strong> Points earned through gameplay milestones and accomplishments.
+                    <strong>Achievements:</strong> Points earned through gameplay milestones and
+                    accomplishments.
                   </p>
                   <p>
-                    <strong>Diplomatic Influence:</strong> Based on embassy network strength, relationship
-                    quality, and cultural exchange programs.
+                    <strong>Diplomatic Influence:</strong> Based on embassy network strength,
+                    relationship quality, and cultural exchange programs.
                   </p>
-                  <p className="text-[10px] italic border-t border-border/45 pt-2.5 mt-3 dark:border-white/5">
+                  <p className="border-border/45 mt-3 border-t pt-2.5 text-[10px] italic dark:border-white/5">
                     Rankings update in real-time based on your nation's performance and activities.
                   </p>
                 </div>

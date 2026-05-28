@@ -83,7 +83,7 @@ export function LoreCardBatchAdmin() {
   const requestStats = api.loreCards.getRequestStats.useQuery(undefined, {
     enabled: activeSubTab === "requests",
   });
-  
+
   const statusParam = requestStatusFilter === "ALL" ? undefined : (requestStatusFilter as any);
   const requestQueue = api.loreCards.getRequestQueue.useQuery(
     { status: statusParam, limit: 50 },
@@ -343,7 +343,9 @@ export function LoreCardBatchAdmin() {
           <div className="glass-card-child rounded-xl border border-purple-500/20 p-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">Wiki Source</label>
+                <label className="text-foreground mb-2 block text-sm font-medium">
+                  Wiki Source
+                </label>
                 <Select
                   value={wikiSource}
                   onValueChange={(value: any) => setWikiSource(value)}
@@ -435,7 +437,9 @@ export function LoreCardBatchAdmin() {
               </Card>
               <Card className="glass-card-child p-4">
                 <p className="text-muted-foreground text-sm">Success</p>
-                <p className="mt-2 text-3xl font-bold text-green-400">{generationResults.success}</p>
+                <p className="mt-2 text-3xl font-bold text-green-400">
+                  {generationResults.success}
+                </p>
               </Card>
               <Card className="glass-card-child p-4">
                 <p className="text-muted-foreground text-sm">Failed/Skipped</p>
@@ -458,7 +462,9 @@ export function LoreCardBatchAdmin() {
               <div className="bg-muted/50 h-2 w-full overflow-hidden rounded-full">
                 <div
                   className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
-                  style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
+                  style={{
+                    width: `${(generationProgress.current / generationProgress.total) * 100}%`,
+                  }}
                 />
               </div>
             </Card>
@@ -552,7 +558,7 @@ export function LoreCardBatchAdmin() {
                 {requestStats.isLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
                 ) : (
-                  requestStats.data?.total ?? 0
+                  (requestStats.data?.total ?? 0)
                 )}
               </p>
             </Card>
@@ -562,7 +568,7 @@ export function LoreCardBatchAdmin() {
                 {requestStats.isLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-yellow-400" />
                 ) : (
-                  requestStats.data?.pending ?? 0
+                  (requestStats.data?.pending ?? 0)
                 )}
               </p>
             </Card>
@@ -572,7 +578,7 @@ export function LoreCardBatchAdmin() {
                 {requestStats.isLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                 ) : (
-                  requestStats.data?.approved ?? 0
+                  (requestStats.data?.approved ?? 0)
                 )}
               </p>
             </Card>
@@ -582,7 +588,7 @@ export function LoreCardBatchAdmin() {
                 {requestStats.isLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-green-400" />
                 ) : (
-                  requestStats.data?.generated ?? 0
+                  (requestStats.data?.generated ?? 0)
                 )}
               </p>
             </Card>
@@ -592,7 +598,7 @@ export function LoreCardBatchAdmin() {
                 {requestStats.isLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-red-400" />
                 ) : (
-                  requestStats.data?.rejected ?? 0
+                  (requestStats.data?.rejected ?? 0)
                 )}
               </p>
             </Card>
@@ -609,7 +615,7 @@ export function LoreCardBatchAdmin() {
                   onClick={() => setRequestStatusFilter(status)}
                   className={
                     requestStatusFilter === status
-                      ? "bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                      ? "bg-purple-600 font-semibold text-white hover:bg-purple-700"
                       : ""
                   }
                 >
@@ -652,7 +658,7 @@ export function LoreCardBatchAdmin() {
                       const isGenerated = request.status === "GENERATED";
 
                       return (
-                        <tr key={request.id} className="hover:bg-white/5 transition-colors">
+                        <tr key={request.id} className="transition-colors hover:bg-white/5">
                           <td className="px-6 py-4 font-semibold text-white">
                             {request.articleTitle}
                           </td>
@@ -671,7 +677,7 @@ export function LoreCardBatchAdmin() {
                               )}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-white/60 font-mono text-xs">
+                          <td className="px-6 py-4 font-mono text-xs text-white/60">
                             {request.userId.substring(0, 12)}...
                           </td>
                           <td className="px-6 py-4 text-white/60">
@@ -693,12 +699,15 @@ export function LoreCardBatchAdmin() {
                                 {request.status}
                               </span>
                               {isRejected && request.rejectionReason && (
-                                <span className="text-[10px] text-red-400/80 max-w-[200px] truncate" title={request.rejectionReason}>
+                                <span
+                                  className="max-w-[200px] truncate text-[10px] text-red-400/80"
+                                  title={request.rejectionReason}
+                                >
                                   Reason: {request.rejectionReason}
                                 </span>
                               )}
                               {isGenerated && request.cardId && (
-                                <span className="text-[10px] text-green-400/80 font-mono">
+                                <span className="font-mono text-[10px] text-green-400/80">
                                   ID: {request.cardId.substring(0, 10)}...
                                 </span>
                               )}
@@ -710,9 +719,11 @@ export function LoreCardBatchAdmin() {
                                 <>
                                   <Button
                                     size="xs"
-                                    onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                    onClick={() =>
+                                      approveMutation.mutate({ requestId: request.id })
+                                    }
                                     disabled={approveMutation.isPending}
-                                    className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs h-7"
+                                    className="h-7 bg-blue-600/20 text-xs text-blue-400 hover:bg-blue-600/30"
                                   >
                                     Approve
                                   </Button>
@@ -720,7 +731,7 @@ export function LoreCardBatchAdmin() {
                                     size="xs"
                                     variant="destructive"
                                     onClick={() => setRejectionRequestId(request.id)}
-                                    className="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs h-7"
+                                    className="h-7 bg-red-600/20 text-xs text-red-400 hover:bg-red-600/30"
                                   >
                                     Reject
                                   </Button>
@@ -729,9 +740,11 @@ export function LoreCardBatchAdmin() {
                               {isApproved && (
                                 <Button
                                   size="xs"
-                                  onClick={() => generateCardMutation.mutate({ requestId: request.id })}
+                                  onClick={() =>
+                                    generateCardMutation.mutate({ requestId: request.id })
+                                  }
                                   disabled={generateCardMutation.isPending}
-                                  className="bg-green-600/20 hover:bg-green-600/30 text-green-400 text-xs h-7 font-semibold"
+                                  className="h-7 bg-green-600/20 text-xs font-semibold text-green-400 hover:bg-green-600/30"
                                 >
                                   {generateCardMutation.isPending ? (
                                     <>
@@ -798,12 +811,16 @@ export function LoreCardBatchAdmin() {
       </Dialog>
 
       {/* Rejection Reason Dialog */}
-      <Dialog open={!!rejectionRequestId} onOpenChange={(open) => !open && setRejectionRequestId(null)}>
+      <Dialog
+        open={!!rejectionRequestId}
+        onOpenChange={(open) => !open && setRejectionRequestId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Lore Card Request</DialogTitle>
             <DialogDescription>
-              Please enter the reason for rejecting this request. The user will be fully refunded 50 IxCredits.
+              Please enter the reason for rejecting this request. The user will be fully refunded 50
+              IxCredits.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

@@ -1,9 +1,13 @@
-/**
- * Jest Setup File
- *
- * This file runs before each test file. It sets up global mocks and
- * configurations needed for the test environment.
- */
+import "@testing-library/jest-dom";
+import fetch, { Headers, Request, Response } from "node-fetch-native";
+
+// Polyfill fetch and its helpers for testing environments (e.g. Clerk nextjs/server)
+if (typeof global.fetch === "undefined") {
+  global.fetch = fetch as any;
+  global.Headers = Headers as any;
+  global.Request = Request as any;
+  global.Response = Response as any;
+}
 
 // Note: ~/env mock is handled via moduleNameMapper in jest config
 // This avoids circular require issues

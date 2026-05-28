@@ -205,7 +205,7 @@ export const intelAnalyticsRouter = createTRPCRouter({
    * Get advanced analytics (volatility, trends, correlations)
    * Migrated from ECI router
    */
-  getAdvancedAnalytics: protectedProcedure
+  getAdvancedAnalytics: premiumProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -254,7 +254,7 @@ export const intelAnalyticsRouter = createTRPCRouter({
    * Get AI-powered recommendations
    * Migrated from ECI router
    */
-  getAIRecommendations: protectedProcedure
+  getAIRecommendations: premiumProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -295,7 +295,7 @@ export const intelAnalyticsRouter = createTRPCRouter({
    * Get predictive economic models
    * Migrated from ECI router
    */
-  getPredictiveModels: protectedProcedure
+  getPredictiveModels: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -702,7 +702,7 @@ export const intelAnalyticsRouter = createTRPCRouter({
    * Get policy effectiveness analysis
    * Migrated from ECI router
    */
-  getPolicyEffectiveness: protectedProcedure
+  getPolicyEffectiveness: premiumProcedure
     .input(
       z.object({
         countryId: z.string(),

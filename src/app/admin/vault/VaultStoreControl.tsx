@@ -34,11 +34,7 @@ import {
 } from "~/components/ui/select";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import { cn } from "~/lib/utils";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "~/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {
   ChevronDown,
   Plus,
@@ -100,10 +96,11 @@ export function VaultStoreControl() {
   });
 
   // Price History Query
-  const { data: priceHistory, isLoading: isHistoryLoading } = api.vault.adminGetPriceHistory.useQuery(
-    { itemId: selectedItemId || "" },
-    { enabled: !!selectedItemId }
-  );
+  const { data: priceHistory, isLoading: isHistoryLoading } =
+    api.vault.adminGetPriceHistory.useQuery(
+      { itemId: selectedItemId || "" },
+      { enabled: !!selectedItemId }
+    );
 
   // Mutations
   const createMutation = api.vault.adminCreateStoreItem.useMutation({
@@ -233,11 +230,11 @@ export function VaultStoreControl() {
           ))}
         </div>
       ) : !items || items.length === 0 ? (
-        <div className="text-muted-foreground border-border/40 py-12 text-center border rounded-xl bg-card/20">
+        <div className="text-muted-foreground border-border/40 bg-card/20 rounded-xl border py-12 text-center">
           No items found in the database. Seeding standard items...
         </div>
       ) : (
-        <div className="border-border/40 overflow-x-auto rounded-xl border bg-card/10">
+        <div className="border-border/40 bg-card/10 overflow-x-auto rounded-xl border">
           <Table>
             <TableHeader className="bg-muted/40">
               <TableRow>
@@ -261,7 +258,7 @@ export function VaultStoreControl() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-semibold text-foreground">{item.name}</div>
+                      <div className="text-foreground font-semibold">{item.name}</div>
                       <div className="text-muted-foreground max-w-sm truncate text-[10px]">
                         {item.description || "No description provided."}
                       </div>
@@ -284,7 +281,7 @@ export function VaultStoreControl() {
                         {item.badgeText && (
                           <Badge
                             variant="outline"
-                            className="border-slate-500/20 bg-slate-550/10 text-muted-foreground px-1.5 py-0 text-[9px]"
+                            className="bg-slate-550/10 text-muted-foreground border-slate-500/20 px-1.5 py-0 text-[9px]"
                           >
                             {item.badgeText}
                           </Badge>
@@ -299,8 +296,8 @@ export function VaultStoreControl() {
                         variant={item.isActive ? "default" : "secondary"}
                         className={`text-[9px] ${
                           item.isActive
-                            ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15 border-emerald-500/20"
-                            : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/15 border-slate-500/20"
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15"
+                            : "border-slate-500/20 bg-slate-500/10 text-slate-400 hover:bg-slate-500/15"
                         }`}
                       >
                         {item.isActive ? "Active" : "Disabled"}
@@ -454,27 +451,29 @@ export function VaultStoreControl() {
                 <Popover open={isIconPopoverOpen} onOpenChange={setIsIconPopoverOpen}>
                   <PopoverTrigger
                     id="item-icon"
-                    className="bg-background border-border/40 text-foreground flex w-full items-center justify-between gap-2 px-3 py-2 text-sm font-normal rounded-lg border hover:bg-muted/30 transition-colors h-9 cursor-pointer"
+                    className="bg-background border-border/40 text-foreground hover:bg-muted/30 flex h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-normal transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       {(() => {
                         const IconComponent = ICON_MAP[formData.icon] || Sparkles;
-                        return <IconComponent className="h-4 w-4 text-amber-550 dark:text-amber-400 shrink-0" />;
+                        return (
+                          <IconComponent className="text-amber-550 h-4 w-4 shrink-0 dark:text-amber-400" />
+                        );
                       })()}
                       <span>{formData.icon}</span>
                     </div>
-                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                   </PopoverTrigger>
-                  <PopoverContent className="w-72 p-3 bg-popover border-border/50 text-foreground">
+                  <PopoverContent className="bg-popover border-border/50 text-foreground w-72 p-3">
                     <div className="space-y-3">
                       <Input
                         placeholder="Search icons..."
                         value={iconSearch}
                         onChange={(e) => setIconSearch(e.target.value)}
-                        className="h-8 bg-background/50 border-border/40 text-xs"
+                        className="bg-background/50 border-border/40 h-8 text-xs"
                         autoFocus
                       />
-                      <div className="grid grid-cols-5 gap-1.5 max-h-48 overflow-y-auto pr-1 thin-scrollbar [scrollbar-width:thin]">
+                      <div className="thin-scrollbar grid max-h-48 [scrollbar-width:thin] grid-cols-5 gap-1.5 overflow-y-auto pr-1">
                         {Object.keys(ICON_MAP)
                           .filter((name) => name.toLowerCase().includes(iconSearch.toLowerCase()))
                           .map((iconName) => {
@@ -491,9 +490,9 @@ export function VaultStoreControl() {
                                   setIconSearch("");
                                 }}
                                 className={cn(
-                                  "flex h-9 w-9 items-center justify-center rounded-lg border border-border/30 p-0 text-foreground transition-all duration-150 hover:bg-muted/50 hover:scale-105",
+                                  "border-border/30 text-foreground hover:bg-muted/50 flex h-9 w-9 items-center justify-center rounded-lg border p-0 transition-all duration-150 hover:scale-105",
                                   isSelected
-                                    ? "bg-amber-500/15 border-amber-500/50 text-amber-500"
+                                    ? "border-amber-500/50 bg-amber-500/15 text-amber-500"
                                     : "bg-background/20"
                                 )}
                               >
@@ -516,7 +515,7 @@ export function VaultStoreControl() {
               </div>
             </div>
 
-            <DialogFooter className="mt-6 pt-4 border-t border-border/40">
+            <DialogFooter className="border-border/40 mt-6 border-t pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -530,7 +529,7 @@ export function VaultStoreControl() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
               >
-                {(createMutation.isPending || updateMutation.isPending) ? (
+                {createMutation.isPending || updateMutation.isPending ? (
                   <>
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving...
                   </>
@@ -561,11 +560,11 @@ export function VaultStoreControl() {
                 ))}
               </div>
             ) : !priceHistory || priceHistory.length === 0 ? (
-              <p className="text-muted-foreground text-center py-6 text-xs">
+              <p className="text-muted-foreground py-6 text-center text-xs">
                 No pricing edits have been recorded for this item.
               </p>
             ) : (
-              <div className="border-border/40 overflow-hidden rounded-lg border bg-muted/20 max-h-60 overflow-y-auto">
+              <div className="border-border/40 bg-muted/20 max-h-60 overflow-hidden overflow-y-auto rounded-lg border">
                 <Table>
                   <TableHeader className="bg-muted/40">
                     <TableRow>
@@ -580,10 +579,10 @@ export function VaultStoreControl() {
                         <TableCell className="text-muted-foreground text-[10px]">
                           {new Date(hist.changedAt).toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-amber-500 text-xs">
+                        <TableCell className="text-right font-mono text-xs font-bold text-amber-500">
                           {hist.price.toLocaleString()} IxC
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-right text-[10px] max-w-[100px] truncate">
+                        <TableCell className="text-muted-foreground max-w-[100px] truncate text-right text-[10px]">
                           {hist.adminId.substring(0, 8)}...
                         </TableCell>
                       </TableRow>
@@ -593,12 +592,8 @@ export function VaultStoreControl() {
               </div>
             )}
           </div>
-          <DialogFooter className="mt-4 pt-2 border-t border-border/40">
-            <Button
-              onClick={() => setIsHistoryOpen(false)}
-              variant="secondary"
-              className="text-xs"
-            >
+          <DialogFooter className="border-border/40 mt-4 border-t pt-2">
+            <Button onClick={() => setIsHistoryOpen(false)} variant="secondary" className="text-xs">
               Close
             </Button>
           </DialogFooter>

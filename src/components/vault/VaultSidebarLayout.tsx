@@ -58,10 +58,14 @@ export function VaultSidebarLayout({
               <div className="glass-hierarchy-child scrollbar-none overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1.5 backdrop-blur-md">
                 <div className="flex min-w-max gap-1.5">
                   {[
-                    { id: "dashboard", href: "/vault", label: "Wallet" },
-                    { id: "cards", href: "/vault/cards", label: "Collection" },
-                    { id: "marketplace", href: "/vault/marketplace", label: "Marketplace" },
-                    { id: "import", href: "/vault/import", label: "Import" },
+                    { id: "dashboard", href: withBasePath("/vault"), label: "Wallet" },
+                    { id: "cards", href: withBasePath("/vault/cards"), label: "Collection" },
+                    {
+                      id: "marketplace",
+                      href: withBasePath("/vault/marketplace"),
+                      label: "Marketplace",
+                    },
+                    { id: "import", href: withBasePath("/vault/import"), label: "Import" },
                     {
                       id: "achievements",
                       href: withBasePath("/achievements"),

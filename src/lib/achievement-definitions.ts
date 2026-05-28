@@ -823,7 +823,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   },
 ];
 
-
 /**
  * Get achievement definition by ID
  */

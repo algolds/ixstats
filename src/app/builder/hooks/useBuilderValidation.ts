@@ -159,12 +159,18 @@ export function useBuilderValidation({
       warnings.push("Capital city not specified");
     }
 
-    if (coreIndicators?.nominalGDP <= 0) {
-      errors.push("Nominal GDP must be greater than 0");
-    }
+    if (coreIndicators) {
+      const nominalGDP = coreIndicators.nominalGDP ?? (coreIndicators as any).gdp;
+      if (nominalGDP === undefined || nominalGDP <= 0) {
+        errors.push("Nominal GDP must be greater than 0");
+      }
 
-    if (coreIndicators?.totalPopulation <= 0) {
-      errors.push("Population must be greater than 0");
+      const population = coreIndicators.totalPopulation ?? (coreIndicators as any).population;
+      if (population === undefined || population <= 0) {
+        errors.push("population must be greater than 0");
+      }
+    } else {
+      errors.push("Core indicators not configured");
     }
 
     return { isValid: errors.length === 0, errors, warnings };
@@ -206,19 +212,25 @@ export function useBuilderValidation({
 
     const { fiscalSystem, governmentSpending, laborEmployment } = builderState.economicInputs;
 
-    if (fiscalSystem.taxRevenueGDPPercent < 0 || fiscalSystem.taxRevenueGDPPercent > 100) {
-      errors.push("Tax revenue percentage must be between 0 and 100");
+    if (fiscalSystem) {
+      if (fiscalSystem.taxRevenueGDPPercent < 0 || fiscalSystem.taxRevenueGDPPercent > 100) {
+        errors.push("Tax revenue percentage must be between 0 and 100");
+      }
     }
 
-    if (governmentSpending.totalSpending < 0 || governmentSpending.totalSpending > 100) {
-      errors.push("Government spending percentage must be between 0 and 100");
+    if (governmentSpending) {
+      if (governmentSpending.totalSpending < 0 || governmentSpending.totalSpending > 100) {
+        errors.push("Government spending percentage must be between 0 and 100");
+      }
     }
 
-    if (laborEmployment.unemploymentRate < 0 || laborEmployment.unemploymentRate > 100) {
-      errors.push("Unemployment rate must be between 0 and 100");
+    if (laborEmployment) {
+      if (laborEmployment.unemploymentRate < 0 || laborEmployment.unemploymentRate > 100) {
+        errors.push("Unemployment rate must be between 0 and 100");
+      }
     }
 
-    if (governmentSpending.totalSpending > fiscalSystem.taxRevenueGDPPercent * 1.5) {
+    if (governmentSpending && fiscalSystem && governmentSpending.totalSpending > fiscalSystem.taxRevenueGDPPercent * 1.5) {
       warnings.push("Government spending significantly exceeds tax revenue (potential deficit)");
     }
 
@@ -274,10 +286,9 @@ export function useBuilderValidation({
     const validation = validateAll();
     return (
       validation.isValid &&
-      builderState.economicInputs !== null &&
-      builderState.completedSteps.length >= 4
+      builderState.economicInputs !== null
     );
-  }, [validateAll, builderState.economicInputs, builderState.completedSteps]);
+  }, [validateAll, builderState.economicInputs]);
 
   return {
     validateStep,

@@ -43,8 +43,8 @@ export default function AdminVaultPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <Card className="mx-auto max-w-md border-red-500/20 bg-slate-900/50">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <Shield className="text-red-400 h-10 w-10 animate-pulse" />
-            <h2 className="text-lg font-semibold text-foreground">Admin Access Required</h2>
+            <Shield className="h-10 w-10 animate-pulse text-red-400" />
+            <h2 className="text-foreground text-lg font-semibold">Admin Access Required</h2>
             <p className="text-muted-foreground text-sm">
               You need administrative permissions to access the Vault Economy command center.
             </p>
@@ -60,32 +60,36 @@ export default function AdminVaultPage() {
   }
 
   return (
-    <div className="px-6 py-8 space-y-6">
+    <div className="space-y-6 px-6 py-8">
       {/* Breadcrumb Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <Link href={withBasePath("/admin")} className="hover:text-foreground transition-colors">
-              Admin 
+              Admin
             </Link>
             <span>/</span>
             <span className="text-foreground font-medium">Vault & Economy</span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-foreground flex items-center gap-2 text-2xl font-black tracking-tight">
             <Coins className="h-6 w-6 text-amber-500" />
             Vault & Economy Control Suite
           </h1>
         </div>
 
         <Link href={withBasePath("/admin")}>
-          <Button variant="outline" size="sm" className="h-9 border-white/10 text-slate-300 hover:text-white">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 border-white/10 text-slate-300 hover:text-white"
+          >
             <ArrowLeft className="mr-1.5 h-4 w-4" /> Admin Home
           </Button>
         </Link>
       </div>
 
       {/* Primary Tab Switcher */}
-      <div className="border-b border-white/5 flex gap-2 overflow-x-auto pb-px">
+      <div className="flex gap-2 overflow-x-auto border-b border-white/5 pb-px">
         {[
           { id: "users" as VaultTab, label: "Users & Balances", icon: Users },
           { id: "store" as VaultTab, label: "Store Inventory", icon: ShoppingBag },
@@ -98,10 +102,10 @@ export default function AdminVaultPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all shrink-0 ${
+              className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-all ${
                 isActive
-                  ? "border-amber-500 text-amber-400 bg-amber-500/5"
-                  : "border-transparent text-slate-400 hover:text-white hover:bg-white/5"
+                  ? "border-amber-500 bg-amber-500/5 text-amber-400"
+                  : "border-transparent text-slate-400 hover:bg-white/5 hover:text-white"
               }`}
             >
               <Icon className="h-4 w-4" />

@@ -1223,7 +1223,6 @@ export const vaultRouter = createTRPCRouter({
           });
         }
 
-
         return { success: true, item: updated };
       } catch (error) {
         console.error("[Vault Router] adminUpdateStoreItem error:", error);
@@ -1384,7 +1383,8 @@ async function seedVaultStoreItems(db: any) {
     {
       id: "upgrade_lore_token",
       name: "Lore Request Token",
-      description: "Grants 1 submission token to request a custom lore card using any Wiki Article.",
+      description:
+        "Grants 1 submission token to request a custom lore card using any Wiki Article.",
       price: 2500,
       icon: "BookOpen",
       glowColor: "rgba(59,130,246,0.35)",
@@ -1408,7 +1408,8 @@ async function seedVaultStoreItems(db: any) {
     {
       id: "upgrade_yield_boost",
       name: "Passive Yield Boost (+5%)",
-      description: "Adds a permanent +5% multiplier to all passive daily credit allowance earnings.",
+      description:
+        "Adds a permanent +5% multiplier to all passive daily credit allowance earnings.",
       price: 5000,
       icon: "TrendingUp",
       glowColor: "rgba(245,158,11,0.35)",
@@ -1427,4 +1428,3 @@ async function seedVaultStoreItems(db: any) {
     });
   }
 }
-

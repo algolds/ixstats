@@ -86,10 +86,11 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
     const [selectedPartnerName, setSelectedPartnerName] = useState(recipientName || "");
 
     // Fetch active users to select a trading partner
-    const { data: activeUsersData, isLoading: loadingActiveUsers } = api.users.getActiveUsers.useQuery(
-      { limit: 50, excludeUserId: currentUserId ?? undefined },
-      { enabled: open && !!currentUserId }
-    );
+    const { data: activeUsersData, isLoading: loadingActiveUsers } =
+      api.users.getActiveUsers.useQuery(
+        { limit: 50, excludeUserId: currentUserId ?? undefined },
+        { enabled: open && !!currentUserId }
+      );
 
     // Fetch search results for trading partners using search query
     const { data: searchResultsData, isLoading: loadingSearchResults } =
@@ -105,14 +106,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
       if (isSearching) {
         return searchResultsData || [];
       }
-      
+
       if (!activeUsersData) return [];
       const query = partnerSearchText.trim().toLowerCase();
       const filtered = query
         ? activeUsersData.filter(
             (u) =>
-              u.countryName.toLowerCase().includes(query) ||
-              u.leader.toLowerCase().includes(query)
+              u.countryName.toLowerCase().includes(query) || u.leader.toLowerCase().includes(query)
           )
         : activeUsersData;
 
@@ -303,19 +303,21 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
           )}
         >
           {/* Close button */}
-          <DialogClose className="absolute top-4 right-4 z-50 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-black/60 p-2 backdrop-blur-sm transition-colors">
+          <DialogClose className="absolute top-4 right-4 z-50 rounded-full bg-slate-100 p-2 backdrop-blur-sm transition-colors hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-black/60">
             <X className="h-5 w-5 text-slate-800 dark:text-white" />
           </DialogClose>
 
           <div className="flex h-full flex-col overflow-auto p-4 sm:p-6">
             {/* Header */}
             <DialogHeader className="mb-4">
-              <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
                 <ArrowRightLeft className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 Create Trade Offer
               </DialogTitle>
               {(selectedPartnerName || recipientName) && (
-                <p className="mt-1 text-sm text-muted-foreground">Trading with {selectedPartnerName || recipientName}</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Trading with {selectedPartnerName || recipientName}
+                </p>
               )}
             </DialogHeader>
 
@@ -329,14 +331,23 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         notify.error("Please select a trading partner first");
                         return;
                       }
-                      if (s === "their-cards" && (!searchRecipient || selectedYourCards.length === 0)) {
+                      if (
+                        s === "their-cards" &&
+                        (!searchRecipient || selectedYourCards.length === 0)
+                      ) {
                         if (!searchRecipient) notify.error("Please select a trading partner first");
                         else notify.error("Please select at least one card to offer");
                         return;
                       }
-                      if (s === "review" && (!searchRecipient || selectedYourCards.length === 0 || selectedTheirCards.length === 0)) {
+                      if (
+                        s === "review" &&
+                        (!searchRecipient ||
+                          selectedYourCards.length === 0 ||
+                          selectedTheirCards.length === 0)
+                      ) {
                         if (!searchRecipient) notify.error("Please select a trading partner first");
-                        else if (selectedYourCards.length === 0) notify.error("Please select at least one card to offer");
+                        else if (selectedYourCards.length === 0)
+                          notify.error("Please select at least one card to offer");
                         else notify.error("Please select at least one card to request");
                         return;
                       }
@@ -345,8 +356,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     className={cn(
                       "rounded-full px-4 py-2 text-sm font-medium transition-all",
                       step === s
-                        ? "border border-blue-500/30 bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 scale-105 font-bold shadow-sm"
-                        : "glass-hierarchy-child text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5"
+                        ? "scale-105 border border-blue-500/30 bg-blue-500/10 font-bold text-blue-600 shadow-sm dark:bg-blue-500/20 dark:text-blue-400"
+                        : "glass-hierarchy-child text-slate-500 hover:bg-slate-200/50 hover:text-slate-900 dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
                     )}
                   >
                     {idx + 1}.{" "}
@@ -372,7 +383,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
                       Select cards to offer ({selectedYourCards.length} selected)
                     </h3>
-                    <p className="text-sm text-muted-foreground">Click cards to select/deselect</p>
+                    <p className="text-muted-foreground text-sm">Click cards to select/deselect</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -448,7 +459,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       Back: Partner
                     </Button>
                     <div className="glass-hierarchy-child rounded-lg px-4 py-2">
-                      <p className="text-sm text-muted-foreground">Total Value</p>
+                      <p className="text-muted-foreground text-sm">Total Value</p>
                       <p className="text-lg font-bold text-slate-900 dark:text-white">
                         {yourValue.toLocaleString()} credits
                       </p>
@@ -456,7 +467,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     <Button
                       onClick={() => setStep("their-cards")}
                       disabled={selectedYourCards.length === 0}
-                      className="glass-hierarchy-interactive text-slate-900 dark:text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="glass-hierarchy-interactive font-bold text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white"
                     >
                       Next: Select Their Cards
                     </Button>
@@ -468,20 +479,20 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
               {step === "partner" && (
                 <div className="space-y-4">
                   {searchRecipient ? (
-                    <div className="glass-global rounded-lg p-6 space-y-4 max-w-md mx-auto text-center">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 shadow-sm bg-blue-500/5">
+                    <div className="glass-global mx-auto max-w-md space-y-4 rounded-lg p-6 text-center">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-blue-500/5 shadow-sm dark:border-white/10">
                         <UnifiedCountryFlag
                           countryName={selectedPartnerName}
                           size="xl"
                           fitContainer
-                          className="object-cover h-full w-full"
+                          className="h-full w-full object-cover"
                         />
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                           {selectedPartnerName || "Trading Partner Selected"}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-1 text-xs">
                           User ID: {searchRecipient}
                         </p>
                       </div>
@@ -489,33 +500,33 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         <Button
                           variant="outline"
                           onClick={handleClearPartner}
-                          className="glass-hierarchy-child text-red-650 dark:text-red-400 border-red-500/20 hover:bg-red-500/10"
+                          className="glass-hierarchy-child text-red-650 border-red-500/20 hover:bg-red-500/10 dark:text-red-400"
                         >
                           Change Partner
                         </Button>
                         <Button
                           onClick={() => setStep("your-cards")}
-                          className="glass-hierarchy-interactive text-slate-900 dark:text-white font-bold"
+                          className="glass-hierarchy-interactive font-bold text-slate-900 dark:text-white"
                         >
                           Next: Select Your Cards
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="glass-hierarchy-child rounded-lg p-6 space-y-4">
+                    <div className="glass-hierarchy-child space-y-4 rounded-lg p-6">
                       <div className="text-center">
-                        <ArrowRightLeft className="mx-auto mb-3 h-10 w-10 text-blue-650 dark:text-blue-400 animate-pulse" />
+                        <ArrowRightLeft className="text-blue-650 mx-auto mb-3 h-10 w-10 animate-pulse dark:text-blue-400" />
                         <h3 className="text-lg font-black text-slate-900 dark:text-white">
                           Select a Trading Partner
                         </h3>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           Search by country or username
                         </p>
                       </div>
 
                       <div className="flex flex-col gap-4">
                         {manualUserIdMode ? (
-                          <div className="mx-auto max-w-md w-full space-y-3 pt-2">
+                          <div className="mx-auto w-full max-w-md space-y-3 pt-2">
                             <Input
                               placeholder="User ID (e.g., user_abc123)"
                               value={searchRecipient}
@@ -525,57 +536,66 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               }}
                               className="w-full text-center"
                             />
-                            <p className="text-[10px] text-center text-slate-400 dark:text-white/40">
+                            <p className="text-center text-[10px] text-slate-400 dark:text-white/40">
                               Paste the player's Clerk ID directly.
                             </p>
                           </div>
                         ) : (
                           <div className="space-y-4">
                             <div className="relative">
-                              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
+                              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
                               <Input
                                 placeholder="Search by country or username..."
                                 value={partnerSearchText}
                                 onChange={(e) => setPartnerSearchText(e.target.value)}
-                                className="pl-10 w-full"
+                                className="w-full pl-10"
                               />
                             </div>
 
                             {isLoadingPartners ? (
-                              <div className="flex flex-col items-center py-12 gap-2">
-                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 dark:border-white/20 border-t-blue-500 dark:border-t-blue-400" />
-                                <span className="text-xs text-muted-foreground">
-                                  {isSearching ? "Searching partners..." : "Loading active countries..."}
+                              <div className="flex flex-col items-center gap-2 py-12">
+                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500 dark:border-white/20 dark:border-t-blue-400" />
+                                <span className="text-muted-foreground text-xs">
+                                  {isSearching
+                                    ? "Searching partners..."
+                                    : "Loading active countries..."}
                                 </span>
                               </div>
                             ) : displayUsers.length > 0 ? (
                               <div className="space-y-2">
-                                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 dark:text-white/40">
-                                  {isSearching ? `Search Results (${displayUsers.length})` : "Active/Recommended Players"}
+                                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-white/40">
+                                  {isSearching
+                                    ? `Search Results (${displayUsers.length})`
+                                    : "Active/Recommended Players"}
                                 </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[35vh] overflow-y-auto pr-1">
+                                <div className="grid max-h-[35vh] grid-cols-1 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2">
                                   {displayUsers.map((user) => (
                                     <div
                                       key={user.id}
-                                      onClick={() => handleSelectPartner(user.id, user.countryName || user.username)}
-                                      className="glass-global glass-interactive flex items-center justify-between p-3 rounded-lg cursor-pointer"
+                                      onClick={() =>
+                                        handleSelectPartner(
+                                          user.id,
+                                          user.countryName || user.username
+                                        )
+                                      }
+                                      className="glass-global glass-interactive flex cursor-pointer items-center justify-between rounded-lg p-3"
                                     >
-                                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                                        <div className="shrink-0 flex items-center justify-center">
+                                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                                        <div className="flex shrink-0 items-center justify-center">
                                           <UnifiedCountryFlag
                                             countryName={user.countryName || user.username}
                                             flagUrl={user.flag}
                                             size="lg"
-                                            className="h-8 w-auto min-w-[32px] rounded border border-slate-200 dark:border-white/10 shadow-sm object-cover"
+                                            className="h-8 w-auto min-w-[32px] rounded border border-slate-200 object-cover shadow-sm dark:border-white/10"
                                           />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                          <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
                                             {user.countryName || "Unknown Country"}
                                           </p>
                                           {user.username && (
-                                            <div className="flex flex-wrap items-center mt-1 text-xs">
-                                              <span className="text-[10px] text-cyan-600 dark:text-cyan-400 bg-cyan-500/5 dark:bg-cyan-500/10 border border-cyan-500/20 dark:border-cyan-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 font-medium">
+                                            <div className="mt-1 flex flex-wrap items-center text-xs">
+                                              <span className="flex items-center gap-1 rounded border border-cyan-500/20 bg-cyan-500/5 px-1.5 py-0.5 text-[10px] font-medium text-cyan-600 dark:border-cyan-500/10 dark:bg-cyan-500/10 dark:text-cyan-400">
                                                 <User className="h-2.5 w-2.5" />
                                                 {user.username}
                                               </span>
@@ -583,8 +603,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                           )}
                                         </div>
                                       </div>
-                                      <div className="text-right shrink-0 flex flex-col items-end pl-2">
-                                        <span className="text-[9px] uppercase font-mono tracking-wider font-bold text-amber-600 dark:text-amber-400 bg-amber-500/5 dark:bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 dark:border-amber-500/30">
+                                      <div className="flex shrink-0 flex-col items-end pl-2 text-right">
+                                        <span className="rounded border border-amber-500/20 bg-amber-500/5 px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-amber-600 uppercase dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
                                           {user.economicTier}
                                         </span>
                                       </div>
@@ -593,20 +613,22 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                 </div>
                               </div>
                             ) : (
-                              <div className="text-center py-12 text-sm text-muted-foreground glass-hierarchy-child rounded-lg">
+                              <div className="text-muted-foreground glass-hierarchy-child rounded-lg py-12 text-center text-sm">
                                 No active trading partners found matching "{partnerSearchText}"
                               </div>
                             )}
                           </div>
                         )}
 
-                        <div className="pt-2 border-t border-slate-200 dark:border-white/5 flex justify-center">
+                        <div className="flex justify-center border-t border-slate-200 pt-2 dark:border-white/5">
                           <button
                             type="button"
                             onClick={() => setManualUserIdMode(!manualUserIdMode)}
-                            className="text-xs text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white/60 transition-colors flex items-center gap-1"
+                            className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-slate-800 dark:text-white/40 dark:hover:text-white/60"
                           >
-                            {manualUserIdMode ? "Switch back to search" : "Or enter user ID manually"}
+                            {manualUserIdMode
+                              ? "Switch back to search"
+                              : "Or enter user ID manually"}
                           </button>
                         </div>
                       </div>
@@ -619,9 +641,14 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
               {step === "their-cards" && (
                 <div className="space-y-4">
                   {!searchRecipient ? (
-                    <div className="text-center py-12 glass-hierarchy-child rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-4">No trading partner selected.</p>
-                      <Button onClick={() => setStep("partner")} className="glass-hierarchy-interactive text-slate-900 dark:text-white font-bold">
+                    <div className="glass-hierarchy-child rounded-lg py-12 text-center">
+                      <p className="text-muted-foreground mb-4 text-sm">
+                        No trading partner selected.
+                      </p>
+                      <Button
+                        onClick={() => setStep("partner")}
+                        className="glass-hierarchy-interactive font-bold text-slate-900 dark:text-white"
+                      >
                         Select Partner
                       </Button>
                     </div>
@@ -632,15 +659,18 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                             Select cards to request ({selectedTheirCards.length} selected)
                           </h3>
-                          <p className="text-xs text-muted-foreground">
-                            Trading with: <span className="font-bold text-blue-600 dark:text-blue-400">{selectedPartnerName || searchRecipient}</span>
+                          <p className="text-muted-foreground text-xs">
+                            Trading with:{" "}
+                            <span className="font-bold text-blue-600 dark:text-blue-400">
+                              {selectedPartnerName || searchRecipient}
+                            </span>
                           </p>
                         </div>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={handleClearPartner}
-                          className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-500/10"
+                          className="text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         >
                           Change Partner
                         </Button>
@@ -721,7 +751,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           Back
                         </Button>
                         <div className="glass-hierarchy-child rounded-lg px-4 py-2">
-                          <p className="text-sm text-muted-foreground">Total Value</p>
+                          <p className="text-muted-foreground text-sm">Total Value</p>
                           <p className="text-lg font-bold text-slate-900 dark:text-white">
                             {theirValue.toLocaleString()} credits
                           </p>
@@ -729,7 +759,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         <Button
                           onClick={() => setStep("review")}
                           disabled={selectedTheirCards.length === 0}
-                          className="glass-hierarchy-interactive text-slate-900 dark:text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="glass-hierarchy-interactive font-bold text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white"
                         >
                           Next: Review Trade
                         </Button>
@@ -746,7 +776,9 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {/* Your side */}
                     <div className="glass-hierarchy-child rounded-lg p-4">
-                      <h3 className="mb-3 text-lg font-semibold text-blue-600 dark:text-blue-400">You Offer</h3>
+                      <h3 className="mb-3 text-lg font-semibold text-blue-600 dark:text-blue-400">
+                        You Offer
+                      </h3>
                       <div className="space-y-2">
                         <p className="text-sm text-slate-800 dark:text-white/80">
                           {selectedYourCards.length} card{selectedYourCards.length !== 1 ? "s" : ""}
@@ -762,8 +794,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                             className="w-full text-slate-900 dark:text-white"
                           />
                         </div>
-                        <div className="border-t border-slate-200 dark:border-white/10 pt-2">
-                          <p className="text-sm text-muted-foreground">Total Value</p>
+                        <div className="border-t border-slate-200 pt-2 dark:border-white/10">
+                          <p className="text-muted-foreground text-sm">Total Value</p>
                           <p className="text-xl font-bold text-slate-900 dark:text-white">
                             {yourValue.toLocaleString()} credits
                           </p>
@@ -773,7 +805,9 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
                     {/* Their side */}
                     <div className="glass-hierarchy-child rounded-lg p-4">
-                      <h3 className="mb-3 text-lg font-semibold text-green-600 dark:text-green-400">You Receive</h3>
+                      <h3 className="mb-3 text-lg font-semibold text-green-600 dark:text-green-400">
+                        You Receive
+                      </h3>
                       <div className="space-y-2">
                         <p className="text-sm text-slate-800 dark:text-white/80">
                           {selectedTheirCards.length} card
@@ -790,8 +824,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                             className="w-full text-slate-900 dark:text-white"
                           />
                         </div>
-                        <div className="border-t border-slate-200 dark:border-white/10 pt-2">
-                          <p className="text-sm text-muted-foreground">Total Value</p>
+                        <div className="border-t border-slate-200 pt-2 dark:border-white/10">
+                          <p className="text-muted-foreground text-sm">Total Value</p>
                           <p className="text-xl font-bold text-slate-900 dark:text-white">
                             {theirValue.toLocaleString()} credits
                           </p>
@@ -803,7 +837,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   {/* Fairness indicator */}
                   <div
                     className={cn(
-                      "glass-hierarchy-child rounded-lg p-4 border",
+                      "glass-hierarchy-child rounded-lg border p-4",
                       fairTrade ? "border-green-500/30" : "border-amber-500/30"
                     )}
                   >
@@ -826,8 +860,10 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                             </svg>
                           </div>
                           <div>
-                            <p className="font-medium text-green-600 dark:text-green-400">Fair Trade</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="font-medium text-green-600 dark:text-green-400">
+                              Fair Trade
+                            </p>
+                            <p className="text-muted-foreground text-xs">
                               Values are within 20% of each other
                             </p>
                           </div>
@@ -836,8 +872,10 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         <>
                           <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                           <div>
-                            <p className="font-medium text-amber-600 dark:text-amber-400">Unbalanced Trade</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="font-medium text-amber-600 dark:text-amber-400">
+                              Unbalanced Trade
+                            </p>
+                            <p className="text-muted-foreground text-xs">
                               Difference: {Math.abs(valueDifference).toLocaleString()} credits
                             </p>
                           </div>
@@ -876,7 +914,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     <Button
                       onClick={handleSubmit}
                       disabled={createTrade.isPending}
-                      className="glass-hierarchy-interactive text-slate-900 dark:text-white font-bold"
+                      className="glass-hierarchy-interactive font-bold text-slate-900 dark:text-white"
                     >
                       <Send className="mr-2 h-4 w-4" />
                       {createTrade.isPending ? "Sending..." : "Send Trade Offer"}

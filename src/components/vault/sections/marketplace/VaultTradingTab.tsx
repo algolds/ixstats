@@ -37,8 +37,10 @@ export function VaultTradingTab() {
   } = api.trading.getActiveTrades.useQuery();
   const { data: history } = api.trading.getTradeHistory.useQuery({ limit: 10 });
 
-  const incomingTrades = activeTrades?.filter((t: any) => t.recipient?.clerkUserId === userId) || [];
-  const outgoingTrades = activeTrades?.filter((t: any) => t.initiator?.clerkUserId === userId) || [];
+  const incomingTrades =
+    activeTrades?.filter((t: any) => t.recipient?.clerkUserId === userId) || [];
+  const outgoingTrades =
+    activeTrades?.filter((t: any) => t.initiator?.clerkUserId === userId) || [];
 
   const completedTrades = history?.trades.filter((t: any) => t.status === "ACCEPTED").length || 0;
   const totalTrades = (history?.total || 0) + (activeTrades?.length || 0);

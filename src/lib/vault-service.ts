@@ -171,10 +171,21 @@ export class VaultService {
     try {
       const config = await getVaultConfig(db);
       if (config.isMaintenanceMode) {
-        return { success: false, newBalance: 0, message: "Vault economy is currently in maintenance mode." };
+        return {
+          success: false,
+          newBalance: 0,
+          message: "Vault economy is currently in maintenance mode.",
+        };
       }
-      if (!config.isEarningEnabled && (type === "EARN_ACTIVE" || type === "EARN_SOCIAL" || type === "EARN_PASSIVE")) {
-        return { success: false, newBalance: 0, message: "Earning credits is currently disabled globally." };
+      if (
+        !config.isEarningEnabled &&
+        (type === "EARN_ACTIVE" || type === "EARN_SOCIAL" || type === "EARN_PASSIVE")
+      ) {
+        return {
+          success: false,
+          newBalance: 0,
+          message: "Earning credits is currently disabled globally.",
+        };
       }
 
       // Validate amount
@@ -267,15 +278,27 @@ export class VaultService {
     try {
       const config = await getVaultConfig(db);
       if (config.isMaintenanceMode) {
-        return { success: false, newBalance: 0, message: "Vault economy is currently in maintenance mode." };
+        return {
+          success: false,
+          newBalance: 0,
+          message: "Vault economy is currently in maintenance mode.",
+        };
       }
 
       if (!config.isStoreEnabled && (type === "SPEND_COSMETIC" || type === "SPEND_BOOST")) {
-        return { success: false, newBalance: 0, message: "Storefront purchases are currently disabled globally." };
+        return {
+          success: false,
+          newBalance: 0,
+          message: "Storefront purchases are currently disabled globally.",
+        };
       }
 
       if (!config.isPacksEnabled && type === "SPEND_PACKS") {
-        return { success: false, newBalance: 0, message: "Card pack purchases are currently disabled globally." };
+        return {
+          success: false,
+          newBalance: 0,
+          message: "Card pack purchases are currently disabled globally.",
+        };
       }
 
       // Validate amount
@@ -805,13 +828,34 @@ export async function getVaultConfig(db: {
       pricePassiveYieldBoost: parseFloat(
         m.vault_pricePassiveYieldBoost ?? String(VAULT_CONFIG_DEFAULTS.pricePassiveYieldBoost)
       ),
-      isEarningEnabled: m.vault_isEarningEnabled !== undefined ? m.vault_isEarningEnabled === "true" : VAULT_CONFIG_DEFAULTS.isEarningEnabled,
-      isTradingEnabled: m.vault_isTradingEnabled !== undefined ? m.vault_isTradingEnabled === "true" : VAULT_CONFIG_DEFAULTS.isTradingEnabled,
-      isAuctionsEnabled: m.vault_isAuctionsEnabled !== undefined ? m.vault_isAuctionsEnabled === "true" : VAULT_CONFIG_DEFAULTS.isAuctionsEnabled,
-      isStoreEnabled: m.vault_isStoreEnabled !== undefined ? m.vault_isStoreEnabled === "true" : VAULT_CONFIG_DEFAULTS.isStoreEnabled,
-      isCraftingEnabled: m.vault_isCraftingEnabled !== undefined ? m.vault_isCraftingEnabled === "true" : VAULT_CONFIG_DEFAULTS.isCraftingEnabled,
-      isPacksEnabled: m.vault_isPacksEnabled !== undefined ? m.vault_isPacksEnabled === "true" : VAULT_CONFIG_DEFAULTS.isPacksEnabled,
-      isMaintenanceMode: m.vault_isMaintenanceMode !== undefined ? m.vault_isMaintenanceMode === "true" : VAULT_CONFIG_DEFAULTS.isMaintenanceMode,
+      isEarningEnabled:
+        m.vault_isEarningEnabled !== undefined
+          ? m.vault_isEarningEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isEarningEnabled,
+      isTradingEnabled:
+        m.vault_isTradingEnabled !== undefined
+          ? m.vault_isTradingEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isTradingEnabled,
+      isAuctionsEnabled:
+        m.vault_isAuctionsEnabled !== undefined
+          ? m.vault_isAuctionsEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isAuctionsEnabled,
+      isStoreEnabled:
+        m.vault_isStoreEnabled !== undefined
+          ? m.vault_isStoreEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isStoreEnabled,
+      isCraftingEnabled:
+        m.vault_isCraftingEnabled !== undefined
+          ? m.vault_isCraftingEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isCraftingEnabled,
+      isPacksEnabled:
+        m.vault_isPacksEnabled !== undefined
+          ? m.vault_isPacksEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isPacksEnabled,
+      isMaintenanceMode:
+        m.vault_isMaintenanceMode !== undefined
+          ? m.vault_isMaintenanceMode === "true"
+          : VAULT_CONFIG_DEFAULTS.isMaintenanceMode,
     };
 
     vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);

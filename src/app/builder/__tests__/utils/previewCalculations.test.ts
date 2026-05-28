@@ -154,6 +154,7 @@ describe("Preview Calculations", () => {
       const partialSectors: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [mockEconomyBuilder.sectors[0]],
+        selectedAtomicComponents: [],
       };
 
       const completeness = calculateCompleteness(partialSectors);

@@ -296,11 +296,11 @@ function PackShelfItem({ pack, actionButton }: PackShelfItemProps) {
               </div>
             </div>
             {pack.guaranteedRarity && (
-              <div className="border-border/50 border-t mt-1.5 pt-1.5 text-center dark:border-white/10">
+              <div className="border-border/50 mt-1.5 border-t pt-1.5 text-center dark:border-white/10">
                 <span className="text-amber-650 block text-[8px] font-bold tracking-widest uppercase dark:text-amber-400">
                   Guaranteed:
                 </span>
-                <span className="text-[9px] font-black text-foreground">
+                <span className="text-foreground text-[9px] font-black">
                   {pack.guaranteedRarity.replace("_", " ")}
                 </span>
               </div>
@@ -590,7 +590,7 @@ export function VaultStoreTab() {
 
         {/* Category Sub-Tabs Selector (Nests subnav inside storefront main card content) */}
         <div className="mb-6 flex justify-center">
-          <div className="glass-surface glass-refraction border-border/40 relative flex w-full gap-1 overflow-hidden rounded-xl border p-1 shadow-sm backdrop-blur-md sm:max-w-md bg-black/5 dark:bg-black/30">
+          <div className="glass-surface glass-refraction border-border/40 relative flex w-full gap-1 overflow-hidden rounded-xl border bg-black/5 p-1 shadow-sm backdrop-blur-md sm:max-w-md dark:bg-black/30">
             <motion.div
               className={cn(
                 "absolute inset-y-1 rounded-lg border transition-all duration-300",

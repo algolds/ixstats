@@ -24,6 +24,16 @@ export interface DerivedLaborMetrics {
   laborForceSize: number;
   /** Effective unemployment rate including underemployment */
   effectiveUnemployment: number;
+  /** Number of employed workers (for tests) */
+  employedWorkforce: number;
+  /** Number of unemployed workers (for tests) */
+  unemployedWorkforce: number;
+  /** Average worker protection score (for tests) */
+  avgProtectionScore: number;
+  /** Employment rate (for tests) */
+  employmentRate: number;
+  /** Unemployment rate (for tests) */
+  unemploymentRate: number;
 }
 
 /**
@@ -55,6 +65,11 @@ export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedL
   const unemployed = totalWorkforce - employed;
   const underemployed = Math.round(totalWorkforce * (laborMarket.underemploymentRate / 100));
 
+  const protections = Object.values(laborMarket.workerProtections || {});
+  const avgProtectionScore = protections.length > 0 
+    ? protections.reduce((a, b) => a + b, 0) / protections.length 
+    : 0;
+
   return {
     employed,
     unemployed,
@@ -63,7 +78,12 @@ export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedL
       totalWorkforce / (laborMarket.laborForceParticipationRate / 100)
     ),
     laborForceSize: totalWorkforce,
-    effectiveUnemployment: ((unemployed + underemployed) / totalWorkforce) * 100,
+    effectiveUnemployment: totalWorkforce > 0 ? ((unemployed + underemployed) / totalWorkforce) * 100 : 0,
+    employedWorkforce: employed,
+    unemployedWorkforce: Math.round(totalWorkforce * (laborMarket.unemploymentRate / 100)),
+    avgProtectionScore,
+    employmentRate: laborMarket.employmentRate,
+    unemploymentRate: laborMarket.unemploymentRate,
   };
 }
 

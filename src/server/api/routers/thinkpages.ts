@@ -73,7 +73,14 @@ const CreatePostSchema = z.object({
   visualizations: z
     .array(
       z.object({
-        type: z.enum(["economic_chart", "diplomatic_map", "trade_flow", "gdp_growth"]),
+        type: z.enum([
+          "economic_chart",
+          "diplomatic_map",
+          "trade_flow",
+          "gdp_growth",
+          "demographics",
+          "budget_debt",
+        ]),
         title: z.string(),
         config: z
           .object({
@@ -568,6 +575,31 @@ export const thinkpagesRouter = createTRPCRouter({
       });
     }
 
+    // Check account type limit for this country
+    const existingCountryAccounts = existingAccounts.filter(
+      (a) => a.countryId === input.countryId && a.isActive
+    );
+
+    const typeCounts = {
+      citizen: existingCountryAccounts.filter((a) => a.accountType === "citizen").length,
+      government: existingCountryAccounts.filter((a) => a.accountType === "government").length,
+      media: existingCountryAccounts.filter((a) => a.accountType === "media").length,
+    };
+
+    const maxLimits = {
+      citizen: 17,
+      government: 5,
+      media: 10,
+    };
+
+    const requestedType = input.accountType as keyof typeof maxLimits;
+    if (requestedType in maxLimits && typeCounts[requestedType] >= maxLimits[requestedType]) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `You have reached the maximum of ${maxLimits[requestedType]} ${requestedType} accounts for this country`,
+      });
+    }
+
     // Create the account
     const displayName = `${input.firstName} ${input.lastName}`;
     const account = await db.thinkpagesAccount.create({
@@ -631,11 +663,22 @@ export const thinkpagesRouter = createTRPCRouter({
   getAccountCountsByType: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const { db } = ctx;
+      const { db, auth } = ctx;
+      const clerkUserId = auth?.userId;
+
+      if (!clerkUserId) {
+        return {
+          citizen: 0,
+          government: 0,
+          media: 0,
+          organization: 0,
+        };
+      }
 
       const accounts = await db.thinkpagesAccount.findMany({
         where: {
           countryId: input.countryId,
+          clerkUserId,
           isActive: true,
         },
         select: { accountType: true },

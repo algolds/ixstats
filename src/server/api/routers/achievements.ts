@@ -214,7 +214,7 @@ export const achievementsRouter = createTRPCRouter({
         const unlockMap = new Map(userUnlocks.map((u) => [u.achievementId, u]));
 
         // Calculate global unlock stats
-        const totalUsersCount = await ctx.db.user.count() || 1;
+        const totalUsersCount = (await ctx.db.user.count()) || 1;
         const globalUnlocksGroup = await ctx.db.userAchievement.groupBy({
           by: ["achievementId"],
           _count: {
@@ -237,7 +237,9 @@ export const achievementsRouter = createTRPCRouter({
           }
 
           const globalUnlocks = countMap.get(m.key) || 0;
-          const globalUnlockPercent = parseFloat(((globalUnlocks / totalUsersCount) * 100).toFixed(1));
+          const globalUnlockPercent = parseFloat(
+            ((globalUnlocks / totalUsersCount) * 100).toFixed(1)
+          );
 
           return {
             key: m.key,

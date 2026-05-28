@@ -15,8 +15,9 @@ export function VaultSystemConfig() {
   const notify = useNotify();
 
   // tRPC Queries & Mutations
-  const { data: vaultConfig, isLoading: isConfigLoading } = api.vault.adminGetVaultConfig.useQuery();
-  
+  const { data: vaultConfig, isLoading: isConfigLoading } =
+    api.vault.adminGetVaultConfig.useQuery();
+
   const [configForm, setConfigForm] = useState({
     activeDailyCap: 100,
     socialDailyCap: 50,
@@ -82,10 +83,8 @@ export function VaultSystemConfig() {
       <Card className="border-border/50 bg-card/30 backdrop-blur-sm">
         <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-lg font-bold text-foreground">
-              Vault Config
-            </CardTitle>
-            <p className="text-muted-foreground text-xs mt-0.5">
+            <CardTitle className="text-foreground text-lg font-bold">Vault Config</CardTitle>
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Updates take effect immediately on active gameplay caps and credit generation.
             </p>
           </div>
@@ -101,7 +100,9 @@ export function VaultSystemConfig() {
             <form onSubmit={handleSaveConfig} className="space-y-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
                 <div className="space-y-1.5">
-                  <Label htmlFor="cfg-active-cap" className="text-foreground/80">Daily Cap (Active)</Label>
+                  <Label htmlFor="cfg-active-cap" className="text-foreground/80">
+                    Daily Cap (Active)
+                  </Label>
                   <div className="relative">
                     <Input
                       id="cfg-active-cap"
@@ -112,7 +113,7 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, activeDailyCap: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 pr-10 font-mono text-foreground"
+                      className="bg-background border-border/40 text-foreground pr-10 font-mono"
                     />
                     <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
                       IxC
@@ -120,7 +121,9 @@ export function VaultSystemConfig() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cfg-social-cap" className="text-foreground/80">Daily Cap (Social)</Label>
+                  <Label htmlFor="cfg-social-cap" className="text-foreground/80">
+                    Daily Cap (Social)
+                  </Label>
                   <div className="relative">
                     <Input
                       id="cfg-social-cap"
@@ -131,7 +134,7 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, socialDailyCap: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 pr-10 font-mono text-foreground"
+                      className="bg-background border-border/40 text-foreground pr-10 font-mono"
                     />
                     <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
                       IxC
@@ -139,7 +142,9 @@ export function VaultSystemConfig() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cfg-xp" className="text-foreground/80">XP per Level</Label>
+                  <Label htmlFor="cfg-xp" className="text-foreground/80">
+                    XP per Level
+                  </Label>
                   <div className="relative">
                     <Input
                       id="cfg-xp"
@@ -150,7 +155,7 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, xpPerLevel: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 pr-12 font-mono text-foreground"
+                      className="bg-background border-border/40 text-foreground pr-12 font-mono"
                     />
                     <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
                       XP
@@ -158,7 +163,9 @@ export function VaultSystemConfig() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cfg-streak" className="text-foreground/80">Max Streak Bonus</Label>
+                  <Label htmlFor="cfg-streak" className="text-foreground/80">
+                    Max Streak Bonus
+                  </Label>
                   <div className="relative">
                     <Input
                       id="cfg-streak"
@@ -169,7 +176,7 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, maxStreakBonus: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 pr-10 font-mono text-foreground"
+                      className="bg-background border-border/40 text-foreground pr-10 font-mono"
                     />
                     <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
                       IxC
@@ -177,7 +184,9 @@ export function VaultSystemConfig() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cfg-premium" className="text-foreground/80">Premium Multiplier</Label>
+                  <Label htmlFor="cfg-premium" className="text-foreground/80">
+                    Premium Multiplier
+                  </Label>
                   <div className="relative">
                     <Input
                       id="cfg-premium"
@@ -189,7 +198,7 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, premiumMultiplier: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 pr-8 font-mono text-foreground"
+                      className="bg-background border-border/40 text-foreground pr-8 font-mono"
                     />
                     <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
                       x
@@ -199,90 +208,125 @@ export function VaultSystemConfig() {
               </div>
 
               {/* System switches section */}
-              <div className="border-t border-border/40 pt-4">
-               
+              <div className="border-border/40 border-t pt-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {/* Enable Earning */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">Enable Earning</span>
-                      <span className="text-[10px] text-muted-foreground">Enables user active & social credits.</span>
+                      <span className="text-foreground text-xs font-semibold">Enable Earning</span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Enables user active & social credits.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isEarningEnabled}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isEarningEnabled: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isEarningEnabled: val }))
+                      }
                     />
                   </div>
                   {/* Enable Store Purchases */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">Enable Store</span>
-                      <span className="text-[10px] text-muted-foreground">Allows buying dynamic storefront cosmetics.</span>
+                      <span className="text-foreground text-xs font-semibold">Enable Store</span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Allows buying dynamic storefront cosmetics.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isStoreEnabled}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isStoreEnabled: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isStoreEnabled: val }))
+                      }
                     />
                   </div>
                   {/* Enable Card Crafting */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">Enable Crafting</span>
-                      <span className="text-[10px] text-muted-foreground">Allows fusing and evolving collector cards.</span>
+                      <span className="text-foreground text-xs font-semibold">Enable Crafting</span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Allows fusing and evolving collector cards.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isCraftingEnabled}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isCraftingEnabled: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isCraftingEnabled: val }))
+                      }
                     />
                   </div>
                   {/* Enable Card Packs */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">Enable Card Packs</span>
-                      <span className="text-[10px] text-muted-foreground">Enables pack purchases & award mutations.</span>
+                      <span className="text-foreground text-xs font-semibold">
+                        Enable Card Packs
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Enables pack purchases & award mutations.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isPacksEnabled}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isPacksEnabled: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isPacksEnabled: val }))
+                      }
                     />
                   </div>
                   {/* Enable P2P Trading */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">Enable P2P Trading</span>
-                      <span className="text-[10px] text-muted-foreground">Allows player card negotiation trades.</span>
+                      <span className="text-foreground text-xs font-semibold">
+                        Enable P2P Trading
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Allows player card negotiation trades.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isTradingEnabled}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isTradingEnabled: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isTradingEnabled: val }))
+                      }
                     />
                   </div>
                   {/* Enable Auctions */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">Enable P2P Auctions</span>
-                      <span className="text-[10px] text-muted-foreground">Enables card listings and active bidding.</span>
+                      <span className="text-foreground text-xs font-semibold">
+                        Enable P2P Auctions
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Enables card listings and active bidding.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isAuctionsEnabled}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isAuctionsEnabled: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isAuctionsEnabled: val }))
+                      }
                     />
                   </div>
                   {/* Maintenance Mode */}
-                  <div className="border border-border/40 bg-muted/30 rounded-lg p-3.5 flex items-center justify-between">
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-destructive">Maintenance Mode</span>
-                      <span className="text-[10px] text-muted-foreground">Blocks all write operations globally.</span>
+                      <span className="text-destructive text-xs font-semibold">
+                        Maintenance Mode
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Blocks all write operations globally.
+                      </span>
                     </div>
                     <Switch
                       checked={configForm.isMaintenanceMode}
-                      onCheckedChange={(val) => setConfigForm((f) => ({ ...f, isMaintenanceMode: val }))}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isMaintenanceMode: val }))
+                      }
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-border/40">
+              <div className="border-border/40 flex justify-end border-t pt-4">
                 <Button
                   type="submit"
                   disabled={saveConfigMutation.isPending}

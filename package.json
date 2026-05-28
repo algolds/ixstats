@@ -315,11 +315,16 @@
     "preset": "ts-jest",
     "testEnvironment": "jsdom",
     "testEnvironmentOptions": {
-      "customExportConditions": [""]
+      "customExportConditions": [
+        ""
+      ]
     },
     "roots": [
       "<rootDir>/src",
       "<rootDir>/tests"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/tests/e2e/"
     ],
     "testMatch": [
       "**/__tests__/**/*.test.ts",
@@ -342,6 +347,8 @@
       "<rootDir>/tests/setup.ts"
     ],
     "moduleNameMapper": {
+      "^server-only$": "<rootDir>/tests/__mocks__/server-only.ts",
+      "^ansi-regex$": "<rootDir>/tests/__mocks__/ansi-regex.ts",
       "^~/env$": "<rootDir>/tests/__mocks__/env.ts",
       "^~/trpc/react$": "<rootDir>/tests/__mocks__/trpc-react.ts",
       "^~/(.*)$": "<rootDir>/src/$1",

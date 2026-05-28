@@ -314,7 +314,7 @@ function DashboardHero({
             <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
             </p>
-            <div className="mt-0.5 flex items-center gap-1">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
               <p className="text-foreground text-sm font-bold tracking-tight">
                 $
                 {metricView.gdp === "perCapita"
@@ -351,7 +351,7 @@ function DashboardHero({
             <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               {metricView.population === "total" ? "Population" : "Density"}
             </p>
-            <div className="mt-0.5 flex items-center gap-1">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
               <p className="text-foreground text-sm font-bold tracking-tight">
                 {metricView.population === "total"
                   ? Math.round(stats.population).toLocaleString("en-US")

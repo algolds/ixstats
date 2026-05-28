@@ -234,7 +234,7 @@ export function VaultUserDirectory() {
       {/* Directory Table */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold">
             User Vault Directory
           </CardTitle>
 
@@ -249,7 +249,7 @@ export function VaultUserDirectory() {
                 setSearchTerm(e.target.value);
                 setPage(1); // reset to first page on search
               }}
-              className="bg-background/50 border-border/50 focus-visible:ring-primary/30 pl-9 text-foreground"
+              className="bg-background/50 border-border/50 focus-visible:ring-primary/30 text-foreground pl-9"
             />
           </div>
         </CardHeader>
@@ -299,13 +299,9 @@ export function VaultUserDirectory() {
                               {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
                             </div>
                             {user.country?.name && (
-                              <div className="text-muted-foreground text-[10px] flex flex-wrap gap-x-2 gap-y-0.5 max-w-[220px]">
-                                {user.wikiUsername && (
-                                  <span>Wiki: {user.wikiUsername}</span>
-                                )}
-                                {user.forumUsername && (
-                                  <span>Forum: {user.forumUsername}</span>
-                                )}
+                              <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-[10px]">
+                                {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
+                                {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
                                 {user.discordUsername && (
                                   <span>Discord: {user.discordUsername}</span>
                                 )}
@@ -349,11 +345,14 @@ export function VaultUserDirectory() {
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center">
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted select-none cursor-pointer">
+                            <DropdownMenuTrigger className="border-border/40 bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold select-none">
                               <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
                               <span>Actions</span>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-popover border-border text-foreground w-44">
+                            <DropdownMenuContent
+                              align="end"
+                              className="bg-popover border-border text-foreground w-44"
+                            >
                               <DropdownMenuItem
                                 onClick={() => handleOpenAdjust(user)}
                                 className="cursor-pointer gap-2 py-2"
@@ -425,7 +424,7 @@ export function VaultUserDirectory() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-foreground"
+                  className="text-foreground h-8 w-8"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
@@ -434,7 +433,7 @@ export function VaultUserDirectory() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-foreground"
+                  className="text-foreground h-8 w-8"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                 >
@@ -457,7 +456,7 @@ export function VaultUserDirectory() {
 
           {selectedUser && (
             <form onSubmit={handleAdjustSubmit} className="space-y-4 py-2">
-              <div className="bg-muted/30 border border-border/40 rounded-lg p-3">
+              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs">Target User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
@@ -490,7 +489,7 @@ export function VaultUserDirectory() {
                     value={adjustAmount}
                     onChange={(e) => setAdjustAmount(e.target.value)}
                     required
-                    className="bg-background border-border/40 font-mono text-foreground"
+                    className="bg-background border-border/40 text-foreground font-mono"
                   />
                   <span className="text-muted-foreground text-[10px]">
                     Positive adds, negative subtracts.
@@ -500,7 +499,10 @@ export function VaultUserDirectory() {
                 <div className="space-y-1.5">
                   <Label htmlFor="adjust-type">Transaction Type</Label>
                   <Select value={adjustType} onValueChange={setAdjustType}>
-                    <SelectTrigger id="adjust-type" className="bg-background border-border/40 text-foreground">
+                    <SelectTrigger
+                      id="adjust-type"
+                      className="bg-background border-border/40 text-foreground"
+                    >
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border/50 text-foreground">
@@ -595,7 +597,7 @@ export function VaultUserDirectory() {
               }}
               className="space-y-4 py-2"
             >
-              <div className="bg-muted/30 border border-border/40 rounded-lg p-3">
+              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs">Target User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
@@ -650,29 +652,36 @@ export function VaultUserDirectory() {
                 ))}
               </div>
             ) : (
-              <div className="overflow-x-auto max-h-80 overflow-y-auto border border-border/40 rounded-lg bg-muted/20">
+              <div className="border-border/40 bg-muted/20 max-h-80 overflow-x-auto overflow-y-auto rounded-lg border">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-muted-foreground text-xs bg-muted/30">
-                      <th className="py-2 px-3 text-left">Time</th>
-                      <th className="py-2 px-3 text-right">Amount</th>
-                      <th className="py-2 px-3 text-left">Type</th>
-                      <th className="py-2 px-3 text-left">Source</th>
-                      <th className="py-2 px-3 text-right">Balance</th>
+                    <tr className="text-muted-foreground bg-muted/30 text-xs">
+                      <th className="px-3 py-2 text-left">Time</th>
+                      <th className="px-3 py-2 text-right">Amount</th>
+                      <th className="px-3 py-2 text-left">Type</th>
+                      <th className="px-3 py-2 text-left">Source</th>
+                      <th className="px-3 py-2 text-right">Balance</th>
                     </tr>
                   </thead>
                   <tbody>
                     {listTransactionsQuery.data?.transactions?.map((tx: any) => (
-                      <tr key={tx.id} className="border-t border-border/40 hover:bg-muted/30">
-                        <td className="text-muted-foreground py-2 px-3 text-xs">
+                      <tr key={tx.id} className="border-border/40 hover:bg-muted/30 border-t">
+                        <td className="text-muted-foreground px-3 py-2 text-xs">
                           {new Date(tx.createdAt).toLocaleString()}
                         </td>
-                        <td className={`py-2 px-3 text-right font-mono font-bold ${tx.credits >= 0 ? "text-emerald-500" : "text-red-400"}`}>
-                          {tx.credits >= 0 ? "+" : ""}{tx.credits}
+                        <td
+                          className={`px-3 py-2 text-right font-mono font-bold ${tx.credits >= 0 ? "text-emerald-500" : "text-red-400"}`}
+                        >
+                          {tx.credits >= 0 ? "+" : ""}
+                          {tx.credits}
                         </td>
-                        <td className="py-2 px-3 text-xs">{tx.type}</td>
-                        <td className="text-muted-foreground py-2 px-3 text-xs truncate max-w-[200px]">{tx.source}</td>
-                        <td className="py-2 px-3 text-right font-mono text-xs">{tx.balanceAfter}</td>
+                        <td className="px-3 py-2 text-xs">{tx.type}</td>
+                        <td className="text-muted-foreground max-w-[200px] truncate px-3 py-2 text-xs">
+                          {tx.source}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">
+                          {tx.balanceAfter}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -700,7 +709,7 @@ export function VaultUserDirectory() {
 
           {selectedUser && (
             <form onSubmit={handlePackSubmit} className="space-y-4 py-2">
-              <div className="bg-muted/30 border border-border/40 rounded-lg p-3">
+              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs">Recipient User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
@@ -719,7 +728,10 @@ export function VaultUserDirectory() {
               <div className="space-y-1.5">
                 <Label htmlFor="pack-select">Select Card Pack Template</Label>
                 <Select value={selectedPackId} onValueChange={setSelectedPackId}>
-                  <SelectTrigger id="pack-select" className="bg-background border-border/40 text-foreground">
+                  <SelectTrigger
+                    id="pack-select"
+                    className="bg-background border-border/40 text-foreground"
+                  >
                     <SelectValue placeholder="Choose a pack configurations..." />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border/50 text-foreground">

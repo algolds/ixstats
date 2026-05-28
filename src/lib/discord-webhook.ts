@@ -5,7 +5,7 @@
  * Used for production monitoring, alerts, and activity notifications
  */
 
-import { env } from "../env";
+import { env } from "~/env";
 
 interface DiscordEmbed {
   title?: string;

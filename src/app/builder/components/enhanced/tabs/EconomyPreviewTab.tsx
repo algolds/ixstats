@@ -138,7 +138,12 @@ export function EconomyPreviewTab({
         />
         <MetricCard
           label="GDP Per Capita"
-          value={`$${Math.round(economicInputs.coreIndicators.gdpPerCapita).toLocaleString()}`}
+          value={`$${Math.round(
+            economicInputs?.coreIndicators?.gdpPerCapita ??
+              (economyBuilder.structure?.totalGDP && economyBuilder.demographics?.totalPopulation
+                ? economyBuilder.structure.totalGDP / economyBuilder.demographics.totalPopulation
+                : 0)
+          ).toLocaleString()}`}
           icon={DollarSign}
           sectionId="preview"
           trend="neutral"

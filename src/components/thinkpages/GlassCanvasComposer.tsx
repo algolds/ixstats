@@ -18,6 +18,7 @@ import {
   Repeat2,
   ChevronDown,
   ChevronUp,
+  Users,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -54,7 +55,13 @@ interface GlassCanvasComposerProps {
 
 interface DataVisualization {
   id: string;
-  type: "economic_chart" | "diplomatic_map" | "trade_flow" | "gdp_growth";
+  type:
+    | "economic_chart"
+    | "diplomatic_map"
+    | "trade_flow"
+    | "gdp_growth"
+    | "demographics"
+    | "budget_debt";
   title: string;
   data: any;
   config: any;
@@ -114,7 +121,7 @@ export function GlassCanvasComposer({
   // Get latest economic data for visualizations - live wired
   const { data: economicData, isLoading: isLoadingEconomic } =
     api.countries.getByIdWithEconomicData.useQuery(
-      { countryId },
+      { id: countryId },
       { enabled: !!countryId, refetchOnWindowFocus: false }
     );
   const { data: gdpHistoryData, isLoading: isLoadingHistory } =
@@ -134,7 +141,11 @@ export function GlassCanvasComposer({
 
   // Check if we have data available for visualizations
   const hasEconomicData = !!economicData;
-  const hasHistoricalData = !!gdpHistoryData && gdpHistoryData.length > 0;
+  const hasHistoricalData =
+    (!!gdpHistoryData && gdpHistoryData.length > 0) ||
+    (!!economicData &&
+      !!(economicData as any).historical &&
+      (economicData as any).historical.length > 0);
   const hasDiplomaticData = !!diplomaticData && diplomaticData.length > 0;
   const hasTradeData = !!tradeData;
 
@@ -208,6 +219,14 @@ export function GlassCanvasComposer({
         hasRequiredData = hasEconomicData;
         errorMessage = "No economic data available for this country";
         break;
+      case "demographics":
+        hasRequiredData = hasEconomicData;
+        errorMessage = "No demographics data available for this country";
+        break;
+      case "budget_debt":
+        hasRequiredData = hasEconomicData;
+        errorMessage = "No fiscal budget/debt data available for this country";
+        break;
     }
 
     if (!hasRequiredData) {
@@ -227,7 +246,14 @@ export function GlassCanvasComposer({
             id: `econ-${Date.now()}`,
             type: "economic_chart",
             title: "GDP Growth Trajectory",
-            data: gdpHistoryData!,
+            data:
+              gdpHistoryData && gdpHistoryData.length > 0
+                ? gdpHistoryData
+                : (economicData as any)?.historical?.map((h: any) => ({
+                    ixTimeTimestamp: new Date(h.year, 0, 1),
+                    totalGdp: h.gdp,
+                    population: h.population,
+                  })) || [],
             config: {
               chartType: "line",
               colors: ["#3B82F6", "#10B981"],
@@ -272,6 +298,42 @@ export function GlassCanvasComposer({
               metrics: ["gdp", "inflation", "unemployment"],
               displayType: "dashboard",
               comparison: "regional_average",
+            },
+          };
+          break;
+        case "demographics":
+          newVisualization = {
+            id: `demo-${Date.now()}`,
+            type: "demographics",
+            title: "Demographics Profile",
+            data: {
+              lifeExpectancy: economicData.lifeExpectancy,
+              literacyRate: economicData.literacyRate,
+              urbanPopulationPercent: economicData.urbanPopulationPercent,
+              ruralPopulationPercent: economicData.ruralPopulationPercent,
+              population: economicData.currentPopulation || economicData.population,
+            },
+            config: {
+              displayType: "stats_grid",
+              colorScheme: "green",
+            },
+          };
+          break;
+        case "budget_debt":
+          newVisualization = {
+            id: `fiscal-${Date.now()}`,
+            type: "budget_debt",
+            title: "Fiscal & Debt Analysis",
+            data: {
+              taxRevenueGDPPercent: economicData.taxRevenueGDPPercent,
+              governmentBudgetGDPPercent: economicData.governmentBudgetGDPPercent,
+              totalGovernmentSpending: economicData.totalGovernmentSpending,
+              totalDebtGDPRatio: economicData.totalDebtGDPRatio,
+              budgetDeficitSurplus: economicData.budgetDeficitSurplus,
+            },
+            config: {
+              displayType: "donut",
+              colorScheme: "amber",
             },
           };
           break;
@@ -345,7 +407,8 @@ export function GlassCanvasComposer({
               <TrendingUp className="h-6 w-6 text-green-400" />
               <div className="text-sm">
                 <div className="font-medium">
-                  GDP: +{(((economicData as any)?.adjustedGdpGrowth || 0.03) * 100).toFixed(1)}%
+                  GDP: +
+                  {(((economicData as any)?.calculatedStats?.gdpGrowth || 0.03) * 100).toFixed(1)}%
                 </div>
                 <div className="text-muted-foreground text-xs">Q4 Performance</div>
               </div>
@@ -374,6 +437,50 @@ export function GlassCanvasComposer({
                   ${((tradeData?.totalVolume || 2.4) / 1000).toFixed(1)}B
                 </div>
                 <div className="text-muted-foreground text-xs">Trade Volume</div>
+              </div>
+            </div>
+          </div>
+        );
+      case "gdp_growth":
+        return (
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-blue-500/20 to-emerald-500/20">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-emerald-400" />
+              <div className="text-sm">
+                <div className="font-medium">GDP Stats</div>
+                <div className="text-muted-foreground text-xs">Economic Performance</div>
+              </div>
+            </div>
+          </div>
+        );
+      case "demographics":
+        return (
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-green-500/20 to-teal-500/20">
+            <div className="flex items-center gap-2">
+              <Users className="h-6 w-6 text-green-400" />
+              <div className="text-sm">
+                <div className="font-medium">
+                  Life Exp: {economicData?.lifeExpectancy || 75} yrs
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  Literacy: {economicData?.literacyRate || 99}%
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case "budget_debt":
+        return (
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-amber-500/20 to-red-500/20">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-amber-400" />
+              <div className="text-sm">
+                <div className="font-medium">
+                  Debt/GDP: {economicData?.totalDebtGDPRatio || 45}%
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  Tax Rev: {economicData?.taxRevenueGDPPercent || 25}% of GDP
+                </div>
               </div>
             </div>
           </div>
@@ -685,7 +792,7 @@ export function GlassCanvasComposer({
                           </div>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-3 gap-1.5">
                         <Button
                           variant="outline"
                           size="sm"
@@ -747,6 +854,38 @@ export function GlassCanvasComposer({
                             <BarChart3 className="mb-0.5 h-5 w-5" />
                           )}
                           <span className="text-[0.65rem]">GDP</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("demographics")}
+                          disabled={
+                            isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
+                          }
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingEconomic ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <Users className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Demographics</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("budget_debt")}
+                          disabled={
+                            isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
+                          }
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingEconomic ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <BarChart3 className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Budget & Debt</span>
                         </Button>
                       </div>
                     </motion.div>

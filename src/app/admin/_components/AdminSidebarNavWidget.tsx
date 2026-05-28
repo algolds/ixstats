@@ -146,11 +146,11 @@ export function AdminSidebarNavWidget({ onNavigate }: AdminSidebarNavWidgetProps
   const pathname = usePathname();
 
   return (
-    <nav className="border-border/30 bg-card/40 w-full rounded-xl border p-2 shadow-sm backdrop-blur-md flex flex-col max-h-[calc(100vh-320px)]">
-      <div className="text-muted-foreground/80 px-3 py-1.5 text-[9px] font-bold tracking-wider uppercase shrink-0">
+    <nav className="border-border/30 bg-card/40 flex max-h-[calc(100vh-320px)] w-full flex-col rounded-xl border p-2 shadow-sm backdrop-blur-md">
+      <div className="text-muted-foreground/80 shrink-0 px-3 py-1.5 text-[9px] font-bold tracking-wider uppercase">
         Admin Control Suite
       </div>
-      <div className="space-y-1 overflow-y-auto pr-1.5 thin-scrollbar [scrollbar-width:thin] flex-1 mt-1">
+      <div className="thin-scrollbar mt-1 flex-1 [scrollbar-width:thin] space-y-1 overflow-y-auto pr-1.5">
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, withBasePath(item.href), item.exact);
           return (
@@ -167,7 +167,7 @@ export function AdminSidebarNavWidget({ onNavigate }: AdminSidebarNavWidgetProps
             >
               <item.icon className="h-4.5 w-4.5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] leading-tight font-semibold tracking-wide truncate whitespace-nowrap">
+                <div className="truncate text-[11px] leading-tight font-semibold tracking-wide whitespace-nowrap">
                   {item.label}
                 </div>
                 {item.description && !active && (

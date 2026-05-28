@@ -30,28 +30,48 @@ describe("wiki-search-service base path handling", () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...ORIGINAL_ENV };
-    if (ORIGINAL_WINDOW === undefined) {
-      // Ensure JSDOM window isn't leaked between tests
-      delete globalWithWindow.window;
-    } else {
-      globalWithWindow.window = ORIGINAL_WINDOW;
-    }
+    globalWithWindow.window = ORIGINAL_WINDOW as any;
+    delete (global as any).__TEST_IS_SERVER;
     mockFetch();
   });
 
   afterEach(() => {
     process.env = ORIGINAL_ENV;
-    if (ORIGINAL_WINDOW === undefined) {
-      delete globalWithWindow.window;
-    } else {
-      globalWithWindow.window = ORIGINAL_WINDOW;
-    }
+    globalWithWindow.window = ORIGINAL_WINDOW as any;
+    delete (global as any).__TEST_IS_SERVER;
     jest.restoreAllMocks();
   });
 
   it("prefixes API proxy calls with base path on the server", async () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     process.env.NEXT_PUBLIC_APP_URL = "https://ixstates.example.com/projects/ixstates";
+
+    // Simulate server side
+    (global as any).__TEST_IS_SERVER = true;
+    globalWithWindow.window = undefined as any;
+
+    const { searchWiki } = await import("../wiki-search-service");
+    await searchWiki("Caphiria", "ixwiki");
+
+    // Restore window / server simulation
+    delete (global as any).__TEST_IS_SERVER;
+    globalWithWindow.window = ORIGINAL_WINDOW as any;
+
+    const fetchCalls = (global.fetch as FetchMock).mock.calls;
+    const targetCall = fetchCalls.find(
+      ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
+    );
+    expect(targetCall).toBeDefined();
+    expect(targetCall?.[0] as string).toMatch(
+      /^https:\/\/ixstates\.example\.com\/projects\/ixstates\/api\/ixwiki-proxy\/api\.php\?/
+    );
+  });
+
+  it("prefixes API proxy calls with base path on the client", async () => {
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+    // Simulate browser environment
+    globalWithWindow.window = {} as any;
+    delete (global as any).__TEST_IS_SERVER;
 
     const { searchWiki } = await import("../wiki-search-service");
     await searchWiki("Caphiria", "ixwiki");
@@ -62,25 +82,7 @@ describe("wiki-search-service base path handling", () => {
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^https:\/\/ixstates\.example\.com\/projects\/ixstates\/api\/ixwiki-proxy\/wiki\/api\.php\?/
-    );
-  });
-
-  it("prefixes API proxy calls with base path on the client", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
-    // Simulate browser environment
-    globalWithWindow.window = {};
-
-    const { searchWiki } = await import("../wiki-search-service");
-    await searchWiki("Caphiria", "iiwiki");
-
-    const fetchCalls = (global.fetch as FetchMock).mock.calls;
-    const targetCall = fetchCalls.find(
-      ([url]) => typeof url === "string" && url.includes("/api/iiwiki-proxy")
-    );
-    expect(targetCall).toBeDefined();
-    expect(targetCall?.[0] as string).toMatch(
-      /^\/projects\/ixstates\/api\/iiwiki-proxy\/wiki\/api\.php\?/
+      /^\/projects\/ixstates\/api\/ixwiki-proxy\/api\.php\?/
     );
   });
 
@@ -96,8 +98,8 @@ describe("wiki-search-service base path handling", () => {
 
     const fetchCalls = (global.fetch as FetchMock).mock.calls.map((call) => call[0] as string);
 
-    expect(fetchCalls.some((url) => url.includes("/api/ixwiki-proxy/wiki/api.php?"))).toBe(true);
-    expect(fetchCalls.some((url) => url.includes("/api/iiwiki-proxy/wiki/api.php?"))).toBe(true);
+    expect(fetchCalls.some((url) => url.includes("/api/ixwiki-proxy/api.php?"))).toBe(true);
+    expect(fetchCalls.some((url) => url.includes("https://iiwiki.com/api.php?"))).toBe(true);
     expect(fetchCalls.some((url) => url.includes("/api/althistory-wiki-proxy/api.php?"))).toBe(
       true
     );
@@ -109,10 +111,22 @@ describe("wiki-search-service base path handling", () => {
     delete process.env.VERCEL_URL;
     process.env.PORT = "4567";
 
+    // Simulate server side
+    (global as any).__TEST_IS_SERVER = true;
+    globalWithWindow.window = undefined as any;
+
     const { searchWiki } = await import("../wiki-search-service");
     await searchWiki("Caphiria", "ixwiki");
 
-    const calledUrl = (global.fetch as FetchMock).mock.calls[0][0] as string;
-    expect(calledUrl).toMatch(/^http:\/\/localhost:4567\/api\/ixwiki-proxy\/wiki\/api\.php\?/);
+    // Restore window / server simulation
+    delete (global as any).__TEST_IS_SERVER;
+    globalWithWindow.window = ORIGINAL_WINDOW as any;
+
+    const fetchCalls = (global.fetch as FetchMock).mock.calls;
+    const targetCall = fetchCalls.find(
+      ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
+    );
+    expect(targetCall).toBeDefined();
+    expect(targetCall?.[0] as string).toMatch(/^http:\/\/localhost:4567\/api\/ixwiki-proxy\/api\.php\?/);
   });
 });

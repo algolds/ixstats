@@ -269,20 +269,20 @@ function ImportDeckTab() {
                   <div className="space-y-6">
                     {/* Hero visual / Header */}
                     <div className="flex flex-col items-center py-4 text-center">
-                      <div className="flex items-center justify-center gap-2.5 mb-2.5">
-                        <h2 className="text-foreground text-3xl font-black sm:text-4xl tracking-tight select-none">
+                      <div className="mb-2.5 flex items-center justify-center gap-2.5">
+                        <h2 className="text-foreground text-3xl font-black tracking-tight select-none sm:text-4xl">
                           Trading Cards
                         </h2>
                         {/* Custom 3-cards icon next to title */}
                         <div className="relative h-7 w-10 shrink-0 select-none">
                           {/* Card 1 (Back left) */}
-                          <div className="absolute left-0 top-0.5 h-6.5 w-4 rounded-[4px] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-950 shadow-sm -rotate-12" />
+                          <div className="absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2 border-slate-900 bg-white shadow-sm dark:border-white dark:bg-slate-950" />
                           {/* Card 2 (Middle) */}
-                          <div className="absolute left-3 top-0 h-6.5 w-4 rounded-[4px] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-950 shadow-sm flex items-center justify-center">
+                          <div className="absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2 border-slate-900 bg-white shadow-sm dark:border-white dark:bg-slate-950">
                             <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-white" />
                           </div>
                           {/* Card 3 (Right) */}
-                          <div className="absolute left-6 top-0.5 h-6.5 w-4 rounded-[4px] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-950 shadow-sm rotate-12 flex items-center justify-center">
+                          <div className="absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2 border-slate-900 bg-white shadow-sm dark:border-white dark:bg-slate-950">
                             <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-white" />
                           </div>
                         </div>
@@ -349,10 +349,10 @@ function ImportDeckTab() {
                     </div>
 
                     {/* Safety Disclaimer */}
-                    <div className="glass-hierarchy-child border-border/50 flex items-start gap-2.5 rounded-xl border bg-white/5 p-4 text-xs text-muted-foreground select-none">
+                    <div className="glass-hierarchy-child border-border/50 text-muted-foreground flex items-start gap-2.5 rounded-xl border bg-white/5 p-4 text-xs select-none">
                       <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
                       <div className="space-y-0.5">
-                        <p className="font-bold text-foreground">Important</p>
+                        <p className="text-foreground font-bold">Important</p>
                         <p className="leading-relaxed">
                           Verification uses the official{" "}
                           <a
@@ -361,9 +361,10 @@ function ImportDeckTab() {
                             rel="noopener noreferrer"
                             className="text-blue-400 hover:text-blue-500"
                           >
-                             NationStates API
+                            NationStates API
                           </a>{" "}
-                          and only grants read-only access to verify public deck contents. We will never ask for your NationStates password or account credentials.
+                          and only grants read-only access to verify public deck contents. We will
+                          never ask for your NationStates password or account credentials.
                         </p>
                       </div>
                     </div>
@@ -379,7 +380,7 @@ function ImportDeckTab() {
                         >
                           <Button
                             onClick={() => setShowNameInput(true)}
-                            className="h-12 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 text-base"
+                            className="h-12 w-full bg-gradient-to-r from-rose-500 to-orange-500 text-base font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600"
                             size="lg"
                           >
                             <Sparkles className="mr-2 h-5 w-5" />
@@ -404,7 +405,7 @@ function ImportDeckTab() {
                                 setNationName("");
                                 setShowNameInput(false);
                               }}
-                              className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+                              className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
                             >
                               Cancel
                             </button>

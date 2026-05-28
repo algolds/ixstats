@@ -28,6 +28,12 @@ import {
   ExternalLink,
   Eye,
   MessageSquare,
+  TrendingUp,
+  Globe,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
+  Loader2,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -213,6 +219,18 @@ const ThinkpagesPostComponent = ({
 }: ThinkpagesPostProps) => {
   const notify = useNotify();
   const blurbMeta = parseBlurbMeta(post);
+
+  const visualizations = React.useMemo(() => {
+    try {
+      if (typeof post.visualizations === "string") {
+        return JSON.parse(post.visualizations);
+      }
+      return post.visualizations || [];
+    } catch (e) {
+      console.warn("Failed to parse visualizations:", e);
+      return [];
+    }
+  }, [post.visualizations]);
 
   // Extract any raw image URLs embedded directly in the text body
   const rawImageUrls = React.useMemo(() => {
@@ -687,6 +705,19 @@ const ThinkpagesPostComponent = ({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Embedded Visualizations */}
+          {visualizations && visualizations.length > 0 && (
+            <div className="mt-3 space-y-2.5">
+              {visualizations.map((viz: any, index: number) => (
+                <PostVisualizationRenderer
+                  key={viz.id || index}
+                  viz={viz}
+                  countryId={post.account.countryId}
+                />
+              ))}
             </div>
           )}
 
@@ -1209,6 +1240,484 @@ export const ThinkpagesPost = React.memo(ThinkpagesPostComponent, (prevProps, ne
     prevProps.post._count?.replies === nextProps.post._count?.replies
   );
 });
+
+ThinkpagesPost.displayName = "ThinkpagesPost";
+
+// ──────────────────────────────────────────────
+// Premium Embedded Live Data Visualization Renderer
+// ──────────────────────────────────────────────
+
+interface PostVisualizationRendererProps {
+  viz: {
+    type:
+      | "economic_chart"
+      | "diplomatic_map"
+      | "trade_flow"
+      | "gdp_growth"
+      | "demographics"
+      | "budget_debt";
+    title: string;
+    config?: any;
+  };
+  countryId: string;
+}
+
+function PostVisualizationRenderer({ viz, countryId }: PostVisualizationRendererProps) {
+  const { type, title } = viz;
+
+  // Query only what is needed based on visualization type
+  const economicQuery = api.countries.getByIdWithEconomicData.useQuery(
+    { id: countryId },
+    {
+      enabled:
+        !!countryId &&
+        (type === "gdp_growth" ||
+          type === "demographics" ||
+          type === "budget_debt" ||
+          type === "economic_chart"),
+      staleTime: 5 * 60_000,
+    }
+  );
+
+  const historyQuery = api.historical.getCountryHistory.useQuery(
+    { countryId, limit: 10 },
+    {
+      enabled: !!countryId && type === "economic_chart",
+      staleTime: 5 * 60_000,
+    }
+  );
+
+  const diplomaticQuery = api.diplomaticCore.getRelationships.useQuery(
+    { countryId },
+    {
+      enabled: !!countryId && type === "diplomatic_map",
+      staleTime: 5 * 60_000,
+    }
+  );
+
+  const tradeQuery = api.countries.getTradeData.useQuery(
+    { countryId },
+    {
+      enabled: !!countryId && type === "trade_flow",
+      staleTime: 5 * 60_000,
+    }
+  );
+
+  const isLoading =
+    economicQuery.isLoading ||
+    historyQuery.isLoading ||
+    diplomaticQuery.isLoading ||
+    tradeQuery.isLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-24 w-full items-center justify-center rounded-xl border border-white/5 bg-white/[0.02]">
+        <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  // Format Helper for large values
+  const formatMoney = (val: number) => {
+    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
+    if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
+    if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
+    return `$${val.toLocaleString()}`;
+  };
+
+  // 1. GDP Growth Trajectory
+  if (type === "economic_chart") {
+    let rawHistory = historyQuery.data || [];
+    if (rawHistory.length === 0 && economicQuery.data?.historical) {
+      rawHistory = economicQuery.data.historical.map((h: any) => ({
+        ixTimeTimestamp: new Date(h.year, 0, 1),
+        totalGdp: h.gdp,
+        population: h.population,
+      }));
+    }
+
+    if (rawHistory.length === 0) {
+      return (
+        <div className="text-muted-foreground rounded-xl border border-white/10 bg-white/5 p-3.5 text-center text-xs">
+          No historical GDP data available
+        </div>
+      );
+    }
+
+    const maxGdp = Math.max(...rawHistory.map((h: any) => h.totalGdp || 0));
+
+    return (
+      <Card className="glass-hierarchy-child border-blue-500/10 bg-blue-500/[0.02] p-3.5">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <TrendingUp className="h-3.5 w-3.5 text-green-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">Historical Trajectory</span>
+        </div>
+        <div className="mt-2 space-y-1.5">
+          {rawHistory.slice(-4).map((h: any, idx: number) => {
+            const yearStr = h.ixTimeTimestamp
+              ? new Date(h.ixTimeTimestamp).getFullYear().toString()
+              : `Y${idx + 1}`;
+            const gdpVal = h.totalGdp || 0;
+            const pct = maxGdp > 0 ? (gdpVal / maxGdp) * 100 : 0;
+            return (
+              <div key={idx} className="flex items-center gap-3 text-xs">
+                <span className="text-muted-foreground w-10 text-left">{yearStr}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-16 text-right font-medium text-white">
+                  {formatMoney(gdpVal)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    );
+  }
+
+  // 2. Diplomatic Relations Map
+  if (type === "diplomatic_map") {
+    const relations = diplomaticQuery.data || [];
+    if (relations.length === 0) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-blue-500/10 bg-blue-500/[0.02] p-3.5 text-center text-xs">
+          No active diplomatic relationships
+        </Card>
+      );
+    }
+
+    return (
+      <Card className="glass-hierarchy-child border-purple-500/10 bg-purple-500/[0.02] p-3.5">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <Globe className="h-3.5 w-3.5 text-purple-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">{relations.length} Connections</span>
+        </div>
+        <div className="grid gap-2">
+          {relations.slice(0, 3).map((rel: any) => {
+            const relType = rel.relationship?.toLowerCase() || "neutral";
+            const colorMap: Record<string, string> = {
+              alliance: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+              trade: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+              tension: "text-red-400 bg-red-500/10 border-red-500/20",
+              neutral: "text-neutral-400 bg-neutral-500/10 border-neutral-500/20",
+            };
+            return (
+              <div
+                key={rel.id}
+                className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs"
+              >
+                <div className="flex items-center gap-2">
+                  {rel.targetCountryFlag ? (
+                    <img
+                      src={rel.targetCountryFlag}
+                      alt=""
+                      className="h-4 w-6 rounded-sm border border-white/10 object-cover shadow-xs"
+                    />
+                  ) : (
+                    <div className="flex h-4 w-6 items-center justify-center rounded-sm bg-white/10 text-[8px]">
+                      {rel.targetCountryName?.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="max-w-[120px] truncate font-medium text-white">
+                    {rel.targetCountryName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={`px-1.5 py-0 text-[9px] font-bold tracking-wider uppercase ${colorMap[relType] || colorMap.neutral}`}
+                  >
+                    {rel.relationship || "Neutral"}
+                  </Badge>
+                  <div className="flex w-16 items-center gap-1.5">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
+                      <div
+                        className="h-full bg-purple-500"
+                        style={{ width: `${rel.strength || 50}%` }}
+                      />
+                    </div>
+                    <span className="text-muted-foreground w-6 text-right text-[10px] font-medium">
+                      {rel.strength || 50}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    );
+  }
+
+  // 3. Trade Flow Analysis
+  if (type === "trade_flow") {
+    const trade = tradeQuery.data;
+    if (!trade) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-orange-500/10 bg-orange-500/[0.02] p-3.5 text-center text-xs">
+          No trade statistics available
+        </Card>
+      );
+    }
+
+    const exportsPct = trade.totalVolume > 0 ? (trade.exports / trade.totalVolume) * 100 : 50;
+    const importsPct = trade.totalVolume > 0 ? (trade.imports / trade.totalVolume) * 100 : 50;
+
+    return (
+      <Card className="glass-hierarchy-child border-orange-500/10 bg-orange-500/[0.02] p-3.5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <BarChart3 className="h-3.5 w-3.5 text-orange-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">Trade Flows</span>
+        </div>
+        <div className="mb-2.5 grid grid-cols-3 gap-3">
+          <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 text-center">
+            <div className="text-muted-foreground text-[10px]">Total Volume</div>
+            <div className="mt-0.5 text-xs font-bold text-white">
+              {formatMoney(trade.totalVolume)}
+            </div>
+          </div>
+          <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 text-center">
+            <div className="text-muted-foreground text-[10px]">Exports</div>
+            <div className="mt-0.5 text-xs font-bold text-emerald-400">
+              {formatMoney(trade.exports)}
+            </div>
+          </div>
+          <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 text-center">
+            <div className="text-muted-foreground text-[10px]">Imports</div>
+            <div className="mt-0.5 text-xs font-bold text-red-400">
+              {formatMoney(trade.imports)}
+            </div>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="text-muted-foreground flex justify-between text-[10px]">
+            <span>Exports ({exportsPct.toFixed(0)}%)</span>
+            <span>Imports ({importsPct.toFixed(0)}%)</span>
+          </div>
+          <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/5">
+            <div className="h-full bg-emerald-500" style={{ width: `${exportsPct}%` }} />
+            <div className="h-full bg-red-500" style={{ width: `${importsPct}%` }} />
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // 4. Economic Performance Overview (GDP stats)
+  if (type === "gdp_growth") {
+    const econ = economicQuery.data;
+    if (!econ) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-emerald-500/10 bg-emerald-500/[0.02] p-3.5 text-center text-xs">
+          No economic metrics available
+        </Card>
+      );
+    }
+
+    const growthRate = econ.calculatedStats?.gdpGrowth || 0;
+    const gdpVal = econ.currentTotalGdp || econ.gdp || 0;
+    const gdppcVal = econ.currentGdpPerCapita || econ.gdpPerCapita || 0;
+
+    return (
+      <Card className="glass-hierarchy-child border-emerald-500/10 bg-emerald-500/[0.02] p-3.5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">Key Metrics</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Total GDP</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{formatMoney(gdpVal)}</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">GDP Per Capita</div>
+            <div className="mt-0.5 text-sm font-bold text-white">
+              ${Math.round(gdppcVal).toLocaleString()}
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div>
+              <div className="text-muted-foreground text-[10px]">Annual Growth</div>
+              <div
+                className={cn(
+                  "mt-0.5 text-sm font-bold",
+                  growthRate >= 0 ? "text-emerald-400" : "text-red-400"
+                )}
+              >
+                {growthRate >= 0 ? "+" : ""}
+                {(growthRate * 100).toFixed(1)}%
+              </div>
+            </div>
+            {growthRate >= 0 ? (
+              <ArrowUpRight className="h-5 w-5 shrink-0 text-emerald-400" />
+            ) : (
+              <ArrowDownRight className="h-5 w-5 shrink-0 text-red-400" />
+            )}
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Economic Tier</div>
+            <Badge
+              variant="secondary"
+              className="mt-1 border border-emerald-500/20 bg-emerald-500/10 text-[9px] font-bold tracking-wider text-emerald-400 uppercase"
+            >
+              {econ.economicTier || "Developed"}
+            </Badge>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // 5. Demographics Profile
+  if (type === "demographics") {
+    const econ = economicQuery.data;
+    if (!econ) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-green-500/10 bg-green-500/[0.02] p-3.5 text-center text-xs">
+          No demographics statistics available
+        </Card>
+      );
+    }
+
+    const urbanPct = econ.urbanPopulationPercent || 65;
+    const ruralPct = econ.ruralPopulationPercent || 35;
+    const popVal = econ.currentPopulation || econ.population || 0;
+
+    return (
+      <Card className="glass-hierarchy-child border-green-500/10 bg-green-500/[0.02] p-3.5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <Users className="h-3.5 w-3.5 text-green-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">Demographics</span>
+        </div>
+        <div className="mb-2.5 grid grid-cols-2 gap-2.5">
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Population</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{popVal.toLocaleString()}</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Life Expectancy</div>
+            <div className="mt-0.5 text-sm font-bold text-white">
+              {econ.lifeExpectancy || 78} Years
+            </div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Literacy Rate</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{econ.literacyRate || 99}%</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Pop Tier</div>
+            <Badge
+              variant="secondary"
+              className="mt-1 border border-green-500/20 bg-green-500/10 text-[9px] font-bold tracking-wider text-green-400 uppercase"
+            >
+              {econ.populationTier || "Medium"}
+            </Badge>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="text-muted-foreground flex justify-between text-[10px]">
+            <span>Urban ({urbanPct.toFixed(0)}%)</span>
+            <span>Rural ({ruralPct.toFixed(0)}%)</span>
+          </div>
+          <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/5">
+            <div className="h-full bg-green-500" style={{ width: `${urbanPct}%` }} />
+            <div className="h-full bg-emerald-700" style={{ width: `${ruralPct}%` }} />
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // 6. Fiscal Budget & Debt
+  if (type === "budget_debt") {
+    const econ = economicQuery.data;
+    if (!econ) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-amber-500/10 bg-amber-500/[0.02] p-3.5 text-center text-xs">
+          No fiscal budget statistics available
+        </Card>
+      );
+    }
+
+    const taxGdp = econ.taxRevenueGDPPercent || 25;
+    const spendGdp = econ.governmentBudgetGDPPercent || 28;
+    const debtGdp = econ.totalDebtGDPRatio || 55;
+    const budgetBal = econ.budgetDeficitSurplus || taxGdp - spendGdp;
+
+    return (
+      <Card className="glass-hierarchy-child border-amber-500/10 bg-amber-500/[0.02] p-3.5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <BarChart3 className="h-3.5 w-3.5 text-amber-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">Fiscal Profile</span>
+        </div>
+        <div className="mb-2.5 grid grid-cols-2 gap-2.5">
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Tax Revenue / GDP</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{taxGdp}%</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Spending / GDP</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{spendGdp}%</div>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div>
+              <div className="text-muted-foreground text-[10px]">Budget Balance</div>
+              <div
+                className={cn(
+                  "mt-0.5 text-sm font-bold",
+                  budgetBal >= 0 ? "text-emerald-400" : "text-red-400"
+                )}
+              >
+                {budgetBal >= 0 ? "+" : ""}
+                {budgetBal.toFixed(1)}%
+              </div>
+            </div>
+            {budgetBal >= 0 ? (
+              <ArrowUpRight className="h-5 w-5 shrink-0 text-emerald-400" />
+            ) : (
+              <ArrowDownRight className="h-5 w-5 shrink-0 text-red-400" />
+            )}
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Debt-to-GDP Ratio</div>
+            <div
+              className={cn(
+                "mt-0.5 text-sm font-bold",
+                debtGdp > 80 ? "text-red-400" : debtGdp > 40 ? "text-amber-400" : "text-emerald-400"
+              )}
+            >
+              {debtGdp}%
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return null;
+}
 
 ThinkpagesPost.displayName = "ThinkpagesPost";
 

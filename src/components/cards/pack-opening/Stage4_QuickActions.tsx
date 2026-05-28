@@ -72,7 +72,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
     // Handle bulk action
     const handleBulkAction = (action: QuickActionType) => {
       const cardIdList = Array.from(selectedCards);
-      
+
       // Update local state for all selected cards
       setCardActions((prev) => {
         const next = new Map(prev);

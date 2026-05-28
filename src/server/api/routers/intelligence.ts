@@ -545,7 +545,7 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     }),
 
   // Mark recommendation as implemented
-  implementRecommendation: publicProcedure
+  implementRecommendation: premiumProcedure
     .input(z.object({ recommendationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.db.intelligenceRecommendation.update({
@@ -558,7 +558,7 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     }),
 
   // Recalculate intelligence for a country
-  recalculateForCountry: publicProcedure
+  recalculateForCountry: premiumProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await calculateIntelligence({ countryId: input.countryId, forceRecalculate: true });
@@ -566,7 +566,7 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     }),
 
   // Recalculate intelligence for all countries (admin only)
-  recalculateAll: publicProcedure.mutation(async ({ ctx }) => {
+  recalculateAll: adminProcedure.mutation(async ({ ctx }) => {
     await calculateIntelligence({ forceRecalculate: true });
     return { success: true, message: "Intelligence recalculated for all countries" };
   }),

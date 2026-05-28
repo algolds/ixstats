@@ -281,7 +281,7 @@ export function VaultWidget() {
               {[
                 {
                   id: "dashboard" as const,
-                  href: "/vault",
+                  href: withBasePath("/vault"),
                   title: "MyVault (Wallet)",
                   icon: Wallet,
                   isActive: pathname === "/vault" || pathname === "/vault/",
@@ -293,7 +293,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "cards" as const,
-                  href: "/vault/cards",
+                  href: withBasePath("/vault/cards"),
                   title: "My Cards",
                   icon: Grid3x3,
                   isActive:
@@ -311,7 +311,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "marketplace" as const,
-                  href: "/vault/marketplace",
+                  href: withBasePath("/vault/marketplace"),
                   title: "Marketplace",
                   icon: ShoppingCart,
                   isActive:
@@ -329,7 +329,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "import" as const,
-                  href: "/vault/import",
+                  href: withBasePath("/vault/import"),
                   title: "NS Importer",
                   icon: Download,
                   isActive: pathname.startsWith("/vault/import"),
@@ -385,7 +385,7 @@ export function VaultWidget() {
           ) : (
             <div className="flex flex-col gap-1.5">
               <Link
-                href="/vault"
+                href={withBasePath("/vault")}
                 className="block text-center text-[0.65rem] text-blue-600 transition-colors hover:text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
               >
                 View Full Vault →

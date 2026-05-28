@@ -481,7 +481,11 @@ export const tradingRouter = createTRPCRouter({
    * Get active trades (sent and received)
    */
   getActiveTrades: protectedProcedure.query(
-    async ({ ctx }: { ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any } }) => {
+    async ({
+      ctx,
+    }: {
+      ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
+    }) => {
       const userId = ctx.user.id;
 
       const trades = await ctx.db.tradeOffer.findMany({
@@ -731,15 +735,13 @@ export const tradingRouter = createTRPCRouter({
           },
         });
 
-        const initiatorValue = initiatorCards.reduce(
-          (sum: number, c: any) => sum + (c.cards.marketValue || 0),
-          0
-        ) + trade.initiatorCredits;
+        const initiatorValue =
+          initiatorCards.reduce((sum: number, c: any) => sum + (c.cards.marketValue || 0), 0) +
+          trade.initiatorCredits;
 
-        const recipientValue = recipientCards.reduce(
-          (sum: number, c: any) => sum + (c.cards.marketValue || 0),
-          0
-        ) + trade.recipientCredits;
+        const recipientValue =
+          recipientCards.reduce((sum: number, c: any) => sum + (c.cards.marketValue || 0), 0) +
+          trade.recipientCredits;
 
         return {
           ...trade,
@@ -806,7 +808,8 @@ export const tradingRouter = createTRPCRouter({
         countryName: user.country?.name || "Unknown Country",
         leader: user.country?.leader || "Unknown Leader",
         economicTier: user.country?.economicTier || "Unknown",
-        username: user.forumUsername || user.wikiUsername || user.discordUsername || "Unnamed Player",
+        username:
+          user.forumUsername || user.wikiUsername || user.discordUsername || "Unnamed Player",
         flag: user.country?.flag || null,
       }));
     }),

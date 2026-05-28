@@ -17,9 +17,9 @@ interface AdminLayoutProps {
 function AccessDeniedScreen() {
   const { signOut } = useAuth();
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-      <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg max-w-sm w-full">
-        <h1 className="mb-4 text-2xl font-bold text-red-650 dark:text-red-500">Access Denied</h1>
+    <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center">
+      <div className="border-border bg-card w-full max-w-sm rounded-lg border p-8 text-center shadow-lg">
+        <h1 className="text-red-650 mb-4 text-2xl font-bold dark:text-red-500">Access Denied</h1>
         <p className="text-muted-foreground mb-6 text-sm">
           You do not have permission to view the Administration console.
         </p>
@@ -33,7 +33,7 @@ function AccessDeniedScreen() {
           >
             Sign Out
           </Button>
-          <Button asChild className="bg-indigo-650 hover:bg-indigo-700 text-white font-semibold">
+          <Button asChild className="bg-indigo-650 font-semibold text-white hover:bg-indigo-700">
             <Link href="/">Go to Home</Link>
           </Button>
         </div>
