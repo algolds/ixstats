@@ -16,6 +16,7 @@ import { searchWiki as searchWikiService } from "~/lib/wiki-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-infobox-parser";
 import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/unified-wiki-parser";
 import { getEligibleCountries } from "~/lib/eligible-country-service";
+import { wikiCacheService } from "~/lib/services/wiki-cache-service";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [
@@ -499,7 +500,14 @@ export const wikiProcedures = {
     )
     .mutation(async ({ input }) => {
       const { pageName, site } = input;
+      const cacheKey = `parsed-infobox:${site}:${pageName.trim().toLowerCase()}`;
       try {
+        // Try L1/L2 cache first
+        const cached = await wikiCacheService.getCustomCache<any>(cacheKey);
+        if (cached) {
+          return cached;
+        }
+
         const article = await getArticleWikitext(pageName, site);
         if (!article) {
           throw new TRPCError({
@@ -518,6 +526,12 @@ export const wikiProcedures = {
           for (const field of parsed.fields) {
             result[field.key] = field.cleanValue || field.rawValue;
           }
+          await wikiCacheService.setCustomCache(
+            cacheKey,
+            "parsed-infobox",
+            result,
+            24 * 60 * 60 * 1000
+          );
           return result;
         }
 
@@ -539,6 +553,12 @@ export const wikiProcedures = {
           );
         }
 
+        await wikiCacheService.setCustomCache(
+          cacheKey,
+          "parsed-infobox",
+          unified,
+          24 * 60 * 60 * 1000
+        );
         return unified;
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -555,7 +575,14 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const name = input.name.trim();
       if (!name) return null;
+      const cacheKey = `get-wiki-infobox:${name.toLowerCase()}`;
       try {
+        // Try L1/L2 cache first
+        const cached = await wikiCacheService.getCustomCache<any>(cacheKey);
+        if (cached) {
+          return cached;
+        }
+
         // Try ixwiki first, then iiwiki
         let article = await getArticleWikitext(name, "ixwiki");
         let wikiSource: "ixwiki" | "iiwiki" = "ixwiki";
@@ -574,6 +601,12 @@ export const wikiProcedures = {
               unified.image_coat || unified.coat_of_arms,
               wikiSource
             );
+          await wikiCacheService.setCustomCache(
+            cacheKey,
+            "get-wiki-infobox",
+            unified,
+            24 * 60 * 60 * 1000
+          );
           return unified;
         }
 
@@ -592,6 +625,12 @@ export const wikiProcedures = {
         if (imgCoat) {
           result.coatOfArmsUrl = resolveImageUrl(imgCoat, wikiSource);
         }
+        await wikiCacheService.setCustomCache(
+          cacheKey,
+          "get-wiki-infobox",
+          result,
+          24 * 60 * 60 * 1000
+        );
         return result;
       } catch (err) {
         console.error(`[Wiki] Error fetching infobox for ${name}:`, err);

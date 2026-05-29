@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Factory } from "lucide-react";
 
 // Sub-components
@@ -221,14 +222,12 @@ export function EconomySectorsTab({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sector Configuration */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
+          <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+            <CutoutCardContent className="space-y-4 p-6">
+              <h3 className="mb-4 flex items-center space-x-2 text-lg font-bold text-emerald-500 dark:text-emerald-400">
                 <Factory className="h-5 w-5" />
                 <span>Active Sectors</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
               {economyBuilder.sectors.map((sector, index) => {
                 const sectorType = sector.id.split("_")[0] as keyof typeof SECTOR_TEMPLATES;
                 const impact = sectorImpacts[sectorType] || 1;
@@ -255,8 +254,8 @@ export function EconomySectorsTab({
                   />
                 );
               })}
-            </CardContent>
-          </Card>
+            </CutoutCardContent>
+          </CutoutCard>
 
           {/* Template Selector */}
           <SectorTemplateSelector

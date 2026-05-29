@@ -52,6 +52,18 @@ const getBasePath = () => {
 };
 
 class UnifiedFlagService {
+  private persistentCacheResolver: ((countryName: string) => Promise<string | null>) | null = null;
+  private persistentCacheSaver: ((countryName: string, flagUrl: string) => Promise<void>) | null =
+    null;
+
+  registerPersistentCache(
+    resolver: (countryName: string) => Promise<string | null>,
+    saver: (countryName: string, flagUrl: string) => Promise<void>
+  ) {
+    this.persistentCacheResolver = resolver;
+    this.persistentCacheSaver = saver;
+  }
+
   private memoryCache: FlagCache = {};
   private localMetadata: Record<string, LocalFlagMetadata> = {};
   private failedCountries = new Set<string>();
@@ -430,6 +442,25 @@ class UnifiedFlagService {
       }
     }
 
+    // Server-side check: check persistent cache first to avoid hitting Commons API
+    if (this.persistentCacheResolver) {
+      try {
+        const persistentUrl = await this.persistentCacheResolver(countryName);
+        if (persistentUrl) {
+          const cachedFlag: CachedFlag = {
+            url: persistentUrl,
+            source: { name: "WikiCommons", baseUrl: "https://commons.wikimedia.org", priority: 1 },
+            cachedAt: Date.now(),
+            lastAccessed: Date.now(),
+          };
+          this.memoryCache[cacheKey] = cachedFlag;
+          return persistentUrl;
+        }
+      } catch (err) {
+        console.warn("[UnifiedFlagService] Server cache fetch failed:", err);
+      }
+    }
+
     // Check if global fetch is disabled but should be re-enabled
     if (
       this.globalFetchDisabled &&
@@ -471,6 +502,13 @@ class UnifiedFlagService {
         // Reset error counter on success
         if (this.apiErrorCount > 0) {
           this.apiErrorCount = Math.max(0, this.apiErrorCount - 1);
+        }
+
+        // Cache in persistent cache (async, non-blocking) on the server
+        if (this.persistentCacheSaver) {
+          void this.persistentCacheSaver(countryName, flagUrl).catch((err) => {
+            console.warn("[UnifiedFlagService] Server cache save failed:", err);
+          });
         }
 
         // Cache the successful result

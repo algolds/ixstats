@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { BarChart3, TrendingUp, Users, DollarSign, Activity } from "lucide-react";
-import { EnhancedNumberInput, MetricCard, SliderWithDirectInput } from "../primitives/enhanced";
+import { BarChart3, TrendingUp, Users, DollarSign, Activity, Percent, Lock } from "lucide-react";
+import {
+  EnhancedNumberInput,
+  MetricCard,
+  SliderWithDirectInput,
+  EnhancedDial,
+} from "../primitives/enhanced";
 import { GlassBarChart } from "~/components/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -10,17 +15,17 @@ import type { EconomicInputs, RealCountryData } from "../lib/economy-data-servic
 import { getEconomicTier } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
-
-// Help System
-import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
 
 interface CoreIndicatorsSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
   referenceCountry?: RealCountryData | null;
   showAdvanced?: boolean;
-  isReadOnly?: boolean; // When true, population/GDP/gdpPerCapita are read-only (calculated values)
-  mode?: "create" | "edit"; // Edit mode shows field locks
+  isReadOnly?: boolean;
+  mode?: "create" | "edit";
   fieldLocks?: Record<string, import("../components/enhanced/builderConfig").FieldLockConfig>;
 }
 
@@ -34,16 +39,9 @@ export function CoreIndicatorsSection({
   fieldLocks,
 }: CoreIndicatorsSectionProps) {
   const isEditMode = mode === "edit";
-
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
-  // Ensure coreIndicators exists with defaults and sanitize any NaN values
-  const sanitizeNumber = (value: any, defaultValue: number): number => {
-    const numValue = Number(value);
-    return !isNaN(numValue) && isFinite(numValue) ? numValue : defaultValue;
-  };
-
-  // Use safe defaults when inputs is null
+  // Safe defaults
   const safeInputs = inputs || {
     coreIndicators: {
       totalPopulation: 10000000,
@@ -64,7 +62,11 @@ export function CoreIndicatorsSection({
     currencyExchangeRate: 1.0,
   };
 
-  // Sanitize all numeric values in coreIndicators to prevent NaN propagation
+  const sanitizeNumber = (value: any, defaultValue: number): number => {
+    const numValue = Number(value);
+    return !isNaN(numValue) && isFinite(numValue) ? numValue : defaultValue;
+  };
+
   const sanitizedCoreIndicators = {
     totalPopulation: sanitizeNumber(coreIndicators.totalPopulation, 10000000),
     nominalGDP: sanitizeNumber(coreIndicators.nominalGDP, 250000000000),
@@ -74,12 +76,9 @@ export function CoreIndicatorsSection({
     currencyExchangeRate: sanitizeNumber(coreIndicators.currencyExchangeRate, 1.0),
   };
 
-  // Calculate economic tier and expected growth rate
   const economicTier = getEconomicTier(sanitizedCoreIndicators.gdpPerCapita);
 
   const calculateExpectedGrowthRate = (gdpPerCapita: number, population: number): number => {
-    // Higher income countries typically have lower growth potential
-    // Larger countries also tend to have lower growth rates due to scale
     const incomeFactor = Math.max(0.5, Math.min(8, 8 - gdpPerCapita / 10000));
     const sizeFactor =
       population >= 100000000
@@ -89,141 +88,13 @@ export function CoreIndicatorsSection({
           : population >= 1000000
             ? 1.0
             : 1.1;
-
-    return Math.round(incomeFactor * sizeFactor * 10) / 10; // Round to 1 decimal
+    return Math.round(incomeFactor * sizeFactor * 10) / 10;
   };
 
   const expectedGrowthRate = calculateExpectedGrowthRate(
     sanitizedCoreIndicators.gdpPerCapita,
     sanitizedCoreIndicators.totalPopulation
   );
-
-  // Calculate derived metrics for overview cards - must be called before early return
-  const metrics = useMemo(() => {
-    const totalPopulation = sanitizedCoreIndicators.totalPopulation;
-    const gdpPerCapita = sanitizedCoreIndicators.gdpPerCapita;
-    const realGDPGrowthRate = sanitizedCoreIndicators.realGDPGrowthRate;
-    const inflationRate = sanitizedCoreIndicators.inflationRate;
-    const nominalGDP = totalPopulation * gdpPerCapita;
-
-    return [
-      {
-        label: "Total GDP",
-        value: nominalGDP,
-        unit: "",
-        description: "Nominal Gross Domestic Product",
-        icon: DollarSign,
-        trend:
-          realGDPGrowthRate > 2
-            ? ("up" as const)
-            : realGDPGrowthRate < 0
-              ? ("down" as const)
-              : ("neutral" as const),
-        change: realGDPGrowthRate,
-        changeUnit: "%",
-      },
-      {
-        label: "Population",
-        value: totalPopulation,
-        unit: " people",
-        description: "Total population count",
-        icon: Users,
-        trend: "neutral" as const,
-      },
-      {
-        label: "GDP per Capita",
-        value: gdpPerCapita,
-        unit: " $",
-        description: "Economic output per person",
-        icon: Activity,
-        trend:
-          realGDPGrowthRate > 2
-            ? ("up" as const)
-            : realGDPGrowthRate < 0
-              ? ("down" as const)
-              : ("neutral" as const),
-        change: realGDPGrowthRate,
-        changeUnit: "%",
-      },
-      {
-        label: "Growth Rate",
-        value: realGDPGrowthRate,
-        unit: "%",
-        description: "Annual economic growth",
-        icon: TrendingUp,
-        trend:
-          realGDPGrowthRate > 2
-            ? ("up" as const)
-            : realGDPGrowthRate < 0
-              ? ("down" as const)
-              : ("neutral" as const),
-        change: realGDPGrowthRate - 2.5, // Assuming 2.5% is global average
-        changeUnit: "pp",
-      },
-    ];
-  }, [sanitizedCoreIndicators]);
-
-  // Guard against null inputs - after all hooks have been called
-  if (!inputs) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading economic data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Generate 10-year economic projections
-  const generateProjections = (currentGDP: number, growthRate: number, inflationRate: number) => {
-    const projections = [];
-    let projectedGDP = currentGDP;
-
-    for (let year = 0; year <= 10; year++) {
-      const yearLabel = year === 0 ? "Current" : `Year ${year}`;
-
-      projections.push({
-        name: yearLabel,
-        population: sanitizedCoreIndicators.totalPopulation, // Population stays constant for simplicity
-        gdpPerCapita: Math.max(1000, projectedGDP), // Ensure minimum visible value
-        growthRate: Math.max(0.1, year === 0 ? growthRate : growthRate * (1 - year * 0.05)), // Slightly declining growth over time
-        inflationRate: Math.max(0.1, inflationRate),
-        color: year === 0 ? "blue" : year <= 3 ? "emerald" : year <= 7 ? "yellow" : "orange",
-      });
-
-      // Apply growth and inflation to next year's GDP
-      projectedGDP = projectedGDP * (1 + growthRate / 100) * (1 + inflationRate / 100);
-    }
-
-    return projections;
-  };
-
-  // Prepare comparison data for charts with guaranteed numeric values
-  const comparisonData = referenceCountry
-    ? [
-        {
-          name: inputs.countryName || "Your Custom Country",
-          population: sanitizedCoreIndicators.totalPopulation,
-          gdpPerCapita: sanitizedCoreIndicators.gdpPerCapita,
-          growthRate: sanitizedCoreIndicators.realGDPGrowthRate,
-          inflationRate: sanitizedCoreIndicators.inflationRate,
-          color: "blue",
-        },
-        {
-          name: `${referenceCountry.name} (Foundation)`,
-          population: sanitizeNumber(referenceCountry.population, 331000000),
-          gdpPerCapita: sanitizeNumber(referenceCountry.gdpPerCapita, 63544),
-          growthRate: sanitizeNumber(referenceCountry.growthRate, 2.3),
-          inflationRate: sanitizeNumber(referenceCountry.inflationRate, 3.1),
-          color: "emerald",
-        },
-      ]
-    : generateProjections(
-        sanitizedCoreIndicators.gdpPerCapita,
-        sanitizedCoreIndicators.realGDPGrowthRate,
-        sanitizedCoreIndicators.inflationRate
-      );
 
   const formatCurrency = (value: number | string) => {
     const numValue = Number(value);
@@ -234,275 +105,306 @@ export function CoreIndicatorsSection({
     return `$${numValue.toLocaleString()}`;
   };
 
-  const formatPopulation = (value: number | string) => {
-    // Always show full number with commas for clarity
-    return Number(value).toLocaleString();
-  };
+  // ─── Render Create Mode (Simplified) ───
+  if (!isEditMode) {
+    const computedGDP =
+      sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita;
+    return (
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Sliders Card (2/3 width) */}
+        <div className="space-y-6 lg:col-span-2">
+          <GlassCard depth="base" className="border-border/40">
+            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <Users className="h-5 w-5 text-amber-400" />
+                Target Population Scale
+              </h3>
+            </div>
+            <GlassCardContent className="space-y-4 p-6">
+              <SliderWithDirectInput
+                label=""
+                description="Set the initial population scale of your sovereign nation."
+                value={sanitizedCoreIndicators.totalPopulation}
+                onChange={(value) => {
+                  const population = sanitizeNumber(value, sanitizedCoreIndicators.totalPopulation);
+                  const clamped = Math.max(100000, Math.min(200000000, population));
+                  onInputsChange({
+                    ...safeInputs,
+                    coreIndicators: {
+                      ...coreIndicators,
+                      totalPopulation: clamped,
+                      nominalGDP: clamped * sanitizedCoreIndicators.gdpPerCapita,
+                    },
+                  });
+                }}
+                min={100000}
+                max={150000000}
+                step={100000}
+                unit=" citizens"
+                sectionId="core"
+                showValue={true}
+                defaultMode="slider"
+                allowModeToggle={true}
+              />
+              <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
+                <span>Min: 100K</span>
+                <span>Selected: {sanitizedCoreIndicators.totalPopulation.toLocaleString()}</span>
+                <span>Max: 150M</span>
+              </div>
+            </GlassCardContent>
+          </GlassCard>
 
-  const formatPopulationCompact = (value: number | string) => {
-    const numValue = Number(value);
-    if (numValue >= 1e9) return `${(numValue / 1e9).toFixed(1)}B`;
-    if (numValue >= 1e6) return `${(numValue / 1e6).toFixed(1)}M`;
-    if (numValue >= 1e3) return `${(numValue / 1e3).toFixed(1)}K`;
-    return numValue.toLocaleString();
-  };
-
-  return (
-    <div className="space-y-8">
-      {/* Overview Metrics */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric, index) => (
-          <MetricCard key={index} {...metric} sectionId="core" className="h-full" />
-        ))}
-      </div>
-
-      {/* Core Economic Controls */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Left Column - Population and GDP */}
-        <div className="space-y-6">
-          <div className="relative">
-            {isReadOnly && sanitizedCoreIndicators.totalPopulation === 0 && (
-              <Badge variant="destructive" className="absolute -top-2 right-0 z-10">
-                ⚠️ Missing Data
-              </Badge>
-            )}
-            <EnhancedNumberInput
-              label="Total Population"
-              description={
-                isReadOnly
-                  ? "🔒 Calculated by IxStats engine based on baseline + growth over time (read-only)"
-                  : "The total number of people living in your country"
-              }
-              value={sanitizedCoreIndicators.totalPopulation}
-              onChange={(value) => {
-                const population = sanitizeNumber(value, sanitizedCoreIndicators.totalPopulation);
-                const gdpPerCapita = sanitizeNumber(inputs.coreIndicators?.gdpPerCapita, 25000);
-                const clampedPopulation = Math.max(1000, Math.min(2000000000, population));
-
-                onInputsChange({
-                  ...inputs,
-                  coreIndicators: {
-                    ...inputs.coreIndicators,
-                    totalPopulation: clampedPopulation,
-                    nominalGDP: clampedPopulation * gdpPerCapita,
-                  },
-                });
-              }}
-              min={1000}
-              max={2000000000}
-              step={100000}
-              unit=" people"
-              sectionId="core"
-              icon={Users}
-              format={formatPopulation}
-              referenceValue={referenceCountry?.population}
-              referenceLabel={referenceCountry?.name}
-              showComparison={!!referenceCountry}
-              showButtons={!isReadOnly}
-              showReset={!isReadOnly}
-              resetValue={referenceCountry?.population}
-              disabled={isReadOnly}
-              helpContent={EconomicsHelpContent.coreIndicators.content}
-              helpTitle="Total Population"
-            />
-          </div>
-
-          <div className="relative">
-            {isReadOnly && sanitizedCoreIndicators.gdpPerCapita === 0 && (
-              <Badge variant="destructive" className="absolute -top-2 right-0 z-10">
-                ⚠️ Missing Data
-              </Badge>
-            )}
-            <EnhancedNumberInput
-              label="GDP per Capita"
-              description={
-                isReadOnly
-                  ? "🔒 Calculated by IxStats engine based on baseline + growth over time (read-only)"
-                  : "Average economic output per person (annual income proxy)"
-              }
-              value={sanitizedCoreIndicators.gdpPerCapita}
-              onChange={(value) => {
-                const gdpPerCapita = sanitizeNumber(value, sanitizedCoreIndicators.gdpPerCapita);
-                const population = sanitizeNumber(inputs.coreIndicators?.totalPopulation, 10000000);
-                const clampedGdpPerCapita = Math.max(500, Math.min(150000, gdpPerCapita));
-
-                onInputsChange({
-                  ...inputs,
-                  coreIndicators: {
-                    ...inputs.coreIndicators,
-                    gdpPerCapita: clampedGdpPerCapita,
-                    nominalGDP: population * clampedGdpPerCapita,
-                  },
-                });
-              }}
-              min={500}
-              max={150000}
-              step={1000}
-              unit=""
-              sectionId="core"
-              icon={DollarSign}
-              format={formatCurrency}
-              referenceValue={referenceCountry?.gdpPerCapita}
-              referenceLabel={referenceCountry?.name}
-              showComparison={!!referenceCountry}
-              showButtons={!isReadOnly}
-              disabled={isReadOnly}
-            />
-          </div>
+          <GlassCard depth="base" className="border-border/40">
+            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <DollarSign className="h-5 w-5 text-amber-400" />
+                Initial GDP per Capita Strength
+              </h3>
+            </div>
+            <GlassCardContent className="space-y-4 p-6">
+              <SliderWithDirectInput
+                label=""
+                description="Average economic production per citizen (economic strength standard)."
+                value={sanitizedCoreIndicators.gdpPerCapita}
+                onChange={(value) => {
+                  const gdpPerCapita = sanitizeNumber(value, sanitizedCoreIndicators.gdpPerCapita);
+                  const clamped = Math.max(1000, Math.min(100000, gdpPerCapita));
+                  onInputsChange({
+                    ...safeInputs,
+                    coreIndicators: {
+                      ...coreIndicators,
+                      gdpPerCapita: clamped,
+                      nominalGDP: sanitizedCoreIndicators.totalPopulation * clamped,
+                    },
+                  });
+                }}
+                min={1000}
+                max={100000}
+                step={500}
+                unit=" USD"
+                sectionId="core"
+                showValue={true}
+                defaultMode="slider"
+                allowModeToggle={true}
+              />
+              <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
+                <span>Min: $1,000</span>
+                <span>Expected Tier: {economicTier}</span>
+                <span>Max: $100,000</span>
+              </div>
+            </GlassCardContent>
+          </GlassCard>
         </div>
 
-        {/* Right Column - Growth and Inflation */}
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-              <TrendingUp className="h-4 w-4" />
-              Economic Growth Profile
-            </label>
-            <p className="text-muted-foreground text-xs">
-              Calculated based on your country's economic tier and population size
-            </p>
-            <div className="bg-card/50 border-border rounded-lg border p-4 backdrop-blur-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <div className="text-foreground text-lg font-semibold">{economicTier}</div>
-                  <div className="text-muted-foreground text-sm">Economic Development Tier</div>
+        {/* Emergent Outcome Card (1/3 width) */}
+        <div className="lg:col-span-1">
+          <GlassCard
+            depth="elevated"
+            className="border-border/40 flex h-full flex-col justify-between"
+          >
+            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <Activity className="h-5 w-5 text-indigo-400" />
+                Economic Profile
+              </h3>
+            </div>
+            <GlassCardContent className="flex flex-1 flex-col justify-center space-y-6 p-6">
+              <div>
+                <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                  Emergent Economic Output
+                </h4>
+                <div className="mt-1 text-3xl font-black text-amber-400">
+                  <NumberFlowDisplay value={computedGDP} format="currency" decimalPlaces={0} />
                 </div>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Computed dynamically as Population × GDP per Capita
+                </p>
+              </div>
+
+              <div className="border-border/20 border-t pt-6">
+                <h4 className="text-muted-foreground mb-2 text-[10px] font-bold tracking-wider uppercase">
+                  Economic Classification
+                </h4>
                 <Badge
                   variant="secondary"
-                  className={cn(
-                    "text-xs font-medium",
-                    economicTier === "Advanced" &&
-                      "border-green-500/30 bg-green-500/20 text-green-600",
-                    economicTier === "Developed" &&
-                      "border-blue-500/30 bg-blue-500/20 text-blue-600",
-                    economicTier === "Emerging" &&
-                      "border-orange-500/30 bg-orange-500/20 text-orange-600",
-                    economicTier === "Developing" &&
-                      "border-yellow-500/30 bg-yellow-500/20 text-yellow-600"
-                  )}
+                  className="border-yellow-400/50 bg-yellow-500/20 px-3 py-1 text-xs font-semibold text-yellow-800 dark:text-yellow-200"
                 >
                   {economicTier}
                 </Badge>
+                <p className="text-muted-foreground mt-2 text-xs leading-normal">
+                  Your nation's baseline classification defines default tax yields, infrastructure
+                  capacity, and starting trade levels.
+                </p>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Expected Growth Rate:</span>
-                  <div className="text-foreground font-medium">{expectedGrowthRate}%</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">GDP per Capita:</span>
-                  <div className="text-foreground font-medium">
-                    ${sanitizedCoreIndicators.gdpPerCapita.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-              {referenceCountry && (
-                <div className="border-border mt-3 border-t pt-3">
-                  <div className="text-muted-foreground text-xs">
-                    vs {referenceCountry.name}: {getEconomicTier(referenceCountry.gdpPerCapita)}{" "}
-                    tier
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <SliderWithDirectInput
-            label="Inflation Rate"
-            description="Annual percentage increase in general price levels"
-            value={sanitizedCoreIndicators.inflationRate}
-            onChange={(value) => {
-              const inflationRate = sanitizeNumber(value, sanitizedCoreIndicators.inflationRate);
-              const clampedInflationRate = Math.max(-5, Math.min(20, inflationRate));
-
-              onInputsChange({
-                ...inputs,
-                coreIndicators: {
-                  ...inputs.coreIndicators,
-                  inflationRate: clampedInflationRate,
-                },
-              });
-            }}
-            min={-5}
-            max={20}
-            step={0.1}
-            precision={1}
-            unit="%"
-            sectionId="core"
-            icon={Activity}
-            showTicks={true}
-            tickCount={6}
-            showValue={true}
-            showRange={true}
-            referenceValue={referenceCountry?.inflationRate}
-            referenceLabel={referenceCountry?.name}
-            showComparison={!!referenceCountry}
-            defaultMode="input"
-            allowModeToggle={true}
-          />
+            </GlassCardContent>
+          </GlassCard>
         </div>
       </div>
+    );
+  }
 
-      {/* Advanced Section */}
-      {showAdvanced && (
-        <div className="space-y-6 border-t border-blue-200/30 pt-6">
-          <h4 className="text-foreground flex items-center gap-2 text-lg font-bold">
-            <BarChart3 className="h-5 w-5" />
-            {referenceCountry
-              ? "Economic Comparison: Custom vs Foundation Country"
-              : "Economic Projections: 10-Year Forecast"}
-          </h4>
+  // ─── Render Edit Mode (Advanced with circular dials and locks) ───
+  return (
+    <div className="space-y-8">
+      {/* Locked Indicators Grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Population Lock Card */}
+        <GlassCard depth="base" className="border-border/40 relative overflow-hidden">
+          <GlassCardContent className="space-y-3 p-4">
+            <div className="flex items-start justify-between">
+              <div className="bg-muted/30 text-muted-foreground rounded-lg p-2">
+                <Users className="h-4 w-4" />
+              </div>
+              <Badge
+                variant="outline"
+                className="border-border/40 text-muted-foreground flex items-center gap-1 bg-black/20 text-[9px]"
+              >
+                <Lock className="h-2.5 w-2.5" /> Locked
+              </Badge>
+            </div>
+            <div>
+              <div className="text-foreground text-2xl font-bold">
+                {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
+              </div>
+              <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                Population
+              </div>
+              <p className="text-muted-foreground/80 mt-1 text-[9px] leading-normal">
+                {locks.totalPopulation?.reason ||
+                  "Calculated dynamically based on baseline + growth rate."}
+              </p>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* GDP Comparison Chart */}
-            <GlassBarChart
-              data={comparisonData.map((item) => ({
-                ...item,
-                gdpPerCapita: Math.max(1000, item.gdpPerCapita), // Ensure minimum visible value
-              }))}
-              xKey="name"
-              yKey="gdpPerCapita"
-              title={referenceCountry ? "GDP per Capita Comparison" : "GDP per Capita Projections"}
-              description={
-                referenceCountry
-                  ? `${inputs.countryName || "Your Custom Country"} vs ${referenceCountry.name}`
-                  : "10-year economic projections based on current growth and inflation rates"
-              }
-              height={300}
-              colors={comparisonData.map((item) => {
-                const colorMap: Record<string, string> = {
-                  blue: "hsl(217, 91%, 60%)",
-                  emerald: "hsl(160, 84%, 60%)",
-                  yellow: "hsl(45, 93%, 58%)",
-                  orange: "hsl(25, 95%, 53%)",
-                  purple: "hsl(262, 83%, 58%)",
-                };
-                return colorMap[item.color] || "hsl(217, 91%, 60%)";
-              })}
+        {/* GDP per Capita Lock Card */}
+        <GlassCard depth="base" className="border-border/40 relative overflow-hidden">
+          <GlassCardContent className="space-y-3 p-4">
+            <div className="flex items-start justify-between">
+              <div className="bg-muted/30 text-muted-foreground rounded-lg p-2">
+                <Activity className="h-4 w-4" />
+              </div>
+              <Badge
+                variant="outline"
+                className="border-border/40 text-muted-foreground flex items-center gap-1 bg-black/20 text-[9px]"
+              >
+                <Lock className="h-2.5 w-2.5" /> Locked
+              </Badge>
+            </div>
+            <div>
+              <div className="text-foreground text-2xl font-bold">
+                ${sanitizedCoreIndicators.gdpPerCapita.toLocaleString()}
+              </div>
+              <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                GDP per Capita ({economicTier})
+              </div>
+              <p className="text-muted-foreground/80 mt-1 text-[9px] leading-normal">
+                {locks.gdpPerCapita?.reason ||
+                  "Influenced by economic component synergy and tax policies."}
+              </p>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
+
+        {/* Nominal GDP Lock Card */}
+        <GlassCard depth="base" className="border-border/40 relative overflow-hidden">
+          <GlassCardContent className="space-y-3 p-4">
+            <div className="flex items-start justify-between">
+              <div className="bg-muted/30 text-muted-foreground rounded-lg p-2">
+                <DollarSign className="h-4 w-4" />
+              </div>
+              <Badge
+                variant="outline"
+                className="border-border/40 text-muted-foreground flex items-center gap-1 bg-black/20 text-[9px]"
+              >
+                <Lock className="h-2.5 w-2.5" /> Locked
+              </Badge>
+            </div>
+            <div>
+              <div className="text-foreground text-2xl font-bold">
+                {formatCurrency(sanitizedCoreIndicators.nominalGDP)}
+              </div>
+              <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                Nominal GDP
+              </div>
+              <p className="text-muted-foreground/80 mt-1 text-[9px] leading-normal">
+                {locks.nominalGDP?.reason || "Calculated as population × GDP per capita."}
+              </p>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
+      </div>
+
+      {/* Draggable Circular Dials */}
+      <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-2">
+        {/* Economic Growth Dial */}
+        <GlassCard depth="base" className="border-border/40">
+          <GlassCardContent className="w-full space-y-4 p-6 text-center">
+            <EnhancedDial
+              label="Real GDP Growth Rate"
+              description="Adjust the annual real economic expansion rate of your nation."
+              value={sanitizedCoreIndicators.realGDPGrowthRate}
+              onChange={(value) => {
+                const growthRate = sanitizeNumber(value, sanitizedCoreIndicators.realGDPGrowthRate);
+                onInputsChange({
+                  ...safeInputs,
+                  coreIndicators: {
+                    ...coreIndicators,
+                    realGDPGrowthRate: growthRate,
+                  },
+                });
+              }}
+              min={-10}
+              max={20}
+              step={0.1}
+              precision={1}
+              unit="%"
+              sectionId="core"
+              icon={TrendingUp}
+              showTicks={true}
+              dialSize={150}
             />
+            <div className="border-border/20 text-muted-foreground flex w-full justify-between border-t pt-3 text-[10px]">
+              <span>Expected Rate: {expectedGrowthRate}%</span>
+              <span>Range: -10% to +20%</span>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
 
-            {/* Growth & Inflation Chart */}
-            <GlassBarChart
-              data={comparisonData.map((item) => ({
-                ...item,
-                growthRate: Math.max(0.1, item.growthRate), // Ensure minimum visible value
-                inflationRate: Math.max(0.1, item.inflationRate),
-              }))}
-              xKey="name"
-              yKey={["growthRate", "inflationRate"]}
-              title={referenceCountry ? "Growth vs Inflation Rates" : "Growth & Inflation Trends"}
-              description={
-                referenceCountry
-                  ? `${inputs.countryName || "Your Custom Country"} vs ${referenceCountry.name} - Economic Performance Indicators`
-                  : "Projected growth and inflation rates over 10 years"
-              }
-              height={300}
-              stacked={false}
-              colors={["hsl(217, 91%, 60%)", "hsl(160, 84%, 60%)"]}
+        {/* Inflation Dial */}
+        <GlassCard depth="base" className="border-border/40">
+          <GlassCardContent className="w-full space-y-4 p-6 text-center">
+            <EnhancedDial
+              label="Inflation Rate"
+              description="Annual percentage change in the general consumer price index."
+              value={sanitizedCoreIndicators.inflationRate}
+              onChange={(value) => {
+                const inflationRate = sanitizeNumber(value, sanitizedCoreIndicators.inflationRate);
+                onInputsChange({
+                  ...safeInputs,
+                  coreIndicators: {
+                    ...coreIndicators,
+                    inflationRate: inflationRate,
+                  },
+                });
+              }}
+              min={-5}
+              max={30}
+              step={0.1}
+              precision={1}
+              unit="%"
+              sectionId="core"
+              icon={Percent}
+              showTicks={true}
+              dialSize={150}
             />
-          </div>
-        </div>
-      )}
+            <div className="border-border/20 text-muted-foreground flex w-full justify-between border-t pt-3 text-[10px]">
+              <span>Stable Target: 2.0%</span>
+              <span>Range: -5% to +30%</span>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
+      </div>
     </div>
   );
 }

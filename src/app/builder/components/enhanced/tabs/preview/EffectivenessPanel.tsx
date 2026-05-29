@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Zap, Gauge } from "lucide-react";
@@ -24,14 +24,12 @@ export function EffectivenessPanel({
   return (
     <>
       {/* Economic Health Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="space-y-4 p-6">
+          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Economic Health</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </h3>
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -74,7 +72,7 @@ export function EffectivenessPanel({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
             <div>
               <span className="text-muted-foreground">GDP Growth:</span>
               <span className="ml-1 font-medium">
@@ -89,7 +87,7 @@ export function EffectivenessPanel({
             </div>
             <div>
               <span className="text-muted-foreground">Risk Level:</span>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="ml-1 text-xs">
                 {economicHealthMetrics?.economicRiskLevel ?? "Unknown"}
               </Badge>
             </div>
@@ -100,18 +98,16 @@ export function EffectivenessPanel({
               </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
       {/* Selected Components Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Zap className="h-5 w-5" />
             <span>Selected Atomic Components</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {selectedComponents.map((componentType, index) => {
               const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
@@ -123,18 +119,16 @@ export function EffectivenessPanel({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="rounded-lg border bg-white/50 p-3 backdrop-blur-sm dark:bg-slate-800/50"
+                  className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 backdrop-blur-sm"
                 >
                   <div className="flex items-center space-x-3">
-                    <div
-                      className={`rounded-lg p-2 bg-${component.color}-100 dark:bg-${component.color}-900/20`}
-                    >
+                    <div className={`rounded-lg p-2 bg-${component.color}-100/10`}>
                       <component.icon
                         className={`h-4 w-4 text-${component.color}-600 dark:text-${component.color}-400`}
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium">{component.name}</div>
+                      <div className="text-sm font-medium text-zinc-200">{component.name}</div>
                       <div className="text-muted-foreground text-xs">{component.description}</div>
                     </div>
                     <Badge variant="outline" className="text-xs">
@@ -145,8 +139,8 @@ export function EffectivenessPanel({
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
     </>
   );
 }

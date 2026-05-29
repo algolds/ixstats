@@ -1,18 +1,15 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useCallback } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { Download, FilePlus } from "lucide-react";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";
-import { CountrySelectorHeader } from "../../primitives/CountrySelectorHeader";
-import { FoundationFiltersPanel } from "../../primitives/FoundationFiltersPanel";
-import { SearchFilter } from "../../primitives/SearchFilter";
+import { withBasePath } from "~/lib/base-path";
 import { CountryGrid } from "../../primitives/CountryGrid";
-import { LivePreview } from "../../primitives/LivePreview";
-import { filterCountries } from "../../utils/country-selector-utils";
-import { archetypes } from "../../utils/country-archetypes";
 import type { RealCountryData } from "../../lib/economy-data-service";
+import { useBuilderContext } from "./context/BuilderStateContext";
+import { useBuilderFilter } from "../builder-filter-context";
+import { filterCountries } from "~/app/builder/utils/country-selector-utils";
+import { archetypes } from "~/app/builder/utils/country-archetypes";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -22,12 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { Button } from "~/components/ui/button";
 
 interface CountrySelectorProps {
   countries: RealCountryData[];
   onCountrySelect: (country: RealCountryData) => void;
-  onCardHoverChange: (countryId: string | null) => void;
   onBackToIntro?: () => void;
   onCreateFromScratch?: () => void;
 }
@@ -38,51 +33,89 @@ export function CountrySelector({
   onBackToIntro,
   onCreateFromScratch,
 }: CountrySelectorProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
-  const [hoveredCountry, setHoveredCountry] = useState<RealCountryData | null>(null);
-  const [softSelectedCountry, setSoftSelectedCountry] = useState<RealCountryData | null>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const { setFoundationPreviewCountry } = useBuilderContext();
+  const {
+    searchTerm,
+    selectedArchetypes,
+    handleClearFilters,
+    softSelectedCountry,
+    setSoftSelectedCountry,
+    newCountryName,
+    setNewCountryName,
+    clearSelection,
+    confirmHandlerRef,
+    onNavigate,
+    setGridWidth,
+    previewWidgetHeight,
+  } = useBuilderFilter();
+  const filteredCountries = useMemo(
+    () => filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes),
+    [countries, searchTerm, selectedArchetypes]
+  );
+  const [_hoveredCountry, setHoveredCountry] = useState<RealCountryData | null>(null);
   const [showScratchDialog, setShowScratchDialog] = useState(false);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll({ container: scrollRef });
-  const headerOpacity = useTransform(scrollY, [0, 100], [1, 0]);
-  const headerPointerEvents = useTransform(scrollY, (y) => (y > 50 ? "none" : "auto"));
-  const headerMarginTop = useTransform(scrollY, [0, 150], ["0px", "-180px"]);
-
-  const searchCardRef = useRef<HTMLDivElement>(null);
-  const countriesListRef = useRef<HTMLDivElement>(null);
+  const noopScroll = useCallback(() => {}, []);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Preload flags for all countries
+  React.useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setGridWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(el);
+    setGridWidth(el.getBoundingClientRect().width);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [setGridWidth]);
+
+  const handleHoverChange = useCallback((country: RealCountryData | null) => {
+    setHoveredCountry(country);
+  }, []);
+
+  React.useEffect(() => {
+    return () => setFoundationPreviewCountry(null);
+  }, [setFoundationPreviewCountry]);
+
+  // Register confirm handler so the hero's confirmation UI can trigger it
+  React.useEffect(() => {
+    confirmHandlerRef.current = () => {
+      if (!softSelectedCountry || !newCountryName.trim()) return;
+      const finalCountry = {
+        ...softSelectedCountry,
+        name: newCountryName.trim(),
+        foundationCountryName: softSelectedCountry.name,
+      };
+      setFoundationPreviewCountry(null);
+      clearSelection();
+      onCountrySelect(finalCountry);
+    };
+  }, [
+    softSelectedCountry,
+    newCountryName,
+    onCountrySelect,
+    setFoundationPreviewCountry,
+    clearSelection,
+    confirmHandlerRef,
+  ]);
+
   const countryNames = useMemo(() => countries?.map((c) => c.name) || [], [countries]);
   const { flagUrls } = useBulkFlags(countryNames, "irl");
-
-  const filteredCountries = useMemo(() => {
-    return filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
-  }, [countries, searchTerm, selectedArchetypes]);
-
-  const handleCountrySelect = useCallback(
-    (country: RealCountryData, customName: string) => {
-      const finalCountry = {
-        ...country,
-        name: customName,
-        foundationCountryName: country.name,
-      };
-      onCountrySelect(finalCountry);
-    },
-    [onCountrySelect]
-  );
-
-  const handleClearAll = useCallback(() => {
-    setSearchTerm("");
-    setSelectedArchetypes([]);
-  }, []);
-
-  const handleCancel = useCallback(() => {
-    setSoftSelectedCountry(null);
-  }, []);
+  const countriesWithFlags = useMemo(() => {
+    const hasAnyFlags = Object.keys(flagUrls).length > 0;
+    if (!hasAnyFlags) return filteredCountries;
+    return filteredCountries.filter((c) => {
+      const url = flagUrls[c.name];
+      return !!url && !url.includes("/placeholder-flag.svg");
+    });
+  }, [filteredCountries, flagUrls]);
 
   const handleScratchConfirm = useCallback(() => {
     setShowScratchDialog(false);
@@ -90,140 +123,93 @@ export function CountrySelector({
   }, [onCreateFromScratch]);
 
   const handleImportClick = useCallback(() => {
-    window.history.pushState(null, "", "/builder?section=import");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+    if (onNavigate) {
+      onNavigate("import");
+    } else {
+      window.history.pushState(null, "", withBasePath("/builder?section=import"));
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [onNavigate]);
 
-  // Live preview is visible when we have a hovered or selected country
-  const isLivePreviewVisible = hoveredCountry !== null || softSelectedCountry !== null;
+  // Click-off: clicking the grid background resets selection
+  const handleGridClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        setFoundationPreviewCountry(null);
+        clearSelection();
+      }
+    },
+    [setFoundationPreviewCountry, clearSelection]
+  );
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)]">
-      {/* Interactive Background */}
-      <InteractiveGridPattern
-        width={60}
-        height={60}
-        squares={[40, 30]}
-        className="absolute inset-0 -z-10 opacity-20 dark:opacity-10"
-        squaresClassName="fill-[var(--color-brand-primary)]/10 stroke-[var(--color-brand-primary)]/20 [&:nth-child(4n+1):hover]:fill-amber-500/30 [&:nth-child(4n+1):hover]:stroke-amber-500/50 [&:nth-child(4n+2):hover]:fill-blue-500/30 [&:nth-child(4n+2):hover]:stroke-blue-500/50 [&:nth-child(4n+3):hover]:fill-emerald-500/30 [&:nth-child(4n+3):hover]:stroke-emerald-500/50 [&:nth-child(4n+4):hover]:fill-purple-500/30 [&:nth-child(4n+4):hover]:stroke-purple-500/50 transition-all duration-300"
-      />
+    <div className="px-4 pb-4">
+      <div className="flex gap-6" ref={gridContainerRef}>
+        <div ref={gridRef} className="min-w-0 flex-1" onClick={handleGridClick}>
+          <CountryGrid
+            countries={countries || []}
+            filteredCountries={countriesWithFlags}
+            searchTerm={searchTerm}
+            selectedArchetype={selectedArchetypes.join(",")}
+            onCountryHover={handleHoverChange}
+            onCountryClick={(country) => {
+              setSoftSelectedCountry(country);
+              setNewCountryName(country.name);
+              setFoundationPreviewCountry(country);
+            }}
+            onClearFilters={handleClearFilters}
+            softSelectedCountryId={softSelectedCountry?.countryCode || null}
+            scrollPosition={0}
+            onScroll={noopScroll}
+            flagUrls={flagUrls}
+          />
+        </div>
 
-      {/* Main Content - No Sidebar */}
-      <div className="flex min-h-0 flex-1 flex-col p-4">
-        {/* Header */}
-        <motion.div
-          className="relative z-0 shrink-0"
+        <div
+          className="w-80 shrink-0 space-y-4 self-start transition-all duration-300 ease-out"
           style={{
-            opacity: headerOpacity,
-            pointerEvents: headerPointerEvents as any,
-            marginTop: headerMarginTop,
+            marginTop: previewWidgetHeight ? `${previewWidgetHeight + 16}px` : undefined,
           }}
         >
-          <CountrySelectorHeader
-            softSelectedCountry={softSelectedCountry}
-            onBackToIntro={onBackToIntro}
-            scrollY={scrollY}
-          />
-        </motion.div>
-
-        {/* Content: Center Panel (Search/Countries) + Right Sidebar (Quick Filters + Preview) */}
-        <motion.div className="relative z-10 flex min-h-0 flex-1 gap-6" ref={gridContainerRef}>
-          {/* Center Panel */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col space-y-4">
-            {/* Search and Filters */}
-            <div className="shrink-0">
-              <SearchFilter
-                ref={searchCardRef}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onClearAll={handleClearAll}
-              />
-            </div>
-
-            {/* Countries Grid */}
-            <div ref={scrollRef} className="no-scrollbar flex-1 overflow-y-auto pb-24">
-              <CountryGrid
-                countries={countries || []}
-                filteredCountries={filteredCountries}
-                searchTerm={searchTerm}
-                selectedArchetype={selectedArchetypes.join(",")}
-                onCountryHover={setHoveredCountry}
-                onCountryClick={(country) => {
-                  setSoftSelectedCountry(country);
-                  setHoveredCountry(null);
-                }}
-                onClearFilters={handleClearAll}
-                softSelectedCountryId={softSelectedCountry?.countryCode || null}
-                onMouseEnter={() => {}}
-                onMouseLeave={() => {}}
-                scrollPosition={scrollPosition}
-                onScroll={setScrollPosition}
-                flagUrls={flagUrls}
-              />
-            </div>
-          </div>
-
-          {/* Right Sidebar - Quick Filters + Actions + Live Preview */}
-          <div className="no-scrollbar w-80 shrink-0 space-y-4 overflow-y-auto pb-24">
-            {/* Quick Filters */}
-            <FoundationFiltersPanel
-              countries={countries || []}
-              selectedArchetypes={selectedArchetypes}
-              onArchetypeSelect={setSelectedArchetypes}
-              filteredCount={filteredCountries.length}
-            />
-
-            {/* Action Buttons */}
-            <div className="space-y-2">
-              <button
-                onClick={() => setShowScratchDialog(true)}
-                className="group relative w-full overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-emerald-400/40 hover:from-emerald-500/20 hover:via-teal-500/15 hover:to-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/10"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                <div className="relative flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 transition-all duration-300 group-hover:bg-emerald-500/30 group-hover:shadow-lg group-hover:shadow-emerald-500/20">
-                    <FilePlus className="h-4 w-4 text-emerald-400" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-emerald-300">Start from Scratch</span>
-                    <p className="text-xs text-emerald-400/60">Build your nation from nothing</p>
-                  </div>
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowScratchDialog(true)}
+              className="group relative w-full overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-emerald-400/40 hover:from-emerald-500/20 hover:via-teal-500/15 hover:to-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <div className="relative flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 transition-all duration-300 group-hover:bg-emerald-500/30 group-hover:shadow-lg group-hover:shadow-emerald-500/20">
+                  <FilePlus className="h-4 w-4 text-emerald-400" />
                 </div>
-              </button>
-
-              <button
-                onClick={handleImportClick}
-                className="group relative w-full overflow-hidden rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-blue-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-blue-400/40 hover:from-blue-500/20 hover:via-indigo-500/15 hover:to-blue-500/20 hover:shadow-lg hover:shadow-blue-500/10"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                <div className="relative flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 transition-all duration-300 group-hover:bg-blue-500/30 group-hover:shadow-lg group-hover:shadow-blue-500/20">
-                    <Download className="h-4 w-4 text-blue-400" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-blue-300">Import from Wiki</span>
-                    <p className="text-xs text-blue-400/60">
-                      Load data from IxWiki, IIWiki, or AltHistory
-                    </p>
-                  </div>
+                <div>
+                  <span className="text-sm font-medium text-emerald-300">Start from Scratch</span>
+                  <p className="text-xs text-emerald-400/60">Build your nation from nothing</p>
                 </div>
-              </button>
-            </div>
+              </div>
+            </button>
 
-            {/* Live Preview Panel */}
-            <LivePreview
-              softSelectedCountry={softSelectedCountry}
-              hoveredCountry={hoveredCountry}
-              isVisible={isLivePreviewVisible}
-              onCountrySelect={handleCountrySelect}
-              onCancel={handleCancel}
-            />
+            <button
+              onClick={handleImportClick}
+              className="group relative w-full overflow-hidden rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-blue-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-blue-400/40 hover:from-blue-500/20 hover:via-indigo-500/15 hover:to-blue-500/20 hover:shadow-lg hover:shadow-blue-500/10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <div className="relative flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 transition-all duration-300 group-hover:bg-blue-500/30 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                  <Download className="h-4 w-4 text-blue-400" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-blue-300">Import from Wiki</span>
+                  <p className="text-xs text-blue-400/60">
+                    Load your country from IIWiki or AltHistory
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Start from Scratch confirmation dialog */}
       <AlertDialog open={showScratchDialog} onOpenChange={setShowScratchDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

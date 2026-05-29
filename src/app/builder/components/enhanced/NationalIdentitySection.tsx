@@ -79,8 +79,9 @@ export function NationalIdentitySection({
   referenceCountry,
   countryId,
 }: NationalIdentitySectionProps) {
-  // Get builder context for autosync registration
-  const { registerAutoSync, unregisterAutoSync } = useBuilderContext();
+  // Get builder context for autosync registration and state management
+  const { registerAutoSync, unregisterAutoSync, builderState, setBuilderState } =
+    useBuilderContext();
 
   // All hooks must be called unconditionally (Rules of Hooks)
   const {
@@ -204,11 +205,16 @@ export function NationalIdentitySection({
     );
   }
 
-  // Tab configuration
-  const [activeTab, setActiveTab] = React.useState("symbols");
+  // Tab configuration from global builder state
+  const activeTab = builderState.activeIdentitySubTab || "basic";
+  const setActiveTab = React.useCallback(
+    (tab: string) => {
+      setBuilderState((prev) => ({ ...prev, activeIdentitySubTab: tab }));
+    },
+    [setBuilderState]
+  );
 
   const tabs: TabDefinition[] = [
-    { id: "symbols", label: "Symbols", icon: Flag },
     { id: "basic", label: "Basic Info", icon: Globe },
     { id: "culture", label: "Culture", icon: Heart },
     { id: "technical", label: "Technical", icon: Landmark },
@@ -228,8 +234,21 @@ export function NationalIdentitySection({
           onTabChange={setActiveTab}
           sectionTheme="identity"
         >
-          {activeTab === "symbols" && (
-            <SymbolsUpload
+          {activeTab === "basic" && (
+            <BasicInfoForm
+              identity={identity as NationalIdentityData}
+              onIdentityChange={handleIdentityChange}
+              selectedGovernmentType={selectedGovernmentType}
+              customOfficialName={customOfficialName}
+              isEditingCustomName={isEditingCustomName}
+              onGovernmentTypeChange={handleGovernmentTypeChange}
+              onCustomOfficialNameChange={setCustomOfficialName}
+              onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
+              onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
+              setShouldFetchCustomTypes={setShouldFetchCustomTypes}
+              customGovernmentTypes={customGovernmentTypes}
+              onFieldSave={handleFieldValueSave}
+              // Symbols merging
               flagUrl={inputs.flagUrl ?? ""}
               coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
               foundationCountry={
@@ -246,23 +265,6 @@ export function NationalIdentitySection({
               onFlagUrlChange={handleFlagUrlChange}
               onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
               onColorsExtracted={handleColorsExtracted}
-            />
-          )}
-
-          {activeTab === "basic" && (
-            <BasicInfoForm
-              identity={identity as NationalIdentityData}
-              onIdentityChange={handleIdentityChange}
-              selectedGovernmentType={selectedGovernmentType}
-              customOfficialName={customOfficialName}
-              isEditingCustomName={isEditingCustomName}
-              onGovernmentTypeChange={handleGovernmentTypeChange}
-              onCustomOfficialNameChange={setCustomOfficialName}
-              onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
-              onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
-              setShouldFetchCustomTypes={setShouldFetchCustomTypes}
-              customGovernmentTypes={customGovernmentTypes}
-              onFieldSave={handleFieldValueSave}
             />
           )}
 

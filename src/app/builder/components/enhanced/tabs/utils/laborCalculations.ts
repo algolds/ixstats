@@ -66,9 +66,8 @@ export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedL
   const underemployed = Math.round(totalWorkforce * (laborMarket.underemploymentRate / 100));
 
   const protections = Object.values(laborMarket.workerProtections || {});
-  const avgProtectionScore = protections.length > 0 
-    ? protections.reduce((a, b) => a + b, 0) / protections.length 
-    : 0;
+  const avgProtectionScore =
+    protections.length > 0 ? protections.reduce((a, b) => a + b, 0) / protections.length : 0;
 
   return {
     employed,
@@ -78,7 +77,8 @@ export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedL
       totalWorkforce / (laborMarket.laborForceParticipationRate / 100)
     ),
     laborForceSize: totalWorkforce,
-    effectiveUnemployment: totalWorkforce > 0 ? ((unemployed + underemployed) / totalWorkforce) * 100 : 0,
+    effectiveUnemployment:
+      totalWorkforce > 0 ? ((unemployed + underemployed) / totalWorkforce) * 100 : 0,
     employedWorkforce: employed,
     unemployedWorkforce: Math.round(totalWorkforce * (laborMarket.unemploymentRate / 100)),
     avgProtectionScore,

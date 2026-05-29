@@ -12,9 +12,9 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { stripBasePath } from "~/lib/base-path";
 import {
   Home,
   Grid3x3,
@@ -38,7 +38,7 @@ import { PreText } from "~/components/ui/pretext";
 export function VaultWidget() {
   const { userId } = useAuth();
   const [showPassiveIncome, setShowPassiveIncome] = useState(false);
-  const pathname = usePathname();
+  const pathname = stripBasePath(usePathname());
   const isOnVault = pathname.startsWith("/vault") || pathname.startsWith("/achievements");
   const isMainVaultPage = pathname === "/vault" || pathname === "/vault/";
 
@@ -281,7 +281,7 @@ export function VaultWidget() {
               {[
                 {
                   id: "dashboard" as const,
-                  href: withBasePath("/vault"),
+                  href: "/vault",
                   title: "MyVault (Wallet)",
                   icon: Wallet,
                   isActive: pathname === "/vault" || pathname === "/vault/",
@@ -293,7 +293,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "cards" as const,
-                  href: withBasePath("/vault/cards"),
+                  href: "/vault/cards",
                   title: "My Cards",
                   icon: Grid3x3,
                   isActive:
@@ -311,7 +311,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "marketplace" as const,
-                  href: withBasePath("/vault/marketplace"),
+                  href: "/vault/marketplace",
                   title: "Marketplace",
                   icon: ShoppingCart,
                   isActive:
@@ -329,7 +329,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "import" as const,
-                  href: withBasePath("/vault/import"),
+                  href: "/vault/import",
                   title: "NS Importer",
                   icon: Download,
                   isActive: pathname.startsWith("/vault/import"),
@@ -341,7 +341,7 @@ export function VaultWidget() {
                 },
                 {
                   id: "achievements" as const,
-                  href: withBasePath("/achievements"),
+                  href: "/achievements",
                   title: "Achievements",
                   icon: Trophy,
                   isActive: pathname.startsWith("/achievements"),
@@ -385,7 +385,7 @@ export function VaultWidget() {
           ) : (
             <div className="flex flex-col gap-1.5">
               <Link
-                href={withBasePath("/vault")}
+                href="/vault"
                 className="block text-center text-[0.65rem] text-blue-600 transition-colors hover:text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
               >
                 View Full Vault →

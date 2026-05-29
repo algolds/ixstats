@@ -293,7 +293,8 @@ function calculateCrossBuilderSynergies(
 
   // Example cross-builder synergies (simplified)
   if (
-    (government.includes(ComponentType.DEMOCRATIC_PROCESS) || government.includes((ComponentType as any).DEMOCRACY)) &&
+    (government.includes(ComponentType.DEMOCRATIC_PROCESS) ||
+      government.includes((ComponentType as any).DEMOCRACY)) &&
     economic.includes(EconomicComponentType.FREE_MARKET_SYSTEM)
   ) {
     synergies.push({

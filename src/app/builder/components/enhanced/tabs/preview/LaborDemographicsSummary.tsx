@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Progress } from "~/components/ui/progress";
 import { Users, Heart } from "lucide-react";
 import type { LaborSummary, DemographicsSummary } from "../utils/previewCalculations";
@@ -18,14 +18,12 @@ export function LaborDemographicsSummary({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Labor Market */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="space-y-4 p-6">
+          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Users className="h-5 w-5" />
             <span>Labor Market</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold">
@@ -44,7 +42,7 @@ export function LaborDemographicsSummary({
               <span>Unemployment Rate</span>
               <span className="font-medium">{laborSummary.unemploymentRate.toFixed(1)}%</span>
             </div>
-            <Progress value={laborSummary.unemploymentRate / 30} className="h-2" />
+            <Progress value={(laborSummary.unemploymentRate / 30) * 100} className="h-2" />
           </div>
 
           <div className="space-y-2">
@@ -52,10 +50,10 @@ export function LaborDemographicsSummary({
               <span>Participation Rate</span>
               <span className="font-medium">{laborSummary.participationRate.toFixed(1)}%</span>
             </div>
-            <Progress value={laborSummary.participationRate / 100} className="h-2" />
+            <Progress value={laborSummary.participationRate} className="h-2" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
             <div>
               <span className="text-muted-foreground">Min Wage:</span>
               <span className="ml-1 font-medium">${laborSummary.minimumWage.toFixed(2)}/hr</span>
@@ -73,18 +71,16 @@ export function LaborDemographicsSummary({
               <span className="ml-1 font-medium">{laborSummary.averageHours}/week</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
       {/* Demographics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="space-y-4 p-6">
+          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Heart className="h-5 w-5" />
             <span>Demographics</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold">
@@ -107,7 +103,7 @@ export function LaborDemographicsSummary({
                 {demographicsSummary.lifeExpectancy.toFixed(1)} years
               </span>
             </div>
-            <Progress value={demographicsSummary.lifeExpectancy / 100} className="h-2" />
+            <Progress value={demographicsSummary.lifeExpectancy} className="h-2" />
           </div>
 
           <div className="space-y-2">
@@ -118,7 +114,7 @@ export function LaborDemographicsSummary({
             <Progress value={demographicsSummary.literacyRate} className="h-2" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
             <div>
               <span className="text-muted-foreground">Urban:</span>
               <span className="ml-1 font-medium">
@@ -144,8 +140,8 @@ export function LaborDemographicsSummary({
               </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
     </div>
   );
 }

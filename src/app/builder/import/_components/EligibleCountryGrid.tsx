@@ -279,13 +279,6 @@ const EligibleCountryCard = React.memo(function EligibleCountryCard({
   const [imgError, setImgError] = useState(false);
   const showFlag = country.flagUrl && !imgError;
 
-  const completenessColor =
-    country.completeness >= 90
-      ? "text-emerald-400"
-      : country.completeness >= 80
-        ? "text-blue-400"
-        : "text-amber-400";
-
   return (
     <motion.div
       className={`glass-floating glass-refraction relative h-48 overflow-hidden rounded-xl${onClick ? "cursor-pointer" : ""}`}
@@ -308,15 +301,6 @@ const EligibleCountryCard = React.memo(function EligibleCountryCard({
       )}
 
       <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 hover:opacity-100" />
-
-      {/* Completeness badge */}
-      <div className="absolute top-3 right-3">
-        <div className="rounded-full bg-black/50 px-2 py-1 backdrop-blur-sm">
-          <span className={`text-xs font-semibold ${completenessColor}`}>
-            {country.completeness}%
-          </span>
-        </div>
-      </div>
 
       <div className="absolute right-0 bottom-0 left-0 p-4">
         <p className="text-lg font-bold text-white [text-shadow:0_0_10px_rgba(0,0,0,0.5)]">

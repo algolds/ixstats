@@ -17,9 +17,9 @@ import {
 import { FaWikipediaW } from "react-icons/fa";
 import { GiCardRandom, GiSoapExperiment } from "react-icons/gi";
 import { stripBasePath } from "~/lib/base-path";
+import { PreText } from "~/components/ui/pretext";
 
 // ─── Section color mapping (matches NAV_COLORS from navigation.tsx) ──────────
-
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "#10b981", bg: "bg-emerald-500/15", label: "Dashboard" },
   "/mycountry": { accent: "#f59e0b", bg: "bg-amber-500/15", label: "MyCountry" },
@@ -96,7 +96,7 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
           {/* Backdrop */}
           <motion.div
             key="nav-tray-backdrop"
-            className="fixed inset-0 z-[9998]"
+            className="fixed inset-0 z-[9998] pointer-events-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -107,7 +107,7 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
           {/* Tray */}
           <motion.div
             key="nav-tray"
-            className="absolute top-full left-1/2 z-[10001] mt-3 w-[280px] -translate-x-1/2"
+            className="absolute top-full left-1/2 z-[10001] mt-3 w-[280px] -translate-x-1/2 pointer-events-auto"
             initial={{ opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
@@ -168,7 +168,9 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                             <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                           </div>
                         </div>
-                        <span className="text-xs font-medium">{item.name}</span>
+                        <PreText className="text-xs font-medium" whiteSpace="nowrap">
+                          {item.name}
+                        </PreText>
                         {active && (
                           <div
                             className="ml-auto h-1.5 w-1.5 rounded-full"
@@ -196,7 +198,9 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                           : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                       }`}
                     >
-                      {item.name}
+                      <PreText className="text-inherit" whiteSpace="nowrap">
+                        {item.name}
+                      </PreText>
                     </Link>
                   ))}
                 </div>

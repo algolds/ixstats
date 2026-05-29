@@ -47,9 +47,11 @@ interface CommandPaletteProps {
 function CommandPaletteContent({
   isSticky = false,
   scrollY = 0,
+  diState,
 }: {
   isSticky?: boolean;
   scrollY?: number;
+  diState: ReturnType<typeof useDynamicIslandState>;
 }) {
   const { setSize } = useDynamicIslandSize();
   const [mounted, setMounted] = useState(false);
@@ -78,7 +80,7 @@ function CommandPaletteContent({
     setIsUserInteracting,
     setTimeDisplayMode,
     switchMode,
-  } = useDynamicIslandState();
+  } = diState;
 
   const diPathname = usePathname();
   const prevNavRef = useRef(diPathname);
@@ -89,36 +91,52 @@ function CommandPaletteContent({
   const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
   const isWikiActive = activePlugin?.id === "wiki";
 
-  // Dynamic size based on sticky/collapsed state + wiki/forum context
+  // Dynamic size based on sticky/collapsed state + wiki/forum context + expanded state
   useEffect(() => {
     let newSize: SizePresets;
     const isForumActive = activePlugin?.id === "forum";
 
-    if (isWikiActive) {
-      if (isSticky && isCollapsed) {
-        newSize = SIZE_PRESETS.WIKI_COMPACT; // 170x32 — compact wiki pill
-      } else if (isSticky) {
-        newSize = SIZE_PRESETS.COMPACT; // 200x36 — hover state
+    if (isExpanded) {
+      if (expandedMode === "search") {
+        newSize = SIZE_PRESETS.ULTRA; // 630px wide
+      } else if (expandedMode === "notifications") {
+        newSize = SIZE_PRESETS.TALL; // 371px wide
+      } else if (expandedMode === "settings") {
+        newSize = SIZE_PRESETS.MEDIUM; // 371px wide
+      } else if (expandedMode === "mycountry") {
+        newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
+      } else if (expandedMode.startsWith("plugin:")) {
+        newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else {
-        newSize = SIZE_PRESETS.WIKI_INLINE; // 280x38 — inline wiki pill
-      }
-    } else if (isForumActive) {
-      if (isCollapsed) {
-        newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32 — compact forum text mode
-      } else {
-        newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40 — hover state/expanded full text
+        newSize = SIZE_PRESETS.MEDIUM;
       }
     } else {
-      if (isSticky && isCollapsed) {
-        newSize = SIZE_PRESETS.COMPACT; // 200x36 pill
-      } else if (isSticky && !isCollapsed) {
-        newSize = SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
+      if (isWikiActive) {
+        if (isSticky && isCollapsed) {
+          newSize = SIZE_PRESETS.WIKI_COMPACT; // 170x32 — compact wiki pill
+        } else if (isSticky) {
+          newSize = SIZE_PRESETS.COMPACT; // 200x36 — hover state
+        } else {
+          newSize = SIZE_PRESETS.WIKI_INLINE; // 280x38 — inline wiki pill
+        }
+      } else if (isForumActive) {
+        if (isCollapsed) {
+          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32 — compact forum text mode
+        } else {
+          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40 — hover state/expanded full text
+        }
       } else {
-        newSize = SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
+        if (isSticky && isCollapsed) {
+          newSize = SIZE_PRESETS.COMPACT; // 200x36 pill
+        } else if (isSticky && !isCollapsed) {
+          newSize = SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
+        } else {
+          newSize = SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
+        }
       }
     }
     setSize(newSize);
-  }, [setSize, isSticky, isCollapsed, isWikiActive, activePlugin?.id]);
+  }, [setSize, isSticky, isCollapsed, isWikiActive, activePlugin?.id, isExpanded, expandedMode]);
 
   useEffect(() => {
     if (isWikiActive && diPathname !== prevNavRef.current) {
@@ -248,21 +266,40 @@ function CommandPaletteContent({
           style={{ touchAction: "none" }}
         >
           <DynamicIsland id="command-palette">
-            <CompactView
-              mode={mode}
-              isSticky={isSticky}
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-              setIsUserInteracting={setIsUserInteracting}
-              timeDisplayMode={timeDisplayMode}
-              setTimeDisplayMode={setTimeDisplayMode}
-              onSwitchMode={switchMode}
-              scrollY={scrollY}
-              activePlugin={activePlugin}
-              pluginCenter={activePlugin?.center}
-              pluginActions={activePlugin?.actions}
-              pluginBadge={activePlugin?.badge}
-            />
+            {!isExpanded ? (
+              <div key="compact" className="h-full w-full">
+                <CompactView
+                  mode={mode}
+                  isSticky={isSticky}
+                  isCollapsed={isCollapsed}
+                  setIsCollapsed={setIsCollapsed}
+                  setIsUserInteracting={setIsUserInteracting}
+                  timeDisplayMode={timeDisplayMode}
+                  setTimeDisplayMode={setTimeDisplayMode}
+                  onSwitchMode={switchMode}
+                  scrollY={scrollY}
+                  activePlugin={activePlugin}
+                  pluginCenter={activePlugin?.center}
+                  pluginActions={activePlugin?.actions}
+                  pluginBadge={activePlugin?.badge}
+                />
+              </div>
+            ) : (
+              <div key="expanded" className="h-full w-full">
+                <ExpandedView
+                  mode={expandedMode}
+                  onClose={() => switchMode("compact")}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  searchFilter={searchFilter}
+                  setSearchFilter={setSearchFilter}
+                  debouncedSearchQuery={debouncedSearchQuery}
+                  searchResults={searchResults}
+                  countriesData={countriesData}
+                  activePlugin={activePlugin}
+                />
+              </div>
+            )}
           </DynamicIsland>
 
           {/* Section accent line — visible when sticky */}
@@ -280,22 +317,6 @@ function CommandPaletteContent({
         {/* Nav tray dropdown */}
         <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayOpen(false)} />
       </div>
-
-      {/* Expanded dropdown content - only on desktop */}
-      {isExpanded && (
-        <ExpandedView
-          mode={expandedMode}
-          onClose={() => switchMode("compact")}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          searchFilter={searchFilter}
-          setSearchFilter={setSearchFilter}
-          debouncedSearchQuery={debouncedSearchQuery}
-          searchResults={searchResults}
-          countriesData={countriesData}
-          activePlugin={activePlugin}
-        />
-      )}
     </>
   );
 }
@@ -307,24 +328,25 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
   if (pathname?.startsWith("/maps")) return null;
 
   return (
-    <div
-      className={`z-[10000] flex items-center justify-center ${className || ""}`}
-      style={{
-        width: "100%", // Always use full width for proper centering
-        maxWidth: isSticky ? "400px" : "100%",
-      }}
-    >
-      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
-      </DynamicIslandProvider>
-    </div>
+    <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
+      <CommandPaletteWrapper className={className} isSticky={isSticky} scrollY={scrollY} />
+    </DynamicIslandProvider>
   );
 }
 
-function CommandPaletteWrapper({ isSticky, scrollY }: { isSticky?: boolean; scrollY?: number }) {
+function CommandPaletteWrapper({
+  className,
+  isSticky,
+  scrollY,
+}: {
+  className?: string;
+  isSticky?: boolean;
+  scrollY?: number;
+}) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const { isExpanded, switchMode } = useDynamicIslandState();
+  const diState = useDynamicIslandState();
+  const { isExpanded, switchMode } = diState;
 
   // Initialize once on mount
   useEffect(() => {
@@ -335,10 +357,28 @@ function CommandPaletteWrapper({ isSticky, scrollY }: { isSticky?: boolean; scro
     };
   }, []);
 
+
   // Close dropdown when clicking outside - use shared state
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      if (!target) return;
+
+      // Ignore elements that have been unmounted during the click lifecycle
+      if (!target.isConnected) {
+        return;
+      }
+
+      // Allow clicks inside Radix portals/popovers/dialogs/tooltips
+      if (
+        target.closest("[data-radix-portal]") ||
+        target.closest("[role='dialog']") ||
+        target.closest("[role='tooltip']")
+      ) {
+        return;
+      }
+
+      if (!target.closest("#command-palette")) {
         switchMode("compact");
       }
     };
@@ -356,8 +396,16 @@ function CommandPaletteWrapper({ isSticky, scrollY }: { isSticky?: boolean; scro
   }
 
   return (
-    <div ref={wrapperRef} className="relative flex items-center justify-center">
-      <CommandPaletteContent isSticky={isSticky} scrollY={scrollY} />
+    <div
+      ref={wrapperRef}
+      className={`relative z-[10000] flex w-full items-center justify-center pointer-events-none ${className || ""}`}
+      style={{
+        maxWidth: isExpanded ? "100%" : isSticky ? "400px" : "100%",
+      }}
+    >
+      <div className="pointer-events-auto">
+        <CommandPaletteContent isSticky={isSticky} scrollY={scrollY} diState={diState} />
+      </div>
     </div>
   );
 }

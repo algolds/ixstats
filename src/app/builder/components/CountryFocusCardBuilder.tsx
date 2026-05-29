@@ -49,7 +49,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     const hasError = !serverFlagUrl && (error || imgError);
     const showFlag = resolvedFlagUrl && !imgError;
 
-    const cardHeightClass = cardSize === "small" ? "h-48" : "h-80";
+    const aspectClass = cardSize === "small" ? "aspect-square" : "aspect-[3/4]";
 
     return (
       <motion.div
@@ -100,8 +100,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         <div
           className={cn(
             "glass-floating glass-refraction glass-interactive relative overflow-hidden transition-all duration-500 ease-out",
-            cardHeightClass,
-            cardSize === "small" && "aspect-square",
+            aspectClass,
             isHovered && "brightness-105 saturate-110 backdrop-blur-md",
             softSelectedCountryId === country.id &&
               "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"

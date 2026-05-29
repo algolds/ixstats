@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
 import { WikiSourceSelector } from "../../import/_components/WikiSourceSelector";
@@ -93,6 +94,10 @@ export const ImportSection = React.memo(function ImportSection({
   onImportComplete,
 }: ImportSectionProps) {
   const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[1]!);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [categoryFilter, setCategoryFilter] = useState("Countries");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -428,10 +433,11 @@ export const ImportSection = React.memo(function ImportSection({
         onSelectSite={setSelectedSite}
       />
 
-      {/* Main Content with Sidebar */}
-      <div className="mt-4 grid gap-6 lg:grid-cols-[240px_1fr]">
-        {/* Sidebar */}
-        <div className="hidden lg:block">
+      {/* Portal to mount the ImportSidebar in the main sidebar layout */}
+      {mounted &&
+        typeof document !== "undefined" &&
+        document.getElementById("import-sidebar-portal") &&
+        createPortal(
           <ImportSidebar
             selectedSite={selectedSite}
             searchTerm={searchTerm}
@@ -439,83 +445,83 @@ export const ImportSection = React.memo(function ImportSection({
             selectedResult={selectedResult}
             parsedData={parsedData}
             isLoading={isLoading}
+          />,
+          document.getElementById("import-sidebar-portal")!
+        )}
+
+      {/* Main Content */}
+      <div className="mt-4 space-y-6">
+        {(selectedResult || parsedData) && (
+          <div className="sticky top-4 z-20">
+            <BackButton onClick={handleBackFromSelection} />
+          </div>
+        )}
+
+        <div className="sticky top-0 z-10 pb-4">
+          <DynamicIslandSearch
+            selectedSite={selectedSite}
+            wikiSites={wikiSites}
+            onSelectSite={setSelectedSite}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            isSearching={isSearching}
+            searchResults={searchResults}
+            displayedResults={displayedResults}
+            hasMoreResults={hasMoreResults}
+            selectedResult={selectedResult}
+            isLoading={isLoading}
+            parsedData={parsedData}
+            error={error}
+            selectedCountryFlag={selectedCountryFlag}
+            categoryFilter={categoryFilter}
+            setCategoryFilter={setCategoryFilter}
+            popularCategories={popularCategories}
+            handleSelectResult={handleSelectResult}
+            loadMoreResults={loadMoreResults}
+            onContinueWithCountry={handleContinueWithCountry}
+            formatNumber={formatNumber}
+            onBackFromSelection={handleBackFromSelection}
           />
         </div>
 
-        {/* Main Content */}
-        <div className="space-y-6">
-          {(selectedResult || parsedData) && (
-            <div className="sticky top-4 z-20">
-              <BackButton onClick={handleBackFromSelection} />
-            </div>
-          )}
-
-          <div className="sticky top-0 z-10 pb-4">
-            <DynamicIslandSearch
-              selectedSite={selectedSite}
-              wikiSites={wikiSites}
-              onSelectSite={setSelectedSite}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              isSearching={isSearching}
-              searchResults={searchResults}
-              displayedResults={displayedResults}
-              hasMoreResults={hasMoreResults}
-              selectedResult={selectedResult}
-              isLoading={isLoading}
-              parsedData={parsedData}
-              error={error}
-              selectedCountryFlag={selectedCountryFlag}
-              categoryFilter={categoryFilter}
-              setCategoryFilter={setCategoryFilter}
-              popularCategories={popularCategories}
-              handleSelectResult={handleSelectResult}
-              loadMoreResults={loadMoreResults}
-              onContinueWithCountry={handleContinueWithCountry}
-              formatNumber={formatNumber}
-              onBackFromSelection={handleBackFromSelection}
-            />
+        {isLoading && !parsedData && (
+          <div className="border-border/50 bg-card/60 flex items-center justify-center gap-3 rounded-xl border px-6 py-8 backdrop-blur-md">
+            <div className="border-muted-foreground/30 h-5 w-5 animate-spin rounded-full border-2 border-t-blue-500" />
+            <span className="text-muted-foreground text-sm">
+              Parsing {selectedResult?.title}...
+            </span>
           </div>
+        )}
 
-          {isLoading && !parsedData && (
-            <div className="border-border/50 bg-card/60 flex items-center justify-center gap-3 rounded-xl border px-6 py-8 backdrop-blur-md">
-              <div className="border-muted-foreground/30 h-5 w-5 animate-spin rounded-full border-2 border-t-blue-500" />
-              <span className="text-muted-foreground text-sm">
-                Parsing {selectedResult?.title}...
-              </span>
+        {!selectedResult &&
+          !parsedData &&
+          !isLoading &&
+          (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
+            <div className="mt-6">
+              <EligibleCountryGrid
+                site={selectedSite.name as "iiwiki" | "althistory"}
+                searchFilter={searchTerm}
+                onCountryClick={handleGridCountryClick}
+              />
             </div>
           )}
 
-          {!selectedResult &&
-            !parsedData &&
-            !isLoading &&
-            (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
-              <div className="mt-6">
-                <EligibleCountryGrid
-                  site={selectedSite.name as "iiwiki" | "althistory"}
-                  searchFilter={searchTerm}
-                  onCountryClick={handleGridCountryClick}
-                />
-              </div>
-            )}
+        {parsedData && !showDeepScan && (
+          <InteractiveInfoboxPreview
+            data={parsedData}
+            onContinue={handleContinueWithData}
+            isLoading={isLoading}
+          />
+        )}
 
-          {parsedData && !showDeepScan && (
-            <InteractiveInfoboxPreview
-              data={parsedData}
-              onContinue={handleContinueWithData}
-              isLoading={isLoading}
-            />
-          )}
-
-          {parsedData && showDeepScan && selectedResult && (
-            <WikiDeepScanPanel
-              countryName={selectedResult.title}
-              wikiSource={selectedSite.name as "ixwiki" | "iiwiki" | "althistory"}
-              onDataExtracted={(enhancedData) => handleDeepScanComplete(enhancedData)}
-              onSkip={() => handleDeepScanComplete(undefined)}
-            />
-          )}
-        </div>
+        {parsedData && showDeepScan && selectedResult && (
+          <WikiDeepScanPanel
+            countryName={selectedResult.title}
+            wikiSource={selectedSite.name as "ixwiki" | "iiwiki" | "althistory"}
+            onDataExtracted={(enhancedData) => handleDeepScanComplete(enhancedData)}
+            onSkip={() => handleDeepScanComplete(undefined)}
+          />
+        )}
       </div>
 
       {showScanToast && scanResult && (

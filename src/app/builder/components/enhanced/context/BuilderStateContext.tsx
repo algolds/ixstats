@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import { useBuilderState, type UseBuilderStateReturn } from "../../../hooks/useBuilderState";
+import type { RealCountryData } from "../../../lib/economy-data-service";
 
 /**
  * AutoSync function type - returns a promise that resolves when sync is complete
@@ -27,6 +28,14 @@ export interface BuilderContextValue extends UseBuilderStateReturn {
   registerAutoSync: (section: keyof AutoSyncRegistry, syncFn: AutoSyncFunction) => void;
   unregisterAutoSync: (section: keyof AutoSyncRegistry) => void;
   syncAllNow: () => Promise<{ success: number; failed: number; errors: string[] }>;
+  submitFn: (() => Promise<void>) | null;
+  isSubmittingGlobal: boolean;
+  registerSubmit: (fn: () => Promise<void>, loading: boolean) => void;
+  unregisterSubmit: () => void;
+  /** Transient — country currently being hovered in the foundation step grid */
+  foundationPreviewCountry: RealCountryData | null;
+  /** Set hovered country for foundation step live preview in sidebar */
+  setFoundationPreviewCountry: (country: RealCountryData | null) => void;
 }
 
 // Create the context with undefined as the default value
@@ -56,6 +65,27 @@ export function BuilderStateProvider({
 }: BuilderStateProviderProps) {
   const builderStateValue = useBuilderState(mode, countryId);
   const [autoSyncRegistry, setAutoSyncRegistry] = useState<AutoSyncRegistry>({});
+  const submitRef = useRef<(() => Promise<void>) | null>(null);
+  const [isSubmittingGlobal, setIsSubmittingGlobal] = useState(false);
+  const [foundationPreviewCountry, setFoundationPreviewCountry] = useState<RealCountryData | null>(
+    null
+  );
+
+  const registerSubmit = useCallback((fn: () => Promise<void>, loading: boolean) => {
+    submitRef.current = fn;
+    setIsSubmittingGlobal(loading);
+  }, []);
+
+  const unregisterSubmit = useCallback(() => {
+    submitRef.current = null;
+    setIsSubmittingGlobal(false);
+  }, []);
+
+  const executeSubmit = useCallback(async () => {
+    if (submitRef.current) {
+      await submitRef.current();
+    }
+  }, []);
 
   /**
    * Register an autosync function for a specific builder section
@@ -116,8 +146,25 @@ export function BuilderStateProvider({
       registerAutoSync,
       unregisterAutoSync,
       syncAllNow,
+      submitFn: executeSubmit,
+      isSubmittingGlobal,
+      registerSubmit,
+      unregisterSubmit,
+      foundationPreviewCountry,
+      setFoundationPreviewCountry,
     }),
-    [builderStateValue, autoSyncRegistry, registerAutoSync, unregisterAutoSync, syncAllNow]
+    [
+      builderStateValue,
+      autoSyncRegistry,
+      registerAutoSync,
+      unregisterAutoSync,
+      syncAllNow,
+      executeSubmit,
+      isSubmittingGlobal,
+      registerSubmit,
+      unregisterSubmit,
+      foundationPreviewCountry,
+    ]
   );
 
   return (

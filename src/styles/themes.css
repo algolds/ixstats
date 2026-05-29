@@ -186,7 +186,7 @@
 
   --color-overlay: rgba(255, 255, 255, 0.75);
   --color-backdrop: rgba(0, 0, 0, 0.25);
-  --color-glass: rgba(255, 255, 255, 0.8);
+  --color-glass: rgba(245, 243, 255, 0.85); /* slight violet tint in light mode for DI glow visibility */
   --color-surface-blur: rgba(255, 255, 255, 0.95);
 
   --color-input-bg: #ffffff;

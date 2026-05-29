@@ -79,6 +79,15 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
           const accessible = isStepAccessible(step);
           const theme = BUILDER_SECTION_THEMES[step.sections[0]!];
 
+          const activeBgClass =
+            step.sections[0] === "identity"
+              ? "bg-teal-500"
+              : step.sections[0] === "government"
+                ? "bg-cyan-500"
+                : step.sections[0] === "economics"
+                  ? "bg-emerald-500"
+                  : "bg-amber-500";
+
           return (
             <React.Fragment key={step.id}>
               {/* Connector line between steps */}
@@ -99,7 +108,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                 className={cn(
                   "group relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all duration-200 sm:gap-2 sm:px-3 sm:py-2.5",
                   active
-                    ? "text-white shadow-md"
+                    ? "font-bold text-zinc-950 shadow-md"
                     : accessible
                       ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                       : "text-muted-foreground/30 cursor-not-allowed"
@@ -107,13 +116,13 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                 aria-current={active ? "step" : undefined}
                 aria-label={`Step ${step.stepNumber}: ${step.label}`}
               >
-                {/* Active background with gradient */}
+                {/* Active background */}
                 {active && (
                   <motion.div
                     layoutId="activeStepBg"
                     className={cn(
-                      "absolute inset-0 rounded-lg bg-gradient-to-r shadow-md",
-                      theme.gradient,
+                      "absolute inset-0 rounded-lg shadow-md",
+                      activeBgClass,
                       theme.activeGlow
                     )}
                     transition={{
@@ -137,7 +146,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     <span
                       className={cn(
                         "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                        active ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                        active ? "bg-black/15 text-zinc-950" : "bg-muted text-muted-foreground"
                       )}
                     >
                       {step.stepNumber}

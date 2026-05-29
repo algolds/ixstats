@@ -192,11 +192,18 @@ export function useDynamicIslandState() {
     // Reset user interaction after 30 seconds
     interactionTimeoutRef.current = setTimeout(() => setIsUserInteracting(false), 30000);
 
-    if (newMode === "compact") {
-      setIsExpanded(false);
-    } else {
+    const isExpandedMode =
+      newMode === "search" ||
+      newMode === "notifications" ||
+      newMode === "settings" ||
+      newMode === "mycountry" ||
+      newMode.startsWith("plugin:");
+
+    if (isExpandedMode) {
       setIsExpanded(true);
       setExpandedMode(newMode);
+    } else {
+      setIsExpanded(false);
     }
   }, []);
 
@@ -404,15 +411,55 @@ export function useDynamicIslandState() {
     };
   }, [mode, isUserInteracting, activePlugin, switchMode]);
 
+  // Cycle time/date display mode when in cycling mode
+  useEffect(() => {
+    if (mode !== "cycling") return;
+
+    const interval = setInterval(() => {
+      setTimeDisplayMode((prev) => {
+        if (prev === "time") return "date";
+        if (prev === "date") return "both";
+        return "time";
+      });
+    }, 4000); // cycle every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [mode, setTimeDisplayMode]);
+
+  // Exit cycling mode on any user activity
+  useEffect(() => {
+    if (mode !== "cycling") return;
+
+    const handleActivity = () => {
+      switchMode("compact");
+    };
+
+    window.addEventListener("mousemove", handleActivity, { passive: true });
+    window.addEventListener("mousedown", handleActivity, { passive: true });
+    window.addEventListener("keydown", handleActivity, { passive: true });
+    window.addEventListener("touchstart", handleActivity, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("mousedown", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
+    };
+  }, [mode, switchMode]);
+
   // When active plugin changes, default expanded mode to plugin view
   useEffect(() => {
     if (activePlugin?.expandedViews) {
       const firstViewKey = Object.keys(activePlugin.expandedViews)[0];
       if (firstViewKey) {
         setExpandedMode(`plugin:${firstViewKey}`);
+        if (activePlugin.id === "builder") {
+          setIsExpanded(true);
+          setMode(`plugin:${firstViewKey}`);
+        }
       }
     }
-  }, [activePlugin]);
+  }, [activePlugin, setIsExpanded, setMode]);
 
   // Forum pages use their own ForumLayout sidebar — no DI forum mode needed.
 

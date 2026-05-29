@@ -115,15 +115,6 @@ export function CoreStep({
         </p>
       </motion.div>
 
-      <Alert className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Foundation Setup:</strong> Define your nation's identity and core economic
-          indicators. These values will automatically adjust other economic parameters throughout
-          the builder.
-        </AlertDescription>
-      </Alert>
-
       <Tabs value={activeCoreTab} onValueChange={onTabChange} className="space-y-6">
         <TabsList className="bg-muted/50 border-border/50 grid w-full grid-cols-2 rounded-xl border p-1 backdrop-blur-sm">
           <EnhancedTabsTrigger value="identity" icon={Flag}>

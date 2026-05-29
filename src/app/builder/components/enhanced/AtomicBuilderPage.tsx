@@ -21,8 +21,9 @@ import { ComponentType as PrismaComponentType } from "~/lib/enums";
 import { useNotify } from "~/hooks/useNotify";
 
 // Import modular architecture
-import { BuilderStateProvider, useBuilderContext } from "./context/BuilderStateContext";
-import { StepContent, BuilderFooter } from "./sections";
+import { useBuilderContext } from "./context/BuilderStateContext";
+import { sanitizeEconomicInputs } from "../../hooks/useBuilderState";
+import { StepContent } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import type { BuilderStep } from "./builderConfig";
@@ -82,7 +83,7 @@ function AtomicBuilderPageInner({
   const { user } = useUser();
   const router = useRouter();
   const notify = useNotify();
-  const { builderState, setBuilderState } = useBuilderContext();
+  const { builderState, setBuilderState, registerSubmit, unregisterSubmit } = useBuilderContext();
   const isEditMode = mode === "edit";
 
   // Country data state
@@ -300,20 +301,71 @@ function AtomicBuilderPageInner({
     isLoading: false,
   };
 
+  // Update country mutation
+  const updateCountryMutation = (api.countries as any).updateCountry?.useMutation({
+    onSuccess: (country: any) => {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(`builder_state_${countryId}`);
+          localStorage.removeItem(`builder_last_saved_${countryId}`);
+        }
+      } catch (error) {
+        // Failed to clear saved state
+      }
+
+      console.log("[Builder] Country updated successfully:", country.name);
+
+      notify.success(
+        "Country Updated Successfully!",
+        `${country.name} has been updated. Redirecting to your dashboard...`
+      );
+
+      setTimeout(() => {
+        router.push(createUrl(`/mycountry`));
+      }, 1000);
+    },
+    onError: (error: any) => {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update country";
+      setError(errorMessage);
+      console.error("[Builder] Country update failed:", errorMessage);
+      notify.error("Failed to Update Country", errorMessage);
+
+      // Release submission lock on error
+      submissionLockRef.current = false;
+      setIsSubmitting(false);
+    },
+  }) || {
+    mutateAsync: async () => {
+      throw new Error("Country update is not available");
+    },
+    isLoading: false,
+  };
+
   const handleCreateCountry = useCallback(async () => {
     // Prevent double-submit with ref-based lock
     if (submissionLockRef.current || isSubmitting) {
-      console.warn("[Builder] Country creation already in progress, ignoring duplicate request");
-      notify.warning("Creation In Progress", "Please wait while your nation is being created...");
+      console.warn(
+        isEditMode
+          ? "[Builder] Country update already in progress, ignoring duplicate request"
+          : "[Builder] Country creation already in progress, ignoring duplicate request"
+      );
+      notify.warning(
+        isEditMode ? "Update In Progress" : "Creation In Progress",
+        isEditMode
+          ? "Please wait while your country is being updated..."
+          : "Please wait while your nation is being created..."
+      );
       return;
     }
 
     if (!builderState.economicInputs || !user) {
-      const errorMsg = "Missing required data for country creation";
+      const errorMsg = "Missing required data for country " + (isEditMode ? "update" : "creation");
       setError(errorMsg);
       notify.error(
         "Incomplete Data",
-        "Please complete all required fields before creating your nation."
+        isEditMode
+          ? "Please complete all required fields before updating your country."
+          : "Please complete all required fields before creating your nation."
       );
       return;
     }
@@ -323,32 +375,83 @@ function AtomicBuilderPageInner({
       submissionLockRef.current = true;
       setIsSubmitting(true);
 
-      console.log("[Builder] Creating country:", builderState.economicInputs.countryName);
+      const formattedGovComps = builderState.governmentComponents.map((comp) => ({
+        componentType: comp,
+      }));
 
-      // Show initial progress toast
-      notify.info(
-        "Creating Your Nation",
-        "Setting up your country, government, and economic systems..."
-      );
+      if (isEditMode) {
+        if (!countryId) {
+          throw new Error("Missing country ID for update");
+        }
 
-      await createCountryMutation.mutateAsync({
-        name: builderState.economicInputs.countryName || "New Nation",
-        foundationCountry:
-          builderState.selectedCountry?.name || builderState.selectedCountry?.countryCode || null,
-        economicInputs: builderState.economicInputs,
-        governmentComponents: builderState.governmentComponents,
-        taxSystemData: builderState.taxSystemData,
-        governmentStructure: builderState.governmentStructure,
-        economyBuilderState: builderState.economyBuilderState || undefined,
-      });
+        console.log("[Builder] Updating country:", builderState.economicInputs.countryName);
+
+        notify.info(
+          "Updating Your Country",
+          "Applying your changes to the country, government, and economic systems..."
+        );
+
+        await updateCountryMutation.mutateAsync({
+          id: countryId,
+          name: builderState.economicInputs.countryName || "Updated Nation",
+          economicInputs: sanitizeEconomicInputs(builderState.economicInputs),
+          governmentComponents: formattedGovComps,
+          taxSystemData: builderState.taxSystemData,
+          governmentStructure: builderState.governmentStructure,
+          economyBuilderState: builderState.economyBuilderState || undefined,
+        });
+      } else {
+        console.log("[Builder] Creating country:", builderState.economicInputs.countryName);
+
+        // Show initial progress toast
+        notify.info(
+          "Creating Your Nation",
+          "Setting up your country, government, and economic systems..."
+        );
+
+        await createCountryMutation.mutateAsync({
+          name: builderState.economicInputs.countryName || "New Nation",
+          foundationCountry:
+            builderState.selectedCountry?.name || builderState.selectedCountry?.countryCode || null,
+          economicInputs: sanitizeEconomicInputs(builderState.economicInputs),
+          governmentComponents: formattedGovComps,
+          taxSystemData: builderState.taxSystemData,
+          governmentStructure: builderState.governmentStructure,
+          economyBuilderState: builderState.economyBuilderState || undefined,
+          archetypeId: builderState.selectedArchetypeId || undefined,
+        });
+      }
     } catch (error) {
       // Error handled by mutation's onError callback
       // Release lock on error
       submissionLockRef.current = false;
       setIsSubmitting(false);
     }
-  }, [builderState, user, createCountryMutation, isSubmitting]);
-
+  }, [
+    builderState,
+    user,
+    createCountryMutation,
+    updateCountryMutation,
+    isSubmitting,
+    isEditMode,
+    countryId,
+  ]);
+  // Register the submit function and loading state with context
+  useEffect(() => {
+    const isMutating =
+      createCountryMutation?.isLoading || updateCountryMutation?.isLoading || isSubmitting;
+    registerSubmit(handleCreateCountry, !!isMutating);
+    return () => {
+      unregisterSubmit();
+    };
+  }, [
+    handleCreateCountry,
+    createCountryMutation?.isLoading,
+    updateCountryMutation?.isLoading,
+    isSubmitting,
+    registerSubmit,
+    unregisterSubmit,
+  ]);
   // Tutorial handlers
   const handleCompleteTutorial = useCallback(() => {
     setShowTutorial(false);
@@ -377,6 +480,7 @@ function AtomicBuilderPageInner({
       ...prev,
       step: "core",
       activeCoreTab: "identity",
+      activeIdentitySubTab: "symbols",
       economicInputs: prev.economicInputs || createDefaultEconomicInputs(),
       completedSteps: [...new Set([...prev.completedSteps, "foundation" as BuilderStep])],
     }));
@@ -492,17 +596,7 @@ function AtomicBuilderPageInner({
   ]);
 
   return (
-    <div className="space-y-6">
-      {/* Step Navigation Header */}
-      <div className="border-border bg-card/50 rounded-xl border p-3 backdrop-blur-sm">
-        <BuilderStepNav
-          activeSection={currentSection}
-          onNavigate={handleNavigateSection}
-          completedSteps={new Set(isEditMode ? ["identity"] : [])}
-          accessibleSteps={allSections}
-        />
-      </div>
-
+    <div className="flex min-h-0 flex-1 flex-col space-y-6">
       {/* Main Content Area with Animations */}
       {builderState.step === "foundation" && !isEditMode ? (
         // Foundation step is rendered without StepContent wrapper (only in create mode)
@@ -512,7 +606,7 @@ function AtomicBuilderPageInner({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
-          className="space-y-6"
+          className="flex min-h-0 flex-1 flex-col"
         >
           <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
             <StepRenderer
@@ -538,12 +632,6 @@ function AtomicBuilderPageInner({
               onGovernmentStructureSave={handleGovernmentStructureSave}
             />
           </Suspense>
-
-          {/* Footer with navigation */}
-          <BuilderFooter
-            onCreateCountry={handleCreateCountry}
-            isCreating={createCountryMutation?.isLoading || isSubmitting}
-          />
         </StepContent>
       )}
 
@@ -613,9 +701,5 @@ export function AtomicBuilderPage({
   mode = "create",
   countryId,
 }: AtomicBuilderPageProps) {
-  return (
-    <BuilderStateProvider mode={mode} countryId={countryId}>
-      <AtomicBuilderPageInner onBackToIntro={onBackToIntro} mode={mode} countryId={countryId} />
-    </BuilderStateProvider>
-  );
+  return <AtomicBuilderPageInner onBackToIntro={onBackToIntro} mode={mode} countryId={countryId} />;
 }

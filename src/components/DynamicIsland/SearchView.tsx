@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import { ScrollArea } from "../ui/scroll-area";
 import { Search, X, ChevronRight } from "lucide-react";
 import { SimpleFlag } from "../SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import type { SearchViewProps, SearchFilter } from "./types";
+import { PreText } from "~/components/ui/pretext";
 
 const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -40,42 +40,43 @@ export function SearchView({
 
   return (
     <div className="p-4">
-      {/* ── Search input ───────────────────────────────────────────── */}
-      <div className="relative mb-3">
-        <Search className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          tabIndex={0}
-          placeholder={`Search ${searchFilter === "all" ? "everything" : searchFilter}…`}
-          value={searchQuery || ""}
-          onChange={(e) => setSearchQuery?.(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              if (searchQuery) {
-                setSearchQuery?.("");
-              } else {
-                closeDropdown();
+      <div className="flex items-center gap-2 mb-3">
+        <div className="relative flex-1">
+          <Search className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            tabIndex={0}
+            placeholder={`Search ${searchFilter === "all" ? "everything" : searchFilter}…`}
+            value={searchQuery || ""}
+            onChange={(e) => setSearchQuery?.(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                if (searchQuery) {
+                  setSearchQuery?.("");
+                } else {
+                  closeDropdown();
+                }
               }
-            }
-          }}
-          className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/30 focus:outline-none"
-          data-command-palette-search="true"
-          autoFocus
-        />
-        <div className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5">
-          <kbd className="bg-muted/60 text-muted-foreground/60 hidden rounded px-1.5 py-0.5 text-[10px] font-medium md:inline">
-            ⌘K
-          </kbd>
+            }}
+            className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/30 focus:outline-none"
+            data-command-palette-search="true"
+            autoFocus
+          />
+          <div className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5">
+            <kbd className="bg-muted/60 text-muted-foreground/60 hidden rounded px-1.5 py-0.5 text-[10px] font-medium md:inline">
+              ⌘K
+            </kbd>
+          </div>
         </div>
         {/* Close */}
         <button
           onClick={closeDropdown}
-          className="text-muted-foreground hover:text-foreground absolute -top-0.5 -right-0.5 flex h-5 w-5 translate-x-full items-center justify-center rounded-md transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
           aria-label="Close search"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
@@ -91,13 +92,15 @@ export function SearchView({
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
             }`}
           >
-            {label}
+            <PreText className="text-inherit" whiteSpace="nowrap">
+              {label}
+            </PreText>
           </button>
         ))}
       </div>
 
       {/* ── Results ───────────────────────────────────────────────── */}
-      <ScrollArea className="max-h-80">
+      <div className="min-h-0 flex-1">
         {searchResults && searchResults.length > 0 ? (
           <div className="space-y-0.5">
             {searchResults.map((result) => (
@@ -121,20 +124,27 @@ export function SearchView({
 
                 {/* Content */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-foreground truncate text-sm font-medium">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <PreText
+                      className="text-foreground truncate text-sm font-medium"
+                      whiteSpace="nowrap"
+                    >
                       {result.title}
-                    </span>
-                    <span
+                    </PreText>
+                    <PreText
                       className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_COLORS[result.type] ?? ""}`}
+                      whiteSpace="nowrap"
                     >
                       {result.type}
-                    </span>
+                    </PreText>
                   </div>
                   {result.description && (
-                    <div className="text-muted-foreground/70 truncate text-xs">
+                    <PreText
+                      className="text-foreground/70 block truncate text-xs"
+                      whiteSpace="nowrap"
+                    >
                       {result.description}
-                    </div>
+                    </PreText>
                   )}
                 </div>
 
@@ -147,46 +157,56 @@ export function SearchView({
           /* ── No results ─────────────────────────────────────────── */
           <div className="py-10 text-center">
             <Search className="text-muted-foreground/30 mx-auto mb-3 h-8 w-8" />
-            <div className="text-muted-foreground text-sm font-medium">No results</div>
-            <div className="text-muted-foreground/60 mt-1 text-xs">
-              Nothing found for &ldquo;{debouncedSearchQuery}&rdquo;
+            <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
+              No results
+            </PreText>
+            <div className="text-muted-foreground/80 mt-1 flex flex-wrap items-center justify-center gap-1 text-xs">
+              <PreText className="inline-block w-auto" whiteSpace="nowrap">
+                {`Nothing found for "${debouncedSearchQuery}"${searchFilter !== "all" ? ` in ${searchFilter}.` : ""}`}
+              </PreText>
               {searchFilter !== "all" && (
-                <>
-                  {" "}
-                  in {searchFilter}.{" "}
-                  <button
-                    onClick={() => setSearchFilter?.("all")}
-                    className="text-primary hover:underline"
-                  >
+                <button
+                  onClick={() => setSearchFilter?.("all")}
+                  className="text-primary inline-block hover:underline"
+                >
+                  <PreText className="inline-block w-auto text-inherit" whiteSpace="nowrap">
                     Search all
-                  </button>
-                </>
+                  </PreText>
+                </button>
               )}
             </div>
           </div>
         ) : (
           /* ── Empty state ────────────────────────────────────────── */
           <div className="py-10 text-center">
-            <div className="text-muted-foreground/60 mb-3 text-sm">
-              Type to search{" "}
-              {searchFilter === "all" ? "countries, commands, and features" : searchFilter}
-            </div>
-            <div className="text-muted-foreground/40 flex items-center justify-center gap-3 text-[11px]">
+            <PreText className="text-muted-foreground/80 mb-3 text-sm" whiteSpace="nowrap">
+              {`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
+            </PreText>
+            <div className="text-muted-foreground/65 flex items-center justify-center gap-3 text-[11px]">
               <span className="flex items-center gap-1">
-                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">⌘K</kbd> search
+                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">⌘K</kbd>
+                <PreText className="w-auto text-inherit" whiteSpace="nowrap">
+                  search
+                </PreText>
+              </span>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="flex items-center gap-1">
+                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">Tab</kbd>
+                <PreText className="w-auto text-inherit" whiteSpace="nowrap">
+                  filter
+                </PreText>
               </span>
               <span className="text-muted-foreground/20">·</span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">Tab</kbd> filter
-              </span>
-              <span className="text-muted-foreground/20">·</span>
-              <span className="flex items-center gap-1">
-                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">Esc</kbd> close
+                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">Esc</kbd>
+                <PreText className="w-auto text-inherit" whiteSpace="nowrap">
+                  close
+                </PreText>
               </span>
             </div>
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

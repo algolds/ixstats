@@ -91,8 +91,10 @@ export interface RealCountryData {
   economicTier?: "Developing" | "Emerging" | "Developed" | "Advanced";
   baselinePopulation?: number;
   baselineGdpPerCapita?: number;
-  maxGdpGrowthRate?: number;
   flag?: string;
+  flagUrl?: string;
+  coatOfArms?: string;
+  coatOfArmsUrl?: string;
 }
 
 /**
@@ -449,8 +451,8 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
 
   return {
     countryName: referenceCountry ? `New ${referenceCountry.name}` : "New Nation",
-    flagUrl: "", // Initialize flagUrl
-    coatOfArmsUrl: "", // Initialize coatOfArmsUrl
+    flagUrl: referenceCountry?.flag || referenceCountry?.flagUrl || "", // Initialize flagUrl
+    coatOfArmsUrl: referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl || "", // Initialize coatOfArmsUrl
     coreIndicators: {
       totalPopulation: basePopulation,
       nominalGDP: baseNominalGDP,

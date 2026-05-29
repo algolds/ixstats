@@ -131,6 +131,13 @@ export function useBuilderActions({
   setBuilderState,
   mode = "create",
 }: UseBuilderActionsProps): UseBuilderActionsReturn {
+  // Dynamic step lists based on mode
+  const steps = useMemo(() => {
+    return mode === "edit"
+      ? ["core", "government", "economics", "preview"]
+      : ["foundation", "core", "preview"];
+  }, [mode]);
+
   // Handle tab navigation within steps
   const handleTabChange = useCallback(
     (step: BuilderStep, tab: string) => {
@@ -168,9 +175,10 @@ export function useBuilderActions({
         if (activeCoreTab === "identity") {
           handleTabChange("core", "indicators");
         } else {
+          const nextStep = mode === "edit" ? "government" : "preview";
           setBuilderState((prev) => ({
             ...prev,
-            step: "government",
+            step: nextStep as BuilderStep,
             completedSteps: [...new Set([...prev.completedSteps, "core" as BuilderStep])],
           }));
         }
@@ -198,87 +206,76 @@ export function useBuilderActions({
         }));
         break;
     }
-  }, [builderState, setBuilderState, handleTabChange]);
+  }, [builderState, setBuilderState, handleTabChange, mode]);
 
   // Handle previous step
   const handlePreviousStep = useCallback(() => {
-    const currentIndex = stepOrder.indexOf(builderState.step);
+    const currentIndex = steps.indexOf(builderState.step);
 
-    // Can't go back from foundation step or before first step
     if (currentIndex <= 0) {
       return;
     }
 
-    // In edit mode, skip foundation step (go to core as minimum)
-    const minIndex = mode === "edit" ? 1 : 0; // Index 1 is "core" step
     const targetIndex = currentIndex - 1;
-
-    if (targetIndex < minIndex) {
-      return; // Can't go below minimum allowed step
-    }
 
     setBuilderState((prev) => ({
       ...prev,
-      step: stepOrder[targetIndex]!,
+      step: steps[targetIndex] as BuilderStep,
       // Mark current step as completed when going back to preserve state
       completedSteps: [...new Set([...prev.completedSteps, builderState.step])],
     }));
-  }, [builderState.step, setBuilderState, mode]);
+  }, [builderState.step, setBuilderState, steps]);
 
   // Handle direct step navigation
   const handleStepClick = useCallback(
     (step: BuilderStep) => {
-      // In edit mode, allow navigation to any step except foundation
+      const currentIndex = steps.indexOf(builderState.step);
+      const targetIndex = steps.indexOf(step);
+
+      if (targetIndex === -1) return;
+
+      // In edit mode, allow navigation to any step
       if (mode === "edit") {
-        if (step !== "foundation") {
-          setBuilderState((prev) => ({
-            ...prev,
-            step,
-            // Mark current step as completed when navigating away
-            completedSteps: [...new Set([...prev.completedSteps, builderState.step])],
-          }));
-        }
+        setBuilderState((prev) => ({
+          ...prev,
+          step,
+          completedSteps: [...new Set([...prev.completedSteps, builderState.step])],
+        }));
         return;
       }
 
-      // In create mode, use standard linear progression
-      const currentIndex = stepOrder.indexOf(builderState.step);
-      const targetIndex = stepOrder.indexOf(step);
-
-      // Only allow navigation to previous steps or completed steps
+      // In create mode, only allow navigation to previous steps or completed steps
       if (targetIndex <= currentIndex || builderState.completedSteps.includes(step)) {
         setBuilderState((prev) => ({
           ...prev,
           step,
-          // Mark current step as completed when navigating away
           completedSteps: [...new Set([...prev.completedSteps, builderState.step])],
         }));
       }
     },
-    [builderState.step, builderState.completedSteps, setBuilderState, mode]
+    [builderState.step, builderState.completedSteps, setBuilderState, mode, steps]
   );
 
   // Check if navigation to a specific step is allowed
   const canNavigateToStep = useCallback(
     (step: BuilderStep): boolean => {
-      // In edit mode, can navigate to any step except foundation
-      if (mode === "edit") {
-        return step !== "foundation";
-      }
+      const currentIndex = steps.indexOf(builderState.step);
+      const targetIndex = steps.indexOf(step);
 
-      // In create mode, use standard linear progression
-      const currentIndex = stepOrder.indexOf(builderState.step);
-      const targetIndex = stepOrder.indexOf(step);
+      if (targetIndex === -1) return false;
+      if (mode === "edit") return true;
+
       return targetIndex <= currentIndex || builderState.completedSteps.includes(step);
     },
-    [builderState.step, builderState.completedSteps, mode]
+    [builderState.step, builderState.completedSteps, mode, steps]
   );
 
   // Calculate progress percentage
   const progressPercentage = useMemo(() => {
-    const currentIndex = stepOrder.indexOf(builderState.step);
-    return ((currentIndex + 1) / stepOrder.length) * 100;
-  }, [builderState.step]);
+    const currentIndex = steps.indexOf(builderState.step);
+    if (currentIndex === -1) return 0;
+    return ((currentIndex + 1) / steps.length) * 100;
+  }, [builderState.step, steps]);
 
   return {
     handleContinue,

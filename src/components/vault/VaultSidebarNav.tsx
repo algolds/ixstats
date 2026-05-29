@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Grid3x3, ShoppingCart, Download } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { stripBasePath, withBasePath } from "~/lib/base-path";
+import { stripBasePath } from "~/lib/base-path";
 
 import {
   CutoutCard,
@@ -167,7 +167,7 @@ export function VaultSidebarNav({
             ) : (
               <Link
                 key={item.id}
-                href={withBasePath(item.href)}
+                href={item.href}
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
@@ -241,7 +241,7 @@ export function VaultSidebarNav({
           ) : (
             <Link
               key={item.id}
-              href={withBasePath(item.href)}
+              href={item.href}
               className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
               aria-current={isActive ? "page" : undefined}
             >

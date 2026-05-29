@@ -19,6 +19,8 @@ interface BuilderVitalityRingsProps {
   className?: string;
   compact?: boolean;
   showMomentum?: boolean;
+  activeSection?: string;
+  showHeader?: boolean;
 }
 
 export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
@@ -30,7 +32,24 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
   className,
   compact = false,
   showMomentum = true,
+  activeSection,
+  showHeader = true,
 }) => {
+  // Check if a specific ring should be highlighted based on the active tab/section
+  const isRingHighlighted = (ringId: string) => {
+    if (!activeSection) return true;
+    if (
+      activeSection === "foundation" ||
+      activeSection === "preview" ||
+      activeSection === "import"
+    ) {
+      return true;
+    }
+    if (activeSection === "identity" && ringId === "social") return true;
+    if (activeSection === "government" && ringId === "government") return true;
+    if (activeSection === "economics" && ringId === "economic") return true;
+    return false;
+  };
   const [prevMetrics, setPrevMetrics] = useState<any>(null);
   const [momentum, setMomentum] = useState({ economic: 0, social: 0, government: 0 });
 
@@ -152,82 +171,104 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
     return (
       <div className={cn("space-y-4", className)}>
         {/* Country Header */}
-        <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
-          {flagUrl && (
-            <div className="h-6 w-8 shrink-0 overflow-hidden rounded border border-white/20">
-              <img src={flagUrl} alt="Flag" className="h-full w-full object-cover" />
-            </div>
-          )}
-        </div>
+        {showHeader && (flagUrl || coatOfArmsUrl) && (
+          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
+            {flagUrl && (
+              <div className="h-6 w-8 shrink-0 overflow-hidden rounded border border-white/20">
+                <img src={flagUrl} alt="Flag" className="h-full w-full object-cover" />
+              </div>
+            )}
+            {coatOfArmsUrl && (
+              <div className="h-6 w-6 shrink-0 overflow-hidden rounded border border-white/20">
+                <img
+                  src={coatOfArmsUrl}
+                  alt="Coat of Arms"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Compact Rings Grid */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4">
-          {rings.map((ring, index) => (
-            <motion.div
-              key={ring.id}
-              className="group flex min-h-[44px] cursor-pointer touch-manipulation flex-col items-center rounded-lg bg-white/5 p-4 transition-all duration-200 hover:bg-white/10 md:p-3"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onRingClick?.(index)}
-            >
-              <div className="relative mb-2">
-                <motion.div
-                  animate={
-                    showMomentum
-                      ? {
-                          rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0,
-                        }
-                      : {}
-                  }
-                  transition={{
-                    duration: 2,
-                    repeat: ring.momentum !== 0 ? Infinity : 0,
-                    ease: "linear",
-                  }}
-                >
-                  <HealthRing
-                    value={ring.value}
-                    size={50}
-                    color={ring.color}
-                    label={ring.label}
-                    tooltip={`${ring.description} (Momentum: ${ring.momentum > 0 ? "+" : ""}${ring.momentum.toFixed(1)})`}
-                    isClickable={true}
-                    className="transition-all duration-200 group-hover:drop-shadow-lg"
-                  />
-                </motion.div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div
-                    style={{ color: ring.color }}
-                    className="opacity-80 transition-opacity group-hover:opacity-100"
+          {rings.map((ring, index) => {
+            const isHighlighted = isRingHighlighted(ring.id);
+            return (
+              <motion.div
+                key={ring.id}
+                className={cn(
+                  "group flex min-h-[44px] cursor-pointer touch-manipulation flex-col items-center rounded-lg bg-white/5 p-4 transition-all duration-200 hover:bg-white/10 md:p-3",
+                  !isHighlighted && "hover:opacity-60"
+                )}
+                animate={{
+                  opacity: isHighlighted ? 1 : 0.3,
+                  scale: isHighlighted ? 1 : 0.96,
+                }}
+                whileHover={{ scale: isHighlighted ? 1.02 : 0.98 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onRingClick?.(index)}
+              >
+                <div className="relative mb-2">
+                  <motion.div
+                    animate={
+                      showMomentum
+                        ? {
+                            rotate:
+                              ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0,
+                          }
+                        : {}
+                    }
+                    transition={{
+                      duration: 2,
+                      repeat: ring.momentum !== 0 ? Infinity : 0,
+                      ease: "linear",
+                    }}
                   >
-                    {ring.icon}
+                    <HealthRing
+                      value={ring.value}
+                      size={50}
+                      color={ring.color}
+                      label={ring.label}
+                      tooltip={`${ring.description} (Momentum: ${ring.momentum > 0 ? "+" : ""}${ring.momentum.toFixed(1)})`}
+                      isClickable={true}
+                      className="transition-all duration-200 group-hover:drop-shadow-lg"
+                    />
+                  </motion.div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div
+                      style={{ color: ring.color }}
+                      className="opacity-80 transition-opacity group-hover:opacity-100"
+                    >
+                      {ring.icon}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <span className="text-foreground text-center text-xs font-medium">
-                {ring.label.split(" ")[0]}
-              </span>
-              <span className="text-muted-foreground w-full truncate text-center text-xs">
-                {ring.metric}
-              </span>
-              {/* Momentum Indicator */}
-              {showMomentum && ring.momentum !== 0 && (
-                <div
-                  className={cn(
-                    "mt-1 flex items-center gap-1 text-xs font-medium",
-                    ring.momentum > 0 ? "text-green-400" : "text-red-400"
-                  )}
-                >
-                  {ring.momentum > 0 ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : (
-                    <Activity className="h-3 w-3" />
-                  )}
-                  {Math.abs(ring.momentum).toFixed(1)}
-                </div>
-              )}
-            </motion.div>
-          ))}
+                <span className="text-foreground text-center text-xs font-medium">
+                  {ring.label.split(" ")[0]}
+                </span>
+                <span className="text-muted-foreground w-full truncate text-center text-xs">
+                  {ring.metric}
+                </span>
+                {/* Momentum Indicator */}
+                {showMomentum && ring.momentum !== 0 && (
+                  <div
+                    className={cn(
+                      "mt-1 flex items-center gap-1 text-xs font-medium",
+                      ring.momentum > 0 ? "text-green-400" : "text-red-400"
+                    )}
+                  >
+                    {ring.momentum > 0 ? (
+                      <TrendingUp className="h-3 w-3" />
+                    ) : (
+                      <Activity className="h-3 w-3" />
+                    )}
+                    {Math.abs(ring.momentum).toFixed(1)}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     );
@@ -263,107 +304,117 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
 
       {/* Individual Vitality Rings */}
       <div className="space-y-4">
-        {rings.map((ring, index) => (
-          <motion.div
-            key={ring.id}
-            className="group flex cursor-pointer items-center gap-4 rounded-lg bg-white/5 p-4 transition-all duration-200 hover:bg-white/10"
-            whileHover={{ scale: 1.01, y: -1 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => onRingClick?.(index)}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
-          >
-            {/* Vitality Ring with Momentum */}
-            <div className="relative shrink-0">
-              <motion.div
-                animate={
-                  showMomentum
-                    ? {
-                        rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0,
-                      }
-                    : {}
-                }
-                transition={{
-                  duration: 3,
-                  repeat: ring.momentum !== 0 ? Infinity : 0,
-                  ease: "linear",
-                }}
-              >
-                <HealthRing
-                  value={ring.value}
-                  size={80}
-                  color={ring.color}
-                  label={ring.label}
-                  tooltip={ring.description}
-                  isClickable={true}
-                  className="transition-all duration-200 group-hover:drop-shadow-lg"
-                />
-              </motion.div>
-              <div className="absolute inset-0 flex items-center justify-center">
+        {rings.map((ring, index) => {
+          const isHighlighted = isRingHighlighted(ring.id);
+          return (
+            <motion.div
+              key={ring.id}
+              className={cn(
+                "group flex cursor-pointer items-center gap-4 rounded-lg bg-white/5 p-4 transition-all duration-200 hover:bg-white/10",
+                !isHighlighted && "hover:opacity-60"
+              )}
+              whileHover={{ scale: isHighlighted ? 1.01 : 0.99, y: isHighlighted ? -1 : 0 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => onRingClick?.(index)}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{
+                opacity: isHighlighted ? 1 : 0.3,
+                scale: isHighlighted ? 1 : 0.98,
+                x: 0,
+              }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+            >
+              {/* Vitality Ring with Momentum */}
+              <div className="relative shrink-0">
                 <motion.div
-                  style={{ color: ring.color }}
-                  className="opacity-80 transition-opacity group-hover:opacity-100"
-                  whileHover={{ scale: 1.1 }}
+                  animate={
+                    showMomentum
+                      ? {
+                          rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0,
+                        }
+                      : {}
+                  }
+                  transition={{
+                    duration: 3,
+                    repeat: ring.momentum !== 0 ? Infinity : 0,
+                    ease: "linear",
+                  }}
                 >
-                  {ring.icon}
+                  <HealthRing
+                    value={ring.value}
+                    size={80}
+                    color={ring.color}
+                    label={ring.label}
+                    tooltip={ring.description}
+                    isClickable={true}
+                    className="transition-all duration-200 group-hover:drop-shadow-lg"
+                  />
                 </motion.div>
-              </div>
-            </div>
-
-            {/* Info Section */}
-            <div className="min-w-0 flex-1">
-              <div className="mb-1 flex items-center gap-2">
-                <h4 className="text-foreground group-hover:text-foreground/80 font-semibold transition-colors">
-                  {ring.label}
-                </h4>
-                <Badge variant={ring.badgeVariant as any} className="text-xs">
-                  {ring.badge}
-                </Badge>
-                {/* Momentum Badge */}
-                {showMomentum && ring.momentum !== 0 && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs",
-                      ring.momentum > 0
-                        ? "border-green-500/50 text-green-400"
-                        : "border-red-500/50 text-red-400"
-                    )}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    style={{ color: ring.color }}
+                    className="opacity-80 transition-opacity group-hover:opacity-100"
+                    whileHover={{ scale: 1.1 }}
                   >
-                    {ring.momentum > 0 ? "+" : ""}
-                    {ring.momentum.toFixed(1)}
-                  </Badge>
-                )}
+                    {ring.icon}
+                  </motion.div>
+                </div>
               </div>
-              <div className="mb-1 text-2xl font-bold" style={{ color: ring.color }}>
-                {ring.metric}
-              </div>
-              <p className="text-muted-foreground mb-2 text-sm">{ring.subtitle}</p>
-              <p className="text-muted-foreground text-xs opacity-80 transition-opacity group-hover:opacity-100">
-                {ring.description}
-              </p>
-            </div>
 
-            {/* Performance Indicator */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="glow-text text-lg font-bold" style={{ color: ring.color }}>
-                {Math.round(ring.value)}%
+              {/* Info Section */}
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center gap-2">
+                  <h4 className="text-foreground group-hover:text-foreground/80 font-semibold transition-colors">
+                    {ring.label}
+                  </h4>
+                  <Badge variant={ring.badgeVariant as any} className="text-xs">
+                    {ring.badge}
+                  </Badge>
+                  {/* Momentum Badge */}
+                  {showMomentum && ring.momentum !== 0 && (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs",
+                        ring.momentum > 0
+                          ? "border-green-500/50 text-green-400"
+                          : "border-red-500/50 text-red-400"
+                      )}
+                    >
+                      {ring.momentum > 0 ? "+" : ""}
+                      {ring.momentum.toFixed(1)}
+                    </Badge>
+                  )}
+                </div>
+                <div className="mb-1 text-2xl font-bold" style={{ color: ring.color }}>
+                  {ring.metric}
+                </div>
+                <p className="text-muted-foreground mb-2 text-sm">{ring.subtitle}</p>
+                <p className="text-muted-foreground text-xs opacity-80 transition-opacity group-hover:opacity-100">
+                  {ring.description}
+                </p>
               </div>
-              <div className="flex items-center gap-1">
-                {ring.value > 75 ? (
-                  <Crown className="h-4 w-4 text-yellow-400" />
-                ) : ring.value > 50 ? (
-                  <Target className="h-4 w-4 text-blue-400" />
-                ) : ring.value > 25 ? (
-                  <Activity className="h-4 w-4 text-orange-400" />
-                ) : (
-                  <Zap className="h-4 w-4 text-red-400" />
-                )}
+
+              {/* Performance Indicator */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="glow-text text-lg font-bold" style={{ color: ring.color }}>
+                  {Math.round(ring.value)}%
+                </div>
+                <div className="flex items-center gap-1">
+                  {ring.value > 75 ? (
+                    <Crown className="h-4 w-4 text-yellow-400" />
+                  ) : ring.value > 50 ? (
+                    <Target className="h-4 w-4 text-blue-400" />
+                  ) : ring.value > 25 ? (
+                    <Activity className="h-4 w-4 text-orange-400" />
+                  ) : (
+                    <Zap className="h-4 w-4 text-red-400" />
+                  )}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

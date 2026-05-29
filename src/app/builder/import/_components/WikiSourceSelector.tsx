@@ -31,45 +31,46 @@ export const WikiSourceSelector: React.FC<WikiSourceSelectorProps> = ({
   wikiSites,
 }) => {
   return (
-    <div className="mb-4">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="text-foreground text-sm font-medium">Wiki Source</span>
-        <span className="text-muted-foreground text-xs">Import from any worldbuilding wiki</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        {wikiSites.map((site) => {
-          const isSelected = selectedSite.name === site.name;
-          return (
-            <button
-              key={site.name}
-              onClick={() => onSelectSite(site)}
-              className={cn(
-                "group relative flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200",
-                isSelected
-                  ? "border-blue-400/50 bg-blue-500/15 shadow-sm shadow-blue-500/20"
-                  : "border-border/50 bg-transparent hover:border-blue-400/30 hover:bg-blue-500/5"
-              )}
-              title={site.displayName}
-            >
-              <IconSwap>
-                <IconSwapItem key={site.name}>
-                  <img
-                    src={withBasePath(logoMap[site.name]!)}
-                    alt={site.displayName}
-                    className={cn(
-                      "h-5 w-5 object-contain transition-opacity duration-200",
-                      isSelected ? "opacity-100" : "opacity-50 group-hover:opacity-75"
-                    )}
-                  />
-                </IconSwapItem>
-              </IconSwap>
-            </button>
-          );
-        })}
-        <span className="text-muted-foreground ml-1 text-xs">
-          <IconSwap>
-            <IconSwapItem key={selectedSite.name}>{selectedSite.displayName}</IconSwapItem>
-          </IconSwap>
+    <div className="mt-6 mb-8">
+      <div className="flex items-center gap-3">
+        {wikiSites
+          .filter((site) => site.name !== "ixwiki")
+          .map((site) => {
+            const isSelected = selectedSite.name === site.name;
+            return (
+              <button
+                key={site.name}
+                onClick={() => onSelectSite(site)}
+                className={cn(
+                  "group relative flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-200",
+                  isSelected
+                    ? "border-blue-400/50 bg-blue-500/15 shadow-sm shadow-blue-500/20"
+                    : "border-border/50 bg-transparent hover:border-blue-400/30 hover:bg-blue-500/5"
+                )}
+                title={site.displayName}
+              >
+                <IconSwap>
+                  <IconSwapItem key={site.name}>
+                    <img
+                      src={withBasePath(logoMap[site.name]!)}
+                      alt={site.displayName}
+                      className={cn(
+                        "h-6 w-6 object-contain transition-opacity duration-200",
+                        isSelected ? "opacity-100" : "opacity-50 group-hover:opacity-75"
+                      )}
+                    />
+                  </IconSwapItem>
+                </IconSwap>
+              </button>
+            );
+          })}
+        <span className="text-muted-foreground ml-2 flex items-center gap-1.5 text-sm font-medium dark:text-zinc-200">
+          <span>Importing from</span>
+          <span className="text-foreground font-semibold dark:text-white">
+            <IconSwap>
+              <IconSwapItem key={selectedSite.name}>{selectedSite.displayName}</IconSwapItem>
+            </IconSwap>
+          </span>
         </span>
       </div>
     </div>

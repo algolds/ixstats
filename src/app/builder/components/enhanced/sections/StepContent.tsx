@@ -2,10 +2,8 @@
 
 import React, { memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Card, CardContent } from "~/components/ui/card";
-import { cn } from "~/lib/utils";
-import { stepConfig } from "../builderConfig";
 import { useBuilderContext } from "../context/BuilderStateContext";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 
 interface StepContentProps {
   children: React.ReactNode;
@@ -21,27 +19,28 @@ interface StepContentProps {
  */
 export const StepContent = memo(function StepContent({ children }: StepContentProps) {
   const { builderState } = useBuilderContext();
-  const currentStepConfig = stepConfig[builderState.step];
+
+  // Link card transitions to both main step navigation and active tab/sub-tab selections
+  const navKey = `${builderState.step}-${builderState.activeCoreTab}-${builderState.activeIdentitySubTab || ""}-${builderState.activeGovernmentTab || ""}-${builderState.activeEconomicsTab || ""}`;
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={builderState.step}
+        key={navKey}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
+        className="mx-auto max-w-6xl"
       >
-        <Card
-          className={cn(
-            "mx-auto max-w-6xl overflow-hidden border-2 shadow-2xl",
-            currentStepConfig.borderColor,
-            "bg-gradient-to-br",
-            currentStepConfig.bgGradient
-          )}
+        <CutoutCard
+          className="overflow-hidden rounded-[24px] border-zinc-800/30 bg-white/[0.02] backdrop-blur-md"
+          texture="dots"
+          textureOpacity={0.03}
+          trackPointerHover={false}
         >
-          <CardContent className="p-8">{children}</CardContent>
-        </Card>
+          <CutoutCardContent className="bg-transparent p-6 sm:p-8">{children}</CutoutCardContent>
+        </CutoutCard>
       </motion.div>
     </AnimatePresence>
   );

@@ -13,7 +13,7 @@ interface PreTextProps {
   font?: string;
   lineHeight?: number;
   className?: string;
-  whiteSpace?: "normal" | "pre-wrap";
+  whiteSpace?: "normal" | "pre-wrap" | "nowrap";
   wordBreak?: "normal" | "keep-all";
   letterSpacing?: number;
 }
@@ -38,6 +38,7 @@ export function PreText({
 
   // Measure container width on mount and resize (client-only)
   useEffect(() => {
+    if (whiteSpace === "nowrap") return;
     if (!isMounted || !containerRef.current) return;
 
     const updateWidth = () => {
@@ -55,10 +56,19 @@ export function PreText({
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [isMounted]);
+  }, [isMounted, whiteSpace]);
 
   // Check if children is a plain string
   const isStringChild = typeof children === "string";
+
+  // Short-circuit for nowrap to avoid layout loop on flex containers
+  if (whiteSpace === "nowrap") {
+    return (
+      <span className={cn("inline-block max-w-full truncate text-inherit", className)}>
+        {children}
+      </span>
+    );
+  }
 
   // Prepare the text segments (client-only precomputation)
   const prepared: PreparedTextWithSegments | null = useMemo(() => {

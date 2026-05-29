@@ -45,14 +45,25 @@ export function NationalSymbolsSection({
 }: NationalSymbolsSectionProps) {
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
-  const [foundationFlagUrl, setFoundationFlagUrl] = useState<string | undefined>(undefined); // State for fetched flag URL
+  const [foundationFlagUrl, setFoundationFlagUrl] = useState<string | undefined>(
+    referenceCountry?.flag || referenceCountry?.flagUrl || undefined
+  ); // State for fetched flag URL
   const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(
-    undefined
+    referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl || undefined
   ); // State for fetched coat of arms URL
 
   // Fetch foundation flag and coat of arms URLs using Wiki Commons API
   useEffect(() => {
     const fetchSymbols = async () => {
+      // First check if referenceCountry already has both symbols
+      const refFlag = referenceCountry?.flag || referenceCountry?.flagUrl;
+      const refCoa = referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl;
+      if (refFlag && refCoa) {
+        setFoundationFlagUrl(refFlag);
+        setFoundationCoatOfArmsUrl(refCoa);
+        return;
+      }
+
       // Get the stable foundation country name
       const foundationCountryName = getFoundationCountryName(referenceCountry);
 
@@ -66,33 +77,44 @@ export function NationalSymbolsSection({
 
           if (flagUrl) {
             setFoundationFlagUrl(flagUrl);
-          } else {
-            setFoundationFlagUrl(undefined);
+          } else if (refFlag) {
+            setFoundationFlagUrl(refFlag);
           }
 
           if (coatOfArmsResult) {
             setFoundationCoatOfArmsUrl(coatOfArmsResult);
-          } else {
-            setFoundationCoatOfArmsUrl(undefined);
+          } else if (refCoa) {
+            setFoundationCoatOfArmsUrl(refCoa);
           }
         } catch (error) {
-          setFoundationFlagUrl(undefined);
-          setFoundationCoatOfArmsUrl(undefined);
+          if (refFlag) setFoundationFlagUrl(refFlag);
+          if (refCoa) setFoundationCoatOfArmsUrl(refCoa);
         }
       }
     };
     fetchSymbols();
-  }, [referenceCountry.name, referenceCountry.countryCode]);
+  }, [referenceCountry]);
 
   // Auto-fill flag and coat of arms from foundation country when available
   useEffect(() => {
-    if (foundationFlagUrl && (!inputs.flagUrl || inputs.flagUrl === "")) {
-      handleFlagUrlChange(foundationFlagUrl);
+    const refFlag = referenceCountry?.flag || referenceCountry?.flagUrl;
+    const activeFlag = foundationFlagUrl || refFlag;
+    if (activeFlag && (!inputs.flagUrl || inputs.flagUrl === "")) {
+      handleFlagUrlChange(activeFlag);
     }
-    if (foundationCoatOfArmsUrl && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === "")) {
-      handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
+
+    const refCoa = referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl;
+    const activeCoa = foundationCoatOfArmsUrl || refCoa;
+    if (activeCoa && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === "")) {
+      handleCoatOfArmsUrlChange(activeCoa);
     }
-  }, [foundationFlagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);
+  }, [
+    foundationFlagUrl,
+    foundationCoatOfArmsUrl,
+    referenceCountry,
+    inputs.flagUrl,
+    inputs.coatOfArmsUrl,
+  ]);
 
   // Enhanced theming for this section (use original foundation country name)
   const foundationCountryName = getFoundationCountryName(referenceCountry);
@@ -117,26 +139,22 @@ export function NationalSymbolsSection({
   return (
     <>
       <div className="space-y-6">
-        <GlassCard depth="elevated" blur="medium">
-          <GlassCardContent>
-            <CountrySymbolsUploader
-              flagUrl={inputs.flagUrl ?? ""}
-              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
-              foundationCountry={{
-                name: foundationCountryName, // Use the original foundation country name
-                flagUrl: foundationFlagUrl,
-                coatOfArmsUrl: foundationCoatOfArmsUrl, // Now dynamically fetched from Wiki Commons
-              }}
-              onSelectFlag={() => setShowFlagImageModal(true)}
-              onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
-              onFlagUrlChange={handleFlagUrlChange}
-              onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
-              onColorsExtracted={(colors) => {
-                handleColorsExtracted(colors);
-              }}
-            />
-          </GlassCardContent>
-        </GlassCard>
+        <CountrySymbolsUploader
+          flagUrl={inputs.flagUrl ?? ""}
+          coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
+          foundationCountry={{
+            name: foundationCountryName, // Use the original foundation country name
+            flagUrl: foundationFlagUrl,
+            coatOfArmsUrl: foundationCoatOfArmsUrl, // Now dynamically fetched from Wiki Commons
+          }}
+          onSelectFlag={() => setShowFlagImageModal(true)}
+          onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
+          onFlagUrlChange={handleFlagUrlChange}
+          onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
+          onColorsExtracted={(colors) => {
+            handleColorsExtracted(colors);
+          }}
+        />
       </div>
 
       {/* Modal components outside the main layout */}

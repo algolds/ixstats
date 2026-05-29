@@ -327,6 +327,46 @@ export function EconomyBuilderPage({
   // Get builder context if available (returns null if used standalone, not within BuilderStateProvider)
   const builderContext = useBuilderContextOptional();
 
+  // Sync with global builderState activeEconomicsTab
+  useEffect(() => {
+    if (builderContext?.builderState?.activeEconomicsTab) {
+      const globalTab = builderContext.builderState.activeEconomicsTab;
+      const mappedTab =
+        globalTab === "economy" ? "sectors" : globalTab === "tax" ? "taxes" : (globalTab as any);
+      if (
+        mappedTab === "components" ||
+        mappedTab === "sectors" ||
+        mappedTab === "labor" ||
+        mappedTab === "demographics" ||
+        mappedTab === "taxes" ||
+        mappedTab === "preview"
+      ) {
+        if (currentStep !== mappedTab) {
+          setCurrentStep(mappedTab);
+        }
+      }
+    }
+  }, [builderContext?.builderState?.activeEconomicsTab, currentStep]);
+
+  // Sync currentStep back to global state
+  useEffect(() => {
+    if (builderContext?.setBuilderState) {
+      const globalTab = builderContext.builderState.activeEconomicsTab;
+      const mappedGlobalTab =
+        globalTab === "economy" ? "sectors" : globalTab === "tax" ? "taxes" : globalTab;
+      if (mappedGlobalTab !== currentStep) {
+        builderContext.setBuilderState((prev: any) => ({
+          ...prev,
+          activeEconomicsTab: currentStep,
+        }));
+      }
+    }
+  }, [
+    currentStep,
+    builderContext?.setBuilderState,
+    builderContext?.builderState?.activeEconomicsTab,
+  ]);
+
   // Prepare economy data for autosave
   const economyDataForSync = useMemo(() => {
     return {
@@ -938,6 +978,7 @@ export function EconomyBuilderPage({
           steps={steps}
           currentStep={currentStep}
           onStepChange={(stepId) => setCurrentStep(stepId as any)}
+          className="lg:hidden"
         />
 
         {/* Validation Errors - Matching GovernmentBuilder pattern */}

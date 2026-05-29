@@ -148,6 +148,7 @@ export function GovernmentSpendingSection({
         isSurplus={isSurplus}
         selectedPoliciesCount={selectedPolicies.size}
         isUpdating={integrationState.isUpdating}
+        spendingData={spendingData}
       />
 
       {/* Main Content Tabs */}

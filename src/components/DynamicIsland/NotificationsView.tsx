@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "./types";
+import { PreText } from "~/components/ui/pretext";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -246,11 +247,16 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       <div className="mb-3 flex items-center justify-between">
         <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
           <BellRing className="h-4 w-4 text-blue-400" />
-          <span>{isExecutiveMode ? "Intelligence" : "Notifications"}</span>
+          <PreText className="text-inherit" whiteSpace="nowrap">
+            {isExecutiveMode ? "Intelligence" : "Notifications"}
+          </PreText>
           {totalUnreadCount > 0 && (
-            <span className="bg-destructive min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
-              {totalUnreadCount}
-            </span>
+            <PreText
+              className="bg-destructive min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
+              whiteSpace="nowrap"
+            >
+              {String(totalUnreadCount)}
+            </PreText>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -261,7 +267,9 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
               className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors disabled:opacity-40"
             >
               <CheckCircle className="h-3 w-3" />
-              <span>Read all</span>
+              <PreText className="text-inherit" whiteSpace="nowrap">
+                Read all
+              </PreText>
             </button>
           )}
           <button
@@ -293,13 +301,18 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                       animate={{ rotate: isCollapsed ? 0 : 90 }}
                       transition={{ duration: 0.15 }}
                     >
-                      <ChevronRight className="text-muted-foreground/40 h-3 w-3" />
+                      <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
                     </motion.div>
-                    <span className="text-muted-foreground/60 text-[11px] font-semibold tracking-wider uppercase">
+                    <PreText
+                      className="text-muted-foreground/90 text-[11px] font-semibold tracking-wider uppercase"
+                      whiteSpace="nowrap"
+                    >
                       {group.label}
-                    </span>
+                    </PreText>
                   </div>
-                  <span className="text-muted-foreground/40 text-[10px]">{group.items.length}</span>
+                  <PreText className="text-muted-foreground/70 text-[10px]" whiteSpace="nowrap">
+                    {String(group.items.length)}
+                  </PreText>
                 </button>
 
                 {/* Items */}
@@ -351,24 +364,33 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                             {/* Content */}
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="text-foreground truncate text-sm font-medium">
+                                <PreText
+                                  className="text-foreground truncate text-sm font-medium"
+                                  whiteSpace="nowrap"
+                                >
                                   {n.title}
-                                </span>
+                                </PreText>
                                 {!isRead && (
                                   <span className="bg-primary h-1.5 w-1.5 shrink-0 rounded-full" />
                                 )}
                               </div>
                               {(n.description || n.message) && (
-                                <div className="text-muted-foreground/70 mt-0.5 truncate text-xs">
+                                <PreText
+                                  className="text-foreground/70 mt-0.5 block truncate text-xs"
+                                  whiteSpace="nowrap"
+                                >
                                   {n.description || n.message}
-                                </div>
+                                </PreText>
                               )}
                             </div>
 
                             {/* Time */}
-                            <div className="text-muted-foreground/40 shrink-0 text-[10px]">
+                            <PreText
+                              className="text-muted-foreground/70 shrink-0 text-[10px]"
+                              whiteSpace="nowrap"
+                            >
                               {relativeTime(n.timestamp || n.createdAt || Date.now())}
-                            </div>
+                            </PreText>
                           </motion.button>
                         );
                       })}
@@ -382,10 +404,12 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           /* ── Empty state ────────────────────────────────────────── */
           <div className="py-10 text-center">
             <Bell className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
-            <div className="text-muted-foreground text-sm font-medium">
+            <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
               {isExecutiveMode ? "Situation stable" : "All caught up"}
-            </div>
-            <div className="text-muted-foreground/50 mt-1 text-xs">No notifications right now</div>
+            </PreText>
+            <PreText className="text-muted-foreground/75 mt-1 text-xs" whiteSpace="nowrap">
+              No notifications right now
+            </PreText>
           </div>
         )}
       </div>

@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { cn } from "~/lib/utils";
 import type { BuilderSection } from "../lib/builder-theme";
+import { BuilderPreviewWidget } from "./BuilderPreviewWidget";
+import { BuilderSectionNavWidget } from "./BuilderSectionNavWidget";
+import { BuilderHelpWidget } from "./BuilderHelpWidget";
 
 interface BuilderSidebarLayoutProps {
   children: ReactNode;
@@ -17,26 +21,62 @@ interface BuilderSidebarLayoutProps {
   completedSteps?: Set<BuilderSection>;
   /** Which steps can be accessed */
   accessibleSteps?: Set<BuilderSection>;
+  /** Builder mode: 'create' or 'edit' */
+  mode?: "create" | "edit";
+  heroCollapsed?: boolean;
+  onHeroExpand?: () => void;
 }
 
-export function BuilderSidebarLayout({ children, heroSection, alerts }: BuilderSidebarLayoutProps) {
+export function BuilderSidebarLayout({
+  children,
+  heroSection,
+  alerts,
+  activeSection,
+  onNavigate,
+  completedSteps,
+  accessibleSteps,
+  mode = "create",
+  heroCollapsed,
+  onHeroExpand,
+}: BuilderSidebarLayoutProps) {
   return (
-    <div className="space-y-0" data-builder-content>
+    <div className="flex flex-col" data-builder-content>
       {/* Hero Section */}
       {heroSection && (
-        <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">{heroSection}</div>
+        <div className="container mx-auto px-4 pt-[6vh] lg:pt-[8vh]">{heroSection}</div>
       )}
 
-      <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4">
-        {/* Alerts */}
-        {alerts && <div className="mb-3 space-y-2 sm:mb-4">{alerts}</div>}
+      {/* Alerts */}
+      {alerts && (
+        <div className="container mx-auto px-4 pt-4 sm:pt-6">
+          <div className="mb-4 space-y-3 sm:mb-6">{alerts}</div>
+        </div>
+      )}
 
-        {/* Main Layout */}
-        <div className="flex gap-3 sm:gap-4">
-          {/* Main Content */}
-          <div className="min-w-0 flex-1">
-            <div className="space-y-3 sm:space-y-4">{children}</div>
+      {/* Main Layout */}
+      <div className={cn("container mx-auto flex gap-4 px-4 pb-4 sm:gap-6 sm:pb-6", !heroSection && "pt-16 lg:pt-20")}>
+        {/* Desktop Sidebar Nav (CutoutCard widgets) */}
+        <div className="relative z-30 hidden shrink-0 lg:block">
+          <div className="space-y-4">
+            {activeSection !== "import" && (
+              <BuilderPreviewWidget
+                heroCollapsed={heroCollapsed}
+                onHeroExpand={onHeroExpand}
+                activeSection={activeSection}
+              />
+            )}
+            <BuilderSectionNavWidget activeSection={activeSection} />
+            {activeSection === "import" ? (
+              <div id="import-sidebar-portal" className="space-y-4" />
+            ) : (
+              <BuilderHelpWidget activeSection={activeSection} />
+            )}
           </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="min-w-0 flex-1">
+          <div className="space-y-4">{children}</div>
         </div>
       </div>
     </div>

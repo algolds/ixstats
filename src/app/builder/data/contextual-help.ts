@@ -15,17 +15,17 @@ export const contextualHelp: Record<BuilderSection, HelpStep[]> = {
     {
       title: "Filter & Search",
       description:
-        "Use archetypes (Developed, Emerging, Resource-Rich, etc.) and the search bar to narrow options. Filters work together — combine them for precise results.",
+        "Click the 'Filters' toggle button in the top bar to expand archetype categories inline, and use the search field to quickly narrow down options.",
     },
     {
-      title: "Live Preview",
+      title: "Start from Scratch",
       description:
-        "Hover over any country card to see a live preview with economic indicators. Click to soft-select and review full details in the side panel before committing.",
+        "Prefer a blank slate? Click the 'Start from Scratch' option in the right sidebar to configure a completely custom geopolitical identity and economic baseline.",
     },
     {
       title: "Import from Wiki",
       description:
-        "Already have a nation on IxWiki or IIWiki? Switch to the Import section to pull your existing data directly into the builder.",
+        "Already have a nation on IIWiki? Click the 'Import from Wiki' option in the right sidebar to load your existing wiki data directly.",
     },
   ],
   identity: [

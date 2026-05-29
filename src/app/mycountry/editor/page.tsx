@@ -6,7 +6,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/url-utils";
 import { LoadingState } from "~/components/shared/feedback/LoadingState";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { AtomicBuilderPage } from "~/app/builder/components/enhanced/AtomicBuilderPage";
+import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +35,5 @@ export default function MyCountryEditor() {
     return <LoadingState message="Loading country data..." />;
   }
 
-  return (
-    <AtomicBuilderPage
-      mode="edit"
-      countryId={country.id}
-      onBackToIntro={() => router.push(createUrl("/mycountry"))}
-    />
-  );
+  return <BuilderRouter mode="edit" countryId={country.id} />;
 }

@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
-import { motion } from "motion/react";
+import React, { useState } from "react";
+import { motion, useMotionValue, useMotionTemplate } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useTheme } from "~/context/theme-context";
+
+import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -17,13 +19,15 @@ interface GlassCardProps {
   onClick?: () => void;
   ref?: React.Ref<HTMLDivElement>; // Added ref prop
   style?: React.CSSProperties; // Added style prop
+  texture?: TextureType; // Added texture prop
+  textureOpacity?: number; // Added textureOpacity prop
 }
 
 const depthStyles = {
-  base: "bg-bg-surface/10 border border-border-primary",
-  elevated: "bg-bg-surface/20 border border-border-secondary shadow-lg",
-  modal: "bg-bg-surface/30 border border-border-secondary shadow-2xl",
-  interactive: "bg-bg-surface/15 border border-border-primary shadow-md hover:shadow-xl",
+  base: "border",
+  elevated: "border shadow-lg",
+  modal: "border shadow-2xl",
+  interactive: "border shadow-md hover:shadow-xl hover:scale-[1.005] duration-300 transition-all",
 };
 
 const blurStyles = {
@@ -40,13 +44,33 @@ const gradientStyles = {
 };
 
 const themeStyles = {
-  gold: "text-amber-400 border-amber-400/30",
-  blue: "text-blue-400 border-blue-400/30",
-  indigo: "text-indigo-400 border-indigo-400/30",
-  red: "text-red-400 border-red-400/30",
-  emerald: "text-emerald-400 border-emerald-400/30",
-  teal: "text-teal-400 border-teal-400/30",
-  neutral: "text-text-secondary border-border-primary",
+  gold: "text-amber-400 border-amber-500/25 shadow-[0_0_15px_rgba(245,158,11,0.04)]",
+  blue: "text-blue-400 border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.04)]",
+  indigo: "text-indigo-400 border-indigo-500/25 shadow-[0_0_15px_rgba(99,102,241,0.04)]",
+  red: "text-red-400 border-red-500/25 shadow-[0_0_15px_rgba(239,68,68,0.04)]",
+  emerald: "text-emerald-400 border-emerald-500/25 shadow-[0_0_15px_rgba(16,185,129,0.04)]",
+  teal: "text-teal-400 border-teal-500/25 shadow-[0_0_15px_rgba(20,184,166,0.04)]",
+  neutral: "text-text-secondary border-border-primary/20",
+};
+
+const themeBgStyles = {
+  gold: "bg-gradient-to-br from-amber-500/[0.08] via-white/[0.02] to-amber-500/[0.03]",
+  blue: "bg-gradient-to-br from-blue-500/[0.08] via-white/[0.02] to-blue-500/[0.03]",
+  indigo: "bg-gradient-to-br from-indigo-500/[0.08] via-white/[0.02] to-indigo-500/[0.03]",
+  red: "bg-gradient-to-br from-red-500/[0.08] via-white/[0.02] to-red-500/[0.03]",
+  emerald: "bg-gradient-to-br from-emerald-500/[0.08] via-white/[0.02] to-emerald-500/[0.03]",
+  teal: "bg-gradient-to-br from-teal-500/[0.08] via-white/[0.02] to-teal-500/[0.03]",
+  neutral: "bg-white/[0.03]",
+};
+
+const themeSpotlightColors = {
+  gold: "rgba(245, 158, 11, 0.12)",
+  blue: "rgba(59, 130, 246, 0.12)",
+  indigo: "rgba(99, 102, 241, 0.12)",
+  red: "rgba(239, 68, 68, 0.12)",
+  emerald: "rgba(16, 185, 129, 0.12)",
+  teal: "rgba(20, 184, 166, 0.12)",
+  neutral: "rgba(255, 255, 255, 0.05)",
 };
 
 const motionPresets = {
@@ -83,19 +107,36 @@ export function GlassCard({
   onClick,
   ref, // Destructure ref
   style, // Destructure style
+  texture = "dots", // Default to dots texture overlay
+  textureOpacity = 0.03,
 }: GlassCardProps) {
   const { effectiveTheme } = useTheme();
   const isInteractive = Boolean(onClick) || hover;
   const finalDepth = isInteractive ? "interactive" : depth;
 
+  // Spotlight state and mouse tracking
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const [isHovering, setIsHovering] = useState(false);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent<HTMLDivElement>) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  const handleMouseEnter = () => setIsHovering(true);
+  const handleMouseLeave = () => setIsHovering(false);
+
   const cardClasses = cn(
-    "rounded-xl overflow-hidden transition-all duration-300",
-    "bg-black/50 touch-manipulation",
+    "rounded-xl overflow-hidden relative",
+    "backdrop-blur-md touch-manipulation",
+    themeBgStyles[theme] || themeBgStyles.neutral,
     depthStyles[finalDepth],
     blurStyles[blur],
     gradientStyles[gradient],
     themeStyles[theme],
-    hover && "hover:bg-bg-surface/25 hover:border-border-secondary",
+    hover && "hover:bg-white/[0.05] hover:border-white/20",
     isInteractive && "cursor-pointer active:scale-[0.98] md:active:scale-100",
     className
   );
@@ -109,9 +150,31 @@ export function GlassCard({
       style={style} // Pass style to CardComponent
       className={cardClasses}
       onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       {...motionProps}
     >
-      {children}
+      {/* Interactive Cursor Spotlight Layer */}
+      <motion.div
+        className="pointer-events-none absolute -inset-px z-0 rounded-xl"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              350px circle at ${mouseX}px ${mouseY}px,
+              ${themeSpotlightColors[theme] || themeSpotlightColors.neutral},
+              transparent 80%
+            )
+          `,
+        }}
+        animate={{ opacity: isHovering ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+      />
+
+      {texture && texture !== "none" && (
+        <TextureOverlay texture={texture} opacity={textureOpacity} />
+      )}
+      <div className="relative z-10 h-full w-full">{children}</div>
     </CardComponent>
   );
 }

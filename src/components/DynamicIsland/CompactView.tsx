@@ -21,9 +21,9 @@ import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { isStandaloneClient } from "~/lib/standalone-detection";
 
 // Extracted sub-components
-import { GreetingPopover } from "./GreetingPopover";
 import { MapsProfileDropdown } from "./MapsProfileDropdown";
-import { WikiProfileButton } from "./WikiProfileButton";
+import { WikiProfileButton as _WikiProfileButton } from "./WikiProfileButton";
+import { PreText } from "~/components/ui/pretext";
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
@@ -221,7 +221,7 @@ function CompactViewComponent({
                 >
                   <Bell className="h-3 w-3 animate-pulse text-blue-400" />
                   <span className="text-foreground/90 max-w-[160px] truncate text-[11px] font-medium whitespace-nowrap">
-                    {peekText}
+                    <PreText whiteSpace="nowrap">{peekText}</PreText>
                   </span>
                 </motion.div>
               </AnimatePresence>
@@ -265,7 +265,7 @@ function CompactViewComponent({
                   >
                     <Bell className="h-3 w-3 animate-pulse text-blue-400" />
                     <span className="text-foreground/90 max-w-[200px] truncate text-xs font-medium whitespace-nowrap">
-                      {peekText}
+                      <PreText whiteSpace="nowrap">{peekText}</PreText>
                     </span>
                   </motion.div>
                 ) : (
@@ -294,35 +294,47 @@ function CompactViewComponent({
                         {timeDisplayMode === "time" && (
                           <>
                             <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                            <span className="text-foreground/80 text-[11px] font-semibold whitespace-nowrap tabular-nums">
+                            <PreText
+                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                              whiteSpace="nowrap"
+                            >
                               {currentTime.timeDisplay}
-                            </span>
+                            </PreText>
                           </>
                         )}
                         {timeDisplayMode === "date" && (
                           <>
                             <Calendar className="h-3 w-3 text-blue-500 opacity-70" />
-                            <span className="text-foreground/80 text-[11px] font-semibold whitespace-nowrap tabular-nums">
+                            <PreText
+                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                              whiteSpace="nowrap"
+                            >
                               {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                               })}
-                            </span>
+                            </PreText>
                           </>
                         )}
                         {timeDisplayMode === "both" && (
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                            <span className="text-foreground/80 text-[11px] font-semibold whitespace-nowrap tabular-nums">
+                            <PreText
+                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                              whiteSpace="nowrap"
+                            >
                               {currentTime.timeDisplay}
-                            </span>
-                            <span className="text-muted-foreground/50 text-[10px]">·</span>
-                            <span className="text-foreground/70 text-[10px] font-semibold whitespace-nowrap tabular-nums">
+                            </PreText>
+                            <span className="text-muted-foreground/50 inline text-[10px]">·</span>
+                            <PreText
+                              className="text-foreground/70 inline text-[10px] font-semibold whitespace-nowrap tabular-nums"
+                              whiteSpace="nowrap"
+                            >
                               {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                               })}
-                            </span>
+                            </PreText>
                           </div>
                         )}
                       </button>
@@ -362,10 +374,23 @@ function CompactViewComponent({
                         greeting={currentTime.greeting}
                       />
                     ) : (
-                      <GreetingPopover
-                        greeting={currentTime.greeting}
-                        onSwitchMode={onSwitchMode}
-                      />
+                      <button
+                        onClick={() => onSwitchMode("mycountry")}
+                        className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors"
+                      >
+                        {user?.imageUrl ? (
+                          <img
+                            src={user.imageUrl}
+                            alt=""
+                            className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground h-3 w-3 text-xs">👤</span>
+                        )}
+                        <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
+                          {`${currentTime.greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
+                        </PreText>
+                      </button>
                     )}
                   </motion.div>
                 )}

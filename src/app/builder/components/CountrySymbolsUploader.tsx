@@ -5,15 +5,16 @@ import {
   Shield,
   Image as ImageIcon,
   ChevronDown,
-  Palette,
   Sparkles,
   Upload,
+  Loader2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { extractColorsFromImage, type ExtractedColors } from "~/lib/image-color-extractor";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
+import { GlassCard, GlassCardContent } from "./glass/GlassCard";
 
 interface CountrySymbolsUploaderProps {
   flagUrl: string;
@@ -41,10 +42,8 @@ export function CountrySymbolsUploader({
   onCoatOfArmsUrlChange,
 }: CountrySymbolsUploaderProps) {
   const notify = useNotify();
-  const [isOpen, setIsOpen] = useState(false);
-  const [extractedColors, setExtractedColors] = useState<ExtractedColors | null>(null);
+  const [_extractedColors, setExtractedColors] = useState<ExtractedColors | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [showColorPalette, setShowColorPalette] = useState(false);
   const [isUploadingFlag, setIsUploadingFlag] = useState(false);
   const [isUploadingCoA, setIsUploadingCoA] = useState(false);
 
@@ -71,10 +70,6 @@ export function CountrySymbolsUploader({
       console.log(`[CountrySymbolsUploader] Successfully extracted colors:`, colors);
       setExtractedColors(colors);
       onColorsExtractedRef.current?.(colors);
-      setShowColorPalette(true);
-
-      // Auto-hide palette after 3 seconds
-      setTimeout(() => setShowColorPalette(false), 3000);
     } catch (error) {
       console.error("[CountrySymbolsUploader] Failed to extract colors from image:", error);
       console.log(`[CountrySymbolsUploader] Image URL that failed: ${imageToAnalyze}`);
@@ -87,8 +82,6 @@ export function CountrySymbolsUploader({
         const fallbackColors = getFlagColors(foundationCountry.name);
         setExtractedColors(fallbackColors);
         onColorsExtractedRef.current?.(fallbackColors);
-        setShowColorPalette(true);
-        setTimeout(() => setShowColorPalette(false), 3000);
       }
     } finally {
       setIsExtracting(false);
@@ -99,13 +92,6 @@ export function CountrySymbolsUploader({
   useEffect(() => {
     extractColorsFromImages();
   }, [extractColorsFromImages]);
-
-  // Auto-expand when foundation country has preview images
-  useEffect(() => {
-    if (foundationCountry && (foundationCountry.flagUrl || foundationCountry.coatOfArmsUrl)) {
-      setIsOpen(true);
-    }
-  }, [foundationCountry?.flagUrl, foundationCountry?.coatOfArmsUrl]);
 
   // Set default images from foundation country
   useEffect(() => {
@@ -119,7 +105,24 @@ export function CountrySymbolsUploader({
         onFlagUrlChange(foundationCountry.flagUrl);
       }
     }
-  }, [foundationCountry?.flagUrl, flagUrl, onFlagUrlChange]);
+    if (foundationCountry && foundationCountry.coatOfArmsUrl && onCoatOfArmsUrlChange) {
+      // Always use foundation coat of arms if available and user hasn't set a custom one
+      if (!coatOfArmsUrl || coatOfArmsUrl === "") {
+        console.log(
+          "[CountrySymbolsUploader] Auto-filling with foundation coat of arms:",
+          foundationCountry.coatOfArmsUrl
+        );
+        onCoatOfArmsUrlChange(foundationCountry.coatOfArmsUrl);
+      }
+    }
+  }, [
+    foundationCountry?.flagUrl,
+    foundationCountry?.coatOfArmsUrl,
+    flagUrl,
+    coatOfArmsUrl,
+    onFlagUrlChange,
+    onCoatOfArmsUrlChange,
+  ]);
 
   // Handle file upload for flag
   const handleFlagUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -236,223 +239,165 @@ export function CountrySymbolsUploader({
   };
 
   return (
-    <div className="border-border relative z-10 border-t pt-4">
-      {/* Foundation Country Info */}
-      {foundationCountry && (
-        <div className="bg-card/50 border-border mb-4 rounded-lg border p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <Flag className="h-4 w-4 text-blue-400" />
-            <span className="text-foreground text-sm font-medium">
-              Foundation: {foundationCountry.name}
-            </span>
-          </div>
-          <p className="text-muted-foreground text-xs">
-            Default symbols and colors will be based on this country
-          </p>
-        </div>
-      )}
-
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-card/50 hover:bg-card/70 text-muted-foreground hover:text-foreground flex w-full items-center justify-between rounded-lg px-4 py-3 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5" />
-          National Symbols
-          {isExtracting && (
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}>
-              <Sparkles className="h-4 w-4 text-yellow-400" />
-            </motion.div>
-          )}
-        </div>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-          <ChevronDown className="h-5 w-5" />
-        </motion.div>
-      </button>
-
-      {/* Color Palette Display */}
-      <AnimatePresence>
-        {showColorPalette && extractedColors && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-card/50 border-border mt-2 rounded-lg border p-3"
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <Palette className="h-4 w-4 text-purple-400" />
-              <span className="text-foreground text-sm font-medium">Extracted Colors</span>
-            </div>
-            <div className="flex gap-2">
-              <div
-                className="border-border h-8 w-8 rounded border"
-                style={{ backgroundColor: extractedColors.primary }}
-                title={`Primary: ${extractedColors.primary}`}
-              />
-              <div
-                className="border-border h-8 w-8 rounded border"
-                style={{ backgroundColor: extractedColors.secondary }}
-                title={`Secondary: ${extractedColors.secondary}`}
-              />
-              <div
-                className="border-border h-8 w-8 rounded border"
-                style={{ backgroundColor: extractedColors.accent }}
-                title={`Accent: ${extractedColors.accent}`}
-              />
-            </div>
-            <p className="text-muted-foreground mt-2 text-xs">
-              Colors automatically applied to UI theme
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, marginTop: 0 }}
-            animate={{ height: "auto", opacity: 1, marginTop: "1rem" }}
-            exit={{ height: 0, opacity: 0, marginTop: 0 }}
-            className="overflow-hidden"
-          >
-            <div className={cn("rounded-lg bg-slate-800/50 p-4", isOpen ? "bg-card/50" : "")}>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Flag Section */}
-                <div className="space-y-4">
-                  <label className="form-label text-foreground flex items-center">
-                    <Flag className="mr-2 h-4 w-4 text-blue-400" />
-                    Country Flag
-                  </label>
-                  <div className="border-border flex h-40 w-full items-center justify-center overflow-hidden rounded-md border bg-black/20">
-                    {flagUrl && flagUrl !== "" ? (
-                      <img
-                        src={flagUrl}
-                        alt="Country Flag"
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    ) : foundationCountry?.flagUrl ? (
-                      <div
-                        className="relative h-full w-full cursor-pointer transition-opacity hover:opacity-80"
-                        onClick={() => {
-                          // Use the foundation flag when clicked
-                          if (foundationCountry?.flagUrl && onFlagUrlChange) {
-                            onFlagUrlChange(foundationCountry.flagUrl);
-                          } else {
-                            onSelectFlag();
-                          }
-                        }}
-                      >
-                        <img
-                          src={foundationCountry.flagUrl}
-                          alt={`${foundationCountry.name} Flag`}
-                          className="max-h-full max-w-full object-contain opacity-50"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <span className="text-foreground rounded bg-black/50 px-2 py-1 text-xs">
-                            Foundation Default (Click to Use)
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No Flag Selected</span>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <button
-                      onClick={onSelectFlag}
-                      className="w-full rounded-md bg-blue-600/80 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500/80"
-                    >
-                      <ImageIcon className="mr-2 inline-block h-4 w-4" /> Search Image Repository
-                    </button>
-                    <label
-                      className={`block w-full ${isUploadingFlag ? "pointer-events-none opacity-50" : ""}`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFlagUpload}
-                        className="hidden"
-                        disabled={isUploadingFlag}
-                      />
-                      <div className="w-full cursor-pointer rounded-md bg-green-600/80 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-green-500/80">
-                        <Upload className="mr-2 inline-block h-4 w-4" />
-                        {isUploadingFlag ? "Uploading..." : "Upload Custom Flag"}
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Coat of Arms Section */}
-                <div className="space-y-4">
-                  <label className="form-label text-foreground flex items-center">
-                    <Shield className="mr-2 h-4 w-4 text-purple-400" />
-                    Coat of Arms
-                  </label>
-                  <div className="border-border flex h-40 w-full items-center justify-center overflow-hidden rounded-md border bg-black/20">
-                    {coatOfArmsUrl ? (
-                      <img
-                        src={coatOfArmsUrl}
-                        alt="Coat of Arms"
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    ) : foundationCountry?.coatOfArmsUrl ? (
-                      <div
-                        className="relative h-full w-full cursor-pointer transition-opacity hover:opacity-80"
-                        onClick={() => {
-                          // Use the foundation coat of arms when clicked
-                          if (foundationCountry?.coatOfArmsUrl && onCoatOfArmsUrlChange) {
-                            onCoatOfArmsUrlChange(foundationCountry.coatOfArmsUrl);
-                          } else {
-                            onSelectCoatOfArms();
-                          }
-                        }}
-                      >
-                        <img
-                          src={foundationCountry.coatOfArmsUrl}
-                          alt={`${foundationCountry.name} Coat of Arms`}
-                          className="max-h-full max-w-full object-contain opacity-50"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <span className="text-foreground rounded bg-black/50 px-2 py-1 text-xs">
-                            Foundation Default (Click to Use)
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        No Coat of Arms Selected
+    <div className="relative z-10 space-y-4 pt-4">
+      {/* Flag and Coat of Arms Grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Flag Section */}
+        <GlassCard
+          depth="base"
+          theme="blue"
+          className="border-blue-500/20"
+          texture="chevron"
+          textureOpacity={0.06}
+          motionPreset="none"
+        >
+          <GlassCardContent className="space-y-4 p-5">
+            <label className="text-foreground flex items-center text-sm font-bold">
+              <Flag className="mr-2 h-4 w-4 text-blue-400" />
+              Country Flag
+            </label>
+            <div className="dark:border-border/30 relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg border border-zinc-500/10 bg-zinc-500/5 dark:bg-black/25">
+              <div className="relative z-10 flex h-full w-full items-center justify-center p-3">
+                {flagUrl && flagUrl !== "" ? (
+                  <img
+                    src={flagUrl}
+                    alt="Country Flag"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : foundationCountry?.flagUrl ? (
+                  <div
+                    className="relative flex h-full w-full cursor-pointer items-center justify-center transition-opacity hover:opacity-85"
+                    onClick={() => {
+                      if (foundationCountry?.flagUrl && onFlagUrlChange) {
+                        onFlagUrlChange(foundationCountry.flagUrl);
+                      } else {
+                        onSelectFlag();
+                      }
+                    }}
+                  >
+                    <img
+                      src={foundationCountry.flagUrl}
+                      alt={`${foundationCountry.name} Flag`}
+                      className="max-h-full max-w-full object-contain opacity-50"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/25">
+                      <span className="border-border/20 rounded border bg-black/70 px-2 py-0.5 text-[10px] font-bold text-zinc-300">
+                        Foundation Default (Click to Use)
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <button
-                      onClick={onSelectCoatOfArms}
-                      className="w-full rounded-md bg-purple-600/80 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-500/80"
-                    >
-                      <ImageIcon className="mr-2 inline-block h-4 w-4" /> Search Image Repository
-                    </button>
-                    <label
-                      className={`block w-full ${isUploadingCoA ? "pointer-events-none opacity-50" : ""}`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCoatOfArmsUpload}
-                        className="hidden"
-                        disabled={isUploadingCoA}
-                      />
-                      <div className="w-full cursor-pointer rounded-md bg-green-600/80 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-green-500/80">
-                        <Upload className="mr-2 inline-block h-4 w-4" />
-                        {isUploadingCoA ? "Uploading..." : "Upload Custom Coat of Arms"}
-                      </div>
-                    </label>
-                  </div>
-                </div>
+                ) : (
+                  <span className="text-muted-foreground text-xs font-semibold">
+                    No Flag Selected
+                  </span>
+                )}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={onSelectFlag}
+                className="flex cursor-pointer items-center justify-center gap-1.5 rounded-md bg-blue-600/80 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-blue-500/80"
+              >
+                <ImageIcon className="h-3.5 w-3.5" /> Search Repository
+              </button>
+              <label
+                className={`block cursor-pointer ${isUploadingFlag ? "pointer-events-none opacity-50" : ""}`}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFlagUpload}
+                  className="hidden"
+                  disabled={isUploadingFlag}
+                />
+                <div className="flex items-center justify-center gap-1.5 rounded-md bg-green-600/80 px-3 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-green-500/80">
+                  <Upload className="h-3.5 w-3.5" />
+                  {isUploadingFlag ? "Uploading..." : "Upload Custom"}
+                </div>
+              </label>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
+
+        {/* Coat of Arms Section */}
+        <GlassCard
+          depth="base"
+          theme="indigo"
+          className="border-indigo-500/20"
+          texture="chevron"
+          textureOpacity={0.06}
+          motionPreset="none"
+        >
+          <GlassCardContent className="space-y-4 p-5">
+            <label className="text-foreground flex items-center text-sm font-bold">
+              <Shield className="mr-2 h-4 w-4 text-purple-400" />
+              Coat of Arms
+            </label>
+            <div className="dark:border-border/30 relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg border border-zinc-500/10 bg-zinc-500/5 dark:bg-black/25">
+              <div className="relative z-10 flex h-full w-full items-center justify-center p-3">
+                {coatOfArmsUrl ? (
+                  <img
+                    src={coatOfArmsUrl}
+                    alt="Coat of Arms"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : foundationCountry?.coatOfArmsUrl ? (
+                  <div
+                    className="relative flex h-full w-full cursor-pointer items-center justify-center transition-opacity hover:opacity-85"
+                    onClick={() => {
+                      if (foundationCountry?.coatOfArmsUrl && onCoatOfArmsUrlChange) {
+                        onCoatOfArmsUrlChange(foundationCountry.coatOfArmsUrl);
+                      } else {
+                        onSelectCoatOfArms();
+                      }
+                    }}
+                  >
+                    <img
+                      src={foundationCountry.coatOfArmsUrl}
+                      alt={`${foundationCountry.name} Coat of Arms`}
+                      className="max-h-full max-w-full object-contain opacity-50"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/25">
+                      <span className="border-border/20 rounded border bg-black/70 px-2 py-0.5 text-[10px] font-bold text-zinc-300">
+                        Foundation Default (Click to Use)
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-xs font-semibold">
+                    No Coat of Arms Selected
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={onSelectCoatOfArms}
+                className="flex cursor-pointer items-center justify-center gap-1.5 rounded-md bg-purple-600/80 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-purple-500/80"
+              >
+                <ImageIcon className="h-3.5 w-3.5" /> Search Repository
+              </button>
+              <label
+                className={`block cursor-pointer ${isUploadingCoA ? "pointer-events-none opacity-50" : ""}`}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoatOfArmsUpload}
+                  className="hidden"
+                  disabled={isUploadingCoA}
+                />
+                <div className="flex items-center justify-center gap-1.5 rounded-md bg-green-600/80 px-3 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-green-500/80">
+                  <Upload className="h-3.5 w-3.5" />
+                  {isUploadingCoA ? "Uploading..." : "Upload Custom"}
+                </div>
+              </label>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
+      </div>
     </div>
   );
 }

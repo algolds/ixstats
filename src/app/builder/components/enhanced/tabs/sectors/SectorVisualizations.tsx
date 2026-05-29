@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { PieChart, BarChart3, Zap } from "lucide-react";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
@@ -42,14 +42,12 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   return (
     <div className="space-y-6">
       {/* GDP Composition */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>GDP Composition</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           {sectorChartData.length === 0 ? (
             <div className="text-muted-foreground flex h-[300px] items-center justify-center">
               Add sectors to see GDP composition
@@ -63,18 +61,16 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               colors={getColorsFromData(sectorChartData)}
             />
           )}
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
       {/* Employment Distribution */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Distribution</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           {employmentChartData.length === 0 ? (
             <div className="text-muted-foreground flex h-[250px] items-center justify-center">
               Add sectors to see employment distribution
@@ -89,18 +85,16 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               colors={getColorsFromData(employmentChartData)}
             />
           )}
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
       {/* Component Impact Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Zap className="h-5 w-5" />
             <span>Atomic Component Impact</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           <div className="space-y-3">
             {Object.entries(sectorImpacts).map(([sectorId, impact]) => {
               const template = SECTOR_TEMPLATES[sectorId as keyof typeof SECTOR_TEMPLATES];
@@ -109,7 +103,7 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               return (
                 <div
                   key={sectorId}
-                  className="flex items-center justify-between rounded bg-gray-50 p-2 dark:bg-gray-800"
+                  className="flex items-center justify-between rounded border border-zinc-800/40 bg-zinc-900/30 p-2 text-zinc-300"
                 >
                   <div className="flex items-center space-x-2">
                     <template.icon className="h-4 w-4" />
@@ -123,8 +117,8 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
     </div>
   );
 }

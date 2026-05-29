@@ -33,6 +33,8 @@ export interface UseBuilderValidationReturn {
 interface UseBuilderValidationProps {
   /** Current builder state from useBuilderState */
   builderState: BuilderState;
+  /** Builder mode: 'create' or 'edit' */
+  mode?: "create" | "edit";
 }
 
 /**
@@ -52,80 +54,10 @@ interface UseBuilderValidationProps {
  * @param {UseBuilderValidationProps} props - Builder state to validate
  * @param {BuilderState} props.builderState - Current builder state
  * @returns {UseBuilderValidationReturn} Validation methods and status
- * @returns {Function} returns.validateStep - Validate specific step
- * @returns {Function} returns.validateAll - Validate all steps
- * @returns {boolean} returns.canCreateCountry - Whether country can be created
- *
- * @example
- * ```tsx
- * function ValidationFeedback() {
- *   const { builderState } = useBuilderState();
- *   const { validateStep, canCreateCountry } = useBuilderValidation({ builderState });
- *
- *   const currentValidation = validateStep(builderState.step);
- *
- *   return (
- *     <div>
- *       {currentValidation.errors.map(error => (
- *         <div key={error} className="text-red-500">{error}</div>
- *       ))}
- *       {currentValidation.warnings.map(warning => (
- *         <div key={warning} className="text-yellow-500">{warning}</div>
- *       ))}
- *       <button disabled={!canCreateCountry}>Create Country</button>
- *     </div>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Validate before allowing step progression
- * function ContinueButton() {
- *   const { builderState } = useBuilderState();
- *   const { validateStep } = useBuilderValidation({ builderState });
- *   const { handleContinue } = useBuilderActions({ builderState, setBuilderState });
- *
- *   const handleClick = () => {
- *     const validation = validateStep(builderState.step);
- *     if (!validation.isValid) {
- *       alert(`Cannot continue: ${validation.errors.join(', ')}`);
- *       return;
- *     }
- *     handleContinue();
- *   };
- *
- *   return <button onClick={handleClick}>Continue</button>;
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Display all validation issues
- * function ValidationSummary() {
- *   const { builderState } = useBuilderState();
- *   const { validateAll } = useBuilderValidation({ builderState });
- *
- *   const allValidation = validateAll();
- *
- *   return (
- *     <div>
- *       <h3>Validation Summary</h3>
- *       <p>Status: {allValidation.isValid ? 'Valid' : 'Invalid'}</p>
- *       <p>Errors: {allValidation.errors.length}</p>
- *       <p>Warnings: {allValidation.warnings.length}</p>
- *       <ul>
- *         {allValidation.errors.map(error => (
- *           <li key={error} className="text-red-500">{error}</li>
- *         ))}
- *       </ul>
- *     </div>
- *   );
- * }
- * ```
  */
 export function useBuilderValidation({
   builderState,
+  mode = "create",
 }: UseBuilderValidationProps): UseBuilderValidationReturn {
   // Validate foundation step
   const validateFoundation = useMemo((): ValidationResult => {
@@ -230,7 +162,11 @@ export function useBuilderValidation({
       }
     }
 
-    if (governmentSpending && fiscalSystem && governmentSpending.totalSpending > fiscalSystem.taxRevenueGDPPercent * 1.5) {
+    if (
+      governmentSpending &&
+      fiscalSystem &&
+      governmentSpending.totalSpending > fiscalSystem.taxRevenueGDPPercent * 1.5
+    ) {
       warnings.push("Government spending significantly exceeds tax revenue (potential deficit)");
     }
 
@@ -243,7 +179,9 @@ export function useBuilderValidation({
       (step: BuilderStep): ValidationResult => {
         switch (step) {
           case "foundation":
-            return validateFoundation;
+            return mode === "edit"
+              ? { isValid: true, errors: [], warnings: [] }
+              : validateFoundation;
           case "core":
             return validateCore;
           case "government":
@@ -256,7 +194,7 @@ export function useBuilderValidation({
             return { isValid: true, errors: [], warnings: [] };
         }
       },
-    [validateFoundation, validateCore, validateGovernment, validateEconomics]
+    [validateFoundation, validateCore, validateGovernment, validateEconomics, mode]
   );
 
   // Validate all steps
@@ -265,7 +203,10 @@ export function useBuilderValidation({
       const allErrors: string[] = [];
       const allWarnings: string[] = [];
 
-      const steps: BuilderStep[] = ["foundation", "core", "government", "economics"];
+      const steps: BuilderStep[] =
+        mode === "edit"
+          ? ["core", "government", "economics"]
+          : ["foundation", "core", "government", "economics"];
       steps.forEach((step) => {
         const result = validateStep(step);
         allErrors.push(...result.errors);
@@ -278,16 +219,13 @@ export function useBuilderValidation({
         warnings: allWarnings,
       };
     },
-    [validateStep]
+    [validateStep, mode]
   );
 
   // Check if country creation is allowed
   const canCreateCountry = useMemo(() => {
     const validation = validateAll();
-    return (
-      validation.isValid &&
-      builderState.economicInputs !== null
-    );
+    return validation.isValid && builderState.economicInputs !== null;
   }, [validateAll, builderState.economicInputs]);
 
   return {

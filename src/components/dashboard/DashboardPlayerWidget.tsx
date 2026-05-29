@@ -20,6 +20,7 @@ import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/url-utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { PreText } from "~/components/ui/pretext";
 import {
   CutoutCard,
@@ -132,6 +133,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
             <UnifiedCountryFlag
               countryName={userProfile.country.name}
+              flagUrl={normalizeFlagUrl(userProfile.country.flag)}
               fitContainer={true}
               showTooltip={false}
               rounded={false}

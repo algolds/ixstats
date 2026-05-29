@@ -31,11 +31,16 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
     mode,
   });
 
-  const currentStepIndex = stepOrder.indexOf(builderState.step);
+  const isEditMode = mode === "edit";
+  const steps = isEditMode
+    ? ["core", "government", "economics", "preview"]
+    : ["foundation", "core", "preview"];
+
+  const currentStepIndex = steps.indexOf(builderState.step);
+  const totalSteps = steps.length;
   const isPreviewStep = builderState.step === "preview";
   const isFoundationStep = builderState.step === "foundation";
   const isCoreStep = builderState.step === "core";
-  const isEditMode = mode === "edit";
 
   // In edit mode, disable back button on core step (can't go to foundation)
   const isBackDisabled = isFoundationStep || (isEditMode && isCoreStep);
@@ -55,7 +60,7 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
       <div className="text-muted-foreground flex items-center gap-2 text-sm">
         <Progress value={progressPercentage} className="h-2 w-24" />
         <span>
-          Step {currentStepIndex + 1} of {stepOrder.length}
+          Step {currentStepIndex + 1} of {totalSteps}
         </span>
       </div>
 
@@ -68,20 +73,30 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
             "min-w-[200px] bg-gradient-to-r shadow-lg transition-all",
             isCreating
               ? "cursor-not-allowed from-gray-400 to-gray-500 opacity-90"
-              : "from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
+              : isEditMode
+                ? "from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl"
+                : "from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
           )}
           aria-busy={isCreating}
-          aria-label={isCreating ? "Creating your nation, please wait" : "Create your nation"}
+          aria-label={
+            isCreating
+              ? isEditMode
+                ? "Updating your country, please wait"
+                : "Creating your nation, please wait"
+              : isEditMode
+                ? "Update country"
+                : "Create your nation"
+          }
         >
           {isCreating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating Nation...
+              {isEditMode ? "Updating Country..." : "Creating Nation..."}
             </>
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Create My Nation
+              {isEditMode ? "Update Country" : "Create My Nation"}
               <Crown className="ml-2 h-4 w-4" />
             </>
           )}

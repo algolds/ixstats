@@ -432,15 +432,18 @@ const calculateDimensions = (
     return { width: "min(1400px, 85vw)", height: 80 };
   }
 
-  // For compact modes, use explicit height but let width fit content
+  // For compact modes: both width AND height fit the content — pill wraps content
   if (
     size === "compact" ||
     size === "compactLong" ||
     size === "compactMedium" ||
-    size === "compactTall"
+    size === "compactTall" ||
+    size === "wikiInline" ||
+    size === "wikiCompact" ||
+    size === "default" ||
+    size === "reset"
   ) {
-    const h = resolvedSize.height ?? resolvedSize.aspectRatio * resolvedSize.width;
-    return { width: "fit-content", height: h };
+    return { width: "fit-content", height: "auto" };
   }
 
   // For other preset sizes, use the preset width directly without MIN_WIDTH restriction
@@ -448,6 +451,23 @@ const calculateDimensions = (
     width: `${resolvedSize.width}px`,
     height: resolvedSize.aspectRatio * resolvedSize.width,
   };
+};
+
+const isCompactSize = (size: SizePresets | undefined): boolean => {
+  if (!size) return true;
+  return (
+    size === "compact" ||
+    size === "compactLong" ||
+    size === "compactMedium" ||
+    size === "compactTall" ||
+    size === "minimalLeading" ||
+    size === "minimalTrailing" ||
+    size === "wikiCompact" ||
+    size === "wikiInline" ||
+    size === "default" ||
+    size === "reset" ||
+    size === "empty"
+  );
 };
 
 const DynamicIslandContent = ({
@@ -468,6 +488,39 @@ const DynamicIslandContent = ({
 
   const dimensions = calculateDimensions(state.size, screenSize, currentSize);
 
+  // Dynamic height tracking using ResizeObserver — runs for all sizes so content always drives dimensions
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return;
+      const entry = entries[0];
+      if (entry) {
+        const height = element.scrollHeight || entry.contentRect.height;
+        if (height > 0) {
+          setMeasuredHeight(height);
+        }
+      }
+    });
+
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }, [state.size, children]);
+
+  // For auto-sizing compact modes, let height be truly auto
+  const isAutoHeight = dimensions.height === "auto";
+  const targetHeight = isAutoHeight
+    ? "auto"
+    : measuredHeight !== null
+      ? measuredHeight
+      : dimensions.height;
+
   return (
     <div className="relative">
       {/* Outer glow effect with animation and refraction */}
@@ -484,10 +537,10 @@ const DynamicIslandContent = ({
         }}
         style={{ willChange }}
       >
-        {/* Multi-layer glow for depth */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
+        {/* Multi-layer glow for depth — light mode uses more vivid colors, dark uses subtler */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-indigo-500/50 blur-xl dark:from-blue-500/30 dark:via-purple-500/30 dark:to-blue-500/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/40 via-indigo-500/45 to-purple-400/40 blur-lg dark:from-cyan-400/20 dark:via-indigo-500/20 dark:to-purple-400/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/35 via-violet-400/35 to-blue-400/35 blur-md dark:from-blue-300/15 dark:via-purple-300/15 dark:to-blue-300/15" />
       </motion.div>
 
       {/* Extended glow for wide modes */}
@@ -512,15 +565,15 @@ const DynamicIslandContent = ({
       {/* Main dynamic island */}
       <motion.div
         id={id}
-        className="focus-within:bg-accent/80 hover:shadow-primary/20 hover:shadow-primary/20 relative mx-auto items-center justify-center overflow-visible border border-white/20 text-center shadow-2xl shadow-black/40 transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10"
+        className="focus-within:bg-accent/80 relative mx-auto items-center justify-center border border-blue-200/40 text-center shadow-2xl shadow-blue-500/20 transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10 dark:shadow-black/40"
         initial={{
           width: dimensions.width,
-          height: dimensions.height === "auto" ? "auto" : dimensions.height,
+          height: targetHeight,
           borderRadius: currentSize.borderRadius,
         }}
         animate={{
           width: dimensions.width,
-          height: dimensions.height === "auto" ? "auto" : dimensions.height,
+          height: targetHeight,
           borderRadius: currentSize.borderRadius,
           transition: {
             type: "spring",
@@ -531,15 +584,12 @@ const DynamicIslandContent = ({
         }}
         style={{
           willChange: willChange || "transform",
-          minWidth: dimensions.width === "fit-content" ? "100px" : undefined,
-          maxWidth: dimensions.width === "fit-content" ? "500px" : undefined,
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
+          background: "var(--color-glass)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          // Performance optimization
           transform: "translateZ(0)",
           isolation: "isolate",
+          overflow: isAutoHeight ? "visible" : "hidden",
         }}
         {...props}
       >
@@ -558,8 +608,8 @@ const DynamicIslandContent = ({
           />
         </div>
 
-        {/* Content container */}
-        <div className="relative z-[10001] h-full w-full">
+        {/* Content container — overflow-hidden clips only the content, not the glow */}
+        <div ref={contentRef} className="relative z-[10001] h-auto w-full overflow-hidden">
           <AnimatePresence>{children}</AnimatePresence>
         </div>
       </motion.div>
@@ -596,33 +646,21 @@ type DynamicContainerProps = {
 
 const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
   const willChange = useWillChange();
-  const { state } = useDynamicIslandSize();
-  const { size, previousSize } = state;
-
-  const isSizeChanged = size !== previousSize;
-
-  const initialState = {
-    opacity: size === previousSize ? 1 : 0,
-    scale: size === previousSize ? 1 : 0.9,
-    y: size === previousSize ? 0 : 5,
-  };
-
-  const animateState = {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness,
-      damping,
-      mass,
-    },
-  };
 
   return (
     <motion.div
-      initial={initialState}
-      animate={animateState}
+      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+          type: "spring" as const,
+          stiffness,
+          damping,
+          mass,
+        },
+      }}
       exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95, y: 20 }}
       style={{ willChange }}
       className={className}
@@ -638,19 +676,14 @@ type DynamicChildrenProps = {
 };
 
 const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
-  const { state } = useDynamicIslandSize();
-  const { size, previousSize } = state;
   const willChange = useWillChange();
 
   return (
     <motion.div
-      initial={{
-        opacity: size === previousSize ? 1 : 0,
-        scale: size === previousSize ? 1 : 0.9,
-      }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{
-        opacity: size === previousSize ? 0 : 1,
-        scale: size === previousSize ? 0.9 : 1,
+        opacity: 1,
+        scale: 1,
         transition: {
           type: "spring",
           stiffness,
@@ -658,7 +691,7 @@ const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
           mass,
         },
       }}
-      exit={{ opacity: 0, filter: "blur(10px)", scale: 0 }}
+      exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95 }}
       style={{ willChange }}
       className={className}
     >
@@ -673,17 +706,15 @@ type MotionProps = {
 };
 
 const DynamicTitle = ({ className, children }: MotionProps) => {
-  const { state } = useDynamicIslandSize();
-  const { size, previousSize } = state;
   const willChange = useWillChange();
 
   return (
     <motion.h3
       className={className}
-      initial={{ opacity: 0, scale: 0 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{
-        opacity: size === previousSize ? 0 : 1,
-        scale: size === previousSize ? 0.9 : 1,
+        opacity: 1,
+        scale: 1,
         transition: { type: "spring", stiffness, damping, mass },
       }}
       style={{ willChange }}
@@ -694,17 +725,15 @@ const DynamicTitle = ({ className, children }: MotionProps) => {
 };
 
 const DynamicDescription = ({ className, children }: MotionProps) => {
-  const { state } = useDynamicIslandSize();
-  const { size, previousSize } = state;
   const willChange = useWillChange();
 
   return (
     <motion.p
       className={className}
-      initial={{ opacity: 0, scale: 0 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{
-        opacity: size === previousSize ? 0 : 1,
-        scale: size === previousSize ? 0.9 : 1,
+        opacity: 1,
+        scale: 1,
         transition: { type: "spring", stiffness, damping, mass },
       }}
       style={{ willChange }}

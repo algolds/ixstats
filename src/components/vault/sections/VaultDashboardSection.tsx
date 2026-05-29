@@ -21,7 +21,6 @@ import {
   History,
   Trophy,
 } from "lucide-react";
-import { withBasePath } from "~/lib/base-path";
 import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
 import { api } from "~/trpc/react";
@@ -662,9 +661,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                       )}
                       style={
                         {
-                          // @ts-expect-error Custom CSS Variable mapping
                           "--glow": getRarityGlow(featuredCards[0]?.rarity),
-                          // @ts-expect-error Custom CSS Variable mapping
                           "--border": getRarityBorder(featuredCards[0]?.rarity),
                         } as any
                       }
@@ -846,7 +843,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
 
                 {/* Navigation Button */}
                 <div className="border-t border-slate-200 pt-3 dark:border-white/5">
-                  <Link href={withBasePath("/achievements")} className="block w-full">
+                  <Link href="/achievements" className="block w-full">
                     <Button
                       size="sm"
                       variant="outline"

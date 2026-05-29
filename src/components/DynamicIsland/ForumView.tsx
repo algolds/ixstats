@@ -21,6 +21,7 @@ import { withBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { PreText } from "~/components/ui/pretext";
 
 interface ForumViewProps {
   onClose: () => void;
@@ -31,7 +32,7 @@ interface ForumViewProps {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
-      {children}
+      {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );
 }
@@ -63,9 +64,19 @@ function ForumRow({
     >
       <div className={`shrink-0 rounded-md p-1.5 transition-colors ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="text-foreground truncate text-sm leading-normal font-medium">{label}</div>
+        <PreText
+          className="text-foreground block truncate text-sm leading-normal font-medium"
+          whiteSpace="nowrap"
+        >
+          {label}
+        </PreText>
         {description && (
-          <div className="text-muted-foreground truncate text-xs leading-normal">{description}</div>
+          <PreText
+            className="text-foreground/70 block truncate text-xs leading-normal"
+            whiteSpace="nowrap"
+          >
+            {description}
+          </PreText>
         )}
       </div>
       {rightElement !== undefined ? (
@@ -92,7 +103,9 @@ function ForumHeader({
     <div className="mb-3 flex items-center justify-between">
       <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
         <MessageSquare className="h-4 w-4 text-orange-400" />
-        <span>Forum</span>
+        <PreText className="text-inherit" whiteSpace="nowrap">
+          Forum
+        </PreText>
       </div>
       <div className="flex items-center gap-1">
         {onRefresh && (
@@ -211,9 +224,12 @@ export function ForumView({ onClose }: ForumViewProps) {
           onClick={() => navigate("/forum/conversations")}
           rightElement={
             unreadAlerts > 0 ? (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
-                {unreadAlerts}
-              </span>
+              <PreText
+                className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white shadow-sm"
+                whiteSpace="nowrap"
+              >
+                {String(unreadAlerts)}
+              </PreText>
             ) : undefined
           }
         />
@@ -233,7 +249,9 @@ export function ForumView({ onClose }: ForumViewProps) {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Recent
+                <PreText className="text-inherit" whiteSpace="nowrap">
+                  Recent
+                </PreText>
               </button>
               <button
                 onClick={() => setActiveTab("stash")}
@@ -243,7 +261,9 @@ export function ForumView({ onClose }: ForumViewProps) {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Stash
+                <PreText className="text-inherit" whiteSpace="nowrap">
+                  Stash
+                </PreText>
               </button>
             </div>
           )}
@@ -268,9 +288,12 @@ export function ForumView({ onClose }: ForumViewProps) {
                     />
                   ))
               ) : (
-                <div className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs">
+                <PreText
+                  className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs"
+                  whiteSpace="nowrap"
+                >
                   No recent threads visited.
-                </div>
+                </PreText>
               )}
             </>
           )}
@@ -278,9 +301,12 @@ export function ForumView({ onClose }: ForumViewProps) {
           {activeTab === "stash" && (
             <>
               {loadingStashed ? (
-                <div className="text-muted-foreground animate-pulse py-8 text-center text-xs">
+                <PreText
+                  className="text-muted-foreground animate-pulse py-8 text-center text-xs"
+                  whiteSpace="nowrap"
+                >
                   Loading stashed threads…
-                </div>
+                </PreText>
               ) : stashedThreads && stashedThreads.length > 0 ? (
                 stashedThreads
                   .slice(0, 5)
@@ -297,9 +323,12 @@ export function ForumView({ onClose }: ForumViewProps) {
                     />
                   ))
               ) : (
-                <div className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs">
+                <PreText
+                  className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs"
+                  whiteSpace="nowrap"
+                >
                   Stash is empty. Bookmark threads to see them here!
-                </div>
+                </PreText>
               )}
             </>
           )}

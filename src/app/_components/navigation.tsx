@@ -1558,7 +1558,7 @@ export function Navigation() {
 
       {!isMobile && (
         <motion.div
-          className="fixed top-0 left-1/2 z-[var(--z-command)]"
+          className="fixed top-0 left-1/2 z-[var(--z-command)] flex justify-center pointer-events-none"
           animate={{
             x: "-50%",
             y: isSticky ? 8 : Math.max(-100, 10 - scrollY),
@@ -1571,7 +1571,7 @@ export function Navigation() {
           }}
           style={{
             width: "100%",
-            maxWidth: "400px",
+            maxWidth: "100%",
           }}
         >
           {/* Large blur-3xl glow that moves and morphs with the DI */}

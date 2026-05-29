@@ -2,7 +2,8 @@
 
 import React, { useCallback } from "react";
 import { MapIcon, Clock, Phone, Wifi, Car, Calendar } from "lucide-react";
-import { EnhancedNumberInput, EnhancedToggle } from "../../../primitives/enhanced";
+import { EnhancedNumberInput, EnhancedToggle, GlassSelectBox } from "../../../primitives/enhanced";
+import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
 interface GeographyFormProps {
@@ -41,8 +42,8 @@ export const GeographyForm = React.memo(
       onIdentityChange("drivingSide", checked ? "right" : "left");
     }, []);
 
-    const handleWeekStartDayChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-      onIdentityChange("weekStartDay", e.target.value);
+    const handleWeekStartDayChange = useCallback((value: string) => {
+      onIdentityChange("weekStartDay", value);
     }, []);
 
     const handleNationalSportChange = useCallback((value: any) => {
@@ -59,153 +60,203 @@ export const GeographyForm = React.memo(
 
     return (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <EnhancedNumberInput
-          label="Calling Code"
-          description="International dialing code"
-          value={String(identity.callingCode || "")}
-          onChange={handleCallingCodeChange}
-          sectionId="symbols"
-          icon={Phone}
-          showButtons={false}
-          placeholder="+1, +44, +33..."
-          acceptText={true}
-        />
-
-        <EnhancedNumberInput
-          label="Internet TLD"
-          description="Top-level domain"
-          value={String(identity.internetTLD || "")}
-          onChange={handleInternetTLDChange}
-          sectionId="symbols"
-          icon={Wifi}
-          showButtons={false}
-          placeholder=".us, .uk, .fr..."
-          acceptText={true}
-        />
-
-        <EnhancedNumberInput
-          label="ISO Country Code"
-          description="ISO 3166-1 alpha-2 code"
-          value={String(identity.isoCode || "")}
-          onChange={handleIsoCodeChange}
-          sectionId="symbols"
-          icon={MapIcon}
-          showButtons={false}
-          placeholder="US, GB, FR..."
-          acceptText={true}
-        />
-
-        <EnhancedNumberInput
-          label="Time Zone"
-          description="Primary time zone"
-          value={String(identity.timeZone || "")}
-          onChange={handleTimeZoneChange}
-          sectionId="symbols"
-          icon={Clock}
-          showButtons={false}
-          placeholder="UTC-5, GMT+1, PST..."
-          acceptText={true}
-        />
-
-        <EnhancedNumberInput
-          label="Emergency Number"
-          description="Emergency services number"
-          value={String(identity.emergencyNumber || "")}
-          onChange={handleEmergencyNumberChange}
-          sectionId="symbols"
-          icon={Phone}
-          showButtons={false}
-          placeholder="911, 999, 112..."
-          acceptText={true}
-        />
-
-        <EnhancedNumberInput
-          label="Postal Code Format"
-          description="Postal code pattern"
-          value={String(identity.postalCodeFormat || "")}
-          onChange={handlePostalCodeFormatChange}
-          sectionId="symbols"
-          showButtons={false}
-          placeholder="12345, SW1A 1AA, etc."
-          acceptText={true}
-        />
-
-        <div className="space-y-2">
-          <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-            <Car className="h-4 w-4" />
-            Driving Side
-          </label>
-          <EnhancedToggle
-            label="Right-hand traffic"
-            description="Toggle for left-hand traffic"
-            checked={identity.drivingSide === "right"}
-            onChange={handleDrivingSideChange}
-            sectionId="symbols"
-            variant="switch"
-            showIcons={true}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-            <Calendar className="h-4 w-4" />
-            Week Start Day
-          </label>
-          <select
-            value={identity.weekStartDay || "monday"}
-            onChange={handleWeekStartDayChange}
-            className="border-input bg-background text-foreground focus:border-ring focus:ring-ring w-full rounded-lg border px-4 py-3 transition-all duration-200 focus:ring-2 focus:outline-none"
-          >
-            <option value="monday">Monday</option>
-            <option value="sunday">Sunday</option>
-            <option value="saturday">Saturday</option>
-          </select>
-        </div>
-
-        <EnhancedNumberInput
-          label="National Sport"
-          description="Most popular or official sport"
-          value={String(identity.nationalSport || "")}
-          onChange={handleNationalSportChange}
-          sectionId="symbols"
-          showButtons={false}
-          placeholder="Football, Cricket, Hockey..."
-          acceptText={true}
-        />
-
-        <div className="lg:col-span-3">
-          <h5 className="text-foreground mb-4 flex items-center gap-2 text-lg font-bold">
-            <MapIcon className="h-4 w-4" />
-            Geographic Coordinates (Capital City)
-          </h5>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <EnhancedNumberInput
-              label="Latitude"
-              description="North-South position (-90 to 90)"
-              value={String(identity.coordinatesLatitude || "")}
-              onChange={handleCoordinatesLatitudeChange}
-              sectionId="symbols"
-              showButtons={false}
-              placeholder="40.7128"
-              acceptText={true}
-            />
-
-            <EnhancedNumberInput
-              label="Longitude"
-              description="East-West position (-180 to 180)"
-              value={String(identity.coordinatesLongitude || "")}
-              onChange={handleCoordinatesLongitudeChange}
-              sectionId="symbols"
-              showButtons={false}
-              placeholder="-74.0060"
-              acceptText={true}
-            />
+        {/* Connectivity Card */}
+        <GlassCard
+          depth="base"
+          theme="blue"
+          className="border-blue-500/20 lg:col-span-1"
+          texture="chevron"
+          textureOpacity={0.06}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <Wifi className="h-5 w-5 text-blue-400" />
+              Connectivity
+            </h3>
           </div>
-        </div>
+          <GlassCardContent className="space-y-4 p-6">
+            <EnhancedNumberInput
+              label="Calling Code"
+              description="International dialing code"
+              value={String(identity.callingCode || "")}
+              onChange={handleCallingCodeChange}
+              sectionId="symbols"
+              icon={Phone}
+              showButtons={false}
+              placeholder="+1, +44, +33..."
+              acceptText={true}
+            />
+
+            <EnhancedNumberInput
+              label="Internet TLD"
+              description="Top-level domain"
+              value={String(identity.internetTLD || "")}
+              onChange={handleInternetTLDChange}
+              sectionId="symbols"
+              icon={Wifi}
+              showButtons={false}
+              placeholder=".us, .uk, .fr..."
+              acceptText={true}
+            />
+
+            <EnhancedNumberInput
+              label="ISO Country Code"
+              description="ISO 3166-1 alpha-2 code"
+              value={String(identity.isoCode || "")}
+              onChange={handleIsoCodeChange}
+              sectionId="symbols"
+              icon={MapIcon}
+              showButtons={false}
+              placeholder="US, GB, FR..."
+              acceptText={true}
+            />
+          </GlassCardContent>
+        </GlassCard>
+
+        {/* Civic Rules Card */}
+        <GlassCard
+          depth="base"
+          theme="teal"
+          className="border-teal-500/20 lg:col-span-2"
+          texture="chevron"
+          textureOpacity={0.06}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <Calendar className="h-5 w-5 text-emerald-400" />
+              Civic Rules & Standards
+            </h3>
+          </div>
+          <GlassCardContent className="space-y-4 p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <EnhancedNumberInput
+                label="Time Zone"
+                description="Primary time zone"
+                value={String(identity.timeZone || "")}
+                onChange={handleTimeZoneChange}
+                sectionId="symbols"
+                icon={Clock}
+                showButtons={false}
+                placeholder="UTC-5, GMT+1, PST..."
+                acceptText={true}
+              />
+
+              <EnhancedNumberInput
+                label="Emergency Number"
+                description="Emergency services number"
+                value={String(identity.emergencyNumber || "")}
+                onChange={handleEmergencyNumberChange}
+                sectionId="symbols"
+                icon={Phone}
+                showButtons={false}
+                placeholder="911, 999, 112..."
+                acceptText={true}
+              />
+
+              <EnhancedNumberInput
+                label="Postal Code Format"
+                description="Postal code pattern"
+                value={String(identity.postalCodeFormat || "")}
+                onChange={handlePostalCodeFormatChange}
+                sectionId="symbols"
+                showButtons={false}
+                placeholder="12345, SW1A 1AA, etc."
+                acceptText={true}
+              />
+
+              <EnhancedNumberInput
+                label="National Sport"
+                description="Most popular or official sport"
+                value={String(identity.nationalSport || "")}
+                onChange={handleNationalSportChange}
+                sectionId="symbols"
+                showButtons={false}
+                placeholder="Football, Cricket, Hockey..."
+                acceptText={true}
+              />
+            </div>
+
+            <div className="border-border/20 grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+                  <Car className="text-muted-foreground h-4 w-4" />
+                  Driving Side
+                </label>
+                <EnhancedToggle
+                  label="Right-hand traffic"
+                  description="Toggle for left-hand traffic"
+                  checked={identity.drivingSide === "right"}
+                  onChange={handleDrivingSideChange}
+                  sectionId="symbols"
+                  variant="switch"
+                  showIcons={true}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <GlassSelectBox
+                  label="Week Start Day"
+                  icon={Calendar}
+                  value={identity.weekStartDay || "monday"}
+                  onChange={handleWeekStartDayChange}
+                  options={[
+                    { value: "monday", label: "Monday" },
+                    { value: "sunday", label: "Sunday" },
+                    { value: "saturday", label: "Saturday" },
+                  ]}
+                  placeholder="Select start day"
+                  sectionId="symbols"
+                  theme="default"
+                  size="sm"
+                />
+              </div>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
+
+        {/* Geographic Center Card */}
+        <GlassCard
+          depth="base"
+          className="border-border/40 lg:col-span-3"
+          texture="chevron"
+          textureOpacity={0.06}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <MapIcon className="h-5 w-5 text-yellow-400" />
+              Geographic Center Coordinates
+            </h3>
+          </div>
+          <GlassCardContent className="p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <EnhancedNumberInput
+                label="Latitude"
+                description="North-South position (-90 to 90)"
+                value={String(identity.coordinatesLatitude || "")}
+                onChange={handleCoordinatesLatitudeChange}
+                sectionId="symbols"
+                showButtons={false}
+                placeholder="40.7128"
+                acceptText={true}
+              />
+
+              <EnhancedNumberInput
+                label="Longitude"
+                description="East-West position (-180 to 180)"
+                value={String(identity.coordinatesLongitude || "")}
+                onChange={handleCoordinatesLongitudeChange}
+                sectionId="symbols"
+                showButtons={false}
+                placeholder="-74.0060"
+                acceptText={true}
+              />
+            </div>
+          </GlassCardContent>
+        </GlassCard>
       </div>
     );
   },
-  (prevProps, nextProps) => {
+  (prevProps: GeographyFormProps, nextProps: GeographyFormProps) => {
     // Custom comparison to prevent re-renders
     return (
       prevProps.identity.callingCode === nextProps.identity.callingCode &&

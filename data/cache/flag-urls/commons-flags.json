@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "resolvedAt": "2026-05-26T07:37:47.706Z",
+  "resolvedAt": "2026-05-29T04:22:33.816Z",
   "flags": {
     "korea, dem. people's rep.": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Flag_of_North_Korea.png",
@@ -613,6 +613,22 @@
     "belize": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Flag_of_Belize.svg",
       "resolvedAt": 1779229672266
+    },
+    "puerto rico": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Flag_of_Puerto_Rico.png",
+      "resolvedAt": 1779950899571
+    },
+    "st. kitts and nevis": {
+      "url": null,
+      "resolvedAt": 1779950899577
+    },
+    "caphiriae": {
+      "url": null,
+      "resolvedAt": 1780009444196
+    },
+    "custom nation": {
+      "url": null,
+      "resolvedAt": 1780028553815
     }
   }
 }

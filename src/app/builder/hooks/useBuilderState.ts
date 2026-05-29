@@ -13,7 +13,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { isEqual } from "lodash";
-import type { BuilderStep } from "../components/enhanced/builderConfig";
+import { type BuilderStep, getStepsForMode } from "../components/enhanced/builderConfig";
 import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ComponentType } from "~/lib/enums";
@@ -24,6 +24,7 @@ import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
 const CURRENT_SCHEMA_VERSION = 1;
 
@@ -74,6 +75,8 @@ export interface BuilderState {
   step: BuilderStep;
   /** Foundation country selected as starting point (optional) */
   selectedCountry: RealCountryData | null;
+  /** Selected Faction Archetype key/id (optional) */
+  selectedArchetypeId: string | null;
   /** All economic indicators and metrics for the country */
   economicInputs: EconomicInputs | null;
   /** Selected atomic government components */
@@ -86,6 +89,8 @@ export interface BuilderState {
   completedSteps: BuilderStep[];
   /** Active tab within the Core step */
   activeCoreTab: string;
+  /** Active sub-tab within the National Identity section */
+  activeIdentitySubTab?: string;
   /** Active tab within the Government step */
   activeGovernmentTab: string;
   /** Active tab within the Economics step */
@@ -115,6 +120,16 @@ export interface UseBuilderStateReturn {
   countryId?: string;
   /** Builder mode: 'create' for new countries, 'edit' for existing */
   mode: "create" | "edit";
+  /** Enabled steps for the current mode */
+  enabledSteps: BuilderStep[];
+  /** Whether a DB sync is active */
+  isSyncing: boolean;
+  /** Sync error if DB sync failed */
+  syncError: any;
+  /** Selected archetype ID */
+  selectedArchetypeId?: string | null;
+  /** Update selected archetype ID */
+  updateArchetypeId: (id: string | null) => void;
   /** Update economic inputs with type safety */
   updateEconomicInputs: (inputs: EconomicInputs) => void;
   /** Update selected government components */
@@ -136,12 +151,14 @@ export interface UseBuilderStateReturn {
 const baseInitialState: BuilderState = {
   step: "foundation",
   selectedCountry: null,
+  selectedArchetypeId: null,
   economicInputs: null,
   governmentComponents: [],
   taxSystemData: null,
   governmentStructure: null,
   completedSteps: [],
   activeCoreTab: "identity",
+  activeIdentitySubTab: "basic",
   activeGovernmentTab: "components",
   activeEconomicsTab: "economy",
   showAdvancedMode: false,
@@ -155,6 +172,7 @@ const getInitialState = (mode: "create" | "edit" = "create"): BuilderState => {
       step: "core",
       completedSteps: ["foundation"],
       activeCoreTab: "identity",
+      activeIdentitySubTab: "basic",
     };
   }
 
@@ -314,12 +332,11 @@ export function useBuilderState(
       // Demographics
       inputs.demographics.lifeExpectancy = typedCountry.lifeExpectancy ?? 0;
       inputs.demographics.literacyRate = typedCountry.literacyRate ?? 0;
-      if (typedCountry.urbanPopulationPercent !== undefined) {
-        inputs.demographics.urbanRuralSplit = {
-          urban: typedCountry.urbanPopulationPercent,
-          rural: 100 - typedCountry.urbanPopulationPercent,
-        };
-      }
+      const urbanPop = typedCountry.urbanPopulationPercent ?? 65;
+      inputs.demographics.urbanRuralSplit = {
+        urban: urbanPop,
+        rural: 100 - urbanPop,
+      };
 
       // Income & Wealth Distribution
       inputs.incomeWealth.povertyRate = typedCountry.povertyRate ?? 0;
@@ -364,8 +381,9 @@ export function useBuilderState(
         weekStartDay: nationalIdentity?.weekStartDay || "monday",
       };
 
-      inputs.flagUrl = nationalIdentity?.flagUrl || "";
-      inputs.coatOfArmsUrl = nationalIdentity?.coatOfArmsUrl || "";
+      inputs.flagUrl = normalizeFlagUrl(nationalIdentity?.flagUrl || existingCountry.flag) || "";
+      inputs.coatOfArmsUrl =
+        normalizeFlagUrl(nationalIdentity?.coatOfArmsUrl || existingCountry.coatOfArms) || "";
 
       // Geography
       inputs.geography = {
@@ -425,12 +443,14 @@ export function useBuilderState(
       setBuilderState({
         step: "core", // Skip foundation step in edit mode
         selectedCountry: null, // No foundation selection in edit mode
+        selectedArchetypeId: null,
         economicInputs: inputs,
         governmentComponents: [], // TODO: Extract from existing government if atomic components exist
         taxSystemData,
         governmentStructure,
         completedSteps: ["foundation"], // Auto-complete foundation step
         activeCoreTab: "identity",
+        activeIdentitySubTab: "basic",
         activeGovernmentTab: "components",
         activeEconomicsTab: "economy",
         showAdvancedMode: false,
@@ -467,17 +487,22 @@ export function useBuilderState(
           if (parsedState.economicInputs && parsedState.economicInputs.countryName) {
             setBuilderState((prev) => {
               // Deep merge economicInputs to preserve database-loaded data
+              const sanitizedSaved = sanitizeEconomicInputs(parsedState.economicInputs);
               const mergedInputs = prev.economicInputs
                 ? {
                     ...prev.economicInputs,
-                    ...parsedState.economicInputs,
+                    ...sanitizedSaved,
+                    // Preserve database-loaded flag/COA if draft value is empty
+                    flagUrl: sanitizedSaved.flagUrl || prev.economicInputs.flagUrl || "",
+                    coatOfArmsUrl:
+                      sanitizedSaved.coatOfArmsUrl || prev.economicInputs.coatOfArmsUrl || "",
                     // Ensure nationalIdentity is merged, not replaced
                     nationalIdentity: {
                       ...prev.economicInputs.nationalIdentity,
-                      ...parsedState.economicInputs.nationalIdentity,
+                      ...sanitizedSaved.nationalIdentity,
                     },
                   }
-                : parsedState.economicInputs;
+                : sanitizedSaved;
 
               return {
                 ...prev,
@@ -487,6 +512,8 @@ export function useBuilderState(
                 governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
                 economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
                 activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
+                activeIdentitySubTab:
+                  parsedState.activeIdentitySubTab || prev.activeIdentitySubTab || "basic",
                 activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
                 activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
               };
@@ -646,9 +673,10 @@ export function useBuilderState(
             }
 
             // Media
-            if (wikiData.flagUrl) inputs.flagUrl = wikiData.flagUrl;
+            if (wikiData.flagUrl) inputs.flagUrl = normalizeFlagUrl(wikiData.flagUrl) || "";
             if (wikiData.coatOfArmsUrl || wikiData.coat_of_arms)
-              inputs.coatOfArmsUrl = wikiData.coatOfArmsUrl || wikiData.coat_of_arms;
+              inputs.coatOfArmsUrl =
+                normalizeFlagUrl(wikiData.coatOfArmsUrl || wikiData.coat_of_arms) || "";
 
             // Prepare builder state update
             const stateUpdate: Partial<typeof builderState> = {
@@ -892,9 +920,17 @@ export function useBuilderState(
               console.warn("[BuilderState] Corrupted localStorage data, discarding");
               return;
             }
+            // Only restore data fields, not navigation state — user always starts at foundation
+            const {
+              step: _step,
+              completedSteps: _completedSteps,
+              selectedCountry: _selectedCountry,
+              selectedArchetypeId: _selectedArchetypeId,
+              ...dataFields
+            } = parsedState;
             setBuilderState((prev) => ({
               ...prev,
-              ...parsedState,
+              ...dataFields,
               economyBuilderState: parsedState.economyBuilderState ?? null,
             }));
           }
@@ -1061,9 +1097,74 @@ export function useBuilderState(
     builderState.taxSystemData,
   ]);
 
+  // DB Sync for Edit Mode
+  const updateMutation = api.countries.updateCountry.useMutation({
+    onSuccess: () => {
+      setLastSaved(new Date());
+    },
+    onError: (err) => {
+      console.error("[useBuilderState] DB sync error:", err);
+    },
+  });
+
+  const syncError = updateMutation.error;
+  const isSyncing = updateMutation.isPending;
+
+  const lastSyncedStateRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (mode !== "edit" || !countryId || !editModeInitialized.current || isLoadingCountry) {
+      return;
+    }
+
+    const currentSyncPayload = {
+      id: countryId,
+      name:
+        builderState.economicInputs?.countryName ||
+        builderState.economicInputs?.nationalIdentity?.countryName ||
+        "",
+      economicInputs: sanitizeEconomicInputs(builderState.economicInputs) || undefined,
+      governmentComponents:
+        builderState.governmentComponents?.map((comp) => ({ componentType: comp })) || [],
+      taxSystemData: builderState.taxSystemData || undefined,
+      governmentStructure: builderState.governmentStructure || undefined,
+      economyBuilderState: builderState.economyBuilderState || undefined,
+    };
+
+    if (!lastSyncedStateRef.current) {
+      lastSyncedStateRef.current = currentSyncPayload;
+      return;
+    }
+
+    if (isEqual(lastSyncedStateRef.current, currentSyncPayload)) {
+      return;
+    }
+
+    const triggerDbSync = async () => {
+      try {
+        lastSyncedStateRef.current = currentSyncPayload;
+        await updateMutation.mutateAsync(currentSyncPayload);
+      } catch (err) {
+        // Handled by mutation onError
+      }
+    };
+
+    const timer = setTimeout(triggerDbSync, 1500);
+    return () => clearTimeout(timer);
+  }, [
+    builderState.economicInputs,
+    builderState.governmentComponents,
+    builderState.taxSystemData,
+    builderState.governmentStructure,
+    builderState.economyBuilderState,
+    mode,
+    countryId,
+    isLoadingCountry,
+  ]);
+
   // Update handlers
   const updateEconomicInputs = useCallback((inputs: EconomicInputs) => {
-    setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
+    setBuilderState((prev) => ({ ...prev, economicInputs: sanitizeEconomicInputs(inputs) }));
   }, []);
 
   const updateGovernmentComponents = useCallback((components: ComponentType[]) => {
@@ -1082,39 +1183,48 @@ export function useBuilderState(
     setBuilderState((prev) => ({ ...prev, economyBuilderState: economyState }));
   }, []);
 
-  const updateStep = useCallback((step: BuilderStep, data?: any) => {
-    setBuilderState((prev) => {
-      const newState = { ...prev };
-
-      if (!prev.completedSteps.includes(step)) {
-        newState.completedSteps = [...prev.completedSteps, step];
-      }
-
-      switch (step) {
-        case "foundation":
-          newState.selectedCountry = data;
-          newState.step = "core";
-          if (data) {
-            newState.economicInputs = createDefaultEconomicInputs(data);
-          }
-          break;
-        case "core":
-          newState.economicInputs = data;
-          newState.step = "government";
-          break;
-        case "government":
-          newState.governmentComponents = data;
-          newState.step = "economics";
-          break;
-        case "economics":
-          newState.economicInputs = data;
-          newState.step = "preview";
-          break;
-      }
-
-      return newState;
-    });
+  const updateArchetypeId = useCallback((id: string | null) => {
+    setBuilderState((prev) => ({ ...prev, selectedArchetypeId: id }));
   }, []);
+
+  const updateStep = useCallback(
+    (step: BuilderStep, data?: any) => {
+      setBuilderState((prev) => {
+        const newState = { ...prev };
+
+        if (!prev.completedSteps.includes(step)) {
+          newState.completedSteps = [...prev.completedSteps, step];
+        }
+
+        switch (step) {
+          case "foundation":
+            newState.selectedCountry = data;
+            if (data) {
+              newState.economicInputs = sanitizeEconomicInputs(createDefaultEconomicInputs(data));
+            }
+            break;
+          case "core":
+            newState.economicInputs = sanitizeEconomicInputs(data);
+            break;
+          case "government":
+            newState.governmentComponents = data;
+            break;
+          case "economics":
+            newState.economicInputs = sanitizeEconomicInputs(data);
+            break;
+        }
+
+        const steps = getStepsForMode(mode);
+        const currentIndex = steps.indexOf(step);
+        if (currentIndex !== -1 && currentIndex < steps.length - 1) {
+          newState.step = steps[currentIndex + 1]!;
+        }
+
+        return newState;
+      });
+    },
+    [mode]
+  );
 
   const clearDraft = useCallback(() => {
     try {
@@ -1137,12 +1247,13 @@ export function useBuilderState(
 
   const canAccessStep = useCallback(
     (step: BuilderStep): boolean => {
-      const stepOrder: BuilderStep[] = ["foundation", "core", "government", "economics", "preview"];
-      const currentIndex = stepOrder.indexOf(builderState.step);
-      const targetIndex = stepOrder.indexOf(step);
+      const steps = getStepsForMode(mode);
+      if (!steps.includes(step)) return false;
+      const currentIndex = steps.indexOf(builderState.step);
+      const targetIndex = steps.indexOf(step);
       return targetIndex <= currentIndex || builderState.completedSteps.includes(step);
     },
-    [builderState.step, builderState.completedSteps]
+    [builderState.step, builderState.completedSteps, mode]
   );
 
   return {
@@ -1153,6 +1264,11 @@ export function useBuilderState(
     isLoadingCountry,
     countryId,
     mode,
+    enabledSteps: getStepsForMode(mode),
+    isSyncing,
+    syncError,
+    selectedArchetypeId: builderState.selectedArchetypeId,
+    updateArchetypeId,
     updateEconomicInputs,
     updateGovernmentComponents,
     updateGovernmentStructure,
@@ -1162,4 +1278,32 @@ export function useBuilderState(
     clearDraft,
     canAccessStep,
   };
+}
+
+export function sanitizeEconomicInputs(inputs: any): any {
+  if (!inputs) return inputs;
+  const clean = { ...inputs };
+  if (clean.demographics) {
+    clean.demographics = { ...clean.demographics };
+    if (
+      clean.demographics.lifeExpectancy === null ||
+      clean.demographics.lifeExpectancy === undefined
+    ) {
+      clean.demographics.lifeExpectancy = 70;
+    }
+    if (clean.demographics.literacyRate === null || clean.demographics.literacyRate === undefined) {
+      clean.demographics.literacyRate = 90;
+    }
+    if (clean.demographics.urbanRuralSplit) {
+      const u = clean.demographics.urbanRuralSplit.urban;
+      const r = clean.demographics.urbanRuralSplit.rural;
+      clean.demographics.urbanRuralSplit = {
+        urban: u === null || u === undefined || isNaN(Number(u)) ? 65 : Number(u),
+        rural: r === null || r === undefined || isNaN(Number(r)) ? 35 : Number(r),
+      };
+    } else {
+      clean.demographics.urbanRuralSplit = { urban: 65, rural: 35 };
+    }
+  }
+  return clean;
 }

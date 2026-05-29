@@ -30,7 +30,7 @@ const resolveBasePath = () => {
   const rawBasePath = hasBasePathEnv
     ? process.env.BASE_PATH
     : process.env.NODE_ENV === "production"
-      ? "/projects/ixstats"
+      ? "/projects/ixstates"
       : "";
   return normalizeBasePath(rawBasePath);
 };

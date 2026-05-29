@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
@@ -23,14 +23,12 @@ export function LaborVisualizations({
 }: LaborVisualizationsProps) {
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>Employment Type Distribution</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           <GlassPieChart
             data={employmentTypeData}
             dataKey="value"
@@ -38,17 +36,15 @@ export function LaborVisualizations({
             height={300}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Employment by Sector</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           <GlassBarChart
             data={sectorDistributionData}
             xKey="name"
@@ -57,17 +53,15 @@ export function LaborVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(1)}%`}
           />
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Shield className="h-5 w-5" />
             <span>Worker Protection Scores</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           <GlassBarChart
             data={workerProtectionsData}
             xKey="name"
@@ -76,17 +70,15 @@ export function LaborVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(0)}`}
           />
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="p-6">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Labor Market Health</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
           <div className="space-y-4">
             {[
               { label: "Employment Rate", value: laborMarket.employmentRate },
@@ -112,8 +104,8 @@ export function LaborVisualizations({
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
     </div>
   );
 }

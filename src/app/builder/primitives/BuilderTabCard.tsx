@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
-import { Card, CardContent } from "~/components/ui/card";
+import { CutoutCard } from "~/components/ui/cutout-card";
 
 export interface TabDefinition {
   id: string;
@@ -30,74 +30,129 @@ export function BuilderTabCard({
   children,
   className,
 }: BuilderTabCardProps) {
-  const theme = BUILDER_SECTION_THEMES[sectionTheme];
+  const themeStyles: Record<
+    BuilderSection,
+    {
+      indicatorBg: string;
+      indicatorBorder: string;
+      indicatorGlow: string;
+      activeText: string;
+      activeIcon: string;
+    }
+  > = {
+    foundation: {
+      indicatorBg: "bg-amber-500/10",
+      indicatorBorder: "border-amber-500/20",
+      indicatorGlow: "shadow-[0_0_8px_rgba(245,158,11,0.2)]",
+      activeText: "text-amber-400 font-bold",
+      activeIcon: "text-amber-400",
+    },
+    identity: {
+      indicatorBg: "bg-teal-500/10",
+      indicatorBorder: "border-teal-500/20",
+      indicatorGlow: "shadow-[0_0_8px_rgba(20,184,166,0.2)]",
+      activeText: "text-teal-400 font-bold",
+      activeIcon: "text-teal-400",
+    },
+    government: {
+      indicatorBg: "bg-cyan-500/10",
+      indicatorBorder: "border-cyan-500/20",
+      indicatorGlow: "shadow-[0_0_8px_rgba(6,182,212,0.2)]",
+      activeText: "text-cyan-400 font-bold",
+      activeIcon: "text-cyan-400",
+    },
+    economics: {
+      indicatorBg: "bg-green-500/10",
+      indicatorBorder: "border-green-500/20",
+      indicatorGlow: "shadow-[0_0_8px_rgba(34,197,94,0.2)]",
+      activeText: "text-green-400 font-bold",
+      activeIcon: "text-green-400",
+    },
+    preview: {
+      indicatorBg: "bg-amber-500/10",
+      indicatorBorder: "border-amber-500/20",
+      indicatorGlow: "shadow-[0_0_8px_rgba(245,158,11,0.2)]",
+      activeText: "text-amber-400 font-bold",
+      activeIcon: "text-amber-400",
+    },
+    import: {
+      indicatorBg: "bg-blue-500/10",
+      indicatorBorder: "border-blue-500/20",
+      indicatorGlow: "shadow-[0_0_8px_rgba(59,130,246,0.2)]",
+      activeText: "text-blue-400 font-bold",
+      activeIcon: "text-blue-400",
+    },
+  };
+
+  const currentTheme = themeStyles[sectionTheme] || themeStyles.foundation;
+  const activeIndex = tabs.findIndex((t) => t.id === activeTab);
+  const tabWidthPercent = 100 / tabs.length;
 
   return (
-    <Card
-      className={cn(
-        "bg-card/40 overflow-hidden border-2 backdrop-blur-sm",
-        theme.darkBorder,
-        theme.border,
-        className
-      )}
-    >
-      {/* Horizontal Tab Bar */}
-      <div className="border-border/50 bg-muted/20 scrollbar-hide flex w-full items-center gap-1 overflow-x-auto border-b p-2 sm:gap-2">
+    <div className={cn("space-y-4", className)}>
+      {/* Horizontal Tab Bar with Gold Glass Accents */}
+      <div className="glass-surface glass-refraction relative flex gap-1 rounded-xl border border-zinc-800/40 bg-black/35 p-1 shadow-md">
+        {/* Sliding indicator behind active tab */}
+        {activeIndex !== -1 && (
+          <motion.div
+            className={cn(
+              "absolute inset-y-1 z-0 rounded-lg border",
+              currentTheme.indicatorBg,
+              currentTheme.indicatorBorder,
+              currentTheme.indicatorGlow
+            )}
+            layout
+            layoutId={`builder-tab-indicator-${sectionTheme}`}
+            style={{
+              width: `calc(${tabWidthPercent}% - 8px)`,
+              left: `calc(${(activeIndex / tabs.length) * 100}% + 4px)`,
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+          />
+        )}
+
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
           const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
 
           return (
-            <button
+            <motion.button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-                isActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors duration-200",
+                isActive ? currentTheme.activeText : "text-zinc-400 hover:text-zinc-200"
               )}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
             >
               <Icon
-                size={16}
                 className={cn(
-                  "transition-colors",
-                  isActive ? theme.text : "group-hover:text-foreground"
+                  "h-3.5 w-3.5 transition-colors duration-200",
+                  isActive ? currentTheme.activeIcon : "text-zinc-500"
                 )}
               />
-              <span>{tab.label}</span>
-
-              {/* Active Indicator */}
-              {isActive && (
-                <motion.div
-                  layoutId={`tab-indicator-${sectionTheme}`}
-                  className={cn(
-                    "absolute inset-x-0 -bottom-2.5 h-0.5 bg-gradient-to-r",
-                    theme.gradient
-                  )}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-            </button>
+              <span className="hidden sm:inline">{tab.label}</span>
+            </motion.button>
           );
         })}
       </div>
 
       {/* Content Area */}
-      <CardContent className="relative p-0">
+      <div className="relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="p-4 sm:p-6"
+            className="pt-2"
           >
             {children}
           </motion.div>
         </AnimatePresence>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

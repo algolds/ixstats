@@ -265,14 +265,12 @@ export function EnhancedNumberInput({
         <div
           className={cn(
             "relative flex-1",
-            getGlassClasses("elevated", resolvedTheme, sectionId),
-            "border-2 bg-white/80 dark:bg-gray-800/90",
-            "border-gray-200/50 dark:border-gray-600/50",
-            "hover:border-gray-300/70 dark:hover:border-gray-500/70",
-            "focus-within:border-[var(--primitive-primary)] focus-within:shadow-lg",
-            "focus-within:shadow-[var(--primitive-primary)]/20",
+            "rounded-lg transition-all duration-200 ease-out",
+            "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
+            "hover:border-white/[0.12] hover:bg-white/[0.04] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.03]",
+            "focus-within:border-[var(--primitive-primary)]/50 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_10px_rgba(var(--primitive-primary),0.15)]",
             isEditing &&
-              "border-[var(--primitive-primary)] shadow-[var(--primitive-primary)]/20 shadow-lg",
+              "border-[var(--primitive-primary)]/50 bg-white/[0.05] shadow-[0_0_10px_rgba(var(--primitive-primary),0.15)]",
             glassFocusClass,
             disabled && "cursor-not-allowed opacity-50"
           )}
@@ -300,7 +298,7 @@ export function EnhancedNumberInput({
               className={cn(
                 "w-full border-none bg-transparent outline-none",
                 acceptText ? "font-sans" : "font-mono",
-                "text-gray-900 placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400",
+                "text-foreground placeholder:text-muted-foreground/60",
                 "font-medium",
                 sizeClasses[size],
                 showButtons && "pr-2",
@@ -326,11 +324,11 @@ export function EnhancedNumberInput({
               whileTap={{ scale: 0.95 }}
               className={cn(
                 "flex items-center justify-center rounded-lg transition-all",
-                getGlassClasses("base", resolvedTheme, sectionId),
+                "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
+                "hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-[var(--primitive-primary)]",
                 buttonSizeClasses[size],
-                "hover:bg-[var(--primitive-background)]",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                `text-foreground hover:text-[${colors.primary}]`
+                "disabled:cursor-not-allowed disabled:opacity-30",
+                "text-foreground"
               )}
             >
               <Minus className="h-4 w-4" />
@@ -344,11 +342,11 @@ export function EnhancedNumberInput({
               whileTap={{ scale: 0.95 }}
               className={cn(
                 "flex items-center justify-center rounded-lg transition-all",
-                getGlassClasses("base", resolvedTheme, sectionId),
+                "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
+                "hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-[var(--primitive-primary)]",
                 buttonSizeClasses[size],
-                "hover:bg-[var(--primitive-background)]",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                `text-foreground hover:text-[${colors.primary}]`
+                "disabled:cursor-not-allowed disabled:opacity-30",
+                "text-foreground"
               )}
             >
               <Plus className="h-4 w-4" />
@@ -363,11 +361,11 @@ export function EnhancedNumberInput({
                 whileTap={{ scale: 0.95 }}
                 className={cn(
                   "flex items-center justify-center rounded-lg transition-all",
-                  getGlassClasses("base", resolvedTheme, sectionId),
+                  "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
+                  "hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-[var(--primitive-primary)]",
                   buttonSizeClasses[size],
-                  "hover:bg-[var(--primitive-background)]",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                  `text-foreground hover:text-[${colors.primary}]`
+                  "disabled:cursor-not-allowed disabled:opacity-30",
+                  "text-foreground"
                 )}
               >
                 <RotateCcw className="h-4 w-4" />

@@ -48,7 +48,10 @@ function getApiBaseUrl(): string {
   };
 
   // In server-side context (Node.js), we need absolute URLs
-  if (typeof window === "undefined" || (typeof global !== "undefined" && (global as any).__TEST_IS_SERVER)) {
+  if (
+    typeof window === "undefined" ||
+    (typeof global !== "undefined" && (global as any).__TEST_IS_SERVER)
+  ) {
     const origin =
       process.env.NEXT_PUBLIC_APP_URL ||
       process.env.APP_URL ||

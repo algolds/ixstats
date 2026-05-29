@@ -2,6 +2,7 @@ import React from "react";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
+import { MyCountryDIView } from "./MyCountryDIView";
 import type { ExpandedViewProps, DIPlugin } from "./types";
 
 export function ExpandedView({
@@ -22,51 +23,32 @@ export function ExpandedView({
   }
 
   return (
-    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] -translate-x-1/2 transform sm:w-[90vw] md:w-[600px] lg:max-w-4xl">
-      <div
-        className="command-palette-dropdown border-border relative mx-auto w-full overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        }}
-      >
-        {/* Refraction border effects */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-        </div>
+    <div className="relative w-full text-left max-h-[80vh] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+      {mode === "search" && (
+        <SearchView
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchFilter={searchFilter}
+          setSearchFilter={setSearchFilter}
+          debouncedSearchQuery={debouncedSearchQuery}
+          searchResults={searchResults}
+          countriesData={countriesData}
+          closeDropdown={onClose}
+        />
+      )}
+      {mode === "notifications" && <NotificationsView onClose={onClose} />}
+      {mode === "settings" && <SettingsView onClose={onClose} />}
+      {mode === "mycountry" && <MyCountryDIView onClose={onClose} />}
 
-        <div className="relative z-10">
-          {mode === "search" && (
-            <SearchView
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              searchFilter={searchFilter}
-              setSearchFilter={setSearchFilter}
-              debouncedSearchQuery={debouncedSearchQuery}
-              searchResults={searchResults}
-              countriesData={countriesData}
-              closeDropdown={onClose}
-            />
-          )}
-          {mode === "notifications" && <NotificationsView onClose={onClose} />}
-          {mode === "settings" && <SettingsView onClose={onClose} />}
-
-          {/* Plugin-provided expanded views */}
-          {typeof mode === "string" &&
-            mode.startsWith("plugin:") &&
-            (() => {
-              const viewName = mode.slice(7); // strip "plugin:" prefix
-              const PluginView = activePlugin?.expandedViews?.[viewName];
-              if (!PluginView) return null;
-              return <PluginView onClose={onClose} />;
-            })()}
-        </div>
-      </div>
+      {/* Plugin-provided expanded views */}
+      {typeof mode === "string" &&
+        mode.startsWith("plugin:") &&
+        (() => {
+          const viewName = mode.slice(7); // strip "plugin:" prefix
+          const PluginView = activePlugin?.expandedViews?.[viewName];
+          if (!PluginView) return null;
+          return <PluginView onClose={onClose} />;
+        })()}
     </div>
   );
 }

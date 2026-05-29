@@ -12,12 +12,15 @@
 import React, { useMemo } from "react";
 import { Crown } from "lucide-react";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
+import { PreText } from "~/components/ui/pretext";
 
 function MyCountryLabel() {
   return (
     <span className="flex items-center gap-1.5">
       <Crown className="h-3 w-3 shrink-0 text-amber-400 opacity-70" />
-      <span className="text-foreground/80 text-xs font-medium">MyCountry®</span>
+      <PreText className="text-foreground/80 text-xs font-medium" whiteSpace="nowrap">
+        MyCountry®
+      </PreText>
     </span>
   );
 }

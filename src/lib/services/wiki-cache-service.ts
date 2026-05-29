@@ -895,6 +895,145 @@ export class WikiCacheService {
   }
 
   /**
+   * Get cached data by key with Redis fallback
+   */
+  async getCustomCache<T>(key: string): Promise<T | null> {
+    try {
+      // Try Redis L1
+      if (this.redisClient) {
+        try {
+          const cached = await this.redisClient.get(key);
+          if (cached) {
+            return JSON.parse(cached) as T;
+          }
+        } catch (redisError) {
+          console.warn(`[WikiCache] Redis get error for custom key ${key}:`, redisError);
+        }
+      }
+
+      // Try DB L2
+      const dbCache = await db.wikiCache.findUnique({
+        where: { key },
+      });
+
+      if (dbCache && new Date(dbCache.expiresAt) > new Date()) {
+        const data = JSON.parse(dbCache.data) as T;
+
+        // Warm Redis L1
+        if (this.redisClient) {
+          const ttlSeconds = Math.floor(
+            (new Date(dbCache.expiresAt).getTime() - Date.now()) / 1000
+          );
+          if (ttlSeconds > 0) {
+            void this.redisClient
+              .setex(key, ttlSeconds, JSON.stringify(data))
+              .catch((err: Error) => console.warn("[WikiCache] Redis setex error:", err));
+          }
+        }
+
+        return data;
+      }
+    } catch (error) {
+      console.error(`[WikiCache] Error in getCustomCache for key ${key}:`, error);
+    }
+    return null;
+  }
+
+  /**
+   * Set cached data by key with Redis fallback
+   */
+  async setCustomCache<T>(
+    key: string,
+    type: string,
+    data: T,
+    ttlMs: number = 24 * 60 * 60 * 1000
+  ): Promise<void> {
+    const expiresAt = new Date(Date.now() + ttlMs);
+    try {
+      // Upsert DB L2
+      await db.wikiCache.upsert({
+        where: { key },
+        create: {
+          key,
+          type,
+          data: JSON.stringify(data),
+          expiresAt,
+          hitCount: 0,
+        },
+        update: {
+          data: JSON.stringify(data),
+          expiresAt,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Set Redis L1
+      if (this.redisClient) {
+        const ttlSeconds = Math.floor(ttlMs / 1000);
+        await this.redisClient
+          .setex(key, ttlSeconds, JSON.stringify(data))
+          .catch((err: Error) => console.warn("[WikiCache] Redis setex error:", err));
+      }
+    } catch (error) {
+      console.error(`[WikiCache] Error in setCustomCache for key ${key}:`, error);
+    }
+  }
+
+  /**
+   * Get cached flag URL if exists and valid
+   */
+  async getCachedFlagUrl(
+    countryName: string,
+    wikiSource: WikiSource = "ixwiki"
+  ): Promise<string | null> {
+    const cacheKey = `${wikiSource}:flag:${countryName.toLowerCase()}`;
+    const redisKey = `${wikiSource}:${REDIS_PREFIX.flag}${countryName.toLowerCase()}`;
+
+    try {
+      // Redis check
+      if (this.redisClient) {
+        try {
+          const cached = await this.redisClient.get(redisKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            return parsed.data;
+          }
+        } catch {}
+      }
+
+      // DB check
+      const dbCache = await db.wikiCache.findUnique({
+        where: { key: cacheKey },
+      });
+
+      if (dbCache && new Date(dbCache.expiresAt) > new Date()) {
+        const data = JSON.parse(dbCache.data);
+        return data;
+      }
+    } catch {}
+    return null;
+  }
+
+  /**
+   * Externally set/cache a flag URL
+   */
+  async cacheFlagUrl(
+    countryName: string,
+    flagUrl: string,
+    wikiSource: WikiSource = "ixwiki"
+  ): Promise<void> {
+    const cacheKey = `${wikiSource}:flag:${countryName.toLowerCase()}`;
+    const entry: WikiCacheEntry<string | null> = {
+      data: flagUrl,
+      metadata: {
+        lastFetched: Date.now(),
+        source: "api",
+      },
+    };
+    await this.cacheEntry(cacheKey, "flag", entry, countryName, CACHE_TTL.flag);
+  }
+
+  /**
    * Close Redis connection
    */
   async close(): Promise<void> {

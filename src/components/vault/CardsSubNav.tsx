@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { stripBasePath } from "~/lib/base-path";
 import { motion } from "motion/react";
 import { Grid3x3, ShoppingCart, Download } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 
 const CARDS_SUB_TABS = [
   { id: "collection", href: "/vault/cards", label: "My Collection", icon: Grid3x3 },
@@ -14,7 +14,7 @@ const CARDS_SUB_TABS = [
 ];
 
 export function CardsSubNav() {
-  const pathname = usePathname();
+  const pathname = stripBasePath(usePathname());
 
   const getActiveTab = () => {
     if (pathname.startsWith("/vault/cards")) return "collection";
@@ -51,7 +51,7 @@ export function CardsSubNav() {
         return (
           <Link
             key={tab.id}
-            href={withBasePath(tab.href)}
+            href={tab.href}
             className={cn(
               "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-none bg-transparent px-3 py-2.5 text-xs font-semibold whitespace-nowrap transition-colors duration-205",
               isActive

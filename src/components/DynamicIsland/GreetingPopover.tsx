@@ -16,6 +16,7 @@ import type { ViewMode } from "./types";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
+import { PreText } from "~/components/ui/pretext";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;
@@ -94,10 +95,9 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
         ) : (
           <User className="text-muted-foreground h-3 w-3" />
         )}
-        <span className="hidden whitespace-nowrap sm:inline">
-          {greeting}
-          {user?.firstName ? `, ${user.firstName}` : ""}
-        </span>
+        <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
+          {`${greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
+        </PreText>
       </PopoverTrigger>
       <PopoverContent
         side="bottom"
@@ -109,9 +109,12 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
           <div>
             {/* ── Your Country ─────────────────────────────────── */}
             <div className="border-border/40 border-b px-4 py-3">
-              <div className="text-muted-foreground/60 mb-2 text-[10px] font-semibold tracking-wider uppercase">
+              <PreText
+                className="text-muted-foreground/60 mb-2 text-[10px] font-semibold tracking-wider uppercase"
+                whiteSpace="nowrap"
+              >
                 MyCountry
-              </div>
+              </PreText>
               <div className="relative -mx-1 rounded-lg px-1 py-1.5">
                 <button
                   onClick={() =>
@@ -130,9 +133,12 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-foreground truncate text-sm font-semibold">
+                    <PreText
+                      className="text-foreground truncate text-sm font-semibold"
+                      whiteSpace="nowrap"
+                    >
                       {userProfile.country.name}
-                    </div>
+                    </PreText>
                   </div>
                   <ChevronRight className="text-muted-foreground/40 h-3.5 w-3.5 shrink-0" />
                 </button>
@@ -153,16 +159,23 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                             }}
                             className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-all hover:bg-white/[0.07] active:scale-[0.98]"
                           >
-                            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
+                            <PreText
+                              className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase"
+                              whiteSpace="nowrap"
+                            >
                               {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
-                            </p>
+                            </PreText>
                             <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                              <p className="text-foreground text-[10px] font-bold tracking-tight">
-                                $
-                                {metricView.gdp === "perCapita"
-                                  ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
-                                  : Math.round(stats.currentTotalGdp).toLocaleString("en-US")}
-                              </p>
+                              <PreText
+                                className="text-foreground text-[10px] font-bold tracking-tight"
+                                whiteSpace="nowrap"
+                              >
+                                {`$${
+                                  metricView.gdp === "perCapita"
+                                    ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
+                                    : Math.round(stats.currentTotalGdp).toLocaleString("en-US")
+                                }`}
+                              </PreText>
                               {stats.gdpGrowth !== 0 && (
                                 <span
                                   className={cn(
@@ -175,8 +188,9 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                                   ) : (
                                     <ArrowTrendingDownIcon size={8} />
                                   )}
-                                  {stats.gdpGrowth > 0 ? "+" : ""}
-                                  {stats.gdpGrowth.toFixed(1)}%
+                                  <PreText className="text-inherit" whiteSpace="nowrap">
+                                    {`${stats.gdpGrowth > 0 ? "+" : ""}${stats.gdpGrowth.toFixed(1)}%`}
+                                  </PreText>
                                 </span>
                               )}
                             </div>
@@ -192,34 +206,40 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                             }}
                             className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-all hover:bg-white/[0.07] active:scale-[0.98]"
                           >
-                            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
+                            <PreText
+                              className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase"
+                              whiteSpace="nowrap"
+                            >
                               {metricView.population === "total" ? "Population" : "Density"}
-                            </p>
+                            </PreText>
                             <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                              <p className="text-foreground text-[10px] font-bold tracking-tight">
+                              <PreText
+                                className="text-foreground text-[10px] font-bold tracking-tight"
+                                whiteSpace="nowrap"
+                              >
                                 {metricView.population === "total"
                                   ? Math.round(stats.population).toLocaleString("en-US")
                                   : stats.populationDensity
                                     ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
                                     : "N/A"}
-                              </p>
+                              </PreText>
                               {stats.popGrowth !== 0 && metricView.population === "total" && (
-                                <span
+                                <PreText
                                   className={cn(
                                     "flex shrink-0 items-center gap-0.5 text-[8px] font-semibold",
                                     stats.popGrowth > 0 ? "text-emerald-500" : "text-red-500"
                                   )}
+                                  whiteSpace="nowrap"
                                 >
-                                  {stats.popGrowth > 0 ? "+" : ""}
-                                  {stats.popGrowth.toFixed(1)}%
-                                </span>
+                                  {`${stats.popGrowth > 0 ? "+" : ""}${stats.popGrowth.toFixed(1)}%`}
+                                </PreText>
                               )}
                             </div>
                           </button>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="px-2 py-1 text-[10px]">
-                        Click metrics to toggle views
+                        <PreText whiteSpace="nowrap">Click metrics to toggle views</PreText>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -262,9 +282,12 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                         color={ring.color}
                         label={ring.label}
                       />
-                      <span className={`text-[10px] font-medium ${ring.labelClass}`}>
-                        {ring.label} {ring.value}%
-                      </span>
+                      <PreText
+                        className={`text-[10px] font-medium ${ring.labelClass}`}
+                        whiteSpace="nowrap"
+                      >
+                        {`${ring.label} ${ring.value}%`}
+                      </PreText>
                     </div>
                   ))}
                 </div>
@@ -279,7 +302,9 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                   className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
                 >
                   <Crown className="h-3.5 w-3.5 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.5)] transition-all group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
-                  <span className="flex-1 text-left">MyCountry</span>
+                  <PreText className="flex-1 text-left text-inherit" whiteSpace="nowrap">
+                    MyCountry
+                  </PreText>
                   <ChevronRight className="text-muted-foreground/30 h-3 w-3" />
                 </button>
               )}
@@ -292,7 +317,9 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                 className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
               >
                 <Globe className="h-3.5 w-3.5 text-purple-400 drop-shadow-[0_0_4px_rgba(168,85,247,0.5)] transition-all group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.7)]" />
-                <span className="flex-1 text-left">View Profile</span>
+                <PreText className="flex-1 text-left text-inherit" whiteSpace="nowrap">
+                  View Profile
+                </PreText>
                 <ChevronRight className="text-muted-foreground/30 h-3 w-3" />
               </button>
             </div>
@@ -302,7 +329,9 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
               <SignOutButton>
                 <button className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors">
                   <LogOut className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5 group-hover:scale-110" />
-                  <span>Sign Out</span>
+                  <PreText className="text-inherit" whiteSpace="nowrap">
+                    Sign Out
+                  </PreText>
                 </button>
               </SignOutButton>
             </div>
@@ -311,12 +340,12 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
           /* ── Unauthenticated / no country ────────────────── */
           <div className="p-4 text-center">
             <User className="mx-auto mb-2 h-8 w-8 text-blue-400/60" />
-            <div className="text-muted-foreground mb-1 text-sm">
+            <PreText className="text-muted-foreground mb-1 text-sm" whiteSpace="nowrap">
               {isStandalone ? "Welcome to IxWorld!" : "Welcome to IxStats!"}
-            </div>
-            <div className="text-muted-foreground/70 mb-3 text-xs">
+            </PreText>
+            <PreText className="text-muted-foreground/70 mb-3 text-xs" whiteSpace="nowrap">
               {isStandalone ? "Sign in with IxnayID to edit maps" : "Sign in with IxnayID"}
-            </div>
+            </PreText>
             <button
               onClick={() =>
                 (window.location.href =
@@ -324,7 +353,9 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
               }
               className="text-foreground border-border hover:bg-accent/10 rounded-lg border px-4 py-2 text-xs font-medium transition-colors"
             >
-              Sign In
+              <PreText className="text-inherit" whiteSpace="nowrap">
+                Sign In
+              </PreText>
             </button>
           </div>
         )}

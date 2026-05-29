@@ -192,7 +192,7 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
 
   // Everything else → redirect to main site using configured base path
   const fallbackHost = process.env.STANDALONE_FALLBACK_HOST || "https://ixwiki.com";
-  return NextResponse.redirect(`${fallbackHost}${BASE_PATH || "/projects/ixstats"}${pathname}`);
+  return NextResponse.redirect(`${fallbackHost}${BASE_PATH || "/projects/ixstates"}${pathname}`);
 }
 
 // If Clerk is not configured, use a simple middleware that doesn't handle auth

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Building2 } from "lucide-react";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -27,14 +27,12 @@ export function ConfigurationSummary({
       </div>
 
       {/* Economic Structure Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+        <CutoutCardContent className="space-y-4 p-6">
+          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Building2 className="h-5 w-5" />
             <span>Economic Structure</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </h3>
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Economic Model:</span>
@@ -55,7 +53,7 @@ export function ConfigurationSummary({
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-medium">Primary Sectors:</h4>
+            <h4 className="text-sm font-medium">Primary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.primarySectors.map((sector, index) => (
                 <Badge key={index} variant="secondary">
@@ -66,7 +64,7 @@ export function ConfigurationSummary({
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-medium">Secondary Sectors:</h4>
+            <h4 className="text-sm font-medium">Secondary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.secondarySectors.map((sector, index) => (
                 <Badge key={index} variant="secondary">
@@ -77,7 +75,7 @@ export function ConfigurationSummary({
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-medium">Tertiary Sectors:</h4>
+            <h4 className="text-sm font-medium">Tertiary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.tertiarySectors.map((sector, index) => (
                 <Badge key={index} variant="secondary">
@@ -86,8 +84,8 @@ export function ConfigurationSummary({
               ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CutoutCardContent>
+      </CutoutCard>
     </>
   );
 }

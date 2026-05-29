@@ -1,13 +1,15 @@
 /**
- * Budget Allocation List Component
+ * Budget Allocation List Component (Refactored)
  *
- * List of budget allocations for each department
+ * List of budget allocations with soft warnings for underfunded vital services.
  */
 
-import React from "react";
+"use client";
+
+import React, { useMemo } from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Info } from "lucide-react";
 import { BudgetAllocationForm } from "~/components/government/atoms/BudgetAllocationForm";
 import { BudgetMeter } from "./BudgetMeter";
 import type { DepartmentInput, BudgetAllocationInput } from "~/types/government";
@@ -43,16 +45,33 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
   onExpandAll,
   onCollapseAll,
 }: BudgetAllocationListProps) {
+  // Compute soft warnings for vital departments allocated <5%
+  const vitalWarnings = useMemo(() => {
+    const list: string[] = [];
+    departments.forEach((dept, index) => {
+      if (["Defense", "Health", "Education"].includes(dept.category)) {
+        const alloc = budgetAllocations.find((a) => a.departmentId === index.toString());
+        const pct = alloc ? alloc.allocatedPercent : 0;
+        if (pct < 5) {
+          list.push(
+            `Low funding alert for "${dept.name}" (${pct.toFixed(1)}%). Setting a budget below 5% for core ${dept.category.toLowerCase()} services will depress legitimacy and administrative efficiency.`
+          );
+        }
+      }
+    });
+    return list;
+  }, [departments, budgetAllocations]);
+
   if (departments.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-foreground text-2xl font-semibold">Budget Allocation</h2>
+          <h2 className="text-xl font-bold tracking-tight text-white">Budget Allocation</h2>
         </div>
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
+        <Alert className="border-white/10 bg-zinc-950/40 text-zinc-300">
+          <AlertTriangle className="h-4 w-4 text-amber-400" />
           <AlertDescription>
-            Add departments first before setting up budget allocations.
+            Add departments first in the Administration tab before setting up budget allocations.
           </AlertDescription>
         </Alert>
       </div>
@@ -61,30 +80,62 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-foreground text-2xl font-semibold">Budget Allocation</h2>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onExpandAll} className="text-xs">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-white">Budget Allocation</h2>
+          <p className="mt-1 text-xs text-zinc-400">
+            Distribute funding across active ministries and manage fiscal limits
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExpandAll}
+            className="h-8 border-white/10 text-xs text-zinc-300 hover:bg-white/5"
+          >
             <ChevronDown className="mr-1 h-3 w-3" />
             Expand All
-          </Button>
-          <Button variant="outline" size="sm" onClick={onCollapseAll} className="text-xs">
-            <ChevronRight className="mr-1 h-3 w-3" />
-            Collapse All
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={onFixAllocations}
-            className="text-xs text-blue-600 hover:text-blue-700"
+            onClick={onCollapseAll}
+            className="h-8 border-white/10 text-xs text-zinc-300 hover:bg-white/5"
           >
-            <CheckCircle className="mr-1 h-3 w-3" />
-            Fix Allocations
+            <ChevronRight className="mr-1 h-3.5 w-3.5" />
+            Collapse All
           </Button>
+          {!isReadOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onFixAllocations}
+              className="h-8 border-amber-500/30 text-xs text-amber-400 hover:bg-amber-500/10"
+            >
+              <CheckCircle className="mr-1 h-3.5 w-3.5" />
+              Fix Allocations
+            </Button>
+          )}
         </div>
       </div>
 
       <BudgetMeter budgetSummary={budgetSummary} />
+
+      {/* Vital service warnings list */}
+      {vitalWarnings.length > 0 && (
+        <div className="space-y-2">
+          {vitalWarnings.map((warning, idx) => (
+            <div
+              key={idx}
+              className="flex items-start gap-2.5 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs text-amber-200"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <div className="leading-relaxed">{warning}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-4">
         {departments.map((department, index) => {

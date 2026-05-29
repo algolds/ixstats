@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import type { SettingsViewProps } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
+import { PreText } from "~/components/ui/pretext";
 
 // ─── Local toggle hook ───────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
-      {children}
+      {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );
 }
@@ -147,12 +148,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
         <div className="py-6 text-center">
           <div className="bg-muted/30 rounded-xl p-6">
             <User className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-            <div className="text-foreground mb-1 text-sm font-medium">
+            <PreText className="text-foreground mb-1 text-sm font-medium" whiteSpace="nowrap">
               {isOnWikiPage ? "Welcome to WikiOS" : "Welcome to IxStats"}
-            </div>
-            <div className="text-muted-foreground mb-4 text-xs">
+            </PreText>
+            <PreText className="text-muted-foreground mb-4 text-xs" whiteSpace="nowrap">
               Sign in to access your settings
-            </div>
+            </PreText>
             <Button
               size="sm"
               onClick={() =>
@@ -174,7 +175,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
       <div className="p-4">
         <SettingsHeader onClose={onClose} isOnWikiPage={isOnWikiPage} />
         <div className="py-8 text-center">
-          <div className="text-muted-foreground text-sm">Loading…</div>
+          <PreText className="text-muted-foreground text-sm" whiteSpace="nowrap">
+            Loading…
+          </PreText>
         </div>
       </div>
     );
@@ -205,10 +208,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-foreground text-sm font-medium">Theme</div>
-            <div className="text-muted-foreground text-xs">
+            <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+              Theme
+            </PreText>
+            <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
               {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
-            </div>
+            </PreText>
           </div>
           <AnimatedThemeToggler className="h-8 w-8" />
         </div>
@@ -276,12 +281,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-foreground text-sm font-medium">
+            <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
               {isOnWikiPage ? "Wiki Profile" : "Profile & Settings"}
-            </div>
-            <div className="text-muted-foreground text-xs">
+            </PreText>
+            <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
               {isOnWikiPage ? "Contributions and awards" : "Account and preferences"}
-            </div>
+            </PreText>
           </div>
           <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
         </button>
@@ -297,7 +302,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             <SignOutButton>
               <div className="flex items-center gap-2">
                 <LogOut className="h-3.5 w-3.5" />
-                <span className="text-sm">Sign Out</span>
+                <PreText className="text-sm" whiteSpace="nowrap">
+                  Sign Out
+                </PreText>
               </div>
             </SignOutButton>
           </Button>
@@ -328,7 +335,7 @@ function SettingsHeader({
         ) : (
           <Settings className="h-4 w-4 text-blue-400" />
         )}
-        <span>{isOnWikiPage ? "Wiki Settings" : "Settings"}</span>
+        <PreText whiteSpace="nowrap">{isOnWikiPage ? "Wiki Settings" : "Settings"}</PreText>
       </div>
       <div className="flex items-center gap-1">
         {onRefresh && (
@@ -371,8 +378,14 @@ function SettingsRow({
     <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
       <div className={`shrink-0 rounded-md p-1.5 ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="text-foreground text-sm font-medium">{label}</div>
-        {description && <div className="text-muted-foreground text-xs">{description}</div>}
+        <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+          {label}
+        </PreText>
+        {description && (
+          <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
+            {description}
+          </PreText>
+        )}
       </div>
       {children}
     </div>

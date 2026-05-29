@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Plus, Info } from "lucide-react";
@@ -19,17 +19,15 @@ export function SectorTemplateSelector({
   onAddSector,
 }: SectorTemplateSelectorProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+      <CutoutCardContent className="p-6">
+        <h3 className="mb-4 flex items-center justify-between text-lg font-bold text-emerald-500 dark:text-emerald-400">
           <span className="flex items-center space-x-2">
             <Plus className="h-5 w-5" />
             <span>Add Economic Sectors</span>
           </span>
           <Badge variant="outline">{existingSectors.length} Active</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h3>
         <div className="space-y-4">
           <p className="text-muted-foreground text-sm">
             Select sector templates to build your economy. Each sector comes with recommended
@@ -55,7 +53,7 @@ export function SectorTemplateSelector({
                   >
                     <div className="flex w-full items-center space-x-3">
                       <div
-                        className={`rounded-lg p-2 bg-${template.color}-100 dark:bg-${template.color}-900/20`}
+                        className={`rounded-lg p-2 bg-${template.color}-100/10 dark:bg-${template.color}-900/20`}
                       >
                         <Icon
                           className={`h-5 w-5 text-${template.color}-600 dark:text-${template.color}-400`}
@@ -94,15 +92,15 @@ export function SectorTemplateSelector({
             })}
           </div>
 
-          <div className="flex items-start space-x-2 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
-            <Info className="mt-0.5 h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <div className="text-xs text-blue-900 dark:text-blue-100">
+          <div className="flex items-start space-x-2 rounded-lg border border-zinc-800/40 bg-zinc-900/40 p-3">
+            <Info className="mt-0.5 h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+            <div className="text-xs text-zinc-300">
               <strong>Tip:</strong> Add multiple sectors to create a diverse economy. Each sector
               can be customized with specific characteristics after adding.
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

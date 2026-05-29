@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -139,11 +141,30 @@ export function DemographicsPopulationTab({
     field: string,
     value: any
   ) => {
+    let nextParentValue = { ...(economyBuilder.demographics[parentField] as any), [field]: value };
+
+    // Auto-balance urban/rural split to sum to 100
+    if (parentField === "urbanRuralSplit") {
+      const val = typeof value === "number" ? value : parseFloat(String(value ?? 0));
+      const safeVal = Number.isNaN(val) ? 0 : val;
+      if (field === "urban") {
+        nextParentValue = {
+          urban: safeVal,
+          rural: Math.round((100 - safeVal) * 10) / 10,
+        };
+      } else if (field === "rural") {
+        nextParentValue = {
+          rural: safeVal,
+          urban: Math.round((100 - safeVal) * 10) / 10,
+        };
+      }
+    }
+
     onEconomyBuilderChange({
       ...economyBuilder,
       demographics: {
         ...economyBuilder.demographics,
-        [parentField]: { ...(economyBuilder.demographics[parentField] as any), [field]: value },
+        [parentField]: nextParentValue,
       },
     });
   };
@@ -369,7 +390,7 @@ export function DemographicsPopulationTab({
         />
       </div>
 
-      <div className="flex space-x-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+      <div className="flex space-x-1 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 shadow-inner backdrop-blur-md">
         {[
           { id: "population", label: "Population", icon: Users },
           { id: "age", label: "Age Structure", icon: Baby },
@@ -383,7 +404,12 @@ export function DemographicsPopulationTab({
               variant={activeSection === section.id ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveSection(section.id as any)}
-              className="flex-1"
+              className={cn(
+                "flex-1 rounded-lg transition-all duration-205",
+                activeSection === section.id
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/20 hover:bg-emerald-500"
+                  : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200"
+              )}
             >
               <Icon className="mr-2 h-4 w-4" />
               {section.label}
@@ -393,16 +419,14 @@ export function DemographicsPopulationTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>
+        <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
+          <CutoutCardContent className="space-y-6 p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-emerald-500 dark:text-emerald-400">
               {activeSection === "population" && "Population Structure"}
               {activeSection === "age" && "Age Distribution"}
               {activeSection === "geographic" && "Geographic Distribution"}
               {activeSection === "social" && "Social Indicators"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+            </h3>
             {activeSection === "population" && (
               <PopulationSection
                 demographics={economyBuilder.demographics}
@@ -434,8 +458,8 @@ export function DemographicsPopulationTab({
                 showAdvanced={showAdvanced}
               />
             )}
-          </CardContent>
-        </Card>
+          </CutoutCardContent>
+        </CutoutCard>
 
         <DemographicsVisualizations demographics={economyBuilder.demographics} {...chartData} />
       </div>

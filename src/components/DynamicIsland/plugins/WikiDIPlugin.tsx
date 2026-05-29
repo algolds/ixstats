@@ -13,6 +13,7 @@ import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { WikiView } from "~/components/DynamicIsland/WikiView";
 import { WikiProfileButton } from "~/components/DynamicIsland/WikiProfileButton";
+import { PreText } from "~/components/ui/pretext";
 
 function WikiBreadcrumb() {
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
@@ -24,14 +25,19 @@ function WikiBreadcrumb() {
     <span className="flex max-w-[220px] items-center gap-1.5 overflow-hidden">
       <BookOpen className="h-3 w-3 shrink-0 text-blue-400 opacity-70" />
       <span className="di-wiki-title">
-        <span className="di-wiki-title-text">{articleTitle || "IxWiki"}</span>
+        <PreText className="di-wiki-title-text" whiteSpace="nowrap">
+          {articleTitle || "IxWiki"}
+        </PreText>
       </span>
       {activeSectionName && (
         <>
           <span className="text-foreground/25 shrink-0 text-[10px]">›</span>
-          <span className="text-foreground/50 max-w-[80px] truncate text-[10px]">
+          <PreText
+            className="text-foreground/50 max-w-[80px] truncate text-[10px]"
+            whiteSpace="nowrap"
+          >
             {activeSectionName}
-          </span>
+          </PreText>
         </>
       )}
     </span>

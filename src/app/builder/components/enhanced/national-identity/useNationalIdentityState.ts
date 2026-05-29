@@ -5,7 +5,6 @@ import { api } from "~/trpc/react";
 import { useBuilderTheming } from "~/hooks/useBuilderTheming";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
 import { useNationalIdentityAutoSync } from "~/hooks/useNationalIdentityAutoSync";
-import { wikiCommonsFlagService } from "~/lib/wiki-commons-flag-service";
 import type {
   EconomicInputs,
   RealCountryData,
@@ -38,11 +37,12 @@ export function useNationalIdentityState(
   const [isEditingCustomName, setIsEditingCustomName] = useState(false);
   const [shouldFetchCustomTypes, setShouldFetchCustomTypes] = useState(false);
   const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(
-    undefined
+    referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl || undefined
   );
 
   // Foundation country data
-  const foundationCountryName = getFoundationCountryName(referenceCountry);
+  const foundationCountryName =
+    getFoundationCountryName(referenceCountry) || (countryId ? inputs.countryName : null);
   const { flag } = useCountryFlagRouteAware(foundationCountryName || "");
   const { handleColorsExtracted } = useBuilderTheming(foundationCountryName || "");
 
@@ -56,6 +56,12 @@ export function useNationalIdentityState(
   );
   const upsertCustomGovernmentType = api.customTypes.upsertCustomGovernmentType.useMutation();
   const upsertFieldValue = api.customTypes.upsertFieldValue.useMutation();
+
+  // Fetch wiki images (runs on backend via tRPC, avoiding client-side CORS/Failed to fetch issues)
+  const { data: wikiImages } = api.countries.getWikiPageImages.useQuery(
+    { countryName: foundationCountryName || "" },
+    { enabled: !!foundationCountryName, staleTime: 24 * 60 * 60_000 }
+  );
 
   // Initialize identity data - memoize to prevent unnecessary re-renders
   const identity = useMemo(
@@ -167,33 +173,44 @@ export function useNationalIdentityState(
     [upsertFieldValue]
   );
 
-  // Fetch coat of arms from foundation country
+  // Fetch coat of arms from foundation country/wiki images
   useEffect(() => {
-    const fetchCoatOfArms = async () => {
-      if (foundationCountryName) {
-        try {
-          const coatOfArmsResult =
-            await wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName);
-          if (coatOfArmsResult) setFoundationCoatOfArmsUrl(coatOfArmsResult);
-        } catch (error) {
-          console.error("Error fetching coat of arms:", error);
-        }
+    // First check if referenceCountry already has the coat of arms
+    const refCoa = referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl;
+    if (refCoa) {
+      setFoundationCoatOfArmsUrl(refCoa);
+      return;
+    }
+
+    if (wikiImages) {
+      const parsedCoaUrl =
+        wikiImages.find((img: { title: string; url: string }) =>
+          /coat.?of.?arms|coa|seal|emblem|escudo|wappen/i.test(img.title)
+        )?.url ?? null;
+
+      if (parsedCoaUrl) {
+        setFoundationCoatOfArmsUrl(parsedCoaUrl);
       }
-    };
-    fetchCoatOfArms();
-  }, [foundationCountryName]);
+    }
+  }, [wikiImages, referenceCountry]);
 
   // Auto-fill flag and coat of arms from foundation country
   useEffect(() => {
-    if (flag?.flagUrl && !inputs.flagUrl) {
-      handleFlagUrlChange(flag.flagUrl);
+    const refFlag = referenceCountry?.flag || referenceCountry?.flagUrl;
+    const activeFlag = flag?.flagUrl || refFlag;
+    if (activeFlag && !inputs.flagUrl) {
+      handleFlagUrlChange(activeFlag);
     }
-    if (foundationCoatOfArmsUrl && !inputs.coatOfArmsUrl) {
-      handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
+
+    const refCoa = referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl;
+    const activeCoa = foundationCoatOfArmsUrl || refCoa;
+    if (activeCoa && !inputs.coatOfArmsUrl) {
+      handleCoatOfArmsUrlChange(activeCoa);
     }
   }, [
     flag?.flagUrl,
     foundationCoatOfArmsUrl,
+    referenceCountry,
     inputs.flagUrl,
     inputs.coatOfArmsUrl,
     handleFlagUrlChange,

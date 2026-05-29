@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useCallback, Suspense } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Globe,
   Flag,
@@ -18,6 +18,7 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -337,6 +338,7 @@ function HelpModal({ text, title }: { text: string; title: string }) {
   );
 }
 import { FoundationStep } from "../steps/FoundationStep";
+import { GovernmentStep } from "../steps/GovernmentStep";
 import { NationalIdentitySection } from "../NationalIdentitySection";
 import { CoreIndicatorsSection } from "../../../sections/CoreIndicatorsSection";
 import { AtomicComponentSelector } from "~/components/government/atoms/AtomicGovernmentComponents";
@@ -455,34 +457,56 @@ export const StepRenderer = memo(function StepRenderer({
 
     return (
       <div className="space-y-6">
-        <Alert className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Foundation Setup:</strong> Define your nation's identity and core economic
-            indicators. These values will automatically adjust other economic parameters throughout
-            the builder.
-          </AlertDescription>
-        </Alert>
+        <div className="glass-surface glass-refraction relative mb-6 flex gap-1 rounded-xl p-1 lg:hidden">
+          {/* Sliding indicator behind active tab */}
+          <motion.div
+            className="absolute inset-y-1 z-0 rounded-lg bg-white/8"
+            layout
+            layoutId="core-parent-tab-indicator"
+            style={{
+              width: "calc(50% - 8px)",
+              left:
+                builderState.activeCoreTab === "identity" ? "calc(0% + 4px)" : "calc(50% + 4px)",
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+          />
+          {[
+            { id: "identity", label: "National Identity", icon: Flag },
+            { id: "indicators", label: "Core Indicators", icon: BarChart3 },
+          ].map((tab) => {
+            const isActive = builderState.activeCoreTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => handleTabChange("core", tab.id)}
+                className={cn(
+                  "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-200",
+                  isActive ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
+                )}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              >
+                <Icon
+                  className={cn(
+                    "h-3.5 w-3.5 transition-colors duration-200",
+                    isActive ? "text-teal-400" : "text-zinc-500"
+                  )}
+                />
+                <span>{tab.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
 
-        <Tabs
-          value={builderState.activeCoreTab}
-          onValueChange={(tab) => handleTabChange("core", tab)}
-          className="space-y-6"
-        >
-          <EnhancedTabsList className="grid grid-cols-1 sm:grid-cols-2">
-            <EnhancedTabsTrigger value="identity" icon={Flag}>
-              National Identity
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="indicators" icon={BarChart3}>
-              Core Indicators
-            </EnhancedTabsTrigger>
-          </EnhancedTabsList>
-
-          <TabsContent value="identity" className="mt-6">
+        <AnimatePresence mode="wait">
+          {builderState.activeCoreTab === "identity" ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
+              key="identity"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
               <NationalIdentitySection
                 inputs={builderState.economicInputs}
@@ -493,13 +517,13 @@ export const StepRenderer = memo(function StepRenderer({
                 countryId={countryId}
               />
             </motion.div>
-          </TabsContent>
-
-          <TabsContent value="indicators" className="mt-6">
+          ) : (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
+              key="indicators"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
               <CoreIndicatorsSection
                 inputs={builderState.economicInputs}
@@ -510,8 +534,8 @@ export const StepRenderer = memo(function StepRenderer({
                 referenceCountry={builderState.selectedCountry}
               />
             </motion.div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -519,113 +543,25 @@ export const StepRenderer = memo(function StepRenderer({
   // Government Step
   if (builderState.step === "government" && builderState.economicInputs) {
     return (
-      <div className="space-y-6">
-        <Tabs
-          value={builderState.activeGovernmentTab}
-          onValueChange={(tab) => handleTabChange("government", tab)}
-          className="space-y-6"
-        >
-          <EnhancedTabsList className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-0">
-            <EnhancedTabsTrigger
-              value="components"
-              icon={Settings}
-              badge={builderState.governmentComponents.length}
-            >
-              Atomic Components
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="structure" icon={Crown}>
-              Government Builder
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="spending" icon={Coins}>
-              Policies
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="preview" icon={Eye}>
-              Preview
-            </EnhancedTabsTrigger>
-          </EnhancedTabsList>
-
-          <TabsContent value="components" className="mt-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                    <Info className="h-4 w-4" />
-                    <span>
-                      Each component adds unique characteristics to your country and influences some
-                      of the calculations
-                    </span>
-                  </div>
-                </div>
-                <AtomicComponentSelector
-                  initialComponents={builderState.governmentComponents}
-                  onChange={(components) => {
-                    setBuilderState((prev) => ({
-                      ...prev,
-                      governmentComponents: components,
-                    }));
-                  }}
-                />
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="structure" className="mt-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="bg-card/50 max-h-[75vh] overflow-y-auto rounded-xl border p-1 shadow-sm">
-                <GovernmentBuilder
-                  initialData={builderState.governmentStructure}
-                  onChange={onGovernmentStructureChange}
-                  onSave={onGovernmentStructureSave}
-                  gdpData={{
-                    nominalGDP: builderState.economicInputs?.coreIndicators?.nominalGDP || 0,
-                    countryName: builderState.selectedCountry?.name,
-                  }}
-                />
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="spending" className="mt-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <GovernmentSpendingSection
-                inputs={builderState.economicInputs}
-                onInputsChange={(economicInputs: EconomicInputs) => {
-                  setBuilderState((prev) => ({ ...prev, economicInputs }));
-                }}
-                selectedAtomicComponents={builderState.governmentComponents}
-                governmentBuilderData={builderState.governmentStructure}
-                countryId={builderState.selectedCountry?.countryCode}
-                showAdvanced={builderState.showAdvancedMode}
-              />
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="preview" className="mt-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <GovernmentStructurePreview
-                governmentStructure={builderState.governmentStructure}
-                governmentComponents={builderState.governmentComponents}
-              />
-            </motion.div>
-          </TabsContent>
-        </Tabs>
-      </div>
+      <GovernmentStep
+        economicInputs={builderState.economicInputs}
+        selectedCountry={builderState.selectedCountry}
+        governmentComponents={builderState.governmentComponents}
+        governmentStructure={builderState.governmentStructure}
+        activeGovernmentTab={builderState.activeGovernmentTab}
+        onGovernmentComponentsChange={(components) => {
+          setBuilderState((prev) => ({
+            ...prev,
+            governmentComponents: components,
+          }));
+        }}
+        onGovernmentStructureChange={onGovernmentStructureChange}
+        onGovernmentStructureSave={onGovernmentStructureSave}
+        onEconomicInputsChange={(inputs) => {
+          setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
+        }}
+        onTabChange={(tab) => handleTabChange("government", tab)}
+      />
     );
   }
 

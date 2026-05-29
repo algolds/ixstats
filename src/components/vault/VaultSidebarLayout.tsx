@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
+import { stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import type { VaultSection } from "./VaultSidebarNav";
 import { DashboardPlayerWidget } from "~/components/dashboard/DashboardPlayerWidget";
@@ -29,7 +29,7 @@ export function VaultSidebarLayout({
   activeSection,
   onNavigate,
 }: VaultSidebarLayoutProps) {
-  const pathname = usePathname();
+  const pathname = stripBasePath(usePathname());
 
   return (
     <div className="space-y-0">
@@ -58,17 +58,17 @@ export function VaultSidebarLayout({
               <div className="glass-hierarchy-child scrollbar-none overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1.5 backdrop-blur-md">
                 <div className="flex min-w-max gap-1.5">
                   {[
-                    { id: "dashboard", href: withBasePath("/vault"), label: "Wallet" },
-                    { id: "cards", href: withBasePath("/vault/cards"), label: "Collection" },
+                    { id: "dashboard", href: "/vault", label: "Wallet" },
+                    { id: "cards", href: "/vault/cards", label: "Collection" },
                     {
                       id: "marketplace",
-                      href: withBasePath("/vault/marketplace"),
+                      href: "/vault/marketplace",
                       label: "Marketplace",
                     },
-                    { id: "import", href: withBasePath("/vault/import"), label: "Import" },
+                    { id: "import", href: "/vault/import", label: "Import" },
                     {
                       id: "achievements",
-                      href: withBasePath("/achievements"),
+                      href: "/achievements",
                       label: "Achievements",
                     },
                   ].map((item) => {

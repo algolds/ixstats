@@ -1,10 +1,10 @@
 // Government Step - Atomic components and structure for Atomic Builder
-// Extracted from AtomicBuilderPage.tsx for modularity (contains government tabs and dialogs)
+// Refactored to align with macOS/iOS design language and contextual Atomic Components
 
 "use client";
 
-import React from "react";
-import { motion } from "motion/react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Building2,
   Shield,
@@ -14,40 +14,48 @@ import {
   Crown,
   Coins,
   Eye,
-  Atom,
-  Blocks,
-  Zap,
+  Lock,
+  Unlock,
   AlertTriangle,
+  CheckCircle,
+  Network,
   Users,
+  Cpu,
+  Handshake,
   Scale,
-  Heart,
-  Globe,
+  Vote,
+  Clock,
   TrendingUp,
+  Star,
+  Cross,
+  Target,
+  BarChart3,
+  Heart,
+  Building,
+  Leaf,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { Switch } from "~/components/ui/switch";
+import { Checkbox } from "~/components/ui/checkbox";
 import { cn } from "~/lib/utils";
 import { stepConfig } from "../builderConfig";
-import {
-  AtomicComponentSelector,
-  type ComponentType,
-} from "~/components/government/atoms/AtomicGovernmentComponents";
-import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
+import { Label } from "~/components/ui/label";
+import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
+import { RevenueSourceForm } from "~/components/government/atoms/RevenueSourceForm";
+import { DepartmentList } from "~/components/builder/government/DepartmentList";
+import { BudgetAllocationList } from "~/components/builder/government/BudgetAllocationList";
 import { GovernmentSpendingSection } from "~/app/builder/sections/GovernmentSpendingSection";
 import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
-
-// Help System
-// import { GovernmentHelpSystem } from '../help/GovernmentHelpSystem';
+import { ComponentType } from "@prisma/client";
+import {
+  detectSynergies,
+  detectConflicts,
+  calculateGovernmentEffectiveness,
+} from "~/lib/atomic-government-utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface GovernmentStepProps {
   economicInputs: EconomicInputs;
@@ -62,73 +70,138 @@ interface GovernmentStepProps {
   onTabChange: (tab: string) => void;
 }
 
-// Enhanced tab components
-function EnhancedTabsList({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsList>) {
+// Custom circular ring rendering
+function Ring({ value, color, label }: { value: number; color: string; label: string }) {
+  const radius = 28;
+  const strokeWidth = 5.5;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset =
+    circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
+
   return (
-    <TabsList
-      className={cn(
-        "bg-muted/50 border-border/50 grid w-full grid-cols-2 gap-2 rounded-xl border p-1 backdrop-blur-sm sm:grid-cols-4 sm:gap-0",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </TabsList>
+    <div className="flex shrink-0 flex-col items-center gap-1.5">
+      <div className="relative h-16 w-16">
+        <svg className="h-full w-full -rotate-90">
+          <circle
+            cx="32"
+            cy="32"
+            r={radius}
+            fill="transparent"
+            stroke="rgba(255,255,255,0.03)"
+            strokeWidth={strokeWidth}
+          />
+          <circle
+            cx="32"
+            cy="32"
+            r={radius}
+            fill="transparent"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-zinc-100">
+          {Math.round(value)}%
+        </span>
+      </div>
+      <span className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase">{label}</span>
+    </div>
   );
 }
 
-function EnhancedTabsTrigger({
-  children,
-  icon: Icon,
-  badge,
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsTrigger> & {
-  icon?: React.ElementType;
-  badge?: string | number;
+// macOS style selection card grid for core setup
+function SelectionCardGrid({
+  title,
+  subtitle,
+  options,
+  selectedValues,
+  onToggle,
+  isReadOnly,
+}: {
+  title: string;
+  subtitle: string;
+  options: { value: ComponentType; label: string; desc: string; icon: any }[];
+  selectedValues: ComponentType[];
+  onToggle: (val: ComponentType) => void;
+  isReadOnly: boolean;
+  maxSelect?: number;
 }) {
   return (
-    <TabsTrigger
-      className={cn(
-        "data-[state=active]:bg-background relative flex flex-col gap-1.5 p-3 transition-all duration-200 data-[state=active]:shadow-sm",
-        "hover:bg-background/50",
-        className
-      )}
-      {...props}
-    >
-      <div className="flex items-center gap-1.5">
-        {Icon && React.createElement(Icon, { className: "h-4 w-4" })}
+    <div className="space-y-3">
+      <div>
+        <h4 className="text-xs font-semibold tracking-wider text-zinc-300 uppercase">{title}</h4>
+        <p className="mt-0.5 text-[10px] text-zinc-500">{subtitle}</p>
       </div>
-      <span className="text-xs font-medium">{children}</span>
-      {badge !== undefined && (
-        <Badge
-          variant="secondary"
-          className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center p-0 text-[10px]"
-        >
-          {badge}
-        </Badge>
-      )}
-    </TabsTrigger>
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+        {options.map((opt) => {
+          const isSelected = selectedValues.includes(opt.value);
+          const Icon = opt.icon;
+          return (
+            <div
+              key={opt.value}
+              onClick={() => {
+                if (isReadOnly) return;
+                onToggle(opt.value);
+              }}
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all duration-150 select-none active:scale-[0.99]",
+                isSelected
+                  ? "border-amber-500/30 bg-amber-500/10 text-white shadow-[0_0_12px_rgba(245,158,11,0.04)]"
+                  : "border-white/[0.04] bg-zinc-950/20 text-zinc-400 hover:border-white/10"
+              )}
+            >
+              <div
+                className={cn(
+                  "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+                  isSelected ? "bg-amber-500/20 text-amber-400" : "bg-zinc-900 text-zinc-500"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={cn(
+                      "text-xs font-semibold",
+                      isSelected ? "text-zinc-100" : "text-zinc-300"
+                    )}
+                  >
+                    {opt.label}
+                  </span>
+                  {isSelected && <CheckCircle className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
+                </div>
+                <p className="mt-1 text-[10px] leading-normal text-zinc-400">{opt.desc}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
-// Help tooltip component
-function HelpTooltip({ text }: { text: string }) {
+// macOS Control Center-style volume/brightness slider component
+function AttributeSlider({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <HelpCircle className="text-muted-foreground h-4 w-4 cursor-help" />
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
-          <p className="text-xs">{text}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-400">
+        <span>{label}</span>
+        <span style={{ color }}>{Math.round(value)}%</span>
+      </div>
+      <div className="h-3 w-full overflow-hidden rounded-full border border-white/5 bg-zinc-900/60 p-[1px]">
+        <div
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{
+            width: `${value}%`,
+            backgroundColor: color,
+            boxShadow: `0 0 8px ${color}40`,
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -144,359 +217,874 @@ export function GovernmentStep({
   onEconomicInputsChange,
   onTabChange,
 }: GovernmentStepProps) {
+  // Safety Lock state
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  // Verification checkpoint state
+  const [isVerified, setIsVerified] = useState(false);
+
+  // Capture initial budget values on mount to detect changes
+  const initialBudget = useRef<number | null>(null);
+  const initialCurrency = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (governmentStructure?.structure?.totalBudget && initialBudget.current === null) {
+      initialBudget.current = governmentStructure.structure.totalBudget;
+    }
+    if (governmentStructure?.structure?.budgetCurrency && initialCurrency.current === null) {
+      initialCurrency.current = governmentStructure.structure.budgetCurrency;
+    }
+  }, [governmentStructure]);
+
+  // Compute metrics dynamically
+  const effectivenessMetrics = useMemo(() => {
+    return calculateGovernmentEffectiveness(governmentComponents);
+  }, [governmentComponents]);
+
+  const synergies = useMemo(() => detectSynergies(governmentComponents), [governmentComponents]);
+  const conflicts = useMemo(() => detectConflicts(governmentComponents), [governmentComponents]);
+
+  // Legitimacy formula based on components: electoral, traditional, performance, religious, charismatic
+  const legitimacyScore = useMemo(() => {
+    let score = 50; // base
+    if (governmentComponents.includes(ComponentType.ELECTORAL_LEGITIMACY)) score += 15;
+    if (governmentComponents.includes(ComponentType.TRADITIONAL_LEGITIMACY)) score += 10;
+    if (governmentComponents.includes(ComponentType.PERFORMANCE_LEGITIMACY)) score += 15;
+    if (governmentComponents.includes(ComponentType.CHARISMATIC_LEGITIMACY)) score += 10;
+    if (governmentComponents.includes(ComponentType.RELIGIOUS_LEGITIMACY)) score += 10;
+
+    // penalties
+    score -= conflicts.length * 5;
+    if (governmentComponents.includes(ComponentType.MILITARY_ENFORCEMENT)) score -= 12;
+    if (governmentComponents.includes(ComponentType.SURVEILLANCE_SYSTEM)) score -= 8;
+
+    return Math.min(100, Math.max(0, score));
+  }, [governmentComponents, conflicts]);
+
+  // Budget allocations percent sum
+  const totalAllocatedPercent = useMemo(() => {
+    if (!governmentStructure?.budgetAllocations) return 0;
+    return governmentStructure.budgetAllocations.reduce(
+      (sum: number, a: any) => sum + (a.allocatedPercent || 0),
+      0
+    );
+  }, [governmentStructure]);
+
+  // Budget health: peaks at 100% allocation
+  const budgetHealthScore = useMemo(() => {
+    const diff = Math.abs(100 - totalAllocatedPercent);
+    return Math.max(0, 100 - diff);
+  }, [totalAllocatedPercent]);
+
+  // Administrative Efficiency slider based on components
+  const administrativeEfficiency = useMemo(() => {
+    let score = 50;
+    if (governmentComponents.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) score += 20;
+    if (governmentComponents.includes(ComponentType.TECHNOCRATIC_AGENCIES)) score += 15;
+    if (governmentComponents.includes(ComponentType.PARTISAN_INSTITUTIONS)) score -= 15;
+    if (governmentComponents.includes(ComponentType.MILITARY_ADMINISTRATION)) score -= 10;
+    if (governmentStructure?.departments?.length > 8) {
+      score -= (governmentStructure.departments.length - 8) * 3; // overhead
+    }
+    return Math.min(100, Math.max(10, score));
+  }, [governmentComponents, governmentStructure]);
+
+  // Political Stability slider based on synergies, conflicts, and law
+  const politicalStability = useMemo(() => {
+    let score = 60;
+    score += synergies.length * 8;
+    score -= conflicts.length * 12;
+    if (governmentComponents.includes(ComponentType.RULE_OF_LAW)) score += 15;
+    if (governmentComponents.includes(ComponentType.MILITARY_ENFORCEMENT)) score += 10;
+    return Math.min(100, Math.max(5, score));
+  }, [governmentComponents, synergies, conflicts]);
+
+  // Warnings / Critical Changes Check
+  const deltaWarning = useMemo(() => {
+    if (!governmentStructure?.structure?.totalBudget || !initialBudget.current) return null;
+    const current = governmentStructure.structure.totalBudget;
+    const deltaPct = Math.abs((current - initialBudget.current) / initialBudget.current) * 100;
+    if (deltaPct > 25) {
+      return `Budget Delta Alert: The proposed budget of ${current.toLocaleString()} has changed by ${deltaPct.toFixed(1)}% compared to the country's baseline. Ensure revenue channels are sufficient to avoid instability.`;
+    }
+    return null;
+  }, [governmentStructure]);
+
+  const currencyChangeWarning = useMemo(() => {
+    if (!governmentStructure?.structure?.budgetCurrency || !initialCurrency.current) return null;
+    if (governmentStructure.structure.budgetCurrency !== initialCurrency.current) {
+      return `Currency Conversion: Budget currency has changed from "${initialCurrency.current}" to "${governmentStructure.structure.budgetCurrency}". Ensure this aligns with trade partners.`;
+    }
+    return null;
+  }, [governmentStructure]);
+
+  // GDP cap warning
+  const gdpCapWarning = useMemo(() => {
+    const budget = governmentStructure?.structure?.totalBudget || 0;
+    const gdp = economicInputs?.coreIndicators?.nominalGDP || 0;
+    if (budget > gdp && gdp > 0) {
+      return `GDP Threshold Violated: Total budget cannot exceed your country's nominal GDP (${gdp.toLocaleString()}). Please adjust the budget allocation or structure.`;
+    }
+    return null;
+  }, [governmentStructure, economicInputs]);
+
+  // Handle core structure atomic components toggle
+  const handleToggleCoreComponent = (compType: ComponentType) => {
+    if (!isUnlocked) return;
+    let newComponents = [...governmentComponents];
+
+    // Core categories represent exclusive choices inside their family, except Legitimacy which can have up to 2
+    const powerComps: ComponentType[] = [
+      ComponentType.CENTRALIZED_POWER,
+      ComponentType.FEDERAL_SYSTEM,
+      ComponentType.CONFEDERATE_SYSTEM,
+      ComponentType.UNITARY_SYSTEM,
+    ];
+    const decisionComps: ComponentType[] = [
+      ComponentType.DEMOCRATIC_PROCESS,
+      ComponentType.AUTOCRATIC_PROCESS,
+      ComponentType.TECHNOCRATIC_PROCESS,
+      ComponentType.CONSENSUS_PROCESS,
+      ComponentType.OLIGARCHIC_PROCESS,
+    ];
+
+    if (powerComps.includes(compType)) {
+      newComponents = newComponents.filter((c) => !powerComps.includes(c));
+      newComponents.push(compType);
+    } else if (decisionComps.includes(compType)) {
+      newComponents = newComponents.filter((c) => !decisionComps.includes(c));
+      newComponents.push(compType);
+    } else {
+      // Legitimacy selection
+      if (newComponents.includes(compType)) {
+        newComponents = newComponents.filter((c) => c !== compType);
+      } else {
+        const legitimacyComps: ComponentType[] = [
+          ComponentType.ELECTORAL_LEGITIMACY,
+          ComponentType.TRADITIONAL_LEGITIMACY,
+          ComponentType.PERFORMANCE_LEGITIMACY,
+          ComponentType.CHARISMATIC_LEGITIMACY,
+          ComponentType.RELIGIOUS_LEGITIMACY,
+        ];
+        const activeLegitimacy = newComponents.filter((c) => legitimacyComps.includes(c));
+        if (activeLegitimacy.length >= 2) {
+          // Replace the first selected legitimacy component
+          newComponents = newComponents.filter((c) => c !== activeLegitimacy[0]);
+        }
+        newComponents.push(compType);
+      }
+    }
+    onGovernmentComponentsChange(newComponents);
+  };
+
+  // Core options lists
+  const powerOptions = [
+    {
+      value: ComponentType.CENTRALIZED_POWER,
+      label: "Centralized Power",
+      desc: "Central government holds principal policy and executive decisions.",
+      icon: Settings,
+    },
+    {
+      value: ComponentType.FEDERAL_SYSTEM,
+      label: "Federal Distribution",
+      desc: "Sovereign power shared between regional states and central government.",
+      icon: Building2,
+    },
+    {
+      value: ComponentType.CONFEDERATE_SYSTEM,
+      label: "Confederation",
+      desc: "Loose assembly of sovereign states with weak federal oversight.",
+      icon: Network,
+    },
+    {
+      value: ComponentType.UNITARY_SYSTEM,
+      label: "Unitary System",
+      desc: "Single national system with regional offices as direct subsidiaries.",
+      icon: Crown,
+    },
+  ];
+
+  const decisionOptions = [
+    {
+      value: ComponentType.DEMOCRATIC_PROCESS,
+      label: "Democratic Process",
+      desc: "Decisions made via parliamentary representation or franchise.",
+      icon: Users,
+    },
+    {
+      value: ComponentType.AUTOCRATIC_PROCESS,
+      label: "Autocratic Process",
+      desc: "Decisions handled unilaterally by executive command.",
+      icon: Shield,
+    },
+    {
+      value: ComponentType.TECHNOCRATIC_PROCESS,
+      label: "Technocratic Process",
+      desc: "Decisions delegated to academic and technical expert agencies.",
+      icon: Cpu,
+    },
+    {
+      value: ComponentType.CONSENSUS_PROCESS,
+      label: "Consensus Process",
+      desc: "Decisions require absolute stake-holder negotiation.",
+      icon: Handshake,
+    },
+    {
+      value: ComponentType.OLIGARCHIC_PROCESS,
+      label: "Oligarchic Process",
+      desc: "Decisions directed by a wealthy ruling executive class.",
+      icon: Scale,
+    },
+  ];
+
+  const legitimacyOptions = [
+    {
+      value: ComponentType.ELECTORAL_LEGITIMACY,
+      label: "Electoral Legitimacy",
+      desc: "Authority earned from regular transparent popular franchise.",
+      icon: Vote,
+    },
+    {
+      value: ComponentType.TRADITIONAL_LEGITIMACY,
+      label: "Traditional Legitimacy",
+      desc: "Authority founded on dynastic history or cultural precedence.",
+      icon: Clock,
+    },
+    {
+      value: ComponentType.PERFORMANCE_LEGITIMACY,
+      label: "Performance Legitimacy",
+      desc: "Authority maintained through concrete GDP and indicator results.",
+      icon: TrendingUp,
+    },
+    {
+      value: ComponentType.CHARISMATIC_LEGITIMACY,
+      label: "Charismatic Legitimacy",
+      desc: "Authority anchored to the strong persona and support of the leader.",
+      icon: Star,
+    },
+    {
+      value: ComponentType.RELIGIOUS_LEGITIMACY,
+      label: "Religious Legitimacy",
+      desc: "Authority grounded on scripture or institutional endorsement.",
+      icon: Cross,
+    },
+  ];
+
+  const economicGovernanceOptions = [
+    {
+      value: ComponentType.FREE_MARKET_SYSTEM,
+      label: "Free Market System",
+      desc: "Market pricing drives capital and production with negligible intervention.",
+      icon: TrendingUp,
+    },
+    {
+      value: ComponentType.PLANNED_ECONOMY,
+      label: "Planned Economy",
+      desc: "Centralized planning directives govern production and resources.",
+      icon: Target,
+    },
+    {
+      value: ComponentType.MIXED_ECONOMY,
+      label: "Mixed Economy",
+      desc: "Private property works alongside targeted government infrastructure.",
+      icon: BarChart3,
+    },
+    {
+      value: ComponentType.CORPORATIST_SYSTEM,
+      label: "Corporatist System",
+      desc: "Capital and labor cartels negotiate regulatory policy via the state.",
+      icon: Building2,
+    },
+    {
+      value: ComponentType.SOCIAL_MARKET_ECONOMY,
+      label: "Social Market Economy",
+      desc: "Market principles integrated with high regulatory protections.",
+      icon: Heart,
+    },
+    {
+      value: ComponentType.STATE_CAPITALISM,
+      label: "State Capitalism",
+      desc: "Commercial enterprises owned and directed by central agencies.",
+      icon: Building,
+    },
+    {
+      value: ComponentType.RESOURCE_BASED_ECONOMY,
+      label: "Resource Economy",
+      desc: "National capital flows heavily from resource extraction exports.",
+      icon: Leaf,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-4 text-center"
-      >
-        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg">
-          <Building2 className="h-8 w-8 text-white" />
-        </div>
-        <div className="flex items-center justify-center gap-2">
-          <h2 className="text-3xl font-bold">MyGovernment Builder</h2>
-          <HelpTooltip text={stepConfig.government.help} />
-        </div>
-      </motion.div>
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
+      {/* Dynamic Vitality Hero Card */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/65 p-6 shadow-xl backdrop-blur-xl">
+        <TextureOverlay texture="paperGrain" opacity={0.05} />
+        <TextureOverlay texture="chevron" opacity={0.03} />
 
-      <Tabs value={activeGovernmentTab} onValueChange={onTabChange} className="space-y-6">
-        <div className="flex items-center justify-between">
-          <EnhancedTabsList>
-            <EnhancedTabsTrigger
-              value="components"
-              icon={Settings}
-              badge={governmentComponents.length}
-            >
-              Atomic Components
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="structure" icon={Crown}>
-              MyGovernment Builder
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="spending" icon={Coins}>
-              Policies
-            </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="preview" icon={Eye}>
-              Preview
-            </EnhancedTabsTrigger>
-          </EnhancedTabsList>
-          {/* <GovernmentHelpSystem section={activeGovernmentTab as 'components' | 'structure' | 'spending' | 'preview'} /> */}
-        </div>
-
-        {/* COMPONENTS TAB */}
-        <TabsContent value="components" className="mt-6">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <Info className="h-4 w-4" />
-                  <span>
-                    Each component adds unique characteristics to your country and influences some
-                    of the calculations
-                  </span>
-                </div>
-                {/* Atomic Components Info Dialog - continues below for space */}
-                <AtomicComponentsHelpDialog />
-              </div>
-              <AtomicComponentSelector
-                initialComponents={governmentComponents}
-                onChange={onGovernmentComponentsChange}
-                maxComponents={15}
-                isReadOnly={false}
-              />
-            </div>
-          </motion.div>
-        </TabsContent>
-
-        {/* STRUCTURE TAB */}
-        <TabsContent value="structure" className="mt-6">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-            <div className="mb-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <Info className="h-4 w-4" />
-                  <span>
-                    Configure your government structure, departments, budget, and revenue sources
-                  </span>
-                </div>
-                <GovernmentBuilderHelpDialog />
-              </div>
-            </div>
-            <GovernmentBuilder
-              initialData={governmentStructure}
-              onChange={onGovernmentStructureChange}
-              onSave={onGovernmentStructureSave}
-              gdpData={{
-                nominalGDP: economicInputs?.coreIndicators?.nominalGDP || 0,
-                countryName: selectedCountry?.name,
-              }}
+        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
+          {/* Section 1: Vitality Rings */}
+          <div className="flex justify-around border-r border-white/5 pr-2 lg:col-span-5">
+            <Ring value={legitimacyScore} color="#10b981" label="Legitimacy" />
+            <Ring
+              value={effectivenessMetrics.totalEffectiveness}
+              color="#8b5cf6"
+              label="Effectiveness"
             />
-          </motion.div>
-        </TabsContent>
+            <Ring value={budgetHealthScore} color="#f59e0b" label="Budget Health" />
+          </div>
 
-        {/* SPENDING/POLICIES TAB */}
-        <TabsContent value="spending" className="mt-6">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-            <div className="mb-6 space-y-4">
+          {/* Section 2: Attribute Sliders */}
+          <div className="space-y-3.5 border-r border-white/5 px-4 lg:col-span-4">
+            <AttributeSlider
+              label="Administrative Efficiency"
+              value={administrativeEfficiency}
+              color="#3b82f6"
+            />
+            <AttributeSlider
+              label="Political Stability"
+              value={politicalStability}
+              color="#ec4899"
+            />
+          </div>
+
+          {/* Section 3: Synergies and Conflicts overview */}
+          <div className="space-y-3.5 pl-2 lg:col-span-3">
+            <div>
               <div className="flex items-center justify-between">
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <Info className="h-4 w-4" />
-                  <span>
-                    Select policies that align with your atomic components and government structure
-                  </span>
-                </div>
-                <PoliciesHelpDialog />
+                <span className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                  Synergies
+                </span>
+                <Badge className="border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                  {synergies.length} Active
+                </Badge>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {synergies.slice(0, 3).map((syn, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="border-emerald-500/20 bg-emerald-500/5 text-[9px] text-emerald-300"
+                  >
+                    Synergy Detected
+                  </Badge>
+                ))}
+                {synergies.length === 0 && (
+                  <span className="text-[10px] text-zinc-500 italic">No synergies unlocked</span>
+                )}
               </div>
             </div>
-            <GovernmentSpendingSection
-              inputs={economicInputs}
-              onInputsChange={onEconomicInputsChange}
-              selectedAtomicComponents={governmentComponents}
-              governmentBuilderData={governmentStructure}
-              countryId={selectedCountry?.countryCode || undefined}
-            />
-          </motion.div>
-        </TabsContent>
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                  Conflicts
+                </span>
+                <Badge
+                  className={cn(
+                    "px-1.5 py-0.5 text-[10px] font-semibold",
+                    conflicts.length > 0
+                      ? "border-red-500/25 bg-red-500/10 text-red-400"
+                      : "bg-zinc-800 text-zinc-500"
+                  )}
+                >
+                  {conflicts.length} Active
+                </Badge>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {conflicts.slice(0, 3).map((con, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="border-red-500/20 bg-red-500/5 text-[9px] text-red-300"
+                  >
+                    Conflict Warning
+                  </Badge>
+                ))}
+                {conflicts.length === 0 && (
+                  <span className="text-[10px] text-zinc-500 italic">No conflicts present</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* PREVIEW TAB */}
-        <TabsContent value="preview" className="mt-6">
-          <GovernmentPreviewTab
-            governmentStructure={governmentStructure}
-            governmentComponents={governmentComponents}
+      {/* Safety Lock Switch */}
+      <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-zinc-950/20 p-4 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "rounded-lg p-2",
+              isUnlocked ? "bg-amber-500/15 text-amber-400" : "bg-zinc-900 text-zinc-500"
+            )}
+          >
+            {isUnlocked ? <Unlock className="h-4.5 w-4.5" /> : <Lock className="h-4.5 w-4.5" />}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-100">Modify Core Governance</h3>
+            <p className="mt-0.5 text-[11px] text-zinc-400">
+              Toggle this switch to unlock budget numbers, structures, and atomic component links
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+            {isUnlocked ? "Unlocked" : "Locked"}
+          </span>
+          <Switch
+            checked={isUnlocked}
+            onCheckedChange={setIsUnlocked}
+            className="data-[state=checked]:bg-amber-500"
           />
+        </div>
+      </div>
+
+      {/* Main Tabs interface */}
+      <Tabs value={activeGovernmentTab} onValueChange={onTabChange} className="space-y-6">
+        <TabsList className="grid grid-cols-4 rounded-xl border border-white/10 bg-zinc-950/60 p-1">
+          <TabsTrigger
+            value="components"
+            className="py-2 text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-amber-400"
+          >
+            Core Setup
+          </TabsTrigger>
+          <TabsTrigger
+            value="structure"
+            className="py-2 text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-amber-400"
+          >
+            Departments
+          </TabsTrigger>
+          <TabsTrigger
+            value="spending"
+            className="py-2 text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-amber-400"
+          >
+            Budget & Revenue
+          </TabsTrigger>
+          <TabsTrigger
+            value="preview"
+            className="py-2 text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-amber-400"
+          >
+            Verify & Preview
+          </TabsTrigger>
+        </TabsList>
+
+        {/* CORE SETUP TAB */}
+        <TabsContent value="components" className="mt-4 focus-visible:outline-none">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
+              {/* Structure Form details wrapper */}
+              <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-5">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <GovernmentStructureForm
+                  data={governmentStructure.structure}
+                  onChange={(structure) => {
+                    if (isUnlocked) {
+                      onGovernmentStructureChange({
+                        ...governmentStructure,
+                        structure,
+                      });
+                    }
+                  }}
+                  isReadOnly={!isUnlocked}
+                  gdpData={{
+                    nominalGDP: economicInputs?.coreIndicators?.nominalGDP || 0,
+                    countryName: selectedCountry?.name,
+                  }}
+                />
+              </div>
+
+              {/* Core Governance Selection cards */}
+              <div className="relative space-y-6 overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-6">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <h3 className="flex items-center gap-2 text-base font-bold text-zinc-100">
+                  <Settings className="h-5 w-5 text-amber-400" />
+                  Core Governance Principles
+                </h3>
+
+                <SelectionCardGrid
+                  title="Power Distribution (Select 1)"
+                  subtitle="Defines how authority is partitioned between central and regional offices"
+                  options={powerOptions}
+                  selectedValues={governmentComponents}
+                  onToggle={handleToggleCoreComponent}
+                  isReadOnly={!isUnlocked}
+                />
+
+                <SelectionCardGrid
+                  title="Decision Processes (Select 1)"
+                  subtitle="Governs the active mechanism by which national policy laws are passed"
+                  options={decisionOptions}
+                  selectedValues={governmentComponents}
+                  onToggle={handleToggleCoreComponent}
+                  isReadOnly={!isUnlocked}
+                />
+
+                <SelectionCardGrid
+                  title="Legitimacy Sources (Select up to 2)"
+                  subtitle="Represents how popular authority is recognized and maintained"
+                  options={legitimacyOptions}
+                  selectedValues={governmentComponents}
+                  onToggle={handleToggleCoreComponent}
+                  isReadOnly={!isUnlocked}
+                  maxSelect={2}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-xl border border-white/5 bg-zinc-950/40 p-5">
+                <h4 className="text-xs font-semibold tracking-wider text-zinc-200 uppercase">
+                  Setup Instructions
+                </h4>
+                <ul className="mt-3 list-inside list-disc space-y-2 text-xs text-zinc-400">
+                  <li>Define the formal ceremonial and executive names of your administration.</li>
+                  <li>
+                    Unlock editing using the{" "}
+                    <span className="font-semibold text-amber-400">Modify Core Governance</span>{" "}
+                    switch above.
+                  </li>
+                  <li>Pick exactly one Power Distribution model.</li>
+                  <li>Select the primary Decision Process philosophy.</li>
+                  <li>
+                    Select up to two Legitimacy pillars to secure your administration's mandate.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* DEPARTMENTS TAB */}
+        <TabsContent value="structure" className="mt-4 focus-visible:outline-none">
+          <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-6">
+            <TextureOverlay texture="chevron" opacity={0.02} />
+            <DepartmentList
+              departments={governmentStructure.departments}
+              onAddDepartment={() => {
+                if (!isUnlocked) return;
+                const newDept = {
+                  name: "",
+                  category: "Other" as const,
+                  description: "",
+                  ministerTitle: "Minister",
+                  organizationalLevel: "Ministry" as const,
+                  color: "#6366f1",
+                  priority: 50,
+                  functions: [],
+                };
+                onGovernmentStructureChange({
+                  ...governmentStructure,
+                  departments: [...governmentStructure.departments, newDept],
+                });
+              }}
+              onUpdateDepartment={(idx, updated) => {
+                if (!isUnlocked) return;
+                const newDepts = [...governmentStructure.departments];
+                newDepts[idx] = updated;
+                onGovernmentStructureChange({
+                  ...governmentStructure,
+                  departments: newDepts,
+                });
+              }}
+              onRemoveDepartment={(idx) => {
+                if (!isUnlocked) return;
+                onGovernmentStructureChange({
+                  ...governmentStructure,
+                  departments: governmentStructure.departments.filter(
+                    (_: any, i: number) => i !== idx
+                  ),
+                });
+              }}
+              isReadOnly={!isUnlocked}
+              governmentComponents={governmentComponents}
+              onGovernmentComponentsChange={onGovernmentComponentsChange}
+            />
+          </div>
+        </TabsContent>
+
+        {/* BUDGET & REVENUE TAB */}
+        <TabsContent value="spending" className="mt-4 focus-visible:outline-none">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="space-y-6 lg:col-span-8">
+              {/* GDP Cap Alert Banner */}
+              {gdpCapWarning && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-red-500/25 bg-red-500/5 p-3.5 text-xs text-red-200">
+                  <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-red-400" />
+                  <div className="leading-relaxed">{gdpCapWarning}</div>
+                </div>
+              )}
+
+              {/* Budget Allocations list */}
+              <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-6">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <BudgetAllocationList
+                  departments={governmentStructure.departments}
+                  budgetAllocations={governmentStructure.budgetAllocations}
+                  budgetSummary={{
+                    totalAllocated:
+                      governmentStructure.budgetAllocations?.reduce(
+                        (sum: number, a: any) => sum + (a.allocatedAmount || 0),
+                        0
+                      ) || 0,
+                    totalAllocatedPercent: totalAllocatedPercent,
+                    remaining:
+                      (governmentStructure.structure?.totalBudget || 0) -
+                      (governmentStructure.budgetAllocations?.reduce(
+                        (sum: number, a: any) => sum + (a.allocatedAmount || 0),
+                        0
+                      ) || 0),
+                    remainingPercent: 100 - totalAllocatedPercent,
+                    isOverBudget: totalAllocatedPercent > 100,
+                    isUnderBudget: totalAllocatedPercent < 100,
+                  }}
+                  totalBudget={governmentStructure.structure.totalBudget}
+                  currency={governmentStructure.structure.budgetCurrency || "USD"}
+                  onUpdateAllocation={(idx, updated) => {
+                    if (!isUnlocked) return;
+                    const newAllocations = [...(governmentStructure.budgetAllocations || [])];
+                    const existingIndex = newAllocations.findIndex(
+                      (a) => a.departmentId === idx.toString()
+                    );
+                    if (existingIndex >= 0) {
+                      newAllocations[existingIndex] = updated;
+                    } else {
+                      newAllocations.push(updated);
+                    }
+                    onGovernmentStructureChange({
+                      ...governmentStructure,
+                      budgetAllocations: newAllocations,
+                    });
+                  }}
+                  onFixAllocations={() => {
+                    if (!isUnlocked) return;
+                    // Auto distribute allocations evenly
+                    const totalBudgetVal = governmentStructure.structure.totalBudget;
+                    const numDepts = governmentStructure.departments.length;
+                    if (numDepts === 0) return;
+                    const evenPercent = 100 / numDepts;
+                    const fixedAllocations = governmentStructure.departments.map(
+                      (_: any, idx: number) => ({
+                        departmentId: idx.toString(),
+                        budgetYear: new Date().getFullYear(),
+                        allocatedPercent: evenPercent,
+                        allocatedAmount: Math.round((totalBudgetVal * evenPercent) / 100),
+                        notes: "Even redistribution",
+                      })
+                    );
+                    onGovernmentStructureChange({
+                      ...governmentStructure,
+                      budgetAllocations: fixedAllocations,
+                    });
+                  }}
+                  isReadOnly={!isUnlocked}
+                  budgetAllocationsCollapsed={{}}
+                  onToggleCollapse={() => {}}
+                  onExpandAll={() => {}}
+                  onCollapseAll={() => {}}
+                />
+              </div>
+
+              {/* Revenue Sources form */}
+              <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-6">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-zinc-100">Revenue Channels</h3>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    Configure sources of public capital funding
+                  </p>
+                </div>
+                <RevenueSourceForm
+                  data={governmentStructure.revenueSources}
+                  onChange={(revenueSources) => {
+                    if (isUnlocked) {
+                      onGovernmentStructureChange({
+                        ...governmentStructure,
+                        revenueSources,
+                      });
+                    }
+                  }}
+                  totalRevenue={governmentStructure.structure.totalBudget}
+                  currency={governmentStructure.structure.budgetCurrency || "USD"}
+                  isReadOnly={!isUnlocked}
+                  availableDepartments={governmentStructure.departments.map(
+                    (d: any, idx: number) => ({
+                      id: idx.toString(),
+                      name: d.name,
+                    })
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-6 lg:col-span-4">
+              {/* Economic Governance Atomic components */}
+              <div className="space-y-4 rounded-xl border border-white/5 bg-zinc-900/10 p-5">
+                <h4 className="text-sm font-bold text-zinc-200">Economic Philosophy</h4>
+                <p className="text-[11px] text-zinc-400">
+                  Select components outlining your economic governance direction
+                </p>
+                <div className="space-y-2">
+                  {economicGovernanceOptions.map((opt) => {
+                    const isSelected = governmentComponents.includes(opt.value);
+                    const Icon = opt.icon;
+                    return (
+                      <div
+                        key={opt.value}
+                        onClick={() => {
+                          if (!isUnlocked) return;
+                          if (isSelected) {
+                            onGovernmentComponentsChange(
+                              governmentComponents.filter((c) => c !== opt.value)
+                            );
+                          } else {
+                            if (governmentComponents.length >= 15) return;
+                            // Exclusive filter: clear other economic governance selections
+                            const econComps = economicGovernanceOptions.map(
+                              (o) => o.value
+                            ) as ComponentType[];
+                            const cleaned = governmentComponents.filter(
+                              (c) => !econComps.includes(c)
+                            );
+                            onGovernmentComponentsChange([...cleaned, opt.value]);
+                          }
+                        }}
+                        className={cn(
+                          "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3.5 transition-all duration-200 select-none",
+                          isSelected
+                            ? "border-amber-500/40 bg-amber-500/10 text-white"
+                            : "border-white/[0.04] bg-zinc-950/20 text-zinc-400 hover:border-white/10"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
+                            isSelected
+                              ? "bg-amber-500/20 text-amber-400"
+                              : "bg-zinc-900 text-zinc-500"
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <span
+                            className={cn(
+                              "block text-[11px] font-bold",
+                              isSelected ? "text-zinc-100" : "text-zinc-300"
+                            )}
+                          >
+                            {opt.label}
+                          </span>
+                          <p className="mt-0.5 text-[9.5px] leading-normal text-zinc-400">
+                            {opt.desc}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* VERIFY & PREVIEW TAB */}
+        <TabsContent value="preview" className="mt-4 focus-visible:outline-none">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="space-y-6 lg:col-span-7">
+              {/* Policies spending section */}
+              <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-6">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <GovernmentSpendingSection
+                  inputs={economicInputs}
+                  onInputsChange={onEconomicInputsChange}
+                  selectedAtomicComponents={governmentComponents}
+                  governmentBuilderData={governmentStructure}
+                  countryId={selectedCountry?.countryCode || undefined}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-6 lg:col-span-5">
+              {/* Safety Rails Checkpoint and Verification Box */}
+              <div className="relative space-y-4 overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-5">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <h4 className="flex items-center gap-2 text-sm font-bold text-zinc-200">
+                  <Shield className="h-4.5 w-4.5 text-amber-500" />
+                  Verification Checkpoint
+                </h4>
+                <p className="text-[11px] text-zinc-400">
+                  Review critical adjustments compared to initial setup before authorization
+                </p>
+
+                <div className="space-y-2.5">
+                  {deltaWarning && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] text-amber-200">
+                      <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
+                      <span>{deltaWarning}</span>
+                    </div>
+                  )}
+
+                  {currencyChangeWarning && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] text-amber-200">
+                      <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
+                      <span>{currencyChangeWarning}</span>
+                    </div>
+                  )}
+
+                  {!deltaWarning && !currencyChangeWarning && (
+                    <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-[11px] text-emerald-200">
+                      <CheckCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-400" />
+                      <span>
+                        No high-risk adjustments detected. Structural variables are within safe
+                        boundaries.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-2.5 pt-2 select-none">
+                  <Checkbox
+                    id="verify-checkbox"
+                    checked={isVerified}
+                    onCheckedChange={(checked) => setIsVerified(checked === true)}
+                    className="mt-0.5 border-zinc-700 data-[state=checked]:border-amber-500 data-[state=checked]:bg-amber-500"
+                  />
+                  <Label
+                    htmlFor="verify-checkbox"
+                    className="cursor-pointer text-xs leading-normal text-zinc-400"
+                  >
+                    I verify these governance adjustments are intentional and authorization should
+                    be finalized.
+                  </Label>
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    onClick={async () => {
+                      if (!isVerified || gdpCapWarning) return;
+                      await onGovernmentStructureSave(governmentStructure);
+                    }}
+                    disabled={!isVerified || !!gdpCapWarning}
+                    className="h-9 w-full rounded-lg bg-amber-500 text-xs font-semibold text-black hover:bg-amber-600 disabled:bg-zinc-800 disabled:text-zinc-500"
+                  >
+                    Save & Finalize Governance
+                  </Button>
+                </div>
+              </div>
+
+              {/* Government Structure Preview */}
+              <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/10 p-6">
+                <TextureOverlay texture="chevron" opacity={0.02} />
+                <GovernmentStructurePreview
+                  governmentStructure={governmentStructure}
+                  governmentComponents={governmentComponents}
+                />
+              </div>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-// Separate help dialog components to keep the main component clean
-
-function AtomicComponentsHelpDialog() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <HelpCircle className="h-4 w-4" />
-          What are Atomic Components?
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Atom className="h-6 w-6 text-purple-600" />
-            Atomic Components
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          {/* Dialog content continues - implementing the full help content */}
-          <div>
-            <p className="text-muted-foreground leading-relaxed">
-              Atomic Components are the building blocks of your government. Instead of choosing a
-              pre-defined government type, you assemble a custom structure from fundamental building
-              blocks that interact with each other to create emergent behaviors and effectiveness
-              levels.
-            </p>
-          </div>
-
-          {/* Core Principles */}
-          <div>
-            <h3 className="mb-3 text-lg font-semibold">Core Principles</h3>
-            <div className="space-y-3">
-              <div className="flex gap-3">
-                <div className="h-fit rounded-lg bg-purple-500/20 p-2">
-                  <Blocks className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Modularity</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Each component is independent. Mix and match Power Distribution, Decision
-                    Processes, Legitimacy Sources, Institutions, and more freely.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="h-fit rounded-lg bg-blue-500/20 p-2">
-                  <Zap className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Synergy Effects</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Components interact dynamically. Certain combinations unlock bonuses while
-                    others create tensions requiring management.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Component Categories */}
-          <div>
-            <h3 className="mb-3 text-lg font-semibold">Component Categories (72 Total)</h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {[
-                {
-                  icon: Crown,
-                  name: "Power Distribution (4)",
-                  color: "purple",
-                  desc: "Centralized, Federal, Confederate, Unitary systems",
-                },
-                {
-                  icon: Settings,
-                  name: "Decision Processes (4)",
-                  color: "blue",
-                  desc: "Democratic, Autocratic, Consensus, Technocratic",
-                },
-                {
-                  icon: Shield,
-                  name: "Legitimacy Sources (4)",
-                  color: "green",
-                  desc: "Electoral, Traditional, Performance, Charismatic",
-                },
-                {
-                  icon: Building2,
-                  name: "Institutions (8)",
-                  color: "orange",
-                  desc: "Judiciary, Bureaucracy, Military, Security, etc.",
-                },
-                {
-                  icon: Scale,
-                  name: "Control Mechanisms (8)",
-                  color: "red",
-                  desc: "Checks and balances, oversight systems",
-                },
-                {
-                  icon: Coins,
-                  name: "Economic Governance (8)",
-                  color: "yellow",
-                  desc: "Market, Command, Mixed economy systems",
-                },
-                {
-                  icon: Users,
-                  name: "Administrative (8)",
-                  color: "indigo",
-                  desc: "Efficiency, decentralization, management",
-                },
-                {
-                  icon: Heart,
-                  name: "Social Policy (8)",
-                  color: "pink",
-                  desc: "Welfare, education, healthcare systems",
-                },
-                {
-                  icon: Globe,
-                  name: "International Relations (8)",
-                  color: "cyan",
-                  desc: "Diplomacy, alliances, trade policies",
-                },
-                {
-                  icon: TrendingUp,
-                  name: "Innovation & Development (8)",
-                  color: "emerald",
-                  desc: "R&D, technology, entrepreneurship",
-                },
-                {
-                  icon: AlertTriangle,
-                  name: "Crisis Management (4)",
-                  color: "amber",
-                  desc: "Emergency response, risk management",
-                },
-              ].map((category, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <category.icon className={`h-4 w-4 text-${category.color}-600`} />
-                    <span className="font-medium">{category.name}</span>
-                  </div>
-                  <p className="text-muted-foreground pl-6 text-sm">{category.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function GovernmentBuilderHelpDialog() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <HelpCircle className="h-4 w-4" />
-          Government Builder Guide
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Crown className="h-6 w-6 text-blue-600" />
-            Government Builder
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div>
-            <p className="text-muted-foreground leading-relaxed">
-              The Government Builder transforms your selected atomic components into a complete
-              government structure. It automatically generates departments, budget allocations, and
-              revenue sources based on your choices, while allowing you to customize and fine-tune
-              the details.
-            </p>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function PoliciesHelpDialog() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <HelpCircle className="h-4 w-4" />
-          Policies Guide
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-6 w-6 text-green-600" />
-            Government Policies
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div>
-            <p className="text-muted-foreground leading-relaxed">
-              Government policies are specific spending priorities and programs that complement your
-              atomic components. They are dynamically filtered based on your selected components,
-              ensuring that only relevant and compatible policies are available for selection.
-            </p>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function GovernmentPreviewTab({
-  governmentStructure,
-  governmentComponents,
-}: {
-  governmentStructure: any;
-  governmentComponents: ComponentType[];
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.1 }}
-      className="space-y-6"
-    >
-      <GovernmentStructurePreview
-        governmentStructure={governmentStructure}
-        governmentComponents={governmentComponents}
-      />
-    </motion.div>
   );
 }

@@ -127,6 +127,8 @@ describe("wiki-search-service base path handling", () => {
       ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
     );
     expect(targetCall).toBeDefined();
-    expect(targetCall?.[0] as string).toMatch(/^http:\/\/localhost:4567\/api\/ixwiki-proxy\/api\.php\?/);
+    expect(targetCall?.[0] as string).toMatch(
+      /^http:\/\/localhost:4567\/api\/ixwiki-proxy\/api\.php\?/
+    );
   });
 });

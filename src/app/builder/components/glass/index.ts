@@ -2,6 +2,11 @@ export { GlassCard, GlassCardHeader, GlassCardContent, GlassCardFooter } from ".
 export { GlassTooltip, InfoIcon } from "./GlassTooltip";
 export { LiveFeedback } from "./LiveFeedback";
 export { BuilderModeToggle } from "./BuilderModeToggle";
+export {
+  DynamicIslandEffects,
+  DYNAMIC_ISLAND_STYLE,
+  DYNAMIC_ISLAND_BORDER_CLASS,
+} from "./DynamicIslandEffects";
 
 // New standardized components
 export {

@@ -152,5 +152,5 @@ export function getStepsForMode(mode: BuilderMode): BuilderStep[] {
   if (mode === "edit") {
     return ["core", "government", "economics", "preview"];
   }
-  return stepOrder;
+  return ["foundation", "core", "government", "economics", "preview"];
 }

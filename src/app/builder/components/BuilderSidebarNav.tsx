@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useMemo } from "react";
 import { cn } from "~/lib/utils";
 import {
   Globe,
@@ -9,78 +10,38 @@ import {
   CheckCircle,
   Lock,
   Check,
+  Sparkles,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
-import { type BuilderSection, BUILDER_SECTION_THEMES, BUILD_STEPS } from "../lib/builder-theme";
-
-// ─── Nav item config ───
-
-interface BuilderNavItem {
-  id: BuilderSection;
-  icon: LucideIcon;
-  title: string;
-  shortTitle: string;
-  gradient: string;
-  activeGlow: string;
-}
-
-// Only include build steps - no welcome/import
-const NAV_ITEMS: BuilderNavItem[] = [
-  {
-    id: "foundation",
-    icon: Globe,
-    title: "Foundation",
-    shortTitle: "Found.",
-    gradient: BUILDER_SECTION_THEMES.foundation.gradient,
-    activeGlow: BUILDER_SECTION_THEMES.foundation.activeGlow,
-  },
-  {
-    id: "identity",
-    icon: Flag,
-    title: "National Identity",
-    shortTitle: "Identity",
-    gradient: BUILDER_SECTION_THEMES.identity.gradient,
-    activeGlow: BUILDER_SECTION_THEMES.identity.activeGlow,
-  },
-  {
-    id: "government",
-    icon: Building2,
-    title: "Government",
-    shortTitle: "Govt.",
-    gradient: BUILDER_SECTION_THEMES.government.gradient,
-    activeGlow: BUILDER_SECTION_THEMES.government.activeGlow,
-  },
-  {
-    id: "economics",
-    icon: TrendingUp,
-    title: "Economics",
-    shortTitle: "Econ.",
-    gradient: BUILDER_SECTION_THEMES.economics.gradient,
-    activeGlow: BUILDER_SECTION_THEMES.economics.activeGlow,
-  },
-  {
-    id: "preview",
-    icon: CheckCircle,
-    title: "Preview & Create",
-    shortTitle: "Preview",
-    gradient: BUILDER_SECTION_THEMES.preview.gradient,
-    activeGlow: BUILDER_SECTION_THEMES.preview.activeGlow,
-  },
-];
-
-// ─── Props ───
+import { type BuilderSection } from "../lib/builder-theme";
+import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 
 interface BuilderSidebarNavProps {
   activeSection: BuilderSection;
   onNavigate: (section: BuilderSection) => void;
-  /** Which build steps have been completed */
   completedSteps?: Set<BuilderSection>;
-  /** Which steps the user can currently access */
   accessibleSteps?: Set<BuilderSection>;
   variant?: "desktop" | "expanded" | "mobile";
+  mode?: "create" | "edit";
 }
 
-// ─── Component ───
+interface NavItem {
+  title: string;
+  section: BuilderSection;
+  icon: LucideIcon;
+  colorClass: string;
+  bgClass: string;
+  tab?: string;
+  isActive: (activeSec: BuilderSection, state: any) => boolean;
+  onClick: (state: any, onNavigate: (section: BuilderSection) => void) => void;
+}
 
 export function BuilderSidebarNav({
   activeSection,
@@ -88,45 +49,218 @@ export function BuilderSidebarNav({
   completedSteps = new Set(),
   accessibleSteps,
   variant = "desktop",
+  mode = "create",
 }: BuilderSidebarNavProps) {
-  const isAccessible = (id: BuilderSection) => {
+  const state = useBuilderContext();
+
+  const isAccessible = (section: BuilderSection) => {
     if (!accessibleSteps) return true;
-    return accessibleSteps.has(id);
+    return accessibleSteps.has(section);
   };
 
-  const stepIndex = (id: BuilderSection) => BUILD_STEPS.indexOf(id);
+  // Define steps for Create Mode
+  const createNavItems = useMemo<NavItem[]>(
+    () => [
+      {
+        title: "Foundation",
+        section: "foundation",
+        icon: Globe,
+        colorClass: "text-blue-400",
+        bgClass: "bg-blue-500/5 hover:bg-blue-500/10",
+        isActive: (sec) => sec === "foundation",
+        onClick: (_, onNav) => onNav("foundation"),
+      },
+      {
+        title: "Core Identity",
+        section: "identity",
+        icon: Flag,
+        colorClass: "text-teal-400",
+        bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
+        isActive: (sec) => sec === "identity",
+        onClick: (_, onNav) => onNav("identity"),
+      },
+      {
+        title: "Preview & Create",
+        section: "preview",
+        icon: CheckCircle,
+        colorClass: "text-amber-400",
+        bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
+        isActive: (sec) => sec === "preview",
+        onClick: (_, onNav) => onNav("preview"),
+      },
+    ],
+    []
+  );
 
-  /* ── Mobile: horizontal pill bar ── */
+  // Define steps for Edit Mode
+  const editNavItems = useMemo<NavItem[]>(
+    () => [
+      {
+        title: "National Identity",
+        section: "identity",
+        icon: Flag,
+        colorClass: "text-teal-400",
+        bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
+        tab: "identity",
+        isActive: (sec, st) => sec === "identity" && st.builderState.activeCoreTab === "identity",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeCoreTab: "identity" }));
+          onNav("identity");
+        },
+      },
+      {
+        title: "Core Indicators",
+        section: "identity",
+        icon: TrendingUp,
+        colorClass: "text-emerald-400",
+        bgClass: "bg-emerald-500/5 hover:bg-emerald-500/10",
+        tab: "indicators",
+        isActive: (sec, st) => sec === "identity" && st.builderState.activeCoreTab === "indicators",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeCoreTab: "indicators" }));
+          onNav("identity");
+        },
+      },
+      {
+        title: "Gov Components",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-cyan-400",
+        bgClass: "bg-cyan-500/5 hover:bg-cyan-500/10",
+        tab: "components",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "components",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "components" }));
+          onNav("government");
+        },
+      },
+      {
+        title: "Gov Structure",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-sky-400",
+        bgClass: "bg-sky-500/5 hover:bg-sky-500/10",
+        tab: "structure",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "structure",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "structure" }));
+          onNav("government");
+        },
+      },
+      {
+        title: "Spending Policies",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-blue-400",
+        bgClass: "bg-blue-500/5 hover:bg-blue-500/10",
+        tab: "spending",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "spending",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "spending" }));
+          onNav("government");
+        },
+      },
+      {
+        title: "Tax System",
+        section: "economics",
+        icon: TrendingUp,
+        colorClass: "text-purple-400",
+        bgClass: "bg-purple-500/5 hover:bg-purple-500/10",
+        tab: "tax",
+        isActive: (sec, st) =>
+          sec === "economics" &&
+          (st.builderState.activeEconomicsTab === "tax" ||
+            st.builderState.activeEconomicsTab === "taxes"),
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Economy Sectors",
+        section: "economics",
+        icon: Globe,
+        colorClass: "text-violet-400",
+        bgClass: "bg-violet-500/5 hover:bg-violet-500/10",
+        tab: "economy",
+        isActive: (sec, st) =>
+          sec === "economics" &&
+          (st.builderState.activeEconomicsTab === "economy" ||
+            st.builderState.activeEconomicsTab === "sectors" ||
+            st.builderState.activeEconomicsTab === "components" ||
+            st.builderState.activeEconomicsTab === "labor" ||
+            st.builderState.activeEconomicsTab === "demographics" ||
+            st.builderState.activeEconomicsTab === "preview"),
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "economy" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Preview & Save",
+        section: "preview",
+        icon: CheckCircle,
+        colorClass: "text-amber-400",
+        bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
+        isActive: (sec) => sec === "preview",
+        onClick: (_, onNav) => onNav("preview"),
+      },
+    ],
+    []
+  );
+
+  const activeItems = mode === "edit" ? editNavItems : createNavItems;
+
+  // Calculate completion percentage
+  const completionPercent = useMemo(() => {
+    if (mode === "edit") {
+      // In edit mode, look at how many of the 3 primary sections are completed (identity, government, economics)
+      const editSections: BuilderSection[] = ["identity", "government", "economics"];
+      const completed = editSections.filter((s) => completedSteps.has(s)).length;
+      return Math.round((completed / editSections.length) * 100);
+    } else {
+      // Create mode
+      const createSections: BuilderSection[] = ["foundation", "identity"];
+      const completed = createSections.filter((s) => completedSteps.has(s)).length;
+      return Math.round((completed / createSections.length) * 100);
+    }
+  }, [completedSteps, mode]);
+
+  // ─── Mobile: horizontal pill bar ───
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
+      <nav className="glass-surface glass-refraction overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/60 p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
-          {NAV_ITEMS.map((item) => {
-            const isActive = item.id === activeSection;
-            const accessible = isAccessible(item.id);
-            const completed = completedSteps.has(item.id);
-            const isBuildStep = stepIndex(item.id) >= 0;
+          {activeItems.map((item, idx) => {
+            const isActive = item.isActive(activeSection, state);
+            const accessible = isAccessible(item.section);
+            const completed = completedSteps.has(item.section);
 
             return (
               <button
-                key={item.id}
-                onClick={() => accessible && onNavigate(item.id)}
+                key={idx}
+                onClick={() => accessible && item.onClick(state, onNavigate)}
                 disabled={!accessible}
                 className={cn(
-                  "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
+                  "relative flex shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-[10px] font-semibold transition-all duration-200",
                   isActive
-                    ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
+                    ? "bg-amber-500 font-bold text-zinc-950 shadow-md"
                     : accessible
-                      ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      : "text-muted-foreground/40 cursor-not-allowed"
+                      ? "border-zinc-800/40 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                      : "cursor-not-allowed text-zinc-600"
                 )}
-                aria-current={isActive ? "page" : undefined}
               >
-                <item.icon size={14} className="shrink-0" />
-                <span className="whitespace-nowrap">{item.shortTitle}</span>
-                {!accessible && <Lock className="text-muted-foreground/40 h-3 w-3 shrink-0" />}
-                {completed && isBuildStep && !isActive && (
-                  <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+                <item.icon
+                  size={10}
+                  className={cn("shrink-0", isActive ? "text-zinc-950" : item.colorClass)}
+                />
+                <span>{item.title}</span>
+                {!accessible && <Lock className="h-2.5 w-2.5 shrink-0 text-zinc-600" />}
+                {completed && !isActive && (
+                  <Check className="h-2.5 w-2.5 shrink-0 text-emerald-500" />
                 )}
               </button>
             );
@@ -136,110 +270,100 @@ export function BuilderSidebarNav({
     );
   }
 
-  /* ── Expanded desktop: icon + label sidebar ── */
-  if (variant === "expanded") {
-    return (
-      <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.id === activeSection;
-          const accessible = isAccessible(item.id);
-          const completed = completedSteps.has(item.id);
-          const isBuildStep = stepIndex(item.id) >= 0;
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => accessible && onNavigate(item.id)}
-              disabled={!accessible}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200",
-                isActive
-                  ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
-                  : accessible
-                    ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    : "text-muted-foreground/40 cursor-not-allowed"
-              )}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <item.icon size={16} className="shrink-0" />
-              <span className="truncate">{item.title}</span>
-              {!accessible && (
-                <Lock className="text-muted-foreground/40 ml-auto h-3.5 w-3.5 shrink-0" />
-              )}
-              {completed && isBuildStep && !isActive && accessible && (
-                <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-emerald-500" />
-              )}
-              {isBuildStep && accessible && !completed && !isActive && (
-                <span className="text-muted-foreground/50 ml-auto text-[10px]">
-                  {stepIndex(item.id) + 1}/{BUILD_STEPS.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-    );
-  }
-
-  /* ── Desktop: icon rail with tooltip labels ── */
+  // ─── Desktop: CutoutCard Step Progress Widget ───
   return (
-    <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
-      {NAV_ITEMS.map((item) => {
-        const isActive = item.id === activeSection;
-        const accessible = isAccessible(item.id);
-        const completed = completedSteps.has(item.id);
-        const isBuildStep = stepIndex(item.id) >= 0;
+    <CutoutCard
+      className={cn(
+        cutoutCardSurfaceClassName,
+        "w-56 overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40 shadow-lg backdrop-blur-md"
+      )}
+      trackPointerHover={false}
+      texture="dots"
+      textureOpacity={0.06}
+    >
+      {/* Cutout Header */}
+      <div className="relative bg-amber-500/10 px-3 pt-2.5 pb-4">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-100">
+          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+          <span>{mode === "edit" ? "Edit Progress" : "Build Progress"}</span>
+        </div>
+        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
+        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+      </div>
 
-        return (
-          <button
-            key={item.id}
-            onClick={() => accessible && onNavigate(item.id)}
-            disabled={!accessible}
-            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            aria-label={item.title}
-            aria-current={isActive ? "page" : undefined}
-          >
+      <CutoutCardContent className="space-y-3.5 p-3 pt-1">
+        {/* Progress Bar */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[9px] text-zinc-400">
+            <span>Overall Completion</span>
+            <span className="font-bold text-zinc-200">{completionPercent}%</span>
+          </div>
+          <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
             <div
-              className={cn(
-                "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200",
-                isActive
-                  ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
-                  : accessible
-                    ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    : "text-muted-foreground/30 cursor-not-allowed"
-              )}
-            >
-              <item.icon
-                size={18}
-                className={cn(
-                  "transition-transform duration-150",
-                  !isActive && accessible && "group-hover/tip:scale-110"
-                )}
-              />
-              {/* Completion check */}
-              {completed && isBuildStep && !isActive && (
-                <span className="ring-background absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2">
-                  <Check className="h-2 w-2 text-white" />
-                </span>
-              )}
-              {/* Lock indicator */}
-              {!accessible && (
-                <Lock className="text-muted-foreground/50 absolute -right-0.5 -bottom-0.5 h-3 w-3 drop-shadow" />
-              )}
+              className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 transition-all duration-500"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+        </div>
 
-              {/* Tooltip */}
-              <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100">
-                {item.title}
-                {!accessible ? " (locked)" : ""}
-                <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
-              </span>
-            </div>
-          </button>
-        );
-      })}
-    </nav>
+        {/* Steps List */}
+        <div className="space-y-1">
+          {activeItems.map((item, idx) => {
+            const isActive = item.isActive(activeSection, state);
+            const accessible = isAccessible(item.section);
+            const completed = completedSteps.has(item.section);
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={idx}
+                onClick={() => accessible && item.onClick(state, onNavigate)}
+                disabled={!accessible}
+                className={cn(
+                  "group flex w-full items-center justify-between rounded-md border border-transparent p-1.5 text-left transition-all duration-200",
+                  isActive
+                    ? "border-amber-500/20 bg-amber-500/10 font-bold"
+                    : accessible
+                      ? cn("text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200", item.bgClass)
+                      : "cursor-not-allowed text-zinc-600 opacity-60"
+                )}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <Icon
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-colors",
+                      isActive ? "text-amber-400" : accessible ? item.colorClass : "text-zinc-700"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "truncate text-[10px] leading-none",
+                      isActive ? "font-bold text-amber-400" : "text-zinc-300"
+                    )}
+                  >
+                    {item.title}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1 pl-2">
+                  {!accessible ? (
+                    <Lock className="h-3 w-3 text-zinc-700" />
+                  ) : completed && !isActive ? (
+                    <Check className="h-3 w-3 stroke-[2.5] text-emerald-500" />
+                  ) : isActive ? (
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                    </span>
+                  ) : (
+                    <ChevronRight className="h-3 w-3 text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100" />
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }
-
-export { NAV_ITEMS };
-export type { BuilderNavItem };

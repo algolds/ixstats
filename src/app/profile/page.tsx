@@ -36,6 +36,7 @@ import {
   IxnayIDCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
+import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
 
 import { useProfileSettings, useSetupStatus } from "./_hooks";
 
@@ -51,6 +52,7 @@ function ProfileContent() {
   const [showLore, setShowLore] = useState(false);
   const [showThinkpages, setShowThinkpages] = useState(false);
   const [showIxnayID, setShowIxnayID] = useState(false);
+  const [heroCollapsed, setHeroCollapsed] = useState(true);
 
   const profileSettings = useProfileSettings({
     userProfileCountryId: userProfile?.countryId ?? undefined,
@@ -94,7 +96,10 @@ function ProfileContent() {
             <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 blur-[120px] dark:bg-purple-500/20" />
           </div>
 
-          <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          <DashboardSidebarLayout
+            heroCollapsed={heroCollapsed}
+            onHeroExpand={() => setHeroCollapsed(false)}
+          >
             <div className="mb-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
@@ -322,7 +327,7 @@ function ProfileContent() {
                 </div>
               </div>
             </div>
-          </div>
+          </DashboardSidebarLayout>
         </div>
       </SignedIn>
       <SignedOut>

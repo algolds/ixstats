@@ -2,6 +2,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { wikiCacheService } from "~/lib/services/wiki-cache-service";
+
+// Register persistent L1/L2 server cache for flag resolution
+unifiedFlagService.registerPersistentCache(
+  (country) => wikiCacheService.getCachedFlagUrl(country),
+  (country, url) => wikiCacheService.cacheFlagUrl(country, url)
+);
 import { api } from "~/trpc/server";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 

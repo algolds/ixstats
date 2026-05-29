@@ -100,7 +100,8 @@ export const GLASS_DEPTHS = {
 export function useSectionTheme(sectionId?: SectionId, overrideTheme?: PrimitiveTheme) {
   return useMemo(() => {
     const theme = overrideTheme || (sectionId ? SECTION_THEME_MAP[sectionId] : "default");
-    const colors = SECTION_COLOR_SCHEMES[theme];
+    const colors =
+      SECTION_COLOR_SCHEMES[theme as PrimitiveTheme] || SECTION_COLOR_SCHEMES["default"];
 
     return {
       theme,
@@ -124,7 +125,7 @@ export function getSectionColors(
   theme?: PrimitiveTheme
 ): SectionColorScheme {
   const resolvedTheme = theme || (sectionId ? SECTION_THEME_MAP[sectionId] : "default");
-  return SECTION_COLOR_SCHEMES[resolvedTheme];
+  return SECTION_COLOR_SCHEMES[resolvedTheme as PrimitiveTheme] || SECTION_COLOR_SCHEMES["default"];
 }
 
 // Utility to generate chart colors for consistent theming with complementary colors

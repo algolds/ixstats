@@ -13,6 +13,7 @@ import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { ForumView } from "~/components/DynamicIsland/ForumView";
 import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
+import { PreText } from "~/components/ui/pretext";
 
 function ForumBreadcrumb() {
   const { currentThread, currentForum, unreadAlerts } = useForumContext();
@@ -28,11 +29,16 @@ function ForumBreadcrumb() {
       }`}
     >
       <MessageSquare className="h-3 w-3 shrink-0 text-orange-400 opacity-70" />
-      <span className="text-foreground/80 truncate text-xs font-medium">{label}</span>
+      <PreText className="text-foreground/80 truncate text-xs font-medium" whiteSpace="nowrap">
+        {label}
+      </PreText>
       {unreadAlerts > 0 && (
-        <span className="flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] font-bold text-white">
-          {unreadAlerts}
-        </span>
+        <PreText
+          className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] font-bold text-white"
+          whiteSpace="nowrap"
+        >
+          {String(unreadAlerts)}
+        </PreText>
       )}
     </span>
   );

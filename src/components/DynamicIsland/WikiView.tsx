@@ -29,6 +29,7 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
+import { PreText } from "~/components/ui/pretext";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -109,11 +110,16 @@ export function WikiView({ onClose }: WikiViewProps) {
       <div className="mb-4 flex items-center justify-between">
         <div className="text-foreground flex items-center gap-2 text-lg font-bold">
           <BookOpen className="h-5 w-5 text-blue-400" />
-          <span>Wiki</span>
+          <PreText className="text-inherit" whiteSpace="nowrap">
+            Wiki
+          </PreText>
           {articleTitle && (
-            <span className="text-muted-foreground ml-1 max-w-[200px] truncate text-sm font-normal">
-              — {articleTitle}
-            </span>
+            <PreText
+              className="text-muted-foreground ml-1 max-w-[200px] truncate text-sm font-normal"
+              whiteSpace="nowrap"
+            >
+              {`— ${articleTitle}`}
+            </PreText>
           )}
         </div>
         <Button
@@ -154,9 +160,16 @@ export function WikiView({ onClose }: WikiViewProps) {
       {searchQuery.length >= 2 && (
         <div className="border-border mb-3 border-b pb-3">
           <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
-            <span>Results{searchData?.totalHits ? ` (${searchData.totalHits})` : ""}</span>
+            <PreText className="text-inherit" whiteSpace="nowrap">
+              {`Results${searchData?.totalHits ? ` (${searchData.totalHits})` : ""}`}
+            </PreText>
             {isSearching && (
-              <span className="text-muted-foreground/50 animate-pulse">searching...</span>
+              <PreText
+                className="text-muted-foreground/80 animate-pulse text-[10px]"
+                whiteSpace="nowrap"
+              >
+                searching...
+              </PreText>
             )}
           </div>
           {searchResults.length > 0 ? (
@@ -168,7 +181,9 @@ export function WikiView({ onClose }: WikiViewProps) {
               >
                 <span className="flex items-center gap-2 text-sm">
                   <BookOpen className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate font-medium">{result.title}</span>
+                  <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">
+                    {result.title}
+                  </PreText>
                 </span>
                 {result.snippet && (
                   <span
@@ -179,7 +194,9 @@ export function WikiView({ onClose }: WikiViewProps) {
               </button>
             ))
           ) : !isSearching ? (
-            <p className="text-muted-foreground/50 px-2 py-1 text-xs">No results</p>
+            <PreText className="text-muted-foreground/75 px-2 py-1 text-xs" whiteSpace="nowrap">
+              No results
+            </PreText>
           ) : null}
         </div>
       )}
@@ -207,9 +224,11 @@ export function WikiView({ onClose }: WikiViewProps) {
                     style={{ paddingLeft: `${8 + (entry.level - 2) * 14}px` }}
                   >
                     {entry.level > 2 && (
-                      <span className="text-muted-foreground/40 mr-1.5 text-[10px]">›</span>
+                      <span className="text-muted-foreground/70 mr-1.5 text-[10px]">›</span>
                     )}
-                    <span className="truncate">{entry.text}</span>
+                    <PreText className="truncate text-inherit" whiteSpace="nowrap">
+                      {entry.text}
+                    </PreText>
                   </button>
                 ))}
               </div>
@@ -254,15 +273,19 @@ export function WikiView({ onClose }: WikiViewProps) {
                     onClick={() => handleNavigateToArticle(rc.title ?? "")}
                     className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
                   >
-                    <span className="truncate text-[13px]">{rc.title}</span>
-                    <span className="text-muted-foreground text-[10px]">
-                      {rc.user} · {formatMWTimeAgo(rc.timestamp)}
-                    </span>
+                    <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
+                      {rc.title}
+                    </PreText>
+                    <PreText className="text-muted-foreground text-[10px]" whiteSpace="nowrap">
+                      {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
+                    </PreText>
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground px-2 text-xs">Loading...</p>
+              <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
+                Loading...
+              </PreText>
             )}
           </CollapsibleSection>
 
@@ -365,7 +388,7 @@ export function WikiView({ onClose }: WikiViewProps) {
 function SectionHeader({ label }: { label: string }) {
   return (
     <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
-      {label}
+      <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
 }
@@ -394,9 +417,15 @@ function CollapsibleSection({
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           {icon}
-          {label}
+          <PreText className="inline-block text-inherit" whiteSpace="nowrap">
+            {label}
+          </PreText>
         </span>
-        {count !== undefined && <span className="text-muted-foreground/50">{count}</span>}
+        {count !== undefined && (
+          <PreText className="text-muted-foreground/75 inline-block shrink-0" whiteSpace="nowrap">
+            {String(count)}
+          </PreText>
+        )}
       </button>
       {open && children}
     </div>
@@ -421,12 +450,17 @@ function QuickAction({
     >
       <span className="flex items-center gap-2">
         <span className="text-muted-foreground [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
-        <span>{label}</span>
+        <PreText className="text-inherit" whiteSpace="nowrap">
+          {label}
+        </PreText>
       </span>
       {shortcut && (
-        <kbd className="border-border bg-accent/10 text-muted-foreground rounded border px-1.5 py-0.5 text-[10px]">
+        <PreText
+          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[10px]"
+          whiteSpace="nowrap"
+        >
           {shortcut}
-        </kbd>
+        </PreText>
       )}
     </button>
   );

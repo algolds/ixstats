@@ -123,9 +123,13 @@ export function getSectorCategory(sectorType: string): "Primary" | "Secondary" |
  */
 export function calculateSectorTotals(sectors: SectorConfiguration[]) {
   const avgGrowthRate =
-    sectors.length > 0 ? sectors.reduce((sum, s) => sum + (s.growthRate || 0), 0) / sectors.length : 0;
+    sectors.length > 0
+      ? sectors.reduce((sum, s) => sum + (s.growthRate || 0), 0) / sectors.length
+      : 0;
   const averageProductivity =
-    sectors.length > 0 ? sectors.reduce((sum, s) => sum + (s.productivity || 0), 0) / sectors.length : 0;
+    sectors.length > 0
+      ? sectors.reduce((sum, s) => sum + (s.productivity || 0), 0) / sectors.length
+      : 0;
 
   return {
     totalGDP: sectors.reduce((sum, sector) => sum + sector.gdpContribution, 0),

@@ -326,9 +326,9 @@ export function getEmploymentTypeColor(type: string): string {
  */
 export function calculateEffectivenessScore(state: EconomyBuilderState): number {
   if (!state) return 0;
-  
+
   let score = 75; // Base score
-  
+
   // Penalize incomplete configurations (missing sectors)
   if (!state.sectors || state.sectors.length === 0) {
     score -= 30;
@@ -338,16 +338,17 @@ export function calculateEffectivenessScore(state: EconomyBuilderState): number 
     if (Math.abs(totalGdp - 100) > 1) {
       score -= 15;
     }
-    
+
     // Consider productivity
-    const avgProductivity = state.sectors.reduce((sum, s) => sum + (s.productivity || 0), 0) / state.sectors.length;
+    const avgProductivity =
+      state.sectors.reduce((sum, s) => sum + (s.productivity || 0), 0) / state.sectors.length;
     if (avgProductivity > 80) {
       score += 5;
     } else if (avgProductivity < 40) {
       score -= 10;
     }
   }
-  
+
   // Consider labor market (unemployment rate)
   if (state.laborMarket) {
     if (state.laborMarket.totalWorkforce === 0) {
@@ -361,7 +362,7 @@ export function calculateEffectivenessScore(state: EconomyBuilderState): number 
   } else {
     score -= 20;
   }
-  
+
   // Consider demographics
   if (state.demographics) {
     if (state.demographics.totalPopulation === 0) {
@@ -370,7 +371,7 @@ export function calculateEffectivenessScore(state: EconomyBuilderState): number 
   } else {
     score -= 20;
   }
-  
+
   return Math.max(0, Math.min(100, score));
 }
 
@@ -379,31 +380,36 @@ export function calculateEffectivenessScore(state: EconomyBuilderState): number 
  */
 export function calculateCompleteness(state: EconomyBuilderState): number {
   if (!state) return 0;
-  
+
   let completeness = 0;
-  
+
   // Sectors weight: 30%
   if (state.sectors && state.sectors.length > 0) {
     completeness += 30;
   }
-  
+
   // Labor market weight: 30%
   if (state.laborMarket && state.laborMarket.totalWorkforce > 0) {
     completeness += 30;
   }
-  
+
   // Demographics weight: 20%
-  if (state.demographics && state.demographics.totalPopulation > 0 && state.demographics.regions && state.demographics.regions.length > 0) {
+  if (
+    state.demographics &&
+    state.demographics.totalPopulation > 0 &&
+    state.demographics.regions &&
+    state.demographics.regions.length > 0
+  ) {
     completeness += 20;
   } else if (state.demographics && state.demographics.totalPopulation > 0) {
     completeness += 10;
   }
-  
+
   // Selected atomic components weight: 20%
   if (state.selectedAtomicComponents && state.selectedAtomicComponents.length > 0) {
     completeness += 20;
   }
-  
+
   return completeness;
 }
 
@@ -413,12 +419,12 @@ export function calculateCompleteness(state: EconomyBuilderState): number {
 export function identifyIssues(state: EconomyBuilderState): string[] {
   const issues: string[] = [];
   if (!state) return ["Missing state"];
-  
+
   // 1. Zero population (Critical)
   if (!state.demographics || state.demographics.totalPopulation === 0) {
     issues.push("Critical: Population is zero");
   }
-  
+
   // 2. Missing sectors (Critical)
   if (!state.sectors || state.sectors.length === 0) {
     issues.push("Critical: No sectors configured");
@@ -429,16 +435,16 @@ export function identifyIssues(state: EconomyBuilderState): string[] {
       issues.push("High: Sector GDP contributions must sum to 100%");
     }
   }
-  
+
   // 4. High unemployment (Medium)
   if (state.laborMarket && state.laborMarket.unemploymentRate > 15) {
     issues.push("Medium: High unemployment rate");
   }
-  
+
   // 5. Missing atomic components (Medium)
   if (!state.selectedAtomicComponents || state.selectedAtomicComponents.length === 0) {
     issues.push("Medium: No atomic components selected");
   }
-  
+
   return issues;
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "motion/react";
+import { PreText } from "~/components/ui/pretext";
 import {
   Globe,
   Sparkles,
@@ -70,7 +71,7 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
   const suggestions = wikiSuggestions[selectedSite.name] || wikiSuggestions.ixwiki!;
 
   return (
-    <div className="sticky top-6 space-y-4">
+    <div className="sticky top-6 w-56 space-y-4">
       {/* ─── Idle state ─── */}
       {!isActive && !isParsing && !isParsed && (
         <motion.div
@@ -140,33 +141,49 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                 <p className="mb-1 font-semibold" style={{ color: "var(--color-text-primary)" }}>
                   📊 World Baseline
                 </p>
-                <p className="border-l border-emerald-500/30 pl-3 leading-relaxed">
-                  Your imported Population and GDP are parsed to calculate starting GDP per Capita
-                  and establish your initial{" "}
-                  <span className="font-medium text-emerald-400">Economic Tier</span>.
-                </p>
+                <div className="border-l border-emerald-500/30 pl-3">
+                  <PreText
+                    font="11px Inter, sans-serif"
+                    lineHeight={16}
+                    className="text-[11px] text-zinc-400"
+                  >
+                    Your imported Population and GDP are parsed to calculate starting GDP per Capita
+                    and establish your initial Economic Tier.
+                  </PreText>
+                </div>
               </div>
 
               <div>
                 <p className="mb-1 font-semibold" style={{ color: "var(--color-text-primary)" }}>
                   ⚡ Dynamic Scaling
                 </p>
-                <p className="border-l border-emerald-500/30 pl-3 leading-relaxed">
-                  Workforce size scales from population demographics, which determines baseline
-                  industrial capacity, productiveness, and gross tax revenue.
-                </p>
+                <div className="border-l border-emerald-500/30 pl-3">
+                  <PreText
+                    font="11px Inter, sans-serif"
+                    lineHeight={16}
+                    className="text-[11px] text-zinc-400"
+                  >
+                    Workforce size scales from population demographics, which determines baseline
+                    industrial capacity, productiveness, and gross tax revenue.
+                  </PreText>
+                </div>
               </div>
 
               <div>
                 <p className="mb-1 font-semibold" style={{ color: "var(--color-text-primary)" }}>
                   ⚙️ Customizing Specifics
                 </p>
-                <p className="border-l border-emerald-500/30 pl-3 leading-relaxed">
-                  Proceed through the builder steps to customize details: set corporate/income
-                  taxes, configure public service funding under{" "}
-                  <span className="font-medium text-blue-400">MyGovernment</span>, and select
-                  national policies.
-                </p>
+                <div className="border-l border-emerald-500/30 pl-3">
+                  <PreText
+                    font="11px Inter, sans-serif"
+                    lineHeight={16}
+                    className="text-[11px] text-zinc-400"
+                  >
+                    Proceed through the builder steps to customize details: set corporate/income
+                    taxes, configure public service funding under MyGovernment, and select national
+                    policies.
+                  </PreText>
+                </div>
               </div>
             </div>
           </div>
@@ -274,127 +291,6 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
               <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 Extracting infobox data...
               </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ─── Parsed ─── */}
-      {isParsed && parsedData && (
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-4"
-        >
-          <div
-            className="rounded-xl border p-4 backdrop-blur-sm"
-            style={{
-              backgroundColor: "var(--color-bg-secondary)",
-              borderColor: "var(--color-border-primary)",
-            }}
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                Data Extracted
-              </span>
-            </div>
-            <div className="mb-3 flex items-center gap-3">
-              {parsedData.flagUrl ? (
-                <img
-                  src={parsedData.flagUrl}
-                  alt="Flag"
-                  className="h-6 w-10 rounded-sm border object-cover"
-                  style={{ borderColor: "var(--color-border-primary)" }}
-                />
-              ) : selectedResult?.flagUrl ? (
-                <img
-                  src={selectedResult.flagUrl}
-                  alt="Flag"
-                  className="h-6 w-10 rounded-sm border object-cover"
-                  style={{ borderColor: "var(--color-border-primary)" }}
-                />
-              ) : (
-                <Globe className="h-6 w-6 shrink-0" style={{ color: "var(--color-text-muted)" }} />
-              )}
-              <div>
-                <span
-                  className="text-sm font-medium"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
-                  {parsedData.common_name ||
-                    parsedData.official_name ||
-                    parsedData.conventional_long_name ||
-                    selectedResult?.title}
-                </span>
-                <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  From: {selectedSite.displayName}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              {parsedData.population && (
-                <div
-                  className="flex items-center gap-2 text-xs"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  <Users className="h-3 w-3 text-blue-400" />
-                  Population: {String(parsedData.population)}
-                </div>
-              )}
-              {(parsedData.gdpPerCapita ||
-                parsedData.GDP_nominal_per_capita ||
-                parsedData.GDP_PPP_per_capita) && (
-                <div
-                  className="flex items-center gap-2 text-xs"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  <DollarSign className="h-3 w-3 text-green-400" />
-                  GDP/Capita:{" "}
-                  {String(
-                    parsedData.gdpPerCapita ||
-                      parsedData.GDP_nominal_per_capita ||
-                      parsedData.GDP_PPP_per_capita
-                  )}
-                </div>
-              )}
-              {parsedData.capital && (
-                <div
-                  className="flex items-center gap-2 text-xs"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  <MapPin className="h-3 w-3 text-red-400" />
-                  Capital: {parsedData.capital}
-                </div>
-              )}
-              {(parsedData.government_type || parsedData.government) && (
-                <div
-                  className="flex items-center gap-2 text-xs"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  <Building className="h-3 w-3 text-purple-400" />
-                  Govt: {parsedData.government_type || parsedData.government}
-                </div>
-              )}
-              <div
-                className="flex items-center gap-2 text-xs"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                <Database className="h-3 w-3 text-amber-400" />
-                {extractCount(parsedData)}/8 fields extracted
-              </div>
-            </div>
-
-            <div className="bg-accent/30 mt-3 h-1.5 w-full overflow-hidden rounded-full">
-              <div
-                className="h-full rounded-full bg-green-500"
-                style={{ width: `${(extractCount(parsedData) / 8) * 100}%` }}
-              />
             </div>
           </div>
         </motion.div>

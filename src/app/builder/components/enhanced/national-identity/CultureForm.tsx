@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { Languages, Heart } from "lucide-react";
+import { Languages, Heart, Music, Sparkles } from "lucide-react";
 import { EnhancedNumberInput } from "../../../primitives/enhanced";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
+import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
 interface CultureFormProps {
@@ -44,11 +45,22 @@ export const CultureForm = React.memo(
     }, []);
 
     return (
-      <>
-        {/* Mottos Section */}
-        <div className="space-y-4">
-          <h4 className="text-lg font-semibold">National Mottos</h4>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Aspirations & Symbols Card */}
+        <GlassCard
+          depth="base"
+          theme="gold"
+          className="border-amber-500/20"
+          texture="chevron"
+          textureOpacity={0.06}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <Sparkles className="h-5 w-5 text-yellow-400" />
+              Aspirations & Symbols
+            </h3>
+          </div>
+          <GlassCardContent className="space-y-4 p-6">
             <EnhancedNumberInput
               label="National Motto (English)"
               value={String(identity.motto || "")}
@@ -68,33 +80,10 @@ export const CultureForm = React.memo(
               placeholder="Original language version"
               acceptText={true}
             />
-          </div>
-        </div>
-
-        {/* Languages & Culture Section */}
-        <div className="space-y-4">
-          <h4 className="text-lg font-semibold">Languages & Culture</h4>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <IdentityAutocomplete
-              fieldName="officialLanguages"
-              value={String(identity.officialLanguages || "")}
-              onChange={handleOfficialLanguagesChange}
-              placeholder="English, Spanish, French..."
-              icon={Languages}
-              onSave={onFieldSave}
-            />
-
-            <IdentityAutocomplete
-              fieldName="nationalLanguage"
-              value={String(identity.nationalLanguage || "")}
-              onChange={handleNationalLanguageChange}
-              placeholder="Primary language"
-              icon={Languages}
-              onSave={onFieldSave}
-            />
 
             <EnhancedNumberInput
               label="National Anthem"
+              icon={Music}
               value={String(identity.nationalAnthem || "")}
               onChange={handleNationalAnthemChange}
               sectionId="symbols"
@@ -102,6 +91,43 @@ export const CultureForm = React.memo(
               placeholder="Name of national anthem"
               acceptText={true}
             />
+          </GlassCardContent>
+        </GlassCard>
+
+        {/* Social & Civic Profile Card */}
+        <GlassCard
+          depth="base"
+          theme="indigo"
+          className="border-indigo-500/20"
+          texture="chevron"
+          textureOpacity={0.06}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <Languages className="h-5 w-5 text-indigo-400" />
+              Social & Civic Profile
+            </h3>
+          </div>
+          <GlassCardContent className="space-y-4 p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <IdentityAutocomplete
+                fieldName="officialLanguages"
+                value={String(identity.officialLanguages || "")}
+                onChange={handleOfficialLanguagesChange}
+                placeholder="English, Spanish, French..."
+                icon={Languages}
+                onSave={onFieldSave}
+              />
+
+              <IdentityAutocomplete
+                fieldName="nationalLanguage"
+                value={String(identity.nationalLanguage || "")}
+                onChange={handleNationalLanguageChange}
+                placeholder="Primary language"
+                icon={Languages}
+                onSave={onFieldSave}
+              />
+            </div>
 
             <EnhancedNumberInput
               label="National Religion"
@@ -125,9 +151,9 @@ export const CultureForm = React.memo(
               placeholder="July 4th, December 1st..."
               acceptText={true}
             />
-          </div>
-        </div>
-      </>
+          </GlassCardContent>
+        </GlassCard>
+      </div>
     );
   },
   (prevProps, nextProps) => {

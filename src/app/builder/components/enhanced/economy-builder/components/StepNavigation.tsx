@@ -14,13 +14,21 @@ interface StepNavigationProps {
   steps: readonly Step[];
   currentStep: string;
   onStepChange: (stepId: string) => void;
+  className?: string;
 }
 
-export function StepNavigation({ steps, currentStep, onStepChange }: StepNavigationProps) {
+export function StepNavigation({
+  steps,
+  currentStep,
+  onStepChange,
+  className,
+}: StepNavigationProps) {
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
-    <div className="bg-muted/50 border-border flex items-center justify-between overflow-x-auto rounded-lg border p-4">
+    <div
+      className={`bg-muted/50 border-border flex items-center justify-between overflow-x-auto rounded-lg border p-4 ${className || ""}`}
+    >
       {steps.map((step, index) => {
         const StepIcon = step.icon;
         const isActive = step.id === currentStep;

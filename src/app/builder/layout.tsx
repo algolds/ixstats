@@ -1,82 +1,82 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { ChevronUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BackgroundImageTexture } from "~/components/ui/bg-image-texture";
 
 /**
  * Builder Layout - Headless mode with scroll-up navigation reveal
  *
  * The builder starts "headless" - content begins at the top of the viewport.
- * The main site navigation is hidden by default and reveals when scrolling up.
+ * The main site navigation is hidden by default.
+ * Wheel up (when content area is at its scroll top) reveals the nav.
+ * Wheel down hides it. Touch/mouse drag-up at the top also triggers it.
  */
 export default function BuilderLayout({ children }: { children: React.ReactNode }) {
   const [showNav, setShowNav] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const lastScrollY = useRef(0);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+    const isAtTop = () => window.scrollY <= 0;
 
-      setIsScrolled(currentScrollY > 100);
-
-      // Scrolling up - show nav
-      if (currentScrollY < lastScrollY.current) {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY < 0 && isAtTop()) {
         setShowNav(true);
-      }
-      // Scrolling down - hide nav
-      else if (currentScrollY > lastScrollY.current) {
+      } else if (e.deltaY > 0) {
         setShowNav(false);
       }
-
-      lastScrollY.current = currentScrollY;
     };
 
-    // Throttle scroll handler
-    let ticking = false;
-    const throttledScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0]!.clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isAtTop()) return;
+      const dy = e.touches[0]!.clientY - touchStartY.current;
+      if (dy > 20) {
+        setShowNav(true);
+      } else if (dy < -20) {
+        setShowNav(false);
       }
     };
 
-    window.addEventListener("scroll", throttledScroll, { passive: true });
-    return () => window.removeEventListener("scroll", throttledScroll);
-  }, []);
-
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setShowNav(true);
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
   }, []);
 
   return (
     <>
       {/* CSS to control main navigation visibility */}
       <style {...({ jsx: "true", global: "true" } as any)}>{`
-        /* Hide the main navigation by default in builder */
+        /* ─── Navigation bar: hidden by default ─── */
         body:has([data-builder-headless]) .navigation-bar {
           transform: translateY(-100%);
-          transition: transform 0.3s ease-in-out;
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
+          will-change: transform;
         }
 
-        /* Show navigation when scrolling up */
+        /* ─── Reveal with spring physics overshoot ─── */
         body:has([data-builder-headless][data-show-nav="true"]) .navigation-bar {
           transform: translateY(0);
+          transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+          border-bottom-color: rgba(251, 191, 36, 0.25);
         }
 
-        /* Ensure mobile nav also hides */
+        /* ─── Mobile nav siblings ─── */
         body:has([data-builder-headless]) .navigation-bar + div[class*="mobile"],
         body:has([data-builder-headless]) [data-mobile-nav] {
           transform: translateY(-100%);
-          transition: transform 0.3s ease-in-out;
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body:has([data-builder-headless][data-show-nav="true"])
@@ -84,31 +84,18 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
           + div[class*="mobile"],
         body:has([data-builder-headless][data-show-nav="true"]) [data-mobile-nav] {
           transform: translateY(0);
-        }
-
-        /* When nav is visible, add top padding to builder wrapper */
-        [data-builder-headless][data-show-nav="true"] {
-          padding-top: 4rem;
-          transition: padding-top 0.3s ease-in-out;
+          transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
 
-      <div data-builder-headless data-show-nav={showNav} className="min-h-screen">
+      <div data-builder-headless data-show-nav={showNav} className="relative min-h-screen">
+        <BackgroundImageTexture
+          variant="groovepaper"
+          opacity={0.08}
+          className="pointer-events-none absolute inset-0 z-0"
+        />
         {children}
       </div>
-
-      {/* Floating scroll-to-top button — appears when scrolled down and nav is hidden */}
-      <button
-        onClick={scrollToTop}
-        className={`border-border/50 bg-background/80 fixed top-4 right-4 z-50 flex h-8 w-8 items-center justify-center rounded-full border shadow-md backdrop-blur-sm transition-all duration-300 hover:border-blue-400/50 hover:bg-blue-500/10 ${
-          isScrolled && !showNav
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-12 opacity-0"
-        }`}
-        aria-label="Scroll to top to reveal navigation"
-      >
-        <ChevronUp className="text-muted-foreground h-4 w-4" />
-      </button>
     </>
   );
 }
