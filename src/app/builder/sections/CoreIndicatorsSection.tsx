@@ -1,13 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { BarChart3, TrendingUp, Users, DollarSign, Activity, Percent, Lock } from "lucide-react";
-import {
-  EnhancedNumberInput,
-  MetricCard,
-  SliderWithDirectInput,
-  EnhancedDial,
-} from "../primitives/enhanced";
+import { BarChart3, Users, DollarSign, Activity, Percent } from "lucide-react";
+import { SliderWithDirectInput } from "../primitives/enhanced";
 import { GlassBarChart } from "~/components/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -364,12 +359,6 @@ export function CoreIndicatorsSection({
               <div className="bg-muted/30 text-muted-foreground rounded-lg p-2">
                 <Users className="h-4 w-4" />
               </div>
-              <Badge
-                variant="outline"
-                className="border-border/40 text-muted-foreground flex items-center gap-1 bg-black/20 text-[9px]"
-              >
-                <Lock className="h-2.5 w-2.5" /> Locked
-              </Badge>
             </div>
             <div>
               <div className="text-foreground text-2xl font-bold">
@@ -393,12 +382,6 @@ export function CoreIndicatorsSection({
               <div className="bg-muted/30 text-muted-foreground rounded-lg p-2">
                 <Activity className="h-4 w-4" />
               </div>
-              <Badge
-                variant="outline"
-                className="border-border/40 text-muted-foreground flex items-center gap-1 bg-black/20 text-[9px]"
-              >
-                <Lock className="h-2.5 w-2.5" /> Locked
-              </Badge>
             </div>
             <div>
               <div className="text-foreground text-2xl font-bold">
@@ -422,12 +405,6 @@ export function CoreIndicatorsSection({
               <div className="bg-muted/30 text-muted-foreground rounded-lg p-2">
                 <DollarSign className="h-4 w-4" />
               </div>
-              <Badge
-                variant="outline"
-                className="border-border/40 text-muted-foreground flex items-center gap-1 bg-black/20 text-[9px]"
-              >
-                <Lock className="h-2.5 w-2.5" /> Locked
-              </Badge>
             </div>
             <div>
               <div className="text-foreground text-2xl font-bold">
@@ -444,76 +421,6 @@ export function CoreIndicatorsSection({
         </GlassCard>
       </div>
 
-      {/* Draggable Circular Dials */}
-      <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-2">
-        {/* Economic Growth Dial */}
-        <GlassCard depth="base" className="border-border/40">
-          <GlassCardContent className="w-full space-y-4 p-6 text-center">
-            <EnhancedDial
-              label="Real GDP Growth Rate"
-              description="Adjust the annual real economic expansion rate of your nation."
-              value={sanitizedCoreIndicators.realGDPGrowthRate}
-              onChange={(value) => {
-                const growthRate = sanitizeNumber(value, sanitizedCoreIndicators.realGDPGrowthRate);
-                onInputsChange({
-                  ...safeInputs,
-                  coreIndicators: {
-                    ...coreIndicators,
-                    realGDPGrowthRate: growthRate,
-                  },
-                });
-              }}
-              min={-10}
-              max={20}
-              step={0.1}
-              precision={1}
-              unit="%"
-              sectionId="core"
-              icon={TrendingUp}
-              showTicks={true}
-              dialSize={150}
-            />
-            <div className="border-border/20 text-muted-foreground flex w-full justify-between border-t pt-3 text-[10px]">
-              <span>Expected Rate: {expectedGrowthRate}%</span>
-              <span>Range: -10% to +20%</span>
-            </div>
-          </GlassCardContent>
-        </GlassCard>
-
-        {/* Inflation Dial */}
-        <GlassCard depth="base" className="border-border/40">
-          <GlassCardContent className="w-full space-y-4 p-6 text-center">
-            <EnhancedDial
-              label="Inflation Rate"
-              description="Annual percentage change in the general consumer price index."
-              value={sanitizedCoreIndicators.inflationRate}
-              onChange={(value) => {
-                const inflationRate = sanitizeNumber(value, sanitizedCoreIndicators.inflationRate);
-                onInputsChange({
-                  ...safeInputs,
-                  coreIndicators: {
-                    ...coreIndicators,
-                    inflationRate: inflationRate,
-                  },
-                });
-              }}
-              min={-5}
-              max={30}
-              step={0.1}
-              precision={1}
-              unit="%"
-              sectionId="core"
-              icon={Percent}
-              showTicks={true}
-              dialSize={150}
-            />
-            <div className="border-border/20 text-muted-foreground flex w-full justify-between border-t pt-3 text-[10px]">
-              <span>Stable Target: 2.0%</span>
-              <span>Range: -5% to +30%</span>
-            </div>
-          </GlassCardContent>
-        </GlassCard>
-      </div>
     </div>
   );
 }

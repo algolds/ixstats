@@ -7,13 +7,9 @@ import {
   Building,
   MapPin,
   Users,
-  Coins,
   BarChart3,
-  TrendingUp,
   DollarSign,
-  Activity,
   Percent,
-  Lock,
   Link2,
   Link2Off,
 } from "lucide-react";
@@ -21,7 +17,6 @@ import {
   CurrencySymbolPicker,
   GlassSelectBox,
   SliderWithDirectInput,
-  EnhancedDial,
 } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
@@ -409,42 +404,44 @@ export const BasicInfoForm = React.memo(
                 )}
               </div>
 
-              {/* Government Structure Fields */}
-              <div className="border-border/10 my-4 space-y-4 border-t pt-4">
-                <div className="text-foreground text-[10px] font-black tracking-wider text-zinc-400 uppercase">
-                  Government Structure
-                </div>
-                <GovernmentStructureForm
-                  data={
-                    governmentStructure?.structure || {
-                      governmentName: "",
-                      governmentType: "Other",
-                      headOfState: "",
-                      headOfGovernment: "",
-                      legislatureName: "",
-                      executiveName: "",
-                      judicialName: "",
-                      totalBudget: 0,
-                      fiscalYear: "Calendar Year",
-                      budgetCurrency: "USD",
+              {/* Government Structure Fields (hidden in edit mode - rendered in its own card) */}
+              {!isEditMode && (
+                <div className="border-border/10 my-4 space-y-4 border-t pt-4">
+                  <div className="text-foreground text-[10px] font-black tracking-wider text-zinc-400 uppercase">
+                    Government Structure
+                  </div>
+                  <GovernmentStructureForm
+                    data={
+                      governmentStructure?.structure || {
+                        governmentName: "",
+                        governmentType: "Other",
+                        headOfState: "",
+                        headOfGovernment: "",
+                        legislatureName: "",
+                        executiveName: "",
+                        judicialName: "",
+                        totalBudget: 0,
+                        fiscalYear: "Calendar Year",
+                        budgetCurrency: "USD",
+                      }
                     }
-                  }
-                  onChange={(structure) => {
-                    onGovernmentStructureChange({
-                      ...governmentStructure,
-                      structure,
-                    });
-                  }}
-                  isReadOnly={false}
-                  gdpData={{
-                    nominalGDP: inputs.coreIndicators?.nominalGDP || 0,
-                    countryName: identity.countryName,
-                  }}
-                  hideBudgetConfig={true}
-                  noWrapper={true}
-                  hideGovernmentType={true}
-                />
-              </div>
+                    onChange={(structure) => {
+                      onGovernmentStructureChange({
+                        ...governmentStructure,
+                        structure,
+                      });
+                    }}
+                    isReadOnly={false}
+                    gdpData={{
+                      nominalGDP: inputs.coreIndicators?.nominalGDP || 0,
+                      countryName: identity.countryName,
+                    }}
+                    hideBudgetConfig={true}
+                    noWrapper={true}
+                    hideGovernmentType={true}
+                  />
+                </div>
+              )}
 
               {/* Divider and Civic Standards */}
               <div className="border-border/10 my-4 border-t pt-4" />
@@ -514,23 +511,70 @@ export const BasicInfoForm = React.memo(
             </GlassCardContent>
           </GlassCard>
 
-          {/* Civic & Financial Standards Card (Now hosts Core Indicators) */}
-          <GlassCard
-            depth="base"
-            theme="emerald"
-            className="border-emerald-500/20"
-            texture="chevron"
-            textureOpacity={0.06}
-          >
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                <BarChart3 className="h-5 w-5 text-emerald-400" />
-                Core Indicators
-              </h3>
-            </div>
-            <GlassCardContent className="space-y-4 p-6">
-              {!isEditMode ? (
-                // Create Mode: Sliders & Emergent GDP
+          {isEditMode ? (
+            /* Edit Mode: Government Structure card replaces Core Indicators */
+            <GlassCard
+              depth="base"
+              theme="indigo"
+              className="border-indigo-500/20"
+              texture="chevron"
+              textureOpacity={0.06}
+            >
+              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                  <Crown className="h-5 w-5 text-indigo-400" />
+                  Government Structure
+                </h3>
+              </div>
+              <GlassCardContent className="space-y-4 p-6">
+                <GovernmentStructureForm
+                  data={
+                    governmentStructure?.structure || {
+                      governmentName: "",
+                      governmentType: "Other",
+                      headOfState: "",
+                      headOfGovernment: "",
+                      legislatureName: "",
+                      executiveName: "",
+                      judicialName: "",
+                      totalBudget: 0,
+                      fiscalYear: "Calendar Year",
+                      budgetCurrency: "USD",
+                    }
+                  }
+                  onChange={(structure) => {
+                    onGovernmentStructureChange({
+                      ...governmentStructure,
+                      structure,
+                    });
+                  }}
+                  isReadOnly={false}
+                  gdpData={{
+                    nominalGDP: inputs.coreIndicators?.nominalGDP || 0,
+                    countryName: identity.countryName,
+                  }}
+                  hideBudgetConfig={true}
+                  noWrapper={true}
+                  hideGovernmentType={true}
+                />
+              </GlassCardContent>
+            </GlassCard>
+          ) : (
+            /* Create Mode: Core Indicators (unchanged) */
+            <GlassCard
+              depth="base"
+              theme="emerald"
+              className="border-emerald-500/20"
+              texture="chevron"
+              textureOpacity={0.06}
+            >
+              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                  <BarChart3 className="h-5 w-5 text-emerald-400" />
+                  Core Indicators
+                </h3>
+              </div>
+              <GlassCardContent className="space-y-4 p-6">
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <label className="text-foreground flex items-center gap-2 text-sm font-medium">
@@ -578,7 +622,7 @@ export const BasicInfoForm = React.memo(
                     </div>
                   </div>
 
-                                <div className="space-y-2">
+                  <div className="space-y-2">
                     <label className="text-foreground flex items-center gap-2 text-sm font-medium">
                       <DollarSign className="text-muted-foreground h-4 w-4" />
                        GDP per Capita
@@ -693,208 +737,71 @@ export const BasicInfoForm = React.memo(
                     )}
                   </div>
 
-                {/* Emergent Outcomes */}
-                <div className="space-y-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                        Total GDP
-                      </h5>
-                      <div className="mt-1 text-xl font-black text-amber-400">
-                        <NumberFlowDisplay
-                          value={computedGDP}
-                          format="currency"
-                          decimalPlaces={0}
-                        />
+                  {/* Emergent Outcomes */}
+                  <div className="space-y-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Total GDP
+                        </h5>
+                        <div className="mt-1 text-xl font-black text-amber-400">
+                          <NumberFlowDisplay
+                            value={computedGDP}
+                            format="currency"
+                            decimalPlaces={0}
+                          />
+                        </div>
+                        <p className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
+                          Population × GDP per Capita
+                        </p>
                       </div>
-                      <p className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
-                        Population × GDP per Capita
-                      </p>
-                    </div>
 
-                    <div>
-                      <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                        Tax Revenue
-                      </h5>
-                      <div className="mt-1 text-xl font-black text-emerald-400">
-                        <NumberFlowDisplay
-                          value={computedGDP * ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100)}
-                          format="currency"
-                          decimalPlaces={0}
-                        />
-                      </div>
-                      <p className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
-                        {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}% of GDP
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="border-border/20 border-t pt-3 flex flex-wrap gap-x-6 gap-y-3">
-                    <div>
-                      <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
-                        Economic Classification
-                      </h5>
-                      <Badge
-                        variant="secondary"
-                        className="border-yellow-400/50 bg-yellow-500/20 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:text-yellow-200"
-                      >
-                        {economicTier}
-                      </Badge>
-                    </div>
-                    <div>
-                      <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
-                        Population Tier
-                      </h5>
-                      <Badge
-                        variant="secondary"
-                        className="border-blue-400/50 bg-blue-500/20 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:text-blue-200"
-                      >
-                        Tier {populationTier}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-                // Edit Mode: Locks & Dials
-                <div className="space-y-4">
-                  {/* Locked metrics list/grid */}
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {/* Population */}
-                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
-                      <Badge
-                        variant="outline"
-                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
-                      >
-                        <Lock className="h-2 w-2" /> Locked
-                      </Badge>
-                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
-                        Population (Tier {populationTier})
-                      </div>
-                      <div className="text-foreground text-base font-bold">
-                        {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
+                      <div>
+                        <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Tax Revenue
+                        </h5>
+                        <div className="mt-1 text-xl font-black text-emerald-400">
+                          <NumberFlowDisplay
+                            value={computedGDP * ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100)}
+                            format="currency"
+                            decimalPlaces={0}
+                          />
+                        </div>
+                        <p className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
+                          {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}% of GDP
+                        </p>
                       </div>
                     </div>
 
-                    {/* GDP per Capita */}
-                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
-                      <Badge
-                        variant="outline"
-                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
-                      >
-                        <Lock className="h-2 w-2" /> Locked
-                      </Badge>
-                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
-                        GDP per Capita ({economicTier})
+                    <div className="border-border/20 border-t pt-3 flex flex-wrap gap-x-6 gap-y-3">
+                      <div>
+                        <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
+                          Economic Classification
+                        </h5>
+                        <Badge
+                          variant="secondary"
+                          className="border-yellow-400/50 bg-yellow-500/20 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:text-yellow-200"
+                        >
+                          {economicTier}
+                        </Badge>
                       </div>
-                      <div className="text-foreground text-base font-bold">
-                        ${sanitizedCoreIndicators.gdpPerCapita.toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* Nominal GDP */}
-                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
-                      <Badge
-                        variant="outline"
-                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
-                      >
-                        <Lock className="h-2 w-2" /> Locked
-                      </Badge>
-                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
-                        Nominal GDP
-                      </div>
-                      <div className="text-foreground truncate text-base font-bold">
-                        {formatCurrency(sanitizedCoreIndicators.nominalGDP)}
-                      </div>
-                    </div>
-
-                    {/* Tax Revenue */}
-                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
-                      <Badge
-                        variant="outline"
-                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
-                      >
-                        <Lock className="h-2 w-2" /> Locked
-                      </Badge>
-                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
-                        Tax Revenue
-                      </div>
-                      <div className="text-foreground truncate text-base font-bold text-emerald-400">
-                        {formatCurrency(sanitizedCoreIndicators.nominalGDP * ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Circular dials */}
-                  <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
-                    <div className="border-border/40 flex flex-col items-center rounded-lg border bg-black/5 p-4 text-center">
-                      <EnhancedDial
-                        label="Real GDP Growth"
-                        value={sanitizedCoreIndicators.realGDPGrowthRate}
-                        onChange={(value) => {
-                          const growthRate = sanitizeNumber(
-                            value,
-                            sanitizedCoreIndicators.realGDPGrowthRate
-                          );
-                          onInputsChange({
-                            ...safeInputs,
-                            coreIndicators: {
-                              ...coreIndicators,
-                              realGDPGrowthRate: growthRate,
-                            },
-                          });
-                        }}
-                        min={-10}
-                        max={20}
-                        step={0.1}
-                        precision={1}
-                        unit="%"
-                        sectionId="core"
-                        icon={TrendingUp}
-                        showTicks={true}
-                        dialSize={120}
-                      />
-                      <div className="text-muted-foreground mt-2 text-[9px]">
-                        Expected: {expectedGrowthRate}%
-                      </div>
-                    </div>
-
-                    <div className="border-border/40 flex flex-col items-center rounded-lg border bg-black/5 p-4 text-center">
-                      <EnhancedDial
-                        label="Inflation Rate"
-                        value={sanitizedCoreIndicators.inflationRate}
-                        onChange={(value) => {
-                          const inflationRate = sanitizeNumber(
-                            value,
-                            sanitizedCoreIndicators.inflationRate
-                          );
-                          onInputsChange({
-                            ...safeInputs,
-                            coreIndicators: {
-                              ...coreIndicators,
-                              inflationRate: inflationRate,
-                            },
-                          });
-                        }}
-                        min={-5}
-                        max={30}
-                        step={0.1}
-                        precision={1}
-                        unit="%"
-                        sectionId="core"
-                        icon={Percent}
-                        showTicks={true}
-                        dialSize={120}
-                      />
-                      <div className="text-muted-foreground mt-2 text-[9px]">
-                        Stable Target: 2.0%
+                      <div>
+                        <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
+                          Population Tier
+                        </h5>
+                        <Badge
+                          variant="secondary"
+                          className="border-blue-400/50 bg-blue-500/20 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:text-blue-200"
+                        >
+                          Tier {populationTier}
+                        </Badge>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </GlassCardContent>
-          </GlassCard>
+              </GlassCardContent>
+            </GlassCard>
+          )}
         </div>
       </div>
     );

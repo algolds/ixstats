@@ -19,6 +19,7 @@ import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
+import { toast } from "sonner";
 import type { GovernmentDepartment } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
@@ -562,6 +563,14 @@ export function useBuilderState(
                   }
                 : sanitizedSaved;
 
+              const savedTab = parsedState.activeIdentitySubTab;
+              if (savedTab && savedTab !== "basic") {
+                toast.info("Session restored", {
+                  description: `Starting at Basic Info tab (was on "${savedTab}").`,
+                  duration: 4000,
+                });
+              }
+
               return {
                 ...prev,
                 economicInputs: mergedInputs,
@@ -570,8 +579,7 @@ export function useBuilderState(
                 governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
                 economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
                 activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
-                activeIdentitySubTab:
-                  parsedState.activeIdentitySubTab || prev.activeIdentitySubTab || "basic",
+                activeIdentitySubTab: "basic",
                 activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
                 activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
               };

@@ -32,26 +32,6 @@ const isPublicRoute = createRouteMatcher([
   "/IxEconomy.xlsx",
 ]);
 
-// IxWorld standalone mode: when running as maps.ixwiki.com, restrict routes
-const IXWORLD_ALLOWED_PREFIXES = [
-  "/maps",
-  "/api",
-  "/countries",
-  "/profile",
-  "/flags",
-  "/_next",
-  "/sign-in",
-  "/sign-up",
-  "/messages",
-  "/thinkpages",
-  "/forum",
-  "/admin",
-  "/mycountry",
-  "/ws",
-  "/socket.io",
-  "/w",
-];
-
 // Note: Clerk configuration check is now performed dynamically in getClerkMiddleware()
 
 /**
@@ -160,8 +140,8 @@ function enhanceResponse(
 
 /**
  * IxWorld standalone route guard.
- * When the request comes from maps.ixwiki.com, only maps-related routes are served.
- * All other routes redirect to the main IxStates instance.
+ * When the request comes from maps.ixwiki.com, redirect root to /maps.
+ * All other routes are served as-is.
  */
 function handleStandaloneRouting(req: NextRequest): NextResponse | null {
   if (!isStandaloneRequest(req.headers)) return null;
@@ -173,26 +153,7 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
     return NextResponse.redirect(new URL("/maps", req.nextUrl.origin));
   }
 
-  // Allow favicon, IxEconomy.xlsx and allowed route prefixes
-  if (
-    pathname === "/favicon.ico" ||
-    pathname.endsWith("/IxEconomy.xlsx") ||
-    IXWORLD_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))
-  ) {
-    return null;
-  }
-
-  // Everything else → allow if it's a potential country slug (one path segment)
-  // or redirect to main IxStats for anything else
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 1) {
-    // Allow single-segment paths (could be country slugs)
-    return null;
-  }
-
-  // Everything else → redirect to main site using configured base path
-  const fallbackHost = process.env.STANDALONE_FALLBACK_HOST || "https://ixwiki.com";
-  return NextResponse.redirect(`${fallbackHost}${BASE_PATH || "/projects/ixstates"}${pathname}`);
+  return null;
 }
 
 // If Clerk is not configured, use a simple middleware that doesn't handle auth

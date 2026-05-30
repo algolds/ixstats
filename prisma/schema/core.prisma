@@ -783,7 +783,6 @@ model NationalIdentity {
   emergencyNumber      String?
   postalCodeFormat     String?
   nationalSport        String?
-  nationalAnimal       String?
   nationalBird         String?
   nationalFish         String?
   founders             String?
