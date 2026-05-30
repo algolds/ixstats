@@ -88,10 +88,10 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
               <img
                 src={user.imageUrl}
                 alt=""
-                className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 group-hover:ring-blue-400/60 transition-all"
+                className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60"
               />
             ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-2 ring-blue-400/30 group-hover:ring-blue-400/60 transition-all">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60">
                 <User className="h-3.5 w-3.5 text-blue-400" />
               </div>
             )}
@@ -126,9 +126,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
               <button
                 onClick={() =>
                   userProfile.country &&
-                  (window.location.href = createAbsoluteUrl(
-                    getNationUrl(userProfile.country.name)
-                  ))
+                  (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))
                 }
                 className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors"
               >
@@ -345,25 +343,24 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
         </div>
       ) : (
         /* ── Unauthenticated / no country ────────────────── */
-        <div className="p-4 text-center">
-          <User className="mx-auto mb-2 h-8 w-8 text-blue-400/60" />
-          <PreText className="text-muted-foreground mb-1 text-sm" whiteSpace="nowrap">
-            {isStandalone ? "Welcome to IxWorld!" : "Welcome to IxStats!"}
-          </PreText>
-          <PreText className="text-muted-foreground/70 mb-3 text-xs" whiteSpace="nowrap">
-            {isStandalone ? "Sign in with IxnayID to edit maps" : "Sign in with IxnayID"}
-          </PreText>
-          <button
-            onClick={() =>
-              (window.location.href =
-                process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
-            }
-            className="text-foreground border-border hover:bg-accent/10 rounded-lg border px-4 py-2 text-xs font-medium transition-colors"
-          >
-            <PreText className="text-inherit" whiteSpace="nowrap">
-              Sign In
+        <div className="py-6 text-center">
+          <div className="bg-muted/30 rounded-xl p-6">
+            <User className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+            <PreText className="text-muted-foreground mb-4 text-xs" whiteSpace="nowrap">
+              {isStandalone ? "Sign in with IxnayID to edit maps" : "Sign in with IxnayID"}
             </PreText>
-          </button>
+            <button
+              onClick={() =>
+                (window.location.href =
+                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
+              }
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-md px-4 py-2 text-xs font-medium transition-colors"
+            >
+              <PreText className="text-inherit" whiteSpace="nowrap">
+                Sign In
+              </PreText>
+            </button>
+          </div>
         </div>
       )}
     </motion.div>

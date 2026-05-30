@@ -18,6 +18,8 @@ import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
+import { Switch } from "~/components/ui/switch";
+import { getPopulationTierFromPopulation } from "~/types/ixstats";
 
 interface CoreIndicatorsSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
@@ -77,6 +79,21 @@ export function CoreIndicatorsSection({
   };
 
   const economicTier = getEconomicTier(sanitizedCoreIndicators.gdpPerCapita);
+  const populationTier = getPopulationTierFromPopulation(sanitizedCoreIndicators.totalPopulation);
+
+  const defaultTaxRate = referenceCountry?.taxRevenuePercent || 20;
+  const [isTaxCustom, setIsTaxCustom] = React.useState(
+    () => {
+      const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
+      return currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
+    }
+  );
+
+  React.useEffect(() => {
+    const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
+    const isCustom = currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
+    setIsTaxCustom(isCustom);
+  }, [inputs.fiscalSystem?.taxRevenueGDPPercent, defaultTaxRate]);
 
   const calculateExpectedGrowthRate = (gdpPerCapita: number, population: number): number => {
     const incomeFactor = Math.max(0.5, Math.min(8, 8 - gdpPerCapita / 10000));
@@ -141,6 +158,7 @@ export function CoreIndicatorsSection({
                 max={150000000}
                 step={100000}
                 unit=" citizens"
+                precision={0}
                 sectionId="core"
                 showValue={true}
                 defaultMode="slider"
@@ -194,6 +212,82 @@ export function CoreIndicatorsSection({
               </div>
             </GlassCardContent>
           </GlassCard>
+
+          {/* Tax Revenue Projection Card */}
+          <GlassCard depth="base" className="border-border/40">
+            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1] flex items-center justify-between">
+              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <Percent className="h-5 w-5 text-amber-400" />
+                Tax Revenue Projection
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground">Customize</span>
+                <Switch
+                  checked={isTaxCustom}
+                  onCheckedChange={(checked) => {
+                    setIsTaxCustom(checked);
+                    if (!checked) {
+                      onInputsChange({
+                        ...safeInputs,
+                        fiscalSystem: {
+                          ...(safeInputs.fiscalSystem || {}),
+                          taxRevenueGDPPercent: defaultTaxRate,
+                          governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                          taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                        },
+                      });
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <GlassCardContent className="space-y-4 p-6">
+              {isTaxCustom ? (
+                <>
+                  <SliderWithDirectInput
+                    label=""
+                    description="Target tax revenue as a percentage of gross domestic product."
+                    value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
+                    onChange={(value) => {
+                      const taxRate = sanitizeNumber(value, inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20);
+                      const clamped = Math.max(5, Math.min(50, taxRate));
+                      onInputsChange({
+                        ...safeInputs,
+                        fiscalSystem: {
+                          ...(safeInputs.fiscalSystem || {}),
+                          taxRevenueGDPPercent: clamped,
+                          governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                          taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                        },
+                      });
+                    }}
+                    min={5}
+                    max={50}
+                    step={0.5}
+                    unit="%"
+                    sectionId="core"
+                    showValue={true}
+                    defaultMode="slider"
+                    allowModeToggle={true}
+                  />
+                  <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
+                    <span>Min: 5%</span>
+                    <span>Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%</span>
+                    <span>Max: 50%</span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground text-xs leading-normal">
+                    Using default flat tax revenue projection of <strong className="text-foreground">{defaultTaxRate.toFixed(1)}%</strong> of GDP.
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    Toggle Customize to adjust target tax revenue rates.
+                  </p>
+                </div>
+              )}
+            </GlassCardContent>
+          </GlassCard>
         </div>
 
         {/* Emergent Outcome Card (1/3 width) */}
@@ -222,15 +316,30 @@ export function CoreIndicatorsSection({
               </div>
 
               <div className="border-border/20 border-t pt-6">
-                <h4 className="text-muted-foreground mb-2 text-[10px] font-bold tracking-wider uppercase">
-                  Economic Classification
-                </h4>
-                <Badge
-                  variant="secondary"
-                  className="border-yellow-400/50 bg-yellow-500/20 px-3 py-1 text-xs font-semibold text-yellow-800 dark:text-yellow-200"
-                >
-                  {economicTier}
-                </Badge>
+                <div className="flex flex-wrap gap-4 mb-2">
+                  <div>
+                    <h4 className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">
+                      Economic Classification
+                    </h4>
+                    <Badge
+                      variant="secondary"
+                      className="border-yellow-400/50 bg-yellow-500/20 px-3 py-1 text-xs font-semibold text-yellow-800 dark:text-yellow-200"
+                    >
+                      {economicTier}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">
+                      Population Tier
+                    </h4>
+                    <Badge
+                      variant="secondary"
+                      className="border-blue-400/50 bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-800 dark:text-blue-200"
+                    >
+                      Tier {populationTier}
+                    </Badge>
+                  </div>
+                </div>
                 <p className="text-muted-foreground mt-2 text-xs leading-normal">
                   Your nation's baseline classification defines default tax yields, infrastructure
                   capacity, and starting trade levels.
@@ -267,7 +376,7 @@ export function CoreIndicatorsSection({
                 {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
               </div>
               <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                Population
+                Population (Tier {populationTier})
               </div>
               <p className="text-muted-foreground/80 mt-1 text-[9px] leading-normal">
                 {locks.totalPopulation?.reason ||

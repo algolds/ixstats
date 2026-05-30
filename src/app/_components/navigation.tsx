@@ -1558,7 +1558,7 @@ export function Navigation() {
 
       {!isMobile && (
         <motion.div
-          className="fixed top-0 left-1/2 z-[var(--z-command)] flex justify-center pointer-events-none"
+          className="pointer-events-none fixed top-0 left-1/2 z-[var(--z-command)] flex justify-center"
           animate={{
             x: "-50%",
             y: isSticky ? 8 : Math.max(-100, 10 - scrollY),

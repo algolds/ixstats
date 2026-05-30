@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, Unlock as UnlockIcon, Globe, Flag, Building2, TrendingUp, CheckCircle, Check, X, ChevronRight, Download, Loader2, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
+import { Lock, Unlock as UnlockIcon, ArrowLeft, ArrowRight, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/url-utils";
@@ -19,7 +19,7 @@ import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { PreText } from "~/components/ui/pretext";
 import { BuilderSectionHero } from "./BuilderSectionHero";
 import { ImportSection } from "./sections/ImportSection";
-import { BuilderIntegrationSidebar } from "./enhanced/BuilderIntegrationSidebar";
+import { BuilderNotchBar } from "./BuilderNotchBar";
 import { useBuilderActions } from "../hooks/useBuilderActions";
 import {
   type BuilderSection,
@@ -116,9 +116,10 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   });
 
   const previewFlag = foundationPreviewCountry?.flag || foundationPreviewCountry?.flagUrl;
-  const rawFlagUrl = activeSection === "foundation"
-    ? previewFlag || builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag
-    : builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag;
+  const rawFlagUrl =
+    activeSection === "foundation"
+      ? previewFlag || builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag
+      : builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag;
   const countryFlagUrl = rawFlagUrl?.replace("flagcdn.com/w320/", "flagcdn.com/w1280/");
   const [heroCollapsed, setHeroCollapsed] = useState(false);
 
@@ -146,7 +147,11 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   useEffect(() => {
     if (!initialUrlSyncRef.current) return;
     const mappedSection = legacyStepToSection(builderState.step) as BuilderSection;
-    if (activeSection !== "import" && mappedSection !== activeSection && BUILD_STEPS.includes(mappedSection)) {
+    if (
+      activeSection !== "import" &&
+      mappedSection !== activeSection &&
+      BUILD_STEPS.includes(mappedSection)
+    ) {
       setActiveSection(mappedSection);
       window.history.pushState(null, "", withBasePath(buildSectionUrl(mappedSection, mode)));
       document.title = `${SECTION_TITLES[mappedSection]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
@@ -158,6 +163,9 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
 
   // Manual save state
   const [isManualSaving, setIsManualSaving] = useState(false);
+  // Flash label: briefly shows section name in DI center on navigation, then clears
+  const [navFlashLabel, setNavFlashLabel] = useState<string | null>(null);
+  const navFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Compute completed and accessible steps from builder state
   const completedSteps = useMemo(() => {
@@ -171,40 +179,56 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
 
   const accessibleSteps = useMemo(() => {
     const set = new Set<BuilderSection>();
-    if (mode !== "edit") {
-      set.add("foundation");
+    if (mode === "edit") {
+      // In edit mode, all sections except foundation are accessible
+      for (const step of BUILD_STEPS) {
+        if (step !== "foundation") set.add(step);
+      }
+      return set;
     }
-    // Other steps accessible if previous steps completed
-    const stepOrder = mode === "edit" ? BUILD_STEPS.filter((s) => s !== "foundation") : BUILD_STEPS;
-    for (let i = 0; i < stepOrder.length; i++) {
-      set.add(stepOrder[i]!);
-      // If this step isn't completed, stop making further steps accessible
-      // UNLESS we're in a more permissive mode
-      if (i > 0 && !completedSteps.has(stepOrder[i - 1]!)) {
-        // Allow the current step but not beyond
-        break;
+
+    set.add("foundation");
+    set.add(activeSection); // The current section is always accessible
+
+    // In create mode:
+    // 1. Any completed steps are accessible
+    for (const completedSection of completedSteps) {
+      set.add(completedSection);
+    }
+
+    // 2. Any step that comes before the active section in the order is always accessible
+    const activeIndex = BUILD_STEPS.indexOf(activeSection);
+    if (activeIndex !== -1) {
+      for (let i = 0; i <= activeIndex; i++) {
+        set.add(BUILD_STEPS[i]!);
       }
     }
-    // Also allow preview if we have economic inputs (user has started building)
-    if (builderState.economicInputs) {
+
+    // 3. Once foundation is completed (unlocked), all other steps are freely accessible
+    if (completedSteps.has("foundation")) {
+      set.add("identity");
+      set.add("government");
+      set.add("economics");
       set.add("preview");
     }
+
+    if (activeSection === "import") {
+      set.add("import");
+    }
     return set;
-  }, [completedSteps, builderState.economicInputs, mode]);
+  }, [completedSteps, mode, activeSection]);
 
-  const activeStepsCount = mode === "edit" ? BUILD_STEPS.length - 1 : BUILD_STEPS.length;
-  const completionPercent = useMemo(() => {
-    const activeSteps = BUILD_STEPS.filter((s) => mode !== "edit" || s !== "foundation");
-    const completed = activeSteps.filter((s) => completedSteps.has(s)).length;
-    return Math.round((completed / activeSteps.length) * 100);
-  }, [completedSteps, mode]);
-
-  // Navigate to a section
+  // Navigate to a section — also briefly flashes the section name in DI
   const handleNavigate = useCallback(
     (section: BuilderSection) => {
       if (section === activeSection) return;
 
       setActiveSection(section);
+
+      // Flash section name in DI compact center for 1.8s
+      if (navFlashTimerRef.current) clearTimeout(navFlashTimerRef.current);
+      setNavFlashLabel(SECTION_TITLES[section] ?? null);
+      navFlashTimerRef.current = setTimeout(() => setNavFlashLabel(null), 1800);
 
       // Sync URL
       window.history.pushState(null, "", withBasePath(buildSectionUrl(section, mode)));
@@ -216,294 +240,124 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       window.scrollTo({ top: 0, behavior: "instant" });
 
       // Sync the legacy builder state using ref to avoid stale closure
-      // Skip for import section since it's not a builder step
       if (section !== "import") {
         const legacyStep = sectionToLegacyStep(section);
         if (BUILD_STEPS.includes(section) && legacyStep !== builderStepRef.current) {
-          setBuilderState((prev) => ({ ...prev, step: legacyStep as BuilderStep }));
+          setBuilderState((prev) => ({
+            ...prev,
+            step: legacyStep as BuilderStep,
+            completedSteps: [...new Set([...prev.completedSteps, builderStepRef.current])],
+          }));
         }
       }
     },
     [activeSection, setBuilderState, mode]
   );
 
-  // Step navigation expanded view for Dynamic Island
-  const StepNavView = useMemo(() => {
-    return function StepNavView({ onClose }: { onClose: () => void }) {
-      const steps = mode === "edit"
-        ? (["identity", "government", "economics", "preview"] as BuilderSection[])
-        : (["foundation", "identity", "government", "economics", "preview"] as BuilderSection[]);
-
-      const stepIcons: Record<BuilderSection, any> = {
-        foundation: Globe,
-        identity: Flag,
-        government: Building2,
-        economics: TrendingUp,
-        preview: CheckCircle,
-        import: Download,
-      };
-
-      const stepLabels: Record<BuilderSection, string> = {
-        foundation: "Foundation",
-        identity: "Identity",
-        government: "Government",
-        economics: "Economics",
-        preview: "Preview",
-        import: "Import",
-      };
-
-      const subStepsConfig: Record<BuilderSection, Array<{ id: string; label: string }>> = {
-        foundation: [],
-        identity: [
-          { id: "basic", label: "Basic Info" },
-          { id: "culture", label: "Culture" },
-          { id: "technical", label: "Technical" },
-          { id: "indicators", label: "Indicators" }
-        ],
-        government: [
-          { id: "components", label: "Gov Components" },
-          { id: "structure", label: "Gov Builder" },
-          { id: "spending", label: "Policies" },
-          { id: "preview", label: "Preview" }
-        ],
-        economics: [
-          { id: "taxes", label: "Tax System" },
-          { id: "sectors", label: "Economy Sectors" },
-          { id: "labor", label: "Labor" },
-          { id: "demographics", label: "Demographics" }
-        ],
-        preview: [],
-        import: []
-      };
-
-      const isSubStepActive = (stepKey: BuilderSection, subId: string) => {
-        if (stepKey === "identity") {
-          if (subId === "indicators") return builderState.activeCoreTab === "indicators";
-          return builderState.activeCoreTab === "identity" && (builderState.activeIdentitySubTab || "basic") === subId;
-        }
-        if (stepKey === "government") {
-          return (builderState.activeGovernmentTab || "components") === subId;
-        }
-        if (stepKey === "economics") {
-          if (subId === "taxes") return builderState.activeEconomicsTab === "taxes" || builderState.activeEconomicsTab === "tax";
-          if (subId === "sectors") return builderState.activeEconomicsTab === "sectors" || builderState.activeEconomicsTab === "economy";
-          return builderState.activeEconomicsTab === subId;
-        }
-        return false;
-      };
-
-      const handleSubStepClick = (stepKey: BuilderSection, subId: string) => {
-        setBuilderState((prev) => {
-          const updates: any = {};
-          if (stepKey === "identity") {
-            if (subId === "indicators") {
-              updates.activeCoreTab = "indicators";
-            } else {
-              updates.activeCoreTab = "identity";
-              updates.activeIdentitySubTab = subId;
-            }
-          } else if (stepKey === "government") {
-            updates.activeGovernmentTab = subId;
-          } else if (stepKey === "economics") {
-            updates.activeEconomicsTab = subId;
-          }
-          return { ...prev, ...updates };
-        });
-        handleNavigate(stepKey);
-        onClose();
-      };
-
-      const currentSubSteps = subStepsConfig[activeSection] || [];
-      const isBackDisabled = activeSection === "foundation" || (mode === "edit" && activeSection === "identity");
-
-      return (
-        <div className="p-4 flex flex-col gap-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MyCountryLogo size="md" mode={mode} animated={false} />
-            </div>
-            <button
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors cursor-pointer"
-              title="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-
-          {/* Steps List */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-            {steps.map((stepKey) => {
-              const isActive = stepKey === activeSection;
-              const isCompleted = completedSteps.has(stepKey);
-              const isAccessible = accessibleSteps.has(stepKey);
-              const StepIcon = stepIcons[stepKey];
-              const label = stepLabels[stepKey];
-
-              const handleClick = () => {
-                if (!isAccessible) return;
-                
-                if (stepKey === "identity") {
-                  setBuilderState((prev) => ({
-                    ...prev,
-                    activeCoreTab: prev.activeCoreTab || "identity",
-                    activeIdentitySubTab: prev.activeIdentitySubTab || "basic",
-                  }));
-                } else if (stepKey === "government") {
-                  setBuilderState((prev) => ({
-                    ...prev,
-                    activeGovernmentTab: prev.activeGovernmentTab || "components",
-                  }));
-                } else if (stepKey === "economics") {
-                  setBuilderState((prev) => ({
-                    ...prev,
-                    activeEconomicsTab: prev.activeEconomicsTab || "tax",
-                  }));
-                }
-
-                handleNavigate(stepKey);
-                onClose();
-              };
-
-              return (
-                <button
-                  key={stepKey}
-                  disabled={!isAccessible}
-                  onClick={handleClick}
-                  className={cn(
-                    "flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 gap-1.5 relative overflow-hidden group select-none cursor-pointer",
-                    isActive
-                      ? "bg-amber-500/10 border-amber-500/50 shadow-md shadow-amber-500/5 text-amber-400 font-bold"
-                      : isCompleted
-                        ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30"
-                        : isAccessible
-                          ? "bg-white/5 border-white/10 text-foreground/80 hover:bg-white/10 hover:border-white/20 hover:text-foreground"
-                          : "bg-black/20 border-white/5 text-muted-foreground/45 cursor-not-allowed opacity-50"
-                  )}
-                >
-                  <div className="relative">
-                    <StepIcon className={cn("h-5 w-5 shrink-0", isActive ? "text-amber-400" : isCompleted ? "text-emerald-400" : "text-foreground/60")} />
-                    {isCompleted && !isActive && (
-                      <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-0.5 border border-black shadow">
-                        <Check className="h-2 w-2 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <PreText className="text-[10px] tracking-wide font-semibold mt-1" whiteSpace="nowrap">
-                    {label}
-                  </PreText>
-
-                  {!isAccessible && (
-                    <div className="absolute top-1.5 right-1.5">
-                      <Lock className="h-2.5 w-2.5 text-muted-foreground/50" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Sub-steps Horizontally Scrollable Bar */}
-          {currentSubSteps.length > 0 && (
-            <div className="flex flex-col gap-1.5 border-t border-white/5 pt-3">
-             
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin" style={{ scrollbarWidth: "none" }}>
-                {currentSubSteps.map((sub) => {
-                  const isActive = isSubStepActive(activeSection, sub.id);
-                  return (
-                    <button
-                      key={sub.id}
-                      onClick={() => handleSubStepClick(activeSection, sub.id)}
-                      className={cn(
-                        "shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold border transition-all cursor-pointer",
-                        isActive
-                          ? activeSection === "identity"
-                            ? "bg-teal-500/10 border-teal-500/40 text-teal-400 shadow-sm"
-                            : activeSection === "government"
-                              ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-400 shadow-sm"
-                              : "bg-emerald-500/10 border-emerald-500/40 text-emerald-400 shadow-sm"
-                          : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:border-white/20 hover:text-foreground"
-                      )}
-                    >
-                      <PreText whiteSpace="nowrap">{sub.label}</PreText>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Bottom Actions Row */}
-          <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-1">
-            <button
-              onClick={handlePreviousStep}
-              disabled={isBackDisabled}
-              className="hover:bg-white/10 bg-white/5 border border-white/10 text-foreground flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 text-muted-foreground" />
-              <PreText whiteSpace="nowrap">Back</PreText>
-            </button>
-
-            {activeSection === "preview" && submitFn ? (
-              <button
-                onClick={submitFn}
-                disabled={isSubmittingGlobal}
-                className={cn(
-                  "flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-5 text-xs font-bold text-white shadow-sm transition-all border border-transparent",
-                  isSubmittingGlobal
-                    ? "cursor-not-allowed bg-zinc-800 text-zinc-400"
-                    : mode === "edit"
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                )}
-              >
-                {isSubmittingGlobal ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <PreText whiteSpace="nowrap">{mode === "edit" ? "Updating..." : "Creating..."}</PreText>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                    <PreText whiteSpace="nowrap">{mode === "edit" ? "Update Country" : "Create My Nation"}</PreText>
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={handleContinue}
-                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-4.5 text-xs font-bold text-zinc-950 transition-all hover:from-amber-600 hover:to-yellow-600 border border-transparent"
-              >
-                <PreText whiteSpace="nowrap" className="text-zinc-950">Continue</PreText>
-                <ArrowRight className="h-3.5 w-3.5 text-zinc-950" />
-              </button>
-            )}
-          </div>
-        </div>
-      );
+  // Cleanup flash timer on unmount
+  useEffect(() => {
+    return () => {
+      if (navFlashTimerRef.current) clearTimeout(navFlashTimerRef.current);
     };
-  }, [activeSection, completionPercent, completedSteps, accessibleSteps, handleNavigate, mode, setBuilderState, builderState, handlePreviousStep, handleContinue, submitFn, isSubmittingGlobal]);
+  }, []);
 
-  // Register Dynamic Island plugin for builder page
+  // Step labels for Dynamic Island display
+  const currentStepLabel = useMemo(() => {
+    const shortLabels: Record<BuilderSection, string> = {
+      foundation: "Foundation",
+      identity: "Identity",
+      government: "Government",
+      economics: "Economics",
+      preview: "Preview",
+      import: "Import",
+    };
+    return shortLabels[activeSection] || activeSection;
+  }, [activeSection]);
+
+  const currentSubStepLabel = useMemo(() => {
+    if (activeSection === "identity") {
+      const tab = builderState.activeIdentitySubTab || "basic";
+      const labels: Record<string, string> = {
+        basic: "Basic Info",
+        culture: "Culture",
+        technical: "Technical",
+      };
+      return labels[tab] || tab;
+    }
+    if (activeSection === "government") {
+      const tab = builderState.activeGovernmentTab || "components";
+      const labels: Record<string, string> = {
+        components: "Core Setup",
+        structure: "Departments",
+        spending: "Budget & Revenue",
+        preview: "Verify & Preview",
+      };
+      return labels[tab] || tab;
+    }
+    if (activeSection === "economics") {
+      const tab = builderState.activeEconomicsTab || "tax";
+      const labels: Record<string, string> = {
+        tax: "Tax System",
+        economy: "Economy Sectors",
+      };
+      return labels[tab] || tab;
+    }
+    return null;
+  }, [
+    activeSection,
+    builderState.activeIdentitySubTab,
+    builderState.activeGovernmentTab,
+    builderState.activeEconomicsTab,
+  ]);
+  const themeTextColor = useMemo(() => {
+    const colors: Record<BuilderSection, string> = {
+      foundation: "text-amber-400",
+      identity: "text-teal-400",
+      government: "text-cyan-400",
+      economics: "text-emerald-400",
+      preview: "text-amber-400",
+      import: "text-blue-400",
+    };
+    return colors[activeSection] || "text-amber-400";
+  }, [activeSection]);
+
+  const handleDIClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Register Dynamic Island plugin — compact only, notch bar handles navigation
   const diPlugin = useMemo(
     () => ({
       id: "builder",
-      priority: 100, // override other plugins
+      priority: 100,
       center: (
-        <span className="flex items-center gap-1.5">
-          <MyCountryLogo size="sm" mode={mode} animated={false} />
-        </span>
+        <button
+          onClick={handleDIClick}
+          className="flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-white/90 select-none hover:opacity-85 focus:outline-none"
+        >
+          <MyCountryLogo size="sm" variant="icon-only" mode={mode} animated={false} />
+          <span className={cn("ml-1 font-bold transition-colors", themeTextColor)}>
+            {currentStepLabel}
+          </span>
+          {currentSubStepLabel && (
+            <>
+              <span className="text-white/30">›</span>
+              <span
+                className="max-w-[60px] truncate font-medium text-white/70"
+                title={currentSubStepLabel}
+              >
+                {currentSubStepLabel}
+              </span>
+            </>
+          )}
+        </button>
       ),
-      expandedViews: {
-        stepNav: StepNavView,
-      },
       accentColor: mode === "edit" ? "#f59e0b" : "#10b981",
       stickyLabel: mode === "edit" ? "Country Editor" : "Country Builder",
     }),
-    [mode, StepNavView]
+    [mode, currentStepLabel, currentSubStepLabel, themeTextColor, handleDIClick]
   );
 
   useDIPlugin(diPlugin);
@@ -619,41 +473,18 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       />
     );
 
-    const isComplex = activeSection === "government" || activeSection === "economics";
-
-    if (isComplex) {
-      return (
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-          {/* Main content forms (2/3 width) */}
-          <div className="space-y-4 lg:col-span-2">{mainContent}</div>
-
-          {/* Right Integration Sidebar widget (1/3 width) */}
-          <div className="space-y-4 md:sticky md:top-6 md:self-start lg:col-span-1">
-            <BuilderIntegrationSidebar
-              selectedComponents={builderState.economyBuilderState?.selectedAtomicComponents || []}
-              governmentComponents={
-                builderState.governmentComponents?.map((c: any) =>
-                  typeof c === "string" ? c : c.id || c.name || ""
-                ) || []
-              }
-            />
-          </div>
-        </div>
-      );
-    }
-
     return mainContent;
   };
 
   // Always use sidebar layout now (no welcome screen)
   return (
     <BuilderFilterProvider onNavigate={handleNavigate}>
-      <div className="relative w-full min-h-screen">
+      <div className="relative min-h-screen w-full">
         {/* Dynamic Background Flag for non-foundation steps */}
         {activeSection !== "foundation" && countryFlagUrl && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
             <div
-              className="absolute inset-x-0 top-0 h-[60vh] bg-center bg-no-repeat bg-cover saturate-50 opacity-[0.08] blur-[2px]"
+              className="absolute inset-x-0 top-0 h-[60vh] bg-cover bg-center bg-no-repeat opacity-[0.08] blur-[80px] saturate-50"
               style={{
                 backgroundImage: `url(${countryFlagUrl})`,
                 maskImage: "linear-gradient(to bottom, black 20%, transparent 100%)",
@@ -671,12 +502,34 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           heroCollapsed={heroCollapsed}
           onHeroExpand={() => setHeroCollapsed(false)}
           heroSection={
-            !heroCollapsed && activeSection === "foundation" && (
+            !heroCollapsed &&
+            activeSection === "foundation" && (
               <BuilderSectionHero
                 section={activeSection}
                 mode={mode}
                 countryId={countryId}
                 onNavigate={handleNavigate}
+              />
+            )
+          }
+          notchBar={
+            activeSection !== "foundation" && (
+              <BuilderNotchBar
+                activeSection={activeSection}
+                completedSteps={completedSteps}
+                accessibleSteps={accessibleSteps}
+                mode={mode}
+                onNavigate={handleNavigate}
+                onBack={() => {
+                  if (activeSection === "import") {
+                    handleNavigate("foundation");
+                  } else {
+                    handlePreviousStep();
+                  }
+                }}
+                onContinue={handleContinue}
+                onSubmit={submitFn ?? undefined}
+                isSubmitting={isSubmittingGlobal}
               />
             )
           }

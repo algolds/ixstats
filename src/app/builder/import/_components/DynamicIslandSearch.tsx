@@ -81,6 +81,8 @@ interface DynamicIslandSearchProps {
 
 export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   selectedSite,
+  wikiSites,
+  onSelectSite,
   searchTerm,
   setSearchTerm,
   isSearching,
@@ -108,6 +110,21 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   const [previewImgError, setPreviewImgError] = useState(false);
   const [flagImgError, setFlagImgError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleToggleWiki = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!wikiSites || wikiSites.length === 0) return;
+      const currentIndex = wikiSites.findIndex((site) => site.name === selectedSite.name);
+      const nextIndex = (currentIndex + 1) % wikiSites.length;
+      const nextSite = wikiSites[nextIndex];
+      if (nextSite) {
+        onSelectSite(nextSite);
+      }
+    },
+    [wikiSites, selectedSite, onSelectSite]
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -377,14 +394,19 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                   Search {selectedSite.displayName}...
                 </span>
-                <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleToggleWiki}
+                  className="hover:bg-accent/35 z-10 ml-auto flex cursor-pointer items-center gap-2 rounded-md p-1 transition-all active:scale-95"
+                  title={`Switch from ${selectedSite.displayName}`}
+                >
                   <img
                     src={withBasePath(logoMap[selectedSite.name]!)}
                     alt={selectedSite.displayName}
-                    className="h-4 w-4 object-contain opacity-60"
+                    className="h-4 w-4 object-contain opacity-60 transition-opacity hover:opacity-100"
                   />
                   <ChevronDown className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
-                </div>
+                </button>
               </motion.div>
             )}
 
@@ -462,18 +484,24 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     </button>
                   )}
 
-                  {/* Wiki Logo */}
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  {/* Wiki Logo Selector */}
+                  <button
+                    type="button"
+                    onClick={handleToggleWiki}
+                    className="hover:bg-accent/35 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md p-1 transition-all active:scale-95"
+                    title={`Switch from ${selectedSite.displayName}`}
+                  >
                     <IconSwap>
                       <IconSwapItem key={selectedSite.name}>
                         <img
                           src={withBasePath(logoMap[selectedSite.name]!)}
                           alt={selectedSite.displayName}
-                          className="h-4 w-4 object-contain opacity-60"
+                          className="h-4 w-4 object-contain opacity-60 transition-opacity hover:opacity-100"
                         />
                       </IconSwapItem>
                     </IconSwap>
-                  </div>
+                    <ChevronDown className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
+                  </button>
                 </div>
 
                 {/* Category Selector Panel */}

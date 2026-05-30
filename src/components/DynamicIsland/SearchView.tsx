@@ -40,7 +40,7 @@ export function SearchView({
 
   return (
     <div className="p-4">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <input
@@ -124,7 +124,7 @@ export function SearchView({
 
                 {/* Content */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
                     <PreText
                       className="text-foreground truncate text-sm font-medium"
                       whiteSpace="nowrap"

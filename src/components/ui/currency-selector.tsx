@@ -10,6 +10,7 @@ import {
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/format-utils";
+import { cn } from "~/lib/utils";
 
 interface CurrencySelectorProps {
   value: string;
@@ -60,16 +61,19 @@ export function CurrencySelector({
             const info = getCurrencyInfo(currency);
             return info.isISO;
           })
-          .map((currency) => (
-            <SelectItem key={currency} value={currency}>
-              <div className="flex items-center gap-2">
-                <span>{currency}</span>
-                <Badge variant="secondary" className="text-xs">
-                  ISO
-                </Badge>
-              </div>
-            </SelectItem>
-          ))}
+          .map((currency) => {
+            const info = getCurrencyInfo(currency);
+            return (
+              <SelectItem key={currency} value={currency}>
+                <div className="flex items-center gap-2">
+                  {info.symbol && (
+                    <span className="w-5 text-center text-sm">{info.symbol}</span>
+                  )}
+                  <span>{currency}</span>
+                </div>
+              </SelectItem>
+            );
+          })}
 
         {/* Custom Currencies */}
         <div className="text-muted-foreground mt-2 px-2 py-1.5 text-xs font-semibold">
@@ -135,9 +139,17 @@ export function CurrencyInput({
           onChange={(e) => onValueChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${className} ${
-            !isValid ? "border-red-500 focus-visible:ring-red-500" : ""
-          }`}
+          className={cn(
+            "file:text-foreground placeholder:text-muted-foreground/80 selection:bg-primary selection:text-primary-foreground",
+            "flex h-9 w-full min-w-0 rounded-md border border-neutral-200 bg-white/50 dark:border-white/[0.08] dark:bg-white/[0.015]",
+            "px-3 py-1 text-sm shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] transition-all duration-200 outline-none hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
+            "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-xs file:font-medium",
+            "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+            "hover:border-neutral-300 hover:bg-white/70 dark:hover:border-white/[0.12] dark:hover:bg-white/[0.03]",
+            "focus:scale-[1.01] focus:border-amber-500/60 focus:bg-white/95 focus:shadow-md focus:ring-[2.5px] focus:shadow-amber-500/20 focus:ring-amber-500/20 dark:focus:bg-gray-800/90",
+            !isValid && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+            className
+          )}
         />
         {currencyInfo?.symbol && (
           <Badge variant="secondary" className="text-xs">

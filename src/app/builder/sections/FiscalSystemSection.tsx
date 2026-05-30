@@ -178,8 +178,8 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
         title: "Budget Balance",
         value:
           safeBudgetBalance >= 0
-            ? `$${(Math.abs(safeBudgetBalance) / 1e9).toFixed(1)}B`
-            : `-$${(Math.abs(safeBudgetBalance) / 1e9).toFixed(1)}B`,
+            ? sectionUtils.formatCurrency(safeBudgetBalance, "$", 1)
+            : `-${sectionUtils.formatCurrency(Math.abs(safeBudgetBalance), "$", 1)}`,
         subtitle: safeBudgetBalance >= 0 ? "Surplus" : "Deficit",
         trend: safeBudgetBalance >= 0 ? ("up" as const) : ("down" as const),
         color: safeBudgetBalance >= 0 ? ("green" as const) : ("red" as const),
@@ -205,7 +205,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
       {
         label: "Government Revenue",
         title: "Gov Revenue",
-        value: `$${(safeGovRevenue / 1e9).toFixed(1)}B`,
+        value: sectionUtils.formatCurrency(safeGovRevenue, "$", 1),
         subtitle: "Total Annual",
         trend: "neutral" as const,
         color: "blue" as const,
@@ -300,19 +300,19 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
     return [
       {
         category: "Income Tax",
-        value: (actualRevenue * (incomeRate / totalRate)) / 1e9,
+        value: actualRevenue * (incomeRate / totalRate),
       },
       {
         category: "Corporate Tax",
-        value: (actualRevenue * (corporateRate / totalRate)) / 1e9,
+        value: actualRevenue * (corporateRate / totalRate),
       },
       {
         category: "Sales Tax",
-        value: (actualRevenue * (salesRate / totalRate)) / 1e9,
+        value: actualRevenue * (salesRate / totalRate),
       },
       {
         category: "Property Tax",
-        value: (actualRevenue * (propertyRate / totalRate)) / 1e9,
+        value: actualRevenue * (propertyRate / totalRate),
       },
     ].filter((item) => item.value > 0);
   }, [fiscalSystem, nominalGDP]);
@@ -497,7 +497,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
                 showLegend={true}
                 showLabels={true}
                 showPercentage={true}
-                formatValue={(value) => `$${value.toFixed(1)}B`}
+                formatValue={(value) => sectionUtils.formatCurrency(value, "$", 1)}
                 minSlicePercentage={3}
                 loading={false}
                 error={undefined}

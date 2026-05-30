@@ -135,7 +135,7 @@ export function useBuilderActions({
   const steps = useMemo(() => {
     return mode === "edit"
       ? ["core", "government", "economics", "preview"]
-      : ["foundation", "core", "preview"];
+      : ["foundation", "core", "government", "economics", "preview"];
   }, [mode]);
 
   // Handle tab navigation within steps
@@ -175,7 +175,7 @@ export function useBuilderActions({
         if (activeCoreTab === "identity") {
           handleTabChange("core", "indicators");
         } else {
-          const nextStep = mode === "edit" ? "government" : "preview";
+          const nextStep = "government";
           setBuilderState((prev) => ({
             ...prev,
             step: nextStep as BuilderStep,
@@ -208,23 +208,59 @@ export function useBuilderActions({
     }
   }, [builderState, setBuilderState, handleTabChange, mode]);
 
-  // Handle previous step
+  // Handle previous step - moves to previous tab or previous step
   const handlePreviousStep = useCallback(() => {
-    const currentIndex = steps.indexOf(builderState.step);
+    const { step, activeCoreTab, activeGovernmentTab, activeEconomicsTab } = builderState;
 
+    // 1. Check if we can go back a tab within the current step
+    if (step === "core" && activeCoreTab === "indicators") {
+      handleTabChange("core", "identity");
+      return;
+    }
+
+    if (step === "government") {
+      const govTabs = ["components", "structure", "spending", "preview"];
+      const currentGovIndex = govTabs.indexOf(activeGovernmentTab);
+      if (currentGovIndex > 0) {
+        handleTabChange("government", govTabs[currentGovIndex - 1]!);
+        return;
+      }
+    }
+
+    if (step === "economics" && activeEconomicsTab === "economy") {
+      handleTabChange("economics", "tax");
+      return;
+    }
+
+    // 2. Otherwise, navigate to the previous step
+    const currentIndex = steps.indexOf(step);
     if (currentIndex <= 0) {
       return;
     }
 
     const targetIndex = currentIndex - 1;
+    const prevStep = steps[targetIndex] as BuilderStep;
 
-    setBuilderState((prev) => ({
-      ...prev,
-      step: steps[targetIndex] as BuilderStep,
-      // Mark current step as completed when going back to preserve state
-      completedSteps: [...new Set([...prev.completedSteps, builderState.step])],
-    }));
-  }, [builderState.step, setBuilderState, steps]);
+    setBuilderState((prev) => {
+      const updatedState = {
+        ...prev,
+        step: prevStep,
+        // Mark current step as completed when going back to preserve state
+        completedSteps: [...new Set([...prev.completedSteps, step])],
+      };
+
+      // Set target tabs to the last tab when going backward
+      if (prevStep === "core") {
+        updatedState.activeCoreTab = "indicators";
+      } else if (prevStep === "government") {
+        updatedState.activeGovernmentTab = "preview";
+      } else if (prevStep === "economics") {
+        updatedState.activeEconomicsTab = "economy";
+      }
+
+      return updatedState;
+    });
+  }, [builderState, setBuilderState, steps, handleTabChange]);
 
   // Handle direct step navigation
   const handleStepClick = useCallback(
@@ -244,8 +280,9 @@ export function useBuilderActions({
         return;
       }
 
-      // In create mode, only allow navigation to previous steps or completed steps
-      if (targetIndex <= currentIndex || builderState.completedSteps.includes(step)) {
+      // In create mode, once unlocked (foundation completed), allow free navigation to any step
+      const isUnlocked = builderState.completedSteps.includes("foundation" as BuilderStep);
+      if (isUnlocked || targetIndex <= currentIndex || builderState.completedSteps.includes(step)) {
         setBuilderState((prev) => ({
           ...prev,
           step,
@@ -264,6 +301,10 @@ export function useBuilderActions({
 
       if (targetIndex === -1) return false;
       if (mode === "edit") return true;
+
+      // In create mode, once unlocked (foundation completed), allow free navigation to any step
+      const isUnlocked = builderState.completedSteps.includes("foundation" as BuilderStep);
+      if (isUnlocked) return true;
 
       return targetIndex <= currentIndex || builderState.completedSteps.includes(step);
     },

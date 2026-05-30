@@ -20,6 +20,7 @@ export interface CountryPreview {
 export const formatNumber = (num: number | undefined, isCurrency = true, precision = 1): string => {
   if (num === undefined || num === null || isNaN(num)) return isCurrency ? "$0" : "0";
   const prefix = isCurrency ? "$" : "";
+  if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(precision)}T`;
   if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precision)}B`;
   if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precision)}M`;
   if (Math.abs(num) >= 1e3) return `${prefix}${(num / 1e3).toFixed(precision)}K`;

@@ -474,6 +474,47 @@ export function getAvailableCurrencies(): string[] {
   return [...ISO_CURRENCY_CODES, ...Object.keys(CUSTOM_CURRENCIES)];
 }
 
+const ISO_CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  AUD: "A$",
+  CAD: "CA$",
+  CHF: "CHF",
+  CNY: "¥",
+  SEK: "kr",
+  NZD: "NZ$",
+  MXN: "Mex$",
+  SGD: "S$",
+  HKD: "HK$",
+  NOK: "kr",
+  TRY: "₺",
+  RUB: "₽",
+  INR: "₹",
+  BRL: "R$",
+  ZAR: "R",
+  KRW: "₩",
+  PLN: "zł",
+  TWD: "NT$",
+  THB: "฿",
+  DKK: "kr",
+  CZK: "Kč",
+  HUF: "Ft",
+  ILS: "₪",
+  CLP: "$",
+  PHP: "₱",
+  AED: "د.إ",
+  COP: "$",
+  SAR: "﷼",
+  MYR: "RM",
+  RON: "lei",
+  BGN: "лв",
+  HRK: "kn",
+  ISK: "kr",
+  UAH: "₴",
+};
+
 /**
  * Get currency information
  */
@@ -482,8 +523,9 @@ export function getCurrencyInfo(currency: string): {
   symbol?: string;
   name?: string;
 } {
+  const upper = currency.toUpperCase();
   if (isISOCurrency(currency)) {
-    return { isISO: true };
+    return { isISO: true, symbol: ISO_CURRENCY_SYMBOLS[upper] };
   }
 
   const customCurrency = getCustomCurrency(currency);

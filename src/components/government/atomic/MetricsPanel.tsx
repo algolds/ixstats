@@ -1,15 +1,18 @@
+"use client";
+
 /**
  * Metrics Panel
  *
- * Display key metrics: total components, costs, synergies, etc.
- * Optimized with React.memo for performance.
+ * Displays key metrics: total components, effectiveness, implementation/maintenance costs, synergies, and conflicts.
+ * Refactored to render as a clean grid of glass-pill indicators directly inside the parent panel,
+ * eliminating double card nested borders.
  *
  * @module MetricsPanel
  */
 
 import React from "react";
-import { Card, CardContent } from "~/components/ui/card";
 import { TrendingUp, DollarSign, Zap, AlertTriangle, Package, Target } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 export interface MetricsPanelProps {
   metrics: {
@@ -20,77 +23,112 @@ export interface MetricsPanelProps {
     synergyCount: number;
     conflictCount: number;
   };
+  onComponentsClick?: () => void;
+  onEffectivenessClick?: () => void;
+  onImplementationClick?: () => void;
+  onMaintenanceClick?: () => void;
+  onSynergiesClick?: () => void;
+  onConflictsClick?: () => void;
 }
 
 /**
- * Display government metrics in glass card layout
+ * Display government metrics in glass pill layouts
  */
-export const MetricsPanel = React.memo<MetricsPanelProps>(({ metrics }) => {
+export const MetricsPanel = React.memo<MetricsPanelProps>(({
+  metrics,
+  onComponentsClick,
+  onEffectivenessClick,
+  onImplementationClick,
+  onMaintenanceClick,
+  onSynergiesClick,
+  onConflictsClick
+}) => {
   const metricItems = [
     {
       label: "Components",
       value: metrics.totalComponents,
       icon: Package,
-      color: "text-blue-600 dark:text-blue-400",
-      bgColor: "bg-blue-50 dark:bg-blue-950/30",
+      color: "text-blue-400 border-blue-500/20 bg-blue-500/5",
+      iconColor: "text-blue-400",
+      onClick: onComponentsClick,
     },
     {
       label: "Effectiveness",
       value: `${metrics.totalEffectiveness.toFixed(1)}%`,
       icon: Target,
-      color: "text-purple-600 dark:text-purple-400",
-      bgColor: "bg-purple-50 dark:bg-purple-950/30",
+      color: "text-purple-400 border-purple-500/20 bg-purple-500/5",
+      iconColor: "text-purple-400",
+      onClick: onEffectivenessClick,
     },
     {
       label: "Implementation",
       value: `$${(metrics.implementationCost / 1000).toFixed(0)}k`,
       icon: DollarSign,
-      color: "text-green-600 dark:text-green-400",
-      bgColor: "bg-green-50 dark:bg-green-950/30",
+      color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+      iconColor: "text-emerald-400",
+      onClick: onImplementationClick,
     },
     {
       label: "Maintenance",
       value: `$${(metrics.maintenanceCost / 1000).toFixed(0)}k/yr`,
       icon: TrendingUp,
-      color: "text-amber-600 dark:text-amber-400",
-      bgColor: "bg-amber-50 dark:bg-amber-950/30",
+      color: "text-amber-400 border-amber-500/20 bg-amber-500/5",
+      iconColor: "text-amber-400",
+      onClick: onMaintenanceClick,
     },
     {
       label: "Synergies",
       value: metrics.synergyCount,
       icon: Zap,
-      color: "text-green-600 dark:text-green-400",
-      bgColor: "bg-green-50 dark:bg-green-950/30",
+      color: "text-green-400 border-green-500/20 bg-green-500/5",
+      iconColor: "text-green-400",
+      onClick: onSynergiesClick,
     },
     {
       label: "Conflicts",
       value: metrics.conflictCount,
       icon: AlertTriangle,
-      color: "text-red-600 dark:text-red-400",
-      bgColor: "bg-red-50 dark:bg-red-950/30",
+      color: cn(
+        metrics.conflictCount > 0
+          ? "text-red-400 border-red-500/30 bg-red-500/10 shadow-[0_0_8px_rgba(239,68,68,0.1)] animate-pulse"
+          : "text-zinc-500 border-zinc-800 bg-zinc-900/10"
+      ),
+      iconColor: metrics.conflictCount > 0 ? "text-red-400" : "text-zinc-500",
+      onClick: onConflictsClick,
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6 w-full select-none">
       {metricItems.map((item) => {
-        const Icon = item.icon;
+        const Icon = item.icon || Package;
+        const isClickable = !!item.onClick;
+        const Component = isClickable ? "button" : "div";
         return (
-          <Card key={item.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`rounded-lg p-2 ${item.bgColor}`}>
-                  <Icon className={`h-5 w-5 ${item.color}`} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="mb-0.5 text-xs text-gray-600 dark:text-gray-400">{item.label}</p>
-                  <p className="truncate text-lg font-semibold text-gray-900 dark:text-white">
-                    {item.value}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Component
+            key={item.label}
+            onClick={item.onClick}
+            type={isClickable ? "button" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-xl border p-3 backdrop-blur-md transition-all duration-200 text-left w-full",
+              isClickable
+                ? "cursor-pointer hover:scale-[1.03] hover:shadow-md hover:border-current/30"
+                : "hover:scale-[1.02]",
+              item.color
+            )}
+          >
+            <div className="rounded-lg p-1.5 bg-black/10 shrink-0">
+              <Icon className={cn("h-4 w-4", item.iconColor)} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                {item.label}
+              </p>
+              <p className="truncate text-sm font-black text-foreground">
+                {item.value}
+              </p>
+            </div>
+          </Component>
         );
       })}
     </div>

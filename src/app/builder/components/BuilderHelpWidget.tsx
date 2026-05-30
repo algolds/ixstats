@@ -1,3 +1,4 @@
+// Builder Help Widget for Atomic Builder
 "use client";
 
 import React from "react";
@@ -13,6 +14,7 @@ import {
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
+import { useBuilderFilter } from "./builder-filter-context";
 
 interface BuilderHelpWidgetProps {
   activeSection: BuilderSection;
@@ -28,8 +30,36 @@ const SECTION_TITLES: Record<BuilderSection, string> = {
 };
 
 export function BuilderHelpWidget({ activeSection }: BuilderHelpWidgetProps) {
-  const steps = contextualHelp[activeSection] || contextualHelp.foundation;
-  const sectionTitle = SECTION_TITLES[activeSection] || activeSection;
+  const { selectedTemplate } = useBuilderFilter();
+
+  let steps = contextualHelp[activeSection] || contextualHelp.foundation;
+  let sectionTitle = SECTION_TITLES[activeSection] || activeSection;
+
+  if (activeSection === "foundation" && selectedTemplate) {
+    sectionTitle = "Country Archetype";
+    steps = [
+      {
+        title: "Choose Starting Model",
+        description:
+          "Select an archetype (e.g. Nordic, Silicon Valley, Soviet Command) to seed your nation's initial policies, tax structures, and starting modifiers.",
+      },
+      {
+        title: "Check Alignment Profile",
+        description:
+          "Review how each archetype aligns with innovation and stability metrics to see how they fit your desired gameplay strategy.",
+      },
+      {
+        title: "Review Traits & Modifiers",
+        description:
+          "Analyze starting traits that determine initial sector bonuses, public trust levels, and GDP growth potentials.",
+      },
+      {
+        title: "Confirm or Skip",
+        description:
+          "Seed the chosen archetype structure or choose to skip to build from a blank slate. You can customize everything later.",
+      },
+    ];
+  }
 
   return (
     <CutoutCard

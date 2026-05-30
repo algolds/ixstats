@@ -4,13 +4,14 @@ import type { ReactNode } from "react";
 import { cn } from "~/lib/utils";
 import type { BuilderSection } from "../lib/builder-theme";
 import { BuilderPreviewWidget } from "./BuilderPreviewWidget";
-import { BuilderSectionNavWidget } from "./BuilderSectionNavWidget";
 import { BuilderHelpWidget } from "./BuilderHelpWidget";
 
 interface BuilderSidebarLayoutProps {
   children: ReactNode;
   /** Hero section rendered above the grid */
   heroSection?: ReactNode;
+  /** Sticky notch bar rendered below hero, above main content */
+  notchBar?: ReactNode;
   /** Alerts/banners rendered above main content */
   alerts?: ReactNode;
   /** Active builder section */
@@ -30,6 +31,7 @@ interface BuilderSidebarLayoutProps {
 export function BuilderSidebarLayout({
   children,
   heroSection,
+  notchBar,
   alerts,
   activeSection,
   onNavigate,
@@ -40,11 +42,14 @@ export function BuilderSidebarLayout({
   onHeroExpand,
 }: BuilderSidebarLayoutProps) {
   return (
-    <div className="flex flex-col" data-builder-content>
+    <div className={cn("flex flex-col", !heroSection && "pt-[68px]")} data-builder-content>
       {/* Hero Section */}
       {heroSection && (
         <div className="container mx-auto px-4 pt-[6vh] lg:pt-[8vh]">{heroSection}</div>
       )}
+
+      {/* Notch bar — sticky, sits just below DI, pushes content down */}
+      {notchBar}
 
       {/* Alerts */}
       {alerts && (
@@ -54,9 +59,16 @@ export function BuilderSidebarLayout({
       )}
 
       {/* Main Layout */}
-      <div className={cn("container mx-auto flex gap-4 px-4 pb-4 sm:gap-6 sm:pb-6", !heroSection && "pt-16 lg:pt-20")}>
+      <div
+        className={cn(
+          "container mx-auto flex gap-4 px-4 pb-4 sm:gap-6 sm:pb-6",
+          !heroSection && !notchBar && "pt-16 lg:pt-20",
+          notchBar && "pt-3",
+          heroSection && !notchBar && "pt-6 lg:pt-8"
+        )}
+      >
         {/* Desktop Sidebar Nav (CutoutCard widgets) */}
-        <div className="relative z-30 hidden shrink-0 lg:block">
+        <div className="relative z-30 hidden shrink-0 lg:block lg:pt-8 lg:pr-2 lg:pl-6">
           <div className="space-y-4">
             {activeSection !== "import" && (
               <BuilderPreviewWidget
@@ -65,7 +77,6 @@ export function BuilderSidebarLayout({
                 activeSection={activeSection}
               />
             )}
-            <BuilderSectionNavWidget activeSection={activeSection} />
             {activeSection === "import" ? (
               <div id="import-sidebar-portal" className="space-y-4" />
             ) : (
@@ -75,7 +86,7 @@ export function BuilderSidebarLayout({
         </div>
 
         {/* Main Content */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 lg:pr-6 lg:pl-2">
           <div className="space-y-4">{children}</div>
         </div>
       </div>

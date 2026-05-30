@@ -7,7 +7,7 @@
  * @module useAtomicGovernmentBuilder
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
 import {
@@ -32,6 +32,8 @@ export interface UseAtomicGovernmentBuilderProps {
   isReadOnly?: boolean;
   /** Change callback */
   onChange?: (components: ComponentType[]) => void;
+  /** Default category to filter components */
+  defaultCategoryFilter?: string | null;
 }
 
 export interface UseAtomicGovernmentBuilderReturn {
@@ -72,11 +74,22 @@ export function useAtomicGovernmentBuilder({
   maxComponents = 10,
   isReadOnly = false,
   onChange,
+  defaultCategoryFilter = null,
 }: UseAtomicGovernmentBuilderProps = {}): UseAtomicGovernmentBuilderReturn {
   // State
   const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>(initialComponents);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(defaultCategoryFilter);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Sync state if initialComponents changes
+  useEffect(() => {
+    setSelectedComponents(initialComponents);
+  }, [initialComponents]);
+
+  // Sync category filter if defaultCategoryFilter changes
+  useEffect(() => {
+    setCategoryFilter(defaultCategoryFilter);
+  }, [defaultCategoryFilter]);
 
   // Filtered components based on search and category
   const filteredComponents = useMemo(() => {

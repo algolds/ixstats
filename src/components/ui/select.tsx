@@ -89,16 +89,21 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
   );
 }
 
+interface SelectItemProps extends React.ComponentProps<typeof SelectPrimitive.Item> {
+  description?: string;
+}
+
 function SelectItem({
   className,
   children,
+  description,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+}: SelectItemProps) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 pr-8 pl-3 text-sm text-slate-700 outline-hidden transition-colors select-none hover:bg-slate-50 focus:bg-slate-100 focus:text-slate-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-slate-200 dark:hover:bg-slate-700/80 dark:focus:bg-slate-700 dark:focus:text-white [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 pr-8 pl-3 text-sm text-slate-700 outline-hidden transition-colors select-none hover:bg-slate-50 focus:bg-slate-100 focus:text-slate-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-slate-200 dark:hover:bg-slate-700/80 dark:focus:bg-slate-700 dark:focus:text-white [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -108,7 +113,14 @@ function SelectItem({
           <CheckIcon className="size-4 text-blue-500 dark:text-blue-400" />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      <div className="flex flex-col py-0.5">
+        <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+        {description && (
+          <span className="text-[10px] text-zinc-400 mt-0.5 whitespace-normal max-w-[280px] leading-relaxed select-desc">
+            {description}
+          </span>
+        )}
+      </div>
     </SelectPrimitive.Item>
   );
 }

@@ -523,49 +523,10 @@ const DynamicIslandContent = ({
 
   return (
     <div className="relative">
-      {/* Outer glow effect with animation and refraction */}
-      <motion.div
-        className="absolute inset-0 opacity-60"
-        animate={{
-          borderRadius: currentSize.borderRadius,
-          transition: {
-            type: "spring",
-            stiffness: stiffness * 0.7,
-            damping: damping * 0.85,
-            mass,
-          },
-        }}
-        style={{ willChange }}
-      >
-        {/* Multi-layer glow for depth — light mode uses more vivid colors, dark uses subtler */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-indigo-500/50 blur-xl dark:from-blue-500/30 dark:via-purple-500/30 dark:to-blue-500/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/40 via-indigo-500/45 to-purple-400/40 blur-lg dark:from-cyan-400/20 dark:via-indigo-500/20 dark:to-purple-400/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/35 via-violet-400/35 to-blue-400/35 blur-md dark:from-blue-300/15 dark:via-purple-300/15 dark:to-blue-300/15" />
-      </motion.div>
-
-      {/* Extended glow for wide modes */}
-      {(state.size === "extraWide" || state.size === "fullWidth") && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent opacity-40 blur-xl"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{
-            opacity: 0.4,
-            scale: 1.1,
-            transition: {
-              type: "spring",
-              stiffness: 200,
-              damping: 25,
-              duration: 0.8,
-            },
-          }}
-          exit={{ opacity: 0, scale: 0.8 }}
-        />
-      )}
-
-      {/* Main dynamic island */}
+      {/* Main dynamic island — glow via box-shadow so it always matches border-radius */}
       <motion.div
         id={id}
-        className="focus-within:bg-accent/80 relative mx-auto items-center justify-center border border-blue-200/40 text-center shadow-2xl shadow-blue-500/20 transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10 dark:shadow-black/40"
+        className="focus-within:bg-accent/80 relative mx-auto items-center justify-center border border-violet-300/60 text-center transition-colors duration-200 will-change-auto dark:border-white/10"
         initial={{
           width: dimensions.width,
           height: targetHeight,
@@ -584,32 +545,48 @@ const DynamicIslandContent = ({
         }}
         style={{
           willChange: willChange || "transform",
-          background: "var(--color-glass)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          // DynamicIslandEffects glass aesthetic — matches BuilderSectionHero
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+          backdropFilter: "blur(20px) saturate(190%)",
+          WebkitBackdropFilter: "blur(20px) saturate(190%)",
           transform: "translateZ(0)",
           isolation: "isolate",
           overflow: isAutoHeight ? "visible" : "hidden",
+          boxShadow: [
+            "0 0 0 1px rgba(139,92,246,0.25)",
+            "0 0 20px 4px rgba(99,102,241,0.4)",
+            "0 0 50px 12px rgba(139,92,246,0.22)",
+            "0 0 80px 24px rgba(59,130,246,0.14)",
+            "0 4px 24px 0 rgba(0,0,0,0.18)",
+          ].join(", "),
         }}
         {...props}
       >
-        {/* Inner glass effects with refraction */}
-        <div className="pointer-events-none absolute inset-0">
-          {/* Refraction edges */}
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-
-          {/* Inner shimmer - optimized animation */}
+        {/* DynamicIslandEffects — multi-layer colorful glow + refraction edges + shimmer */}
+        <div className="pointer-events-none absolute inset-0 z-0" style={{ opacity: 0.5 }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
+        </div>
+        {/* Refraction edges */}
+        <div className="pointer-events-none absolute inset-0 z-0">
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/35 to-transparent" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
+          {/* Inner shimmer */}
           <div
-            className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent will-change-transform"
+            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/10 to-transparent"
             style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
           />
         </div>
 
-        {/* Content container — overflow-hidden clips only the content, not the glow */}
-        <div ref={contentRef} className="relative z-[10001] h-auto w-full overflow-hidden">
+        {/* Content container */}
+        <div
+          ref={contentRef}
+          className={`relative z-[10001] h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
+        >
           <AnimatePresence>{children}</AnimatePresence>
         </div>
       </motion.div>

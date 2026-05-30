@@ -1,18 +1,51 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { Globe, Crown, Building, MapPin, Users, Coins } from "lucide-react";
-import { CurrencySymbolPicker, GlassSelectBox } from "../../../primitives/enhanced";
+import {
+  Globe,
+  Crown,
+  Building,
+  MapPin,
+  Users,
+  Coins,
+  BarChart3,
+  TrendingUp,
+  DollarSign,
+  Activity,
+  Percent,
+  Lock,
+  Link2,
+  Link2Off,
+} from "lucide-react";
+import {
+  CurrencySymbolPicker,
+  GlassSelectBox,
+  SliderWithDirectInput,
+  EnhancedDial,
+} from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
-import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
-import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
+import { cn } from "~/lib/utils";
+import type {
+  NationalIdentityData,
+  EconomicInputs,
+  RealCountryData,
+} from "~/app/builder/lib/economy-data-service";
+import { getEconomicTier } from "~/app/builder/lib/economy-data-service";
+import { EDIT_MODE_FIELD_LOCKS } from "~/app/builder/components/enhanced/builderConfig";
+import { Badge } from "~/components/ui/badge";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { Switch } from "~/components/ui/switch";
+import { getPopulationTierFromPopulation } from "~/types/ixstats";
 
 import { CountrySymbolsUploader } from "../../CountrySymbolsUploader";
+import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
 
 interface BasicInfoFormProps {
   identity: NationalIdentityData;
+  governmentStructure: any;
+  onGovernmentStructureChange: (structure: any) => void;
   onIdentityChange: (field: keyof NationalIdentityData, value: any) => void;
   selectedGovernmentType: string;
   customOfficialName: string;
@@ -38,6 +71,14 @@ interface BasicInfoFormProps {
   onFlagUrlChange: (url: string) => void;
   onCoatOfArmsUrlChange: (url: string) => void;
   onColorsExtracted: (colors: any) => void;
+
+  // Core Indicator Props
+  inputs: EconomicInputs;
+  onInputsChange: (inputs: EconomicInputs) => void;
+  referenceCountry?: RealCountryData | null;
+  showAdvanced?: boolean;
+  mode?: "create" | "edit";
+  fieldLocks?: Record<string, any>;
 }
 
 const GOVERNMENT_TYPES = [
@@ -79,6 +120,8 @@ const GOVERNMENT_TYPES = [
 export const BasicInfoForm = React.memo(
   function BasicInfoForm({
     identity,
+    governmentStructure,
+    onGovernmentStructureChange,
     onIdentityChange,
     selectedGovernmentType,
     customOfficialName,
@@ -100,6 +143,14 @@ export const BasicInfoForm = React.memo(
     onFlagUrlChange,
     onCoatOfArmsUrlChange,
     onColorsExtracted,
+
+    // Core Indicator Props
+    inputs,
+    onInputsChange,
+    referenceCountry,
+    showAdvanced = false,
+    mode = "create",
+    fieldLocks,
   }: BasicInfoFormProps) {
     // Fetch custom government types on mount
     React.useEffect(() => {
@@ -134,25 +185,139 @@ export const BasicInfoForm = React.memo(
       onIdentityChange("officialName", event.target.value);
     }, []);
 
-    const handleCapitalCityChange = useCallback((value: string) => {
-      onIdentityChange("capitalCity", value);
-    }, []);
+    const [isLargestLocked, setIsLargestLocked] = React.useState(() => {
+      return identity.capitalCity === identity.largestCity && !!identity.capitalCity;
+    });
 
-    const handleLargestCityChange = useCallback((value: string) => {
-      onIdentityChange("largestCity", value);
-    }, []);
+    const toggleLargestLock = useCallback(() => {
+      const next = !isLargestLocked;
+      setIsLargestLocked(next);
+      if (next) {
+        onIdentityChange("largestCity", identity.capitalCity || "");
+        if (identity.capitalCity && onFieldSave) {
+          onFieldSave("largestCity", identity.capitalCity);
+        }
+      }
+    }, [isLargestLocked, identity.capitalCity, onIdentityChange, onFieldSave]);
+
+    const handleCapitalCityChange = useCallback(
+      (value: string) => {
+        onIdentityChange("capitalCity", value);
+        if (isLargestLocked) {
+          onIdentityChange("largestCity", value);
+        }
+      },
+      [isLargestLocked, onIdentityChange]
+    );
+
+    const handleCapitalCitySave = useCallback(
+      (fieldName: string, value: string) => {
+        if (onFieldSave) {
+          onFieldSave("capitalCity", value);
+          if (isLargestLocked) {
+            onFieldSave("largestCity", value);
+          }
+        }
+      },
+      [isLargestLocked, onFieldSave]
+    );
+
+    const handleLargestCityChange = useCallback(
+      (value: string) => {
+        onIdentityChange("largestCity", value);
+      },
+      [onIdentityChange]
+    );
 
     const handleDemonymChange = useCallback((value: string) => {
       onIdentityChange("demonym", value);
     }, []);
 
-    const handleCurrencyChange = useCallback((value: string) => {
-      onIdentityChange("currency", value);
-    }, []);
+    // ─── Core Indicators Logic ───
+    const isEditMode = mode === "edit";
+    const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
-    const handleCurrencySymbolChange = useCallback((symbol: string) => {
-      onIdentityChange("currencySymbol", symbol);
-    }, []);
+    // Safe defaults
+    const safeInputs = inputs || {
+      coreIndicators: {
+        totalPopulation: 10000000,
+        nominalGDP: 250000000000,
+        gdpPerCapita: 25000,
+        realGDPGrowthRate: 3.0,
+        inflationRate: 2.0,
+        currencyExchangeRate: 1.0,
+      },
+    };
+
+    const coreIndicators = safeInputs.coreIndicators || {
+      totalPopulation: 10000000,
+      nominalGDP: 250000000000,
+      gdpPerCapita: 25000,
+      realGDPGrowthRate: 3.0,
+      inflationRate: 2.0,
+      currencyExchangeRate: 1.0,
+    };
+
+    const sanitizeNumber = (value: any, defaultValue: number): number => {
+      const numValue = Number(value);
+      return !isNaN(numValue) && isFinite(numValue) ? numValue : defaultValue;
+    };
+
+    const sanitizedCoreIndicators = {
+      totalPopulation: sanitizeNumber(coreIndicators.totalPopulation, 10000000),
+      nominalGDP: sanitizeNumber(coreIndicators.nominalGDP, 250000000000),
+      gdpPerCapita: sanitizeNumber(coreIndicators.gdpPerCapita, 25000),
+      realGDPGrowthRate: sanitizeNumber(coreIndicators.realGDPGrowthRate, 3.0),
+      inflationRate: sanitizeNumber(coreIndicators.inflationRate, 2.0),
+      currencyExchangeRate: sanitizeNumber(coreIndicators.currencyExchangeRate, 1.0),
+    };
+
+    const economicTier = getEconomicTier(sanitizedCoreIndicators.gdpPerCapita);
+    const populationTier = getPopulationTierFromPopulation(sanitizedCoreIndicators.totalPopulation);
+
+    const defaultTaxRate = referenceCountry?.taxRevenuePercent || 20;
+    const [isTaxCustom, setIsTaxCustom] = React.useState(
+      () => {
+        const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
+        return currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
+      }
+    );
+
+    React.useEffect(() => {
+      const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
+      const isCustom = currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
+      setIsTaxCustom(isCustom);
+    }, [inputs.fiscalSystem?.taxRevenueGDPPercent, defaultTaxRate]);
+
+    const calculateExpectedGrowthRate = (gdpPerCapita: number, population: number): number => {
+      const incomeFactor = Math.max(0.5, Math.min(8, 8 - gdpPerCapita / 10000));
+      const sizeFactor =
+        population >= 100000000
+          ? 0.8
+          : population >= 10000000
+            ? 0.9
+            : population >= 1000000
+              ? 1.0
+              : 1.1;
+      return Math.round(incomeFactor * sizeFactor * 10) / 10;
+    };
+
+    const expectedGrowthRate = calculateExpectedGrowthRate(
+      sanitizedCoreIndicators.gdpPerCapita,
+      sanitizedCoreIndicators.totalPopulation
+    );
+
+    const formatCurrency = (value: number | string) => {
+      const numValue = Number(value);
+      if (numValue >= 1e12) return `$${(numValue / 1e12).toFixed(1)}T`;
+      if (numValue >= 1e9) return `$${(numValue / 1e9).toFixed(1)}B`;
+      if (numValue >= 1e6) return `$${(numValue / 1e6).toFixed(1)}M`;
+      if (numValue >= 1e3) return `$${(numValue / 1e3).toFixed(1)}K`;
+      return `$${numValue.toLocaleString()}`;
+    };
+
+    const computedGDP =
+      sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita;
 
     return (
       <div className="space-y-6">
@@ -170,7 +335,7 @@ export const BasicInfoForm = React.memo(
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Administrative Profile Card */}
           <GlassCard
             depth="base"
@@ -186,11 +351,31 @@ export const BasicInfoForm = React.memo(
               </h3>
             </div>
             <GlassCardContent className="space-y-4 p-6">
+              {/* 1. Official Name */}
+              <div className="space-y-2">
+                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+                  <Crown className="text-muted-foreground h-4 w-4" />
+                  Official Name
+                </label>
+                <p className="text-muted-foreground text-[11px] leading-tight">
+                  Full ceremonial name of the country
+                </p>
+                <Input
+                  value={identity.officialName ?? ""}
+                  onChange={handleOfficialNameChange}
+                  placeholder="The Republic of..."
+                />
+              </div>
+
+              {/* 2. Country Name */}
               <div className="space-y-2">
                 <label className="text-foreground flex items-center gap-2 text-sm font-medium">
                   <Globe className="text-muted-foreground h-4 w-4" />
                   Country Name
                 </label>
+                <p className="text-muted-foreground text-[11px] leading-tight">
+                  Short form name of the country
+                </p>
                 <Input
                   value={identity.countryName ?? ""}
                   onChange={handleCountryNameChange}
@@ -198,6 +383,7 @@ export const BasicInfoForm = React.memo(
                 />
               </div>
 
+              {/* 3. Government Type */}
               <div className="space-y-2">
                 <GlassSelectBox
                   label="Government Type"
@@ -223,36 +409,46 @@ export const BasicInfoForm = React.memo(
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                  <Crown className="text-muted-foreground h-4 w-4" />
-                  Official Name
-                </label>
-                <p className="text-muted-foreground text-xs">Full ceremonial name of the country</p>
-                <Input
-                  value={identity.officialName ?? ""}
-                  onChange={handleOfficialNameChange}
-                  placeholder="The Republic of..."
+              {/* Government Structure Fields */}
+              <div className="border-border/10 my-4 space-y-4 border-t pt-4">
+                <div className="text-foreground text-[10px] font-black tracking-wider text-zinc-400 uppercase">
+                  Government Structure
+                </div>
+                <GovernmentStructureForm
+                  data={
+                    governmentStructure?.structure || {
+                      governmentName: "",
+                      governmentType: "Other",
+                      headOfState: "",
+                      headOfGovernment: "",
+                      legislatureName: "",
+                      executiveName: "",
+                      judicialName: "",
+                      totalBudget: 0,
+                      fiscalYear: "Calendar Year",
+                      budgetCurrency: "USD",
+                    }
+                  }
+                  onChange={(structure) => {
+                    onGovernmentStructureChange({
+                      ...governmentStructure,
+                      structure,
+                    });
+                  }}
+                  isReadOnly={false}
+                  gdpData={{
+                    nominalGDP: inputs.coreIndicators?.nominalGDP || 0,
+                    countryName: identity.countryName,
+                  }}
+                  hideBudgetConfig={true}
+                  noWrapper={true}
+                  hideGovernmentType={true}
                 />
               </div>
-            </GlassCardContent>
-          </GlassCard>
 
-          {/* Civic & Financial Standards Card */}
-          <GlassCard
-            depth="base"
-            theme="emerald"
-            className="border-emerald-500/20"
-            texture="chevron"
-            textureOpacity={0.06}
-          >
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Coins className="h-5 w-5 text-emerald-400" />
-                Civic & Financial Standards
-              </h3>
-            </div>
-            <GlassCardContent className="space-y-4 p-6">
+              {/* Divider and Civic Standards */}
+              <div className="border-border/10 my-4 border-t pt-4" />
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <IdentityAutocomplete
                   fieldName="capitalCity"
@@ -260,16 +456,50 @@ export const BasicInfoForm = React.memo(
                   onChange={handleCapitalCityChange}
                   placeholder="Capital city name"
                   icon={Building}
-                  onSave={onFieldSave}
+                  onSave={handleCapitalCitySave}
+                  extraLabelElement={
+                    <button
+                      type="button"
+                      onClick={toggleLargestLock}
+                      className={cn(
+                        "flex items-center gap-1 text-[10px] font-semibold transition-all duration-150 focus:outline-none",
+                        isLargestLocked
+                          ? "text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      title={
+                        isLargestLocked
+                          ? "Unlock Largest City to set a different value"
+                          : "Set Largest City to match Capital City"
+                      }
+                    >
+                      {isLargestLocked ? (
+                        <>
+                          <Link2 className="h-3 w-3" />
+                          <span>Linked as Largest</span>
+                        </>
+                      ) : (
+                        <>
+                          <Link2Off className="text-muted-foreground/60 h-3 w-3" />
+                          <span>Link Largest</span>
+                        </>
+                      )}
+                    </button>
+                  }
                 />
 
                 <IdentityAutocomplete
                   fieldName="largestCity"
-                  value={String(identity.largestCity || "")}
+                  value={
+                    isLargestLocked
+                      ? String(identity.capitalCity || "")
+                      : String(identity.largestCity || "")
+                  }
                   onChange={handleLargestCityChange}
-                  placeholder="Largest city name"
+                  placeholder={isLargestLocked ? "Same as Capital City" : "Largest city name"}
                   icon={MapPin}
                   onSave={onFieldSave}
+                  disabled={isLargestLocked}
                 />
               </div>
 
@@ -281,26 +511,388 @@ export const BasicInfoForm = React.memo(
                 icon={Users}
                 onSave={onFieldSave}
               />
+            </GlassCardContent>
+          </GlassCard>
 
-              <div className="border-border/20 grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
-                <CurrencyAutocomplete
-                  fieldName="currency"
-                  value={String(identity.currency || "")}
-                  onChange={handleCurrencyChange}
-                  placeholder="Select or enter currency"
-                />
-                <div className="space-y-2">
-                  <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                    <Coins className="text-muted-foreground h-4 w-4" />
-                    Currency Symbol
-                  </label>
-                  <CurrencySymbolPicker
-                    value={identity.currencySymbol || "$"}
-                    onSymbolSelect={handleCurrencySymbolChange}
-                    sectionId="symbols"
-                  />
+          {/* Civic & Financial Standards Card (Now hosts Core Indicators) */}
+          <GlassCard
+            depth="base"
+            theme="emerald"
+            className="border-emerald-500/20"
+            texture="chevron"
+            textureOpacity={0.06}
+          >
+            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                <BarChart3 className="h-5 w-5 text-emerald-400" />
+                Core Indicators
+              </h3>
+            </div>
+            <GlassCardContent className="space-y-4 p-6">
+              {!isEditMode ? (
+                // Create Mode: Sliders & Emergent GDP
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+                      <Users className="text-muted-foreground h-4 w-4" />
+                      Starting Population
+                    </label>
+                    <p className="text-muted-foreground text-[11px] leading-tight">
+                      Set the initial population of your country. This is before any
+                      modifications from events, policies, or other factors.
+                    </p>
+                    <SliderWithDirectInput
+                      label=""
+                      value={sanitizedCoreIndicators.totalPopulation}
+                      onChange={(value) => {
+                        const population = sanitizeNumber(
+                          value,
+                          sanitizedCoreIndicators.totalPopulation
+                        );
+                        const clamped = Math.max(100000, Math.min(200000000, population));
+                        onInputsChange({
+                          ...safeInputs,
+                          coreIndicators: {
+                            ...coreIndicators,
+                            totalPopulation: clamped,
+                            nominalGDP: clamped * sanitizedCoreIndicators.gdpPerCapita,
+                          },
+                        });
+                      }}
+                      min={100000}
+                      max={150000000}
+                      step={100000}
+                      unit=" citizens"
+                      precision={0}
+                      sectionId="core"
+                      showValue={true}
+                      defaultMode="slider"
+                      allowModeToggle={true}
+                    />
+                    <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+                      <span>Min: 100K</span>
+                      <span>
+                        Selected: {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
+                      </span>
+                      <span>Max: 150M</span>
+                    </div>
+                  </div>
+
+                                <div className="space-y-2">
+                    <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+                      <DollarSign className="text-muted-foreground h-4 w-4" />
+                       GDP per Capita
+                    </label>
+                    <p className="text-muted-foreground text-[11px] leading-tight">
+                      Average economic production per citizen. This is before any
+                      modifications from events, policies, or other factors.
+                    </p>
+                    <SliderWithDirectInput
+                      label=""
+                      value={sanitizedCoreIndicators.gdpPerCapita}
+                      onChange={(value) => {
+                        const gdpPerCapita = sanitizeNumber(
+                          value,
+                          sanitizedCoreIndicators.gdpPerCapita
+                        );
+                        const clamped = Math.max(1000, Math.min(100000, gdpPerCapita));
+                        onInputsChange({
+                          ...safeInputs,
+                          coreIndicators: {
+                            ...coreIndicators,
+                            gdpPerCapita: clamped,
+                            nominalGDP: sanitizedCoreIndicators.totalPopulation * clamped,
+                          },
+                        });
+                      }}
+                      min={1000}
+                      max={100000}
+                      step={500}
+                      unit=" USD"
+                      sectionId="core"
+                      showValue={true}
+                      defaultMode="slider"
+                      allowModeToggle={true}
+                    />
+                    <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+                      <span>Min: $1,000</span>
+                      <span>Expected Tier: {economicTier}</span>
+                      <span>Max: $100,000</span>
+                    </div>
+                  </div>
+
+                  {/* Tax Revenue Opt-In / Slider */}
+                  <div className="space-y-4 border-t border-border/20 pt-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+                        <Percent className="text-muted-foreground h-4 w-4" />
+                         Tax Revenue
+                      </label>
+                      <Switch
+                        checked={isTaxCustom}
+                        onCheckedChange={(checked) => {
+                          setIsTaxCustom(checked);
+                          if (!checked) {
+                            onInputsChange({
+                              ...safeInputs,
+                              fiscalSystem: {
+                                ...(safeInputs.fiscalSystem || {}),
+                                taxRevenueGDPPercent: defaultTaxRate,
+                                governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                                taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                              },
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                    <p className="text-muted-foreground text-[11px] leading-tight">
+                      Toggle to customize the target tax revenue projection for your nation.
+                    </p>
+
+                    {isTaxCustom ? (
+                      <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <SliderWithDirectInput
+                          label=""
+                          value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
+                          onChange={(value) => {
+                            const taxRate = sanitizeNumber(
+                              value,
+                              inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20
+                            );
+                            const clamped = Math.max(5, Math.min(50, taxRate));
+                            onInputsChange({
+                              ...safeInputs,
+                              fiscalSystem: {
+                                ...(safeInputs.fiscalSystem || {}),
+                                taxRevenueGDPPercent: clamped,
+                                governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                                taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                              },
+                            });
+                          }}
+                          min={5}
+                          max={50}
+                          step={0.5}
+                          unit="%"
+                          sectionId="core"
+                          showValue={true}
+                          defaultMode="slider"
+                          allowModeToggle={true}
+                        />
+                        <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+                          <span>Min: 5%</span>
+                          <span>Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%</span>
+                          <span>Max: 50%</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-zinc-500 italic mt-1">
+                        Using default flat tax revenue projection of {defaultTaxRate.toFixed(1)}% of GDP.
+                      </p>
+                    )}
+                  </div>
+
+                {/* Emergent Outcomes */}
+                <div className="space-y-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                        Total GDP
+                      </h5>
+                      <div className="mt-1 text-xl font-black text-amber-400">
+                        <NumberFlowDisplay
+                          value={computedGDP}
+                          format="currency"
+                          decimalPlaces={0}
+                        />
+                      </div>
+                      <p className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
+                        Population × GDP per Capita
+                      </p>
+                    </div>
+
+                    <div>
+                      <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                        Tax Revenue
+                      </h5>
+                      <div className="mt-1 text-xl font-black text-emerald-400">
+                        <NumberFlowDisplay
+                          value={computedGDP * ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100)}
+                          format="currency"
+                          decimalPlaces={0}
+                        />
+                      </div>
+                      <p className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
+                        {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}% of GDP
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-border/20 border-t pt-3 flex flex-wrap gap-x-6 gap-y-3">
+                    <div>
+                      <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
+                        Economic Classification
+                      </h5>
+                      <Badge
+                        variant="secondary"
+                        className="border-yellow-400/50 bg-yellow-500/20 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:text-yellow-200"
+                      >
+                        {economicTier}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
+                        Population Tier
+                      </h5>
+                      <Badge
+                        variant="secondary"
+                        className="border-blue-400/50 bg-blue-500/20 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:text-blue-200"
+                      >
+                        Tier {populationTier}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </div>
+            ) : (
+                // Edit Mode: Locks & Dials
+                <div className="space-y-4">
+                  {/* Locked metrics list/grid */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {/* Population */}
+                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
+                      <Badge
+                        variant="outline"
+                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
+                      >
+                        <Lock className="h-2 w-2" /> Locked
+                      </Badge>
+                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+                        Population (Tier {populationTier})
+                      </div>
+                      <div className="text-foreground text-base font-bold">
+                        {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* GDP per Capita */}
+                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
+                      <Badge
+                        variant="outline"
+                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
+                      >
+                        <Lock className="h-2 w-2" /> Locked
+                      </Badge>
+                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+                        GDP per Capita ({economicTier})
+                      </div>
+                      <div className="text-foreground text-base font-bold">
+                        ${sanitizedCoreIndicators.gdpPerCapita.toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* Nominal GDP */}
+                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
+                      <Badge
+                        variant="outline"
+                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
+                      >
+                        <Lock className="h-2 w-2" /> Locked
+                      </Badge>
+                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+                        Nominal GDP
+                      </div>
+                      <div className="text-foreground truncate text-base font-bold">
+                        {formatCurrency(sanitizedCoreIndicators.nominalGDP)}
+                      </div>
+                    </div>
+
+                    {/* Tax Revenue */}
+                    <div className="border-border/40 relative space-y-1 rounded-lg border bg-black/10 p-3">
+                      <Badge
+                        variant="outline"
+                        className="border-border/40 text-muted-foreground absolute top-2 right-2 flex items-center gap-1 bg-black/20 px-1 py-0 text-[8px]"
+                      >
+                        <Lock className="h-2 w-2" /> Locked
+                      </Badge>
+                      <div className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+                        Tax Revenue
+                      </div>
+                      <div className="text-foreground truncate text-base font-bold text-emerald-400">
+                        {formatCurrency(sanitizedCoreIndicators.nominalGDP * ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Circular dials */}
+                  <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                    <div className="border-border/40 flex flex-col items-center rounded-lg border bg-black/5 p-4 text-center">
+                      <EnhancedDial
+                        label="Real GDP Growth"
+                        value={sanitizedCoreIndicators.realGDPGrowthRate}
+                        onChange={(value) => {
+                          const growthRate = sanitizeNumber(
+                            value,
+                            sanitizedCoreIndicators.realGDPGrowthRate
+                          );
+                          onInputsChange({
+                            ...safeInputs,
+                            coreIndicators: {
+                              ...coreIndicators,
+                              realGDPGrowthRate: growthRate,
+                            },
+                          });
+                        }}
+                        min={-10}
+                        max={20}
+                        step={0.1}
+                        precision={1}
+                        unit="%"
+                        sectionId="core"
+                        icon={TrendingUp}
+                        showTicks={true}
+                        dialSize={120}
+                      />
+                      <div className="text-muted-foreground mt-2 text-[9px]">
+                        Expected: {expectedGrowthRate}%
+                      </div>
+                    </div>
+
+                    <div className="border-border/40 flex flex-col items-center rounded-lg border bg-black/5 p-4 text-center">
+                      <EnhancedDial
+                        label="Inflation Rate"
+                        value={sanitizedCoreIndicators.inflationRate}
+                        onChange={(value) => {
+                          const inflationRate = sanitizeNumber(
+                            value,
+                            sanitizedCoreIndicators.inflationRate
+                          );
+                          onInputsChange({
+                            ...safeInputs,
+                            coreIndicators: {
+                              ...coreIndicators,
+                              inflationRate: inflationRate,
+                            },
+                          });
+                        }}
+                        min={-5}
+                        max={30}
+                        step={0.1}
+                        precision={1}
+                        unit="%"
+                        sectionId="core"
+                        icon={Percent}
+                        showTicks={true}
+                        dialSize={120}
+                      />
+                      <div className="text-muted-foreground mt-2 text-[9px]">
+                        Stable Target: 2.0%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </GlassCardContent>
           </GlassCard>
         </div>
@@ -309,15 +901,13 @@ export const BasicInfoForm = React.memo(
   },
   (prevProps, nextProps) => {
     // Custom comparison to prevent re-renders
-    // Only re-render if the actual identity values or symbols we display have changed
+    // Only re-render if the actual identity values or symbols or core indicators we display have changed
     return (
       prevProps.identity.countryName === nextProps.identity.countryName &&
       prevProps.identity.officialName === nextProps.identity.officialName &&
       prevProps.identity.capitalCity === nextProps.identity.capitalCity &&
       prevProps.identity.largestCity === nextProps.identity.largestCity &&
       prevProps.identity.demonym === nextProps.identity.demonym &&
-      prevProps.identity.currency === nextProps.identity.currency &&
-      prevProps.identity.currencySymbol === nextProps.identity.currencySymbol &&
       prevProps.selectedGovernmentType === nextProps.selectedGovernmentType &&
       prevProps.customOfficialName === nextProps.customOfficialName &&
       prevProps.isEditingCustomName === nextProps.isEditingCustomName &&
@@ -325,7 +915,32 @@ export const BasicInfoForm = React.memo(
       prevProps.coatOfArmsUrl === nextProps.coatOfArmsUrl &&
       prevProps.foundationCountry?.name === nextProps.foundationCountry?.name &&
       prevProps.foundationCountry?.flagUrl === nextProps.foundationCountry?.flagUrl &&
-      prevProps.foundationCountry?.coatOfArmsUrl === nextProps.foundationCountry?.coatOfArmsUrl
+      prevProps.foundationCountry?.coatOfArmsUrl === nextProps.foundationCountry?.coatOfArmsUrl &&
+      prevProps.inputs.coreIndicators?.totalPopulation ===
+        nextProps.inputs.coreIndicators?.totalPopulation &&
+      prevProps.inputs.coreIndicators?.gdpPerCapita ===
+        nextProps.inputs.coreIndicators?.gdpPerCapita &&
+      prevProps.inputs.coreIndicators?.realGDPGrowthRate ===
+        nextProps.inputs.coreIndicators?.realGDPGrowthRate &&
+      prevProps.inputs.coreIndicators?.inflationRate ===
+        nextProps.inputs.coreIndicators?.inflationRate &&
+      prevProps.inputs.fiscalSystem?.taxRevenueGDPPercent ===
+        nextProps.inputs.fiscalSystem?.taxRevenueGDPPercent &&
+      prevProps.mode === nextProps.mode &&
+      prevProps.governmentStructure?.structure?.governmentName ===
+        nextProps.governmentStructure?.structure?.governmentName &&
+      prevProps.governmentStructure?.structure?.governmentType ===
+        nextProps.governmentStructure?.structure?.governmentType &&
+      prevProps.governmentStructure?.structure?.headOfState ===
+        nextProps.governmentStructure?.structure?.headOfState &&
+      prevProps.governmentStructure?.structure?.headOfGovernment ===
+        nextProps.governmentStructure?.structure?.headOfGovernment &&
+      prevProps.governmentStructure?.structure?.legislatureName ===
+        nextProps.governmentStructure?.structure?.legislatureName &&
+      prevProps.governmentStructure?.structure?.executiveName ===
+        nextProps.governmentStructure?.structure?.executiveName &&
+      prevProps.governmentStructure?.structure?.judicialName ===
+        nextProps.governmentStructure?.structure?.judicialName
     );
   }
 );

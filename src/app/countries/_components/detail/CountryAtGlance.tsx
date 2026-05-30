@@ -26,6 +26,15 @@ import {
   Car,
   Flag,
   LocateFixed,
+  Rabbit,
+  Bird,
+  Fish,
+  Flower2,
+  UtensilsCrossed,
+  Apple,
+  Wine,
+  Guitar,
+  Star,
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -115,6 +124,26 @@ interface CountryAtGlanceData {
     nationalDay?: string | null;
     mottoNative?: string | null;
     nationalSport?: string | null;
+    nationalAnimal?: string | null;
+    nationalBird?: string | null;
+    nationalFish?: string | null;
+    founders?: string | null;
+    nationalFlower?: string | null;
+    nationalDish?: string | null;
+    nationalFruit?: string | null;
+    nationalDrink?: string | null;
+    nationalInstrument?: string | null;
+    nationalSymbol?: string | null;
+    nationalAnimalImage?: string | null;
+    nationalBirdImage?: string | null;
+    nationalFishImage?: string | null;
+    foundersImage?: string | null;
+    nationalFlowerImage?: string | null;
+    nationalDishImage?: string | null;
+    nationalFruitImage?: string | null;
+    nationalDrinkImage?: string | null;
+    nationalInstrumentImage?: string | null;
+    nationalSymbolImage?: string | null;
     callingCode?: string | null;
     internetTLD?: string | null;
     isoCode?: string | null;
@@ -424,6 +453,146 @@ export function CountryAtGlance({
                           {country.nationalIdentity.nationalSport}
                         </p>
                       </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalAnimal && (
+                    <div className="flex items-start space-x-3">
+                      <Rabbit className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">National Animal(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalAnimal}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalAnimalImage && (
+                        <img src={country.nationalIdentity.nationalAnimalImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalBird && (
+                    <div className="flex items-start space-x-3">
+                      <Bird className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">National Bird(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalBird}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalBirdImage && (
+                        <img src={country.nationalIdentity.nationalBirdImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalFish && (
+                    <div className="flex items-start space-x-3">
+                      <Fish className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">National Fish</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalFish}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalFishImage && (
+                        <img src={country.nationalIdentity.nationalFishImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.founders && (
+                    <div className="flex items-start space-x-3">
+                      <Users className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">Founder(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.founders}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.foundersImage && (
+                        <img src={country.nationalIdentity.foundersImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalFlower && (
+                    <div className="flex items-start space-x-3">
+                      <Flower2 className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">National Flower(s) & Plants</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalFlower}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalFlowerImage && (
+                        <img src={country.nationalIdentity.nationalFlowerImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalDish && (
+                    <div className="flex items-start space-x-3">
+                      <UtensilsCrossed className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">National Dish(es) & Food</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalDish}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalDishImage && (
+                        <img src={country.nationalIdentity.nationalDishImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalFruit && (
+                    <div className="flex items-start space-x-3">
+                      <Apple className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">Fruit(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalFruit}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalFruitImage && (
+                        <img src={country.nationalIdentity.nationalFruitImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalDrink && (
+                    <div className="flex items-start space-x-3">
+                      <Wine className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">Drink(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalDrink}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalDrinkImage && (
+                        <img src={country.nationalIdentity.nationalDrinkImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalInstrument && (
+                    <div className="flex items-start space-x-3">
+                      <Guitar className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">National Instrument(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalInstrument}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalInstrumentImage && (
+                        <img src={country.nationalIdentity.nationalInstrumentImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalSymbol && (
+                    <div className="flex items-start space-x-3">
+                      <Star className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-sm">Other Symbol(s)</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalSymbol}
+                        </p>
+                      </div>
+                      {country.nationalIdentity.nationalSymbolImage && (
+                        <img src={country.nationalIdentity.nationalSymbolImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                      )}
                     </div>
                   )}
                   {country.nationalIdentity.callingCode && (

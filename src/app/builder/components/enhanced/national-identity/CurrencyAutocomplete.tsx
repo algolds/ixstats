@@ -6,6 +6,23 @@ import { CurrencySelector, CurrencyInput } from "~/components/ui/currency-select
 import { api } from "~/trpc/react";
 import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/format-utils";
 
+const QUICK_CURRENCIES = [
+  { code: "USD", symbol: "$", label: "US Dollar" },
+  { code: "EUR", symbol: "€", label: "Euro" },
+  { code: "GBP", symbol: "£", label: "Pound Sterling" },
+  { code: "JPY", symbol: "¥", label: "Japanese Yen" },
+  { code: "Taler", symbol: "₮", label: "Taler" },
+  { code: "Crown", symbol: "©", label: "Crown" },
+  { code: "Mark", symbol: "ℳ", label: "Mark" },
+];
+
+function getSymbolForCurrency(code: string): string | undefined {
+  const quick = QUICK_CURRENCIES.find((c) => c.code === code);
+  if (quick) return quick.symbol;
+  const info = getCurrencyInfo(code);
+  return info.symbol;
+}
+
 interface CurrencyAutocompleteProps {
   fieldName: string;
   value: string;
@@ -14,6 +31,8 @@ interface CurrencyAutocompleteProps {
   onSave?: (fieldName: string, value: string) => void;
   showValidation?: boolean;
   allowCustom?: boolean;
+  currencySymbol?: string;
+  onSymbolSelect?: (symbol: string) => void;
 }
 
 export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
@@ -24,6 +43,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
   onSave,
   showValidation = true,
   allowCustom = true,
+  onSymbolSelect,
 }: CurrencyAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMode, setInputMode] = useState<"selector" | "input">("selector");
@@ -45,8 +65,12 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
       if (onSave && newValue.trim()) {
         onSave(fieldName, newValue.trim());
       }
+      const symbol = newValue ? getSymbolForCurrency(newValue) : undefined;
+      if (symbol && onSymbolSelect) {
+        onSymbolSelect(symbol);
+      }
     },
-    [onChange, onSave, fieldName]
+    [onChange, onSave, fieldName, onSymbolSelect]
   );
 
   const availableCurrencies = getAvailableCurrencies();
@@ -90,11 +114,15 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
         {/* Currency Selector Mode */}
         {inputMode === "selector" && (
           <div className="space-y-2">
-            <CurrencySelector
-              value={value}
-              onValueChange={handleValueChange}
-              placeholder={placeholder}
-            />
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <CurrencySelector
+                  value={value}
+                  onValueChange={handleValueChange}
+                  placeholder={placeholder}
+                />
+              </div>
+            </div>
 
             {/* Show current currency info */}
             {value && currencyInfo && (
@@ -124,12 +152,16 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
         {/* Custom Input Mode */}
         {inputMode === "input" && (
           <div className="space-y-2">
-            <CurrencyInput
-              value={value}
-              onValueChange={handleValueChange}
-              placeholder="Enter custom currency name"
-              showValidation={showValidation}
-            />
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <CurrencyInput
+                  value={value}
+                  onValueChange={handleValueChange}
+                  placeholder="Enter custom currency name"
+                  showValidation={showValidation}
+                />
+              </div>
+            </div>
 
             {/* Show suggestions from database */}
             {isOpen && ((data?.global?.length ?? 0) > 0 || (data?.user?.length ?? 0) > 0) && (
@@ -162,14 +194,15 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
           <div className="space-y-2">
             <div className="text-muted-foreground text-xs">Quick select:</div>
             <div className="flex flex-wrap gap-1">
-              {["USD", "EUR", "GBP", "JPY", "Taler", "Crown", "Mark"].map((currency) => (
+              {QUICK_CURRENCIES.map(({ code, symbol }) => (
                 <button
-                  key={currency}
+                  key={code}
                   type="button"
-                  onClick={() => handleValueChange(currency)}
-                  className="bg-muted hover:bg-muted/80 rounded px-2 py-1 text-xs transition-colors"
+                  onClick={() => handleValueChange(code)}
+                  className="bg-muted hover:bg-muted/80 inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors"
                 >
-                  {currency}
+                  <span className="font-medium">{symbol}</span>
+                  <span>{code}</span>
                 </button>
               ))}
             </div>

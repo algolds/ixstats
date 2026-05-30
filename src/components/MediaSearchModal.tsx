@@ -29,6 +29,7 @@ interface MediaSearchModalProps {
   onClose: () => void;
   onImageSelect: (imageUrl: string) => void;
   onFileUpload?: (file: File) => Promise<void>;
+  usePortal?: boolean;
 }
 
 export function MediaSearchModal({
@@ -36,6 +37,7 @@ export function MediaSearchModal({
   onClose,
   onImageSelect,
   onFileUpload,
+  usePortal = true,
 }: MediaSearchModalProps) {
   const notify = useNotify();
   const [searchQuery, setSearchQuery] = useState("");
@@ -297,7 +299,8 @@ export function MediaSearchModal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          className="fixed inset-0 z-[100100] flex items-center justify-center nested-media-modal"
+          data-dialog-nested="true"
           style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}
         >
           <motion.div
@@ -874,5 +877,8 @@ export function MediaSearchModal({
     </AnimatePresence>
   );
 
-  return createPortal(modalContent, portalElement);
+  if (usePortal && portalElement) {
+    return createPortal(modalContent, portalElement);
+  }
+  return modalContent;
 }

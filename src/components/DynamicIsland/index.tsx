@@ -357,7 +357,6 @@ function CommandPaletteWrapper({
     };
   }, []);
 
-
   // Close dropdown when clicking outside - use shared state
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -398,7 +397,7 @@ function CommandPaletteWrapper({
   return (
     <div
       ref={wrapperRef}
-      className={`relative z-[10000] flex w-full items-center justify-center pointer-events-none ${className || ""}`}
+      className={`pointer-events-none relative z-[10000] flex w-full items-center justify-center ${className || ""}`}
       style={{
         maxWidth: isExpanded ? "100%" : isSticky ? "400px" : "100%",
       }}

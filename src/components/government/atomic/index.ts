@@ -7,7 +7,7 @@
  */
 
 export { ComponentCard } from "./ComponentCard";
-export type { ComponentCardProps } from "./ComponentCard";
+export type { ComponentCardProps, InteractionInfo } from "./ComponentCard";
 
 export { ComponentLibrary } from "./ComponentLibrary";
 export type { ComponentLibraryProps } from "./ComponentLibrary";
@@ -29,3 +29,6 @@ export type { MetricsPanelProps } from "./MetricsPanel";
 
 export { TemplateSelector } from "./TemplateSelector";
 export type { TemplateSelectorProps, GovernmentTemplate } from "./TemplateSelector";
+
+export { AtomicWelcomeModal } from "./AtomicWelcomeModal";
+

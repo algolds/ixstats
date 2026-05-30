@@ -133,6 +133,12 @@ export function GovernmentStructureSection({
           initialData={governmentData}
           onSave={handleSave}
           onPreview={handlePreview}
+          gdpData={{
+            nominalGDP: inputs.coreIndicators.nominalGDP,
+            countryName: inputs.countryName,
+            taxRevenue: inputs.fiscalSystem.governmentRevenueTotal,
+            taxRevenuePercent: inputs.fiscalSystem.taxRevenueGDPPercent,
+          }}
         />
       </div>
     );
@@ -254,7 +260,10 @@ export function GovernmentStructureSection({
                   <div>
                     <p className="text-muted-foreground text-sm">Budget Allocated</p>
                     <p className="text-foreground text-2xl font-bold">
-                      {(stats.totalBudgetAllocated / 1e9).toFixed(1)}B
+                      {new Intl.NumberFormat("en-US", {
+                        notation: "compact",
+                        maximumFractionDigits: 1,
+                      }).format(stats.totalBudgetAllocated)}
                     </p>
                   </div>
                   <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400" />

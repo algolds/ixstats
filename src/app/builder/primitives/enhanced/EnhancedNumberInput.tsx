@@ -22,6 +22,73 @@ interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "o
   acceptText?: boolean; // Allow text input for names, etc.
   helpContent?: React.ReactNode;
   helpTitle?: string;
+  dynamicStep?: boolean;
+}
+
+function formatInputOnTheFly(val: string): string {
+  if (!val || val === "-") return val;
+
+  // Clean value by removing spaces and any currency symbols
+  let cleaned = val.replace(/[$€£¥\s]/g, "");
+
+  // Check for leading minus sign
+  const hasMinus = cleaned.startsWith("-");
+  if (hasMinus) {
+    cleaned = cleaned.slice(1);
+  }
+
+  // Extract suffix (K, M, B, T) at the end
+  const suffixMatch = cleaned.match(/([KMBTkmbt])$/);
+  const suffix = suffixMatch ? suffixMatch[1]!.toUpperCase() : "";
+  let mainPart = suffix ? cleaned.slice(0, -1) : cleaned;
+
+  // Strip any commas from the main part
+  mainPart = mainPart.replace(/,/g, "");
+
+  // Separate integer and decimal portions
+  const dotIndex = mainPart.indexOf(".");
+  let integerPart = mainPart;
+  let decimalPart = "";
+
+  if (dotIndex !== -1) {
+    integerPart = mainPart.slice(0, dotIndex);
+    decimalPart = mainPart.slice(dotIndex);
+  }
+
+  // Clean integer part to contain only digits
+  const cleanInteger = integerPart.replace(/\D/g, "");
+
+  // Format the integer part with commas
+  let formattedInteger = cleanInteger;
+  if (cleanInteger) {
+    formattedInteger = Number(cleanInteger).toLocaleString("en-US", {
+      maximumFractionDigits: 0,
+    });
+  } else if (integerPart === "" && dotIndex !== -1) {
+    formattedInteger = "";
+  }
+
+  // Clean decimal part to contain only dot and digits
+  let cleanDecimal = decimalPart;
+  if (decimalPart) {
+    const decimalDigits = decimalPart.slice(1).replace(/\D/g, "");
+    cleanDecimal = "." + decimalDigits;
+  }
+
+  return (hasMinus ? "-" : "") + formattedInteger + cleanDecimal + suffix;
+}
+
+function getDynamicStep(val: number, defaultStep: number = 1): number {
+  const absVal = Math.abs(val);
+  if (absVal === 0) return defaultStep;
+  const targetStep = absVal * 0.1;
+  const stepMagnitude = Math.pow(10, Math.floor(Math.log10(targetStep)));
+  if (stepMagnitude === 0) return defaultStep;
+  const rawRatio = targetStep / stepMagnitude;
+  let roundedRatio = 1;
+  if (rawRatio >= 5) roundedRatio = 5;
+  else if (rawRatio >= 2) roundedRatio = 2;
+  return Math.max(defaultStep, roundedRatio * stepMagnitude);
 }
 
 export function EnhancedNumberInput({
@@ -53,6 +120,7 @@ export function EnhancedNumberInput({
   acceptText = false,
   helpContent,
   helpTitle,
+  dynamicStep = false,
 }: EnhancedNumberInputProps) {
   const [displayValue, setDisplayValue] = useState(value.toString());
   const [isEditing, setIsEditing] = useState(false);
@@ -128,9 +196,30 @@ export function EnhancedNumberInput({
   }, [value, precision, isEditing, isFocused, acceptText, format]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setDisplayValue(newValue);
-    // Don't call onChange here - wait for blur to avoid feedback loops
+    if (acceptText) {
+      setDisplayValue(e.target.value);
+      return;
+    }
+
+    const input = e.target;
+    const rawValue = input.value;
+    
+    // Capture cursor position from the right side of the input (to avoid comma shifts moving the cursor)
+    const selectionStart = input.selectionStart || 0;
+    const lengthBefore = rawValue.length;
+    
+    const formatted = formatInputOnTheFly(rawValue);
+    
+    setDisplayValue(formatted);
+    
+    // Restore cursor position in the next tick
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        const suffixLengthBefore = lengthBefore - selectionStart;
+        const newSelectionStart = Math.max(0, formatted.length - suffixLengthBefore);
+        inputRef.current.setSelectionRange(newSelectionStart, newSelectionStart);
+      }
+    });
   };
 
   const handleInputBlur = () => {
@@ -149,8 +238,6 @@ export function EnhancedNumberInput({
         const clampedValue = numericValue < 0 ? 0 : numericValue > max ? max : numericValue;
         onChange(clampedValue);
 
-        // Keep the exact number as-is (don't format until focus for better UX)
-        // This preserves the user's exact input like "1500000" instead of converting to "1.5M"
         setDisplayValue(
           clampedValue.toLocaleString("en-US", {
             minimumFractionDigits: 0,
@@ -172,6 +259,12 @@ export function EnhancedNumberInput({
   const handleInputFocus = () => {
     setIsEditing(true);
     setIsFocused(true);
+
+    if (!acceptText) {
+      const cleanValue = formatInputOnTheFly(displayValue);
+      setDisplayValue(cleanValue);
+    }
+
     // Select all text when focusing for easier editing
     setTimeout(() => {
       if (inputRef.current) {
@@ -182,25 +275,42 @@ export function EnhancedNumberInput({
 
   const handleIncrement = () => {
     if (isNumeric) {
-      const newValue = Math.min(max, numericValue + step);
+      const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
+      const newValue = Math.min(max, numericValue + currentStep);
       onChange(newValue);
+      
+      const formatted = isFocused
+        ? formatInputOnTheFly(newValue.toString())
+        : (typeof format === "function" ? format(newValue) : newValue.toFixed(precision));
+      setDisplayValue(formatted);
     }
   };
 
   const handleDecrement = () => {
     if (isNumeric) {
-      const newValue = Math.max(min, numericValue - step);
+      const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
+      const newValue = Math.max(min, numericValue - currentStep);
       onChange(newValue);
+      
+      const formatted = isFocused
+        ? formatInputOnTheFly(newValue.toString())
+        : (typeof format === "function" ? format(newValue) : newValue.toFixed(precision));
+      setDisplayValue(formatted);
     }
   };
 
   const handleReset = () => {
     if (resetValue !== undefined) {
       onChange(resetValue);
+      
+      const formatted = isFocused
+        ? formatInputOnTheFly(resetValue.toString())
+        : (typeof format === "function" ? format(resetValue) : Number(resetValue).toFixed(precision));
+      setDisplayValue(formatted);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowUp") {
       e.preventDefault();
       handleIncrement();
@@ -220,6 +330,65 @@ export function EnhancedNumberInput({
         setDisplayValue(originalValue.toFixed(precision));
       }
       inputRef.current?.blur();
+    } else if (e.key === "Backspace" && !acceptText) {
+      const input = inputRef.current;
+      if (input) {
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        
+        if (start === end && start > 0) {
+          const charToDelete = displayValue[start - 1];
+          if (charToDelete === ",") {
+            e.preventDefault();
+            // Delete comma and the digit before it
+            const before = displayValue.slice(0, start - 2);
+            const after = displayValue.slice(start);
+            const combined = before + after;
+            const formatted = formatInputOnTheFly(combined);
+            
+            setDisplayValue(formatted);
+            
+            const lengthBefore = displayValue.length;
+            const suffixLengthBefore = lengthBefore - start;
+            requestAnimationFrame(() => {
+              if (inputRef.current) {
+                const newStart = Math.max(0, formatted.length - suffixLengthBefore);
+                inputRef.current.setSelectionRange(newStart, newStart);
+              }
+            });
+          }
+        }
+      }
+    } else if (e.key === "Delete" && !acceptText) {
+      const input = inputRef.current;
+      if (input) {
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        
+        if (start === end && start < displayValue.length) {
+          const charToDelete = displayValue[start];
+          if (charToDelete === ",") {
+            e.preventDefault();
+            // Delete comma and the digit after it
+            const before = displayValue.slice(0, start);
+            const after = displayValue.slice(start + 2);
+            const combined = before + after;
+            const formatted = formatInputOnTheFly(combined);
+            
+            setDisplayValue(formatted);
+            
+            const lengthBefore = displayValue.length;
+            const suffixLengthBefore = lengthBefore - start;
+            const newSuffixLength = Math.max(0, suffixLengthBefore - 2);
+            requestAnimationFrame(() => {
+              if (inputRef.current) {
+                const newStart = Math.max(0, formatted.length - newSuffixLength);
+                inputRef.current.setSelectionRange(newStart, newStart);
+              }
+            });
+          }
+        }
+      }
     }
   };
 
@@ -260,14 +429,15 @@ export function EnhancedNumberInput({
         </div>
       )}
 
-      <div className="flex items-stretch gap-2">
+      <div className="relative w-full">
         {/* Main Input Container */}
         <div
           className={cn(
-            "relative flex-1",
+            "relative w-full",
             "rounded-lg transition-all duration-200 ease-out",
             "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
             "hover:border-white/[0.12] hover:bg-white/[0.04] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.03]",
+            "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
             "focus-within:border-[var(--primitive-primary)]/50 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_10px_rgba(var(--primitive-primary),0.15)]",
             isEditing &&
               "border-[var(--primitive-primary)]/50 bg-white/[0.05] shadow-[0_0_10px_rgba(var(--primitive-primary),0.15)]",
@@ -284,7 +454,7 @@ export function EnhancedNumberInput({
             animate={{ opacity: isFocused ? 1 : 0 }}
           />
 
-          <div className="relative flex items-center">
+          <div className="relative flex items-center justify-between w-full pr-1.5">
             <input
               ref={inputRef}
               type="text"
@@ -296,83 +466,82 @@ export function EnhancedNumberInput({
               placeholder={placeholder || (acceptText ? "Enter text..." : "Enter number...")}
               disabled={disabled}
               className={cn(
-                "w-full border-none bg-transparent outline-none",
+                "flex-1 min-w-0 border-none bg-transparent outline-none",
                 acceptText ? "font-sans" : "font-mono",
                 "text-foreground placeholder:text-muted-foreground/60",
                 "font-medium",
                 sizeClasses[size],
-                showButtons && "pr-2",
                 !isEditing && "cursor-pointer"
               )}
             />
 
             {/* Unit Display */}
             {unit && displayValue && !isEditing && (
-              <span className="text-muted-foreground ml-1 text-sm">{unit}</span>
+              <span className="text-muted-foreground mx-2 text-sm shrink-0">{unit}</span>
+            )}
+
+            {/* Action Buttons */}
+            {showButtons && (
+              <div className="flex items-center gap-0.5 shrink-0 z-10">
+                {/* Divider Line */}
+                <div className="h-4 w-[1px] bg-white/10 dark:bg-white/5 mx-1 shrink-0" />
+                
+                <motion.button
+                  type="button"
+                  onClick={handleDecrement}
+                  disabled={disabled || Number(value) <= min}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={cn(
+                    "flex items-center justify-center rounded transition-all",
+                    "hover:bg-white/[0.08] dark:hover:bg-white/[0.05] hover:text-[var(--primitive-primary)]",
+                    "w-6 h-6",
+                    "disabled:cursor-not-allowed disabled:opacity-20",
+                    "text-foreground/70 hover:text-foreground"
+                  )}
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </motion.button>
+
+                <motion.button
+                  type="button"
+                  onClick={handleIncrement}
+                  disabled={disabled || Number(value) >= max}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={cn(
+                    "flex items-center justify-center rounded transition-all",
+                    "hover:bg-white/[0.08] dark:hover:bg-white/[0.05] hover:text-[var(--primitive-primary)]",
+                    "w-6 h-6",
+                    "disabled:cursor-not-allowed disabled:opacity-20",
+                    "text-foreground/70 hover:text-foreground"
+                  )}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </motion.button>
+
+                {showReset && resetValue !== undefined && (
+                  <motion.button
+                    type="button"
+                    onClick={handleReset}
+                    disabled={disabled}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={cn(
+                      "flex items-center justify-center rounded transition-all",
+                      "hover:bg-white/[0.08] dark:hover:bg-white/[0.05] hover:text-[var(--primitive-primary)]",
+                      "w-6 h-6",
+                      "disabled:cursor-not-allowed disabled:opacity-20",
+                      "text-foreground/70 hover:text-foreground"
+                    )}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </motion.button>
+                )}
+              </div>
             )}
           </div>
         </div>
-
-        {/* Action Buttons */}
-        {showButtons && (
-          <div className="flex items-center gap-1">
-            <motion.button
-              type="button"
-              onClick={handleDecrement}
-              disabled={disabled || Number(value) <= min}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={cn(
-                "flex items-center justify-center rounded-lg transition-all",
-                "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
-                "hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-[var(--primitive-primary)]",
-                buttonSizeClasses[size],
-                "disabled:cursor-not-allowed disabled:opacity-30",
-                "text-foreground"
-              )}
-            >
-              <Minus className="h-4 w-4" />
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={handleIncrement}
-              disabled={disabled || Number(value) >= max}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={cn(
-                "flex items-center justify-center rounded-lg transition-all",
-                "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
-                "hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-[var(--primitive-primary)]",
-                buttonSizeClasses[size],
-                "disabled:cursor-not-allowed disabled:opacity-30",
-                "text-foreground"
-              )}
-            >
-              <Plus className="h-4 w-4" />
-            </motion.button>
-
-            {showReset && resetValue !== undefined && (
-              <motion.button
-                type="button"
-                onClick={handleReset}
-                disabled={disabled}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={cn(
-                  "flex items-center justify-center rounded-lg transition-all",
-                  "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
-                  "hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-[var(--primitive-primary)]",
-                  buttonSizeClasses[size],
-                  "disabled:cursor-not-allowed disabled:opacity-30",
-                  "text-foreground"
-                )}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </motion.button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Comparison Display */}

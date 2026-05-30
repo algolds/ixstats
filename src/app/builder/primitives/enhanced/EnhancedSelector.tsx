@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { MOTION_VARIANTS } from "./animation-utils";
 import type { SectionId } from "./types";
+import { Input } from "~/components/ui/input";
 
 interface Option {
   value: string;
@@ -140,12 +141,12 @@ export function EnhancedSelector({
               {/* Search Input */}
               {searchable && (
                 <div className="border-b border-[var(--primitive-border)] p-2">
-                  <input
+                  <Input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search options..."
-                    className="w-full rounded border border-[var(--primitive-border)] bg-transparent px-3 py-2 text-sm focus:border-[var(--primitive-primary)] focus:outline-none"
+                    className="h-9 w-full border-[var(--primitive-border)] bg-transparent py-1 text-sm focus:border-[var(--primitive-primary)]"
                   />
                 </div>
               )}

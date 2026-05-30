@@ -17,6 +17,15 @@ import {
   Car,
   Flag,
   Music,
+  Rabbit,
+  Bird,
+  Fish,
+  Flower2,
+  UtensilsCrossed,
+  Apple,
+  Wine,
+  Guitar,
+  Star,
 } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 
@@ -49,6 +58,26 @@ interface NationalIdentity {
   emergencyNumber?: string | null;
   postalCodeFormat?: string | null;
   nationalSport?: string | null;
+  nationalAnimal?: string | null;
+  nationalBird?: string | null;
+  nationalFish?: string | null;
+  founders?: string | null;
+  nationalFlower?: string | null;
+  nationalDish?: string | null;
+  nationalFruit?: string | null;
+  nationalDrink?: string | null;
+  nationalInstrument?: string | null;
+  nationalSymbol?: string | null;
+  nationalAnimalImage?: string | null;
+  nationalBirdImage?: string | null;
+  nationalFishImage?: string | null;
+  foundersImage?: string | null;
+  nationalFlowerImage?: string | null;
+  nationalDishImage?: string | null;
+  nationalFruitImage?: string | null;
+  nationalDrinkImage?: string | null;
+  nationalInstrumentImage?: string | null;
+  nationalSymbolImage?: string | null;
   weekStartDay?: string | null;
 }
 
@@ -219,6 +248,127 @@ export function NationalIdentityDisplay({
                 <p className="text-muted-foreground mb-1 text-xs">National Sport</p>
                 <p className="font-semibold">{nationalIdentity?.nationalSport}</p>
               </div>
+            </div>
+          )}
+
+          {getValue(nationalIdentity?.nationalAnimal) && (
+            <div className="flex items-start gap-3">
+              <Rabbit className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">National Animal(s)</p>
+                <p className="font-semibold">{nationalIdentity?.nationalAnimal}</p>
+              </div>
+              {nationalIdentity?.nationalAnimalImage && (
+                <img src={nationalIdentity.nationalAnimalImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalBird) && (
+            <div className="flex items-start gap-3">
+              <Bird className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">National Bird(s)</p>
+                <p className="font-semibold">{nationalIdentity?.nationalBird}</p>
+              </div>
+              {nationalIdentity?.nationalBirdImage && (
+                <img src={nationalIdentity.nationalBirdImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalFish) && (
+            <div className="flex items-start gap-3">
+              <Fish className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">National Fish</p>
+                <p className="font-semibold">{nationalIdentity?.nationalFish}</p>
+              </div>
+              {nationalIdentity?.nationalFishImage && (
+                <img src={nationalIdentity.nationalFishImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.founders) && (
+            <div className="flex items-start gap-3">
+              <Users className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">Founder(s)</p>
+                <p className="font-semibold">{nationalIdentity?.founders}</p>
+              </div>
+              {nationalIdentity?.foundersImage && (
+                <img src={nationalIdentity.foundersImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalFlower) && (
+            <div className="flex items-start gap-3">
+              <Flower2 className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">National Flower(s) & Plants</p>
+                <p className="font-semibold">{nationalIdentity?.nationalFlower}</p>
+              </div>
+              {nationalIdentity?.nationalFlowerImage && (
+                <img src={nationalIdentity.nationalFlowerImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalDish) && (
+            <div className="flex items-start gap-3">
+              <UtensilsCrossed className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">National Dish(es) & Food</p>
+                <p className="font-semibold">{nationalIdentity?.nationalDish}</p>
+              </div>
+              {nationalIdentity?.nationalDishImage && (
+                <img src={nationalIdentity.nationalDishImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalFruit) && (
+            <div className="flex items-start gap-3">
+              <Apple className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">Fruit(s)</p>
+                <p className="font-semibold">{nationalIdentity?.nationalFruit}</p>
+              </div>
+              {nationalIdentity?.nationalFruitImage && (
+                <img src={nationalIdentity.nationalFruitImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalDrink) && (
+            <div className="flex items-start gap-3">
+              <Wine className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">Drink(s)</p>
+                <p className="font-semibold">{nationalIdentity?.nationalDrink}</p>
+              </div>
+              {nationalIdentity?.nationalDrinkImage && (
+                <img src={nationalIdentity.nationalDrinkImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalInstrument) && (
+            <div className="flex items-start gap-3">
+              <Guitar className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">National Instrument(s)</p>
+                <p className="font-semibold">{nationalIdentity?.nationalInstrument}</p>
+              </div>
+              {nationalIdentity?.nationalInstrumentImage && (
+                <img src={nationalIdentity.nationalInstrumentImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
+            </div>
+          )}
+          {getValue(nationalIdentity?.nationalSymbol) && (
+            <div className="flex items-start gap-3">
+              <Star className="text-primary mt-0.5 h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-foreground mb-1 text-xs">Other Symbol(s)</p>
+                <p className="font-semibold">{nationalIdentity?.nationalSymbol}</p>
+              </div>
+              {nationalIdentity?.nationalSymbolImage && (
+                <img src={nationalIdentity.nationalSymbolImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+              )}
             </div>
           )}
 

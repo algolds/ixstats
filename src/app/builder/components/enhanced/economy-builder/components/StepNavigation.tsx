@@ -27,6 +27,7 @@ export function StepNavigation({
 
   return (
     <div
+      role="tablist"
       className={`bg-muted/50 border-border flex items-center justify-between overflow-x-auto rounded-lg border p-4 ${className || ""}`}
     >
       {steps.map((step, index) => {

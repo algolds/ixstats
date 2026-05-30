@@ -188,7 +188,13 @@ export function SliderWithDirectInput({
                 <motion.div className="text-foreground flex items-center gap-1 text-sm font-semibold">
                   <span>
                     {!isNaN(parseFloat(localValue))
-                      ? (parseFloat(localValue) || 0).toFixed(precision)
+                      ? Number((parseFloat(localValue) || 0).toFixed(precision)).toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: precision,
+                            maximumFractionDigits: precision,
+                          }
+                        )
                       : "0"}
                   </span>
                   {unit && <span className="text-muted-foreground">{unit}</span>}
@@ -241,6 +247,7 @@ export function SliderWithDirectInput({
               "text-foreground placeholder-muted-foreground",
               "border-gray-200/40 dark:border-gray-700/40",
               "focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 focus:outline-none",
+              "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
               "transition-all duration-200",
               config.input,
               "font-mono", // Monospace for better number alignment

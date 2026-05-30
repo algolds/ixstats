@@ -7,6 +7,7 @@ import {
   GlassCardHeader,
 } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
 
 interface WikiSite {
   displayName: string;
@@ -56,20 +57,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <Search className="text-text-muted h-4 w-4" />
               )}
             </div>
-            <input
+            <Input
               type="text"
               placeholder={`Type to search ${categoryFilter} on ${selectedSite.displayName}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={cn(
-                "w-full rounded-lg border py-3 pr-4 pl-10 transition-all duration-200",
-                "focus:ring-brand-primary/50 focus:border-brand-primary/50 focus:ring-2 focus:outline-none"
-              )}
-              style={{
-                backgroundColor: "var(--color-bg-secondary)",
-                borderColor: "var(--color-border-primary)",
-                color: "var(--color-text-primary)",
-              }}
+              className="h-12 border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] py-3 pl-10 text-[var(--color-text-primary)]"
             />
             {searchTerm && (
               <motion.button

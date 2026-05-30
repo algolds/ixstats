@@ -122,8 +122,10 @@ export const Autocomplete = React.memo(function Autocomplete({
         placeholder={placeholder}
         className={cn(
           "w-full rounded-lg px-4 py-3 pr-10",
-          "text-foreground border border-white/[0.08] bg-white/[0.02] font-normal dark:border-white/[0.06] dark:bg-white/[0.015]",
-          "focus:border-amber-500/40 focus:bg-white/[0.04] focus:ring-2 focus:ring-amber-500/15 focus:outline-none",
+          "text-foreground border border-neutral-200 bg-white/50 font-normal dark:border-white/[0.08] dark:bg-white/[0.015]",
+          "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
+          "hover:border-neutral-300 hover:bg-white/70 dark:hover:border-white/[0.12] dark:hover:bg-white/[0.03]",
+          "focus:border-amber-500/60 focus:bg-white/95 focus:ring-[2.5px] focus:ring-amber-500/20 focus:outline-none",
           "transition-all duration-200",
           disabled && "cursor-not-allowed opacity-50",
           className

@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
-import { WikiSourceSelector } from "../../import/_components/WikiSourceSelector";
 import { DynamicIslandSearch } from "../../import/_components/DynamicIslandSearch";
 import { ImportSidebar } from "../../import/_components/ImportSidebar";
 import { BackButton } from "../../import/_components/BackButton";
@@ -408,6 +408,7 @@ export const ImportSection = React.memo(function ImportSection({
 
   const formatNumber = (num: number | undefined, _decimals?: number): string => {
     if (!num) return "Unknown";
+    if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`;
     if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
     if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
@@ -426,13 +427,6 @@ export const ImportSection = React.memo(function ImportSection({
 
   return (
     <div>
-      {/* Wiki Site Selection */}
-      <WikiSourceSelector
-        wikiSites={wikiSites}
-        selectedSite={selectedSite}
-        onSelectSite={setSelectedSite}
-      />
-
       {/* Portal to mount the ImportSidebar in the main sidebar layout */}
       {mounted &&
         typeof document !== "undefined" &&
@@ -452,12 +446,17 @@ export const ImportSection = React.memo(function ImportSection({
       {/* Main Content */}
       <div className="mt-4 space-y-6">
         {(selectedResult || parsedData) && (
-          <div className="sticky top-4 z-20">
+          <div className="sticky top-[112px] z-20 mb-2">
             <BackButton onClick={handleBackFromSelection} />
           </div>
         )}
 
-        <div className="sticky top-0 z-10 pb-4">
+        <div
+          className={cn(
+            "sticky z-10 pb-4 transition-all duration-200",
+            selectedResult || parsedData ? "top-[168px]" : "top-[112px]"
+          )}
+        >
           <DynamicIslandSearch
             selectedSite={selectedSite}
             wikiSites={wikiSites}

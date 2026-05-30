@@ -6,6 +6,7 @@ import { Search, ChevronDown, Check } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { SectionId } from "./types";
+import { Input } from "~/components/ui/input";
 
 interface CurrencySymbol {
   symbol: string;
@@ -198,13 +199,13 @@ export function CurrencySymbolPicker({
             <div className="border-b border-gray-200/30 p-3 dark:border-gray-600/30">
               <div className="relative">
                 <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                <input
+                <Input
                   ref={searchInputRef}
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search currencies..."
-                  className="placeholder:text-muted-foreground dark:placeholder:text-muted-foreground w-full rounded-lg border border-gray-200/50 bg-transparent py-2 pr-4 pl-10 text-gray-900 transition-colors focus:border-[var(--primitive-primary)] focus:outline-none dark:border-gray-600/50 dark:text-gray-100"
+                  className="h-10 border-gray-200/50 bg-transparent py-2 pl-10 text-gray-900 focus:border-[var(--primitive-primary)] dark:border-gray-600/50 dark:text-gray-100"
                 />
               </div>
             </div>

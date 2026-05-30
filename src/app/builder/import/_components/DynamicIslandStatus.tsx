@@ -46,7 +46,7 @@ export const DynamicIslandStatus: React.FC<DynamicIslandStatusProps> = ({
             className="border-border-secondary h-4 w-6 rounded-sm border object-cover shadow-sm"
           />
         ) : (
-          <MyCountryLogo className="h-5 w-5" />
+          <MyCountryLogo size="sm" variant="icon-only" />
         )}
         <span className="font-medium">
           {isLoading ? `Parsing ${selectedResultTitle}...` : `Parsed ${selectedResultTitle}`}

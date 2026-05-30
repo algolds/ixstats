@@ -93,10 +93,18 @@ export function DepartmentsList({
                         <div className="hover:bg-muted/50 flex cursor-pointer items-center justify-between p-4 transition-colors">
                           <div className="flex items-center gap-3">
                             <div
-                              className="rounded-lg p-2"
+                              className="rounded-lg p-2 h-8 w-8 overflow-hidden flex items-center justify-center shrink-0"
                               style={{ backgroundColor: department.color + "20" }}
                             >
-                              {getDepartmentIcon(department.category)}
+                              {department.icon ? (
+                                <img
+                                  src={department.icon}
+                                  alt="Logo"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                getDepartmentIcon(department.category)
+                              )}
                             </div>
                             <div>
                               <h4 className="flex items-center gap-2 font-semibold">

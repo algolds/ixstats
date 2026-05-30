@@ -783,6 +783,26 @@ model NationalIdentity {
   emergencyNumber      String?
   postalCodeFormat     String?
   nationalSport        String?
+  nationalAnimal       String?
+  nationalBird         String?
+  nationalFish         String?
+  founders             String?
+  nationalFlower       String?
+  nationalDish         String?
+  nationalFruit        String?
+  nationalDrink        String?
+  nationalInstrument   String?
+  nationalSymbol       String?
+  nationalAnimalImage  String?
+  nationalBirdImage    String?
+  nationalFishImage    String?
+  foundersImage        String?
+  nationalFlowerImage  String?
+  nationalDishImage    String?
+  nationalFruitImage   String?
+  nationalDrinkImage   String?
+  nationalInstrumentImage String?
+  nationalSymbolImage  String?
   weekStartDay         String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt

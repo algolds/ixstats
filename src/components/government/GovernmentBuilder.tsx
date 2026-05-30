@@ -49,6 +49,8 @@ interface GovernmentBuilderProps {
   gdpData?: {
     nominalGDP: number;
     countryName?: string;
+    taxRevenue?: number;
+    taxRevenuePercent?: number;
   };
 }
 

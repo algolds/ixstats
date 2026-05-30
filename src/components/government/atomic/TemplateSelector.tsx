@@ -278,41 +278,42 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
 
     return (
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <FileText className="h-4 w-4 text-slate-400 dark:text-zinc-500 shrink-0" />
         <Select onValueChange={onSelect} disabled={disabled}>
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-[160px] border-0 border-transparent bg-transparent shadow-none hover:bg-slate-100/50 dark:hover:bg-white/5 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-700 dark:text-slate-300">
             <SelectValue placeholder="Load Template..." />
           </SelectTrigger>
           <SelectContent>
             {groupedTemplates.map((group, groupIndex) => (
               <React.Fragment key={group.id}>
                 <SelectGroup>
-                  <SelectLabel className="flex items-center justify-between gap-2 py-1">
+                  <SelectLabel
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      toggleGroup(group.id);
+                    }}
+                    className="flex items-center justify-between gap-2 py-1.5 px-2 cursor-pointer select-none rounded-md hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors"
+                  >
                     <span className="flex items-center gap-2">
                       <group.icon className={`h-3.5 w-3.5 ${group.iconClassName}`} />
-                      <span>{group.label}</span>
+                      <span className="font-semibold text-xs text-foreground/90">{group.label}</span>
                     </span>
                     <span className="flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px]">
                         {group.templates.length}
                       </Badge>
-                      <button
-                        type="button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          toggleGroup(group.id);
-                        }}
-                        className="rounded p-0.5 transition-colors hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                        aria-label={`Toggle ${group.label}`}
-                      >
+                      <div className="text-muted-foreground/80">
                         {collapsedGroups.has(group.id) ? (
                           <ChevronRight className="h-3.5 w-3.5" />
                         ) : (
                           <ChevronDown className="h-3.5 w-3.5" />
                         )}
-                      </button>
+                      </div>
                     </span>
                   </SelectLabel>
                   {!collapsedGroups.has(group.id) &&

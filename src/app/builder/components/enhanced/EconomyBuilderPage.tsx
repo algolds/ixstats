@@ -34,7 +34,6 @@ import { cn } from "~/lib/utils";
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
 
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 // Types and Services
 import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
@@ -463,9 +462,6 @@ export function EconomyBuilderPage({
     }
   }, [activeTaxSystemData, onPersistTaxSystem]);
 
-  // Track auto-selection to prevent loops
-  const hasAutoSelectedRef = useRef(false);
-
   // Phase 2 optimization: Use consolidated sync hook for refs, integration service, and cross-builder sync
   const {
     economyBuilderRef,
@@ -488,100 +484,6 @@ export function EconomyBuilderPage({
 
   // Track last processed revenue sources to prevent re-trigger loop
   const lastProcessedRevenueSourcesRef = useRef<string | null>(null);
-
-  // Auto-select economic components based on government components with comprehensive synergy scoring
-  useEffect(() => {
-    if (governmentComponents && governmentComponents.length > 0 && !hasAutoSelectedRef.current) {
-      hasAutoSelectedRef.current = true;
-
-      // Extract government component types from various possible formats
-      const govCompTypes = governmentComponents
-        .map((comp) => {
-          if (typeof comp === "string") return comp;
-          if (comp.type) return comp.type;
-          if (comp.id) return comp.id;
-          return null;
-        })
-        .filter(Boolean) as string[];
-
-      console.log("[EconomyBuilder] Government components detected:", govCompTypes);
-
-      // Score each economic component based on synergies with government
-      const componentScores = Object.entries(ATOMIC_ECONOMIC_COMPONENTS).map(([key, component]) => {
-        if (!component) return { type: key as EconomicComponentType, score: 0 };
-
-        // Calculate synergy score
-        const synergyMatches =
-          component.governmentSynergies?.filter((govType) =>
-            govCompTypes.some(
-              (gc) => gc === govType || gc.includes(govType) || govType.includes(gc)
-            )
-          ).length || 0;
-
-        // Calculate conflict penalty
-        const conflictMatches =
-          component.governmentConflicts?.filter((govType) =>
-            govCompTypes.some(
-              (gc) => gc === govType || gc.includes(govType) || govType.includes(gc)
-            )
-          ).length || 0;
-
-        // Base score = component effectiveness
-        let score = component.effectiveness || 50;
-
-        // Add synergy bonuses (+15 per synergy)
-        score += synergyMatches * 15;
-
-        // Subtract conflict penalties (-20 per conflict)
-        score -= conflictMatches * 20;
-
-        return {
-          type: key as EconomicComponentType,
-          score,
-          synergyCount: synergyMatches,
-          conflictCount: conflictMatches,
-          component,
-        };
-      });
-
-      // Sort by score (highest first) and select top 6-8 components with positive synergies
-      const topComponents = componentScores
-        .filter((item) => item.score > 60 && (item.synergyCount ?? 0) > 0) // Must have synergies and good score
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 8) // Select top 6-8
-        .map((item) => item.type);
-
-      if (topComponents.length > 0) {
-        const merged = Array.from(new Set([...selectedComponents, ...topComponents]));
-        setSelectedComponents(merged);
-
-        console.log(
-          `[EconomyBuilder] Auto-selected ${topComponents.length} components with government synergies:`,
-          {
-            components: topComponents.map((type) => {
-              const comp = ATOMIC_ECONOMIC_COMPONENTS[type];
-              const item = componentScores.find((i) => i.type === type);
-              return {
-                type,
-                name: comp?.name,
-                score: item?.score,
-                synergies: item?.synergyCount,
-                conflicts: item?.conflictCount,
-              };
-            }),
-          }
-        );
-
-        // User-friendly notification
-        notify.success(
-          "Components Auto-Selected",
-          `Auto-selected ${topComponents.length} economic components that synergize with your government structure`
-        );
-      } else {
-        console.log("[EconomyBuilder] No strong synergies found with government components");
-      }
-    }
-  }, [governmentComponents.length]); // Only trigger on count change
 
   // NOTE: Integration service subscription and cross-builder sync effects have been
   // moved to useEconomyBuilderSync hook (Phase 2 optimization)

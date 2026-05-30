@@ -156,20 +156,22 @@ export function GlassCard({
       {...motionProps}
     >
       {/* Interactive Cursor Spotlight Layer */}
-      <motion.div
-        className="pointer-events-none absolute -inset-px z-0 rounded-xl"
-        style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              350px circle at ${mouseX}px ${mouseY}px,
-              ${themeSpotlightColors[theme] || themeSpotlightColors.neutral},
-              transparent 80%
-            )
-          `,
-        }}
-        animate={{ opacity: isHovering ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
-      />
+      {isInteractive && (
+        <motion.div
+          className="pointer-events-none absolute -inset-px z-0 rounded-xl"
+          style={{
+            background: useMotionTemplate`
+              radial-gradient(
+                350px circle at ${mouseX}px ${mouseY}px,
+                ${themeSpotlightColors[theme] || themeSpotlightColors.neutral},
+                transparent 80%
+              )
+            `,
+          }}
+          animate={{ opacity: isHovering ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        />
+      )}
 
       {texture && texture !== "none" && (
         <TextureOverlay texture={texture} opacity={textureOpacity} />

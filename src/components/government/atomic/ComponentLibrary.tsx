@@ -8,9 +8,14 @@
  */
 
 import React from "react";
-import { ComponentCard } from "./ComponentCard";
+import { ComponentCard, type InteractionInfo } from "./ComponentCard";
 import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
 import { ComponentType } from "~/lib/enums";
+import {
+  checkGovernmentSynergy,
+  checkGovernmentConflict,
+} from "~/lib/atomic-government-utils";
 
 export interface ComponentLibraryProps {
   components: Partial<Record<ComponentType, AtomicGovernmentComponent>>;
@@ -35,6 +40,8 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     canSelectMore = true,
     enableInlineScroll = false,
   }) => {
+    const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
+
     const componentEntries = Object.entries(components).filter(
       ([, comp]) => comp !== undefined
     ) as [string, AtomicGovernmentComponent][];
@@ -50,19 +57,49 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     }
 
     return (
-      <div className={enableInlineScroll ? "max-h-[60vh] overflow-y-auto pr-1" : undefined}>
+      <div className={enableInlineScroll ? "max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 dark:scrollbar-thumb-zinc-800" : undefined}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {componentEntries.map(([type, component]) => (
-            <ComponentCard
-              key={component.id}
-              component={component}
-              isSelected={selectedIds.includes(type as ComponentType)}
-              onSelect={() => onSelect(type as ComponentType)}
-              onDeselect={() => onDeselect(type as ComponentType)}
-              isReadOnly={isReadOnly}
-              canSelectMore={canSelectMore}
-            />
-          ))}
+          {componentEntries.map(([type, component]) => {
+            const compType = type as ComponentType;
+
+            const synergisticWith: InteractionInfo[] = [];
+            const conflictingWith: InteractionInfo[] = [];
+
+            selectedIds.forEach((sid) => {
+              if (sid === compType) return;
+              const score = checkGovernmentSynergy(compType, sid);
+              if (score > 0) {
+                const partner = ATOMIC_COMPONENTS[sid];
+                synergisticWith.push({
+                  type: sid,
+                  name: partner?.name || sid,
+                  score,
+                });
+              }
+              if (checkGovernmentConflict(compType, sid)) {
+                const partner = ATOMIC_COMPONENTS[sid];
+                conflictingWith.push({
+                  type: sid,
+                  name: partner?.name || sid,
+                  score: 15,
+                });
+              }
+            });
+
+            return (
+              <ComponentCard
+                key={component.id}
+                component={component}
+                isSelected={selectedSet.has(compType)}
+                onSelect={() => onSelect(compType)}
+                onDeselect={() => onDeselect(compType)}
+                isReadOnly={isReadOnly}
+                canSelectMore={canSelectMore}
+                synergisticWith={synergisticWith}
+                conflictingWith={conflictingWith}
+              />
+            );
+          })}
         </div>
       </div>
     );

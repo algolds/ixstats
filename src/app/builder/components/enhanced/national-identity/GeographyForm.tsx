@@ -46,10 +46,6 @@ export const GeographyForm = React.memo(
       onIdentityChange("weekStartDay", value);
     }, []);
 
-    const handleNationalSportChange = useCallback((value: any) => {
-      onIdentityChange("nationalSport", String(value));
-    }, []);
-
     const handleCoordinatesLatitudeChange = useCallback((value: any) => {
       onIdentityChange("coordinatesLatitude", String(value));
     }, []);
@@ -163,17 +159,6 @@ export const GeographyForm = React.memo(
                 placeholder="12345, SW1A 1AA, etc."
                 acceptText={true}
               />
-
-              <EnhancedNumberInput
-                label="National Sport"
-                description="Most popular or official sport"
-                value={String(identity.nationalSport || "")}
-                onChange={handleNationalSportChange}
-                sectionId="symbols"
-                showButtons={false}
-                placeholder="Football, Cricket, Hockey..."
-                acceptText={true}
-              />
             </div>
 
             <div className="border-border/20 grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
@@ -224,7 +209,7 @@ export const GeographyForm = React.memo(
           <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
             <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
               <MapIcon className="h-5 w-5 text-yellow-400" />
-              Geographic Center Coordinates
+              Geography
             </h3>
           </div>
           <GlassCardContent className="p-6">
@@ -267,7 +252,6 @@ export const GeographyForm = React.memo(
       prevProps.identity.postalCodeFormat === nextProps.identity.postalCodeFormat &&
       prevProps.identity.drivingSide === nextProps.identity.drivingSide &&
       prevProps.identity.weekStartDay === nextProps.identity.weekStartDay &&
-      prevProps.identity.nationalSport === nextProps.identity.nationalSport &&
       prevProps.identity.coordinatesLatitude === nextProps.identity.coordinatesLatitude &&
       prevProps.identity.coordinatesLongitude === nextProps.identity.coordinatesLongitude
     );

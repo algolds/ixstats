@@ -34,7 +34,7 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
   const isEditMode = mode === "edit";
   const steps = isEditMode
     ? ["core", "government", "economics", "preview"]
-    : ["foundation", "core", "preview"];
+    : ["foundation", "core", "government", "economics", "preview"];
 
   const currentStepIndex = steps.indexOf(builderState.step);
   const totalSteps = steps.length;

@@ -4,6 +4,7 @@ import React, { forwardRef } from "react";
 import { motion } from "motion/react";
 import { Search } from "lucide-react";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
+import { Input } from "~/components/ui/input";
 
 interface SearchFilterProps {
   searchTerm: string;
@@ -28,13 +29,13 @@ export const SearchFilter = forwardRef<HTMLDivElement, SearchFilterProps>(functi
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-[var(--color-text-muted)] dark:text-zinc-300" />
-            <input
+            <Input
               ref={searchInputRef}
               type="text"
               placeholder="Search countries by name, code, or continent..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/50 py-3 pr-4 pl-12 text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/50 focus:outline-none dark:text-white dark:placeholder:text-zinc-300"
+              className="h-12 border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/50 py-3 pl-12 text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:border-blue-400/50 focus:ring-blue-400/50 dark:text-white dark:placeholder-zinc-300"
             />
           </div>
           <motion.button

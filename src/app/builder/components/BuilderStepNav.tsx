@@ -140,13 +140,12 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
                       <Check className="h-3 w-3" />
                     </span>
-                  ) : !accessible ? (
-                    <Lock className="h-3.5 w-3.5 shrink-0" />
                   ) : (
                     <span
                       className={cn(
                         "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                        active ? "bg-black/15 text-zinc-950" : "bg-muted text-muted-foreground"
+                        active ? "bg-black/15 text-zinc-950" : "bg-muted text-muted-foreground",
+                        !accessible && "opacity-50"
                       )}
                     >
                       {step.stepNumber}

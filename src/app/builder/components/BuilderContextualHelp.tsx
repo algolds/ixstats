@@ -22,13 +22,112 @@ import { Button } from "~/components/ui/button";
 import { Onboarding } from "~/components/ui/onboarding";
 import { contextualHelp } from "../data/contextual-help";
 import type { BuilderSection } from "../lib/builder-theme";
+import { useBuilderFilter } from "./builder-filter-context";
 
 interface BuilderContextualHelpProps {
   activeSection: BuilderSection;
 }
 
 export function BuilderContextualHelp({ activeSection }: BuilderContextualHelpProps) {
+  const { selectedTemplate } = useBuilderFilter();
+
   if (activeSection === "foundation") {
+    if (selectedTemplate) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:bg-muted/60 h-[42px] gap-2 rounded-xl px-3 text-sm font-medium"
+            >
+              <CircleHelp className="h-5 w-5" />
+              <span className="hidden sm:inline">Help</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-blue-500" />
+                Country Archetype Guide
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 text-sm">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Overview */}
+                <div className="space-y-3">
+                  <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
+                    <Check className="h-4 w-4 text-green-500" />
+                    What are Country Archetypes?
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Archetypes are starting economic and political templates based on historical and
+                    modern models. Applying an archetype seeds your starting tax structure, public
+                    spending values, and key government components, giving you a functional
+                    blueprint from day one.
+                  </p>
+                </div>
+
+                {/* Important Indicators */}
+                <div className="space-y-3">
+                  <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
+                    <ExternalLink className="h-4 w-4 text-blue-500" />
+                    Key Archetype Concepts
+                  </h3>
+                  <ul className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+                    <li>
+                      • <strong>Alignment Profile:</strong> Innovation vs. Stability metrics that
+                      place your country on a strategic development vector.
+                    </li>
+                    <li>
+                      • <strong>Traits & Modifiers:</strong> Inherent starting bonuses or penalties
+                      (e.g. Technology Hub, High Bureaucracy) that modify gameplay variables.
+                    </li>
+                    <li>
+                      • <strong>Initial Seed:</strong> Pre-populates the Government, Tax, and
+                      Spending sliders so you don't have to build from absolute zero.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Archetype Tips */}
+              <div className="space-y-4">
+                <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
+                  <CircleHelp className="h-4 w-4 text-amber-500" />
+                  Tips for Selection
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800/40 dark:bg-zinc-950/20">
+                    <h4 className="flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
+                      <Check className="h-4 w-4" />
+                      Choosing a Blueprint
+                    </h4>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                      Pick an archetype that matches your long-term vision. If you want a highly
+                      advanced tech economy, the "Silicon Valley" or "Asian Tiger" models provide
+                      excellent starting points.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800/40 dark:bg-zinc-950/20">
+                    <h4 className="flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
+                      <ExternalLink className="h-4 w-4" />
+                      Total Customizability
+                    </h4>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                      Remember, you can fully modify all sliders, tax brackets, and government
+                      components in the subsequent steps. The archetype is only a starting
+                      suggestion.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
     return (
       <Dialog>
         <DialogTrigger asChild>

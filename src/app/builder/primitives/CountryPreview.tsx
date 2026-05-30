@@ -8,6 +8,7 @@ import { HealthRing } from "~/components/ui/health-ring";
 import { getEconomicTier } from "../lib/economy-data-service";
 import { formatNumber } from "../utils/country-selector-utils";
 import type { RealCountryData } from "../lib/economy-data-service";
+import { cn } from "~/lib/utils";
 
 interface CountryPreviewProps {
   country: RealCountryData;
@@ -76,7 +77,12 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
       </div>
 
       {/* Live Activity Rings */}
-      <div className={`grid grid-cols-3 gap-${isLarge ? "4" : "3"} mb-6`}>
+      <div
+        className={cn(
+          "mb-6 grid scrollbar-none grid-cols-3 overflow-x-auto px-1 py-2",
+          isLarge ? "gap-4" : "gap-1.5"
+        )}
+      >
         {metrics.map((metric) => (
           <div key={metric.label} className="text-center">
             <HealthRing
@@ -84,9 +90,12 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
               size={ringSize}
               color={metric.color}
               label={metric.label}
-              tooltip={isLarge ? metric.tooltip : undefined}
+              tooltip={metric.tooltip}
             />
-            <div className="mt-2 text-xs font-medium text-white/90">
+            <div
+              className="mx-auto mt-2 max-w-[64px] truncate text-xs font-medium text-white/90"
+              title={metric.label}
+            >
               {isLarge ? metric.label : metric.label.split(" ")[0]}
             </div>
           </div>

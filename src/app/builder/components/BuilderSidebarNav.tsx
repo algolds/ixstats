@@ -80,6 +80,84 @@ export function BuilderSidebarNav({
         onClick: (_, onNav) => onNav("identity"),
       },
       {
+        title: "Gov Components",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-cyan-400",
+        bgClass: "bg-cyan-500/5 hover:bg-cyan-500/10",
+        tab: "components",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "components",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "components" }));
+          onNav("government");
+        },
+      },
+      {
+        title: "Gov Structure",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-sky-400",
+        bgClass: "bg-sky-500/5 hover:bg-sky-500/10",
+        tab: "structure",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "structure",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "structure" }));
+          onNav("government");
+        },
+      },
+      {
+        title: "Spending Policies",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-blue-400",
+        bgClass: "bg-blue-500/5 hover:bg-blue-500/10",
+        tab: "spending",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "spending",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "spending" }));
+          onNav("government");
+        },
+      },
+      {
+        title: "Tax System",
+        section: "economics",
+        icon: TrendingUp,
+        colorClass: "text-purple-400",
+        bgClass: "bg-purple-500/5 hover:bg-purple-500/10",
+        tab: "tax",
+        isActive: (sec, st) =>
+          sec === "economics" &&
+          (st.builderState.activeEconomicsTab === "tax" ||
+            st.builderState.activeEconomicsTab === "taxes"),
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Economy Sectors",
+        section: "economics",
+        icon: Globe,
+        colorClass: "text-violet-400",
+        bgClass: "bg-violet-500/5 hover:bg-violet-500/10",
+        tab: "economy",
+        isActive: (sec, st) =>
+          sec === "economics" &&
+          (st.builderState.activeEconomicsTab === "economy" ||
+            st.builderState.activeEconomicsTab === "sectors" ||
+            st.builderState.activeEconomicsTab === "components" ||
+            st.builderState.activeEconomicsTab === "labor" ||
+            st.builderState.activeEconomicsTab === "demographics" ||
+            st.builderState.activeEconomicsTab === "preview"),
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "economy" }));
+          onNav("economics");
+        },
+      },
+      {
         title: "Preview & Create",
         section: "preview",
         icon: CheckCircle,
@@ -101,25 +179,8 @@ export function BuilderSidebarNav({
         icon: Flag,
         colorClass: "text-teal-400",
         bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
-        tab: "identity",
-        isActive: (sec, st) => sec === "identity" && st.builderState.activeCoreTab === "identity",
-        onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeCoreTab: "identity" }));
-          onNav("identity");
-        },
-      },
-      {
-        title: "Core Indicators",
-        section: "identity",
-        icon: TrendingUp,
-        colorClass: "text-emerald-400",
-        bgClass: "bg-emerald-500/5 hover:bg-emerald-500/10",
-        tab: "indicators",
-        isActive: (sec, st) => sec === "identity" && st.builderState.activeCoreTab === "indicators",
-        onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeCoreTab: "indicators" }));
-          onNav("identity");
-        },
+        isActive: (sec) => sec === "identity",
+        onClick: (_, onNav) => onNav("identity"),
       },
       {
         title: "Gov Components",
@@ -223,7 +284,12 @@ export function BuilderSidebarNav({
       return Math.round((completed / editSections.length) * 100);
     } else {
       // Create mode
-      const createSections: BuilderSection[] = ["foundation", "identity"];
+      const createSections: BuilderSection[] = [
+        "foundation",
+        "identity",
+        "government",
+        "economics",
+      ];
       const completed = createSections.filter((s) => completedSteps.has(s)).length;
       return Math.round((completed / createSections.length) * 100);
     }
@@ -258,7 +324,6 @@ export function BuilderSidebarNav({
                   className={cn("shrink-0", isActive ? "text-zinc-950" : item.colorClass)}
                 />
                 <span>{item.title}</span>
-                {!accessible && <Lock className="h-2.5 w-2.5 shrink-0 text-zinc-600" />}
                 {completed && !isActive && (
                   <Check className="h-2.5 w-2.5 shrink-0 text-emerald-500" />
                 )}
@@ -346,18 +411,16 @@ export function BuilderSidebarNav({
                 </div>
 
                 <div className="flex items-center gap-1 pl-2">
-                  {!accessible ? (
-                    <Lock className="h-3 w-3 text-zinc-700" />
-                  ) : completed && !isActive ? (
+                  {completed && !isActive ? (
                     <Check className="h-3 w-3 stroke-[2.5] text-emerald-500" />
                   ) : isActive ? (
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500"></span>
                     </span>
-                  ) : (
+                  ) : accessible ? (
                     <ChevronRight className="h-3 w-3 text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100" />
-                  )}
+                  ) : null}
                 </div>
               </button>
             );

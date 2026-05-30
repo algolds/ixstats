@@ -12,6 +12,8 @@ import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import { Label } from "~/components/ui/label";
+import { MediaSearchModal } from "~/components/MediaSearchModal";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {
   Select,
   SelectContent,
@@ -23,6 +25,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
   Plus,
   X,
@@ -46,6 +49,7 @@ import {
   MoreHorizontal,
   Info,
   CheckCircle,
+  Upload,
 } from "lucide-react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
@@ -97,7 +101,7 @@ const organizationalLevels: OrganizationalLevel[] = [
   "Commission",
 ];
 
-const categoryIcons = {
+export const categoryIcons = {
   Defense: Shield,
   Education: GraduationCap,
   Health: Heart,
@@ -122,7 +126,7 @@ const categoryIcons = {
   Other: MoreHorizontal,
 };
 
-const categoryColors = {
+export const categoryColors = {
   Defense: "#dc2626",
   Education: "#2563eb",
   Health: "#059669",
@@ -147,8 +151,37 @@ const categoryColors = {
   Other: "#6b7280",
 };
 
+const getPriorityDetails = (level: number) => {
+  if (level <= 3) {
+    return {
+      label: "Low (Reactive)",
+      desc: "Vulnerability to crises increased by +15%. Emergent sector issues resolve slowly. Operational capability is restricted.",
+      color: "text-red-400 bg-red-500/10 border-red-500/20",
+    };
+  }
+  if (level <= 6) {
+    return {
+      label: "Standard (Active)",
+      desc: "Balanced operational stance. Baseline event occurrence. Regular response times to national and regional issues.",
+      color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+    };
+  }
+  if (level <= 8) {
+    return {
+      label: "High (Strategic)",
+      desc: "Vulnerability to crises reduced by -20%. Fast resolution of events. Elevated operational preparedness.",
+      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    };
+  }
+  return {
+    label: "Critical (Executive)",
+    desc: "Vulnerability to crises reduced by -50%. Instant crisis resolution. High frequency of breakthrough events, but potential administrative exhaustion.",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  };
+};
+
 // Map department category to relevant atomic components
-const categoryToComponents: Record<string, ComponentType[]> = {
+export const categoryToComponents: Record<string, ComponentType[]> = {
   Defense: [
     ComponentType.MILITARY_ENFORCEMENT,
     ComponentType.MILITARY_ADMINISTRATION,
@@ -215,11 +248,191 @@ const categoryToComponents: Record<string, ComponentType[]> = {
   ],
 };
 
-const fallbackComponents: ComponentType[] = [
+export const fallbackComponents: ComponentType[] = [
   ComponentType.PROFESSIONAL_BUREAUCRACY,
   ComponentType.RULE_OF_LAW,
   ComponentType.CITIZEN_ENGAGEMENT,
 ];
+
+export const categorySuggestions: Record<string, string[]> = {
+  Defense: [
+    "National Defense Operations",
+    "Border Security & Control",
+    "Military Readiness & Training",
+    "Counter-Terrorism Operations",
+    "Cyber Warfare & Cyber Defense",
+    "Strategic Intelligence Gathering",
+  ],
+  Education: [
+    "K-12 Curriculum Development",
+    "Teacher Licensing & Certification",
+    "School Infrastructure Funding",
+    "Higher Education Support",
+    "Vocational & Technical Training",
+    "Student Loan Administration",
+  ],
+  Health: [
+    "Disease Surveillance & Control",
+    "Public Hospital Management",
+    "Medical Research Funding",
+    "Healthcare Subsidy Programs",
+    "Pharmaceutical Safety Regulation",
+    "Mental Health Support Services",
+  ],
+  Finance: [
+    "National Budget Preparation",
+    "Taxation & Revenue Policy",
+    "Macroeconomic Forecasting",
+    "Public Debt Management",
+    "Financial Sector Regulation",
+    "Treasury & Cash Management",
+  ],
+  "Foreign Affairs": [
+    "Bilateral Diplomatic Relations",
+    "Consular & Visa Services",
+    "International Treaty Negotiation",
+    "Foreign Development Aid",
+    "Representation in Global Bodies",
+    "Trade Agreement Advocacy",
+  ],
+  Interior: [
+    "Local Government Liaison",
+    "National Parks & Public Lands",
+    "Electoral Registry & Elections",
+    "Civil Registration & Records",
+    "Domestic Resource Management",
+    "Border Entry Infrastructure",
+  ],
+  Justice: [
+    "Prosecution of Federal Crimes",
+    "Court System Administration",
+    "Correctional Facility Management",
+    "Civil Rights Enforcement",
+    "Anti-Corruption Investigations",
+    "Legal Counsel to the Executive",
+  ],
+  Transportation: [
+    "Highway System Maintenance",
+    "Aviation Safety & Regulation",
+    "Public Transit Subsidies",
+    "Railway Network Planning",
+    "Maritime Port Infrastructure",
+    "Vehicle License & Registration",
+  ],
+  Agriculture: [
+    "Crop Subsidy Administration",
+    "Food Safety Inspections",
+    "Agricultural Trade Support",
+    "Livestock Health Monitoring",
+    "Rural Development Programs",
+    "Soil & Water Conservation",
+  ],
+  Environment: [
+    "Air & Water Quality Monitoring",
+    "Climate Mitigation Programs",
+    "Wildlife & Habitat Protection",
+    "Waste Management Regulation",
+    "Renewable Energy Permitting",
+    "Environmental Impact Auditing",
+  ],
+  Labor: [
+    "Workplace Safety Inspections",
+    "Minimum Wage Enforcement",
+    "Unemployment Benefits",
+    "Job Training Programs",
+    "Labor Dispute Mediation",
+    "Collective Bargaining Oversight",
+  ],
+  Commerce: [
+    "Domestic Business Support",
+    "Intellectual Property & Patents",
+    "Census & Economic Data Collection",
+    "Consumer Protection Standards",
+    "Export Promotion Programs",
+    "Industrial Sector Subsidies",
+  ],
+  Energy: [
+    "Electrical Grid Reliability",
+    "Nuclear Energy Safety Regulation",
+    "Fossil Fuel Sector Permitting",
+    "Clean Energy Research Funding",
+    "Strategic Fuel Reserve Management",
+    "Energy Efficiency Standards",
+  ],
+  Communications: [
+    "Telecom Spectrum Allocation",
+    "Broadband Infrastructure Grants",
+    "Media Broadcast Licensing",
+    "Consumer Telecom Protections",
+    "Postal Service Administration",
+    "Cybersecurity Infrastructure Standards",
+  ],
+  Culture: [
+    "Historical Site Preservation",
+    "Arts & Humanities Grants",
+    "National Library & Archives",
+    "Cultural Export Promotion",
+    "Public Broadcasting Subsidies",
+    "Indigenous Heritage Protection",
+  ],
+  "Science and Technology": [
+    "Scientific Research Grants",
+    "Space Exploration Programs",
+    "Emerging Technology Standards",
+    "STEM Education Initiatives",
+    "Supercomputing & AI Infrastructure",
+    "Technology Transfer Operations",
+  ],
+  "Social Services": [
+    "Poverty Relief Programs",
+    "Child Welfare & Protection",
+    "Disability Benefit Auditing",
+    "Elderly Care Support Services",
+    "Food Security Assistance",
+    "Community Development Block Grants",
+  ],
+  Housing: [
+    "Affordable Housing Construction",
+    "Mortgage Insurance Programs",
+    "Fair Housing Law Enforcement",
+    "Urban Renewal Initiatives",
+    "Homelessness Support Grants",
+    "Public Housing Maintenance",
+  ],
+  "Veterans Affairs": [
+    "Veterans Healthcare System",
+    "Disability Compensation Audits",
+    "GI Bill Education Benefits",
+    "Veterans Cemetery Administration",
+    "Transition Assistance Programs",
+    "Home Loan Guarantee Systems",
+  ],
+  Intelligence: [
+    "Foreign Espionage Operations",
+    "Signals Intelligence (SIGINT)",
+    "Counter-Intelligence Operations",
+    "Cyber Intelligence Ops",
+    "Terrorist Threat Analysis",
+    "Satellite Imagery Processing",
+  ],
+  "Emergency Management": [
+    "Disaster Relief Operations",
+    "Early Warning Alert Systems",
+    "Emergency Shelter Logistics",
+    "Hazard Mitigation Grants",
+    "First Responder Training",
+    "Critical Infrastructure Protection",
+  ],
+  Other: [
+    "Inter-agency Policy Planning",
+    "Regulatory Compliance Auditing",
+    "Public Communication & Press",
+    "Information Technology Support",
+    "Administrative Record Keeping",
+    "Internal Operations Oversight",
+  ],
+};
+
 
 export function DepartmentForm({
   data,
@@ -232,6 +445,14 @@ export function DepartmentForm({
   onGovernmentComponentsChange,
 }: DepartmentFormProps) {
   const [newFunction, setNewFunction] = useState("");
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+
+  const handleAddSuggestion = (text: string) => {
+    const currentFunctions = data.functions || [];
+    if (!currentFunctions.includes(text)) {
+      handleChange("functions", [...currentFunctions, text]);
+    }
+  };
 
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -350,27 +571,60 @@ export function DepartmentForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="organizationalLevel" className="text-xs font-semibold text-zinc-300">
-            Organizational Level
-          </Label>
-          <Select
-            value={data.organizationalLevel}
-            onValueChange={(value: OrganizationalLevel) =>
-              handleChange("organizationalLevel", value)
-            }
-            disabled={isReadOnly}
-          >
-            <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
-              <SelectValue placeholder="Select level" />
-            </SelectTrigger>
-            <SelectContent className="border-white/10 bg-zinc-950 text-white">
-              {organizationalLevels.map((level) => (
-                <SelectItem key={level} value={level} className="hover:bg-zinc-800">
-                  {level}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label className="text-xs font-semibold text-zinc-300">Theme Color & Symbol</Label>
+          <div className="flex items-center gap-2">
+            {(() => {
+              const isValidColor = (c: string) => {
+                if (!c) return false;
+                return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c) || c.startsWith("rgba(") || c.startsWith("rgb(");
+              };
+              const safeColor = isValidColor(data.color)
+                ? data.color
+                : (categoryColors[data.category as keyof typeof categoryColors] || "#06b6d4");
+
+              return (
+                <ColorPickerInput
+                  value={safeColor}
+                  onChange={(val) => handleChange("color", val)}
+                  disabled={isReadOnly}
+                />
+              );
+            })()}
+
+            {/* Logo/Symbol Upload Button (Brings standard MediaSearchModal) */}
+            <div className="relative shrink-0">
+              {data.icon ? (
+                <div className="flex items-center gap-1.5 bg-zinc-900/60 border border-white/10 rounded-lg p-1">
+                  <div className="h-7 w-7 rounded-md bg-zinc-950 overflow-hidden flex items-center justify-center">
+                    <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />
+                  </div>
+                  {!isReadOnly && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChange("icon", undefined)}
+                      className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      title="Remove Logo"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsMediaModalOpen(true)}
+                  disabled={isReadOnly}
+                  className="h-9 px-3 text-xs border-white/10 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center gap-1"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Upload Logo</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -421,71 +675,136 @@ export function DepartmentForm({
       </div>
 
       {/* Priority Level Slider */}
-      <div className="space-y-2 rounded-xl border border-white/5 bg-zinc-900/20 p-4">
-        <div className="mb-1 flex items-center justify-between">
-          <Label className="text-xs font-semibold text-zinc-300">Priority Level</Label>
-          <Badge className="border-amber-500/25 bg-amber-500/10 text-amber-400">
-            {data.priority}%
-          </Badge>
-        </div>
-        <Slider
-          value={[data.priority]}
-          onValueChange={(val) => handleChange("priority", val[0])}
-          min={1}
-          max={100}
-          step={1}
-          disabled={isReadOnly}
-          className="py-2"
-        />
-        <div className="flex justify-between text-[10px] text-zinc-500">
-          <span>Low Priority</span>
-          <span>High Priority</span>
-        </div>
-      </div>
+      {(() => {
+        const uiPriority = Math.max(1, Math.min(10, Math.round((data.priority || 50) / 10)));
+        const priorityInfo = getPriorityDetails(uiPriority);
 
-      {/* Theme Color & Parent */}
+        return (
+          <div className="space-y-3 rounded-xl border border-white/5 bg-zinc-900/20 p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-xs font-semibold text-zinc-300">Priority Level</Label>
+                <p className="text-[10px] text-zinc-500">
+                  Determines sector crisis resistance and resolution speed
+                </p>
+              </div>
+              <Badge className={cn("border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider transition-all", priorityInfo.color)}>
+                Level {uiPriority} • {priorityInfo.label}
+              </Badge>
+            </div>
+            <Slider
+              value={[uiPriority]}
+              onValueChange={(val) => handleChange("priority", val[0] * 10)}
+              min={1}
+              max={10}
+              step={1}
+              disabled={isReadOnly}
+              className="py-2"
+            />
+            <div className="relative overflow-hidden rounded-lg border border-white/5 bg-black/30 p-2.5 text-[10px] leading-relaxed text-zinc-400">
+              <TextureOverlay texture="chevron" opacity={0.03} />
+              <div className="relative z-10">
+                <span className="font-semibold text-zinc-300 block mb-0.5">Calculation Outcomes:</span>
+                {priorityInfo.desc}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Hierarchy: Organizational Level & Parent Department */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-zinc-300">Theme Color</Label>
-          <ColorPickerInput
-            value={data.color}
-            onChange={(val) => handleChange("color", val)}
+          <div className="flex items-center gap-1">
+            <Label htmlFor="organizationalLevel" className="text-xs font-semibold text-zinc-300">
+              Organizational Level
+            </Label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-zinc-500 hover:text-zinc-300 cursor-help flex">
+                  <Info className="h-3.5 w-3.5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="bg-zinc-900 border-white/10 text-white text-[11px] p-2 max-w-[220px]">
+                Determines the bureaucratic tier and administrative status of this unit.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Select
+            value={data.organizationalLevel}
+            onValueChange={(value: OrganizationalLevel) =>
+              handleChange("organizationalLevel", value)
+            }
             disabled={isReadOnly}
-          />
+          >
+            <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
+              <SelectValue placeholder="Select level" />
+            </SelectTrigger>
+            <SelectContent className="border-white/10 bg-zinc-950 text-white z-[100030]">
+              {organizationalLevels.map((level) => {
+                const levelDescriptions: Record<OrganizationalLevel, string> = {
+                  Ministry: "Primary cabinet-level executive organ led by a minister. Designs sector-wide policy.",
+                  Department: "Major branch of government with a specific, broad area of jurisdiction.",
+                  Agency: "Semi-autonomous specialized body with authority to execute policies & regulations.",
+                  Bureau: "Sub-division of a department handling specific regulatory or technical duties.",
+                  Office: "Focused administrative or service unit dedicated to specific tasks.",
+                  Commission: "Independent regulatory or advisory body, typically led by multiple commissioners.",
+                };
+
+                return (
+                  <Tooltip key={level}>
+                    <TooltipTrigger asChild>
+                      <div className="w-full">
+                        <SelectItem value={level} className="hover:bg-zinc-800 w-full">
+                          {level}
+                        </SelectItem>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs bg-zinc-900 border-white/10 text-white text-[11px] p-2 z-[100040]">
+                      {levelDescriptions[level]}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
 
-        {availableParents.length > 0 && (
-          <div className="space-y-1.5">
-            <Label htmlFor="parentDepartment" className="text-xs font-semibold text-zinc-300">
-              Parent Department
-            </Label>
-            <Select
-              value={data.parentDepartmentId || "no-parent"}
-              onValueChange={(value) =>
-                handleChange("parentDepartmentId", value === "no-parent" ? undefined : value)
-              }
-              disabled={isReadOnly}
-            >
-              <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
-                <SelectValue placeholder="Select parent" />
-              </SelectTrigger>
-              <SelectContent className="border-white/10 bg-zinc-950 text-white">
-                <SelectItem value="no-parent" className="hover:bg-zinc-800">
-                  No Parent
+        <div className="space-y-1.5">
+          <Label htmlFor="parentDepartment" className="text-xs font-semibold text-zinc-300">
+            Parent Department
+          </Label>
+          <Select
+            value={data.parentDepartmentId || "no-parent"}
+            onValueChange={(value) =>
+              handleChange("parentDepartmentId", value === "no-parent" ? undefined : value)
+            }
+            disabled={isReadOnly || availableParents.length === 0}
+          >
+            <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
+              <SelectValue placeholder="Select parent" />
+            </SelectTrigger>
+            <SelectContent className="border-white/10 bg-zinc-950 text-white">
+              <SelectItem value="no-parent" className="hover:bg-zinc-800">
+                No Parent
+              </SelectItem>
+              {availableParents.map((parent) => (
+                <SelectItem key={parent.id} value={parent.id} className="hover:bg-zinc-800">
+                  {parent.name}
                 </SelectItem>
-                {availableParents.map((parent) => (
-                  <SelectItem key={parent.id} value={parent.id} className="hover:bg-zinc-800">
-                    {parent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+              ))}
+            </SelectContent>
+          </Select>
+          {availableParents.length === 0 && (
+            <p className="text-[10px] text-zinc-500 italic">
+              Create other departments first to establish hierarchy.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Functions Tags */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label className="text-xs font-semibold text-zinc-300">Responsibilities & Functions</Label>
         {!isReadOnly && (
           <div className="flex gap-2">
@@ -505,6 +824,39 @@ export function DepartmentForm({
             </Button>
           </div>
         )}
+
+        {/* Suggested popular functions based on category */}
+        {!isReadOnly && (
+          <div className="space-y-1.5 bg-black/10 border border-white/[0.03] rounded-lg p-2.5">
+            <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+              Popular Suggested Functions ({data.category})
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1 scrollbar-thin">
+              {(categorySuggestions[data.category] || categorySuggestions.Other).map((suggestion) => {
+                const isSelected = (data.functions || []).includes(suggestion);
+                return (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => !isSelected && handleAddSuggestion(suggestion)}
+                    disabled={isSelected}
+                    className={cn(
+                      "text-[10px] px-2 py-0.5 rounded-md border transition-all text-left flex items-center gap-1 select-none",
+                      isSelected
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default opacity-60"
+                        : "bg-zinc-900/50 border-white/5 text-zinc-400 hover:border-white/10 hover:text-zinc-200 hover:bg-zinc-800"
+                    )}
+                  >
+                    <span>{suggestion}</span>
+                    {!isSelected && <Plus className="h-2.5 w-2.5 shrink-0 opacity-60" />}
+                    {isSelected && <CheckCircle className="h-2.5 w-2.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-2 flex flex-wrap gap-1.5">
           {(data.functions || []).map((func, index) => (
             <Badge
@@ -547,27 +899,40 @@ export function DepartmentForm({
                 (active) => active !== compType && checkGovernmentConflict(compType, active)
               );
 
+              const cardColor = data.color || "#06b6d4";
+
               return (
                 <div
                   key={compType}
                   onClick={() => handleToggleComponent(compType)}
+                  style={{
+                    ["--hover-border-color" as any]: `${cardColor}40`,
+                    ["--hover-bg-color" as any]: `${cardColor}08`,
+                    ...(isSelected ? {
+                      borderColor: `${cardColor}50`,
+                      backgroundColor: `${cardColor}12`,
+                      boxShadow: `0 0 12px ${cardColor}08`,
+                    } : {})
+                  }}
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all duration-200 select-none",
+                    "relative overflow-hidden flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all duration-200 select-none",
                     isSelected
-                      ? "border-amber-500/40 bg-amber-500/10 text-white shadow-[0_0_12px_rgba(245,158,11,0.05)]"
-                      : "border-white/[0.05] bg-zinc-950/40 text-zinc-400 hover:border-white/15",
+                      ? "text-white"
+                      : "border-white/[0.05] bg-zinc-950/40 text-zinc-400 hover:border-[var(--hover-border-color)] hover:bg-[var(--hover-bg-color)]",
                     isConflicting && isSelected && "border-red-500/40 bg-red-500/5"
                   )}
                 >
+                  <TextureOverlay texture="chevron" opacity={0.02} />
                   <div
-                    className={cn(
-                      "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-                      isSelected ? "bg-amber-500/20 text-amber-400" : "bg-zinc-900 text-zinc-500"
-                    )}
+                    className="relative z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors"
+                    style={{
+                      backgroundColor: isSelected ? `${cardColor}25` : "rgba(24, 24, 27, 0.5)",
+                      color: isSelected ? cardColor : "#71717a",
+                    }}
                   >
                     <CompIcon className="h-4 w-4" />
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="relative z-10 min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <span
                         className={cn(
@@ -578,7 +943,7 @@ export function DepartmentForm({
                         {comp.name}
                       </span>
                       {isSelected && (
-                        <CheckCircle className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: cardColor }} />
                       )}
                     </div>
                     <p className="mt-1 text-[10px] leading-normal text-zinc-400">
@@ -616,6 +981,17 @@ export function DepartmentForm({
           </Button>
         </div>
       )}
+
+      {/* Media Search Modal Portal */}
+      <MediaSearchModal
+        isOpen={isMediaModalOpen}
+        onClose={() => setIsMediaModalOpen(false)}
+        onImageSelect={(imageUrl) => {
+          handleChange("icon", imageUrl);
+          setIsMediaModalOpen(false);
+        }}
+        usePortal={false}
+      />
     </div>
   );
 }

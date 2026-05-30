@@ -457,85 +457,14 @@ export const StepRenderer = memo(function StepRenderer({
 
     return (
       <div className="space-y-6">
-        <div className="glass-surface glass-refraction relative mb-6 flex gap-1 rounded-xl p-1 lg:hidden">
-          {/* Sliding indicator behind active tab */}
-          <motion.div
-            className="absolute inset-y-1 z-0 rounded-lg bg-white/8"
-            layout
-            layoutId="core-parent-tab-indicator"
-            style={{
-              width: "calc(50% - 8px)",
-              left:
-                builderState.activeCoreTab === "identity" ? "calc(0% + 4px)" : "calc(50% + 4px)",
-            }}
-            transition={{ type: "spring", stiffness: 350, damping: 30 }}
-          />
-          {[
-            { id: "identity", label: "National Identity", icon: Flag },
-            { id: "indicators", label: "Core Indicators", icon: BarChart3 },
-          ].map((tab) => {
-            const isActive = builderState.activeCoreTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <motion.button
-                key={tab.id}
-                onClick={() => handleTabChange("core", tab.id)}
-                className={cn(
-                  "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-200",
-                  isActive ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
-                )}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              >
-                <Icon
-                  className={cn(
-                    "h-3.5 w-3.5 transition-colors duration-200",
-                    isActive ? "text-teal-400" : "text-zinc-500"
-                  )}
-                />
-                <span>{tab.label}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        <AnimatePresence mode="wait">
-          {builderState.activeCoreTab === "identity" ? (
-            <motion.div
-              key="identity"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <NationalIdentitySection
-                inputs={builderState.economicInputs}
-                onInputsChange={(economicInputs: EconomicInputs) => {
-                  setBuilderState((prev) => ({ ...prev, economicInputs }));
-                }}
-                referenceCountry={builderState.selectedCountry}
-                countryId={countryId}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="indicators"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <CoreIndicatorsSection
-                inputs={builderState.economicInputs}
-                onInputsChange={(economicInputs: EconomicInputs) => {
-                  setBuilderState((prev) => ({ ...prev, economicInputs }));
-                }}
-                showAdvanced={builderState.showAdvancedMode}
-                referenceCountry={builderState.selectedCountry}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <NationalIdentitySection
+          inputs={builderState.economicInputs}
+          onInputsChange={(economicInputs: EconomicInputs) => {
+            setBuilderState((prev) => ({ ...prev, economicInputs }));
+          }}
+          referenceCountry={builderState.selectedCountry}
+          countryId={countryId}
+        />
       </div>
     );
   }

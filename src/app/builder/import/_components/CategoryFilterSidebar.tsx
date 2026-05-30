@@ -7,6 +7,7 @@ import {
   GlassCardHeader,
 } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
 
 interface WikiSite {
   name: string;
@@ -103,20 +104,12 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
             <GlassCardContent>
               <div className="space-y-4">
                 <div className="relative">
-                  <input
+                  <Input
                     type="text"
                     placeholder="e.g., Countries, Nations, Cities..."
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className={cn(
-                      "w-full rounded-lg border px-4 py-3 transition-all duration-200",
-                      "focus:ring-brand-primary/50 focus:border-brand-primary/50 focus:ring-2 focus:outline-none"
-                    )}
-                    style={{
-                      backgroundColor: "var(--color-bg-secondary)",
-                      borderColor: "var(--color-border-primary)",
-                      color: "var(--color-text-primary)",
-                    }}
+                    className="h-12 border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] py-3 text-[var(--color-text-primary)]"
                   />
                 </div>
 

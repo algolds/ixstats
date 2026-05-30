@@ -23,7 +23,10 @@ export function ExpandedView({
   }
 
   return (
-    <div className="relative w-full text-left max-h-[80vh] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+    <div
+      className="relative max-h-[80vh] w-full overflow-y-auto text-left"
+      style={{ scrollbarWidth: "thin" }}
+    >
       {mode === "search" && (
         <SearchView
           searchQuery={searchQuery}

@@ -8,14 +8,14 @@ const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
-import { Flag, Globe, Landmark, Heart, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { Globe, Landmark, Heart, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import type {
   EconomicInputs,
   RealCountryData,
   NationalIdentityData,
 } from "~/app/builder/lib/economy-data-service";
 import { BuilderTabCard, type TabDefinition } from "~/app/builder/primitives/BuilderTabCard";
-import { BasicInfoForm, SymbolsUpload, GeographyForm, CultureForm } from "./national-identity";
+import { BasicInfoForm, GeographyForm, CultureForm } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 import { useBuilderContext } from "./context/BuilderStateContext";
 
@@ -80,7 +80,7 @@ export function NationalIdentitySection({
   countryId,
 }: NationalIdentitySectionProps) {
   // Get builder context for autosync registration and state management
-  const { registerAutoSync, unregisterAutoSync, builderState, setBuilderState } =
+  const { registerAutoSync, unregisterAutoSync, builderState, setBuilderState, mode } =
     useBuilderContext();
 
   // All hooks must be called unconditionally (Rules of Hooks)
@@ -169,13 +169,36 @@ export function NationalIdentitySection({
     return null;
   };
 
+  const handleGovernmentStructureChange = useCallback(
+    (structure: any) => {
+      setBuilderState((prev) => ({
+        ...prev,
+        governmentStructure: structure,
+      }));
+    },
+    [setBuilderState]
+  );
+
   // Memoize callbacks to prevent unnecessary re-renders
   const handleGovernmentTypeChange = useCallback(
     (value: string) => {
       setSelectedGovernmentType(value);
       handleIdentityChange("governmentType", value);
+      setBuilderState((prev) => {
+        if (!prev.governmentStructure || !prev.governmentStructure.structure) return prev;
+        return {
+          ...prev,
+          governmentStructure: {
+            ...prev.governmentStructure,
+            structure: {
+              ...prev.governmentStructure.structure,
+              governmentType: value,
+            },
+          },
+        };
+      });
     },
-    [setSelectedGovernmentType, handleIdentityChange]
+    [setSelectedGovernmentType, handleIdentityChange, setBuilderState]
   );
 
   const handleCustomOfficialNameFocus = useCallback(() => {
@@ -233,39 +256,50 @@ export function NationalIdentitySection({
           activeTab={activeTab}
           onTabChange={setActiveTab}
           sectionTheme="identity"
+          hideTabList
         >
           {activeTab === "basic" && (
-            <BasicInfoForm
-              identity={identity as NationalIdentityData}
-              onIdentityChange={handleIdentityChange}
-              selectedGovernmentType={selectedGovernmentType}
-              customOfficialName={customOfficialName}
-              isEditingCustomName={isEditingCustomName}
-              onGovernmentTypeChange={handleGovernmentTypeChange}
-              onCustomOfficialNameChange={setCustomOfficialName}
-              onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
-              onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
-              setShouldFetchCustomTypes={setShouldFetchCustomTypes}
-              customGovernmentTypes={customGovernmentTypes}
-              onFieldSave={handleFieldValueSave}
-              // Symbols merging
-              flagUrl={inputs.flagUrl ?? ""}
-              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
-              foundationCountry={
-                foundationCountryName
-                  ? {
-                      name: foundationCountryName,
-                      flagUrl: flag?.flagUrl ?? "",
-                      coatOfArmsUrl: foundationCoatOfArmsUrl,
-                    }
-                  : undefined
-              }
-              onSelectFlag={() => setShowFlagImageModal(true)}
-              onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
-              onFlagUrlChange={handleFlagUrlChange}
-              onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
-              onColorsExtracted={handleColorsExtracted}
-            />
+            <div className="space-y-8">
+              <BasicInfoForm
+                identity={identity as NationalIdentityData}
+                governmentStructure={builderState.governmentStructure}
+                onGovernmentStructureChange={handleGovernmentStructureChange}
+                onIdentityChange={handleIdentityChange}
+                selectedGovernmentType={selectedGovernmentType}
+                customOfficialName={customOfficialName}
+                isEditingCustomName={isEditingCustomName}
+                onGovernmentTypeChange={handleGovernmentTypeChange}
+                onCustomOfficialNameChange={setCustomOfficialName}
+                onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
+                onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
+                setShouldFetchCustomTypes={setShouldFetchCustomTypes}
+                customGovernmentTypes={customGovernmentTypes}
+                onFieldSave={handleFieldValueSave}
+                // Symbols merging
+                flagUrl={inputs.flagUrl ?? ""}
+                coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
+                foundationCountry={
+                  foundationCountryName
+                    ? {
+                        name: foundationCountryName,
+                        flagUrl: flag?.flagUrl ?? "",
+                        coatOfArmsUrl: foundationCoatOfArmsUrl,
+                      }
+                    : undefined
+                }
+                onSelectFlag={() => setShowFlagImageModal(true)}
+                onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
+                onFlagUrlChange={handleFlagUrlChange}
+                onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
+                onColorsExtracted={handleColorsExtracted}
+                // Core Indicators props
+                inputs={inputs}
+                onInputsChange={onInputsChange}
+                referenceCountry={referenceCountry}
+                showAdvanced={builderState.showAdvancedMode}
+                mode={mode}
+              />
+            </div>
           )}
 
           {activeTab === "culture" && (

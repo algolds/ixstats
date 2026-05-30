@@ -96,7 +96,7 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
           {/* Backdrop */}
           <motion.div
             key="nav-tray-backdrop"
-            className="fixed inset-0 z-[9998] pointer-events-auto"
+            className="pointer-events-auto fixed inset-0 z-[9998]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -107,7 +107,7 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
           {/* Tray */}
           <motion.div
             key="nav-tray"
-            className="absolute top-full left-1/2 z-[10001] mt-3 w-[280px] -translate-x-1/2 pointer-events-auto"
+            className="pointer-events-auto absolute top-full left-1/2 z-[10001] mt-3 w-[280px] -translate-x-1/2"
             initial={{ opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}

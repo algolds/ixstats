@@ -150,6 +150,10 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             notes: "",
           };
 
+          const parentDept = department.parentDepartmentId 
+            ? departments[parseInt(department.parentDepartmentId)]
+            : null;
+
           return (
             <BudgetAllocationForm
               key={index}
@@ -157,10 +161,12 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
               onChange={(updated) => onUpdateAllocation(index, updated)}
               departmentName={department.name}
               departmentColor={department.color}
+              parentName={parentDept ? parentDept.name : undefined}
+              parentColor={parentDept ? parentDept.color : undefined}
               totalBudget={totalBudget}
               currency={currency}
               isReadOnly={isReadOnly}
-              isCollapsed={budgetAllocationsCollapsed[index] || false}
+              isCollapsed={budgetAllocationsCollapsed[index] !== false}
               onToggleCollapse={() => onToggleCollapse(index)}
             />
           );

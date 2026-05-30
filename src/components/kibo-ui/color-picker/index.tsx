@@ -66,8 +66,20 @@ export const ColorPicker = ({
   className,
   ...props
 }: ColorPickerProps) => {
-  const selectedColor = Color(value);
-  const defaultColor = Color(defaultValue);
+  const getSafeColor = (val: any) => {
+    try {
+      return Color(val);
+    } catch {
+      try {
+        return Color(defaultValue);
+      } catch {
+        return Color("#000000");
+      }
+    }
+  };
+
+  const selectedColor = getSafeColor(value);
+  const defaultColor = getSafeColor(defaultValue);
 
   const [hue, setHue] = useState(selectedColor.hue() || defaultColor.hue() || 0);
   const [saturation, setSaturation] = useState(
@@ -79,6 +91,8 @@ export const ColorPicker = ({
   const [alpha, setAlpha] = useState(selectedColor.alpha() * 100 || defaultColor.alpha() * 100);
   const [mode, setMode] = useState("hex");
 
+  const lastValueRef = useRef(value);
+
   // Keep latest onChange in a ref to avoid infinite rendering loop when parent onChange is not memoized
   const onChangeRef = useRef(onChange);
   useEffect(() => {
@@ -87,41 +101,68 @@ export const ColorPicker = ({
 
   // Update color when controlled value changes
   useEffect(() => {
-    if (value) {
-      try {
-        const color = Color(value);
-        const hsl = color.hsl().object();
-        const nextHue = hsl.h || 0;
-        const nextSat = hsl.s || 0;
-        const nextLt = hsl.l || 0;
-        const nextAlpha = color.alpha() * 100;
+    if (value !== lastValueRef.current) {
+      lastValueRef.current = value;
+      if (value) {
+        try {
+          const color = Color(value);
 
-        // Check if values have actually changed before updating state
-        // to prevent conversion/precision feedback loops
-        if (
-          Math.abs(hue - nextHue) > 0.01 ||
-          Math.abs(saturation - nextSat) > 0.01 ||
-          Math.abs(lightness - nextLt) > 0.01 ||
-          Math.abs(alpha - nextAlpha) > 0.01
-        ) {
+          // Compare rounded RGB and alpha values to prevent infinite precision feedback loops
+          const currentStateColor = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
+          const currentRgb = currentStateColor.rgb().array().map(Math.round);
+          const incomingRgb = color.rgb().array().map(Math.round);
+
+          if (
+            currentRgb[0] === incomingRgb[0] &&
+            currentRgb[1] === incomingRgb[1] &&
+            currentRgb[2] === incomingRgb[2] &&
+            Math.abs(color.alpha() - currentStateColor.alpha()) < 0.01
+          ) {
+            return;
+          }
+
+          const hsl = color.hsl().object();
+          const nextHue = hsl.h || 0;
+          const nextSat = hsl.s || 0;
+          const nextLt = hsl.l || 0;
+          const nextAlpha = color.alpha() * 100;
+
           setHue(nextHue);
           setSaturation(nextSat);
           setLightness(nextLt);
           setAlpha(nextAlpha);
+        } catch (err) {
+          console.error("Invalid color value passed to ColorPicker:", value, err);
         }
-      } catch (err) {
-        console.error("Invalid color value passed to ColorPicker:", value, err);
       }
     }
   }, [value, hue, saturation, lightness, alpha]);
 
+  const isMountedRef = useRef(false);
+
   // Notify parent of changes
   useEffect(() => {
-    if (onChangeRef.current) {
-      const color = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
-      const rgba = color.rgb().array();
+    if (isMountedRef.current) {
+      if (onChangeRef.current) {
+        const color = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
+        const rgba = color.rgb().array();
 
-      onChangeRef.current([rgba[0], rgba[1], rgba[2], alpha / 100]);
+        // Convert HSL back to color string format to update lastValueRef
+        let colorStr = "#000000";
+        if (alpha < 100) {
+          colorStr = `rgba(${Math.round(rgba[0])}, ${Math.round(rgba[1])}, ${Math.round(rgba[2])}, ${alpha / 100})`;
+        } else {
+          const r = Math.round(rgba[0]).toString(16).padStart(2, "0");
+          const g = Math.round(rgba[1]).toString(16).padStart(2, "0");
+          const b = Math.round(rgba[2]).toString(16).padStart(2, "0");
+          colorStr = `#${r}${g}${b}`;
+        }
+
+        lastValueRef.current = colorStr;
+        onChangeRef.current([rgba[0], rgba[1], rgba[2], alpha / 100]);
+      }
+    } else {
+      isMountedRef.current = true;
     }
   }, [hue, saturation, lightness, alpha]);
 
@@ -497,11 +538,11 @@ export function ColorPickerInput({
               onChange={(rgbaArray) => {
                 let colorStr = "#000000";
                 if (rgbaArray[3] < 1) {
-                  colorStr = `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${rgbaArray[3]})`;
+                  colorStr = `rgba(${Math.round(rgbaArray[0])}, ${Math.round(rgbaArray[1])}, ${Math.round(rgbaArray[2])}, ${rgbaArray[3]})`;
                 } else {
-                  const r = rgbaArray[0].toString(16).padStart(2, "0");
-                  const g = rgbaArray[1].toString(16).padStart(2, "0");
-                  const b = rgbaArray[2].toString(16).padStart(2, "0");
+                  const r = Math.round(rgbaArray[0]).toString(16).padStart(2, "0");
+                  const g = Math.round(rgbaArray[1]).toString(16).padStart(2, "0");
+                  const b = Math.round(rgbaArray[2]).toString(16).padStart(2, "0");
                   colorStr = `#${r}${g}${b}`;
                 }
                 onChange(colorStr);

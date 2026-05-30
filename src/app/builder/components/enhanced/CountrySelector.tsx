@@ -46,7 +46,6 @@ export function CountrySelector({
     confirmHandlerRef,
     onNavigate,
     setGridWidth,
-    previewWidgetHeight,
   } = useBuilderFilter();
   const filteredCountries = useMemo(
     () => filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes),
@@ -166,12 +165,7 @@ export function CountrySelector({
           />
         </div>
 
-        <div
-          className="w-80 shrink-0 space-y-4 self-start transition-all duration-300 ease-out"
-          style={{
-            marginTop: previewWidgetHeight ? `${previewWidgetHeight + 16}px` : undefined,
-          }}
-        >
+        <div className="w-80 shrink-0 space-y-4 self-start">
           <div className="space-y-2">
             <button
               onClick={() => setShowScratchDialog(true)}

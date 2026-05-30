@@ -356,13 +356,13 @@ function CompactViewComponent({
                               onSwitchMode(`plugin:${pluginViewKey}`);
                             }
                           }}
-                          className="flex max-w-[220px] cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
+                          className="flex max-w-[220px] cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </button>
                       ) : (
-                        <div className="flex max-w-[220px] items-center gap-1.5 overflow-hidden px-1.5">
+                        <div className="flex max-w-[220px] items-center gap-1.5 px-1.5">
                           {pluginCenter}
                         </div>
                       )

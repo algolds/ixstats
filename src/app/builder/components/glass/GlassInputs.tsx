@@ -294,6 +294,7 @@ export function GlassNumberInput({
             "bg-card/50 w-full rounded-lg border px-3 py-3 backdrop-blur-sm md:py-2",
             "text-foreground placeholder-muted-foreground transition-all duration-200",
             "focus:ring-ring/20 touch-manipulation focus:ring-2 focus:outline-none",
+            "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
             "text-base md:text-sm", // Prevent zoom on mobile
             themeStyles[theme],
             disabled && "cursor-not-allowed opacity-60",

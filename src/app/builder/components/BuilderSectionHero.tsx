@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Search,
-  SlidersHorizontal,
-  ArrowRight,
-  X,
-} from "lucide-react";
+import { Search, SlidersHorizontal, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useBuilderActions } from "../hooks/useBuilderActions";
 import { type BuilderSection } from "../lib/builder-theme";
@@ -31,7 +26,6 @@ interface BuilderSectionHeroProps {
   onNavigate?: (section: BuilderSection) => void;
 }
 
-
 export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   section,
   mode = "create",
@@ -41,8 +35,14 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   const isEditMode = mode === "edit";
   const [showHistory, setShowHistory] = useState(false);
 
-  const { builderState, setBuilderState, submitFn, isSubmittingGlobal, foundationPreviewCountry, setFoundationPreviewCountry } =
-    useBuilderContext();
+  const {
+    builderState,
+    setBuilderState,
+    submitFn,
+    isSubmittingGlobal,
+    foundationPreviewCountry,
+    setFoundationPreviewCountry,
+  } = useBuilderContext();
   const foundationFilter = useBuilderFilter();
   const { setHeroHeight } = foundationFilter;
 
@@ -83,8 +83,15 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (isSearchExpanded && searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
-        if (!foundationFilter.searchTerm.trim() && foundationFilter.selectedArchetypes.length === 0) {
+      if (
+        isSearchExpanded &&
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        if (
+          !foundationFilter.searchTerm.trim() &&
+          foundationFilter.selectedArchetypes.length === 0
+        ) {
           setIsSearchExpanded(false);
           setActiveCategory(null);
           foundationFilter.setShowFilters(false);
@@ -139,7 +146,11 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
 
   // On foundation step, use the hovered/selected country flag for the hero background
   const isFoundation = section === "foundation";
-  const previewFlag = foundationPreviewCountry?.flag || foundationPreviewCountry?.flagUrl;
+  const previewFlag =
+    foundationPreviewCountry?.flag ||
+    foundationPreviewCountry?.flagUrl ||
+    foundationFilter.selectedTemplate?.flag ||
+    foundationFilter.selectedTemplate?.flagUrl;
   const rawFlagUrl = isFoundation
     ? previewFlag || builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag
     : builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag;
@@ -158,13 +169,15 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       transition={{ duration: 0.3 }}
       className={cn(
         "sticky top-0 z-[6000] overflow-hidden rounded-b-xl shadow-lg shadow-black/20 transition-all duration-300",
-        isFoundation ? "border border-white/20 dark:border-white/10" : "glass-surface glass-refraction glass-edge backdrop-blur-xl"
+        isFoundation
+          ? "border border-white/20 dark:border-white/10"
+          : "glass-surface glass-refraction glass-edge backdrop-blur-xl"
       )}
       style={isFoundation ? DYNAMIC_ISLAND_STYLE : undefined}
     >
       {/* Top Right Version Badge */}
-      <div className="absolute top-3 right-3 z-30 pointer-events-none select-none">
-        <span className="rounded border border-white/10 dark:border-white/5 bg-black/25 px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground/80 backdrop-blur-sm shadow-sm">
+      <div className="pointer-events-none absolute top-3 right-3 z-30 select-none">
+        <span className="text-muted-foreground/80 rounded border border-white/10 bg-black/25 px-1.5 py-0.5 text-[9px] font-bold shadow-sm backdrop-blur-sm dark:border-white/5">
           v{BUILDER_VERSION}
         </span>
       </div>
@@ -172,16 +185,17 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       {isFoundation && <DynamicIslandEffects />}
 
       {/* Background Flag & Texture Overlay */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
-        {countryFlagUrl && (isFoundation ? foundationPreviewCountry : true) && (
-          <div
-            className={cn(
-              "absolute inset-0 bg-center bg-no-repeat bg-cover saturate-50 transition-all duration-700",
-              isFoundation ? "opacity-40" : "opacity-[0.08] blur-[2px]"
-            )}
-            style={{ backgroundImage: `url(${countryFlagUrl})` }}
-          />
-        )}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
+        {countryFlagUrl &&
+          (isFoundation ? foundationPreviewCountry || foundationFilter.selectedTemplate : true) && (
+            <div
+              className={cn(
+                "absolute inset-0 bg-cover bg-center bg-no-repeat saturate-50 transition-all duration-700",
+                isFoundation ? "opacity-40" : "opacity-[0.08] blur-[2px]"
+              )}
+              style={{ backgroundImage: `url(${countryFlagUrl})` }}
+            />
+          )}
         <TextureOverlay texture="paperGrain" opacity={0.09} className="mix-blend-overlay" />
         <TextureOverlay texture="diagonal" opacity={0.06} className="mix-blend-overlay" />
       </div>
@@ -190,16 +204,15 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       <div className="h-12 lg:h-16" />
 
       {section !== "import" && (
-        <div 
+        <div
           className={cn(
             "relative z-10 w-full overflow-hidden transition-all duration-300",
-            isFoundation ? "" : "border-t border-border/30 bg-black/0"
+            isFoundation ? "" : "border-border/30 border-t bg-black/0"
           )}
         >
-
           <div className="relative z-10 flex w-full items-center justify-between gap-3 px-4 py-2.5">
             {foundationFilter.softSelectedCountry ? (
-              <div className="flex min-w-0 w-full flex-grow flex-1 items-center gap-3">
+              <div className="flex w-full min-w-0 flex-1 flex-grow items-center gap-3">
                 <input
                   ref={namingInputRef}
                   autoFocus
@@ -207,21 +220,21 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                   value={foundationFilter.newCountryName}
                   onChange={(e) => foundationFilter.setNewCountryName(e.target.value)}
                   placeholder="Name your nation..."
-                  className="h-12 min-w-0 w-full flex-[12] rounded-lg border-2 border-white/20 bg-white/5 backdrop-blur-md px-5 text-base font-bold text-foreground placeholder-muted-foreground focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-200"
+                  className="text-foreground placeholder-muted-foreground h-12 w-full min-w-0 flex-[12] rounded-lg border-2 border-white/20 bg-white/5 px-5 text-base font-bold shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-200 hover:shadow-xs focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]"
                 />
                 <button
                   onClick={() => {
                     foundationFilter.clearSelection();
                     setFoundationPreviewCountry(null);
                   }}
-                  className="flex h-12 shrink-0 cursor-pointer items-center rounded-lg border border-white/10 bg-white/5 px-5 text-xs font-bold text-muted-foreground backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10 hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground flex h-12 shrink-0 cursor-pointer items-center rounded-lg border border-white/10 bg-white/5 px-5 text-xs font-bold backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => foundationFilter.confirmHandlerRef.current?.()}
                   disabled={!foundationFilter.newCountryName.trim()}
-                  className="flex h-12 shrink-0 cursor-pointer items-center rounded-lg bg-blue-500/20 border border-blue-500/30 backdrop-blur-sm px-6 text-xs font-bold text-foreground shadow-sm transition-all hover:bg-blue-600/30 dark:hover:bg-blue-500/30 hover:border-blue-500/40 dark:hover:border-blue-500/30 hover:text-foreground hover:shadow-md hover:shadow-blue-500/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                  className="text-foreground hover:text-foreground flex h-12 shrink-0 cursor-pointer items-center rounded-lg border border-blue-500/30 bg-blue-500/20 px-6 text-xs font-bold shadow-sm backdrop-blur-sm transition-all hover:border-blue-500/40 hover:bg-blue-600/30 hover:shadow-md hover:shadow-blue-500/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none dark:hover:border-blue-500/30 dark:hover:bg-blue-500/30"
                 >
                   Continue
                 </button>
@@ -229,14 +242,33 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
             ) : (
               <div className="flex w-full items-center gap-3">
                 {/* Left column: Spacer matching the desktop sidebar nav + spacing + padding */}
-                <div className="hidden lg:block shrink-0" style={{ width: "264px" }} />
-                <div className="block lg:hidden shrink-0" style={{ width: "16px" }} />
+                <div className="hidden shrink-0 lg:block" style={{ width: "264px" }} />
+                <div className="block shrink-0 lg:hidden" style={{ width: "16px" }} />
 
                 {/* Center column: Search Island Area */}
-                <div className="flex-1 flex justify-center items-center min-w-0">
-                  {!foundationFilter.selectedTemplate && (
+                <div className="flex min-w-0 flex-1 items-center justify-center">
+                  {foundationFilter.selectedTemplate ? (
+                    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3.5 py-1 text-xs shadow-md backdrop-blur-sm dark:border-white/5">
+                      {(foundationFilter.selectedTemplate.flag ||
+                        foundationFilter.selectedTemplate.flagUrl) && (
+                        <div className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px] border border-white/20">
+                          <img
+                            src={
+                              foundationFilter.selectedTemplate.flag ||
+                              foundationFilter.selectedTemplate.flagUrl
+                            }
+                            alt={`${foundationFilter.selectedTemplate.name} flag`}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <span className="text-xs font-bold text-white select-none">
+                        {foundationFilter.selectedTemplate.name}
+                      </span>
+                    </div>
+                  ) : (
                     <AnimatePresence initial={false} mode="wait">
-                       {!isSearchExpanded ? (
+                      {!isSearchExpanded ? (
                         <motion.div
                           key="collapsed"
                           initial={{ opacity: 0, scale: 0.95 }}
@@ -244,10 +276,10 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.15 }}
                           onClick={() => setIsSearchExpanded(true)}
-                          className="flex h-9 w-[180px] cursor-pointer items-center justify-center gap-2 rounded-full border border-white/10 dark:border-white/5 bg-black/25 px-3.5 text-xs text-muted-foreground transition-all hover:bg-black/40 hover:border-white/20 shadow-md backdrop-blur-sm"
+                          className="text-muted-foreground flex h-9 w-[180px] cursor-pointer items-center justify-center gap-2 rounded-full border border-white/10 bg-black/25 px-3.5 text-xs shadow-md backdrop-blur-sm transition-all hover:border-white/20 hover:bg-black/40 dark:border-white/5"
                         >
-                          <Search className="h-4 w-4 shrink-0 text-muted-foreground dark:text-zinc-300" />
-                          <span className="text-sm text-muted-foreground dark:text-white select-none">
+                          <Search className="text-muted-foreground h-4 w-4 shrink-0 dark:text-zinc-300" />
+                          <span className="text-muted-foreground text-sm select-none dark:text-white">
                             Search countries...
                           </span>
                         </motion.div>
@@ -260,10 +292,10 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ type: "spring", stiffness: 400, damping: 30 }}
                           className={cn(
-                            "flex flex-col w-full rounded-xl border transition-all duration-200 shadow-md overflow-hidden",
+                            "flex w-full flex-col overflow-hidden rounded-xl border shadow-md transition-all duration-200",
                             isSearchFocused
                               ? "border-blue-500/40 bg-black/35 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                              : "border-white/10 dark:border-white/5 bg-black/20 hover:border-white/20"
+                              : "border-white/10 bg-black/20 hover:border-white/20 dark:border-white/5"
                           )}
                         >
                           <div className="relative z-10 flex h-9 items-center gap-2 px-3">
@@ -276,16 +308,16 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                               className={cn(
                                 "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
                                 foundationFilter.showFilters
-                                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                                  : "hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                                  ? "border border-blue-500/30 bg-blue-500/15 text-blue-400"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-white/10"
                               )}
                               title="Toggle filters"
                             >
                               <SlidersHorizontal className="h-3.5 w-3.5" />
                             </button>
 
-                            <Search className="h-4 w-4 shrink-0 text-muted-foreground dark:text-zinc-300" />
-                            
+                            <Search className="text-muted-foreground h-4 w-4 shrink-0 dark:text-zinc-300" />
+
                             <input
                               ref={searchInputRef}
                               type="text"
@@ -294,7 +326,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                               onChange={(e) => foundationFilter.setSearchTerm(e.target.value)}
                               onFocus={() => setIsSearchFocused(true)}
                               onBlur={() => setIsSearchFocused(false)}
-                              className="placeholder:text-muted-foreground dark:placeholder:text-zinc-300 flex-1 bg-transparent text-sm outline-none text-foreground dark:text-white"
+                              className="placeholder:text-muted-foreground text-foreground flex-1 bg-transparent text-sm outline-none dark:text-white dark:placeholder:text-zinc-300"
                             />
 
                             {foundationFilter.searchTerm && (
@@ -304,22 +336,23 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                                   foundationFilter.setSearchTerm("");
                                   searchInputRef.current?.focus();
                                 }}
-                                className="hover:bg-white/10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors"
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                                 title="Clear search"
                               >
-                                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                                <X className="text-muted-foreground hover:text-foreground h-3 w-3" />
                               </button>
                             )}
 
                             {/* Inline Clear All */}
-                            {(foundationFilter.searchTerm || foundationFilter.selectedArchetypes.length > 0) && (
+                            {(foundationFilter.searchTerm ||
+                              foundationFilter.selectedArchetypes.length > 0) && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   foundationFilter.handleClearFilters();
                                   setActiveCategory(null);
                                 }}
-                                className="hover:bg-white/10 px-2 py-1 rounded-md text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                className="text-muted-foreground hover:text-foreground shrink-0 rounded-md px-2 py-1 text-[10px] transition-colors hover:bg-white/10"
                                 title="Clear all"
                               >
                                 Clear All
@@ -335,16 +368,19 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
                                 transition={{ duration: 0.2, ease: "easeInOut" }}
-                                className="overflow-hidden border-t px-3 py-3 relative z-10"
+                                className="relative z-10 overflow-hidden border-t px-3 py-3"
                                 style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}
                               >
                                 {/* Active category toggle */}
-                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                <div className="mb-2 flex flex-wrap gap-1.5">
                                   {consolidatedCategories.map((cat) => {
-                                    const catArchetypes = getArchetypesByConsolidatedCategory(cat.id);
-                                    const selectedInCategory = foundationFilter.selectedArchetypes.filter((id) =>
-                                      catArchetypes.some((a) => a.id === id)
+                                    const catArchetypes = getArchetypesByConsolidatedCategory(
+                                      cat.id
                                     );
+                                    const selectedInCategory =
+                                      foundationFilter.selectedArchetypes.filter((id) =>
+                                        catArchetypes.some((a) => a.id === id)
+                                      );
                                     const isCatActive = activeCategory === cat.id;
 
                                     return (
@@ -355,7 +391,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                                           setActiveCategory(isCatActive ? null : cat.id);
                                         }}
                                         className={cn(
-                                          "rounded-md border px-2.5 py-1 text-xs font-medium transition-all flex items-center gap-1.5",
+                                          "flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-all",
                                           isCatActive
                                             ? "text-foreground border-blue-400/50 bg-blue-500/15"
                                             : "border-border/50 text-muted-foreground bg-transparent hover:border-blue-400/30"
@@ -381,49 +417,65 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                                       animate={{ opacity: 1, y: 0 }}
                                       exit={{ opacity: 0, y: -5 }}
                                       transition={{ duration: 0.15 }}
-                                      className="flex flex-wrap gap-1.5 rounded-lg bg-black/10 p-2 border border-border/20"
+                                      className="border-border/20 flex flex-wrap gap-1.5 rounded-lg border bg-black/10 p-2"
                                     >
-                                      {getArchetypesByConsolidatedCategory(activeCategory).map((archetype) => {
-                                        const isSelected = foundationFilter.selectedArchetypes.includes(archetype.id);
-                                        const Icon = archetype.icon;
+                                      {getArchetypesByConsolidatedCategory(activeCategory).map(
+                                        (archetype) => {
+                                          const isSelected =
+                                            foundationFilter.selectedArchetypes.includes(
+                                              archetype.id
+                                            );
+                                          const Icon = archetype.icon;
 
-                                        return (
-                                          <button
-                                            key={archetype.id}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              const isSel = foundationFilter.selectedArchetypes.includes(archetype.id);
-                                              if (isSel) {
-                                                foundationFilter.setSelectedArchetypes(
-                                                  foundationFilter.selectedArchetypes.filter((id) => id !== archetype.id)
-                                                );
-                                              } else {
-                                                foundationFilter.setSelectedArchetypes([
-                                                  ...foundationFilter.selectedArchetypes,
-                                                  archetype.id,
-                                                ]);
-                                              }
-                                            }}
-                                            className={cn(
-                                              "flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-all",
-                                              isSelected
-                                                ? "text-foreground border-blue-400/50 bg-blue-500/15"
-                                                : "border-border/50 text-muted-foreground bg-transparent hover:border-blue-400/30"
-                                            )}
-                                          >
-                                            {Icon && <Icon className={cn("h-3.5 w-3.5", archetype.color)} />}
-                                            <span>{archetype.name}</span>
-                                          </button>
-                                        );
-                                      })}
+                                          return (
+                                            <button
+                                              key={archetype.id}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const isSel =
+                                                  foundationFilter.selectedArchetypes.includes(
+                                                    archetype.id
+                                                  );
+                                                if (isSel) {
+                                                  foundationFilter.setSelectedArchetypes(
+                                                    foundationFilter.selectedArchetypes.filter(
+                                                      (id) => id !== archetype.id
+                                                    )
+                                                  );
+                                                } else {
+                                                  foundationFilter.setSelectedArchetypes([
+                                                    ...foundationFilter.selectedArchetypes,
+                                                    archetype.id,
+                                                  ]);
+                                                }
+                                              }}
+                                              className={cn(
+                                                "flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-all",
+                                                isSelected
+                                                  ? "text-foreground border-blue-400/50 bg-blue-500/15"
+                                                  : "border-border/50 text-muted-foreground bg-transparent hover:border-blue-400/30"
+                                              )}
+                                            >
+                                              {Icon && (
+                                                <Icon
+                                                  className={cn("h-3.5 w-3.5", archetype.color)}
+                                                />
+                                              )}
+                                              <span>{archetype.name}</span>
+                                            </button>
+                                          );
+                                        }
+                                      )}
                                     </motion.div>
                                   )}
                                 </AnimatePresence>
 
                                 {/* Selected Filters chips summary */}
                                 {foundationFilter.selectedArchetypes.length > 0 && (
-                                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t pt-2 border-border/10">
-                                    <span className="text-[10px] text-muted-foreground font-medium">Selected Archetypes:</span>
+                                  <div className="border-border/10 mt-2.5 flex flex-wrap items-center gap-1.5 border-t pt-2">
+                                    <span className="text-muted-foreground text-[10px] font-medium">
+                                      Selected Archetypes:
+                                    </span>
                                     {foundationFilter.selectedArchetypes.map((id) => {
                                       const archetype = archetypes.find((a) => a.id === id);
                                       if (!archetype) return null;
@@ -434,7 +486,9 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             foundationFilter.setSelectedArchetypes(
-                                              foundationFilter.selectedArchetypes.filter((x) => x !== id)
+                                              foundationFilter.selectedArchetypes.filter(
+                                                (x) => x !== id
+                                              )
                                             );
                                           }}
                                           className="flex items-center gap-1 rounded-full border border-blue-400/50 bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-300 transition-colors hover:bg-blue-500/20"
@@ -457,13 +511,13 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                 </div>
 
                 {/* Right column: Spacer matching right sidebar + spacing + padding, containing Continue button */}
-                <div className="shrink-0 flex justify-end items-center" style={{ width: "360px" }}>
+                <div className="flex shrink-0 items-center justify-end" style={{ width: "360px" }}>
                   <button
                     onClick={handleContinue}
-                    className="flex h-6 cursor-pointer items-center gap-1 rounded border border-border/30 bg-black/40 px-2.5 text-[9px] font-bold text-foreground transition-all hover:bg-black/60 hover:border-border/60 shadow-md shadow-black/20"
+                    className="flex h-7 cursor-pointer items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-3 text-[11px] font-bold text-zinc-950 shadow-md shadow-amber-500/20 transition-all hover:from-amber-400 hover:to-yellow-400"
                   >
-                    <span className="hidden sm:inline">Continue</span>
-                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    <span>Continue</span>
+                    <ArrowRight className="h-3 w-3 text-zinc-950" />
                   </button>
                 </div>
               </div>

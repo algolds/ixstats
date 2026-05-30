@@ -6,6 +6,7 @@ import { ChevronDown, Check, Search } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { EnhancedInputProps } from "./types";
+import { Input } from "~/components/ui/input";
 
 interface SelectOption {
   value: string;
@@ -244,13 +245,13 @@ export function GlassSelectBox({
               <div className="border-b border-gray-200/50 p-3 dark:border-gray-600/50">
                 <div className="relative">
                   <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-                  <input
+                  <Input
                     ref={inputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search options..."
-                    className="text-foreground placeholder:text-muted-foreground w-full rounded-md border border-gray-200/50 bg-transparent py-2 pr-3 pl-10 text-sm focus:border-[var(--primitive-primary)] focus:outline-none dark:border-gray-600/50"
+                    className="text-foreground h-9 w-full border-gray-200/50 bg-transparent py-1 dark:border-gray-600/50"
                   />
                 </div>
               </div>

@@ -155,7 +155,25 @@ const baseInitialState: BuilderState = {
   economicInputs: null,
   governmentComponents: [],
   taxSystemData: null,
-  governmentStructure: null,
+  governmentStructure: {
+    structure: {
+      governmentName: "Government of the Nation",
+      governmentType: "Other",
+      headOfState: "",
+      headOfGovernment: "",
+      legislatureName: "",
+      executiveName: "",
+      judicialName: "",
+      totalBudget: 350000000,
+      fiscalYear: "Calendar Year",
+      budgetCurrency: "USD",
+    },
+    departments: [],
+    budgetAllocations: [],
+    revenueSources: [],
+    isValid: true,
+    errors: { structure: [], departments: {}, budget: [], revenue: [] },
+  },
   completedSteps: [],
   activeCoreTab: "identity",
   activeIdentitySubTab: "basic",
@@ -378,6 +396,26 @@ export function useBuilderState(
         emergencyNumber: nationalIdentity?.emergencyNumber || "",
         postalCodeFormat: nationalIdentity?.postalCodeFormat || "",
         nationalSport: nationalIdentity?.nationalSport || "",
+        nationalAnimal: nationalIdentity?.nationalAnimal || "",
+        nationalBird: nationalIdentity?.nationalBird || "",
+        nationalFish: nationalIdentity?.nationalFish || "",
+        founders: nationalIdentity?.founders || "",
+        nationalFlower: nationalIdentity?.nationalFlower || "",
+        nationalDish: nationalIdentity?.nationalDish || "",
+        nationalFruit: nationalIdentity?.nationalFruit || "",
+        nationalDrink: nationalIdentity?.nationalDrink || "",
+        nationalInstrument: nationalIdentity?.nationalInstrument || "",
+        nationalSymbol: nationalIdentity?.nationalSymbol || "",
+        nationalAnimalImage: nationalIdentity?.nationalAnimalImage || "",
+        nationalBirdImage: nationalIdentity?.nationalBirdImage || "",
+        nationalFishImage: nationalIdentity?.nationalFishImage || "",
+        foundersImage: nationalIdentity?.foundersImage || "",
+        nationalFlowerImage: nationalIdentity?.nationalFlowerImage || "",
+        nationalDishImage: nationalIdentity?.nationalDishImage || "",
+        nationalFruitImage: nationalIdentity?.nationalFruitImage || "",
+        nationalDrinkImage: nationalIdentity?.nationalDrinkImage || "",
+        nationalInstrumentImage: nationalIdentity?.nationalInstrumentImage || "",
+        nationalSymbolImage: nationalIdentity?.nationalSymbolImage || "",
         weekStartDay: nationalIdentity?.weekStartDay || "monday",
       };
 
@@ -428,6 +466,26 @@ export function useBuilderState(
           ),
           budgetAllocations: existingGovernment.budgetAllocations,
           revenueSources: existingGovernment.revenueSources,
+          isValid: true,
+          errors: { structure: [], departments: {}, budget: [], revenue: [] },
+        };
+      } else if (existingCountry) {
+        governmentStructure = {
+          structure: {
+            governmentName: `Government of ${existingCountry.name}`,
+            governmentType: (existingCountry.governmentType || "Other") as any,
+            headOfState: "",
+            headOfGovernment: "",
+            legislatureName: "",
+            executiveName: "",
+            judicialName: "",
+            totalBudget: currentTotalGdp * 0.35,
+            fiscalYear: "Calendar Year",
+            budgetCurrency: typedCountry.currencyName || "USD",
+          },
+          departments: [],
+          budgetAllocations: [],
+          revenueSources: [],
           isValid: true,
           errors: { structure: [], departments: {}, budget: [], revenue: [] },
         };
@@ -1201,10 +1259,91 @@ export function useBuilderState(
             newState.selectedCountry = data;
             if (data) {
               newState.economicInputs = sanitizeEconomicInputs(createDefaultEconomicInputs(data));
+              // Also update/initialize government structure with the foundation defaults if it hasn't been edited
+              if (
+                !newState.governmentStructure ||
+                !newState.governmentStructure.structure ||
+                newState.governmentStructure.structure.governmentName === "Government of the Nation"
+              ) {
+                newState.governmentStructure = {
+                  structure: {
+                    governmentName: `Government of ${data.name}`,
+                    governmentType: (data.governmentType || "Other") as any,
+                    headOfState: "",
+                    headOfGovernment: "",
+                    legislatureName: "",
+                    executiveName: "",
+                    judicialName: "",
+                    totalBudget: (data.gdp || 1000000000) * 0.35,
+                    fiscalYear: "Calendar Year",
+                    budgetCurrency: data.currency || "USD",
+                  },
+                  departments: [],
+                  budgetAllocations: [],
+                  revenueSources: [],
+                  isValid: true,
+                  errors: { structure: [], departments: {}, budget: [], revenue: [] },
+                };
+              }
             }
             break;
           case "core":
             newState.economicInputs = sanitizeEconomicInputs(data);
+            if (data) {
+              // Update governmentStructure defaults using user's custom name, gdp, currency
+              const inputs = data as EconomicInputs;
+              const hasCustomizedStructure =
+                newState.governmentStructure &&
+                newState.governmentStructure.structure &&
+                newState.governmentStructure.structure.governmentName !==
+                  "Government of the Nation" &&
+                !newState.governmentStructure.structure.governmentName.startsWith(
+                  "Government of Custom Nation"
+                ) &&
+                (!newState.selectedCountry ||
+                  newState.governmentStructure.structure.governmentName !==
+                    `Government of ${newState.selectedCountry.name}`);
+
+              if (
+                !newState.governmentStructure ||
+                !newState.governmentStructure.structure ||
+                !hasCustomizedStructure
+              ) {
+                const countryName =
+                  inputs.countryName || newState.selectedCountry?.name || "the Nation";
+                const govType = inputs.nationalIdentity?.governmentType || "Other";
+                const nominalGDP = inputs.coreIndicators?.nominalGDP || 1000000000;
+                const currency = inputs.nationalIdentity?.currency || "USD";
+
+                newState.governmentStructure = {
+                  ...newState.governmentStructure,
+                  structure: {
+                    governmentName: `Government of ${countryName}`,
+                    governmentType: govType as any,
+                    headOfState: newState.governmentStructure?.structure?.headOfState || "",
+                    headOfGovernment:
+                      newState.governmentStructure?.structure?.headOfGovernment || "",
+                    legislatureName: newState.governmentStructure?.structure?.legislatureName || "",
+                    executiveName: newState.governmentStructure?.structure?.executiveName || "",
+                    judicialName: newState.governmentStructure?.structure?.judicialName || "",
+                    totalBudget: nominalGDP * 0.35,
+                    fiscalYear:
+                      newState.governmentStructure?.structure?.fiscalYear || "Calendar Year",
+                    budgetCurrency: currency,
+                  },
+                  departments: newState.governmentStructure?.departments || [],
+                  budgetAllocations: newState.governmentStructure?.budgetAllocations || [],
+                  revenueSources: newState.governmentStructure?.revenueSources || [],
+                  isValid: true,
+                  errors: newState.governmentStructure?.errors || {
+                    structure: [],
+                    departments: {},
+                    budget: [],
+                    revenue: [],
+                  },
+                };
+              }
+            }
             break;
           case "government":
             newState.governmentComponents = data;

@@ -223,6 +223,26 @@ export interface NationalIdentityData {
   postalCodeFormat?: string;
   weekStartDay?: string;
   nationalSport?: string;
+  nationalAnimal?: string;
+  nationalBird?: string;
+  nationalFish?: string;
+  founders?: string;
+  nationalFlower?: string;
+  nationalDish?: string;
+  nationalFruit?: string;
+  nationalDrink?: string;
+  nationalInstrument?: string;
+  nationalSymbol?: string;
+  nationalAnimalImage?: string;
+  nationalBirdImage?: string;
+  nationalFishImage?: string;
+  foundersImage?: string;
+  nationalFlowerImage?: string;
+  nationalDishImage?: string;
+  nationalFruitImage?: string;
+  nationalDrinkImage?: string;
+  nationalInstrumentImage?: string;
+  nationalSymbolImage?: string;
   coordinatesLatitude?: string;
   coordinatesLongitude?: string;
 }

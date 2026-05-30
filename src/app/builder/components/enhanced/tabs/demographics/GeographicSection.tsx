@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { EnhancedSlider } from "../../../../primitives/enhanced";
 import { Building2, MapPin, Plus, Minus, Settings, Users, Target } from "lucide-react";
 import type { DemographicsConfiguration, RegionDistribution } from "~/types/economy-builder";
+import { Input } from "~/components/ui/input";
 
 interface GeographicSectionProps {
   demographics: DemographicsConfiguration;
@@ -115,11 +116,10 @@ export function GeographicSection({
                     <MapPin className="h-4 w-4" />
                     Region Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={region.name}
                     onChange={(e) => onRegionChange(index, "name", e.target.value)}
-                    className="bg-background border-border focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
                     placeholder="Enter region name"
                   />
                 </div>
