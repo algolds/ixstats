@@ -39,7 +39,7 @@ export function AccountManagerModal({
     >
       <DialogContent className="max-h-[90vh] max-w-lg overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Account Manager</DialogTitle>
+          <DialogTitle></DialogTitle>
         </DialogHeader>
         <div className="overflow-x-hidden overflow-y-auto">
           <EnhancedAccountManager

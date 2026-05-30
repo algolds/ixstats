@@ -114,10 +114,10 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
             transition={{ type: "spring", stiffness: 400, damping: 28 }}
           >
             <div
-              className="overflow-hidden rounded-2xl border shadow-2xl"
+              className="overflow-hidden rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl"
               style={{
-                background: "var(--color-glass)",
-                borderColor: "var(--color-border-primary)",
+                background:
+                  "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
               }}

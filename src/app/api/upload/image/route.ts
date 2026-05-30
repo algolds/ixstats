@@ -64,8 +64,6 @@ function sanitizeSvg(svgContent: string): string {
   return sanitized;
 }
 
-// Get base path for production deployments (e.g., /projects/ixstats)
-const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 function generateSafeFileName(originalName: string, userId: string, fileType: string): string {
   // Create a hash combining user ID and timestamp for uniqueness
@@ -141,11 +139,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate safe file name
-    const fileName = generateSafeFileName(file.name, userId, file.type);
+    // Generate safe file name and ensure no directory traversal
+    const fileName = path.basename(generateSafeFileName(file.name, userId, file.type));
+
 
     // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "images", "uploads");
+    const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "public", "images", "uploads");
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
       console.log(`[ImageUpload] Created directory: ${uploadsDir}`);
@@ -168,10 +167,8 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(uploadsDir, fileName);
     await writeFile(filePath, buffer);
 
-    // Generate public URL with base path for production
-    const publicUrl = BASE_PATH
-      ? `${BASE_PATH}/images/uploads/${fileName}`
-      : `/images/uploads/${fileName}`;
+    // Generate public URL without base path (dynamic base path resolved on frontend)
+    const publicUrl = `/images/uploads/${fileName}`;
 
     console.log(
       `[ImageUpload] Successfully saved ${file.name} as ${fileName} (${file.size} bytes) for user ${userId} at ${publicUrl}`

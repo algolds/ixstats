@@ -24,8 +24,10 @@ async function poll() {
   }
 }
 
-await poll();
-setInterval(poll, INTERVAL_MS);
+void (async () => {
+  await poll();
+  setInterval(poll, INTERVAL_MS);
+})();
 
 process.on("SIGTERM", () => process.exit(0));
 process.on("SIGINT", () => process.exit(0));

@@ -252,7 +252,7 @@ export function EnhancedAccountManager({
           </div>
         </div>
         <PreText className="text-muted-foreground text-sm">
-          Manage your strategic communication personas
+          Manage your Thinkpages personas
         </PreText>
       </CardHeader>
 

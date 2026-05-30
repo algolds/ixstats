@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
 import Link from "next/link";
+import { usePermissions } from "~/hooks/usePermissions";
 import {
   MoreHorizontal,
   Pin,
@@ -37,6 +38,8 @@ import {
   Loader2,
   X,
   Copy,
+  Briefcase,
+  Activity,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -67,12 +70,16 @@ import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
 function proxyDiscordUrl(url: string): string {
+  if (!url) return "";
   try {
     const parsed = new URL(url as string);
     if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
-      return `/api/proxy-discord-image?url=${encodeURIComponent(url as string)}`;
+      return withBasePath(`/api/proxy-discord-image?url=${encodeURIComponent(url as string)}`);
     }
   } catch {}
+  if (url.startsWith("/")) {
+    return withBasePath(url);
+  }
   return url;
 }
 
@@ -231,6 +238,33 @@ const ThinkpagesPostComponent = ({
   const notify = useNotify();
   const blurbMeta = parseBlurbMeta(post);
 
+  const { user: currentUserData } = usePermissions();
+  const currentUserRoleLevel = currentUserData?.role?.level ?? 100;
+
+  const isOwnPost = currentUserAccountId === post.account.id;
+  const isCurrentUserStaff = currentUserRoleLevel === 20;
+  const targetUserClerkUserId = post.account?.clerkUserId;
+
+  const targetUserQuery = api.users.getUserWithRole.useQuery(
+    { clerkUserId: targetUserClerkUserId || "" },
+    {
+      enabled: isCurrentUserStaff && !isOwnPost && !!targetUserClerkUserId,
+      staleTime: 5 * 60_000,
+    }
+  );
+
+  const targetUserRoleLevel = targetUserQuery.data?.user?.role?.level ?? 100;
+
+  const canEdit =
+    isOwnPost ||
+    currentUserRoleLevel <= 10 ||
+    (currentUserRoleLevel === 20 && targetUserRoleLevel >= 20);
+
+  const canDelete =
+    isOwnPost ||
+    currentUserRoleLevel <= 10 ||
+    (currentUserRoleLevel === 20 && targetUserRoleLevel >= 20);
+
   const visualizations = React.useMemo(() => {
     try {
       if (typeof post.visualizations === "string") {
@@ -252,7 +286,7 @@ const ThinkpagesPostComponent = ({
   }, [post.content]);
 
   const mediaAttachments = React.useMemo(() => {
-    return [
+    const raw = [
       ...(post.mediaAttachments ?? []),
       ...rawImageUrls.map((url, i) => ({
         id: `raw_${i}`,
@@ -261,6 +295,10 @@ const ThinkpagesPostComponent = ({
         filename: `image_${i + 1}`,
       })),
     ];
+    return raw.map((att: any) => ({
+      ...att,
+      url: proxyDiscordUrl(att.url),
+    }));
   }, [post.mediaAttachments, rawImageUrls]);
 
   // Remove raw image URLs from the content string we pass to formatters
@@ -283,7 +321,7 @@ const ThinkpagesPostComponent = ({
   }, [post.repostOf?.content]);
 
   const repostMediaAttachments = React.useMemo(() => {
-    return [
+    const raw = [
       ...(post.repostOf?.mediaAttachments ?? []),
       ...repostImageUrls.map((url, i) => ({
         id: `repost_raw_${i}`,
@@ -292,6 +330,10 @@ const ThinkpagesPostComponent = ({
         filename: `repost_image_${i + 1}`,
       })),
     ];
+    return raw.map((att: any) => ({
+      ...att,
+      url: proxyDiscordUrl(att.url),
+    }));
   }, [post.repostOf?.mediaAttachments, repostImageUrls]);
 
   const cleanRepostContent = React.useMemo(() => {
@@ -409,11 +451,11 @@ const ThinkpagesPostComponent = ({
   }, [flagPostMutation, post.id, currentUserAccountId, flagReason]);
 
   const handleEdit = useCallback(() => {
-    if (!currentUserAccountId || post.account.id !== currentUserAccountId) return;
+    if (!canEdit) return;
     setEditText(post.content);
     setShowEditComposer(true);
     setShowMoreOptions(false);
-  }, [post.content, post.account.id, currentUserAccountId]);
+  }, [post.content, canEdit]);
 
   const handleSubmitEdit = useCallback(async () => {
     if (!editText.trim() || editText === post.content) {
@@ -434,10 +476,10 @@ const ThinkpagesPostComponent = ({
   }, [updatePostMutation, post.id, editText, post.content, currentUserAccountId]);
 
   const handleDelete = useCallback(() => {
-    if (!currentUserAccountId || post.account.id !== currentUserAccountId) return;
+    if (!canDelete) return;
     setShowDeleteConfirm(true);
     setShowMoreOptions(false);
-  }, [post.account.id, currentUserAccountId]);
+  }, [canDelete]);
 
   const handleConfirmDelete = useCallback(async () => {
     try {
@@ -524,7 +566,7 @@ const ThinkpagesPostComponent = ({
           <div className="ml-4 space-y-2 border-l-2 border-blue-500/30 pl-4">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarImage src={post.parentPost.account.profileImageUrl} />
+                <AvatarImage src={proxyDiscordUrl(post.parentPost.account.profileImageUrl)} />
                 <AvatarFallback
                   className={`text-xs font-semibold ${ACCOUNT_TYPE_COLORS[post.parentPost.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
                 >
@@ -566,7 +608,7 @@ const ThinkpagesPostComponent = ({
       <div className="flex gap-3">
         <button onClick={() => onAccountClick?.(post.account.id)} className="shrink-0">
           <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
-            <AvatarImage src={post.account.profileImageUrl} />
+            <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
             <AvatarFallback
               className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
             >
@@ -634,7 +676,7 @@ const ThinkpagesPostComponent = ({
               <Card className="rounded-lg border-green-500/30 bg-green-500/10 p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={post.repostOf.account.profileImageUrl} />
+                    <AvatarImage src={proxyDiscordUrl(post.repostOf.account.profileImageUrl)} />
                     <AvatarFallback className="text-xs font-semibold">
                       {post.repostOf.account.displayName
                         ?.split(" ")
@@ -967,39 +1009,41 @@ const ThinkpagesPostComponent = ({
                 <MoreHorizontal className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                {currentUserAccountId === post.account.id && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePin();
-                      }}
-                    >
-                      <Pin className="h-4 w-4" />
-                      {post.pinned ? "Unpin" : "Pin"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit();
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete();
-                      }}
-                      variant="destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
+                {isOwnPost && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePin();
+                    }}
+                  >
+                    <Pin className="h-4 w-4" />
+                    {post.pinned ? "Unpin" : "Pin"}
+                  </DropdownMenuItem>
                 )}
+                {canEdit && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit();
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                    }}
+                    variant="destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+                {(isOwnPost || canEdit || canDelete) && <DropdownMenuSeparator />}
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1033,7 +1077,7 @@ const ThinkpagesPostComponent = ({
               >
                 <div className="flex gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={post.account.profileImageUrl} />
+                    <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
                     <AvatarFallback
                       className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
                     >
@@ -1341,7 +1385,9 @@ interface PostVisualizationRendererProps {
       | "trade_flow"
       | "gdp_growth"
       | "demographics"
-      | "budget_debt";
+      | "budget_debt"
+      | "labor_market"
+      | "national_vitality";
     title: string;
     config?: any;
   };
@@ -1360,7 +1406,8 @@ function PostVisualizationRenderer({ viz, countryId }: PostVisualizationRenderer
         (type === "gdp_growth" ||
           type === "demographics" ||
           type === "budget_debt" ||
-          type === "economic_chart"),
+          type === "economic_chart" ||
+          type === "labor_market"),
       staleTime: 5 * 60_000,
     }
   );
@@ -1389,11 +1436,20 @@ function PostVisualizationRenderer({ viz, countryId }: PostVisualizationRenderer
     }
   );
 
+  const vitalityQuery = api.countries.getActivityRingsData.useQuery(
+    { countryId },
+    {
+      enabled: !!countryId && type === "national_vitality",
+      staleTime: 5 * 60_000,
+    }
+  );
+
   const isLoading =
     economicQuery.isLoading ||
     historyQuery.isLoading ||
     diplomaticQuery.isLoading ||
-    tradeQuery.isLoading;
+    tradeQuery.isLoading ||
+    vitalityQuery.isLoading;
 
   if (isLoading) {
     return (
@@ -1795,6 +1851,124 @@ function PostVisualizationRenderer({ viz, countryId }: PostVisualizationRenderer
               )}
             >
               {debtGdp}%
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // 7. Labor Market & Income Distribution
+  if (type === "labor_market") {
+    const econ = economicQuery.data;
+    if (!econ) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-teal-500/10 bg-teal-500/[0.02] p-3.5 text-center text-xs">
+          No labor market metrics available
+        </Card>
+      );
+    }
+
+    const unemp = econ.unemploymentRate || 5.2;
+    const gini = econ.incomeInequalityGini || 32;
+    const avgIncome = econ.averageAnnualIncome || 35000;
+    const minWage = econ.minimumWage || 8.5;
+
+    return (
+      <Card className="glass-hierarchy-child border-teal-500/10 bg-teal-500/[0.02] p-3.5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <Briefcase className="h-3.5 w-3.5 text-teal-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">Labor & Income</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Unemployment Rate</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{unemp}%</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Gini Coefficient</div>
+            <div className="mt-0.5 text-sm font-bold text-white">{gini}</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Avg Annual Income</div>
+            <div className="mt-0.5 text-sm font-bold text-white">${avgIncome.toLocaleString()}</div>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
+            <div className="text-muted-foreground text-[10px]">Minimum Wage</div>
+            <div className="mt-0.5 text-sm font-bold text-white">${minWage}/hr</div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // 8. National Vitality & Well-being
+  if (type === "national_vitality") {
+    const vit = vitalityQuery.data;
+    if (!vit) {
+      return (
+        <Card className="glass-hierarchy-child text-muted-foreground border-red-500/10 bg-red-500/[0.02] p-3.5 text-center text-xs">
+          No vitality metrics available
+        </Card>
+      );
+    }
+
+    const econVit = vit.economicVitality || 50;
+    const popWell = vit.populationWellbeing || 50;
+    const diploStand = vit.diplomaticStanding || 50;
+    const govEff = vit.governmentalEfficiency || 50;
+
+    return (
+      <Card className="glass-hierarchy-child border-red-500/10 bg-red-500/[0.02] p-3.5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <Activity className="h-3.5 w-3.5 text-red-400" />
+            {title}
+          </span>
+          <span className="text-muted-foreground text-[10px]">National Vitality</span>
+        </div>
+        <div className="space-y-2">
+          {/* Economic Vitality */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-white">
+              <span className="text-muted-foreground">Economic Vitality</span>
+              <span className="font-semibold text-emerald-400">{econVit}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-full bg-emerald-500" style={{ width: `${econVit}%` }} />
+            </div>
+          </div>
+          {/* Population Wellbeing */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-white">
+              <span className="text-muted-foreground">Population Wellbeing</span>
+              <span className="font-semibold text-blue-400">{popWell}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-full bg-blue-500" style={{ width: `${popWell}%` }} />
+            </div>
+          </div>
+          {/* Diplomatic Standing */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-white">
+              <span className="text-muted-foreground">Diplomatic Standing</span>
+              <span className="font-semibold text-purple-400">{diploStand}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-full bg-purple-500" style={{ width: `${diploStand}%` }} />
+            </div>
+          </div>
+          {/* Government Efficiency */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-white">
+              <span className="text-muted-foreground">Government Efficiency</span>
+              <span className="font-semibold text-amber-400">{govEff}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-full bg-amber-500" style={{ width: `${govEff}%` }} />
             </div>
           </div>
         </div>

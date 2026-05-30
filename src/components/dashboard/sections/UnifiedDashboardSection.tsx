@@ -190,7 +190,7 @@ function groupWikiEdits(activities: any[]): any[] {
         const isNew = group.some((g: any) => g.content?.title?.startsWith("New wiki page"));
         result.push({
           ...group[0],
-          id: `wiki-grouped-${pageTitle}`,
+          id: `wiki-grouped-${pageTitle}-${i}`,
           content: {
             ...group[0].content,
             title: isNew ? `New wiki page: ${pageTitle}` : pageTitle,
@@ -1580,6 +1580,10 @@ function BlurbResponseModal({
     _count?: { responses: number };
   };
 }) {
+  const [newResponse, setNewResponse] = useState("");
+  const utils = api.useUtils();
+  const { isSignedIn } = useUser();
+
   const {
     data: responsesData,
     fetchNextPage,
@@ -1592,6 +1596,21 @@ function BlurbResponseModal({
       getNextPageParam: (lastPage: any) => lastPage.nextCursor,
     }
   );
+
+  const { data: myResponse } = api.blurbs.getMyResponse.useQuery(
+    { promptId: prompt.id },
+    { enabled: open && !!isSignedIn }
+  );
+
+  const submitMutation = api.blurbs.submitResponse.useMutation({
+    onSuccess: () => {
+      setNewResponse("");
+      utils.blurbs.getResponsesForPrompt.invalidate({ promptId: prompt.id });
+      utils.blurbs.getMyResponse.invalidate({ promptId: prompt.id });
+      utils.blurbs.getActivePrompts.invalidate();
+      utils.blurbs.getBlurbCount.invalidate();
+    },
+  });
 
   const responses = responsesData?.pages.flatMap((p: any) => p.responses) ?? [];
 
@@ -1618,6 +1637,60 @@ function BlurbResponseModal({
             </div>
           </div>
         </DialogHeader>
+
+        {/* Submission Form (If active and not answered yet) */}
+        {isSignedIn && !myResponse && (
+          <div className="border-border/20 bg-muted/10 border-b px-5 py-3">
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={newResponse}
+                onChange={(e) => setNewResponse(e.target.value)}
+                placeholder="Share your country's perspective..."
+                maxLength={1000}
+                rows={3}
+                className="w-full resize-none rounded-lg border border-border/40 bg-white/5 px-3 py-2 text-xs focus:border-purple-500 focus:outline-none"
+              />
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{newResponse.length}/1000 characters</span>
+                <Button
+                  size="sm"
+                  className="h-6 bg-purple-600 px-3 text-[10px] text-white hover:bg-purple-700"
+                  onClick={() =>
+                    submitMutation.mutate({
+                      promptId: prompt.id,
+                      content: newResponse,
+                    })
+                  }
+                  disabled={!newResponse.trim() || newResponse.length > 1000 || submitMutation.isPending}
+                >
+                  {submitMutation.isPending ? "Submitting..." : "Submit Response"}
+                </Button>
+              </div>
+              {submitMutation.error && (
+                <p className="text-[10px] text-red-400 mt-1">{submitMutation.error.message}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* User's existing response */}
+        {isSignedIn && myResponse && (
+          <div className="border-border/20 bg-emerald-500/5 border-b px-5 py-3">
+            <h4 className="text-emerald-400 mb-1 text-[10px] font-bold tracking-wider uppercase">Your Submitted Response</h4>
+            <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-relaxed">
+              {myResponse.content}
+            </p>
+          </div>
+        )}
+
+        {/* Sign in prompt */}
+        {!isSignedIn && (
+          <div className="border-border/20 bg-muted/10 border-b px-5 py-3 text-center">
+            <p className="text-muted-foreground text-xs">
+              Sign in to submit your country's response.
+            </p>
+          </div>
+        )}
 
         {/* Responses */}
         <div className="flex-1 space-y-2 overflow-y-auto px-5 py-3">
@@ -1673,14 +1746,14 @@ function BlurbResponseModal({
         {/* Footer */}
         <div className="border-border/30 flex items-center justify-between border-t px-5 py-3">
           <Link
-            href={createUrl(`/thinkpages?prompt=${prompt.slug ?? prompt.id}`)}
+            href={createUrl(`/blurbs/${prompt.slug ?? prompt.id}`)}
             className="inline-flex items-center gap-1.5 text-xs text-purple-400 transition-colors hover:text-purple-300"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt
           </Link>
           <Link
-            href={createUrl("/thinkpages")}
+            href={createUrl("/blurbs")}
             className="text-muted-foreground hover:text-foreground text-xs transition-colors"
           >
             All prompts →

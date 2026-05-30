@@ -17,6 +17,10 @@ const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
+const APP_URL = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://maps.ixwiki.com").replace(/\/$/, "");
+const CLEAN_BASE_PATH = BASE_PATH
+  ? (BASE_PATH.startsWith("/") ? BASE_PATH : `/${BASE_PATH}`).replace(/\/$/, "")
+  : "";
 
 const DEFAULT_COUNTRY_ID = process.env.DISCORD_POST_COUNTRY_ID || "";
 
@@ -37,7 +41,7 @@ async function downloadDiscordImage(
     const filename = `discord_${messageId}_${index}.${ext}`;
     const filePath = path.join(DISCORD_IMAGE_DIR, filename);
 
-    if (existsSync(filePath)) return `${BASE_PATH}/images/discord/${filename}`;
+    if (existsSync(filePath)) return `${CLEAN_BASE_PATH}/images/discord/${filename}`;
 
     const response = await fetch(url, {
       headers: {
@@ -51,7 +55,7 @@ async function downloadDiscordImage(
     const buffer = Buffer.from(await response.arrayBuffer());
     writeFileSync(filePath, buffer);
 
-    return `${BASE_PATH}/images/discord/${filename}`;
+    return `${CLEAN_BASE_PATH}/images/discord/${filename}`;
   } catch {
     return url;
   }
@@ -691,4 +695,234 @@ async function getDefaultCountryId(db: PrismaClient): Promise<string> {
   const country = await db.country.findFirst({ select: { id: true } });
   if (country) return country.id;
   throw new Error("No country found in database for bot account");
+}
+
+export function mapThinkpagesReactionToDiscord(reactionType: string): string {
+  if (reactionType.startsWith("discord:")) {
+    const parts = reactionType.split(":");
+    const name = parts[1] || "";
+    const id = parts[2] || "";
+    if (id) return `${name}:${id}`;
+    return name;
+  }
+
+  switch (reactionType) {
+    case "like":
+      return "❤️";
+    case "laugh":
+      return "😂";
+    case "angry":
+      return "😡";
+    case "sad":
+      return "😢";
+    case "fire":
+      return "🔥";
+    case "thumbsup":
+      return "👍";
+    case "thumbsdown":
+      return "👎";
+    default:
+      return reactionType;
+  }
+}
+
+export function formatThinkPagesEmbed(
+  post: { id: string; content: string; ixTimeTimestamp?: Date | string },
+  account: { displayName: string; username: string; verified: boolean; profileImageUrl?: string | null },
+  mediaUrls?: string[]
+): any[] {
+  const url = `${APP_URL}${CLEAN_BASE_PATH}/thinkpages/post/${post.id}`;
+  
+  const authorName = `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`;
+  
+  const avatarUrl = account.profileImageUrl 
+    ? (account.profileImageUrl.startsWith("http") ? account.profileImageUrl : `${APP_URL}${account.profileImageUrl}`)
+    : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
+
+  const timestamp = post.ixTimeTimestamp 
+    ? new Date(post.ixTimeTimestamp).toISOString()
+    : new Date().toISOString();
+
+  const embedColor = 0x9835ff;
+
+  const description = post.content;
+
+  const embeds: any[] = [
+    {
+      url,
+      author: {
+        name: authorName,
+        icon_url: avatarUrl,
+        url,
+      },
+      description,
+      color: embedColor,
+      footer: {
+        text: "ThinkPages · Shared via IxStates",
+        icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
+      },
+      timestamp,
+    }
+  ];
+
+  if (mediaUrls && mediaUrls.length > 0) {
+    const urls = mediaUrls.map(u => u.startsWith("http") ? u : `${APP_URL}${u}`);
+    embeds[0].image = { url: urls[0] };
+    
+    for (let i = 1; i < urls.length; i++) {
+      embeds.push({
+        url,
+        image: { url: urls[i] },
+      });
+    }
+  }
+
+  return embeds;
+}
+
+export async function postThinkPagesToDiscord(
+  db: PrismaClient,
+  post: { id: string; content: string; ixTimeTimestamp?: Date | string },
+  account: { displayName: string; username: string; verified: boolean; profileImageUrl?: string | null },
+  mediaUrls?: string[]
+): Promise<boolean> {
+  if (!DISCORD_BOT_TOKEN) {
+    console.warn("[DiscordPoster] DISCORD_BOT_TOKEN not set, skipping autopost to Discord");
+    return false;
+  }
+
+  try {
+    const embeds = formatThinkPagesEmbed(post, account, mediaUrls);
+
+    const res = await fetch(
+      `${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "Content-Type": "application/json",
+          "User-Agent": "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)",
+        },
+        body: JSON.stringify({ embeds }),
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+
+    if (!res.ok) {
+      console.error(`[DiscordPoster] Failed to post message to Discord: ${res.status} ${res.statusText}`);
+      return false;
+    }
+
+    const discordMsg = (await res.json()) as { id: string };
+    console.log(`[DiscordPoster] Autoposted thinkpages post ${post.id} to Discord as msg ${discordMsg.id}`);
+
+    // Update the post content in the database to append the marker
+    await db.thinkpagesPost.update({
+      where: { id: post.id },
+      data: {
+        content: `${post.content}\n\n[DiscordMsg:${discordMsg.id}]`,
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error("[DiscordPoster] Error autoposting to Discord:", error);
+    return false;
+  }
+}
+
+export async function editDiscordMessage(
+  messageId: string,
+  post: { id: string; content: string; ixTimeTimestamp?: Date | string },
+  account: { displayName: string; username: string; verified: boolean; profileImageUrl?: string | null },
+  mediaUrls?: string[]
+): Promise<boolean> {
+  if (!DISCORD_BOT_TOKEN) return false;
+  try {
+    const embeds = formatThinkPagesEmbed(post, account, mediaUrls);
+    const res = await fetch(
+      `${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages/${messageId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "Content-Type": "application/json",
+          "User-Agent": "IxStats/1.0",
+        },
+        body: JSON.stringify({ embeds }),
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+    return res.ok;
+  } catch (error) {
+    console.error(`[DiscordPoster] Error editing message ${messageId}:`, error);
+    return false;
+  }
+}
+
+export async function deleteDiscordMessage(messageId: string): Promise<boolean> {
+  if (!DISCORD_BOT_TOKEN) return false;
+  try {
+    const res = await fetch(
+      `${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages/${messageId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "User-Agent": "IxStats/1.0",
+        },
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+    return res.ok;
+  } catch (error) {
+    console.error(`[DiscordPoster] Error deleting message ${messageId}:`, error);
+    return false;
+  }
+}
+
+export async function addDiscordReaction(messageId: string, reactionType: string): Promise<boolean> {
+  if (!DISCORD_BOT_TOKEN) return false;
+  try {
+    const emoji = mapThinkpagesReactionToDiscord(reactionType);
+    const encodedEmoji = encodeURIComponent(emoji);
+    const res = await fetch(
+      `${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages/${messageId}/reactions/${encodedEmoji}/@me`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "User-Agent": "IxStats/1.0",
+        },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    return res.ok;
+  } catch (error) {
+    console.error(`[DiscordPoster] Error adding reaction ${reactionType} to message ${messageId}:`, error);
+    return false;
+  }
+}
+
+export async function removeDiscordReaction(messageId: string, reactionType: string): Promise<boolean> {
+  if (!DISCORD_BOT_TOKEN) return false;
+  try {
+    const emoji = mapThinkpagesReactionToDiscord(reactionType);
+    const encodedEmoji = encodeURIComponent(emoji);
+    const res = await fetch(
+      `${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages/${messageId}/reactions/${encodedEmoji}/@me`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "User-Agent": "IxStats/1.0",
+        },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    return res.ok;
+  } catch (error) {
+    console.error(`[DiscordPoster] Error removing reaction ${reactionType} from message ${messageId}:`, error);
+    return false;
+  }
 }

@@ -82,6 +82,8 @@ const CreatePostSchema = z.object({
           "gdp_growth",
           "demographics",
           "budget_debt",
+          "labor_market",
+          "national_vitality",
         ]),
         title: z.string(),
         config: z
@@ -89,10 +91,13 @@ const CreatePostSchema = z.object({
             chartType: z.string().optional(),
             dataSource: z.string().optional(),
             timeRange: z
-              .object({
-                start: z.string().optional(),
-                end: z.string().optional(),
-              })
+              .union([
+                z.string(),
+                z.object({
+                  start: z.string().optional(),
+                  end: z.string().optional(),
+                }),
+              ])
               .optional(),
             metrics: z.array(z.string()).optional(),
             countries: z.array(z.string()).optional(),
@@ -916,6 +921,27 @@ export const thinkpagesRouter = createTRPCRouter({
       console.error("[ThinkPages] Failed to award post credits:", error);
     }
 
+    // 📣 Autopost public, non-repost posts to Discord IxTwitter channel
+    if (post.visibility === "public" && post.postType !== "repost") {
+      try {
+        const { postThinkPagesToDiscord } = await import("~/lib/discord-ixtwitter-sync");
+        // Run asynchronously without awaiting to keep createPost response fast
+        postThinkPagesToDiscord(
+          db as any,
+          post,
+          {
+            displayName: account.displayName,
+            username: account.username,
+            verified: account.verified,
+            profileImageUrl: account.profileImageUrl,
+          },
+          input.mediaUrls
+        ).catch((err) => console.error("[ThinkPages] Autopost to Discord promise error:", err));
+      } catch (error) {
+        console.error("[ThinkPages] Failed to trigger Discord autopost:", error);
+      }
+    }
+
     return {
       ...post,
       creditsEarned,
@@ -968,7 +994,26 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      if (post.account.clerkUserId !== clerkUserId) {
+      const isOwner = post.account.clerkUserId === clerkUserId;
+      let isAllowedMod = false;
+
+      if (!isOwner) {
+        const currentUserRoleLevel = ctx.user?.role?.level ?? 100;
+        if (currentUserRoleLevel <= 10) {
+          isAllowedMod = true;
+        } else if (currentUserRoleLevel <= 20) {
+          const targetUser = await db.user.findUnique({
+            where: { clerkUserId: post.account.clerkUserId },
+            include: { role: true },
+          });
+          const targetUserRoleLevel = targetUser?.role?.level ?? 100;
+          if (targetUserRoleLevel >= currentUserRoleLevel) {
+            isAllowedMod = true;
+          }
+        }
+      }
+
+      if (!isOwner && !isAllowedMod) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You do not have permission to update this post",
@@ -985,6 +1030,7 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         include: {
           account: true,
+          mediaAttachments: true,
           parentPost: {
             include: { account: true },
           },
@@ -993,6 +1039,32 @@ export const thinkpagesRouter = createTRPCRouter({
           },
         },
       });
+
+      // Update Discord message if it exists
+      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+      if (match && match[1]) {
+        try {
+          const { editDiscordMessage } = await import("~/lib/discord-ixtwitter-sync");
+          const mediaUrls = updatedPost.mediaAttachments?.map((m) => m.url) || [];
+          editDiscordMessage(
+            match[1],
+            { id: updatedPost.id, content: input.content, ixTimeTimestamp: updatedPost.ixTimeTimestamp || updatedPost.createdAt },
+            updatedPost.account,
+            mediaUrls
+          ).then(async (success) => {
+            if (success) {
+              await db.thinkpagesPost.update({
+                where: { id: updatedPost.id },
+                data: {
+                  content: `${input.content}\n\n[DiscordMsg:${match[1]}]`
+                }
+              });
+            }
+          }).catch((err) => console.error("[ThinkPages] Edit Discord msg promise error:", err));
+        } catch (error) {
+          console.error("[ThinkPages] Failed to trigger Discord edit:", error);
+        }
+      }
 
       return updatedPost;
     }),
@@ -1028,7 +1100,26 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      if (post.account.clerkUserId !== clerkUserId) {
+      const isOwner = post.account.clerkUserId === clerkUserId;
+      let isAllowedMod = false;
+
+      if (!isOwner) {
+        const currentUserRoleLevel = ctx.user?.role?.level ?? 100;
+        if (currentUserRoleLevel <= 10) {
+          isAllowedMod = true;
+        } else if (currentUserRoleLevel <= 20) {
+          const targetUser = await db.user.findUnique({
+            where: { clerkUserId: post.account.clerkUserId },
+            include: { role: true },
+          });
+          const targetUserRoleLevel = targetUser?.role?.level ?? 100;
+          if (targetUserRoleLevel >= currentUserRoleLevel) {
+            isAllowedMod = true;
+          }
+        }
+      }
+
+      if (!isOwner && !isAllowedMod) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You do not have permission to delete this post",
@@ -1052,6 +1143,9 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
+      // Get the message ID before deleting
+      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+
       // Hard delete the post (PostReaction, PostMention, MediaAttachment cascade automatically)
       const deletedPost = await db.thinkpagesPost.delete({
         where: { id: input.postId },
@@ -1064,6 +1158,18 @@ export const thinkpagesRouter = createTRPCRouter({
           postCount: { decrement: 1 + repostCount },
         },
       });
+
+      // Delete Discord message if it exists
+      if (match && match[1]) {
+        try {
+          const { deleteDiscordMessage } = await import("~/lib/discord-ixtwitter-sync");
+          deleteDiscordMessage(match[1]).catch((err) =>
+            console.error("[ThinkPages] Delete Discord msg promise error:", err)
+          );
+        } catch (error) {
+          console.error("[ThinkPages] Failed to trigger Discord delete:", error);
+        }
+      }
 
       return { success: true, postId: deletedPost.id };
     }),
@@ -1094,7 +1200,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
     const post = await db.thinkpagesPost.findUnique({
       where: { id: input.postId },
-      select: { reactionCounts: true },
+      select: { reactionCounts: true, content: true },
     });
 
     if (!post) {
@@ -1144,6 +1250,19 @@ export const thinkpagesRouter = createTRPCRouter({
           });
         });
 
+        // Sync removal to Discord if message exists
+        const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+        if (match && match[1]) {
+          try {
+            const { removeDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
+            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err) =>
+              console.error("[ThinkPages] Remove Discord reaction promise error:", err)
+            );
+          } catch (error) {
+            console.error("[ThinkPages] Failed to trigger Discord reaction removal:", error);
+          }
+        }
+
         return { removed: true };
       }
 
@@ -1169,6 +1288,19 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       });
 
+      // Sync reaction update to Discord
+      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+      if (match && match[1]) {
+        try {
+          const { addDiscordReaction, removeDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
+          removeDiscordReaction(match[1], existingReaction.reactionType)
+            .then(() => addDiscordReaction(match[1], input.reactionType))
+            .catch((err) => console.error("[ThinkPages] Sync update Discord reaction error:", err));
+        } catch (error) {
+          console.error("[ThinkPages] Failed to trigger Discord reaction update:", error);
+        }
+      }
+
       return { updated: true, reactionType: input.reactionType };
     } else {
       // New reaction - create it
@@ -1190,6 +1322,19 @@ export const thinkpagesRouter = createTRPCRouter({
 
         return newReaction;
       });
+
+      // Sync reaction creation to Discord if message exists
+      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+      if (match && match[1]) {
+        try {
+          const { addDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
+          addDiscordReaction(match[1], input.reactionType).catch((err) =>
+            console.error("[ThinkPages] Add Discord reaction promise error:", err)
+          );
+        } catch (error) {
+          console.error("[ThinkPages] Failed to trigger Discord reaction sync:", error);
+        }
+      }
 
       // 🔔 Notify post author of new reaction (likes only)
       if (input.reactionType === "like") {
@@ -1248,7 +1393,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { reactionCounts: true },
+        select: { reactionCounts: true, content: true },
       });
 
       if (!post) {
@@ -1300,6 +1445,19 @@ export const thinkpagesRouter = createTRPCRouter({
           });
         });
 
+        // Sync reaction removal to Discord
+        const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+        if (match && match[1]) {
+          try {
+            const { removeDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
+            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err) =>
+              console.error("[ThinkPages] Remove Discord reaction promise error:", err)
+            );
+          } catch (error) {
+            console.error("[ThinkPages] Failed to trigger Discord reaction removal:", error);
+          }
+        }
+
         return { success: true };
       }
 
@@ -1343,6 +1501,7 @@ export const thinkpagesRouter = createTRPCRouter({
             profileImageUrl: true,
             accountType: true,
             verified: true,
+            clerkUserId: true,
             country: {
               select: {
                 id: true,
@@ -1362,6 +1521,7 @@ export const thinkpagesRouter = createTRPCRouter({
                 profileImageUrl: true,
                 accountType: true,
                 verified: true,
+                clerkUserId: true,
               },
             },
           },
@@ -1376,6 +1536,7 @@ export const thinkpagesRouter = createTRPCRouter({
                 profileImageUrl: true,
                 accountType: true,
                 verified: true,
+                clerkUserId: true,
               },
             },
           },
@@ -1503,26 +1664,84 @@ export const thinkpagesRouter = createTRPCRouter({
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
         include: {
-          // account: true, // Relation doesn't exist
+          account: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              profileImageUrl: true,
+              accountType: true,
+              verified: true,
+              clerkUserId: true,
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  flag: true,
+                },
+              },
+            },
+          },
           parentPost: {
             include: {
-              // account: true // Relation doesn't exist
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                },
+              },
             },
           },
           repostOf: {
             include: {
-              // account: true // Relation doesn't exist
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                },
+              },
             },
           },
           replies: {
             include: {
-              // account: true, // Relation doesn't exist
-              // reactions: true // Relation doesn't exist
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                },
+              },
+              reactions: true,
+              mediaAttachments: true,
             },
             orderBy: { ixTimeTimestamp: "asc" },
             take: 50,
           },
           reactions: true,
+          mediaAttachments: true,
+          reposts: {
+            select: { accountId: true },
+          },
+          _count: {
+            select: {
+              replies: true,
+              reposts: true,
+            },
+          },
         },
       });
 
@@ -1581,6 +1800,7 @@ export const thinkpagesRouter = createTRPCRouter({
               profileImageUrl: true,
               accountType: true,
               verified: true,
+              clerkUserId: true,
             },
           },
           parentPost: {
@@ -1593,6 +1813,7 @@ export const thinkpagesRouter = createTRPCRouter({
                   profileImageUrl: true,
                   accountType: true,
                   verified: true,
+                  clerkUserId: true,
                 },
               },
             },
@@ -1607,6 +1828,7 @@ export const thinkpagesRouter = createTRPCRouter({
                   profileImageUrl: true,
                   accountType: true,
                   verified: true,
+                  clerkUserId: true,
                 },
               },
             },

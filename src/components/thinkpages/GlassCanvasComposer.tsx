@@ -19,6 +19,9 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
+  Briefcase,
+  Activity,
+  Minus,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -27,6 +30,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
@@ -56,12 +60,14 @@ interface GlassCanvasComposerProps {
 interface DataVisualization {
   id: string;
   type:
-    | "economic_chart"
-    | "diplomatic_map"
-    | "trade_flow"
-    | "gdp_growth"
-    | "demographics"
-    | "budget_debt";
+  | "economic_chart"
+  | "diplomatic_map"
+  | "trade_flow"
+  | "gdp_growth"
+  | "demographics"
+  | "budget_debt"
+  | "labor_market"
+  | "national_vitality";
   title: string;
   data: any;
   config: any;
@@ -89,6 +95,7 @@ export function GlassCanvasComposer({
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [postToDiscord, setPostToDiscord] = useState(true);
   const composerRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const hasContent =
@@ -138,16 +145,23 @@ export function GlassCanvasComposer({
     { countryId },
     { enabled: !!countryId, refetchOnWindowFocus: false }
   );
+  const { data: vitalityData, isLoading: isLoadingVitality } =
+    api.countries.getActivityRingsData.useQuery(
+      { countryId },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
 
   // Check if we have data available for visualizations
   const hasEconomicData = !!economicData;
   const hasHistoricalData =
-    (!!gdpHistoryData && gdpHistoryData.length > 0) ||
-    (!!economicData &&
-      !!(economicData as any).historical &&
-      (economicData as any).historical.length > 0);
+    !!gdpHistoryData &&
+    (gdpHistoryData.length > 0 ||
+      (economicData &&
+        (economicData as any).historical &&
+        (economicData as any).historical.length > 0));
   const hasDiplomaticData = !!diplomaticData && diplomaticData.length > 0;
   const hasTradeData = !!tradeData;
+  const hasVitalityData = !!vitalityData;
 
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
@@ -155,6 +169,7 @@ export function GlassCanvasComposer({
       setContent("");
       setSelectedVisualizations([]);
       setSelectedImages([]);
+      setPostToDiscord(true);
       onPost();
     },
     onError: (error) => {
@@ -182,10 +197,11 @@ export function GlassCanvasComposer({
       })),
       mediaUrls: selectedImages,
       repostOfId: repostData?.originalPost?.id,
+      postToDiscord,
     };
 
     createPostMutation.mutate(postData);
-  }, [content, selectedVisualizations, selectedImages, account.id, createPostMutation, repostData]);
+  }, [content, selectedVisualizations, selectedImages, account.id, createPostMutation, repostData, postToDiscord]);
 
   const extractHashtags = (text: string): string[] => {
     const hashtags = text.match(/#[\w]+/g);
@@ -227,6 +243,14 @@ export function GlassCanvasComposer({
         hasRequiredData = hasEconomicData;
         errorMessage = "No fiscal budget/debt data available for this country";
         break;
+      case "labor_market":
+        hasRequiredData = hasEconomicData;
+        errorMessage = "No labor market data available for this country";
+        break;
+      case "national_vitality":
+        hasRequiredData = hasVitalityData;
+        errorMessage = "No activity/vitality data available for this country";
+        break;
     }
 
     if (!hasRequiredData) {
@@ -250,10 +274,10 @@ export function GlassCanvasComposer({
               gdpHistoryData && gdpHistoryData.length > 0
                 ? gdpHistoryData
                 : (economicData as any)?.historical?.map((h: any) => ({
-                    ixTimeTimestamp: new Date(h.year, 0, 1),
-                    totalGdp: h.gdp,
-                    population: h.population,
-                  })) || [],
+                  ixTimeTimestamp: new Date(h.year, 0, 1),
+                  totalGdp: h.gdp,
+                  population: h.population,
+                })) || [],
             config: {
               chartType: "line",
               colors: ["#3B82F6", "#10B981"],
@@ -334,6 +358,37 @@ export function GlassCanvasComposer({
             config: {
               displayType: "donut",
               colorScheme: "amber",
+            },
+          };
+          break;
+        case "labor_market":
+          newVisualization = {
+            id: `labor-${Date.now()}`,
+            type: "labor_market",
+            title: "Labor & Income Profile",
+            data: {
+              unemploymentRate: economicData.unemploymentRate,
+              incomeInequalityGini: economicData.incomeInequalityGini,
+              averageAnnualIncome: economicData.averageAnnualIncome,
+              minimumWage: economicData.minimumWage,
+            },
+            config: {
+              metrics: ["unemployment", "gini", "income"],
+              displayType: "stats_grid",
+              colorScheme: "teal",
+            },
+          };
+          break;
+        case "national_vitality":
+          newVisualization = {
+            id: `vitality-${Date.now()}`,
+            type: "national_vitality",
+            title: "National Vitality Assessment",
+            data: vitalityData!,
+            config: {
+              metrics: ["economic", "population", "diplomatic", "government"],
+              displayType: "progress_bars",
+              colorScheme: "red",
             },
           };
           break;
@@ -485,6 +540,38 @@ export function GlassCanvasComposer({
             </div>
           </div>
         );
+      case "labor_market":
+        return (
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-teal-500/20 to-blue-500/20">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-6 w-6 text-teal-400" />
+              <div className="text-sm">
+                <div className="font-medium">
+                  Unemployment: {economicData?.unemploymentRate || 5.2}%
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  Gini Index: {economicData?.incomeInequalityGini || 32}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case "national_vitality":
+        return (
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-red-500/20 to-purple-500/20">
+            <div className="flex items-center gap-2">
+              <Activity className="h-6 w-6 text-red-400" />
+              <div className="text-sm">
+                <div className="font-medium">
+                  Vitality: {vitalityData?.economicVitality || 75}%
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  Wellbeing: {vitalityData?.populationWellbeing || 70}%
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return (
           <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-gray-500/20 to-gray-400/20">
@@ -500,7 +587,7 @@ export function GlassCanvasComposer({
   return (
     <Card
       ref={composerRef}
-      className="glass-hierarchy-child relative overflow-hidden border-blue-500/30 bg-blue-500/5"
+      className="glass-hierarchy-child relative overflow-hidden border-blue-500/30 bg-blue-500/5 py-0 gap-0"
     >
       <TextureOverlay texture="paperGrain" opacity={0.06} />
       {/* ── Collapsed bar ── */}
@@ -536,7 +623,7 @@ export function GlassCanvasComposer({
             transition={{ duration: 0.15 }}
           >
             <CardContent className="p-3">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Account Info with Manager */}
                 <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
                   <div className="flex items-center gap-2.5">
@@ -671,21 +758,7 @@ export function GlassCanvasComposer({
                     className="min-h-16 resize-none border-0 bg-white/5 text-sm backdrop-blur-sm transition-all focus:bg-white/10"
                     maxLength={characterLimit}
                   />
-                  <div className="flex items-center justify-between text-[0.65rem]">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground">Live data</span>
-                      {(hasEconomicData ||
-                        hasHistoricalData ||
-                        hasDiplomaticData ||
-                        hasTradeData) && (
-                        <Badge
-                          variant="outline"
-                          className="h-3.5 border-green-500/30 bg-green-500/10 px-1 py-0 text-[9px] text-green-400"
-                        >
-                          Live
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="flex justify-end text-[0.65rem]">
                     <span
                       className={cn(
                         "font-medium",
@@ -696,7 +769,7 @@ export function GlassCanvasComposer({
                             : "text-muted-foreground"
                       )}
                     >
-                      {remainingChars}
+                      {remainingChars} characters remaining
                     </span>
                   </div>
                 </div>
@@ -785,14 +858,15 @@ export function GlassCanvasComposer({
                         {(isLoadingEconomic ||
                           isLoadingHistory ||
                           isLoadingDiplomatic ||
-                          isLoadingTrade) && (
-                          <div className="flex items-center gap-1 text-[0.65rem] text-blue-400">
-                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                            <span>Loading...</span>
-                          </div>
-                        )}
+                          isLoadingTrade ||
+                          isLoadingVitality) && (
+                            <div className="flex items-center gap-1 text-[0.65rem] text-blue-400">
+                              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                              <span>Loading...</span>
+                            </div>
+                          )}
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-4 gap-1.5">
                         <Button
                           variant="outline"
                           size="sm"
@@ -887,6 +961,38 @@ export function GlassCanvasComposer({
                           )}
                           <span className="text-[0.65rem]">Budget & Debt</span>
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("labor_market")}
+                          disabled={
+                            isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
+                          }
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingEconomic ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <Briefcase className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Labor Market</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("national_vitality")}
+                          disabled={
+                            isGeneratingVisualization || isLoadingVitality || !hasVitalityData
+                          }
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingVitality ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <Activity className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Vitality Rings</span>
+                        </Button>
                       </div>
                     </motion.div>
                   )}
@@ -894,7 +1000,7 @@ export function GlassCanvasComposer({
 
                 {/* Action Bar */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -904,7 +1010,17 @@ export function GlassCanvasComposer({
                       {isGeneratingVisualization ? (
                         <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <Plus className="mr-1 h-3.5 w-3.5" />
+                        <motion.div
+                          animate={{ rotate: showVisualizationPanel ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="mr-1"
+                        >
+                          {showVisualizationPanel ? (
+                            <Minus className="h-3.5 w-3.5" />
+                          ) : (
+                            <Plus className="h-3.5 w-3.5" />
+                          )}
+                        </motion.div>
                       )}
                       Data
                     </Button>
@@ -927,6 +1043,29 @@ export function GlassCanvasComposer({
                         </Badge>
                       )}
                     </Button>
+                    <div className="flex items-center gap-2 px-2 border-l border-white/10 h-5">
+                      <Switch
+                        id="share-to-discord-toggle"
+                        checked={postToDiscord}
+                        onCheckedChange={setPostToDiscord}
+                        className="data-[state=checked]:bg-[#5865F2] data-[state=unchecked]:bg-white/10 dark:data-[state=unchecked]:bg-white/10 data-[state=checked]:shadow-[0_0_8px_rgba(88,101,242,0.4)] border-white/10"
+                      />
+                      <label
+                        htmlFor="share-to-discord-toggle"
+                        className="cursor-pointer text-[10px] text-neutral-400 select-none hover:text-neutral-300 transition-colors flex items-center gap-1.5"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          className={cn(
+                            "h-3 w-3 fill-current transition-colors duration-200",
+                            postToDiscord ? "text-[#5865F2]" : "text-neutral-500"
+                          )}
+                        >
+                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 0 1-1.873-.894.077.077 0 0 1-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 0 1 .077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.009c.12.099.246.195.373.289a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
+                        </svg>
+                        Share to Discord
+                      </label>
+                    </div>
                   </div>
 
                   <Button

@@ -8,6 +8,33 @@ import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
+import { createUrl } from "~/lib/url-utils";
+
+const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
+
+function proxyDiscordUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
+      const path = `/api/proxy-discord-image?url=${encodeURIComponent(url)}`;
+      if (process.env.NODE_ENV === "production") {
+        return `https://ixwiki.com/projects/ixstates${path}`;
+      }
+      return createUrl(path);
+    }
+  } catch {}
+  if (url.startsWith("/")) {
+    if (process.env.NODE_ENV === "production") {
+      const pathWithoutBp = url.startsWith("/projects/ixstates")
+        ? url.slice("/projects/ixstates".length)
+        : url;
+      return `https://ixwiki.com/projects/ixstates${pathWithoutBp}`;
+    }
+    return createUrl(url);
+  }
+  return url;
+}
 
 function parseBlurbContent(post: {
   hashtags?: string[] | string | null;
@@ -80,7 +107,7 @@ export function SplashThinkPagesPeek() {
                 >
                   <div className="border-border bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-md border">
                     {flag ? (
-                      <img src={flag} alt="" className="h-full w-full object-cover" />
+                      <img src={proxyDiscordUrl(flag)} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <span className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
                         TP
@@ -136,7 +163,7 @@ export function SplashThinkPagesPeek() {
                           )}
                         >
                           <img
-                            src={m.url}
+                            src={proxyDiscordUrl(m.url)}
                             alt={m.filename || `Attachment ${idx + 1}`}
                             className="h-full w-full object-cover"
                           />

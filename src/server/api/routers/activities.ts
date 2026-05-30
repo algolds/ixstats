@@ -115,7 +115,6 @@ export const activitiesRouter = createTRPCRouter({
               visibility: "public",
             },
             orderBy: { ixTimeTimestamp: "desc" },
-            take: mergeCap,
             include: {
               account: {
                 select: {
@@ -125,6 +124,7 @@ export const activitiesRouter = createTRPCRouter({
                   profileImageUrl: true,
                   accountType: true,
                   verified: true,
+                  clerkUserId: true,
                   country: {
                     select: {
                       id: true,
@@ -144,6 +144,7 @@ export const activitiesRouter = createTRPCRouter({
                       profileImageUrl: true,
                       accountType: true,
                       verified: true,
+                      clerkUserId: true,
                     },
                   },
                 },
@@ -158,6 +159,7 @@ export const activitiesRouter = createTRPCRouter({
                       profileImageUrl: true,
                       accountType: true,
                       verified: true,
+                      clerkUserId: true,
                     },
                   },
                 },
