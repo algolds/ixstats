@@ -25,6 +25,20 @@ function normalizeGrowth(value: number | null | undefined): number {
   return Math.min(20, Math.max(-20, v));
 }
 
+const getMetricColor = (val: number) => {
+  if (val < 35) return "#ef4444"; // Red danger/low
+  if (val < 60) return "#f97316"; // Orange bad
+  if (val < 80) return "#eab308"; // Yellow ok
+  return "#10b981"; // Green good
+};
+
+const getMetricLabelClass = (val: number) => {
+  if (val < 35) return "text-red-600 dark:text-red-400";
+  if (val < 60) return "text-orange-600 dark:text-orange-400";
+  if (val < 80) return "text-yellow-600 dark:text-yellow-400";
+  return "text-green-600 dark:text-green-400";
+};
+
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
 const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number => {
@@ -327,38 +341,30 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                   {[
                     {
                       value: activityRingsData.economicVitality || 0,
-                      color: "#22c55e",
                       label: "Economy",
-                      labelClass: "text-green-600 dark:text-green-400",
                     },
                     {
                       value: activityRingsData.populationWellbeing || 0,
-                      color: "#3b82f6",
                       label: "Population",
-                      labelClass: "text-blue-600 dark:text-blue-400",
                     },
                     {
                       value: activityRingsData.diplomaticStanding || 0,
-                      color: "#a855f7",
                       label: "Diplomacy",
-                      labelClass: "text-purple-600 dark:text-purple-400",
                     },
                     {
                       value: activityRingsData.governmentalEfficiency || 0,
-                      color: "#f97316",
                       label: "Government",
-                      labelClass: "text-orange-600 dark:text-orange-400",
                     },
                   ].map((ring) => (
                     <div key={ring.label} className="flex flex-col items-center gap-1">
                       <HealthRing
                         value={ring.value}
                         size={56}
-                        color={ring.color}
+                        color={getMetricColor(ring.value)}
                         label={ring.label}
                       />
                       <PreText
-                        className={`text-[10px] font-medium ${ring.labelClass}`}
+                        className={cn("text-[10px] font-medium", getMetricLabelClass(ring.value))}
                         whiteSpace="nowrap"
                       >
                         {`${ring.label} ${ring.value}%`}

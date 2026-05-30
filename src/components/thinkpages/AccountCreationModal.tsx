@@ -596,8 +596,8 @@ export function AccountCreationModal({
                         >
                           <span>
                             {showAdvanced
-                              ? "Hide Advanced Bot Settings"
-                              : "Show Advanced Bot Settings"}
+                              ? "Hide Advanced Settings"
+                              : "Show Advanced Settings"}
                           </span>
                         </button>
 

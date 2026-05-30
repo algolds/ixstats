@@ -21,7 +21,7 @@ interface BuilderHelpWidgetProps {
 }
 
 const SECTION_TITLES: Record<BuilderSection, string> = {
-  foundation: "Foundation",
+  foundation: "Getting Started",
   identity: "Identity",
   government: "Government",
   economics: "Economics",
@@ -73,7 +73,9 @@ export function BuilderHelpWidget({ activeSection }: BuilderHelpWidgetProps) {
       <div className="relative bg-blue-500/10 px-3 pt-2.5 pb-4">
         <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
           <BookOpen className="h-3.5 w-3.5 text-blue-400" />
-          <span>{sectionTitle} Guide</span>
+          <span>
+            {sectionTitle === "Getting Started" ? "Getting Started" : `${sectionTitle} Guide`}
+          </span>
         </div>
         <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
         <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
@@ -84,12 +86,19 @@ export function BuilderHelpWidget({ activeSection }: BuilderHelpWidgetProps) {
           {steps.map((step, index) => (
             <div key={index} className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-blue-500/10 text-[9px] font-bold text-blue-400">
-                  {index + 1}
-                </span>
+                {activeSection !== "foundation" && (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-blue-500/10 text-[9px] font-bold text-blue-400">
+                    {index + 1}
+                  </span>
+                )}
                 <span className="text-foreground text-[10px] font-bold">{step.title}</span>
               </div>
-              <p className="text-muted-foreground pl-6 text-[9px] leading-normal">
+              <p
+                className={cn(
+                  "text-muted-foreground text-[9px] leading-normal",
+                  activeSection === "foundation" ? "pl-0" : "pl-6"
+                )}
+              >
                 {step.description}
               </p>
             </div>

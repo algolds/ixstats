@@ -42,8 +42,22 @@ async function loadCache(): Promise<Record<string, FlagCacheEntry>> {
     try {
       const raw = await fsPromises.readFile(CACHE_FILE, "utf-8");
       const parsed: FlagCacheData = JSON.parse(raw);
-      const age = Date.now() - new Date(parsed.resolvedAt).getTime();
       memoryCache = parsed.flags ?? {};
+
+      // Clean up null/failed entries that are older than 1 hour
+      const FAILED_TTL_MS = 60 * 60 * 1000;
+      const now = Date.now();
+      let hasChanges = false;
+      for (const [key, entry] of Object.entries(memoryCache)) {
+        if (entry.url === null && now - entry.resolvedAt > FAILED_TTL_MS) {
+          delete memoryCache[key];
+          hasChanges = true;
+        }
+      }
+      if (hasChanges) {
+        void saveCache(memoryCache).catch(() => {});
+      }
+
       return memoryCache;
     } catch {
       memoryCache = {};
@@ -102,6 +116,15 @@ const COUNTRY_MAPPINGS: Record<string, string> = {
   "central african republic": "Central African Republic",
   "dominican republic": "Dominican Republic",
   "united arab emirates": "United Arab Emirates",
+  "syrian arab republic": "Syria",
+  "macao sar, china": "Macau",
+  "hong kong sar, china": "Hong Kong",
+  "west bank and gaza": "Palestine",
+  "virgin islands (u.s.)": "United States Virgin Islands",
+  "kyrgyz republic": "Kyrgyzstan",
+  "slovak republic": "Slovakia",
+  "st. lucia": "Saint Lucia",
+  "sint maarten (dutch part)": "Sint Maarten",
 };
 
 async function resolveFlagFromCommons(countryName: string): Promise<string | null> {
@@ -140,10 +163,13 @@ export async function resolveFlags(countryNames: string[]): Promise<Record<strin
   const results: Record<string, string | null> = {};
   const toResolve: string[] = [];
 
+  const FAILED_TTL_MS = 60 * 60 * 1000; // 1 hour for failures/nulls so they retry
+
   for (const name of countryNames) {
     const key = name.toLowerCase().trim();
     const entry = cache[key];
-    if (entry && Date.now() - entry.resolvedAt < CACHE_TTL_MS) {
+    const ttl = entry?.url === null ? FAILED_TTL_MS : CACHE_TTL_MS;
+    if (entry && Date.now() - entry.resolvedAt < ttl) {
       results[name] = entry.url;
     } else {
       toResolve.push(name);
@@ -152,8 +178,8 @@ export async function resolveFlags(countryNames: string[]): Promise<Record<strin
 
   if (toResolve.length === 0) return results;
 
-  // Resolve in batches to avoid overwhelming Wikimedia Commons
-  const BATCH = 10;
+  // Resolve in smaller batches with slightly longer delay to avoid 429 rate limits
+  const BATCH = 5;
   for (let i = 0; i < toResolve.length; i += BATCH) {
     const batch = toResolve.slice(i, i + BATCH);
     const resolved = await Promise.allSettled(
@@ -172,7 +198,7 @@ export async function resolveFlags(countryNames: string[]): Promise<Record<strin
     }
 
     if (i + BATCH < toResolve.length) {
-      await new Promise((res) => setTimeout(res, 200));
+      await new Promise((res) => setTimeout(res, 800));
     }
   }
 

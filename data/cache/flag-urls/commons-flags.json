@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "resolvedAt": "2026-05-29T04:22:33.816Z",
+  "resolvedAt": "2026-05-30T12:07:53.994Z",
   "flags": {
     "korea, dem. people's rep.": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Flag_of_North_Korea.png",
@@ -9,10 +9,6 @@
     "korea, rep.": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flag_of_South_Korea.png",
       "resolvedAt": 1779781062880
-    },
-    "czech republic": {
-      "url": null,
-      "resolvedAt": 1779781067475
     },
     "bahamas, the": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/9/93/Flag_of_the_Bahamas.svg",
@@ -418,126 +414,6 @@
       "url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Flag_of_Nicaragua.png",
       "resolvedAt": 1779781066425
     },
-    "ecuador": {
-      "url": null,
-      "resolvedAt": 1779781066425
-    },
-    "bolivia": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "paraguay": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "uruguay": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "guyana": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "suriname": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "iceland": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "luxembourg": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "malta": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "cyprus": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "estonia": {
-      "url": null,
-      "resolvedAt": 1779781066707
-    },
-    "latvia": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "lithuania": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "slovakia": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "hungary": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "romania": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "bulgaria": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "serbia": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "croatia": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "slovenia": {
-      "url": null,
-      "resolvedAt": 1779781067475
-    },
-    "bosnia and herzegovina": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "montenegro": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "north macedonia": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "albania": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "moldova": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "belarus": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "georgia": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "armenia": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "azerbaijan": {
-      "url": null,
-      "resolvedAt": 1779781067706
-    },
-    "caphiria": {
-      "url": null,
-      "resolvedAt": 1779229670884
-    },
     "north korea": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Flag_of_North_Korea.png",
       "resolvedAt": 1779229491968
@@ -566,10 +442,6 @@
       "url": "https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Tonga.svg",
       "resolvedAt": 1779229671644
     },
-    "east asia & pacific": {
-      "url": null,
-      "resolvedAt": 1779229673765
-    },
     "gibraltar": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Flag_of_Gibraltar.svg",
       "resolvedAt": 1779229671712
@@ -590,17 +462,9 @@
       "url": "https://upload.wikimedia.org/wikipedia/commons/2/29/Flag_of_Eritrea.svg",
       "resolvedAt": 1779229671874
     },
-    "post-demographic dividend": {
-      "url": null,
-      "resolvedAt": 1779229673746
-    },
     "guam": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Flag_of_Guam.svg",
       "resolvedAt": 1779229671926
-    },
-    "least developed countries: un classification": {
-      "url": null,
-      "resolvedAt": 1779229673871
     },
     "liechtenstein": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/4/47/Flag_of_Liechtenstein.svg",
@@ -618,17 +482,477 @@
       "url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Flag_of_Puerto_Rico.png",
       "resolvedAt": 1779950899571
     },
+    "grenada": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Flag_of_Grenada.png",
+      "resolvedAt": 1780137605456
+    },
+    "cayman islands": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flag_of_the_Cayman_Islands.svg",
+      "resolvedAt": 1780137611758
+    },
+    "aruba": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Aruba.png",
+      "resolvedAt": 1780137611792
+    },
+    "mauritius": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Flag_of_Mauritius.svg",
+      "resolvedAt": 1780137611815
+    },
+    "comoros": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Flag_of_the_Comoros.svg",
+      "resolvedAt": 1780137611906
+    },
+    "vanuatu": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Flag_of_Vanuatu.svg",
+      "resolvedAt": 1780137611951
+    },
+    "kiribati": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Flag_of_Kiribati.svg",
+      "resolvedAt": 1780137612043
+    },
+    "libya": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Flag_of_Libya.png",
+      "resolvedAt": 1780137612157
+    },
+    "zimbabwe": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Flag_of_Zimbabwe.svg",
+      "resolvedAt": 1780137612201
+    },
+    "dominica": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Flag_of_Dominica.png",
+      "resolvedAt": 1780137617853
+    },
+    "eswatini": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Flag_of_Eswatini.svg",
+      "resolvedAt": 1780137617870
+    },
+    "niger": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Flag_of_Niger.svg",
+      "resolvedAt": 1780137617874
+    },
+    "tajikistan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Flag_of_Tajikistan.svg",
+      "resolvedAt": 1780137617898
+    },
+    "zambia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/06/Flag_of_Zambia.svg",
+      "resolvedAt": 1780137617913
+    },
+    "seychelles": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Flag_of_Seychelles.svg",
+      "resolvedAt": 1780137617916
+    },
+    "russian federation": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Flag_of_Russia.svg",
+      "resolvedAt": 1780137618158
+    },
+    "nauru": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/30/Flag_of_Nauru.svg",
+      "resolvedAt": 1780137618164
+    },
+    "american samoa": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Flag_of_American_Samoa.svg",
+      "resolvedAt": 1780137618201
+    },
+    "isle of man": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Flag_of_the_Isle_of_Man.svg",
+      "resolvedAt": 1780137618205
+    },
+    "cote d'ivoire": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_C%C3%B4te_d%27Ivoire.svg",
+      "resolvedAt": 1780137618251
+    },
+    "guinea-bissau": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/01/Flag_of_Guinea-Bissau.svg",
+      "resolvedAt": 1780137647296
+    },
+    "st. vincent and the grenadines": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Flag_of_Saint_Vincent_and_the_Grenadines.svg",
+      "resolvedAt": 1780137647314
+    },
+    "chad": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Flag_of_Chad.svg",
+      "resolvedAt": 1780137647317
+    },
+    "cameroon": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Flag_of_Cameroon.png",
+      "resolvedAt": 1780137647322
+    },
+    "faroe islands": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Flag_of_the_Faroe_Islands.svg",
+      "resolvedAt": 1780137647336
+    },
+    "new caledonia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Flags_of_New_Caledonia.svg",
+      "resolvedAt": 1780137647453
+    },
+    "czech republic": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_Czech_Republic.svg",
+      "resolvedAt": 1780137739384
+    },
+    "ecuador": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Flag_of_Ecuador.png",
+      "resolvedAt": 1780137737574
+    },
+    "bolivia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Flag_of_Bolivia.svg",
+      "resolvedAt": 1780137737574
+    },
+    "paraguay": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Paraguay_flag.png",
+      "resolvedAt": 1780137737574
+    },
+    "uruguay": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_Uruguay.svg",
+      "resolvedAt": 1780137737574
+    },
+    "guyana": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/99/Flag_of_Guyana.svg",
+      "resolvedAt": 1780137738483
+    },
+    "suriname": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/60/Flag_of_Suriname.svg",
+      "resolvedAt": 1780137738483
+    },
+    "iceland": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Flag_of_Iceland.png",
+      "resolvedAt": 1780137738483
+    },
+    "luxembourg": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/da/Flag_of_Luxembourg.svg",
+      "resolvedAt": 1780137738483
+    },
+    "malta": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/73/Flag_of_Malta.svg",
+      "resolvedAt": 1780137738483
+    },
+    "cyprus": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Cyprus.svg",
+      "resolvedAt": 1780137739384
+    },
+    "estonia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Estonia.png",
+      "resolvedAt": 1780137739384
+    },
+    "latvia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Flag_of_Latvia.svg",
+      "resolvedAt": 1780137739384
+    },
+    "lithuania": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/12/Flag_of_Lithuania.png",
+      "resolvedAt": 1780137739384
+    },
+    "slovakia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Flag_of_Slovakia.png",
+      "resolvedAt": 1780137740282
+    },
+    "hungary": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/00/Flag_of_Hungary.png",
+      "resolvedAt": 1780137740282
+    },
+    "romania": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/73/Flag_of_Romania.svg",
+      "resolvedAt": 1780137740282
+    },
+    "bulgaria": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Flag_of_Bulgaria.png",
+      "resolvedAt": 1780137740282
+    },
+    "serbia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Flag_of_Serbia.png",
+      "resolvedAt": 1780137740282
+    },
+    "croatia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Flag_of_Croatia.svg",
+      "resolvedAt": 1780137741169
+    },
+    "slovenia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/Flag_of_Slovenia.png",
+      "resolvedAt": 1780137741170
+    },
+    "bosnia and herzegovina": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Flag_of_Bosnia_and_Herzegovina.svg",
+      "resolvedAt": 1780137741170
+    },
+    "montenegro": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/64/Flag_of_Montenegro.svg",
+      "resolvedAt": 1780137741170
+    },
+    "north macedonia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/79/Flag_of_North_Macedonia.svg",
+      "resolvedAt": 1780137741170
+    },
+    "albania": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Flag_of_Albania.svg",
+      "resolvedAt": 1780137742067
+    },
+    "moldova": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/2/27/Flag_of_Moldova.svg",
+      "resolvedAt": 1780137742067
+    },
+    "belarus": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/78/Flag_of_Belarus.png",
+      "resolvedAt": 1780137742067
+    },
+    "georgia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flag_of_Georgia.svg",
+      "resolvedAt": 1780137742067
+    },
+    "armenia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Flag_of_Armenia.png",
+      "resolvedAt": 1780137742067
+    },
+    "azerbaijan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Flag_of_Azerbaijan.svg",
+      "resolvedAt": 1780137742944
+    },
+    "rwanda": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/17/Flag_of_Rwanda.svg",
+      "resolvedAt": 1780137773304
+    },
+    "sao tome and principe": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Flag_of_S%C3%A3o_Tom%C3%A9_and_Pr%C3%ADncipe.svg",
+      "resolvedAt": 1780137773333
+    },
+    "mozambique": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Flag_of_Mozambique.svg",
+      "resolvedAt": 1780137773338
+    },
+    "south sudan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Flag_of_South_Sudan.png",
+      "resolvedAt": 1780137817246
+    },
+    "barbados": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Flag_of_Barbados.svg",
+      "resolvedAt": 1780137817936
+    },
+    "kosovo": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Flag_of_Kosovo.svg",
+      "resolvedAt": 1780137818006
+    },
+    "sierra leone": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Flag_of_Sierra_Leone.png",
+      "resolvedAt": 1780137818024
+    },
+    "burundi": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Flag_of_Burundi.svg",
+      "resolvedAt": 1780137818033
+    },
+    "burkina faso": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Flag_of_Burkina_Faso.svg",
+      "resolvedAt": 1780137818050
+    },
+    "syrian arab republic": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Flag_of_Syria_%282025-%29.svg",
+      "resolvedAt": 1780137833064
+    },
+    "hong kong sar, china": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Hong_Kong_flag.png",
+      "resolvedAt": 1780137833064
+    },
+    "west bank and gaza": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Flag_of_Palestine.png",
+      "resolvedAt": 1780137833064
+    },
+    "virgin islands (u.s.)": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f8/Flag_of_the_United_States_Virgin_Islands.svg",
+      "resolvedAt": 1780137833064
+    },
+    "kyrgyz republic": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Flag_of_Kyrgyzstan.svg",
+      "resolvedAt": 1780137833064
+    },
+    "slovak republic": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Flag_of_Slovakia.png",
+      "resolvedAt": 1780137833949
+    },
+    "st. lucia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Flag_of_Saint_Lucia.svg",
+      "resolvedAt": 1780137833949
+    },
+    "sint maarten (dutch part)": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Flag_of_Sint_Maarten.svg",
+      "resolvedAt": 1780137833949
+    },
+    "syria": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Flag_of_Syria_%282025-%29.svg",
+      "resolvedAt": 1780137833949
+    },
+    "hong kong": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Hong_Kong_flag.png",
+      "resolvedAt": 1780137833949
+    },
+    "palestine": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Flag_of_Palestine.png",
+      "resolvedAt": 1780137833949
+    },
+    "united states virgin islands": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f8/Flag_of_the_United_States_Virgin_Islands.svg",
+      "resolvedAt": 1780137833949
+    },
+    "kyrgyzstan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Flag_of_Kyrgyzstan.svg",
+      "resolvedAt": 1780137833949
+    },
+    "saint lucia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Flag_of_Saint_Lucia.svg",
+      "resolvedAt": 1780137833949
+    },
+    "sint maarten": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Flag_of_Sint_Maarten.svg",
+      "resolvedAt": 1780137833949
+    },
+    "curacao": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Flag_of_Cura%C3%A7ao.svg",
+      "resolvedAt": 1780137840593
+    },
+    "bermuda": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Flag_of_Bermuda.svg",
+      "resolvedAt": 1780137840618
+    },
+    "macao sar, china": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/63/Flag_of_Macau.svg",
+      "resolvedAt": 1780137842783
+    },
+    "macau": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/63/Flag_of_Macau.svg",
+      "resolvedAt": 1780137842783
+    },
+    "togo": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_Togo.png",
+      "resolvedAt": 1780138378606
+    },
+    "antigua and barbuda": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Flag_of_Antigua_and_Barbuda.svg",
+      "resolvedAt": 1780138383284
+    },
+    "turks and caicos islands": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Flag_of_the_Turks_and_Caicos_Islands.svg",
+      "resolvedAt": 1780138383438
+    },
+    "uganda": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Flag_of_Uganda.svg",
+      "resolvedAt": 1780138383545
+    },
+    "equatorial guinea": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Flag_of_Equatorial_Guinea.svg",
+      "resolvedAt": 1780138383548
+    },
+    "djibouti": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Flag_of_Djibouti.svg",
+      "resolvedAt": 1780138383574
+    },
+    "turkiye": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg",
+      "resolvedAt": 1780138393358
+    },
+    "madagascar": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Flag_of_Madagascar.svg",
+      "resolvedAt": 1780138393422
+    },
+    "brunei darussalam": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Flag_of_Brunei.svg",
+      "resolvedAt": 1780138393428
+    },
+    "mali": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Flag_of_Mali.svg",
+      "resolvedAt": 1780138393436
+    },
+    "turkmenistan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Flag_of_Turkmenistan.svg",
+      "resolvedAt": 1780138393462
+    },
+    "sudan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Sudan.png",
+      "resolvedAt": 1780139093022
+    },
+    "liberia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Flag_of_Liberia.svg",
+      "resolvedAt": 1780139093038
+    },
+    "san marino": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Flag_of_San_Marino.svg",
+      "resolvedAt": 1780139093039
+    },
+    "gabon": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Flag_of_Gabon.svg",
+      "resolvedAt": 1780139093052
+    },
+    "european union": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_Europe.svg",
+      "resolvedAt": 1780139229333
+    },
+    "benin": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Flag_of_Benin.svg",
+      "resolvedAt": 1780139229334
+    },
+    "namibia": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_Namibia.png",
+      "resolvedAt": 1780139229347
+    },
+    "northern mariana islands": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Flag_of_the_Northern_Mariana_Islands.svg",
+      "resolvedAt": 1780139229356
+    },
+    "botswana": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Flag_of_Botswana.png",
+      "resolvedAt": 1780139229364
+    },
+    "mauritania": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/43/Flag_of_Mauritania.svg",
+      "resolvedAt": 1780139229375
+    },
+    "malawi": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/Flag_of_Malawi.svg",
+      "resolvedAt": 1780139229581
+    },
+    "cabo verde": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/38/Flag_of_Cape_Verde.svg",
+      "resolvedAt": 1780139229601
+    },
+    "andorra": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Flag_of_Andorra.svg",
+      "resolvedAt": 1780139229613
+    },
+    "samoa": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Flag_of_Samoa.svg",
+      "resolvedAt": 1780139229635
+    },
+    "monaco": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Flag_of_Monaco.svg",
+      "resolvedAt": 1780139229638
+    },
+    "bhutan": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Flag_of_Bhutan.svg",
+      "resolvedAt": 1780139229834
+    },
+    "trinidad and tobago": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Flag_of_Trinidad_and_Tobago.png",
+      "resolvedAt": 1780139229852
+    },
+    "senegal": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/fd/Flag_of_Senegal.svg",
+      "resolvedAt": 1780139229868
+    },
+    "guinea": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Guinea.png",
+      "resolvedAt": 1780139229878
+    },
+    "angola": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Angola.svg",
+      "resolvedAt": 1780139571272
+    },
+    "caphiria": {
+      "url": null,
+      "resolvedAt": 1780142509287
+    },
     "st. kitts and nevis": {
       "url": null,
-      "resolvedAt": 1779950899577
+      "resolvedAt": 1780142873969
     },
-    "caphiriae": {
+    "micronesia, fed. sts.": {
       "url": null,
-      "resolvedAt": 1780009444196
-    },
-    "custom nation": {
-      "url": null,
-      "resolvedAt": 1780028553815
+      "resolvedAt": 1780142873993
     }
   }
 }

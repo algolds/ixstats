@@ -186,6 +186,7 @@ export function LiveFeedback({
             coatOfArmsUrl={coatOfArmsUrl}
             compact={true}
             showMomentum={true}
+            activeSection={activeSection}
             className="w-full"
           />
 

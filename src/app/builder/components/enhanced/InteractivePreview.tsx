@@ -478,6 +478,7 @@ export function InteractivePreview({
                     console.log(`Clicked vitality ring ${index}`);
                   }}
                   showMomentum={true}
+                  activeSection="preview"
                   className="bg-transparent"
                 />
               </GlassCardContent>

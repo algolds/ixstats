@@ -43,13 +43,66 @@ export const generateCountryPreview = (country: RealCountryData): CountryPreview
   };
 };
 
+const REGIONS_AND_GROUPS = new Set([
+  "world",
+  "north america",
+  "post-demographic dividend",
+  "high income",
+  "euro area",
+  "oecd members",
+  "europe & central asia",
+  "other small states",
+  "small states",
+  "central europe and the baltics",
+  "caribbean small states",
+  "latin america & caribbean",
+  "east asia & pacific",
+  "middle east & north africa",
+  "upper middle income",
+  "late-demographic dividend",
+  "arab world",
+  "china (occupied territories)",
+  "ibrd only",
+  "middle income",
+  "ida & ibrd total",
+  "low & middle income",
+  "pacific island small states",
+  "early-demographic dividend",
+  "fragile and conflict affected situations",
+  "lower middle income",
+  "africa western and central",
+  "ida blend",
+  "sub-saharan africa",
+  "africa eastern and southern",
+  "pre-demographic dividend",
+  "south asia",
+  "ida total",
+  "least developed countries: un classification",
+  "ida only",
+  "heavily indebted poor countries (hipc)",
+  "low income",
+  "europe & central asia (excluding high income)",
+  "europe & central asia (ida & ibrd countries)",
+  "latin america & caribbean (excluding high income)",
+  "latin america & the caribbean (ida & ibrd countries)",
+  "east asia & pacific (excluding high income)",
+  "east asia & pacific (ida & ibrd countries)",
+  "middle east & north africa (excluding high income)",
+  "middle east & north africa (ida & ibrd countries)",
+  "sub-saharan africa (excluding high income)",
+  "sub-saharan africa (ida & ibrd countries)",
+  "south asia (ida & ibrd)"
+]);
+
 export const filterCountries = (
   countries: RealCountryData[],
   searchTerm: string,
   selectedArchetypes: string[], // Changed to array
   archetypes: CountryArchetype[]
 ): RealCountryData[] => {
-  let filtered = countries.filter((country) => country.name !== "World");
+  let filtered = countries.filter(
+    (country) => !REGIONS_AND_GROUPS.has(country.name.toLowerCase().trim())
+  );
 
   if (searchTerm) {
     filtered = filtered.filter(

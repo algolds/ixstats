@@ -52,6 +52,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import { useLiveNotifications } from "~/hooks/useLiveNotifications";
 import { HealthRing } from "~/components/ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
+import { cn } from "~/lib/utils";
 
 interface GlobalStatsIslandProps {
   className?: string;
@@ -65,6 +66,20 @@ interface SearchResult {
   icon?: React.ComponentType<{ className?: string }>;
   action: () => void;
 }
+
+const getMetricColor = (val: number) => {
+  if (val < 35) return "#ef4444"; // Red danger/low
+  if (val < 60) return "#f97316"; // Orange bad
+  if (val < 80) return "#eab308"; // Yellow ok
+  return "#10b981"; // Green good
+};
+
+const getMetricLabelClass = (val: number) => {
+  if (val < 35) return "text-red-500 dark:text-red-400";
+  if (val < 60) return "text-orange-500 dark:text-orange-400";
+  if (val < 80) return "text-yellow-500 dark:text-yellow-400";
+  return "text-green-500 dark:text-green-400";
+};
 
 function GlobalStatsIslandContent() {
   const { setSize } = useDynamicIslandSize();
@@ -379,12 +394,17 @@ function GlobalStatsIslandContent() {
                             <HealthRing
                               value={activityRingsData.economicVitality}
                               size={64}
-                              color="#22c55e"
+                              color={getMetricColor(activityRingsData.economicVitality)}
                               label="Economic"
                             />
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
-                                <DollarSign className="h-3 w-3 text-green-400" />
+                                <DollarSign
+                                  className={cn(
+                                    "h-3 w-3",
+                                    getMetricLabelClass(activityRingsData.economicVitality)
+                                  )}
+                                />
                                 <span className="text-[10px] font-medium text-white">Economic</span>
                               </div>
                               <div className="text-[9px] text-white/60">
@@ -397,12 +417,17 @@ function GlobalStatsIslandContent() {
                             <HealthRing
                               value={activityRingsData.populationWellbeing}
                               size={64}
-                              color="#3b82f6"
+                              color={getMetricColor(activityRingsData.populationWellbeing)}
                               label="Population"
                             />
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
-                                <Users className="h-3 w-3 text-blue-400" />
+                                <Users
+                                  className={cn(
+                                    "h-3 w-3",
+                                    getMetricLabelClass(activityRingsData.populationWellbeing)
+                                  )}
+                                />
                                 <span className="text-[10px] font-medium text-white">
                                   Population
                                 </span>
@@ -417,12 +442,17 @@ function GlobalStatsIslandContent() {
                             <HealthRing
                               value={activityRingsData.diplomaticStanding}
                               size={64}
-                              color="#a855f7"
+                              color={getMetricColor(activityRingsData.diplomaticStanding)}
                               label="Diplomatic"
                             />
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
-                                <Shield className="h-3 w-3 text-purple-400" />
+                                <Shield
+                                  className={cn(
+                                    "h-3 w-3",
+                                    getMetricLabelClass(activityRingsData.diplomaticStanding)
+                                  )}
+                                />
                                 <span className="text-[10px] font-medium text-white">
                                   Diplomatic
                                 </span>
@@ -437,12 +467,17 @@ function GlobalStatsIslandContent() {
                             <HealthRing
                               value={activityRingsData.governmentalEfficiency}
                               size={64}
-                              color="#f97316"
+                              color={getMetricColor(activityRingsData.governmentalEfficiency)}
                               label="Government"
                             />
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
-                                <Building className="h-3 w-3 text-orange-400" />
+                                <Building
+                                  className={cn(
+                                    "h-3 w-3",
+                                    getMetricLabelClass(activityRingsData.governmentalEfficiency)
+                                  )}
+                                />
                                 <span className="text-[10px] font-medium text-white">
                                   Government
                                 </span>

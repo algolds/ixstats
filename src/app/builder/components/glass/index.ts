@@ -37,3 +37,6 @@ export {
   type SectionConfig,
   type ValidationRule,
 } from "./SectionBase";
+
+export { RefractiveGridBezel } from "./RefractiveGridBezel";
+

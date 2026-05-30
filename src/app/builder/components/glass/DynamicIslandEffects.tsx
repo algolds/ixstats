@@ -24,6 +24,8 @@ interface DynamicIslandEffectsProps {
   showGlow?: boolean;
   /** Whether to show the pulse shimmer animation (default: true) */
   showShimmer?: boolean;
+  /** The primary axis orientation of the gradients and shimmers (default: "horizontal") */
+  orientation?: "horizontal" | "vertical";
 }
 
 /**
@@ -35,7 +37,11 @@ export function DynamicIslandEffects({
   glowOpacity = 0.4,
   showGlow = true,
   showShimmer = true,
+  orientation = "horizontal",
 }: DynamicIslandEffectsProps) {
+  const isVertical = orientation === "vertical";
+  const gradientDirection = isVertical ? "bg-gradient-to-b" : "bg-gradient-to-r";
+
   return (
     <>
       {/* Multi-layer colorful background glow (exactly like the hero card) */}
@@ -47,9 +53,9 @@ export function DynamicIslandEffects({
           )}
           style={{ opacity: glowOpacity }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
+          <div className={cn("absolute inset-0 blur-xl", gradientDirection, "from-blue-500/30 via-purple-500/30 to-blue-500/30")} />
+          <div className={cn("absolute inset-0 blur-lg", gradientDirection, "from-cyan-400/20 via-indigo-500/20 to-purple-400/20")} />
+          <div className={cn("absolute inset-0 blur-md", gradientDirection, "from-blue-300/15 via-purple-300/15 to-blue-300/15")} />
         </div>
       )}
 
@@ -63,7 +69,7 @@ export function DynamicIslandEffects({
         {/* Inner Shimmer */}
         {showShimmer && (
           <div
-            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/10 to-transparent"
+            className={cn("absolute inset-0 animate-pulse", gradientDirection, "from-transparent via-white/10 to-transparent")}
             style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
           />
         )}

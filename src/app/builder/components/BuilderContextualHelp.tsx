@@ -144,7 +144,7 @@ export function BuilderContextualHelp({ activeSection }: BuilderContextualHelpPr
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-blue-500" />
-              Foundation Step Guide
+              Getting Started
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 text-sm">

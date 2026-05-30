@@ -8,24 +8,23 @@ interface HelpStep {
 export const contextualHelp: Record<BuilderSection, HelpStep[]> = {
   foundation: [
     {
-      title: "Choose Your Foundation",
+      title: "Choose a Country",
       description:
-        "Select from 180+ real countries as your starting point. Each provides authentic economic data — GDP, population, growth rates — that becomes the baseline for your nation.",
+        "Select a real country to use as your baseline. The country's population, GDP, and basic data will be used as your nation's starting data.",
     },
     {
-      title: "Filter & Search",
+      title: "Start from scratch",
       description:
-        "Click the 'Filters' toggle button in the top bar to expand archetype categories inline, and use the search field to quickly narrow down options.",
+        "Prefer a blank slate? Configure your country from the ground up. You'll start with a population of 100,000 and a GDP of $1B, with all other stats at default.",
     },
     {
-      title: "Start from Scratch",
+      title: "Import from IIWiki",
       description:
-        "Prefer a blank slate? Click the 'Start from Scratch' option in the right sidebar to configure a completely custom geopolitical identity and economic baseline.",
+        "Already have a nation on IIWiki? Import your nation's data and lore into the builder. You can edit any values after import.",
     },
     {
-      title: "Import from Wiki",
-      description:
-        "Already have a nation on IIWiki? Click the 'Import from Wiki' option in the right sidebar to load your existing wiki data directly.",
+      title: "Need more help?",
+      description: "Check out the full Beginner's Guide for more information.",
     },
   ],
   identity: [

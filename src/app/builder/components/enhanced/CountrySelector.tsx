@@ -47,10 +47,17 @@ export function CountrySelector({
     onNavigate,
     setGridWidth,
   } = useBuilderFilter();
-  const filteredCountries = useMemo(
-    () => filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes),
-    [countries, searchTerm, selectedArchetypes]
-  );
+  const filteredCountries = useMemo(() => {
+    const filtered = filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
+    const shuffled = [...filtered];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = shuffled[i]!;
+      shuffled[i] = shuffled[j]!;
+      shuffled[j] = temp;
+    }
+    return shuffled;
+  }, [countries, searchTerm, selectedArchetypes]);
   const [_hoveredCountry, setHoveredCountry] = useState<RealCountryData | null>(null);
   const [showScratchDialog, setShowScratchDialog] = useState(false);
   const noopScroll = useCallback(() => {}, []);
@@ -108,13 +115,8 @@ export function CountrySelector({
   const countryNames = useMemo(() => countries?.map((c) => c.name) || [], [countries]);
   const { flagUrls } = useBulkFlags(countryNames, "irl");
   const countriesWithFlags = useMemo(() => {
-    const hasAnyFlags = Object.keys(flagUrls).length > 0;
-    if (!hasAnyFlags) return filteredCountries;
-    return filteredCountries.filter((c) => {
-      const url = flagUrls[c.name];
-      return !!url && !url.includes("/placeholder-flag.svg");
-    });
-  }, [filteredCountries, flagUrls]);
+    return filteredCountries;
+  }, [filteredCountries]);
 
   const handleScratchConfirm = useCallback(() => {
     setShowScratchDialog(false);

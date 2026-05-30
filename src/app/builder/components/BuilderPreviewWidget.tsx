@@ -87,6 +87,7 @@ export function BuilderPreviewWidget({
   const { setPreviewWidgetHeight } = foundationFilter;
 
   const sectionTheme = activeSection ? BUILDER_SECTION_THEMES[activeSection] : null;
+  const themeTextColor = activeSection ? (sectionThemeTextClasses[activeSection]?.split(" ")[0] || "text-zinc-400") : "text-zinc-400";
 
   const economicHealthMetrics = useMemo(() => {
     return {
@@ -324,6 +325,7 @@ export function BuilderPreviewWidget({
 
   // Show live preview when hovering/clicking a country in the foundation grid
   if (activeSection === "foundation" && previewCountry) {
+    const flagUrl = previewCountry.flag || previewCountry.flagUrl;
     return (
       <div ref={containerRef} className="w-56">
         <CutoutCard
@@ -333,18 +335,51 @@ export function BuilderPreviewWidget({
           textureOpacity={0.06}
         >
           <DistortedGlass asBackground className="bg-black/20" />
-          <div className="relative bg-blue-500/10 px-3 pt-2.5 pb-4">
-            <div className="text-card-foreground flex items-center gap-1.5 text-[10px] font-bold">
-              <Globe className="h-3 w-3 text-blue-400" />
-              <span>{foundationPreviewCountry ? "Live Preview" : "Selected Base"}</span>
-            </div>
-            <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
+
+          {/* Cutout tab header with background flag (matches rest of builder) */}
+          <div className="relative flex h-28 w-full flex-col items-center justify-center overflow-hidden bg-blue-500/10 px-3 pt-3 pb-6">
+            {flagUrl ? (
+              <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
+                <UnifiedCountryFlag
+                  countryName={previewCountry.name}
+                  flagUrl={flagUrl}
+                  fitContainer={true}
+                  showTooltip={false}
+                  rounded={false}
+                  className="h-full w-full object-cover opacity-75 brightness-75 transition-all duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/15 via-black/30 to-black/60" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 z-0 flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
+                <Globe className="h-8 w-8 text-blue-500/20" />
+              </div>
+            )}
+
+            {/* Live activity indicator badge */}
+            <span className="absolute top-2 left-2 z-20 rounded bg-blue-500/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+              {foundationPreviewCountry ? "Live Preview" : "Selected Base"}
+            </span>
+
+            <span
+              className={cn(
+                "relative z-20 line-clamp-2 rounded-md border bg-black/60 px-3 py-1.5 text-center text-xs font-bold tracking-wider uppercase shadow-md backdrop-blur-sm",
+                activeSection
+                  ? sectionThemeTextClasses[activeSection]
+                  : "border-white/10 text-zinc-100"
+              )}
+            >
+              {previewCountry.name}
+            </span>
+
+            <CutoutCorner className="text-card absolute -bottom-px left-0 z-20" size={16} />
             <CutoutCorner
-              className="text-card absolute right-0 -bottom-px -scale-x-100"
+              className="text-card absolute right-0 -bottom-px z-20 -scale-x-100"
               size={16}
             />
           </div>
-          <CutoutCardContent className="p-3 pt-1">
+
+          <CutoutCardContent className="p-3 pt-2">
             <CountryPreview country={previewCountry} size="small" />
           </CutoutCardContent>
         </CutoutCard>
@@ -428,7 +463,7 @@ export function BuilderPreviewWidget({
 
             <span
               className={cn(
-                "relative z-20 line-clamp-2 rounded-md border bg-black/60 px-3 py-1.5 text-center text-[10px] font-bold tracking-wider uppercase shadow-md backdrop-blur-sm",
+                "relative z-20 line-clamp-2 rounded-md border bg-black/60 px-3 py-1.5 text-center text-xs font-bold tracking-wider uppercase shadow-md backdrop-blur-sm",
                 activeSection
                   ? sectionThemeTextClasses[activeSection]
                   : "border-white/10 text-zinc-100"
@@ -535,7 +570,7 @@ export function BuilderPreviewWidget({
                       label="Legitimacy"
                       tooltip={`Legitimacy: ${govMetrics.legitimacy.toFixed(1)}% - Public alignment and democratic mandate`}
                     />
-                    <span className="max-w-[50px] truncate text-[8px] font-medium text-zinc-400">
+                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
                       Legitimacy
                     </span>
                   </div>
@@ -547,7 +582,7 @@ export function BuilderPreviewWidget({
                       label="Effectiveness"
                       tooltip={`Effectiveness: ${govMetrics.effectiveness.toFixed(1)}% - Policy cohesion and executive capability`}
                     />
-                    <span className="max-w-[50px] truncate text-[8px] font-medium text-zinc-400">
+                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
                       Effectiveness
                     </span>
                   </div>
@@ -559,7 +594,7 @@ export function BuilderPreviewWidget({
                       label="Budget"
                       tooltip={`Budget Health: ${govMetrics.budgetHealth.toFixed(1)}% - Match accuracy of allocations to total budget`}
                     />
-                    <span className="max-w-[50px] truncate text-[8px] font-medium text-zinc-400">
+                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
                       Budget
                     </span>
                   </div>
@@ -627,7 +662,7 @@ export function BuilderPreviewWidget({
                       label="Econ Health"
                       tooltip={`Economic Health: ${econMetrics.economicHealth.toFixed(1)}%`}
                     />
-                    <span className="max-w-[50px] truncate text-[8px] font-medium text-zinc-400">
+                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
                       Health
                     </span>
                   </div>
@@ -639,7 +674,7 @@ export function BuilderPreviewWidget({
                       label="Integration"
                       tooltip={`Integration Score: ${econMetrics.crossBuilderScore.toFixed(1)}%`}
                     />
-                    <span className="max-w-[50px] truncate text-[8px] font-medium text-zinc-400">
+                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
                       Integration
                     </span>
                   </div>
@@ -651,7 +686,7 @@ export function BuilderPreviewWidget({
                       label="Component Quality"
                       tooltip={`Component Quality: ${econMetrics.overallEffectiveness.toFixed(1)}%`}
                     />
-                    <span className="max-w-[50px] truncate text-[8px] font-medium text-zinc-400">
+                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
                       Quality
                     </span>
                   </div>

@@ -77,16 +77,35 @@ export function FoundationStep({
   const archetypes = archetypesData?.archetypes || [];
   const visibleArchetypes = archetypes.slice(0, visibleCount);
 
-  const loaderRef = React.useRef<HTMLDivElement>(null);
-  const isIntersecting = useIntersectionObserver(loaderRef, {
-    rootMargin: "200px",
+  const [hasScrolled, setHasScrolled] = useState(() => {
+    return typeof window !== "undefined" && window.scrollY > 10;
   });
 
   React.useEffect(() => {
-    if (isIntersecting && visibleCount < archetypes.length) {
+    if (hasScrolled) return;
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setHasScrolled(true);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasScrolled]);
+
+  const loaderRef = React.useRef<HTMLDivElement>(null);
+  const observerOptions = React.useMemo(
+    () => ({
+      rootMargin: "50px",
+    }),
+    []
+  );
+  const isIntersecting = useIntersectionObserver(loaderRef, observerOptions);
+
+  React.useEffect(() => {
+    if (hasScrolled && isIntersecting && visibleCount < archetypes.length) {
       setVisibleCount((prev) => Math.min(prev + 6, archetypes.length));
     }
-  }, [isIntersecting, archetypes.length, visibleCount]);
+  }, [isIntersecting, archetypes.length, visibleCount, hasScrolled]);
 
   if (isLoadingCountries) {
     return (
@@ -203,15 +222,17 @@ export function FoundationStep({
       {/* Back Button & Header */}
       <div className="flex flex-col justify-between gap-4 border-b border-zinc-800 pb-4 md:flex-row md:items-center">
         <div>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               setSelectedTemplate(null);
               setLocalSelectedArchetype(null);
             }}
-            className="mb-1 flex items-center gap-1.5 rounded-md border border-zinc-700/50 bg-zinc-800/40 px-3 py-1.5 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-white"
+            className="mb-2 flex items-center gap-1.5 border-zinc-200 bg-zinc-50 text-xs text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-900/80 dark:hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Change Base Template ({selectedTemplate.name})
-          </button>
+          </Button>
           <h2 className="bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-2xl font-bold text-transparent">
             Choose Country Archetype
           </h2>
@@ -258,24 +279,15 @@ export function FoundationStep({
           {/* Divider */}
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-          {/* Standalone Skip Button with Hover-only Dynamic Island styling */}
-          <div className="group relative shrink-0">
-            {/* Dynamic Island background & effects layer - Hover active */}
-            <div
-              className="pointer-events-none absolute inset-0 z-0 rounded-lg border border-white/20 opacity-0 transition-all duration-300 group-hover:opacity-100 dark:border-white/10"
-              style={DYNAMIC_ISLAND_STYLE}
-            >
-              <DynamicIslandEffects glowOpacity={1} />
-            </div>
-
-            {/* Interactive button trigger with base style transitioning to high-contrast white */}
-            <button
-              onClick={handleSkipArchetype}
-              className="relative z-10 block cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-4 py-1.5 text-xs font-semibold text-zinc-500 transition-all duration-300 group-hover:border-transparent hover:text-white dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-white"
-            >
-              Skip Archetype
-            </button>
-          </div>
+          {/* Standalone Skip Button with standard outline styling */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSkipArchetype}
+            className="border-zinc-200 bg-transparent text-xs text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-900/50 dark:hover:text-white"
+          >
+            Skip Archetype
+          </Button>
         </div>
       </div>
 

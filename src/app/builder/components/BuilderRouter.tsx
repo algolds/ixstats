@@ -14,7 +14,7 @@ import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
-import { useDIPlugin } from "~/components/DynamicIsland";
+import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { PreText } from "~/components/ui/pretext";
 import { BuilderSectionHero } from "./BuilderSectionHero";
@@ -323,46 +323,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     return colors[activeSection] || "text-amber-400";
   }, [activeSection]);
 
-  const handleDIClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
 
-  // Register Dynamic Island plugin — compact only, notch bar handles navigation
-  const diPlugin = useMemo(
-    () => ({
-      id: "builder",
-      priority: 100,
-      center: (
-        <button
-          onClick={handleDIClick}
-          className="flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-white/90 select-none hover:opacity-85 focus:outline-none"
-        >
-          <MyCountryLogo size="sm" variant="icon-only" mode={mode} animated={false} />
-          <span className={cn("ml-1 font-bold transition-colors", themeTextColor)}>
-            {currentStepLabel}
-          </span>
-          {currentSubStepLabel && (
-            <>
-              <span className="text-white/30">›</span>
-              <span
-                className="max-w-[60px] truncate font-medium text-white/70"
-                title={currentSubStepLabel}
-              >
-                {currentSubStepLabel}
-              </span>
-            </>
-          )}
-        </button>
-      ),
-      accentColor: mode === "edit" ? "#f59e0b" : "#10b981",
-      stickyLabel: mode === "edit" ? "Country Editor" : "Country Builder",
-    }),
-    [mode, currentStepLabel, currentSubStepLabel, themeTextColor, handleDIClick]
-  );
-
-  useDIPlugin(diPlugin);
 
   // Handle browser back/forward
   useEffect(() => {
@@ -481,6 +442,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Always use sidebar layout now (no welcome screen)
   return (
     <BuilderFilterProvider onNavigate={handleNavigate}>
+      <MyCountryDIPlugin />
       <div className="relative min-h-screen w-full">
         {/* Dynamic Background Flag for non-foundation steps */}
         {activeSection !== "foundation" && countryFlagUrl && (

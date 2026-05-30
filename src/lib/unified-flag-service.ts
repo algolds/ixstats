@@ -647,10 +647,19 @@ class UnifiedFlagService {
         philippines: "the Philippines",
         maldives: "the Maldives",
         "solomon islands": "the Solomon Islands",
-        "marshall islands": "the Marshall Islands",
+        "marshall islands": "the Solomon Islands",
         "central african republic": "the Central African Republic",
         "dominican republic": "the Dominican Republic",
         "united arab emirates": "the United Arab Emirates",
+        "syrian arab republic": "Syria",
+        "macao sar, china": "Macau",
+        "hong kong sar, china": "Hong Kong",
+        "west bank and gaza": "Palestine",
+        "virgin islands (u.s.)": "United States Virgin Islands",
+        "kyrgyz republic": "Kyrgyzstan",
+        "slovak republic": "Slovakia",
+        "st. lucia": "Saint Lucia",
+        "sint maarten (dutch part)": "Sint Maarten",
       };
 
       // Check if we need to use a mapped name

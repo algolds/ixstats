@@ -6,6 +6,7 @@ import { RiGlobalLine } from "react-icons/ri";
 import { motion, useAnimation } from "motion/react";
 import { BlurFade } from "~/components/magicui/blur-fade";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
+import { cn } from "~/lib/utils";
 
 interface CountriesFocusGridModularProps {
   countries: CountryCardData[];
@@ -24,6 +25,7 @@ interface CountriesFocusGridModularProps {
   parallaxOffsets?: number[];
   isAutoScrolling?: boolean;
   flagUrls?: Record<string, string | null>;
+  variant?: "default" | "raw";
 }
 
 const CountryCard: React.FC<{
@@ -128,50 +130,67 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
   parallaxOffsets = [],
   isAutoScrolling = false,
   flagUrls = {},
+  variant = "default",
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const visibleCountries = countries.slice(0, visibleCount);
+  const isRaw = variant === "raw";
+
+  const gridContent = (
+    <div className="relative">
+      {isAutoScrolling && !isRaw && (
+        <div className="absolute top-0 right-0 z-10 p-2">
+          <motion.div
+            className="h-2 w-2 rounded-full bg-emerald-400/60"
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.6, 1, 0.6],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </div>
+      )}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+          isRaw
+            ? ""
+            : "glass-surface overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm"
+        )}
+      >
+        {visibleCountries.map((country, index) => {
+          const columnIndex = index % 4;
+          const parallaxOffset = parallaxOffsets[columnIndex] ?? 0;
+          const flagUrl = flagUrls[country.name] ?? null;
+          return (
+            <CountryCard
+              key={country.id}
+              country={country}
+              index={index}
+              onHoverChange={onCardHoverChange}
+              onCountryClick={onCountryClick}
+              cardSize={cardSize}
+              softSelectedCountryId={softSelectedCountryId}
+              parallaxOffset={parallaxOffset}
+              flagUrl={flagUrl}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  if (isRaw) {
+    return gridContent;
+  }
 
   return (
     <div className="space-y-12" ref={containerRef}>
-      <div className="relative">
-        {isAutoScrolling && (
-          <div className="absolute top-0 right-0 z-10 p-2">
-            <motion.div
-              className="h-2 w-2 rounded-full bg-emerald-400/60"
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.6, 1, 0.6],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          </div>
-        )}
-        <div className="glass-surface grid grid-cols-1 gap-6 overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {visibleCountries.map((country, index) => {
-            const columnIndex = index % 4;
-            const parallaxOffset = parallaxOffsets[columnIndex] ?? 0;
-            const flagUrl = flagUrls[country.name] ?? null;
-            return (
-              <CountryCard
-                key={country.id}
-                country={country}
-                index={index}
-                onHoverChange={onCardHoverChange}
-                onCountryClick={onCountryClick}
-                cardSize={cardSize}
-                softSelectedCountryId={softSelectedCountryId}
-                parallaxOffset={parallaxOffset}
-                flagUrl={flagUrl}
-              />
-            );
-          })}
-        </div>
-      </div>
+      {gridContent}
 
       {(isLoading || (hasMore && visibleCount < countries.length)) && (
         <div className="mt-12">
@@ -192,7 +211,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
         </div>
       )}
 
-      {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
+      {!isLoading && !hasMore && !isAutoScrolling && visibleCount >= countries.length && countries.length > 0 && (
         <div className="mt-12 text-center">
           <div className="glass-floating glass-refraction inline-block px-6 py-4">
             <p className="text-muted-foreground">You've viewed all {countries.length} countries</p>

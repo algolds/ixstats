@@ -34,10 +34,11 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     const [isHovered, setIsHovered] = useState(false);
     const [imgError, setImgError] = useState(false);
 
-    // Only fetch from browser if no server-provided flag URL
-    const { flag, loading, error } = useCountryFlagRouteAware(serverFlagUrl ? "" : country.name);
+    const isPlaceholder = !serverFlagUrl || serverFlagUrl.includes("placeholder-flag.svg") || serverFlagUrl.includes("placeholder");
+    // Only fetch from browser if no server-provided flag URL or it is a placeholder
+    const { flag, loading, error } = useCountryFlagRouteAware(isPlaceholder ? country.name : "");
 
-    const resolvedFlagUrl = serverFlagUrl ?? flag?.flagUrl ?? null;
+    const resolvedFlagUrl = (!serverFlagUrl || isPlaceholder) ? (flag?.flagUrl ?? serverFlagUrl) : serverFlagUrl;
 
     // Reset error when resolved flag changes
     React.useEffect(() => {
@@ -45,115 +46,118 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     }, [resolvedFlagUrl, country.name]);
 
     const _isLoaded = !!resolvedFlagUrl;
-    const isLoading = !serverFlagUrl && (loading || (!flag && !error));
-    const hasError = !serverFlagUrl && (error || imgError);
+    const isLoading = isPlaceholder && (loading || (!flag && !error));
+    const hasError = isPlaceholder ? (!!error || imgError) : imgError;
     const showFlag = resolvedFlagUrl && !imgError;
 
     const aspectClass = cardSize === "small" ? "aspect-square" : "aspect-[3/4]";
 
     return (
-      <motion.div
-        layout
-        className={cn(
-          "country-focus-card relative cursor-pointer",
-          isHovered && "shadow-2xl transition-all duration-100"
-        )}
-        onMouseEnter={() => {
-          setIsHovered(true);
-          onHoverChange(country.id);
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          onHoverChange(null);
-        }}
-        onClick={() => {
-          onCountryClick?.(country.id);
-        }}
-        animate={
-          isHovered
-            ? {
-                scale: 1.08,
-                y: -10,
-                rotateZ: 0.5,
-                rotateY: 0.5,
-              }
-            : {
-                scale: 1,
-                y: 0,
-                rotateZ: 0,
-                rotateY: 0,
-              }
-        }
-        transition={
-          isHovered
-            ? {
-                type: "spring",
-                stiffness: 150,
-                damping: 20,
-              }
-            : {
-                duration: 0.1,
-                ease: "easeInOut",
-              }
-        }
-      >
-        <div
-          className={cn(
-            "glass-floating glass-refraction glass-interactive relative overflow-hidden transition-all duration-500 ease-out",
-            aspectClass,
-            isHovered && "brightness-105 saturate-110 backdrop-blur-md",
-            softSelectedCountryId === country.id &&
-              "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"
-          )}
-        >
-          {/* Flag Background */}
-          {showFlag ? (
-            <img
-              src={resolvedFlagUrl}
-              alt={`Flag of ${country.name}`}
-              className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300"
-              style={{
-                opacity: isLoading || hasError ? 0.2 : 1,
-              }}
-              referrerPolicy="no-referrer"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50">
-              <Globe className="h-12 w-12 text-gray-400" />
-            </div>
-          )}
+      <div className={cn("relative rounded-xl overflow-visible", aspectClass)}>
+        {/* Recessed Indent / Card Slot (always underneath, visible when card floats up) */}
+        <div className="absolute inset-0 rounded-xl bg-zinc-200/40 dark:bg-zinc-950/60 shadow-[inset_0_4px_10px_rgba(0,0,0,0.25)] dark:shadow-[inset_0_6px_16px_rgba(0,0,0,0.85)] border-t border-l border-zinc-400/40 dark:border-black/80 border-r border-b border-white/60 dark:border-white/10 pointer-events-none" />
 
-          {/* Content Overlay */}
+        <motion.div
+          layout
+          className="country-focus-card relative cursor-pointer h-full w-full"
+          onMouseEnter={() => {
+            setIsHovered(true);
+            onHoverChange(country.id);
+          }}
+          onMouseLeave={() => {
+            setIsHovered(false);
+            onHoverChange(null);
+          }}
+          onClick={() => {
+            onCountryClick?.(country.id);
+          }}
+          animate={
+            isHovered
+              ? {
+                  scale: 1.08,
+                  y: -10,
+                  rotateZ: 0.5,
+                  rotateY: 0.5,
+                }
+              : {
+                  scale: 1,
+                  y: 0,
+                  rotateZ: 0,
+                  rotateY: 0,
+                }
+          }
+          transition={
+            isHovered
+              ? {
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 20,
+                }
+              : {
+                  duration: 0.1,
+                  ease: "easeInOut",
+                }
+          }
+        >
           <div
             className={cn(
-              "absolute inset-0 flex flex-col justify-end bg-black/50 p-6 transition-opacity duration-300",
-              isHovered ? "opacity-100" : "opacity-0"
+              "glass-floating glass-refraction glass-interactive relative overflow-hidden transition-all duration-500 ease-out h-full w-full rounded-xl border border-black/5 dark:border-white/10",
+              isHovered
+                ? "shadow-2xl shadow-black/25 dark:shadow-black/60 brightness-105 saturate-110 backdrop-blur-md"
+                : "shadow-md shadow-black/10 dark:shadow-black/35",
+              softSelectedCountryId === country.id &&
+                "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"
             )}
           >
-            <motion.div
-              animate={{
-                scale: isHovered ? 1.05 : 1,
-                opacity: isHovered ? 0.9 : 1,
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            >
-              <span className="text-xl font-medium text-white antialiased [text-shadow:0_0_10px_rgba(255,255,255,0.3)] md:text-2xl">
-                {country.name}
-              </span>
-            </motion.div>
-          </div>
-
-          {/* Always Visible Country Name */}
-          {!isHovered && (
-            <div className="absolute right-4 bottom-4 left-4">
-              <div className="text-xl font-medium text-white antialiased [text-shadow:0_0_15px_rgba(255,255,255,0.4)] md:text-2xl">
-                {country.name}
+            {/* Flag Background */}
+            {showFlag ? (
+              <img
+                src={resolvedFlagUrl}
+                alt={`Flag of ${country.name}`}
+                className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300"
+                style={{
+                  opacity: isLoading || hasError ? 0.2 : 1,
+                }}
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50">
+                <Globe className="h-12 w-12 text-gray-400" />
               </div>
+            )}
+
+            {/* Content Overlay */}
+            <div
+              className={cn(
+                "absolute inset-0 flex flex-col justify-end bg-black/50 p-6 transition-opacity duration-300",
+                isHovered ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <motion.div
+                animate={{
+                  scale: isHovered ? 1.05 : 1,
+                  opacity: isHovered ? 0.9 : 1,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              >
+                <span className="text-xl font-medium text-white antialiased [text-shadow:0_0_10px_rgba(255,255,255,0.3)] md:text-2xl">
+                  {country.name}
+                </span>
+              </motion.div>
             </div>
-          )}
-        </div>
-      </motion.div>
+
+            {/* Always Visible Country Name */}
+            {!isHovered && (
+              <div className="absolute right-4 bottom-4 left-4">
+                <div className="text-xl font-medium text-white antialiased [text-shadow:0_0_15px_rgba(255,255,255,0.4)] md:text-2xl">
+                  {country.name}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
     );
   }
 );

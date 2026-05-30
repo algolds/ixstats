@@ -17,38 +17,50 @@ interface CountryPreviewProps {
 
 export function CountryPreview({ country, size = "large" }: CountryPreviewProps) {
   const isLarge = size === "large";
+  const isSmall = size === "small";
   const ringSize = isLarge ? 70 : 60;
+
+  const econValue = Math.min(100, (country.gdpPerCapita / 50000) * 100);
+  const marketValue = Math.min(100, Math.max(20, ((country.growthRate || 2) + 2) * 20));
+  const devValue = (() => {
+    const tier = getEconomicTier(country.gdpPerCapita);
+    return tier === "Advanced"
+      ? 95
+      : tier === "Developed"
+        ? 75
+        : tier === "Emerging"
+          ? 55
+          : tier === "Developing"
+            ? 35
+            : 20;
+  })();
+
+  const getMetricColor = (val: number) => {
+    if (val < 35) return "#ef4444"; // Red danger/low
+    if (val < 60) return "#f97316"; // Orange bad
+    if (val < 80) return "#eab308"; // Yellow ok
+    return "#10b981"; // Green good
+  };
 
   const metrics = [
     {
       label: "Economic Health",
-      value: Math.min(100, (country.gdpPerCapita / 50000) * 100),
-      color: "#22d3ee",
+      value: econValue,
+      color: getMetricColor(econValue),
       icon: DollarSign,
       tooltip: `Economic strength based on GDP per capita (${formatNumber(country.gdpPerCapita)}). Higher values indicate stronger economic performance.`,
     },
     {
       label: "Market Activity",
-      value: Math.min(100, Math.max(20, ((country.growthRate || 2) + 2) * 20)),
-      color: "#10b981",
+      value: marketValue,
+      color: getMetricColor(marketValue),
       icon: Activity,
       tooltip: `Market dynamism based on GDP growth rate (${((country.growthRate || 0) * 100).toFixed(1)}%). Measures economic momentum and business activity.`,
     },
     {
       label: "Development Index",
-      value: (() => {
-        const tier = getEconomicTier(country.gdpPerCapita);
-        return tier === "Advanced"
-          ? 95
-          : tier === "Developed"
-            ? 75
-            : tier === "Emerging"
-              ? 55
-              : tier === "Developing"
-                ? 35
-                : 20;
-      })(),
-      color: "#8b5cf6",
+      value: devValue,
+      color: getMetricColor(devValue),
       icon: BarChart,
       tooltip: `Overall development level (${getEconomicTier(country.gdpPerCapita)}). Composite indicator of infrastructure, education, and institutional quality.`,
     },
@@ -63,23 +75,27 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
       className="space-y-4"
     >
       {/* Country Header */}
-      <div className="mb-6 text-center">
-        <div className="mb-3 flex h-auto w-full justify-center">
-          <EnhancedCountryFlag
-            countryName={country.name}
-            size="xl"
-            hoverBlur={false}
-            priority={true}
-          />
+      {!isSmall && (
+        <div className="mb-6 text-center">
+          <div className="mb-3 flex h-auto w-full justify-center">
+            <EnhancedCountryFlag
+              countryName={country.name}
+              size="xl"
+              hoverBlur={false}
+              priority={true}
+            />
+          </div>
+          <h4 className="mb-1 text-xl font-bold text-[var(--color-text-primary)]">
+            {country.name}
+          </h4>
+          <p className="text-[var(--color-text-muted)]">{country.continent}</p>
         </div>
-        <h4 className="mb-1 text-xl font-bold text-[var(--color-text-primary)]">{country.name}</h4>
-        <p className="text-[var(--color-text-muted)]">{country.continent}</p>
-      </div>
+      )}
 
       {/* Live Activity Rings */}
       <div
         className={cn(
-          "mb-6 grid scrollbar-none grid-cols-3 overflow-x-auto px-1 py-2",
+          "mb-6 grid scrollbar-none grid-cols-3 overflow-visible px-1 py-3.5",
           isLarge ? "gap-4" : "gap-1.5"
         )}
       >
@@ -93,7 +109,7 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
               tooltip={metric.tooltip}
             />
             <div
-              className="mx-auto mt-2 max-w-[64px] truncate text-xs font-medium text-white/90"
+              className="mx-auto mt-2 max-w-[64px] truncate text-xs font-medium text-[var(--color-text-secondary)] transition-colors"
               title={metric.label}
             >
               {isLarge ? metric.label : metric.label.split(" ")[0]}
