@@ -484,9 +484,30 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("User not found in authentication context");
       }
 
+      // Count owned card instances live
+      const totalCards = await ctx.db.cardOwnership.count({
+        where: { ownerId: ctx.user.id },
+      });
+
+      // Sum of market values for all owned card instances live
+      const ownerships = await ctx.db.cardOwnership.findMany({
+        where: { ownerId: ctx.user.id },
+        include: {
+          cards: {
+            select: {
+              marketValue: true,
+            },
+          },
+        },
+      });
+
+      const deckValue = ownerships.reduce((sum, own) => {
+        return sum + (own.cards?.marketValue ?? 0) * own.quantity;
+      }, 0);
+
       return {
-        totalCards: ctx.user.totalCards ?? 0,
-        deckValue: ctx.user.deckValue ?? 0,
+        totalCards,
+        deckValue,
         collectorLevel: ctx.user.collectorLevel ?? 1,
         collectorXp: ctx.user.collectorXp ?? 0,
       };

@@ -371,17 +371,26 @@ export const StepRenderer = memo(function StepRenderer({
   const { builderState, setBuilderState, updateStep, countryId, mode } = useBuilderContext();
   const { handleTabChange } = useBuilderActions({ builderState, setBuilderState, mode });
 
-  const handleEconomicInputsChange = useCallback((inputs: EconomicInputs) => {
-    setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
-  }, [setBuilderState]);
+  const handleEconomicInputsChange = useCallback(
+    (inputs: EconomicInputs) => {
+      setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
+    },
+    [setBuilderState]
+  );
 
-  const handlePersistEconomyBuilder = useCallback((economyBuilderState: any) => {
-    setBuilderState((prev) => ({ ...prev, economyBuilderState }));
-  }, [setBuilderState]);
+  const handlePersistEconomyBuilder = useCallback(
+    (economyBuilderState: any) => {
+      setBuilderState((prev) => ({ ...prev, economyBuilderState }));
+    },
+    [setBuilderState]
+  );
 
-  const handlePersistTaxSystem = useCallback((taxSystemDraft: any) => {
-    setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
-  }, [setBuilderState]);
+  const handlePersistTaxSystem = useCallback(
+    (taxSystemDraft: any) => {
+      setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
+    },
+    [setBuilderState]
+  );
 
   const handleFoundationComplete = useCallback(
     (country: RealCountryData) => {

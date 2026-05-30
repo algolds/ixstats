@@ -150,7 +150,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             notes: "",
           };
 
-          const parentDept = department.parentDepartmentId 
+          const parentDept = department.parentDepartmentId
             ? departments[parseInt(department.parentDepartmentId)]
             : null;
 

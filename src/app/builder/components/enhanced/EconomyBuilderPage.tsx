@@ -332,15 +332,30 @@ export function EconomyBuilderPage({
   const [selectedComponents, setSelectedComponents] =
     useState<EconomicComponentType[]>(propsSelectedComponents);
 
-  const [activeStructureTab, setActiveStructureTab] = useState<"sectors" | "labor" | "demographics">("sectors");
-  const [activeFiscalTab, setActiveFiscalTab] = useState<"taxes" | "exemptions" | "calculator">("taxes");
+  const [activeStructureTab, setActiveStructureTab] = useState<
+    "sectors" | "labor" | "demographics"
+  >("sectors");
+  const [activeFiscalTab, setActiveFiscalTab] = useState<"taxes" | "exemptions" | "calculator">(
+    "taxes"
+  );
 
   const currentStep = useMemo(() => {
     const rawTab = activeTab || "components";
-    if (rawTab === "sectors" || rawTab === "labor" || rawTab === "demographics" || rawTab === "structure") {
+    if (
+      rawTab === "sectors" ||
+      rawTab === "labor" ||
+      rawTab === "demographics" ||
+      rawTab === "structure"
+    ) {
       return "structure";
     }
-    if (rawTab === "taxes" || rawTab === "tax" || rawTab === "exemptions" || rawTab === "calculator" || rawTab === "fiscal") {
+    if (
+      rawTab === "taxes" ||
+      rawTab === "tax" ||
+      rawTab === "exemptions" ||
+      rawTab === "calculator" ||
+      rawTab === "fiscal"
+    ) {
       return "fiscal";
     }
     if (rawTab === "preview") {
@@ -1138,7 +1153,7 @@ export function EconomyBuilderPage({
                   </h3>
                   <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
                 </div>
-                <GlassCardContent className="p-6 space-y-6">
+                <GlassCardContent className="space-y-6 p-6">
                   {/* Government Revenue Integration Card */}
                   {revenueIntegration.totalRevenue > 0 && (
                     <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
@@ -1295,9 +1310,9 @@ export function EconomyBuilderPage({
                           <Alert className="mt-4 border-amber-500/30 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
                             <Info className="h-4 w-4 text-amber-500" />
                             <AlertDescription className="text-sm text-amber-700 dark:text-amber-200">
-                              High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)})
-                              may reduce private sector GDP growth. Consider balancing with economic
-                              components that promote business development.
+                              High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)}
+                              ) may reduce private sector GDP growth. Consider balancing with
+                              economic components that promote business development.
                             </AlertDescription>
                           </Alert>
                         )}
@@ -1333,14 +1348,14 @@ export function EconomyBuilderPage({
                 textureOpacity={0.04}
               >
                 {/* Horizontal Glass Segmented Sub-tabs inside card header */}
-                <div className="border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1] gap-4">
+                <div className="border-border/40 flex flex-col items-start justify-between gap-4 border-b bg-white/[0.02] px-6 py-4 sm:flex-row sm:items-center dark:bg-black/[0.1]">
                   <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
                     <Factory className="h-5 w-5 text-emerald-400" />
                     Economic Structure
                   </h3>
-                  
+
                   {/* Segmented Pill controls */}
-                  <div className="flex gap-1.5 bg-black/20 p-1 rounded-lg border border-zinc-800/40">
+                  <div className="flex gap-1.5 rounded-lg border border-zinc-800/40 bg-black/20 p-1">
                     {[
                       { id: "sectors", label: "Sectors", icon: Factory },
                       { id: "labor", label: "Labor & Employment", icon: Users },
@@ -1353,10 +1368,10 @@ export function EconomyBuilderPage({
                           key={subTab.id}
                           onClick={() => setActiveStructureTab(subTab.id as any)}
                           className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",
+                            "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all duration-200",
                             isActive
-                              ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm"
-                              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                              ? "bg-emerald-500 font-bold text-zinc-950 shadow-sm"
+                              : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                           )}
                         >
                           <Icon className="h-3.5 w-3.5" />
@@ -1447,14 +1462,14 @@ export function EconomyBuilderPage({
                 textureOpacity={0.04}
               >
                 {/* Horizontal Glass Segmented Sub-tabs inside card header */}
-                <div className="border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1] gap-4">
+                <div className="border-border/40 flex flex-col items-start justify-between gap-4 border-b bg-white/[0.02] px-6 py-4 sm:flex-row sm:items-center dark:bg-black/[0.1]">
                   <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
                     <TrendingUp className="h-5 w-5 text-emerald-400" />
                     Fiscal & Taxes
                   </h3>
-                  
+
                   {/* Segmented Pill controls */}
-                  <div className="flex gap-1.5 bg-black/20 p-1 rounded-lg border border-zinc-800/40">
+                  <div className="flex gap-1.5 rounded-lg border border-zinc-800/40 bg-black/20 p-1">
                     {[
                       { id: "taxes", label: "Rates & Brackets", icon: DollarSign },
                       { id: "exemptions", label: "Tax Exemptions", icon: Coins },
@@ -1467,10 +1482,10 @@ export function EconomyBuilderPage({
                           key={subTab.id}
                           onClick={() => setActiveFiscalTab(subTab.id as any)}
                           className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",
+                            "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all duration-200",
                             isActive
-                              ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm"
-                              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                              ? "bg-emerald-500 font-bold text-zinc-950 shadow-sm"
+                              : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                           )}
                         >
                           <Icon className="h-3.5 w-3.5" />
@@ -1495,27 +1510,29 @@ export function EconomyBuilderPage({
                         {/* Fiscal Blueprint Templates Banner */}
                         <GlassCard className="border-emerald-500/20 bg-emerald-500/5">
                           <GlassCardContent className="p-6">
-                            <h3 className="text-emerald-400 mb-2 flex items-center gap-2 text-lg font-bold">
+                            <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-emerald-400">
                               <Sparkles className="h-5 w-5" />
                               Fiscal Blueprint Templates
                             </h3>
                             <p className="text-muted-foreground mb-4 text-sm">
-                              Select a pre-designed tax blueprint model to instantly configure your nation's fiscal system. 
-                              You can customize it further on this page.
+                              Select a pre-designed tax blueprint model to instantly configure your
+                              nation's fiscal system. You can customize it further on this page.
                             </p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                               {taxSystemTemplates.map((template) => (
                                 <Button
                                   key={template.name}
                                   variant="outline"
-                                  className="flex h-auto flex-col items-start gap-1 border-zinc-800 bg-zinc-950/40 p-4 text-left hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:text-foreground"
+                                  className="hover:text-foreground flex h-auto flex-col items-start gap-1 border-zinc-800 bg-zinc-950/40 p-4 text-left hover:border-emerald-500/50 hover:bg-emerald-500/5"
                                   onClick={() => {
                                     taxBuilder.applyTemplate(template);
                                     notify.success(`Applied ${template.name}`);
                                   }}
                                 >
-                                  <span className="font-bold text-sm">{template.name}</span>
-                                  <span className="text-muted-foreground text-xs line-clamp-2">{template.description}</span>
+                                  <span className="text-sm font-bold">{template.name}</span>
+                                  <span className="text-muted-foreground line-clamp-2 text-xs">
+                                    {template.description}
+                                  </span>
                                 </Button>
                               ))}
                             </div>

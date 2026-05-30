@@ -203,15 +203,15 @@ export function EnhancedNumberInput({
 
     const input = e.target;
     const rawValue = input.value;
-    
+
     // Capture cursor position from the right side of the input (to avoid comma shifts moving the cursor)
     const selectionStart = input.selectionStart || 0;
     const lengthBefore = rawValue.length;
-    
+
     const formatted = formatInputOnTheFly(rawValue);
-    
+
     setDisplayValue(formatted);
-    
+
     // Restore cursor position in the next tick
     requestAnimationFrame(() => {
       if (inputRef.current) {
@@ -278,10 +278,12 @@ export function EnhancedNumberInput({
       const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
       const newValue = Math.min(max, numericValue + currentStep);
       onChange(newValue);
-      
+
       const formatted = isFocused
         ? formatInputOnTheFly(newValue.toString())
-        : (typeof format === "function" ? format(newValue) : newValue.toFixed(precision));
+        : typeof format === "function"
+          ? format(newValue)
+          : newValue.toFixed(precision);
       setDisplayValue(formatted);
     }
   };
@@ -291,10 +293,12 @@ export function EnhancedNumberInput({
       const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
       const newValue = Math.max(min, numericValue - currentStep);
       onChange(newValue);
-      
+
       const formatted = isFocused
         ? formatInputOnTheFly(newValue.toString())
-        : (typeof format === "function" ? format(newValue) : newValue.toFixed(precision));
+        : typeof format === "function"
+          ? format(newValue)
+          : newValue.toFixed(precision);
       setDisplayValue(formatted);
     }
   };
@@ -302,10 +306,12 @@ export function EnhancedNumberInput({
   const handleReset = () => {
     if (resetValue !== undefined) {
       onChange(resetValue);
-      
+
       const formatted = isFocused
         ? formatInputOnTheFly(resetValue.toString())
-        : (typeof format === "function" ? format(resetValue) : Number(resetValue).toFixed(precision));
+        : typeof format === "function"
+          ? format(resetValue)
+          : Number(resetValue).toFixed(precision);
       setDisplayValue(formatted);
     }
   };
@@ -335,7 +341,7 @@ export function EnhancedNumberInput({
       if (input) {
         const start = input.selectionStart || 0;
         const end = input.selectionEnd || 0;
-        
+
         if (start === end && start > 0) {
           const charToDelete = displayValue[start - 1];
           if (charToDelete === ",") {
@@ -345,9 +351,9 @@ export function EnhancedNumberInput({
             const after = displayValue.slice(start);
             const combined = before + after;
             const formatted = formatInputOnTheFly(combined);
-            
+
             setDisplayValue(formatted);
-            
+
             const lengthBefore = displayValue.length;
             const suffixLengthBefore = lengthBefore - start;
             requestAnimationFrame(() => {
@@ -364,7 +370,7 @@ export function EnhancedNumberInput({
       if (input) {
         const start = input.selectionStart || 0;
         const end = input.selectionEnd || 0;
-        
+
         if (start === end && start < displayValue.length) {
           const charToDelete = displayValue[start];
           if (charToDelete === ",") {
@@ -374,9 +380,9 @@ export function EnhancedNumberInput({
             const after = displayValue.slice(start + 2);
             const combined = before + after;
             const formatted = formatInputOnTheFly(combined);
-            
+
             setDisplayValue(formatted);
-            
+
             const lengthBefore = displayValue.length;
             const suffixLengthBefore = lengthBefore - start;
             const newSuffixLength = Math.max(0, suffixLengthBefore - 2);
@@ -454,7 +460,7 @@ export function EnhancedNumberInput({
             animate={{ opacity: isFocused ? 1 : 0 }}
           />
 
-          <div className="relative flex items-center justify-between w-full pr-1.5">
+          <div className="relative flex w-full items-center justify-between pr-1.5">
             <input
               ref={inputRef}
               type="text"
@@ -466,7 +472,7 @@ export function EnhancedNumberInput({
               placeholder={placeholder || (acceptText ? "Enter text..." : "Enter number...")}
               disabled={disabled}
               className={cn(
-                "flex-1 min-w-0 border-none bg-transparent outline-none",
+                "min-w-0 flex-1 border-none bg-transparent outline-none",
                 acceptText ? "font-sans" : "font-mono",
                 "text-foreground placeholder:text-muted-foreground/60",
                 "font-medium",
@@ -477,15 +483,15 @@ export function EnhancedNumberInput({
 
             {/* Unit Display */}
             {unit && displayValue && !isEditing && (
-              <span className="text-muted-foreground mx-2 text-sm shrink-0">{unit}</span>
+              <span className="text-muted-foreground mx-2 shrink-0 text-sm">{unit}</span>
             )}
 
             {/* Action Buttons */}
             {showButtons && (
-              <div className="flex items-center gap-0.5 shrink-0 z-10">
+              <div className="z-10 flex shrink-0 items-center gap-0.5">
                 {/* Divider Line */}
-                <div className="h-4 w-[1px] bg-white/10 dark:bg-white/5 mx-1 shrink-0" />
-                
+                <div className="mx-1 h-4 w-[1px] shrink-0 bg-white/10 dark:bg-white/5" />
+
                 <motion.button
                   type="button"
                   onClick={handleDecrement}
@@ -494,8 +500,8 @@ export function EnhancedNumberInput({
                   whileTap={{ scale: 0.95 }}
                   className={cn(
                     "flex items-center justify-center rounded transition-all",
-                    "hover:bg-white/[0.08] dark:hover:bg-white/[0.05] hover:text-[var(--primitive-primary)]",
-                    "w-6 h-6",
+                    "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
+                    "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
                     "text-foreground/70 hover:text-foreground"
                   )}
@@ -511,8 +517,8 @@ export function EnhancedNumberInput({
                   whileTap={{ scale: 0.95 }}
                   className={cn(
                     "flex items-center justify-center rounded transition-all",
-                    "hover:bg-white/[0.08] dark:hover:bg-white/[0.05] hover:text-[var(--primitive-primary)]",
-                    "w-6 h-6",
+                    "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
+                    "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
                     "text-foreground/70 hover:text-foreground"
                   )}
@@ -529,8 +535,8 @@ export function EnhancedNumberInput({
                     whileTap={{ scale: 0.95 }}
                     className={cn(
                       "flex items-center justify-center rounded transition-all",
-                      "hover:bg-white/[0.08] dark:hover:bg-white/[0.05] hover:text-[var(--primitive-primary)]",
-                      "w-6 h-6",
+                      "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
+                      "h-6 w-6",
                       "disabled:cursor-not-allowed disabled:opacity-20",
                       "text-foreground/70 hover:text-foreground"
                     )}

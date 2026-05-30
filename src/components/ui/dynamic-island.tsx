@@ -271,11 +271,11 @@ const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
 
   const setSize = useCallback(
     (newSize: SizePresets) => {
-      if (state.previousSize !== newSize && newSize !== state.size) {
+      if (newSize !== state.size) {
         dispatch({ type: "SET_SIZE", newSize });
       }
     },
-    [state.previousSize, state.size, dispatch]
+    [state.size, dispatch]
   );
 
   const scheduleAnimation = useCallback(
@@ -548,26 +548,26 @@ const DynamicIslandContent = ({
           // DynamicIslandEffects glass aesthetic — matches BuilderSectionHero
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-          backdropFilter: "blur(20px) saturate(190%)",
-          WebkitBackdropFilter: "blur(20px) saturate(190%)",
+          backdropFilter: "blur(20px) saturate(120%)",
+          WebkitBackdropFilter: "blur(20px) saturate(120%)",
           transform: "translateZ(0)",
           isolation: "isolate",
           overflow: isAutoHeight ? "visible" : "hidden",
           boxShadow: [
-            "0 0 0 1px rgba(139,92,246,0.25)",
-            "0 0 20px 4px rgba(99,102,241,0.4)",
-            "0 0 50px 12px rgba(139,92,246,0.22)",
-            "0 0 80px 24px rgba(59,130,246,0.14)",
+            "0 0 0 1px rgba(139,92,246,0.15)",
+            "0 0 20px 4px rgba(99,102,241,0.25)",
+            "0 0 50px 12px rgba(139,92,246,0.14)",
+            "0 0 80px 24px rgba(59,130,246,0.08)",
             "0 4px 24px 0 rgba(0,0,0,0.18)",
           ].join(", "),
         }}
         {...props}
       >
         {/* DynamicIslandEffects — multi-layer colorful glow + refraction edges + shimmer */}
-        <div className="pointer-events-none absolute inset-0 z-0" style={{ opacity: 0.5 }}>
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
+        <div className="pointer-events-none absolute inset-0 z-0" style={{ opacity: 0.2 }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-blue-500/15 blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-indigo-500/10 to-purple-400/10 blur-lg" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-300/8 via-purple-300/8 to-blue-300/8 blur-md" />
         </div>
         {/* Refraction edges */}
         <div className="pointer-events-none absolute inset-0 z-0">

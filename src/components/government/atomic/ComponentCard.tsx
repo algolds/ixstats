@@ -220,44 +220,61 @@ export const ComponentCard = React.memo<ComponentCardProps>(
         {isSelected && (
           <>
             {/* Core bright glow */}
-            <div className={cn("absolute -inset-1 rounded-xl blur-md pointer-events-none z-0 animate-in fade-in duration-300", glows.core)} />
+            <div
+              className={cn(
+                "animate-in fade-in pointer-events-none absolute -inset-1 z-0 rounded-xl blur-md duration-300",
+                glows.core
+              )}
+            />
             {/* Mid-spread glow */}
-            <div className={cn("absolute -inset-3 rounded-xl blur-xl pointer-events-none z-0 animate-in fade-in duration-300", glows.mid)} />
+            <div
+              className={cn(
+                "animate-in fade-in pointer-events-none absolute -inset-3 z-0 rounded-xl blur-xl duration-300",
+                glows.mid
+              )}
+            />
             {/* Outer ambient glow */}
-            <div className={cn("absolute -inset-5 rounded-xl blur-2xl pointer-events-none z-0 animate-in fade-in duration-300", glows.outer)} />
+            <div
+              className={cn(
+                "animate-in fade-in pointer-events-none absolute -inset-5 z-0 rounded-xl blur-2xl duration-300",
+                glows.outer
+              )}
+            />
           </>
         )}
 
         <CutoutCard
           className={cn(
-            "relative z-10 transition-all duration-300 select-none overflow-hidden rounded-xl border-2 cursor-pointer",
+            "relative z-10 cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-300 select-none",
             isSelected
               ? cn(glows.border, glows.bg, "scale-[1.01] shadow-md dark:shadow-none")
-              : "border-zinc-200 dark:border-white/5 bg-zinc-50/50 hover:bg-zinc-100/80 dark:bg-white/[0.02] hover:dark:border-white/15 hover:dark:bg-white/[0.04] shadow-xs hover:shadow-sm dark:shadow-none",
-            !canSelectMore && !isSelected ? "opacity-40 cursor-not-allowed" : ""
+              : "border-zinc-200 bg-zinc-50/50 shadow-xs hover:bg-zinc-100/80 hover:shadow-sm dark:border-white/5 dark:bg-white/[0.02] dark:shadow-none hover:dark:border-white/15 hover:dark:bg-white/[0.04]",
+            !canSelectMore && !isSelected ? "cursor-not-allowed opacity-40" : ""
           )}
           onClick={handleClick}
           trackPointerHover={false}
         >
           {/* Subtle gradient overlay when selected */}
           {isSelected && (
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
           )}
-          
-          <CutoutCardContent className="p-4 relative z-10">
+
+          <CutoutCardContent className="relative z-10 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-1 items-start gap-3">
                 {/* Category-themed icon badge */}
-                <div className={cn("rounded-lg p-2 shrink-0 transition-all", mapped.bg, mapped.border)}>
+                <div
+                  className={cn("shrink-0 rounded-lg p-2 transition-all", mapped.bg, mapped.border)}
+                >
                   <Icon className={cn("h-5 w-5", mapped.text)} />
                 </div>
 
-                <div className="flex-1 space-y-2 min-w-0">
+                <div className="min-w-0 flex-1 space-y-2">
                   <div>
-                    <h4 className="text-sm font-semibold text-zinc-950 dark:text-zinc-100 tracking-tight leading-tight">
+                    <h4 className="text-sm leading-tight font-semibold tracking-tight text-zinc-950 dark:text-zinc-100">
                       {component.name}
                     </h4>
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-normal">
+                    <p className="mt-1 line-clamp-2 text-xs leading-normal text-zinc-500 dark:text-zinc-400">
                       {component.description}
                     </p>
                   </div>
@@ -266,26 +283,34 @@ export const ComponentCard = React.memo<ComponentCardProps>(
                   <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                     <Badge
                       variant="outline"
-                      className={cn("text-[10px] font-medium border border-opacity-30 border-current", mapped.bg, mapped.text)}
+                      className={cn(
+                        "border-opacity-30 border border-current text-[10px] font-medium",
+                        mapped.bg,
+                        mapped.text
+                      )}
                     >
                       {component.effectiveness}% effective
                     </Badge>
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[10px] font-semibold border-transparent",
+                        "border-transparent text-[10px] font-semibold",
                         component.metadata.complexity === "High"
-                          ? "bg-red-500/10 border-red-500/20 text-red-500 dark:text-red-400"
+                          ? "border-red-500/20 bg-red-500/10 text-red-500 dark:text-red-400"
                           : component.metadata.complexity === "Medium"
-                            ? "bg-amber-500/10 border-amber-500/20 text-amber-500 dark:text-amber-400"
-                            : "bg-green-500/10 border-green-500/20 text-green-500 dark:text-green-400"
+                            ? "border-amber-500/20 bg-amber-500/10 text-amber-500 dark:text-amber-400"
+                            : "border-green-500/20 bg-green-500/10 text-green-500 dark:text-green-400"
                       )}
                     >
                       Complexity: {component.metadata.complexity}
                     </Badge>
                     <Badge
                       variant="outline"
-                      className={cn("text-[10px] font-medium border capitalize border-opacity-30 border-current", mapped.bg, mapped.text)}
+                      className={cn(
+                        "border-opacity-30 border border-current text-[10px] font-medium capitalize",
+                        mapped.bg,
+                        mapped.text
+                      )}
                     >
                       {component.category}
                     </Badge>
@@ -297,24 +322,27 @@ export const ComponentCard = React.memo<ComponentCardProps>(
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 rounded-md bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 text-[10px] text-green-600 dark:text-green-400 hover:bg-green-500/20 dark:hover:bg-green-500/30 transition-colors cursor-help"
+                            className="flex cursor-help items-center gap-1 rounded-md border border-green-500/20 bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-600 transition-colors hover:bg-green-500/20 dark:text-green-400 dark:hover:bg-green-500/30"
                           >
                             <Zap className="h-3 w-3 text-green-600 dark:text-green-400" />
-                            <span className="font-bold text-[9px]">{synergisticWith.length}</span>
+                            <span className="text-[9px] font-bold">{synergisticWith.length}</span>
                           </button>
                         </TooltipTrigger>
                         <TooltipContent
                           side="top"
-                          className="bg-white/95 dark:bg-zinc-950/95 text-zinc-900 dark:text-zinc-200 backdrop-blur-xl p-2.5 max-w-[240px] border border-green-500/30 dark:border-green-500/30 shadow-[0_0_12px_rgba(34,197,94,0.15)]"
+                          className="max-w-[240px] border border-green-500/30 bg-white/95 p-2.5 text-zinc-900 shadow-[0_0_12px_rgba(34,197,94,0.15)] backdrop-blur-xl dark:border-green-500/30 dark:bg-zinc-950/95 dark:text-zinc-200"
                         >
-                          <p className="font-bold text-green-600 dark:text-green-400 mb-1 flex items-center gap-1 text-[11px]">
-                            <Zap className="h-3.5 w-3.5 text-green-500 dark:text-green-400" /> Synergies Active:
+                          <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-green-600 dark:text-green-400">
+                            <Zap className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />{" "}
+                            Synergies Active:
                           </p>
-                          <ul className="space-y-1 text-[10px] list-disc list-inside">
+                          <ul className="list-inside list-disc space-y-1 text-[10px]">
                             {synergisticWith.map((syn, idx) => (
                               <li key={idx} className="truncate text-zinc-700 dark:text-zinc-300">
                                 <span className="font-medium">{syn.name}</span>
-                                <span className="text-green-600 dark:text-green-400 ml-1">+{syn.score}%</span>
+                                <span className="ml-1 text-green-600 dark:text-green-400">
+                                  +{syn.score}%
+                                </span>
                               </li>
                             ))}
                           </ul>
@@ -329,24 +357,27 @@ export const ComponentCard = React.memo<ComponentCardProps>(
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 rounded-md bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 text-[10px] text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-500/30 transition-colors cursor-help"
+                            className="flex cursor-help items-center gap-1 rounded-md border border-red-500/20 bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30"
                           >
                             <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                            <span className="font-bold text-[9px]">{conflictingWith.length}</span>
+                            <span className="text-[9px] font-bold">{conflictingWith.length}</span>
                           </button>
                         </TooltipTrigger>
                         <TooltipContent
                           side="top"
-                          className="bg-white/95 dark:bg-zinc-950/95 text-zinc-900 dark:text-zinc-200 backdrop-blur-xl p-2.5 max-w-[240px] border border-red-500/30 dark:border-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)]"
+                          className="max-w-[240px] border border-red-500/30 bg-white/95 p-2.5 text-zinc-900 shadow-[0_0_12px_rgba(239,68,68,0.15)] backdrop-blur-xl dark:border-red-500/30 dark:bg-zinc-950/95 dark:text-zinc-200"
                         >
-                          <p className="font-bold text-red-600 dark:text-red-400 mb-1 flex items-center gap-1 text-[11px]">
-                            <AlertTriangle className="h-3.5 w-3.5 text-red-500 dark:text-red-400" /> Conflicts Active:
+                          <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400">
+                            <AlertTriangle className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />{" "}
+                            Conflicts Active:
                           </p>
-                          <ul className="space-y-1 text-[10px] list-disc list-inside">
+                          <ul className="list-inside list-disc space-y-1 text-[10px]">
                             {conflictingWith.map((con, idx) => (
                               <li key={idx} className="truncate text-zinc-700 dark:text-zinc-300">
                                 <span className="font-medium">{con.name}</span>
-                                <span className="text-red-600 dark:text-red-400 ml-1">-{con.score}%</span>
+                                <span className="ml-1 text-red-600 dark:text-red-400">
+                                  -{con.score}%
+                                </span>
                               </li>
                             ))}
                           </ul>
@@ -372,16 +403,16 @@ export const ComponentCard = React.memo<ComponentCardProps>(
                   }}
                   disabled={!isSelected && !canSelectMore}
                   className={cn(
-                    "ml-1 h-8 w-8 p-0 rounded-lg border transition-all duration-200 shrink-0",
+                    "ml-1 h-8 w-8 shrink-0 rounded-lg border p-0 transition-all duration-200",
                     isSelected
-                      ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 group/btn"
-                      : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+                      ? "group/btn border-cyan-500/30 bg-cyan-500/15 text-cyan-400 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+                      : "border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
                   )}
                 >
                   {isSelected ? (
                     <>
-                      <Check className="h-4 w-4 block group-hover/btn:hidden" />
-                      <Minus className="h-4 w-4 hidden group-hover/btn:block" />
+                      <Check className="block h-4 w-4 group-hover/btn:hidden" />
+                      <Minus className="hidden h-4 w-4 group-hover/btn:block" />
                     </>
                   ) : (
                     <Plus className="h-4 w-4" />
@@ -397,4 +428,3 @@ export const ComponentCard = React.memo<ComponentCardProps>(
 );
 
 ComponentCard.displayName = "ComponentCard";
-

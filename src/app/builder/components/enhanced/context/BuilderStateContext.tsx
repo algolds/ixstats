@@ -114,19 +114,21 @@ export function BuilderStateProvider({
       errors: [] as string[],
     };
 
-    const syncPromises = Object.entries(autoSyncRegistryRef.current).map(async ([section, syncFn]) => {
-      if (!syncFn) return;
+    const syncPromises = Object.entries(autoSyncRegistryRef.current).map(
+      async ([section, syncFn]) => {
+        if (!syncFn) return;
 
-      try {
-        await syncFn();
-        results.success++;
-      } catch (error) {
-        results.failed++;
-        const errorMsg = error instanceof Error ? error.message : "Unknown error";
-        results.errors.push(`${section}: ${errorMsg}`);
-        console.error(`[AutoSync] Failed to sync ${section}:`, error);
+        try {
+          await syncFn();
+          results.success++;
+        } catch (error) {
+          results.failed++;
+          const errorMsg = error instanceof Error ? error.message : "Unknown error";
+          results.errors.push(`${section}: ${errorMsg}`);
+          console.error(`[AutoSync] Failed to sync ${section}:`, error);
+        }
       }
-    });
+    );
 
     await Promise.all(syncPromises);
     return results;

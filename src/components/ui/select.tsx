@@ -93,12 +93,7 @@ interface SelectItemProps extends React.ComponentProps<typeof SelectPrimitive.It
   description?: string;
 }
 
-function SelectItem({
-  className,
-  children,
-  description,
-  ...props
-}: SelectItemProps) {
+function SelectItem({ className, children, description, ...props }: SelectItemProps) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -116,7 +111,7 @@ function SelectItem({
       <div className="flex flex-col py-0.5">
         <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
         {description && (
-          <span className="text-[10px] text-zinc-400 mt-0.5 whitespace-normal max-w-[280px] leading-relaxed select-desc">
+          <span className="select-desc mt-0.5 max-w-[280px] text-[10px] leading-relaxed whitespace-normal text-zinc-400">
             {description}
           </span>
         )}

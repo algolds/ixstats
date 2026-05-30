@@ -259,7 +259,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalAnimal}</p>
               </div>
               {nationalIdentity?.nationalAnimalImage && (
-                <img src={nationalIdentity.nationalAnimalImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalAnimalImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -271,7 +275,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalBird}</p>
               </div>
               {nationalIdentity?.nationalBirdImage && (
-                <img src={nationalIdentity.nationalBirdImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalBirdImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -283,7 +291,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalFish}</p>
               </div>
               {nationalIdentity?.nationalFishImage && (
-                <img src={nationalIdentity.nationalFishImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalFishImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -295,7 +307,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.founders}</p>
               </div>
               {nationalIdentity?.foundersImage && (
-                <img src={nationalIdentity.foundersImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.foundersImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -307,7 +323,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalFlower}</p>
               </div>
               {nationalIdentity?.nationalFlowerImage && (
-                <img src={nationalIdentity.nationalFlowerImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalFlowerImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -319,7 +339,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalDish}</p>
               </div>
               {nationalIdentity?.nationalDishImage && (
-                <img src={nationalIdentity.nationalDishImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalDishImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -331,7 +355,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalFruit}</p>
               </div>
               {nationalIdentity?.nationalFruitImage && (
-                <img src={nationalIdentity.nationalFruitImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalFruitImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -343,7 +371,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalDrink}</p>
               </div>
               {nationalIdentity?.nationalDrinkImage && (
-                <img src={nationalIdentity.nationalDrinkImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalDrinkImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -355,7 +387,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalInstrument}</p>
               </div>
               {nationalIdentity?.nationalInstrumentImage && (
-                <img src={nationalIdentity.nationalInstrumentImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalInstrumentImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}
@@ -367,7 +403,11 @@ export function NationalIdentityDisplay({
                 <p className="font-semibold">{nationalIdentity?.nationalSymbol}</p>
               </div>
               {nationalIdentity?.nationalSymbolImage && (
-                <img src={nationalIdentity.nationalSymbolImage} alt="" className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover" />
+                <img
+                  src={nationalIdentity.nationalSymbolImage}
+                  alt=""
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-md border object-cover"
+                />
               )}
             </div>
           )}

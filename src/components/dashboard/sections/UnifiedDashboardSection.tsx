@@ -804,6 +804,7 @@ export function UnifiedDashboardSection({
                       countryId={userProfile?.countryId ?? ""}
                       accounts={accounts}
                       isOwner={true}
+                      onCreateAccount={() => setIsAccountModalOpen(true)}
                     />
                     {accounts.length > 1 && (
                       <div className="flex items-center gap-2 px-1 text-[11px]">

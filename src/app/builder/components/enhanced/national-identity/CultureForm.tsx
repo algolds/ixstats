@@ -2,7 +2,28 @@
 
 import React, { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { Languages, Heart, Music, Sparkles, ChevronDown, ChevronUp, Globe, Trophy, Rabbit, Bird, Fish, Users, Flower2, UtensilsCrossed, Apple, Wine, Guitar, Star, Image, X } from "lucide-react";
+import {
+  Languages,
+  Heart,
+  Music,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Globe,
+  Trophy,
+  Rabbit,
+  Bird,
+  Fish,
+  Users,
+  Flower2,
+  UtensilsCrossed,
+  Apple,
+  Wine,
+  Guitar,
+  Star,
+  Image,
+  X,
+} from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
 import { EnhancedNumberInput } from "../../../primitives/enhanced";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
@@ -68,12 +89,15 @@ export const CultureForm = React.memo(
     const [isSymbolsOpen, setIsSymbolsOpen] = useState(false);
     const [imagePickerField, setImagePickerField] = useState<string | null>(null);
 
-    const handleImageSelect = useCallback((url: string) => {
-      if (imagePickerField) {
-        onIdentityChange(imagePickerField as keyof NationalIdentityData, url);
-        setImagePickerField(null);
-      }
-    }, [imagePickerField, onIdentityChange]);
+    const handleImageSelect = useCallback(
+      (url: string) => {
+        if (imagePickerField) {
+          onIdentityChange(imagePickerField as keyof NationalIdentityData, url);
+          setImagePickerField(null);
+        }
+      },
+      [imagePickerField, onIdentityChange]
+    );
 
     return (
       <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
@@ -161,24 +185,82 @@ export const CultureForm = React.memo(
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {([
-                      ["nationalAnimal", "National Animal(s)", Rabbit, "Bald Eagle, Lion, Panda...", "nationalAnimalImage"],
-                      ["nationalBird", "National Bird(s)", Bird, "Robin, Phoenix, Eagle...", "nationalBirdImage"],
-                      ["nationalFish", "National Fish", Fish, "Salmon, Koi, Cod...", "nationalFishImage"],
-                      ["founders", "Founder(s)", Users, "Founding figures", "foundersImage"],
-                      ["nationalFlower", "National Flower(s) & Plants", Flower2, "Rose, Lotus, Cherry Blossom...", "nationalFlowerImage"],
-                      ["nationalDish", "National Dish(es) & Food", UtensilsCrossed, "Pizza, Sushi, Tacos...", "nationalDishImage"],
-                      ["nationalFruit", "Fruit(s)", Apple, "Mango, Apple, Durian...", "nationalFruitImage"],
-                      ["nationalDrink", "Drink(s)", Wine, "Tea, Coffee, Wine...", "nationalDrinkImage"],
-                      ["nationalInstrument", "National Instrument(s)", Guitar, "Sitar, Bagpipes, Drum...", "nationalInstrumentImage"],
-                      ["nationalSymbol", "Other Custom Symbol(s)", Star, "Any other national symbol", "nationalSymbolImage"],
-                    ] as const).map(([key, label, Icon, placeholder, imageKey]) => (
+                    {(
+                      [
+                        [
+                          "nationalAnimal",
+                          "National Animal(s)",
+                          Rabbit,
+                          "Bald Eagle, Lion, Panda...",
+                          "nationalAnimalImage",
+                        ],
+                        [
+                          "nationalBird",
+                          "National Bird(s)",
+                          Bird,
+                          "Robin, Phoenix, Eagle...",
+                          "nationalBirdImage",
+                        ],
+                        [
+                          "nationalFish",
+                          "National Fish",
+                          Fish,
+                          "Salmon, Koi, Cod...",
+                          "nationalFishImage",
+                        ],
+                        ["founders", "Founder(s)", Users, "Founding figures", "foundersImage"],
+                        [
+                          "nationalFlower",
+                          "National Flower(s) & Plants",
+                          Flower2,
+                          "Rose, Lotus, Cherry Blossom...",
+                          "nationalFlowerImage",
+                        ],
+                        [
+                          "nationalDish",
+                          "National Dish(es) & Food",
+                          UtensilsCrossed,
+                          "Pizza, Sushi, Tacos...",
+                          "nationalDishImage",
+                        ],
+                        [
+                          "nationalFruit",
+                          "Fruit(s)",
+                          Apple,
+                          "Mango, Apple, Durian...",
+                          "nationalFruitImage",
+                        ],
+                        [
+                          "nationalDrink",
+                          "Drink(s)",
+                          Wine,
+                          "Tea, Coffee, Wine...",
+                          "nationalDrinkImage",
+                        ],
+                        [
+                          "nationalInstrument",
+                          "National Instrument(s)",
+                          Guitar,
+                          "Sitar, Bagpipes, Drum...",
+                          "nationalInstrumentImage",
+                        ],
+                        [
+                          "nationalSymbol",
+                          "Other Custom Symbol(s)",
+                          Star,
+                          "Any other national symbol",
+                          "nationalSymbolImage",
+                        ],
+                      ] as const
+                    ).map(([key, label, Icon, placeholder, imageKey]) => (
                       <div key={key} className="flex items-start gap-2">
                         <div className="min-w-0 flex-1">
                           <EnhancedNumberInput
                             label={label}
                             value={String((identity as any)[key] || "")}
-                            onChange={(v: any) => onIdentityChange(key as keyof NationalIdentityData, String(v))}
+                            onChange={(v: any) =>
+                              onIdentityChange(key as keyof NationalIdentityData, String(v))
+                            }
                             sectionId="symbols"
                             icon={Icon}
                             showButtons={false}

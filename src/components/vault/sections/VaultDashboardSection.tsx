@@ -371,6 +371,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                     label="Claim Daily Bonus"
                     onClick={() => claimDailyBonus.mutate()}
                     disabled={claimDailyBonus.isPending}
+                    inverted={true}
                   />
                 )}
               </div>
@@ -543,9 +544,9 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                   No transactions recorded
                 </p>
               ) : (
-                <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+                <div className="thin-scrollbar max-h-[280px] space-y-2 overflow-y-auto pr-1">
                   {activities.slice(0, 8).map((activity) => {
-                    const isEarn = activity.type.startsWith("EARN_") || activity.type === "EARN";
+                    const isEarn = activity.amount > 0;
                     return (
                       <div
                         key={activity.id}

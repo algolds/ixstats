@@ -433,7 +433,6 @@ export const categorySuggestions: Record<string, string[]> = {
   ],
 };
 
-
 export function DepartmentForm({
   data,
   onChange,
@@ -576,11 +575,15 @@ export function DepartmentForm({
             {(() => {
               const isValidColor = (c: string) => {
                 if (!c) return false;
-                return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c) || c.startsWith("rgba(") || c.startsWith("rgb(");
+                return (
+                  /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c) ||
+                  c.startsWith("rgba(") ||
+                  c.startsWith("rgb(")
+                );
               };
               const safeColor = isValidColor(data.color)
                 ? data.color
-                : (categoryColors[data.category as keyof typeof categoryColors] || "#06b6d4");
+                : categoryColors[data.category as keyof typeof categoryColors] || "#06b6d4";
 
               return (
                 <ColorPickerInput
@@ -594,8 +597,8 @@ export function DepartmentForm({
             {/* Logo/Symbol Upload Button (Brings standard MediaSearchModal) */}
             <div className="relative shrink-0">
               {data.icon ? (
-                <div className="flex items-center gap-1.5 bg-zinc-900/60 border border-white/10 rounded-lg p-1">
-                  <div className="h-7 w-7 rounded-md bg-zinc-950 overflow-hidden flex items-center justify-center">
+                <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-zinc-900/60 p-1">
+                  <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-zinc-950">
                     <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />
                   </div>
                   {!isReadOnly && (
@@ -604,7 +607,7 @@ export function DepartmentForm({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleChange("icon", undefined)}
-                      className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      className="h-6 w-6 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                       title="Remove Logo"
                     >
                       <X className="h-3 w-3" />
@@ -617,7 +620,7 @@ export function DepartmentForm({
                   variant="outline"
                   onClick={() => setIsMediaModalOpen(true)}
                   disabled={isReadOnly}
-                  className="h-9 px-3 text-xs border-white/10 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center gap-1"
+                  className="flex h-9 items-center gap-1 border-white/10 bg-zinc-900/60 px-3 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white"
                 >
                   <Upload className="h-3.5 w-3.5" />
                   <span>Upload Logo</span>
@@ -688,7 +691,12 @@ export function DepartmentForm({
                   Determines sector crisis resistance and resolution speed
                 </p>
               </div>
-              <Badge className={cn("border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider transition-all", priorityInfo.color)}>
+              <Badge
+                className={cn(
+                  "border px-2 py-0.5 text-xs font-semibold tracking-wider uppercase transition-all",
+                  priorityInfo.color
+                )}
+              >
                 Level {uiPriority} • {priorityInfo.label}
               </Badge>
             </div>
@@ -704,7 +712,9 @@ export function DepartmentForm({
             <div className="relative overflow-hidden rounded-lg border border-white/5 bg-black/30 p-2.5 text-[10px] leading-relaxed text-zinc-400">
               <TextureOverlay texture="chevron" opacity={0.03} />
               <div className="relative z-10">
-                <span className="font-semibold text-zinc-300 block mb-0.5">Calculation Outcomes:</span>
+                <span className="mb-0.5 block font-semibold text-zinc-300">
+                  Calculation Outcomes:
+                </span>
                 {priorityInfo.desc}
               </div>
             </div>
@@ -721,11 +731,14 @@ export function DepartmentForm({
             </Label>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-zinc-500 hover:text-zinc-300 cursor-help flex">
+                <span className="flex cursor-help text-zinc-500 hover:text-zinc-300">
                   <Info className="h-3.5 w-3.5" />
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-zinc-900 border-white/10 text-white text-[11px] p-2 max-w-[220px]">
+              <TooltipContent
+                side="top"
+                className="max-w-[220px] border-white/10 bg-zinc-900 p-2 text-[11px] text-white"
+              >
                 Determines the bureaucratic tier and administrative status of this unit.
               </TooltipContent>
             </Tooltip>
@@ -740,27 +753,35 @@ export function DepartmentForm({
             <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
               <SelectValue placeholder="Select level" />
             </SelectTrigger>
-            <SelectContent className="border-white/10 bg-zinc-950 text-white z-[100030]">
+            <SelectContent className="z-[100030] border-white/10 bg-zinc-950 text-white">
               {organizationalLevels.map((level) => {
                 const levelDescriptions: Record<OrganizationalLevel, string> = {
-                  Ministry: "Primary cabinet-level executive organ led by a minister. Designs sector-wide policy.",
-                  Department: "Major branch of government with a specific, broad area of jurisdiction.",
-                  Agency: "Semi-autonomous specialized body with authority to execute policies & regulations.",
-                  Bureau: "Sub-division of a department handling specific regulatory or technical duties.",
+                  Ministry:
+                    "Primary cabinet-level executive organ led by a minister. Designs sector-wide policy.",
+                  Department:
+                    "Major branch of government with a specific, broad area of jurisdiction.",
+                  Agency:
+                    "Semi-autonomous specialized body with authority to execute policies & regulations.",
+                  Bureau:
+                    "Sub-division of a department handling specific regulatory or technical duties.",
                   Office: "Focused administrative or service unit dedicated to specific tasks.",
-                  Commission: "Independent regulatory or advisory body, typically led by multiple commissioners.",
+                  Commission:
+                    "Independent regulatory or advisory body, typically led by multiple commissioners.",
                 };
 
                 return (
                   <Tooltip key={level}>
                     <TooltipTrigger asChild>
                       <div className="w-full">
-                        <SelectItem value={level} className="hover:bg-zinc-800 w-full">
+                        <SelectItem value={level} className="w-full hover:bg-zinc-800">
                           {level}
                         </SelectItem>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs bg-zinc-900 border-white/10 text-white text-[11px] p-2 z-[100040]">
+                    <TooltipContent
+                      side="right"
+                      className="z-[100040] max-w-xs border-white/10 bg-zinc-900 p-2 text-[11px] text-white"
+                    >
                       {levelDescriptions[level]}
                     </TooltipContent>
                   </Tooltip>
@@ -827,32 +848,34 @@ export function DepartmentForm({
 
         {/* Suggested popular functions based on category */}
         {!isReadOnly && (
-          <div className="space-y-1.5 bg-black/10 border border-white/[0.03] rounded-lg p-2.5">
-            <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+          <div className="space-y-1.5 rounded-lg border border-white/[0.03] bg-black/10 p-2.5">
+            <div className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
               Popular Suggested Functions ({data.category})
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1 scrollbar-thin">
-              {(categorySuggestions[data.category] || categorySuggestions.Other).map((suggestion) => {
-                const isSelected = (data.functions || []).includes(suggestion);
-                return (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => !isSelected && handleAddSuggestion(suggestion)}
-                    disabled={isSelected}
-                    className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-md border transition-all text-left flex items-center gap-1 select-none",
-                      isSelected
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default opacity-60"
-                        : "bg-zinc-900/50 border-white/5 text-zinc-400 hover:border-white/10 hover:text-zinc-200 hover:bg-zinc-800"
-                    )}
-                  >
-                    <span>{suggestion}</span>
-                    {!isSelected && <Plus className="h-2.5 w-2.5 shrink-0 opacity-60" />}
-                    {isSelected && <CheckCircle className="h-2.5 w-2.5 shrink-0" />}
-                  </button>
-                );
-              })}
+            <div className="flex max-h-[120px] scrollbar-thin flex-wrap gap-1.5 overflow-y-auto pr-1">
+              {(categorySuggestions[data.category] || categorySuggestions.Other).map(
+                (suggestion) => {
+                  const isSelected = (data.functions || []).includes(suggestion);
+                  return (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => !isSelected && handleAddSuggestion(suggestion)}
+                      disabled={isSelected}
+                      className={cn(
+                        "flex items-center gap-1 rounded-md border px-2 py-0.5 text-left text-[10px] transition-all select-none",
+                        isSelected
+                          ? "cursor-default border-emerald-500/20 bg-emerald-500/10 text-emerald-400 opacity-60"
+                          : "border-white/5 bg-zinc-900/50 text-zinc-400 hover:border-white/10 hover:bg-zinc-800 hover:text-zinc-200"
+                      )}
+                    >
+                      <span>{suggestion}</span>
+                      {!isSelected && <Plus className="h-2.5 w-2.5 shrink-0 opacity-60" />}
+                      {isSelected && <CheckCircle className="h-2.5 w-2.5 shrink-0" />}
+                    </button>
+                  );
+                }
+              )}
             </div>
           </div>
         )}
@@ -908,14 +931,16 @@ export function DepartmentForm({
                   style={{
                     ["--hover-border-color" as any]: `${cardColor}40`,
                     ["--hover-bg-color" as any]: `${cardColor}08`,
-                    ...(isSelected ? {
-                      borderColor: `${cardColor}50`,
-                      backgroundColor: `${cardColor}12`,
-                      boxShadow: `0 0 12px ${cardColor}08`,
-                    } : {})
+                    ...(isSelected
+                      ? {
+                          borderColor: `${cardColor}50`,
+                          backgroundColor: `${cardColor}12`,
+                          boxShadow: `0 0 12px ${cardColor}08`,
+                        }
+                      : {}),
                   }}
                   className={cn(
-                    "relative overflow-hidden flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all duration-200 select-none",
+                    "relative flex cursor-pointer items-start gap-3 overflow-hidden rounded-lg border p-3 transition-all duration-200 select-none",
                     isSelected
                       ? "text-white"
                       : "border-white/[0.05] bg-zinc-950/40 text-zinc-400 hover:border-[var(--hover-border-color)] hover:bg-[var(--hover-bg-color)]",
@@ -943,7 +968,10 @@ export function DepartmentForm({
                         {comp.name}
                       </span>
                       {isSelected && (
-                        <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: cardColor }} />
+                        <CheckCircle
+                          className="h-3.5 w-3.5 shrink-0"
+                          style={{ color: cardColor }}
+                        />
                       )}
                     </div>
                     <p className="mt-1 text-[10px] leading-normal text-zinc-400">

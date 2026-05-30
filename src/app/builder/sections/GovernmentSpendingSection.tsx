@@ -47,11 +47,7 @@ export function GovernmentSpendingSection({
 
   // All hooks must be called unconditionally (Rules of Hooks)
   // State management via custom hook
-  const {
-    selectedPolicies,
-    togglePolicy,
-    validation,
-  } = useGovernmentSpending({
+  const { selectedPolicies, togglePolicy, validation } = useGovernmentSpending({
     inputs: inputs ?? ({} as EconomicInputs),
     onInputsChange,
     selectedAtomicComponents,

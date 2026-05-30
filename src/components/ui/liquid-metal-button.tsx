@@ -14,6 +14,7 @@ interface LiquidMetalButtonProps {
   className?: string;
   chromatic?: boolean;
   icon?: LucideIcon;
+  inverted?: boolean;
 }
 
 export function LiquidMetalButton({
@@ -24,6 +25,7 @@ export function LiquidMetalButton({
   className,
   chromatic = false,
   icon: IconComponent = Sparkles,
+  inverted = false,
 }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -55,6 +57,8 @@ export function LiquidMetalButton({
       };
     }
   }, [viewMode]);
+
+  const isChromaticActive = chromatic || isHovered;
 
   useEffect(() => {
     const styleId = "shader-canvas-style-exploded";
@@ -98,14 +102,14 @@ export function LiquidMetalButton({
             shaderRef.current,
             liquidMetalFragmentShader,
             {
-              u_repetition: chromatic ? 6 : 4,
+              u_repetition: isChromaticActive ? 6 : 4,
               u_softness: 0.5,
-              u_shiftRed: chromatic ? 0.95 : 0.3,
-              u_shiftBlue: chromatic ? 0.95 : 0.3,
-              u_distortion: chromatic ? 0.35 : 0,
-              u_contour: chromatic ? 0.55 : 0,
+              u_shiftRed: isChromaticActive ? 0.95 : 0.3,
+              u_shiftBlue: isChromaticActive ? 0.95 : 0.3,
+              u_distortion: isChromaticActive ? 0.35 : 0,
+              u_contour: isChromaticActive ? 0.55 : 0,
               u_angle: 45,
-              u_scale: chromatic ? 12 : 8,
+              u_scale: isChromaticActive ? 12 : 8,
               u_shape: 1,
               u_offsetX: 0.1,
               u_offsetY: -0.1,
@@ -127,7 +131,7 @@ export function LiquidMetalButton({
         shaderMount.current = null;
       }
     };
-  }, [chromatic]);
+  }, [chromatic, isHovered, isChromaticActive]);
 
   const handleMouseEnter = () => {
     if (disabled) return;
@@ -218,8 +222,10 @@ export function LiquidMetalButton({
               <IconComponent
                 size={16}
                 style={{
-                  color: chromatic ? "#eeeeee" : "#666666",
-                  filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
+                  color: inverted ? "#111111" : isChromaticActive ? "#ffffff" : "#666666",
+                  filter: inverted
+                    ? "drop-shadow(0px 1px 1px rgba(255, 255, 255, 0.5))"
+                    : "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
                   transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                   transform: "scale(1)",
                 }}
@@ -229,9 +235,13 @@ export function LiquidMetalButton({
               <span
                 style={{
                   fontSize: "14px",
-                  color: "#666666",
-                  fontWeight: 400,
-                  textShadow: "0px 1px 2px rgba(0, 0, 0, 0.5)",
+                  color: inverted ? "#111111" : isChromaticActive ? "#ffffff" : "#666666",
+                  fontWeight: inverted ? 600 : isChromaticActive ? 500 : 400,
+                  textShadow: inverted
+                    ? "0px 1px 1px rgba(255, 255, 255, 0.6)"
+                    : isChromaticActive
+                      ? "0px 1px 4px rgba(255, 255, 255, 0.3)"
+                      : "0px 1px 2px rgba(0, 0, 0, 0.5)",
                   transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                   transform: "scale(1)",
                   whiteSpace: "nowrap",
@@ -262,14 +272,53 @@ export function LiquidMetalButton({
                 height: `${dimensions.innerHeight}px`,
                 margin: "2px",
                 borderRadius: "100px",
-                background: "linear-gradient(180deg, #202020 0%, #000000 100%)",
+                background: inverted
+                  ? "linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)"
+                  : "linear-gradient(180deg, #202020 0%, #000000 100%)",
+                backdropFilter: inverted ? "blur(20px) saturate(180%)" : "none",
+                WebkitBackdropFilter: inverted ? "blur(20px) saturate(180%)" : "none",
                 boxShadow: isPressed
                   ? "inset 0px 2px 4px rgba(0, 0, 0, 0.4), inset 0px 1px 2px rgba(0, 0, 0, 0.3)"
-                  : "none",
+                  : isHovered
+                    ? "inset 0 0 10px rgba(139,92,246,0.15), 0px 0px 0px 1px rgba(139,92,246,0.3)"
+                    : "none",
                 transition:
                   "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease, box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             />
+          </div>
+
+          {/* Z-index 25: Hover Internal Glow (Dynamic Island Colors inside the button) */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: `${dimensions.width}px`,
+              height: `${dimensions.height}px`,
+              transformStyle: "preserve-3d",
+              transform: `translateZ(15px) ${isPressed ? "translateY(1px) scale(0.98)" : "translateY(0) scale(1)"}`,
+              transition:
+                "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
+              zIndex: 25,
+              pointerEvents: "none",
+            }}
+          >
+            <div
+              style={{
+                width: `${dimensions.innerWidth}px`,
+                height: `${dimensions.innerHeight}px`,
+                margin: "2px",
+                borderRadius: "100px",
+                overflow: "hidden",
+                position: "relative",
+                opacity: isHovered ? (inverted ? 0.35 : 0.45) : 0,
+                transition: "opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/40 via-purple-500/40 to-pink-500/40 blur-[4px]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/30 via-indigo-500/30 to-purple-400/30 blur-[2px]" />
+            </div>
           </div>
 
           <div
@@ -355,8 +404,9 @@ export function LiquidMetalButton({
                   width: "20px",
                   height: "20px",
                   borderRadius: "50%",
-                  background:
-                    "radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%)",
+                  background: inverted
+                    ? "radial-gradient(circle, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0) 70%)"
+                    : "radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%)",
                   pointerEvents: "none",
                   animation: "ripple-animation 0.6s ease-out",
                 }}

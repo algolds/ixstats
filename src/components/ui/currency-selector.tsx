@@ -66,9 +66,7 @@ export function CurrencySelector({
             return (
               <SelectItem key={currency} value={currency}>
                 <div className="flex items-center gap-2">
-                  {info.symbol && (
-                    <span className="w-5 text-center text-sm">{info.symbol}</span>
-                  )}
+                  {info.symbol && <span className="w-5 text-center text-sm">{info.symbol}</span>}
                   <span>{currency}</span>
                 </div>
               </SelectItem>

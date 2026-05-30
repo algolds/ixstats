@@ -12,10 +12,7 @@ import { ComponentCard, type InteractionInfo } from "./ComponentCard";
 import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
 import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
 import { ComponentType } from "~/lib/enums";
-import {
-  checkGovernmentSynergy,
-  checkGovernmentConflict,
-} from "~/lib/atomic-government-utils";
+import { checkGovernmentSynergy, checkGovernmentConflict } from "~/lib/atomic-government-utils";
 
 export interface ComponentLibraryProps {
   components: Partial<Record<ComponentType, AtomicGovernmentComponent>>;
@@ -57,7 +54,13 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     }
 
     return (
-      <div className={enableInlineScroll ? "max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 dark:scrollbar-thumb-zinc-800" : undefined}>
+      <div
+        className={
+          enableInlineScroll
+            ? "max-h-[60vh] scrollbar-thin scrollbar-thumb-zinc-800 overflow-y-auto pr-1 dark:scrollbar-thumb-zinc-800"
+            : undefined
+        }
+      >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {componentEntries.map(([type, component]) => {
             const compType = type as ComponentType;

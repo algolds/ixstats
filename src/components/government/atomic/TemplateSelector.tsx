@@ -278,9 +278,9 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
 
     return (
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-slate-400 dark:text-zinc-500 shrink-0" />
+        <FileText className="h-4 w-4 shrink-0 text-slate-400 dark:text-zinc-500" />
         <Select onValueChange={onSelect} disabled={disabled}>
-          <SelectTrigger className="w-[160px] border-0 border-transparent bg-transparent shadow-none hover:bg-slate-100/50 dark:hover:bg-white/5 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-700 dark:text-slate-300">
+          <SelectTrigger className="w-[160px] border-0 border-transparent bg-transparent text-slate-700 shadow-none hover:bg-slate-100/50 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-slate-300 dark:hover:bg-white/5">
             <SelectValue placeholder="Load Template..." />
           </SelectTrigger>
           <SelectContent>
@@ -297,11 +297,13 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
                       event.stopPropagation();
                       toggleGroup(group.id);
                     }}
-                    className="flex items-center justify-between gap-2 py-1.5 px-2 cursor-pointer select-none rounded-md hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors"
+                    className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-1.5 transition-colors select-none hover:bg-slate-100/50 dark:hover:bg-white/5"
                   >
                     <span className="flex items-center gap-2">
                       <group.icon className={`h-3.5 w-3.5 ${group.iconClassName}`} />
-                      <span className="font-semibold text-xs text-foreground/90">{group.label}</span>
+                      <span className="text-foreground/90 text-xs font-semibold">
+                        {group.label}
+                      </span>
                     </span>
                     <span className="flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px]">

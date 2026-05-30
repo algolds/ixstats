@@ -143,6 +143,7 @@ const createPrismaClient = () => {
     "CrisisEvent",
     "ThinkpagesAccount",
     "ThinkpagesPost",
+    "MediaAttachment",
     // New models cloned by demo-seed system
     "DefenseBudget",
     "SecurityAssessment",

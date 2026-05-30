@@ -67,12 +67,12 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
 
     if (selectedComponents.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50/30 dark:bg-white/[0.01]">
-          <Package className="mx-auto mb-3 h-10 w-10 text-zinc-400 dark:text-zinc-600 animate-pulse" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/30 px-4 py-12 text-center dark:border-white/10 dark:bg-white/[0.01]">
+          <Package className="mx-auto mb-3 h-10 w-10 animate-pulse text-zinc-400 dark:text-zinc-600" />
           <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
             No components selected yet.
           </p>
-          <p className="text-[10px] text-zinc-500 dark:text-zinc-500 mt-1 max-w-[200px]">
+          <p className="mt-1 max-w-[200px] text-[10px] text-zinc-500 dark:text-zinc-500">
             Select components from the library to build your government structure.
           </p>
         </div>
@@ -81,25 +81,31 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-white/5 pb-3">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-white/5">
+          <h3 className="text-sm font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
             Selected ({selectedComponents.length})
           </h3>
-          <div className="flex flex-wrap gap-1.5 justify-end">
+          <div className="flex flex-wrap justify-end gap-1.5">
             {totalCost > 0 && (
-              <Badge variant="outline" className="text-[9px] font-bold border-slate-200 bg-slate-100 text-slate-700 dark:border-zinc-700/50 dark:bg-zinc-800/30 dark:text-zinc-300">
+              <Badge
+                variant="outline"
+                className="border-slate-200 bg-slate-100 text-[9px] font-bold text-slate-700 dark:border-zinc-700/50 dark:bg-zinc-800/30 dark:text-zinc-300"
+              >
                 ${totalCost.toLocaleString()}
               </Badge>
             )}
             {totalEffectiveness > 0 && (
-              <Badge variant="outline" className="text-[9px] font-bold border-slate-200 bg-slate-100 text-slate-700 dark:border-zinc-700/50 dark:bg-zinc-800/30 dark:text-zinc-300">
+              <Badge
+                variant="outline"
+                className="border-slate-200 bg-slate-100 text-[9px] font-bold text-slate-700 dark:border-zinc-700/50 dark:bg-zinc-800/30 dark:text-zinc-300"
+              >
                 {totalEffectiveness.toFixed(1)}% Eff
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
+        <div className="max-h-[60vh] scrollbar-thin scrollbar-thumb-zinc-800 space-y-2 overflow-y-auto pr-1">
           <AnimatePresence initial={false}>
             {selectedComponents.map((component) => {
               const Icon = component.icon;
@@ -123,23 +129,33 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
                 >
                   <div
                     className={cn(
-                      "flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 dark:border-white/5 dark:bg-white/[0.02] p-2.5 my-0.5 border-l-2",
+                      "my-0.5 flex items-center justify-between rounded-lg border border-l-2 border-slate-100 bg-slate-50/50 p-2.5 dark:border-white/5 dark:bg-white/[0.02]",
                       borderColClass
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                      <div className={cn("rounded-md p-1.5 shrink-0 border border-slate-200/60 dark:border-white/5", iconCol.bg)}>
+                      <div
+                        className={cn(
+                          "shrink-0 rounded-md border border-slate-200/60 p-1.5 dark:border-white/5",
+                          iconCol.bg
+                        )}
+                      >
                         <Icon className={cn("h-4 w-4", iconCol.text)} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-zinc-900 dark:text-zinc-200">
                           {component.name}
                         </p>
-                        <p className="text-[10px] text-zinc-500 capitalize">
-                          {component.category}
-                        </p>
+                        <p className="text-[10px] text-zinc-500 capitalize">{component.category}</p>
                       </div>
-                      <Badge variant="outline" className={cn("shrink-0 text-[10px] font-medium border border-opacity-35 border-current", iconCol.bg, iconCol.text)}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border-opacity-35 shrink-0 border border-current text-[10px] font-medium",
+                          iconCol.bg,
+                          iconCol.text
+                        )}
+                      >
                         {component.effectiveness}%
                       </Badge>
                     </div>
@@ -148,7 +164,7 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
                         size="sm"
                         variant="ghost"
                         onClick={() => onDeselect(component.type)}
-                        className="ml-2 h-7 w-7 p-0 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 rounded-md border border-transparent hover:border-red-500/20"
+                        className="ml-2 h-7 w-7 rounded-md border border-transparent p-0 text-zinc-500 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
                       >
                         <X className="h-3.5 w-3.5" />
                       </Button>
@@ -234,15 +250,19 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
           if (!baselineCoverage.Administrative) missingPillars.push("Administrative");
 
           return (
-            <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/50 dark:border-white/5 dark:bg-white/[0.01] p-3 space-y-2">
+            <div className="mt-4 space-y-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/[0.01]">
               <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <h4 className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   Institutional Coverage
                 </h4>
-                <span className={cn(
-                  "text-[10px] font-bold transition-colors",
-                  coveredCount === 5 ? "text-emerald-600 dark:text-emerald-400" : "text-cyan-600 dark:text-cyan-400"
-                )}>
+                <span
+                  className={cn(
+                    "text-[10px] font-bold transition-colors",
+                    coveredCount === 5
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-cyan-600 dark:text-cyan-400"
+                  )}
+                >
                   {coveredCount}/5 Pillars
                 </span>
               </div>
@@ -253,24 +273,28 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
                     className={cn(
                       "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 transition-all duration-200",
                       isCovered
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 text-[10px] font-semibold"
-                        : "border-slate-200 bg-slate-100/50 text-slate-400 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-500 text-[10px] hover:border-slate-300 dark:hover:border-zinc-700/50"
+                        ? "border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400"
+                        : "border-slate-200 bg-slate-100/50 text-[10px] text-slate-400 hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-500 dark:hover:border-zinc-700/50"
                     )}
                   >
                     {isCovered ? (
                       <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     ) : (
-                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 dark:bg-zinc-700 mx-1" />
+                      <div className="mx-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 dark:bg-zinc-700" />
                     )}
                     <span className="capitalize">{cat}</span>
                   </div>
                 ))}
               </div>
               {missingPillars.length > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-500/10 dark:bg-amber-500/[0.02] p-2.5 text-[9px] text-amber-800 dark:text-amber-400/90 leading-normal flex items-start gap-1.5">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50/60 p-2.5 text-[9px] leading-normal text-amber-800 dark:border-amber-500/10 dark:bg-amber-500/[0.02] dark:text-amber-400/90">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
                   <div>
-                    <span className="font-semibold text-amber-950 dark:text-amber-400">Pillar Advice:</span> Missing {missingPillars.join(", ")} organs. Select matching components to establish a balanced state structure.
+                    <span className="font-semibold text-amber-950 dark:text-amber-400">
+                      Pillar Advice:
+                    </span>{" "}
+                    Missing {missingPillars.join(", ")} organs. Select matching components to
+                    establish a balanced state structure.
                   </div>
                 </div>
               )}

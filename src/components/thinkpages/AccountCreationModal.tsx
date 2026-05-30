@@ -15,12 +15,7 @@ import {
   ArrowLeft,
   Loader2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { WikiSearch } from "./WikiSearch";
@@ -107,6 +102,7 @@ export function AccountCreationModal({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUnsplashSearch, setShowUnsplashSearch] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [imageSource, setImageSource] = useState<"unsplash" | "upload" | "wiki">("unsplash");
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
@@ -194,6 +190,7 @@ export function AccountCreationModal({
       });
       setErrors({});
       setIsUsernameAvailable(null);
+      setShowAdvanced(false);
     }
   }, [isOpen]);
 
@@ -214,7 +211,6 @@ export function AccountCreationModal({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
     if (!formData.username.trim()) {
       newErrors.username = "Username is required";
     } else if (usernameAvailability?.isAvailable === false) {
@@ -222,8 +218,7 @@ export function AccountCreationModal({
     } else if (isLoadingUsernameAvailability) {
       newErrors.username = "Checking username availability...";
     }
-    if (!formData.bio.trim()) newErrors.bio = "Bio is required";
-    else if (formData.bio.length > 160) {
+    if (formData.bio.trim() && formData.bio.length > 160) {
       newErrors.bio = "Bio must be 160 characters or less";
     }
     setErrors(newErrors);
@@ -458,7 +453,7 @@ export function AccountCreationModal({
                         </div>
                         <div>
                           <label className="mb-2 block text-xs font-medium text-neutral-300 sm:text-sm">
-                            Last Name
+                            Last Name (optional)
                           </label>
                           <input
                             type="text"
@@ -532,7 +527,7 @@ export function AccountCreationModal({
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-neutral-300">
-                          Bio
+                          Bio (optional)
                         </label>
                         <textarea
                           value={formData.bio}
@@ -557,7 +552,7 @@ export function AccountCreationModal({
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-neutral-300">
-                          Profile Picture
+                          Profile Picture (optional)
                         </label>
                         <div className="flex items-center gap-4">
                           <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-neutral-700">
@@ -574,156 +569,107 @@ export function AccountCreationModal({
                             )}
                           </div>
                           <div className="relative flex flex-col gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger className="bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 inline-flex h-9 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-xs transition-all disabled:pointer-events-none disabled:opacity-50">
-                                Change Source
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className="z-[80]">
-                                <DropdownMenuItem onSelect={() => setImageSource("unsplash")}>
-                                  Search Image Repository
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setImageSource("upload")}>
-                                  Upload Image
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setImageSource("wiki")}>
-                                  Search Wiki (IxWiki/IiWiki)
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {imageSource === "unsplash" && (
+                            <button
+                              type="button"
+                              onClick={() => setShowUnsplashSearch(true)}
+                              className="inline-flex items-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                            >
+                              Search Image Repository
+                            </button>
+                            {formData.profileImageUrl && (
                               <button
                                 type="button"
-                                onClick={() => setShowUnsplashSearch(true)}
-                                className="inline-flex items-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                                onClick={() => setFormData((p) => ({ ...p, profileImageUrl: "" }))}
+                                className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-white"
                               >
-                                Search Image Repository
+                                Remove Image
                               </button>
-                            )}
-                            {imageSource === "upload" && (
-                              <div className="space-y-3">
-                                <input
-                                  type="file"
-                                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-
-                                    // Validate file size (max 5MB)
-                                    if (file.size > 5 * 1024 * 1024) {
-                                      notify.error("Image must be smaller than 5MB");
-                                      return;
-                                    }
-
-                                    // Validate file type
-                                    const validTypes = [
-                                      "image/png",
-                                      "image/jpeg",
-                                      "image/jpg",
-                                      "image/gif",
-                                      "image/webp",
-                                      "image/svg+xml",
-                                    ];
-                                    if (!validTypes.includes(file.type)) {
-                                      notify.error(
-                                        "Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)"
-                                      );
-                                      return;
-                                    }
-
-                                    setIsUploadingImage(true);
-
-                                    try {
-                                      // Convert to base64 data URL
-                                      const reader = new FileReader();
-                                      reader.onload = (event) => {
-                                        const dataUrl = event.target?.result as string;
-                                        handleImageSelected(dataUrl);
-                                        notify.success("Image uploaded successfully!");
-                                        setIsUploadingImage(false);
-                                      };
-                                      reader.onerror = () => {
-                                        notify.error("Failed to read image file");
-                                        setIsUploadingImage(false);
-                                      };
-                                      reader.readAsDataURL(file);
-                                    } catch (error) {
-                                      notify.error("Failed to upload image");
-                                      setIsUploadingImage(false);
-                                    }
-                                  }}
-                                  className="block w-full cursor-pointer text-sm text-gray-400 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700"
-                                  disabled={isUploadingImage}
-                                />
-                                {isUploadingImage && (
-                                  <div className="flex items-center gap-2 text-sm text-blue-400">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Uploading image...
-                                  </div>
-                                )}
-                                <p className="text-xs text-gray-400">
-                                  Max file size: 5MB. Supported formats: PNG, JPG, GIF, WEBP, SVG
-                                </p>
-                              </div>
-                            )}
-                            {imageSource === "wiki" && (
-                              <WikiSearch onImageSelect={handleImageSelected} />
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                        <div>
-                          <label className="mb-2 block text-sm font-medium text-neutral-300">
-                            Posting Frequency
-                          </label>
-                          <select
-                            value={formData.postingFrequency}
-                            onChange={(e) =>
-                              setFormData((p) => ({
-                                ...p,
-                                postingFrequency: e.target.value as any,
-                              }))
-                            }
-                            className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
-                          >
-                            <option value="low">Low</option>
-                            <option value="moderate">Moderate</option>
-                            <option value="active">Active</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-sm font-medium text-neutral-300">
-                            Political Lean
-                          </label>
-                          <select
-                            value={formData.politicalLean}
-                            onChange={(e) =>
-                              setFormData((p) => ({ ...p, politicalLean: e.target.value as any }))
-                            }
-                            className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
-                          >
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-sm font-medium text-neutral-300">
-                            Personality
-                          </label>
-                          <select
-                            value={formData.personality}
-                            onChange={(e) =>
-                              setFormData((p) => ({ ...p, personality: e.target.value as any }))
-                            }
-                            className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
-                          >
-                            <option value="serious">Serious</option>
-                            <option value="casual">Casual</option>
-                            <option value="satirical">Satirical</option>
-                          </select>
-                        </div>
+                      <div className="border-t border-white/5 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setShowAdvanced(!showAdvanced)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-white"
+                        >
+                          <span>
+                            {showAdvanced
+                              ? "Hide Advanced Bot Settings"
+                              : "Show Advanced Bot Settings"}
+                          </span>
+                        </button>
+
+                        <AnimatePresence>
+                          {showAdvanced && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="mt-4 grid grid-cols-1 gap-3 overflow-hidden sm:grid-cols-3 sm:gap-4"
+                            >
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-neutral-300">
+                                  Posting Frequency
+                                </label>
+                                <select
+                                  value={formData.postingFrequency}
+                                  onChange={(e) =>
+                                    setFormData((p) => ({
+                                      ...p,
+                                      postingFrequency: e.target.value as any,
+                                    }))
+                                  }
+                                  className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                  <option value="low">Low</option>
+                                  <option value="moderate">Moderate</option>
+                                  <option value="active">Active</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-neutral-300">
+                                  Political Lean
+                                </label>
+                                <select
+                                  value={formData.politicalLean}
+                                  onChange={(e) =>
+                                    setFormData((p) => ({
+                                      ...p,
+                                      politicalLean: e.target.value as any,
+                                    }))
+                                  }
+                                  className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                  <option value="left">Left</option>
+                                  <option value="center">Center</option>
+                                  <option value="right">Right</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-neutral-300">
+                                  Personality
+                                </label>
+                                <select
+                                  value={formData.personality}
+                                  onChange={(e) =>
+                                    setFormData((p) => ({
+                                      ...p,
+                                      personality: e.target.value as any,
+                                    }))
+                                  }
+                                  className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                  <option value="serious">Serious</option>
+                                  <option value="casual">Casual</option>
+                                  <option value="satirical">Satirical</option>
+                                </select>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   )}

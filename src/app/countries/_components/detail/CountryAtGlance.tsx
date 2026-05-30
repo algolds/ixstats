@@ -465,7 +465,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalAnimalImage && (
-                        <img src={country.nationalIdentity.nationalAnimalImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalAnimalImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -479,7 +483,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalBirdImage && (
-                        <img src={country.nationalIdentity.nationalBirdImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalBirdImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -493,7 +501,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalFishImage && (
-                        <img src={country.nationalIdentity.nationalFishImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalFishImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -502,12 +514,14 @@ export function CountryAtGlance({
                       <Users className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-muted-foreground text-sm">Founder(s)</p>
-                        <p className="text-sm font-medium">
-                          {country.nationalIdentity.founders}
-                        </p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.founders}</p>
                       </div>
                       {country.nationalIdentity.foundersImage && (
-                        <img src={country.nationalIdentity.foundersImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.foundersImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -521,7 +535,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalFlowerImage && (
-                        <img src={country.nationalIdentity.nationalFlowerImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalFlowerImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -535,7 +553,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalDishImage && (
-                        <img src={country.nationalIdentity.nationalDishImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalDishImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -549,7 +571,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalFruitImage && (
-                        <img src={country.nationalIdentity.nationalFruitImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalFruitImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -563,7 +589,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalDrinkImage && (
-                        <img src={country.nationalIdentity.nationalDrinkImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalDrinkImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -577,7 +607,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalInstrumentImage && (
-                        <img src={country.nationalIdentity.nationalInstrumentImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalInstrumentImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}
@@ -591,7 +625,11 @@ export function CountryAtGlance({
                         </p>
                       </div>
                       {country.nationalIdentity.nationalSymbolImage && (
-                        <img src={country.nationalIdentity.nationalSymbolImage} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover" />
+                        <img
+                          src={country.nationalIdentity.nationalSymbolImage}
+                          alt=""
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded border object-cover"
+                        />
                       )}
                     </div>
                   )}

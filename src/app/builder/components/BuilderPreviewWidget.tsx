@@ -426,10 +426,14 @@ export function BuilderPreviewWidget({
               </div>
             )}
 
-            <span className={cn(
-              "relative z-20 line-clamp-2 rounded-md bg-black/60 px-3 py-1.5 text-center text-[10px] font-bold uppercase tracking-wider shadow-md backdrop-blur-sm border",
-              activeSection ? sectionThemeTextClasses[activeSection] : "text-zinc-100 border-white/10"
-            )}>
+            <span
+              className={cn(
+                "relative z-20 line-clamp-2 rounded-md border bg-black/60 px-3 py-1.5 text-center text-[10px] font-bold tracking-wider uppercase shadow-md backdrop-blur-sm",
+                activeSection
+                  ? sectionThemeTextClasses[activeSection]
+                  : "border-white/10 text-zinc-100"
+              )}
+            >
               {countryName}
             </span>
 

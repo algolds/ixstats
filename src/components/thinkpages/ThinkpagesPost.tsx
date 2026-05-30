@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
@@ -34,6 +35,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
+  X,
+  Copy,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -42,6 +45,14 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Textarea } from "~/components/ui/textarea";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "~/components/ui/dropdown-menu";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { PostActions } from "./primitives/PostActions";
 import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
@@ -304,6 +315,17 @@ const ThinkpagesPostComponent = ({
   const [showFlagDialog, setShowFlagDialog] = useState(false);
   const [flagReason, setFlagReason] = useState("");
   const [showReactionsDialog, setShowReactionsDialog] = useState(false);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; id: string } | null>(null);
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    if (!lightboxMedia) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxMedia(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxMedia]);
 
   const { data: discordEmojisData } = api.thinkpages.getDiscordEmojis.useQuery(
     {},
@@ -650,13 +672,19 @@ const ThinkpagesPostComponent = ({
                             repostMediaAttachments.length === 4 && "aspect-square"
                           )}
                         >
-                          <img
+                          <motion.img
+                            layoutId={`repost-${post.id}-${media.id || index}`}
                             src={proxyDiscordUrl(media.url)}
                             alt={media.filename || `Image ${index + 1}`}
-                            className="h-full w-full cursor-pointer object-cover transition-all duration-300 hover:scale-[1.01] hover:opacity-90"
+                            className="h-full w-full cursor-pointer object-cover"
+                            whileHover={{ scale: 1.02, opacity: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              window.open(media.url, "_blank");
+                              setLightboxMedia({
+                                url: media.url,
+                                id: `repost-${post.id}-${media.id || index}`,
+                              });
                             }}
                           />
                         </div>
@@ -694,12 +722,19 @@ const ThinkpagesPostComponent = ({
                       mediaAttachments.length === 4 && "aspect-square"
                     )}
                   >
-                    <img
+                    <motion.img
+                      layoutId={`post-${post.id}-${media.id || index}`}
                       src={proxyDiscordUrl(media.url)}
                       alt={media.filename || `Image ${index + 1}`}
-                      className="h-full w-full cursor-pointer object-cover transition-all duration-300 hover:scale-[1.01] hover:opacity-90"
-                      onClick={() => {
-                        window.open(media.url, "_blank");
+                      className="h-full w-full cursor-pointer object-cover"
+                      whileHover={{ scale: 1.02, opacity: 0.95 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxMedia({
+                          url: media.url,
+                          id: `post-${post.id}-${media.id || index}`,
+                        });
                       }}
                     />
                   </div>
@@ -924,66 +959,67 @@ const ThinkpagesPostComponent = ({
           />
 
           <div className="flex items-center justify-end">
-            <div className="relative">
-              <button
-                onClick={() => setShowMoreOptions(!showMoreOptions)}
+            <DropdownMenu>
+              <DropdownMenuTrigger
                 className="text-muted-foreground hover:text-foreground rounded-full p-2 transition-colors hover:bg-white/10"
+                onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="h-4 w-4" />
-              </button>
-              <AnimatePresence>
-                {showMoreOptions && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                    className="bg-background border-border absolute right-0 z-[60] mt-2 w-48 rounded-lg border shadow-lg backdrop-blur-sm"
-                    style={{ zIndex: 60 }}
-                  >
-                    {currentUserAccountId === post.account.id && (
-                      <>
-                        <button
-                          onClick={handlePin}
-                          className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
-                        >
-                          <Pin className="h-4 w-4" />
-                          {post.pinned ? "Unpin" : "Pin"}
-                        </button>
-                        <button
-                          onClick={handleEdit}
-                          className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={handleDelete}
-                          className="hover:bg-muted text-destructive flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </button>
-                        <div className="border-border my-1 border-t"></div>
-                      </>
-                    )}
-                    <button
-                      onClick={handleBookmark}
-                      className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {currentUserAccountId === post.account.id && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePin();
+                      }}
                     >
-                      <Bookmark className="h-4 w-4" />
-                      Bookmark
-                    </button>
-                    <button
-                      onClick={handleFlag}
-                      className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+                      <Pin className="h-4 w-4" />
+                      {post.pinned ? "Unpin" : "Pin"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit();
+                      }}
                     >
-                      <Flag className="h-4 w-4" />
-                      Flag
-                    </button>
-                  </motion.div>
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete();
+                      }}
+                      variant="destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
                 )}
-              </AnimatePresence>
-            </div>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBookmark();
+                  }}
+                >
+                  <Bookmark className="h-4 w-4" />
+                  Bookmark
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFlag();
+                  }}
+                >
+                  <Flag className="h-4 w-4" />
+                  Flag
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Edit Composer */}
@@ -1108,108 +1144,86 @@ const ThinkpagesPostComponent = ({
           )}
 
           {/* Delete Confirmation Dialog */}
-          <AnimatePresence>
-            {showDeleteConfirm && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-background border-border mx-4 max-w-md rounded-lg border p-6"
-                  onClick={(e) => e.stopPropagation()}
+          <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <DialogContent
+              className="border-border bg-background max-w-md p-6"
+              showCloseButton={false}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-red-500/20 p-2">
+                  <Trash2 className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-foreground font-semibold">Delete Post</h3>
+                  <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleConfirmDelete}
+                  disabled={deletePostMutation.isPending}
                 >
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-full bg-red-500/20 p-2">
-                      <Trash2 className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Delete Post</h3>
-                      <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(false)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleConfirmDelete}
-                      disabled={deletePostMutation.isPending}
-                    >
-                      {deletePostMutation.isPending ? "Deleting..." : "Delete"}
-                    </Button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  {deletePostMutation.isPending ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Flag Dialog */}
-          <AnimatePresence>
-            {showFlagDialog && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-                onClick={() => setShowFlagDialog(false)}
-              >
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-background border-border mx-4 max-w-md rounded-lg border p-6"
-                  onClick={(e) => e.stopPropagation()}
+          <Dialog
+            open={showFlagDialog}
+            onOpenChange={(open) => {
+              setShowFlagDialog(open);
+              if (!open) setFlagReason("");
+            }}
+          >
+            <DialogContent
+              className="border-border bg-background max-w-md p-6"
+              showCloseButton={false}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-orange-500/20 p-2">
+                  <Flag className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-foreground font-semibold">Flag Post</h3>
+                  <p className="text-muted-foreground text-sm">Help us understand what's wrong.</p>
+                </div>
+              </div>
+              <Textarea
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                placeholder="Why are you flagging this post?"
+                className="mt-4"
+                autoFocus
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowFlagDialog(false);
+                    setFlagReason("");
+                  }}
                 >
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-full bg-orange-500/20 p-2">
-                      <Flag className="h-5 w-5 text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Flag Post</h3>
-                      <p className="text-muted-foreground text-sm">
-                        Help us understand what's wrong.
-                      </p>
-                    </div>
-                  </div>
-                  <Textarea
-                    value={flagReason}
-                    onChange={(e) => setFlagReason(e.target.value)}
-                    placeholder="Why are you flagging this post?"
-                    className="mb-4"
-                    autoFocus
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setShowFlagDialog(false);
-                        setFlagReason("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleSubmitFlag}
-                      disabled={!flagReason.trim() || flagPostMutation.isPending}
-                      className="bg-orange-600 hover:bg-orange-700"
-                    >
-                      {flagPostMutation.isPending ? "Flagging..." : "Flag Post"}
-                    </Button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSubmitFlag}
+                  disabled={!flagReason.trim() || flagPostMutation.isPending}
+                  className="bg-orange-600 text-white hover:bg-orange-700"
+                >
+                  {flagPostMutation.isPending ? "Flagging..." : "Flag Post"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Reactions Dialog */}
           <ReactionsDialog
@@ -1224,6 +1238,78 @@ const ThinkpagesPostComponent = ({
           />
         </div>
       </div>
+      {typeof window !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {lightboxMedia && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 z-[100100] flex flex-col items-center justify-center bg-black/75 p-4 backdrop-blur-md"
+                onClick={() => setLightboxMedia(null)}
+              >
+                {/* iOS-Style Content Wrapper */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 15 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    transition: { type: "spring", stiffness: 350, damping: 25 },
+                  }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative z-10 flex max-w-[85vw] flex-col items-center gap-4 sm:max-w-xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Image Card with Thick Glass Border */}
+                  <div className="rounded-3xl border-2 border-white/20 bg-white/[0.03] shadow-2xl backdrop-blur-xl">
+                    <motion.img
+                      layoutId={lightboxMedia.id}
+                      src={lightboxMedia.url}
+                      alt="Expanded view"
+                      className="max-h-[65vh] w-full rounded-[22px] object-contain"
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    />
+                  </div>
+
+                  {/* iOS-Style Context Actions Row */}
+                  <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 p-1.5 shadow-lg backdrop-blur-xl">
+                    <button
+                      onClick={() => window.open(lightboxMedia.url, "_blank")}
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-white/10 active:scale-95"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open Original
+                    </button>
+                    <div className="h-4 w-px bg-white/10" />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(lightboxMedia.url);
+                        notify.success("Image URL copied to clipboard!");
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-white/10 active:scale-95"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy Link
+                    </button>
+                    <div className="h-4 w-px bg-white/10" />
+                    <button
+                      onClick={() => setLightboxMedia(null)}
+                      className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Close
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </motion.div>
   );
 };

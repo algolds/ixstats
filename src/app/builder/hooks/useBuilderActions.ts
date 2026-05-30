@@ -158,7 +158,8 @@ export function useBuilderActions({
 
   // Handle continue button - moves to next tab or next step
   const handleContinue = useCallback(() => {
-    const { step, activeCoreTab, activeGovernmentTab, activeEconomicsTab, selectedCountry } = builderState;
+    const { step, activeCoreTab, activeGovernmentTab, activeEconomicsTab, selectedCountry } =
+      builderState;
 
     switch (step) {
       case "foundation":

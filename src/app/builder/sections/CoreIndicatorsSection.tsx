@@ -77,12 +77,10 @@ export function CoreIndicatorsSection({
   const populationTier = getPopulationTierFromPopulation(sanitizedCoreIndicators.totalPopulation);
 
   const defaultTaxRate = referenceCountry?.taxRevenuePercent || 20;
-  const [isTaxCustom, setIsTaxCustom] = React.useState(
-    () => {
-      const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
-      return currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
-    }
-  );
+  const [isTaxCustom, setIsTaxCustom] = React.useState(() => {
+    const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
+    return currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
+  });
 
   React.useEffect(() => {
     const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
@@ -210,13 +208,13 @@ export function CoreIndicatorsSection({
 
           {/* Tax Revenue Projection Card */}
           <GlassCard depth="base" className="border-border/40">
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1] flex items-center justify-between">
+            <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
               <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <Percent className="h-5 w-5 text-amber-400" />
                 Tax Revenue Projection
               </h3>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-muted-foreground">Customize</span>
+                <span className="text-muted-foreground text-[11px]">Customize</span>
                 <Switch
                   checked={isTaxCustom}
                   onCheckedChange={(checked) => {
@@ -227,8 +225,13 @@ export function CoreIndicatorsSection({
                         fiscalSystem: {
                           ...(safeInputs.fiscalSystem || {}),
                           taxRevenueGDPPercent: defaultTaxRate,
-                          governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
-                          taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                          governmentRevenueTotal:
+                            (sanitizedCoreIndicators.totalPopulation *
+                              sanitizedCoreIndicators.gdpPerCapita *
+                              defaultTaxRate) /
+                            100,
+                          taxRevenuePerCapita:
+                            (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
                         },
                       });
                     }
@@ -244,15 +247,23 @@ export function CoreIndicatorsSection({
                     description="Target tax revenue as a percentage of gross domestic product."
                     value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
                     onChange={(value) => {
-                      const taxRate = sanitizeNumber(value, inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20);
+                      const taxRate = sanitizeNumber(
+                        value,
+                        inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20
+                      );
                       const clamped = Math.max(5, Math.min(50, taxRate));
                       onInputsChange({
                         ...safeInputs,
                         fiscalSystem: {
                           ...(safeInputs.fiscalSystem || {}),
                           taxRevenueGDPPercent: clamped,
-                          governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
-                          taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                          governmentRevenueTotal:
+                            (sanitizedCoreIndicators.totalPopulation *
+                              sanitizedCoreIndicators.gdpPerCapita *
+                              clamped) /
+                            100,
+                          taxRevenuePerCapita:
+                            (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
                         },
                       });
                     }}
@@ -267,16 +278,20 @@ export function CoreIndicatorsSection({
                   />
                   <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
                     <span>Min: 5%</span>
-                    <span>Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%</span>
+                    <span>
+                      Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%
+                    </span>
                     <span>Max: 50%</span>
                   </div>
                 </>
               ) : (
-                <div className="text-center py-4">
+                <div className="py-4 text-center">
                   <p className="text-muted-foreground text-xs leading-normal">
-                    Using default flat tax revenue projection of <strong className="text-foreground">{defaultTaxRate.toFixed(1)}%</strong> of GDP.
+                    Using default flat tax revenue projection of{" "}
+                    <strong className="text-foreground">{defaultTaxRate.toFixed(1)}%</strong> of
+                    GDP.
                   </p>
-                  <p className="text-[10px] text-zinc-500 mt-1">
+                  <p className="mt-1 text-[10px] text-zinc-500">
                     Toggle Customize to adjust target tax revenue rates.
                   </p>
                 </div>
@@ -311,7 +326,7 @@ export function CoreIndicatorsSection({
               </div>
 
               <div className="border-border/20 border-t pt-6">
-                <div className="flex flex-wrap gap-4 mb-2">
+                <div className="mb-2 flex flex-wrap gap-4">
                   <div>
                     <h4 className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">
                       Economic Classification
@@ -420,7 +435,6 @@ export function CoreIndicatorsSection({
           </GlassCardContent>
         </GlassCard>
       </div>
-
     </div>
   );
 }

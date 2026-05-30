@@ -299,7 +299,7 @@ export function MediaSearchModal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[100100] flex items-center justify-center nested-media-modal"
+          className="nested-media-modal fixed inset-0 z-[100100] flex items-center justify-center"
           data-dialog-nested="true"
           style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}
         >

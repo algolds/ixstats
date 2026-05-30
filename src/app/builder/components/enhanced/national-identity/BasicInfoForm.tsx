@@ -271,12 +271,10 @@ export const BasicInfoForm = React.memo(
     const populationTier = getPopulationTierFromPopulation(sanitizedCoreIndicators.totalPopulation);
 
     const defaultTaxRate = referenceCountry?.taxRevenuePercent || 20;
-    const [isTaxCustom, setIsTaxCustom] = React.useState(
-      () => {
-        const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
-        return currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
-      }
-    );
+    const [isTaxCustom, setIsTaxCustom] = React.useState(() => {
+      const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
+      return currentTax !== undefined && Math.abs(currentTax - defaultTaxRate) > 0.01;
+    });
 
     React.useEffect(() => {
       const currentTax = inputs.fiscalSystem?.taxRevenueGDPPercent;
@@ -582,8 +580,8 @@ export const BasicInfoForm = React.memo(
                       Starting Population
                     </label>
                     <p className="text-muted-foreground text-[11px] leading-tight">
-                      Set the initial population of your country. This is before any
-                      modifications from events, policies, or other factors.
+                      Set the initial population of your country. This is before any modifications
+                      from events, policies, or other factors.
                     </p>
                     <SliderWithDirectInput
                       label=""
@@ -625,11 +623,11 @@ export const BasicInfoForm = React.memo(
                   <div className="space-y-2">
                     <label className="text-foreground flex items-center gap-2 text-sm font-medium">
                       <DollarSign className="text-muted-foreground h-4 w-4" />
-                       GDP per Capita
+                      GDP per Capita
                     </label>
                     <p className="text-muted-foreground text-[11px] leading-tight">
-                      Average economic production per citizen. This is before any
-                      modifications from events, policies, or other factors.
+                      Average economic production per citizen. This is before any modifications from
+                      events, policies, or other factors.
                     </p>
                     <SliderWithDirectInput
                       label=""
@@ -666,11 +664,11 @@ export const BasicInfoForm = React.memo(
                   </div>
 
                   {/* Tax Revenue Opt-In / Slider */}
-                  <div className="space-y-4 border-t border-border/20 pt-4">
+                  <div className="border-border/20 space-y-4 border-t pt-4">
                     <div className="flex items-center justify-between">
                       <label className="text-foreground flex items-center gap-2 text-sm font-medium">
                         <Percent className="text-muted-foreground h-4 w-4" />
-                         Tax Revenue
+                        Tax Revenue
                       </label>
                       <Switch
                         checked={isTaxCustom}
@@ -682,8 +680,13 @@ export const BasicInfoForm = React.memo(
                               fiscalSystem: {
                                 ...(safeInputs.fiscalSystem || {}),
                                 taxRevenueGDPPercent: defaultTaxRate,
-                                governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
-                                taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                                governmentRevenueTotal:
+                                  (sanitizedCoreIndicators.totalPopulation *
+                                    sanitizedCoreIndicators.gdpPerCapita *
+                                    defaultTaxRate) /
+                                  100,
+                                taxRevenuePerCapita:
+                                  (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
                               },
                             });
                           }
@@ -695,7 +698,7 @@ export const BasicInfoForm = React.memo(
                     </p>
 
                     {isTaxCustom ? (
-                      <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="animate-in fade-in slide-in-from-top-1 space-y-2 pt-2 duration-200">
                         <SliderWithDirectInput
                           label=""
                           value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
@@ -710,8 +713,13 @@ export const BasicInfoForm = React.memo(
                               fiscalSystem: {
                                 ...(safeInputs.fiscalSystem || {}),
                                 taxRevenueGDPPercent: clamped,
-                                governmentRevenueTotal: (sanitizedCoreIndicators.totalPopulation * sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
-                                taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                                governmentRevenueTotal:
+                                  (sanitizedCoreIndicators.totalPopulation *
+                                    sanitizedCoreIndicators.gdpPerCapita *
+                                    clamped) /
+                                  100,
+                                taxRevenuePerCapita:
+                                  (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
                               },
                             });
                           }}
@@ -726,13 +734,17 @@ export const BasicInfoForm = React.memo(
                         />
                         <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
                           <span>Min: 5%</span>
-                          <span>Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%</span>
+                          <span>
+                            Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}
+                            %
+                          </span>
                           <span>Max: 50%</span>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[10px] text-zinc-500 italic mt-1">
-                        Using default flat tax revenue projection of {defaultTaxRate.toFixed(1)}% of GDP.
+                      <p className="mt-1 text-[10px] text-zinc-500 italic">
+                        Using default flat tax revenue projection of {defaultTaxRate.toFixed(1)}% of
+                        GDP.
                       </p>
                     )}
                   </div>
@@ -762,7 +774,10 @@ export const BasicInfoForm = React.memo(
                         </h5>
                         <div className="mt-1 text-xl font-black text-emerald-400">
                           <NumberFlowDisplay
-                            value={computedGDP * ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100)}
+                            value={
+                              computedGDP *
+                              ((inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20) / 100)
+                            }
                             format="currency"
                             decimalPlaces={0}
                           />
@@ -773,7 +788,7 @@ export const BasicInfoForm = React.memo(
                       </div>
                     </div>
 
-                    <div className="border-border/20 border-t pt-3 flex flex-wrap gap-x-6 gap-y-3">
+                    <div className="border-border/20 flex flex-wrap gap-x-6 gap-y-3 border-t pt-3">
                       <div>
                         <h5 className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-wider uppercase">
                           Economic Classification

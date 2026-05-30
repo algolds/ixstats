@@ -30,6 +30,8 @@ export const usersRouter = createTRPCRouter({
           countryId: null,
           country: null,
           role: null,
+          membershipTier: "basic",
+          createdAt: new Date(),
           hasCompletedSetup: false,
         };
       }
@@ -119,6 +121,8 @@ export const usersRouter = createTRPCRouter({
         countryId: countryRecord?.id ?? null,
         country: countryRecord,
         role: userRecord?.role ?? null,
+        membershipTier: userRecord?.membershipTier ?? "basic",
+        createdAt: userRecord?.createdAt ?? new Date(),
         wikiUsername: userRecord?.wikiUsername ?? null,
         forumUsername: userRecord?.forumUsername ?? null,
         hasCompletedSetup: Boolean(countryRecord),
@@ -130,6 +134,8 @@ export const usersRouter = createTRPCRouter({
         countryId: null,
         country: null,
         role: null,
+        membershipTier: "basic",
+        createdAt: new Date(),
         hasCompletedSetup: false,
       };
     }
@@ -533,8 +539,8 @@ export const usersRouter = createTRPCRouter({
               coordinatesLongitude: input.nationalIdentity.coordinatesLongitude,
               emergencyNumber: input.nationalIdentity.emergencyNumber,
               postalCodeFormat: input.nationalIdentity.postalCodeFormat,
-                nationalSport: input.nationalIdentity.nationalSport,
-                nationalBird: input.nationalIdentity.nationalBird,
+              nationalSport: input.nationalIdentity.nationalSport,
+              nationalBird: input.nationalIdentity.nationalBird,
               nationalFish: input.nationalIdentity.nationalFish,
               founders: input.nationalIdentity.founders,
               nationalFlower: input.nationalIdentity.nationalFlower,

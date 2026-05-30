@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crown, Globe, User, ChevronRight, LogOut, X } from "lucide-react";
+import { Crown, Globe, User, ChevronRight, LogOut, X, Shield } from "lucide-react";
 import { SimpleFlag } from "../SimpleFlag";
 import { HealthRing } from "../ui/health-ring";
 import { createAbsoluteUrl } from "~/lib/url-utils";
@@ -28,6 +28,22 @@ function normalizeGrowth(value: number | null | undefined): number {
 }
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
+
+const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number => {
+  if (!createdAt) return 30;
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+
+  // Calculate next billing date: same day of next month
+  let nextBillingDate = new Date(now.getFullYear(), now.getMonth(), createdDate.getDate());
+  if (nextBillingDate <= now) {
+    nextBillingDate = new Date(now.getFullYear(), now.getMonth() + 1, createdDate.getDate());
+  }
+
+  const diffTime = nextBillingDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
 
 interface MyCountryDIViewProps {
   onClose: () => void;
@@ -116,12 +132,71 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
         <div>
           {/* ── Your Country ─────────────────────────────────── */}
           <div className="border-border/40 border-b px-4 pb-3">
-            <PreText
-              className="text-muted-foreground/60 mb-2 text-[10px] font-semibold tracking-wider uppercase"
-              whiteSpace="nowrap"
-            >
-              MyCountry
-            </PreText>
+            <div className="mb-2 flex w-full items-center justify-between">
+              <div className="text-foreground/90 flex items-center gap-1.5 text-xs font-bold">
+                <Crown
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    userProfile.membershipTier === "mycountry_premium"
+                      ? "text-amber-500 drop-shadow-[0_0_4px_rgba(245,158,11,0.3)] dark:text-amber-400"
+                      : "text-muted-foreground"
+                  )}
+                />
+                <span>MyCountry</span>
+              </div>
+              {/* Membership badge */}
+              {userProfile.membershipTier === "mycountry_premium" ? (
+                <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-[0_0_8px_rgba(245,158,11,0.05)] dark:text-amber-400">
+                  Premium
+                </span>
+              ) : (
+                <span className="text-muted-foreground/80 border-border bg-muted/40 inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                  Basic
+                </span>
+              )}
+            </div>
+
+            {/* Status / Duration Row */}
+            <div className="mb-1 flex w-full items-center justify-between">
+              {userProfile.membershipTier === "mycountry_premium" ? (
+                <PreText
+                  className="text-[10px] font-semibold text-amber-600 dark:text-amber-400"
+                  whiteSpace="nowrap"
+                >
+                  Premium active • Member since{" "}
+                  {new Date(userProfile.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </PreText>
+              ) : (
+                <PreText
+                  className="text-muted-foreground/80 text-[10px] font-medium"
+                  whiteSpace="nowrap"
+                >
+                  Basic Membership
+                </PreText>
+              )}
+            </div>
+
+            {/* Roles / Ranks / Titles Row */}
+            {(userProfile.role ||
+              (userProfile.role?.level !== undefined && userProfile.role.level <= 20)) && (
+              <div className="mt-1 mb-2 flex flex-wrap gap-1">
+                {userProfile.role && (
+                  <span className="inline-flex items-center gap-0.5 rounded border border-purple-500/25 bg-purple-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-purple-600 dark:text-purple-400">
+                    <Shield className="h-2 w-2 shrink-0 text-purple-600 dark:text-purple-400" />
+                    {userProfile.role.displayName}
+                  </span>
+                )}
+                {userProfile.role?.level !== undefined && userProfile.role.level <= 20 && (
+                  <span className="inline-flex items-center gap-0.5 rounded border border-amber-500/25 bg-amber-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                    <Crown className="h-2.5 w-2.5 shrink-0 text-amber-500 dark:text-amber-400" />
+                    Founding Member
+                  </span>
+                )}
+              </div>
+            )}
             <div className="relative -mx-1 rounded-lg px-1 py-1.5">
               <button
                 onClick={() =>

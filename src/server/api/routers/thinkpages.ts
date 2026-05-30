@@ -33,13 +33,13 @@ const thinkpagesAccountBaseSchema = z.object({
     .max(20)
     .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
   firstName: z.string().min(1).max(50),
-  lastName: z.string().min(1).max(50),
-  bio: z.string().max(500).optional(),
+  lastName: z.string().max(50).optional().default(""),
+  bio: z.string().max(500).optional().default(""),
   verified: z.boolean().default(false),
   postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
   politicalLean: z.enum(["left", "center", "right"]).default("center"),
   personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().url().or(z.literal("")).optional().nullable(),
+  profileImageUrl: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
 });
 
@@ -53,10 +53,12 @@ const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
   content: z
     .string()
-    .min(1)
     .max(280)
+    .optional()
+    .default("")
     .refine(
       (content) => {
+        if (!content) return true;
         const validation = validateNoXSS(content);
         return validation.valid;
       },
@@ -103,7 +105,7 @@ const CreatePostSchema = z.object({
       })
     )
     .optional(), // Data visualizations embedded in post
-  mediaUrls: z.array(z.string().url()).max(4).optional(), // Up to 4 images per post
+  mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
 });
 
 const AddReactionSchema = z.object({
@@ -601,7 +603,8 @@ export const thinkpagesRouter = createTRPCRouter({
     }
 
     // Create the account
-    const displayName = `${input.firstName} ${input.lastName}`;
+    const lastNameVal = input.lastName || "";
+    const displayName = lastNameVal ? `${input.firstName} ${lastNameVal}` : input.firstName;
     const account = await db.thinkpagesAccount.create({
       data: {
         clerkUserId,
@@ -610,8 +613,8 @@ export const thinkpagesRouter = createTRPCRouter({
         username: input.username,
         displayName,
         firstName: input.firstName,
-        lastName: input.lastName,
-        bio: input.bio,
+        lastName: lastNameVal,
+        bio: input.bio || "",
         verified: input.verified,
         postingFrequency: input.postingFrequency,
         politicalLean: input.politicalLean,

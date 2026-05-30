@@ -102,7 +102,9 @@ export function GovernmentStep({
   const [welcomeOpen, setWelcomeOpen] = useState(false);
 
   // Budget allocations collapsed state
-  const [budgetAllocationsCollapsed, setBudgetAllocationsCollapsed] = useState<Record<number, boolean>>({});
+  const [budgetAllocationsCollapsed, setBudgetAllocationsCollapsed] = useState<
+    Record<number, boolean>
+  >({});
 
   const handleToggleCollapse = useCallback((idx: number) => {
     setBudgetAllocationsCollapsed((prev) => ({
@@ -210,7 +212,7 @@ export function GovernmentStep({
                   MyGovernment Components Builder
                   <button
                     onClick={() => setWelcomeOpen(true)}
-                    className="text-zinc-400 hover:text-cyan-400 cursor-pointer transition-colors p-0.5 rounded-full hover:bg-white/5"
+                    className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-cyan-400"
                     title="Open Help Guide"
                     type="button"
                   >
@@ -394,7 +396,6 @@ export function GovernmentStep({
                 />
               </GlassCardContent>
             </GlassCard>
-
           </div>
         )}
 
@@ -428,8 +429,6 @@ export function GovernmentStep({
                 showOnlyBudgetConfig={true}
               />
 
-
-
               {/* Revenue Sources form */}
               <RevenueSourceForm
                 data={governmentStructure.revenueSources}
@@ -449,7 +448,6 @@ export function GovernmentStep({
                   })
                 )}
               />
-
             </div>
           </div>
         )}
@@ -481,7 +479,6 @@ export function GovernmentStep({
                   />
                 </GlassCardContent>
               </GlassCard>
-
             </div>
 
             <div className="space-y-6 lg:col-span-5">

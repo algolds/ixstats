@@ -265,8 +265,11 @@ export function ThinkpagesSocialPlatform({
             }}
             placeholder="What's happening?"
             countryId={countryId}
-            accounts={[]}
-            isOwner={false}
+            accounts={accounts}
+            isOwner={isOwner}
+            onAccountSelect={onAccountSelect}
+            onAccountSettings={onAccountSettings}
+            onCreateAccount={onCreateAccount || (() => setIsAccountModalOpen(true))}
           />
         </motion.div>
       )}

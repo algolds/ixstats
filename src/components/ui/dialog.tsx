@@ -70,9 +70,9 @@ function DialogContent({
               target.closest('[data-slot="popover-content"]') ||
               target.closest('[data-slot="popover-positioner"]') ||
               target.closest('[data-slot="popover-portal"]') ||
-              target.closest('.bg-popover') ||
+              target.closest(".bg-popover") ||
               target.closest('[role="slider"]') ||
-              target.closest('input') ||
+              target.closest("input") ||
               target.closest(".nested-media-modal") ||
               target.closest('[data-dialog-nested="true"]') ||
               target.closest('[data-slot="select-content"]'))
@@ -91,9 +91,9 @@ function DialogContent({
               target.closest('[data-slot="popover-content"]') ||
               target.closest('[data-slot="popover-positioner"]') ||
               target.closest('[data-slot="popover-portal"]') ||
-              target.closest('.bg-popover') ||
+              target.closest(".bg-popover") ||
               target.closest('[role="slider"]') ||
-              target.closest('input') ||
+              target.closest("input") ||
               target.closest(".nested-media-modal") ||
               target.closest('[data-dialog-nested="true"]') ||
               target.closest('[data-slot="select-content"]'))

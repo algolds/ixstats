@@ -93,7 +93,7 @@ export function DepartmentsList({
                         <div className="hover:bg-muted/50 flex cursor-pointer items-center justify-between p-4 transition-colors">
                           <div className="flex items-center gap-3">
                             <div
-                              className="rounded-lg p-2 h-8 w-8 overflow-hidden flex items-center justify-center shrink-0"
+                              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg p-2"
                               style={{ backgroundColor: department.color + "20" }}
                             >
                               {department.icon ? (
