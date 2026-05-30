@@ -371,6 +371,18 @@ export const StepRenderer = memo(function StepRenderer({
   const { builderState, setBuilderState, updateStep, countryId, mode } = useBuilderContext();
   const { handleTabChange } = useBuilderActions({ builderState, setBuilderState, mode });
 
+  const handleEconomicInputsChange = useCallback((inputs: EconomicInputs) => {
+    setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
+  }, [setBuilderState]);
+
+  const handlePersistEconomyBuilder = useCallback((economyBuilderState: any) => {
+    setBuilderState((prev) => ({ ...prev, economyBuilderState }));
+  }, [setBuilderState]);
+
+  const handlePersistTaxSystem = useCallback((taxSystemDraft: any) => {
+    setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
+  }, [setBuilderState]);
+
   const handleFoundationComplete = useCallback(
     (country: RealCountryData) => {
       updateStep("foundation", country);
@@ -500,21 +512,17 @@ export const StepRenderer = memo(function StepRenderer({
       <Suspense fallback={<BuilderLoadingFallback />}>
         <EconomyBuilderPage
           economicInputs={builderState.economicInputs}
-          onEconomicInputsChange={(inputs: EconomicInputs) => {
-            setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
-          }}
+          onEconomicInputsChange={handleEconomicInputsChange}
           governmentComponents={builderState.governmentComponents}
           governmentBuilderData={builderState.governmentStructure}
           taxSystemData={builderState.taxSystemData}
           countryId={builderState.selectedCountry?.countryCode}
           showAdvanced={builderState.showAdvancedMode}
           persistedEconomyBuilder={builderState.economyBuilderState}
-          onPersistEconomyBuilder={(economyBuilderState: any) => {
-            setBuilderState((prev) => ({ ...prev, economyBuilderState }));
-          }}
-          onPersistTaxSystem={(taxSystemDraft: any) => {
-            setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
-          }}
+          onPersistEconomyBuilder={handlePersistEconomyBuilder}
+          onPersistTaxSystem={handlePersistTaxSystem}
+          activeTab={builderState.activeEconomicsTab}
+          onTabChange={(tab: string) => handleTabChange("economics", tab)}
         />
       </Suspense>
     );

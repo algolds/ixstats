@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
+import { isEqual } from "lodash";
 
 // Economy Builder Components
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
@@ -49,8 +50,18 @@ import { getRegionColor } from "./tabs/utils/demographicsCalculations";
 import { TabLoadingFallback } from "../../components/LoadingFallback";
 
 // Step Components
-import { TaxSystemStep } from "./steps/TaxSystemStep";
 import { PreviewStep } from "./steps/PreviewStep";
+import { useTaxBuilderState } from "~/hooks/useTaxBuilderState";
+import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
+import { AtomicComponentsStep } from "~/components/tax-system/tax-builder/steps/AtomicComponentsStep";
+import { ExemptionsDeductionsStep } from "~/components/tax-system/tax-builder/steps/ExemptionsDeductionsStep";
+import { CalculatorPreviewStep } from "~/components/tax-system/tax-builder/steps/CalculatorPreviewStep";
+import { taxSystemTemplates } from "~/components/tax-system/TaxSystemTemplates";
+import { GlassCard, GlassCardContent } from "../glass/GlassCard";
+import { Sparkles, Coins, Calculator } from "lucide-react";
+
+// Tab Card Primitive
+import { BuilderTabCard, type TabDefinition } from "../../primitives/BuilderTabCard";
 
 // Cross-Builder Integration Components
 import { EconomicArchetypeModal } from "./EconomicArchetypeModal";
@@ -108,6 +119,8 @@ interface EconomyBuilderPageProps {
   persistedEconomyBuilder?: EconomyBuilderState | null;
   onPersistEconomyBuilder?: (builder: EconomyBuilderState) => void;
   onPersistTaxSystem?: (taxSystem: TaxBuilderState) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 /**
@@ -178,6 +191,8 @@ export function EconomyBuilderPage({
   persistedEconomyBuilder = null,
   onPersistEconomyBuilder,
   onPersistTaxSystem,
+  activeTab,
+  onTabChange,
 }: EconomyBuilderPageProps) {
   const notify = useNotify();
   // Removed auto-save state - using global builder autosave instead
@@ -316,55 +331,49 @@ export function EconomyBuilderPage({
 
   const [selectedComponents, setSelectedComponents] =
     useState<EconomicComponentType[]>(propsSelectedComponents);
-  const [currentStep, setCurrentStep] = useState<
-    "components" | "sectors" | "labor" | "demographics" | "taxes" | "preview"
-  >("components");
+
+  const [activeStructureTab, setActiveStructureTab] = useState<"sectors" | "labor" | "demographics">("sectors");
+  const [activeFiscalTab, setActiveFiscalTab] = useState<"taxes" | "exemptions" | "calculator">("taxes");
+
+  const currentStep = useMemo(() => {
+    const rawTab = activeTab || "components";
+    if (rawTab === "sectors" || rawTab === "labor" || rawTab === "demographics" || rawTab === "structure") {
+      return "structure";
+    }
+    if (rawTab === "taxes" || rawTab === "tax" || rawTab === "exemptions" || rawTab === "calculator" || rawTab === "fiscal") {
+      return "fiscal";
+    }
+    if (rawTab === "preview") {
+      return "preview";
+    }
+    return "components";
+  }, [activeTab]);
+
+  const setCurrentStep = useCallback(
+    (step: "components" | "structure" | "fiscal" | "preview") => {
+      if (onTabChange) {
+        onTabChange(step);
+      }
+    },
+    [onTabChange]
+  );
+
+  // Sync external tab changes with internal sub-tabs
+  useEffect(() => {
+    if (activeTab === "sectors" || activeTab === "labor" || activeTab === "demographics") {
+      setActiveStructureTab(activeTab);
+    } else if (activeTab === "taxes" || activeTab === "tax") {
+      setActiveFiscalTab("taxes");
+    } else if (activeTab === "exemptions" || activeTab === "calculator") {
+      setActiveFiscalTab(activeTab);
+    }
+  }, [activeTab]);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
 
   // Get builder context if available (returns null if used standalone, not within BuilderStateProvider)
   const builderContext = useBuilderContextOptional();
-
-  // Sync with global builderState activeEconomicsTab
-  useEffect(() => {
-    if (builderContext?.builderState?.activeEconomicsTab) {
-      const globalTab = builderContext.builderState.activeEconomicsTab;
-      const mappedTab =
-        globalTab === "economy" ? "sectors" : globalTab === "tax" ? "taxes" : (globalTab as any);
-      if (
-        mappedTab === "components" ||
-        mappedTab === "sectors" ||
-        mappedTab === "labor" ||
-        mappedTab === "demographics" ||
-        mappedTab === "taxes" ||
-        mappedTab === "preview"
-      ) {
-        if (currentStep !== mappedTab) {
-          setCurrentStep(mappedTab);
-        }
-      }
-    }
-  }, [builderContext?.builderState?.activeEconomicsTab, currentStep]);
-
-  // Sync currentStep back to global state
-  useEffect(() => {
-    if (builderContext?.setBuilderState) {
-      const globalTab = builderContext.builderState.activeEconomicsTab;
-      const mappedGlobalTab =
-        globalTab === "economy" ? "sectors" : globalTab === "tax" ? "taxes" : globalTab;
-      if (mappedGlobalTab !== currentStep) {
-        builderContext.setBuilderState((prev: any) => ({
-          ...prev,
-          activeEconomicsTab: currentStep,
-        }));
-      }
-    }
-  }, [
-    currentStep,
-    builderContext?.setBuilderState,
-    builderContext?.builderState?.activeEconomicsTab,
-  ]);
 
   // Prepare economy data for autosave
   const economyDataForSync = useMemo(() => {
@@ -456,11 +465,132 @@ export function EconomyBuilderPage({
     (taxSystemData as TaxBuilderState | null) ??
     null;
 
+  const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
+
+  // State management hook
+  const taxBuilder = useTaxBuilderState({
+    initialData: activeTaxSystemData || undefined,
+    countryId: countryId || undefined,
+  });
+
+  // Sync loaded tax system data into taxBuilder state when it arrives
+  const hasInitializedTaxDataRef = useRef(false);
   useEffect(() => {
-    if (activeTaxSystemData && onPersistTaxSystem) {
-      onPersistTaxSystem(activeTaxSystemData as TaxBuilderState);
+    if (activeTaxSystemData && !hasInitializedTaxDataRef.current) {
+      taxBuilder.setBuilderState({
+        taxSystem: {
+          taxSystemName: activeTaxSystemData.taxSystem?.taxSystemName || "",
+          fiscalYear: activeTaxSystemData.taxSystem?.fiscalYear || "calendar",
+          progressiveTax: activeTaxSystemData.taxSystem?.progressiveTax ?? true,
+          alternativeMinTax: activeTaxSystemData.taxSystem?.alternativeMinTax ?? false,
+          complianceRate: activeTaxSystemData.taxSystem?.complianceRate ?? 85,
+          collectionEfficiency: activeTaxSystemData.taxSystem?.collectionEfficiency ?? 90,
+        },
+        categories: activeTaxSystemData.categories || [],
+        brackets: activeTaxSystemData.brackets || {},
+        exemptions: activeTaxSystemData.exemptions || [],
+        deductions: activeTaxSystemData.deductions || {},
+        isValid: activeTaxSystemData.isValid ?? false,
+        errors: activeTaxSystemData.errors || {},
+      });
+      hasInitializedTaxDataRef.current = true;
     }
-  }, [activeTaxSystemData, onPersistTaxSystem]);
+  }, [activeTaxSystemData]);
+
+  // Auto-sync hook
+  const {
+    builderState: autoSyncTaxState,
+    setBuilderState: setAutoSyncTaxState,
+    syncState: taxSyncState,
+    triggerSync: triggerTaxSync,
+    clearConflicts: _clearTaxConflicts,
+  } = useTaxBuilderAutoSync(countryId || undefined, taxBuilder.builderState, {
+    enabled: !!countryId,
+    showConflictWarnings: true,
+    onSyncSuccess: () => {
+      console.log("[EconomyBuilder] Tax autosave successful");
+      setLastSaved(new Date());
+    },
+    onSyncError: (error) => {
+      console.error("[EconomyBuilder] Tax autosave failed:", error);
+      notify.error("Failed to autosave tax system");
+    },
+  });
+
+  // Use auto-sync state if enabled, otherwise use local state
+  const activeTaxBuilderState = countryId ? autoSyncTaxState : taxBuilder.builderState;
+  const setActiveTaxBuilderState = useCallback(
+    (update: React.SetStateAction<TaxBuilderState>) => {
+      if (countryId) {
+        setAutoSyncTaxState(update);
+      } else {
+        taxBuilder.setBuilderState(update);
+      }
+    },
+    [countryId, setAutoSyncTaxState, taxBuilder.setBuilderState]
+  );
+
+  // Sync tax changes back to parent
+  const lastPersistedTaxSystemRef = useRef<TaxBuilderState | null>(null);
+  useEffect(() => {
+    if (activeTaxBuilderState && onPersistTaxSystem) {
+      if (!isEqual(activeTaxBuilderState, lastPersistedTaxSystemRef.current)) {
+        lastPersistedTaxSystemRef.current = activeTaxBuilderState;
+        onPersistTaxSystem(activeTaxBuilderState);
+      }
+    }
+  }, [activeTaxBuilderState, onPersistTaxSystem]);
+
+  // Register tax autosync with BuilderContext
+  useEffect(() => {
+    if (builderContext && countryId && triggerTaxSync) {
+      builderContext.registerAutoSync("taxSystem", triggerTaxSync);
+      return () => {
+        builderContext.unregisterAutoSync("taxSystem");
+      };
+    }
+  }, [countryId, triggerTaxSync, builderContext]);
+
+  // Preview data transformations
+  const previewTaxSystem = useMemo(
+    () => ({
+      id: "builder-preview",
+      countryId: countryId || "preview",
+      ...activeTaxBuilderState.taxSystem,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
+    [activeTaxBuilderState.taxSystem, countryId]
+  );
+
+  const previewCategories = useMemo(
+    () =>
+      activeTaxBuilderState.categories.map((cat, index) => ({
+        id: `category-${index}`,
+        taxSystemId: "builder-preview",
+        ...cat,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })),
+    [activeTaxBuilderState.categories]
+  );
+
+  const previewBrackets = useMemo(() => {
+    const brackets: any[] = [];
+    Object.entries(activeTaxBuilderState.brackets).forEach(([categoryIndex, categoryBrackets]) => {
+      categoryBrackets.forEach((bracket, bracketIndex) => {
+        brackets.push({
+          id: `bracket-${categoryIndex}-${bracketIndex}`,
+          taxSystemId: "builder-preview",
+          categoryId: `category-${categoryIndex}`,
+          ...bracket,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      });
+    });
+    return brackets;
+  }, [activeTaxBuilderState.brackets]);
 
   // Phase 2 optimization: Use consolidated sync hook for refs, integration service, and cross-builder sync
   const {
@@ -509,17 +639,33 @@ export function EconomyBuilderPage({
   // Economy Builder Change Handler - Memoized
   const handleEconomyBuilderChange = useCallback(
     (builder: EconomyBuilderState) => {
+      // Update refs synchronously to prevent pub/sub loop triggers
+      economyBuilderRef.current = builder;
+
       setEconomyBuilder(builder);
       economyIntegrationService.updateEconomyBuilder(builder);
       onPersistEconomyBuilder?.(builder);
 
       if (economicInputs) {
         const mergedInputs = mergeEconomyBuilderIntoInputs(economicInputs, builder);
+        economicInputsRef.current = mergedInputs;
         onEconomicInputsChange(mergedInputs);
       }
     },
-    [economicInputs, onEconomicInputsChange, onPersistEconomyBuilder]
+    [
+      economicInputs,
+      onEconomicInputsChange,
+      onPersistEconomyBuilder,
+      economyBuilderRef,
+      economicInputsRef,
+    ]
   );
+
+  // Track handler in a ref to avoid infinite loops in government sync effects
+  const handleEconomyBuilderChangeRef = useRef(handleEconomyBuilderChange);
+  useEffect(() => {
+    handleEconomyBuilderChangeRef.current = handleEconomyBuilderChange;
+  }, [handleEconomyBuilderChange]);
 
   // Government Revenue Integration Effect (fixed to prevent re-trigger loop)
   useEffect(() => {
@@ -574,14 +720,26 @@ export function EconomyBuilderPage({
       governmentSizeIndicator = "Large";
     }
 
-    // Update revenue integration state
-    setRevenueIntegration({
-      totalRevenue,
-      taxRevenue,
-      nonTaxRevenue,
-      taxBurdenRatio,
-      revenueToGDPRatio,
-      governmentSizeIndicator,
+    // Update revenue integration state using functional state update to prevent redundant loops
+    setRevenueIntegration((prev) => {
+      if (
+        prev.totalRevenue === totalRevenue &&
+        prev.taxRevenue === taxRevenue &&
+        prev.nonTaxRevenue === nonTaxRevenue &&
+        prev.taxBurdenRatio === taxBurdenRatio &&
+        prev.revenueToGDPRatio === revenueToGDPRatio &&
+        prev.governmentSizeIndicator === governmentSizeIndicator
+      ) {
+        return prev;
+      }
+      return {
+        totalRevenue,
+        taxRevenue,
+        nonTaxRevenue,
+        taxBurdenRatio,
+        revenueToGDPRatio,
+        governmentSizeIndicator,
+      };
     });
 
     const adjustedBuilder = applyGovernmentRevenueAdjustments(currentEconomyBuilder, {
@@ -591,7 +749,7 @@ export function EconomyBuilderPage({
     });
 
     if (adjustedBuilder !== currentEconomyBuilder) {
-      handleEconomyBuilderChange(adjustedBuilder);
+      handleEconomyBuilderChangeRef.current(adjustedBuilder);
     }
 
     console.log("[EconomyBuilder] Government revenue integration applied:", {
@@ -602,7 +760,7 @@ export function EconomyBuilderPage({
       revenueToGDPRatio: `${revenueToGDPRatio.toFixed(1)}%`,
       governmentSizeIndicator,
     });
-  }, [governmentBuilderData?.revenueSources, handleEconomyBuilderChange]);
+  }, [governmentBuilderData?.revenueSources]);
 
   // tRPC mutations for comprehensive economy builder management
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
@@ -850,15 +1008,64 @@ export function EconomyBuilderPage({
 
   // Steps Configuration - Following GovernmentBuilder pattern
   const steps = [
-    { id: "components", label: "Atomic Components", icon: Zap },
-    { id: "sectors", label: "Economic Sectors", icon: Factory },
-    { id: "labor", label: "Labor & Employment", icon: Users },
-    { id: "demographics", label: "Demographics", icon: Globe },
-    { id: "taxes", label: "Tax System", icon: DollarSign },
-    { id: "preview", label: "Preview", icon: Eye },
+    { id: "components", label: "Econ Components", icon: Zap },
+    { id: "structure", label: "Econ Structure", icon: Factory },
+    { id: "fiscal", label: "Fiscal & Taxes", icon: TrendingUp },
+    { id: "preview", label: "Econ Preview", icon: Eye },
   ] as const;
+  const tabs = steps as unknown as TabDefinition[];
 
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
+
+  const handleNext = useCallback(() => {
+    if (currentStep === "components") {
+      setCurrentStep("structure");
+      setActiveStructureTab("sectors");
+    } else if (currentStep === "structure") {
+      if (activeStructureTab === "sectors") {
+        setActiveStructureTab("labor");
+      } else if (activeStructureTab === "labor") {
+        setActiveStructureTab("demographics");
+      } else {
+        setCurrentStep("fiscal");
+        setActiveFiscalTab("taxes");
+      }
+    } else if (currentStep === "fiscal") {
+      if (activeFiscalTab === "taxes") {
+        setActiveFiscalTab("exemptions");
+      } else if (activeFiscalTab === "exemptions") {
+        setActiveFiscalTab("calculator");
+      } else {
+        setCurrentStep("preview");
+      }
+    } else if (currentStep === "preview") {
+      handleSave();
+    }
+  }, [currentStep, activeStructureTab, activeFiscalTab, setCurrentStep, handleSave]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentStep === "preview") {
+      setCurrentStep("fiscal");
+      setActiveFiscalTab("calculator");
+    } else if (currentStep === "fiscal") {
+      if (activeFiscalTab === "calculator") {
+        setActiveFiscalTab("exemptions");
+      } else if (activeFiscalTab === "exemptions") {
+        setActiveFiscalTab("taxes");
+      } else {
+        setCurrentStep("structure");
+        setActiveStructureTab("demographics");
+      }
+    } else if (currentStep === "structure") {
+      if (activeStructureTab === "demographics") {
+        setActiveStructureTab("labor");
+      } else if (activeStructureTab === "labor") {
+        setActiveStructureTab("sectors");
+      } else {
+        setCurrentStep("components");
+      }
+    }
+  }, [currentStep, activeStructureTab, activeFiscalTab, setCurrentStep]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -901,7 +1108,13 @@ export function EconomyBuilderPage({
         )}
 
         {/* Step Content - Matching GovernmentBuilder pattern */}
-        <AnimatePresence mode="wait">
+        <BuilderTabCard
+          tabs={tabs}
+          activeTab={currentStep}
+          onTabChange={(tabId) => setCurrentStep(tabId as any)}
+          sectionTheme="economics"
+          hideTabList
+        >
           {currentStep === "components" && (
             <motion.div
               key="components"
@@ -911,294 +1124,463 @@ export function EconomyBuilderPage({
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-2xl font-semibold">
-                  Economic Atomic Components
-                </h2>
-                <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
-              </div>
-
-              {/* Government Revenue Integration Card */}
-              {revenueIntegration.totalRevenue > 0 && (
-                <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-amber-500" />
-                      Government Revenue Integration
-                    </CardTitle>
-                    <CardDescription>
-                      Economic indicators informed by government revenue sources
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-                      {/* Total Government Revenue */}
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">
-                          Total Government Revenue
-                        </Label>
-                        <div className="text-foreground text-2xl font-bold">
-                          {formatCurrency(
-                            revenueIntegration.totalRevenue,
-                            economicInputs.nationalIdentity?.currency || "USD"
-                          )}
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs",
-                              revenueIntegration.governmentSizeIndicator === "Large" &&
-                                "border-blue-500/50 text-blue-500",
-                              revenueIntegration.governmentSizeIndicator === "Medium" &&
-                                "border-amber-500/50 text-amber-500",
-                              revenueIntegration.governmentSizeIndicator === "Small" &&
-                                "border-emerald-500/50 text-emerald-500"
-                            )}
-                          >
-                            {revenueIntegration.governmentSizeIndicator} Government
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Tax Revenue Share */}
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">
-                          Tax Revenue Breakdown
-                        </Label>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="mb-1 flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Tax Revenue</span>
-                              <span className="font-semibold">
-                                {formatCurrency(
-                                  revenueIntegration.taxRevenue,
-                                  economicInputs.nationalIdentity?.currency || "USD"
-                                )}
-                              </span>
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Zap className="h-5 w-5 text-emerald-400" />
+                    Economic Atomic Components
+                  </h3>
+                  <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
+                </div>
+                <GlassCardContent className="p-6 space-y-6">
+                  {/* Government Revenue Integration Card */}
+                  {revenueIntegration.totalRevenue > 0 && (
+                    <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-amber-500" />
+                          Government Revenue Integration
+                        </CardTitle>
+                        <CardDescription>
+                          Economic indicators informed by government revenue sources
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+                          {/* Total Government Revenue */}
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground text-sm">
+                              Total Government Revenue
+                            </Label>
+                            <div className="text-foreground text-2xl font-bold">
+                              {formatCurrency(
+                                revenueIntegration.totalRevenue,
+                                economicInputs.nationalIdentity?.currency || "USD"
+                              )}
                             </div>
-                            <Progress
-                              value={
-                                revenueIntegration.totalRevenue > 0
-                                  ? (revenueIntegration.taxRevenue /
-                                      revenueIntegration.totalRevenue) *
-                                    100
-                                  : 0
-                              }
-                              className="h-2"
-                            />
-                          </div>
-                          <div>
-                            <div className="mb-1 flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Non-Tax Revenue</span>
-                              <span className="font-semibold">
-                                {formatCurrency(
-                                  revenueIntegration.nonTaxRevenue,
-                                  economicInputs.nationalIdentity?.currency || "USD"
-                                )}
-                              </span>
-                            </div>
-                            <Progress
-                              value={
-                                revenueIntegration.totalRevenue > 0
-                                  ? (revenueIntegration.nonTaxRevenue /
-                                      revenueIntegration.totalRevenue) *
-                                    100
-                                  : 0
-                              }
-                              className="bg-muted h-2 [&>div]:bg-emerald-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Revenue Ratios */}
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">
-                          Economic Impact Metrics
-                        </Label>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="text-muted-foreground text-sm">
-                                Revenue as % of GDP
-                              </span>
-                              <Badge variant="outline" className="text-sm font-semibold">
-                                {formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
-                              </Badge>
-                            </div>
-                            <Progress
-                              value={Math.min(revenueIntegration.revenueToGDPRatio, 100)}
-                              className="h-2"
-                            />
-                          </div>
-                          <div>
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="text-muted-foreground text-sm">
-                                Tax Burden Ratio
-                              </span>
+                            <div className="mt-2 flex items-center gap-2">
                               <Badge
                                 variant="outline"
                                 className={cn(
-                                  "text-sm font-semibold",
-                                  revenueIntegration.taxBurdenRatio > 35 &&
-                                    "border-red-500/50 text-red-500",
-                                  revenueIntegration.taxBurdenRatio >= 20 &&
-                                    revenueIntegration.taxBurdenRatio <= 35 &&
+                                  "text-xs",
+                                  revenueIntegration.governmentSizeIndicator === "Large" &&
+                                    "border-blue-500/50 text-blue-500",
+                                  revenueIntegration.governmentSizeIndicator === "Medium" &&
                                     "border-amber-500/50 text-amber-500",
-                                  revenueIntegration.taxBurdenRatio < 20 &&
+                                  revenueIntegration.governmentSizeIndicator === "Small" &&
                                     "border-emerald-500/50 text-emerald-500"
                                 )}
                               >
-                                {formatPercent(revenueIntegration.taxBurdenRatio, 1)}
+                                {revenueIntegration.governmentSizeIndicator} Government
                               </Badge>
                             </div>
-                            <Progress
-                              value={Math.min(revenueIntegration.taxBurdenRatio, 100)}
-                              className={cn(
-                                "h-2",
-                                revenueIntegration.taxBurdenRatio > 35 && "[&>div]:bg-red-500",
-                                revenueIntegration.taxBurdenRatio >= 20 &&
-                                  revenueIntegration.taxBurdenRatio <= 35 &&
-                                  "[&>div]:bg-amber-500",
-                                revenueIntegration.taxBurdenRatio < 20 && "[&>div]:bg-green-500"
-                              )}
-                            />
+                          </div>
+
+                          {/* Tax Revenue Share */}
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground text-sm">
+                              Tax Revenue Breakdown
+                            </Label>
+                            <div className="space-y-3">
+                              <div>
+                                <div className="mb-1 flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">Tax Revenue</span>
+                                  <span className="font-semibold">
+                                    {formatCurrency(
+                                      revenueIntegration.taxRevenue,
+                                      economicInputs.nationalIdentity?.currency || "USD"
+                                    )}
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={
+                                    revenueIntegration.totalRevenue > 0
+                                      ? (revenueIntegration.taxRevenue /
+                                          revenueIntegration.totalRevenue) *
+                                        100
+                                      : 0
+                                  }
+                                  className="h-2"
+                                />
+                              </div>
+                              <div>
+                                <div className="mb-1 flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">Non-Tax Revenue</span>
+                                  <span className="font-semibold">
+                                    {formatCurrency(
+                                      revenueIntegration.nonTaxRevenue,
+                                      economicInputs.nationalIdentity?.currency || "USD"
+                                    )}
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={
+                                    revenueIntegration.totalRevenue > 0
+                                      ? (revenueIntegration.nonTaxRevenue /
+                                          revenueIntegration.totalRevenue) *
+                                        100
+                                      : 0
+                                  }
+                                  className="bg-muted h-2 [&>div]:bg-emerald-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Revenue Ratios */}
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground text-sm">
+                              Economic Impact Metrics
+                            </Label>
+                            <div className="space-y-3">
+                              <div>
+                                <div className="mb-1 flex items-center justify-between">
+                                  <span className="text-muted-foreground text-sm">
+                                    Revenue as % of GDP
+                                  </span>
+                                  <Badge variant="outline" className="text-sm font-semibold">
+                                    {formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
+                                  </Badge>
+                                </div>
+                                <Progress
+                                  value={Math.min(revenueIntegration.revenueToGDPRatio, 100)}
+                                  className="h-2"
+                                />
+                              </div>
+                              <div>
+                                <div className="mb-1 flex items-center justify-between">
+                                  <span className="text-muted-foreground text-sm">
+                                    Tax Burden Ratio
+                                  </span>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-sm font-semibold",
+                                      revenueIntegration.taxBurdenRatio > 35 &&
+                                        "border-red-500/50 text-red-500",
+                                      revenueIntegration.taxBurdenRatio >= 20 &&
+                                        revenueIntegration.taxBurdenRatio <= 35 &&
+                                        "border-amber-500/50 text-amber-500",
+                                      revenueIntegration.taxBurdenRatio < 20 &&
+                                        "border-emerald-500/50 text-emerald-500"
+                                    )}
+                                  >
+                                    {formatPercent(revenueIntegration.taxBurdenRatio, 1)}
+                                  </Badge>
+                                </div>
+                                <Progress
+                                  value={Math.min(revenueIntegration.taxBurdenRatio, 100)}
+                                  className={cn(
+                                    "h-2",
+                                    revenueIntegration.taxBurdenRatio > 35 && "[&>div]:bg-red-500",
+                                    revenueIntegration.taxBurdenRatio >= 20 &&
+                                      revenueIntegration.taxBurdenRatio <= 35 &&
+                                      "[&>div]:bg-amber-500",
+                                    revenueIntegration.taxBurdenRatio < 20 && "[&>div]:bg-green-500"
+                                  )}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Info Alert */}
-                    {revenueIntegration.taxBurdenRatio > 35 && (
-                      <Alert className="mt-4 border-amber-500/30 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
-                        <Info className="h-4 w-4 text-amber-500" />
-                        <AlertDescription className="text-sm text-amber-700 dark:text-amber-200">
-                          High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)})
-                          may reduce private sector GDP growth. Consider balancing with economic
-                          components that promote business development.
-                        </AlertDescription>
-                      </Alert>
+                        {/* Info Alert */}
+                        {revenueIntegration.taxBurdenRatio > 35 && (
+                          <Alert className="mt-4 border-amber-500/30 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
+                            <Info className="h-4 w-4 text-amber-500" />
+                            <AlertDescription className="text-sm text-amber-700 dark:text-amber-200">
+                              High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)})
+                              may reduce private sector GDP growth. Consider balancing with economic
+                              components that promote business development.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <AtomicEconomicComponentSelector
+                    selectedComponents={selectedComponents}
+                    onComponentChange={handleComponentChange}
+                    maxComponents={12}
+                    governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
+                  />
+                </GlassCardContent>
+              </GlassCard>
+            </motion.div>
+          )}
+
+          {currentStep === "structure" && (
+            <motion.div
+              key="structure"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                {/* Horizontal Glass Segmented Sub-tabs inside card header */}
+                <div className="border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1] gap-4">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Factory className="h-5 w-5 text-emerald-400" />
+                    Economic Structure
+                  </h3>
+                  
+                  {/* Segmented Pill controls */}
+                  <div className="flex gap-1.5 bg-black/20 p-1 rounded-lg border border-zinc-800/40">
+                    {[
+                      { id: "sectors", label: "Sectors", icon: Factory },
+                      { id: "labor", label: "Labor & Employment", icon: Users },
+                      { id: "demographics", label: "Demographics", icon: Globe },
+                    ].map((subTab) => {
+                      const isActive = activeStructureTab === subTab.id;
+                      const Icon = subTab.icon;
+                      return (
+                        <button
+                          key={subTab.id}
+                          onClick={() => setActiveStructureTab(subTab.id as any)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",
+                            isActive
+                              ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm"
+                              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          <span>{subTab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <GlassCardContent className="p-6">
+                  <AnimatePresence mode="wait">
+                    {activeStructureTab === "sectors" && (
+                      <motion.div
+                        key="sectors"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <Suspense fallback={<TabLoadingFallback />}>
+                          <EconomySectorsTab
+                            economyBuilder={economyBuilder}
+                            onEconomyBuilderChange={handleEconomyBuilderChange}
+                            selectedComponents={selectedComponents}
+                            showAdvanced={showAdvanced}
+                          />
+                        </Suspense>
+                      </motion.div>
                     )}
-                  </CardContent>
-                </Card>
-              )}
 
-              <AtomicEconomicComponentSelector
-                selectedComponents={selectedComponents}
-                onComponentChange={handleComponentChange}
-                maxComponents={12}
-                governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
-              />
+                    {activeStructureTab === "labor" && (
+                      <motion.div
+                        key="labor"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <Suspense fallback={<TabLoadingFallback />}>
+                          <LaborEmploymentTab
+                            economyBuilder={economyBuilder}
+                            onEconomyBuilderChange={handleEconomyBuilderChange}
+                            selectedComponents={selectedComponents}
+                          />
+                        </Suspense>
+                      </motion.div>
+                    )}
+
+                    {activeStructureTab === "demographics" && (
+                      <motion.div
+                        key="demographics"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <Suspense fallback={<TabLoadingFallback />}>
+                          <DemographicsPopulationTab
+                            economyBuilder={economyBuilder}
+                            onEconomyBuilderChange={handleEconomyBuilderChange}
+                            selectedComponents={selectedComponents}
+                            showAdvanced={showAdvanced}
+                          />
+                        </Suspense>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </GlassCardContent>
+              </GlassCard>
             </motion.div>
           )}
 
-          {currentStep === "sectors" && (
+          {currentStep === "fiscal" && (
             <motion.div
-              key="sectors"
+              key="fiscal"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-2xl font-semibold">Economic Sectors</h2>
-              </div>
-              <Suspense fallback={<TabLoadingFallback />}>
-                <EconomySectorsTab
-                  economyBuilder={economyBuilder}
-                  onEconomyBuilderChange={handleEconomyBuilderChange}
-                  selectedComponents={selectedComponents}
-                  showAdvanced={showAdvanced}
-                />
-              </Suspense>
-            </motion.div>
-          )}
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                {/* Horizontal Glass Segmented Sub-tabs inside card header */}
+                <div className="border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1] gap-4">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <TrendingUp className="h-5 w-5 text-emerald-400" />
+                    Fiscal & Taxes
+                  </h3>
+                  
+                  {/* Segmented Pill controls */}
+                  <div className="flex gap-1.5 bg-black/20 p-1 rounded-lg border border-zinc-800/40">
+                    {[
+                      { id: "taxes", label: "Rates & Brackets", icon: DollarSign },
+                      { id: "exemptions", label: "Tax Exemptions", icon: Coins },
+                      { id: "calculator", label: "Tax Calculator", icon: Calculator },
+                    ].map((subTab) => {
+                      const isActive = activeFiscalTab === subTab.id;
+                      const Icon = subTab.icon;
+                      return (
+                        <button
+                          key={subTab.id}
+                          onClick={() => setActiveFiscalTab(subTab.id as any)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",
+                            isActive
+                              ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm"
+                              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          <span>{subTab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-          {currentStep === "labor" && (
-            <motion.div
-              key="labor"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-2xl font-semibold">Labor & Employment</h2>
-              </div>
-              <Suspense fallback={<TabLoadingFallback />}>
-                <LaborEmploymentTab
-                  economyBuilder={economyBuilder}
-                  onEconomyBuilderChange={handleEconomyBuilderChange}
-                  selectedComponents={selectedComponents}
-                />
-              </Suspense>
-            </motion.div>
-          )}
+                <GlassCardContent className="p-6">
+                  <AnimatePresence mode="wait">
+                    {activeFiscalTab === "taxes" && (
+                      <motion.div
+                        key="taxes"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-6"
+                      >
+                        {/* Fiscal Blueprint Templates Banner */}
+                        <GlassCard className="border-emerald-500/20 bg-emerald-500/5">
+                          <GlassCardContent className="p-6">
+                            <h3 className="text-emerald-400 mb-2 flex items-center gap-2 text-lg font-bold">
+                              <Sparkles className="h-5 w-5" />
+                              Fiscal Blueprint Templates
+                            </h3>
+                            <p className="text-muted-foreground mb-4 text-sm">
+                              Select a pre-designed tax blueprint model to instantly configure your nation's fiscal system. 
+                              You can customize it further on this page.
+                            </p>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                              {taxSystemTemplates.map((template) => (
+                                <Button
+                                  key={template.name}
+                                  variant="outline"
+                                  className="flex h-auto flex-col items-start gap-1 border-zinc-800 bg-zinc-950/40 p-4 text-left hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:text-foreground"
+                                  onClick={() => {
+                                    taxBuilder.applyTemplate(template);
+                                    notify.success(`Applied ${template.name}`);
+                                  }}
+                                >
+                                  <span className="font-bold text-sm">{template.name}</span>
+                                  <span className="text-muted-foreground text-xs line-clamp-2">{template.description}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          </GlassCardContent>
+                        </GlassCard>
 
-          {currentStep === "demographics" && (
-            <motion.div
-              key="demographics"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-2xl font-semibold">
-                  Demographics & Population
-                </h2>
-              </div>
-              <Suspense fallback={<TabLoadingFallback />}>
-                <DemographicsPopulationTab
-                  economyBuilder={economyBuilder}
-                  onEconomyBuilderChange={handleEconomyBuilderChange}
-                  selectedComponents={selectedComponents}
-                  showAdvanced={showAdvanced}
-                />
-              </Suspense>
-            </motion.div>
-          )}
+                        <AtomicComponentsStep
+                          taxSystem={activeTaxBuilderState.taxSystem}
+                          onTaxSystemChange={(taxSystem) => {
+                            setActiveTaxBuilderState((prev) => ({ ...prev, taxSystem }));
+                          }}
+                          selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+                          onAtomicComponentsChange={setSelectedAtomicTaxComponents}
+                          activeGovernmentComponents={governmentComponents}
+                          economicData={{
+                            gdp: economicInputs.coreIndicators?.nominalGDP || 0,
+                            sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
+                            population: economicInputs.coreIndicators?.totalPopulation || 1000000,
+                          }}
+                          validationErrors={activeTaxBuilderState.errors}
+                          isReadOnly={false}
+                          showAtomicIntegration={true}
+                          countryId={countryId || undefined}
+                          previewTaxSystem={previewTaxSystem}
+                        />
+                      </motion.div>
+                    )}
 
-          {currentStep === "taxes" && (
-            <motion.div
-              key="taxes"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-            >
-              <TaxSystemStep
-                countryId={countryId ?? null}
-                activeTaxSystemData={activeTaxSystemData}
-                economicInputs={economicInputs}
-                economyBuilder={economyBuilder}
-                selectedComponents={selectedComponents}
-                governmentBuilderData={governmentBuilderData}
-                onDraftChange={(taxSystem) => {
-                  onPersistTaxSystem?.(taxSystem);
-                }}
-                onUpdate={async (taxSystem) => {
-                  await updateTaxSystemMutation.mutateAsync({
-                    countryId: countryId!,
-                    data: taxSystem,
-                    skipConflictCheck: false,
-                  });
-                }}
-                onCreate={async (taxSystem) => {
-                  await createTaxSystemMutation.mutateAsync({
-                    countryId: countryId!,
-                    data: taxSystem,
-                    skipConflictCheck: false,
-                  });
-                }}
-                onRefetch={async () => {
-                  await refetchTaxSystem();
-                }}
-              />
+                    {activeFiscalTab === "exemptions" && (
+                      <motion.div
+                        key="exemptions"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <ExemptionsDeductionsStep isReadOnly={false} />
+                      </motion.div>
+                    )}
+
+                    {activeFiscalTab === "calculator" && (
+                      <motion.div
+                        key="calculator"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <CalculatorPreviewStep
+                          previewTaxSystem={previewTaxSystem}
+                          previewCategories={previewCategories}
+                          previewBrackets={previewBrackets}
+                          onCalculationChange={() => {}}
+                          economicData={{
+                            gdp: economicInputs.coreIndicators?.nominalGDP || 0,
+                            sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
+                            population: economicInputs.coreIndicators?.totalPopulation || 1000000,
+                          }}
+                          governmentData={governmentBuilderData}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </GlassCardContent>
+              </GlassCard>
             </motion.div>
           )}
 
@@ -1210,15 +1592,31 @@ export function EconomyBuilderPage({
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
             >
-              <PreviewStep
-                economyBuilder={economyBuilder}
-                economicInputs={economicInputs}
-                selectedComponents={selectedComponents}
-                economicHealthMetrics={healthMetrics}
-              />
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Eye className="h-5 w-5 text-emerald-400" />
+                    Economy Configuration Preview
+                  </h3>
+                </div>
+                <GlassCardContent className="p-6">
+                  <PreviewStep
+                    economyBuilder={economyBuilder}
+                    economicInputs={economicInputs}
+                    selectedComponents={selectedComponents}
+                    economicHealthMetrics={healthMetrics}
+                  />
+                </GlassCardContent>
+              </GlassCard>
             </motion.div>
           )}
-        </AnimatePresence>
+        </BuilderTabCard>
 
         {/* Navigation */}
         <NavigationButtons
@@ -1230,14 +1628,8 @@ export function EconomyBuilderPage({
           }}
           isSaving={saveEconomyMutation.isPending}
           countryId={countryId}
-          onPrevious={() => {
-            const prevIndex = Math.max(0, currentStepIndex - 1);
-            setCurrentStep(steps[prevIndex].id as any);
-          }}
-          onNext={() => {
-            const nextIndex = Math.min(steps.length - 1, currentStepIndex + 1);
-            setCurrentStep(steps[nextIndex].id as any);
-          }}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
           onSave={handleSave}
         />
       </div>

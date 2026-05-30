@@ -12,6 +12,12 @@ import {
   Check,
   Sparkles,
   ChevronRight,
+  Zap,
+  Factory,
+  Users,
+  Eye,
+  Coins,
+  Calculator,
   type LucideIcon,
 } from "lucide-react";
 import { type BuilderSection } from "../lib/builder-theme";
@@ -122,38 +128,58 @@ export function BuilderSidebarNav({
         },
       },
       {
-        title: "Tax System",
+        title: "Econ Components",
         section: "economics",
-        icon: TrendingUp,
-        colorClass: "text-purple-400",
-        bgClass: "bg-purple-500/5 hover:bg-purple-500/10",
-        tab: "tax",
+        icon: Zap,
+        colorClass: "text-emerald-400",
+        bgClass: "bg-emerald-500/5 hover:bg-emerald-500/10",
+        tab: "components",
         isActive: (sec, st) =>
-          sec === "economics" &&
-          (st.builderState.activeEconomicsTab === "tax" ||
-            st.builderState.activeEconomicsTab === "taxes"),
+          sec === "economics" && st.builderState.activeEconomicsTab === "components",
         onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" }));
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" }));
           onNav("economics");
         },
       },
       {
-        title: "Economy Sectors",
+        title: "Econ Structure",
         section: "economics",
-        icon: Globe,
-        colorClass: "text-violet-400",
-        bgClass: "bg-violet-500/5 hover:bg-violet-500/10",
-        tab: "economy",
+        icon: Factory,
+        colorClass: "text-teal-400",
+        bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
+        tab: "structure",
         isActive: (sec, st) =>
-          sec === "economics" &&
-          (st.builderState.activeEconomicsTab === "economy" ||
-            st.builderState.activeEconomicsTab === "sectors" ||
-            st.builderState.activeEconomicsTab === "components" ||
-            st.builderState.activeEconomicsTab === "labor" ||
-            st.builderState.activeEconomicsTab === "demographics" ||
-            st.builderState.activeEconomicsTab === "preview"),
+          sec === "economics" && st.builderState.activeEconomicsTab === "structure",
         onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "economy" }));
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Fiscal & Taxes",
+        section: "economics",
+        icon: TrendingUp,
+        colorClass: "text-green-400",
+        bgClass: "bg-green-500/5 hover:bg-green-500/10",
+        tab: "fiscal",
+        isActive: (sec, st) =>
+          sec === "economics" && st.builderState.activeEconomicsTab === "fiscal",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Econ Preview",
+        section: "economics",
+        icon: Eye,
+        colorClass: "text-amber-400",
+        bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
+        tab: "preview",
+        isActive: (sec, st) =>
+          sec === "economics" && st.builderState.activeEconomicsTab === "preview",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" }));
           onNav("economics");
         },
       },
@@ -225,38 +251,58 @@ export function BuilderSidebarNav({
         },
       },
       {
-        title: "Tax System",
+        title: "Econ Components",
         section: "economics",
-        icon: TrendingUp,
-        colorClass: "text-purple-400",
-        bgClass: "bg-purple-500/5 hover:bg-purple-500/10",
-        tab: "tax",
+        icon: Zap,
+        colorClass: "text-emerald-400",
+        bgClass: "bg-emerald-500/5 hover:bg-emerald-500/10",
+        tab: "components",
         isActive: (sec, st) =>
-          sec === "economics" &&
-          (st.builderState.activeEconomicsTab === "tax" ||
-            st.builderState.activeEconomicsTab === "taxes"),
+          sec === "economics" && st.builderState.activeEconomicsTab === "components",
         onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" }));
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" }));
           onNav("economics");
         },
       },
       {
-        title: "Economy Sectors",
+        title: "Econ Structure",
         section: "economics",
-        icon: Globe,
-        colorClass: "text-violet-400",
-        bgClass: "bg-violet-500/5 hover:bg-violet-500/10",
-        tab: "economy",
+        icon: Factory,
+        colorClass: "text-teal-400",
+        bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
+        tab: "structure",
         isActive: (sec, st) =>
-          sec === "economics" &&
-          (st.builderState.activeEconomicsTab === "economy" ||
-            st.builderState.activeEconomicsTab === "sectors" ||
-            st.builderState.activeEconomicsTab === "components" ||
-            st.builderState.activeEconomicsTab === "labor" ||
-            st.builderState.activeEconomicsTab === "demographics" ||
-            st.builderState.activeEconomicsTab === "preview"),
+          sec === "economics" && st.builderState.activeEconomicsTab === "structure",
         onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "economy" }));
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Fiscal & Taxes",
+        section: "economics",
+        icon: TrendingUp,
+        colorClass: "text-green-400",
+        bgClass: "bg-green-500/5 hover:bg-green-500/10",
+        tab: "fiscal",
+        isActive: (sec, st) =>
+          sec === "economics" && st.builderState.activeEconomicsTab === "fiscal",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" }));
+          onNav("economics");
+        },
+      },
+      {
+        title: "Econ Preview",
+        section: "economics",
+        icon: Eye,
+        colorClass: "text-amber-400",
+        bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
+        tab: "preview",
+        isActive: (sec, st) =>
+          sec === "economics" && st.builderState.activeEconomicsTab === "preview",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" }));
           onNav("economics");
         },
       },

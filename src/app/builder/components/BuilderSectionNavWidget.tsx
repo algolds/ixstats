@@ -13,6 +13,8 @@ import {
   Globe,
   Navigation,
   ChevronRight,
+  Zap,
+  Factory,
   type LucideIcon,
 } from "lucide-react";
 import { type BuilderSection, BUILDER_SECTION_THEMES } from "../lib/builder-theme";
@@ -84,20 +86,36 @@ export function BuilderSectionNavWidget({ activeSection }: BuilderSectionNavWidg
       case "economics":
         return [
           {
-            id: "tax",
-            label: "Tax System",
-            icon: TrendingUp,
-            isActive: (st) => st.builderState.activeEconomicsTab === "tax",
+            id: "components",
+            label: "Econ Components",
+            icon: Zap,
+            isActive: (st) => st.builderState.activeEconomicsTab === "components",
             onClick: (st) =>
-              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" })),
+              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" })),
           },
           {
-            id: "economy",
-            label: "Economy Sectors",
-            icon: Globe,
-            isActive: (st) => st.builderState.activeEconomicsTab === "economy",
+            id: "structure",
+            label: "Econ Structure",
+            icon: Factory,
+            isActive: (st) => st.builderState.activeEconomicsTab === "structure",
             onClick: (st) =>
-              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "economy" })),
+              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" })),
+          },
+          {
+            id: "fiscal",
+            label: "Fiscal & Taxes",
+            icon: TrendingUp,
+            isActive: (st) => st.builderState.activeEconomicsTab === "fiscal",
+            onClick: (st) =>
+              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" })),
+          },
+          {
+            id: "preview",
+            label: "Econ Preview",
+            icon: Eye,
+            isActive: (st) => st.builderState.activeEconomicsTab === "preview",
+            onClick: (st) =>
+              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" })),
           },
         ];
       default:

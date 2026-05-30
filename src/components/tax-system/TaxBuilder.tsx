@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge as UIBadge } from "~/components/ui/badge";
@@ -184,12 +184,17 @@ export function TaxBuilder({
     updateValidation(validation);
   }, [validation, updateValidation]);
 
-  // Call onChange whenever builderState changes
+  // Call onChange whenever builderState changes (stabilized with ref to prevent loops)
+  const onChangeRef = useRef(onChange);
   useEffect(() => {
-    if (onChange) {
-      onChange(builderState);
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    if (onChangeRef.current) {
+      onChangeRef.current(builderState);
     }
-  }, [builderState, onChange]);
+  }, [builderState]);
 
   // Intelligence-based suggestions
   const intel = useIntelligenceWebSocket({ countryId });

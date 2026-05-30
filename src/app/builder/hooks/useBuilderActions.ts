@@ -158,7 +158,7 @@ export function useBuilderActions({
 
   // Handle continue button - moves to next tab or next step
   const handleContinue = useCallback(() => {
-    const { step, activeCoreTab, activeGovernmentTab, selectedCountry } = builderState;
+    const { step, activeCoreTab, activeGovernmentTab, activeEconomicsTab, selectedCountry } = builderState;
 
     switch (step) {
       case "foundation":
@@ -199,11 +199,17 @@ export function useBuilderActions({
         break;
 
       case "economics":
-        setBuilderState((prev) => ({
-          ...prev,
-          step: "preview",
-          completedSteps: [...new Set([...prev.completedSteps, "economics" as BuilderStep])],
-        }));
+        const econTabs = ["components", "structure", "fiscal", "preview"];
+        const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
+        if (currentEconIndex < econTabs.length - 1) {
+          handleTabChange("economics", econTabs[currentEconIndex + 1]!);
+        } else {
+          setBuilderState((prev) => ({
+            ...prev,
+            step: "preview",
+            completedSteps: [...new Set([...prev.completedSteps, "economics" as BuilderStep])],
+          }));
+        }
         break;
     }
   }, [builderState, setBuilderState, handleTabChange, mode]);
@@ -227,9 +233,13 @@ export function useBuilderActions({
       }
     }
 
-    if (step === "economics" && activeEconomicsTab === "economy") {
-      handleTabChange("economics", "tax");
-      return;
+    if (step === "economics") {
+      const econTabs = ["components", "structure", "fiscal", "preview"];
+      const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
+      if (currentEconIndex > 0) {
+        handleTabChange("economics", econTabs[currentEconIndex - 1]!);
+        return;
+      }
     }
 
     // 2. Otherwise, navigate to the previous step
@@ -255,7 +265,7 @@ export function useBuilderActions({
       } else if (prevStep === "government") {
         updatedState.activeGovernmentTab = "preview";
       } else if (prevStep === "economics") {
-        updatedState.activeEconomicsTab = "economy";
+        updatedState.activeEconomicsTab = "preview";
       }
 
       return updatedState;

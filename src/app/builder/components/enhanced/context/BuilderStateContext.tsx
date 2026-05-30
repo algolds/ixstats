@@ -64,7 +64,7 @@ export function BuilderStateProvider({
   countryId,
 }: BuilderStateProviderProps) {
   const builderStateValue = useBuilderState(mode, countryId);
-  const [autoSyncRegistry, setAutoSyncRegistry] = useState<AutoSyncRegistry>({});
+  const autoSyncRegistryRef = useRef<AutoSyncRegistry>({});
   const submitRef = useRef<(() => Promise<void>) | null>(null);
   const [isSubmittingGlobal, setIsSubmittingGlobal] = useState(false);
   const [foundationPreviewCountry, setFoundationPreviewCountry] = useState<RealCountryData | null>(
@@ -92,10 +92,7 @@ export function BuilderStateProvider({
    */
   const registerAutoSync = useCallback(
     (section: keyof AutoSyncRegistry, syncFn: AutoSyncFunction) => {
-      setAutoSyncRegistry((prev) => ({
-        ...prev,
-        [section]: syncFn,
-      }));
+      autoSyncRegistryRef.current[section] = syncFn;
     },
     []
   );
@@ -104,11 +101,7 @@ export function BuilderStateProvider({
    * Unregister an autosync function when component unmounts
    */
   const unregisterAutoSync = useCallback((section: keyof AutoSyncRegistry) => {
-    setAutoSyncRegistry((prev) => {
-      const updated = { ...prev };
-      delete updated[section];
-      return updated;
-    });
+    delete autoSyncRegistryRef.current[section];
   }, []);
 
   /**
@@ -121,7 +114,7 @@ export function BuilderStateProvider({
       errors: [] as string[],
     };
 
-    const syncPromises = Object.entries(autoSyncRegistry).map(async ([section, syncFn]) => {
+    const syncPromises = Object.entries(autoSyncRegistryRef.current).map(async ([section, syncFn]) => {
       if (!syncFn) return;
 
       try {
@@ -137,12 +130,12 @@ export function BuilderStateProvider({
 
     await Promise.all(syncPromises);
     return results;
-  }, [autoSyncRegistry]);
+  }, []);
 
   const contextValue = useMemo<BuilderContextValue>(
     () => ({
       ...builderStateValue,
-      autoSyncRegistry,
+      autoSyncRegistry: autoSyncRegistryRef.current,
       registerAutoSync,
       unregisterAutoSync,
       syncAllNow,
@@ -155,7 +148,6 @@ export function BuilderStateProvider({
     }),
     [
       builderStateValue,
-      autoSyncRegistry,
       registerAutoSync,
       unregisterAutoSync,
       syncAllNow,

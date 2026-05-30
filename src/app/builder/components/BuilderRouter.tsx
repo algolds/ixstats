@@ -295,10 +295,12 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       return labels[tab] || tab;
     }
     if (activeSection === "economics") {
-      const tab = builderState.activeEconomicsTab || "tax";
+      const tab = builderState.activeEconomicsTab || "components";
       const labels: Record<string, string> = {
-        tax: "Tax System",
-        economy: "Economy Sectors",
+        components: "Econ Components",
+        structure: "Econ Structure",
+        fiscal: "Fiscal & Taxes",
+        preview: "Econ Preview",
       };
       return labels[tab] || tab;
     }

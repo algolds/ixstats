@@ -1,36 +1,23 @@
-// GovernmentSpendingSectionEnhanced - Refactored with modular components
-// Main section component now composes smaller, focused sub-components
-// Extracted components: PolicySelector, SpendingValidationPanel,
-// PolicyAnalysis, PolicyPresetSelector
-// State management: useGovernmentSpending hook
-// Data: government-spending-policies.ts
+// GovernmentSpendingSection - Simplified policy selection section
+// Renders only the core PolicySelector component inside the parent step wrapper
 
 "use client";
 
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Settings, TrendingUp } from "lucide-react";
+import React from "react";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import type { GovernmentBuilderState } from "~/types/government";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { GovernmentBuilderError } from "../components/GovernmentBuilderError";
-import { AtomicIntegrationFeedback } from "../components/AtomicIntegrationFeedback";
 
 // Modular components
 import { PolicySelector } from "../components/spending/PolicySelector";
-import { SpendingValidationPanel } from "../components/spending/SpendingValidationPanel";
-import { PolicyAnalysis } from "../components/spending/PolicyAnalysis";
-import { PolicyPresetSelector } from "../components/spending/PolicyPresetSelector";
 
 // Custom hook for state management
 import { useGovernmentSpending } from "../hooks/useGovernmentSpending";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
-
-// Help System
-import { GovernmentSpendingHelpSystem } from "../components/help/GovernmentHelpSystem";
 
 interface GovernmentSpendingSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
@@ -44,7 +31,7 @@ interface GovernmentSpendingSectionProps extends SectionContentProps {
 
 /**
  * GovernmentSpendingSection - Main government spending section
- * Refactored to use modular components for better maintainability
+ * Simplified to render only the core PolicySelector component
  */
 export function GovernmentSpendingSection({
   inputs,
@@ -56,24 +43,14 @@ export function GovernmentSpendingSection({
   fieldLocks,
 }: GovernmentSpendingSectionProps) {
   const isEditMode = mode === "edit";
-  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+  const _locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // All hooks must be called unconditionally (Rules of Hooks)
   // State management via custom hook
   const {
     selectedPolicies,
-    integrationState,
-    validation,
-    totalBudget,
-    totalAllocated,
-    totalRevenue,
-    budgetUtilization,
-    isValidBudget,
-    isSurplus,
-    spendingData,
     togglePolicy,
-    applyPolicyPreset,
-    handleAtomicComponentUpdate,
+    validation,
   } = useGovernmentSpending({
     inputs: inputs ?? ({} as EconomicInputs),
     onInputsChange,
@@ -81,10 +58,6 @@ export function GovernmentSpendingSection({
     governmentBuilderData,
     countryId,
   });
-
-  // Local UI state
-  const [activeTab, setActiveTab] = useState("policies");
-  const [showAtomicFeedback, setShowAtomicFeedback] = useState(true);
 
   // Guard against null inputs (after all hooks)
   if (!inputs) {
@@ -112,75 +85,10 @@ export function GovernmentSpendingSection({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Atomic Integration Feedback - shows when atomic components are selected */}
-      {selectedAtomicComponents.length > 0 && showAtomicFeedback && (
-        <AtomicIntegrationFeedback
-          selectedComponents={selectedAtomicComponents}
-          currentGovernmentBuilder={governmentBuilderData}
-          economicInputs={inputs}
-          onUpdateGovernmentBuilder={handleAtomicComponentUpdate}
-          className="mb-6"
-        />
-      )}
-
-      {/* Header with Validation and Preset Selector */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div>
-            <h3 className="text-lg font-semibold">Government Policies</h3>
-            <p className="text-muted-foreground text-sm">
-              Select policies that align with your government structure and atomic components
-            </p>
-          </div>
-          <GovernmentSpendingHelpSystem />
-        </div>
-        <PolicyPresetSelector onApplyPreset={applyPolicyPreset} />
-      </div>
-
-      {/* Validation Panel - shows budget status and key metrics */}
-      <SpendingValidationPanel
-        totalBudget={totalBudget}
-        totalAllocated={totalAllocated}
-        totalRevenue={totalRevenue}
-        budgetUtilization={budgetUtilization}
-        isValidBudget={isValidBudget}
-        isSurplus={isSurplus}
-        selectedPoliciesCount={selectedPolicies.size}
-        isUpdating={integrationState.isUpdating}
-        spendingData={spendingData}
-      />
-
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="policies">
-            <Settings className="mr-2 h-4 w-4" />
-            Policies
-          </TabsTrigger>
-          <TabsTrigger value="visualization">
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Policy Analysis
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Policies Tab - policy selection interface */}
-        <TabsContent value="policies" className="mt-6">
-          <PolicySelector
-            selectedPolicies={selectedPolicies}
-            selectedAtomicComponents={selectedAtomicComponents}
-            onTogglePolicy={togglePolicy}
-          />
-        </TabsContent>
-
-        {/* Visualization Tab - policy impact analysis */}
-        <TabsContent value="visualization" className="mt-6">
-          <PolicyAnalysis
-            selectedPolicies={selectedPolicies}
-            selectedAtomicComponents={selectedAtomicComponents}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <PolicySelector
+      selectedPolicies={selectedPolicies}
+      selectedAtomicComponents={selectedAtomicComponents}
+      onTogglePolicy={togglePolicy}
+    />
   );
 }

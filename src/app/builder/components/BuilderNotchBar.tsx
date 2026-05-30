@@ -25,6 +25,8 @@ import {
   Eye,
   BarChart3,
   Users,
+  Zap,
+  Factory,
 } from "lucide-react";
 import type { BuilderSection } from "../lib/builder-theme";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
@@ -192,20 +194,36 @@ export function BuilderNotchBar({
     if (activeSection === "economics") {
       return [
         {
-          id: "tax",
-          label: "Tax System",
-          icon: TrendingUp,
-          isActive: (st: any) => (st.builderState.activeEconomicsTab || "tax") === "tax",
+          id: "components",
+          label: "Econ Components",
+          icon: Zap,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "components",
           onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" })),
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" })),
         },
         {
-          id: "economy",
-          label: "Economy Sectors",
-          icon: Globe,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "economy",
+          id: "structure",
+          label: "Econ Structure",
+          icon: Factory,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "structure",
           onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "economy" })),
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" })),
+        },
+        {
+          id: "fiscal",
+          label: "Fiscal & Taxes",
+          icon: TrendingUp,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "fiscal",
+          onClick: (st: any) =>
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" })),
+        },
+        {
+          id: "preview",
+          label: "Econ Preview",
+          icon: Eye,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "preview",
+          onClick: (st: any) =>
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" })),
         },
       ];
     }

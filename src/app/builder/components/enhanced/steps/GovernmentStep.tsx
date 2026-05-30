@@ -32,7 +32,6 @@ import { RevenueSourceForm } from "~/components/government/atoms/RevenueSourceFo
 import { DepartmentList } from "~/components/builder/government/DepartmentList";
 import { BudgetAllocationList } from "~/components/builder/government/BudgetAllocationList";
 import { GovernmentSpendingSection } from "~/app/builder/sections/GovernmentSpendingSection";
-import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { ComponentType } from "@prisma/client";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -559,28 +558,6 @@ export function GovernmentStep({
                       Save & Finalize Governance
                     </Button>
                   </div>
-                </GlassCardContent>
-              </GlassCard>
-
-              {/* Government Structure Preview */}
-              <GlassCard
-                depth="base"
-                theme="teal"
-                className="border-cyan-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Eye className="h-5 w-5 text-cyan-400" />
-                    Government Visual Tree
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <GovernmentStructurePreview
-                    governmentStructure={governmentStructure}
-                    governmentComponents={governmentComponents}
-                  />
                 </GlassCardContent>
               </GlassCard>
             </div>

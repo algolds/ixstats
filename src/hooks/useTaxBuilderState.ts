@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { isEqual } from "lodash";
 import type {
   TaxSystemInput,
   TaxCategoryInput,
@@ -222,7 +223,12 @@ export function useTaxBuilderState(options: UseTaxBuilderStateOptions = {}) {
    * Update validation state
    */
   const updateValidation = useCallback((validation: { isValid: boolean; errors: any }) => {
-    setBuilderState((prev) => ({ ...prev, ...validation }));
+    setBuilderState((prev) => {
+      if (prev.isValid === validation.isValid && isEqual(prev.errors, validation.errors)) {
+        return prev;
+      }
+      return { ...prev, ...validation };
+    });
   }, []);
 
   return {

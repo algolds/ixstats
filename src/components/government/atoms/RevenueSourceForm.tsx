@@ -552,7 +552,7 @@ export function RevenueSourceForm({
                             <SelectValue placeholder="Select department" />
                           </SelectTrigger>
                           <SelectContent className="bg-zinc-950/95 border-white/10 text-white">
-                            {availableDepartments.map((dept) => (
+                            {availableDepartments.filter(dept => dept.name && dept.name.trim() !== "").map((dept) => (
                               <SelectItem key={dept.id} value={dept.name} className="focus:bg-zinc-800">
                                 {dept.name}
                               </SelectItem>
@@ -758,7 +758,7 @@ export function RevenueSourceForm({
                           <SelectValue placeholder="Select department" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-950/95 border-white/10 text-white">
-                          {availableDepartments.map((dept) => (
+                          {availableDepartments.filter(dept => dept.name && dept.name.trim() !== "").map((dept) => (
                             <SelectItem key={dept.id} value={dept.name} className="focus:bg-zinc-800">
                               {dept.name}
                             </SelectItem>
