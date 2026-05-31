@@ -80,13 +80,13 @@ export const StepIndicator = React.memo(function StepIndicator({
         <AnimatePresence>
           {!isMinimized && (
             <motion.div
-              className="bg-muted absolute top-8 right-0 left-0 h-0.5"
+              className="absolute top-8 right-0 left-0 h-0.5 border-b border-white/5 bg-zinc-800/60"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="h-full bg-gradient-to-r from-amber-500 via-amber-500 to-yellow-600"
+                className="h-full bg-amber-500"
                 initial={{ width: "0%" }}
                 animate={progressAnimateProps}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -126,36 +126,17 @@ export const StepIndicator = React.memo(function StepIndicator({
                     <motion.div
                       className={cn(
                         "relative z-10 flex items-center justify-center rounded-full border-2 transition-all duration-300",
-                        isCurrent &&
-                          `bg-gradient-to-br ${config.color} border-transparent text-white shadow-lg shadow-amber-500/25`,
+                        isCurrent && "border-amber-500 bg-amber-500 font-bold text-zinc-950",
                         isCompleted &&
                           !isCurrent &&
-                          "border-green-500 bg-green-500/10 text-green-600",
-                        !isCurrent &&
-                          !isCompleted &&
-                          "bg-background border-muted-foreground/30 text-muted-foreground"
+                          "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+                        !isCurrent && !isCompleted && "border-zinc-800 bg-zinc-950/60 text-zinc-500"
                       )}
                       animate={{
                         width: isMinimized ? "40px" : "64px",
                         height: isMinimized ? "40px" : "64px",
-                        ...(isCurrent && !isMinimized
-                          ? {
-                              boxShadow: [
-                                "0 0 0 0px rgba(251, 191, 36, 0.2)",
-                                "0 0 0 10px rgba(251, 191, 36, 0)",
-                              ],
-                            }
-                          : {}),
                       }}
-                      transition={
-                        isCurrent && !isMinimized
-                          ? {
-                              duration: 1.5,
-                              repeat: Infinity,
-                              ease: "easeOut",
-                            }
-                          : { duration: 0.3 }
-                      }
+                      transition={{ duration: 0.3 }}
                     >
                       {isCompleted && !isCurrent ? (
                         <CheckCircle className={cn(isMinimized ? "h-4 w-4" : "h-6 w-6")} />
@@ -176,14 +157,14 @@ export const StepIndicator = React.memo(function StepIndicator({
                           <div
                             className={cn(
                               "text-sm font-semibold whitespace-nowrap transition-colors",
-                              isCurrent && "text-amber-600",
-                              isCompleted && !isCurrent && "text-green-600",
-                              !isCurrent && !isCompleted && "text-muted-foreground"
+                              isCurrent && "text-amber-500",
+                              isCompleted && !isCurrent && "text-emerald-400",
+                              !isCurrent && !isCompleted && "text-zinc-500"
                             )}
                           >
                             {config.title}
                           </div>
-                          <div className="text-muted-foreground mt-0.5 hidden text-xs sm:block">
+                          <div className="mt-0.5 hidden text-xs text-zinc-400 sm:block">
                             {config.description}
                           </div>
                         </motion.div>
@@ -199,8 +180,8 @@ export const StepIndicator = React.memo(function StepIndicator({
                       >
                         <div
                           className={cn(
-                            "flex items-center justify-center rounded-full bg-green-500",
-                            isMinimized ? "h-3 w-3" : "h-5 w-5"
+                            "flex items-center justify-center rounded-md bg-emerald-500",
+                            isMinimized ? "h-3.5 w-3.5" : "h-5 w-5"
                           )}
                         >
                           <CheckCircle
@@ -213,7 +194,7 @@ export const StepIndicator = React.memo(function StepIndicator({
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <p className="font-medium">{config.title}</p>
-                  <p className="text-muted-foreground mt-1 text-xs">{config.tip}</p>
+                  <p className="mt-1 text-xs text-zinc-400">{config.tip}</p>
                 </TooltipContent>
               </Tooltip>
             );

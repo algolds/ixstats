@@ -77,8 +77,8 @@ const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: st
 const SECTION_LABELS: Record<BuilderSection, string> = {
   foundation: "Foundation",
   identity: "Identity",
-  government: "MyGovernment ",
-  economics: "MyEconomy",
+  government: "Government",
+  economics: "Economy",
   preview: "Preview",
   import: "Import",
 };
@@ -192,15 +192,16 @@ export function BuilderNotchBar({
       return [
         {
           id: "components",
-          label: "Econ Components",
+          label: "Components",
           icon: Zap,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "components",
+          isActive: (st: any) =>
+            (st.builderState.activeEconomicsTab || "components") === "components",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" })),
         },
         {
           id: "structure",
-          label: "Econ Structure",
+          label: "Structure",
           icon: Factory,
           isActive: (st: any) => st.builderState.activeEconomicsTab === "structure",
           onClick: (st: any) =>
@@ -208,15 +209,15 @@ export function BuilderNotchBar({
         },
         {
           id: "fiscal",
-          label: "Fiscal & Taxes",
-          icon: TrendingUp,
+          label: "Fiscal",
+          icon: Coins,
           isActive: (st: any) => st.builderState.activeEconomicsTab === "fiscal",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" })),
         },
         {
           id: "preview",
-          label: "Econ Preview",
+          label: "Preview",
           icon: Eye,
           isActive: (st: any) => st.builderState.activeEconomicsTab === "preview",
           onClick: (st: any) =>
@@ -302,7 +303,7 @@ export function BuilderNotchBar({
                 <div
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
-                  className="flex flex-col gap-1.5 rounded-2xl border border-white/10 p-1.5 transition-all duration-300"
+                  className="relative flex flex-col gap-1.5 rounded-2xl border border-white/10 p-1.5 transition-all duration-300"
                   style={{
                     background: "var(--color-glass)",
                     backdropFilter: "blur(20px) saturate(180%)",
@@ -364,7 +365,7 @@ export function BuilderNotchBar({
                               disabled={!isAccessible}
                               onClick={() => isAccessible && onNavigate(stepKey)}
                               className={cn(
-                                "relative flex min-w-0 shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-semibold transition-all duration-200",
+                                "relative flex min-w-0 shrink-0 items-center gap-1 rounded-xl px-1.5 py-1 text-[11px] font-semibold transition-all duration-200 sm:gap-1.5 sm:px-2.5",
                                 isActive
                                   ? "bg-amber-500/15 text-amber-400"
                                   : isCompleted
@@ -383,7 +384,7 @@ export function BuilderNotchBar({
                                 />
                               )}
 
-                              <span className="relative flex min-w-0 items-center gap-1.5">
+                              <span className="relative flex min-w-0 items-center gap-1 sm:gap-1.5">
                                 {isCompleted && !isActive ? (
                                   <span className="relative shrink-0">
                                     <Icon className="h-3 w-3 text-emerald-400/60" />
@@ -403,9 +404,7 @@ export function BuilderNotchBar({
                                 )}
                                 <PreText
                                   whiteSpace="nowrap"
-                                  className={cn(
-                                    "hidden max-w-[70px] truncate text-inherit sm:inline md:max-w-none"
-                                  )}
+                                  className={cn("hidden text-inherit sm:inline")}
                                 >
                                   {label}
                                 </PreText>

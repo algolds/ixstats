@@ -152,15 +152,15 @@ export function BuilderOnboardingBanner({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          "mb-6 overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-amber-500/10 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-amber-900/20",
+          "mb-6 overflow-hidden rounded-xl border border-amber-500/20 bg-zinc-950/60 backdrop-blur-md",
           className
         )}
       >
         {/* Header - always visible */}
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 p-2">
-              <Sparkles className="h-4 w-4 text-white" />
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
+              <Sparkles className="h-4 w-4 text-amber-400" />
             </div>
             <div>
               <h3 className="text-foreground text-sm font-semibold">Getting Started Tips</h3>
@@ -220,10 +220,10 @@ export function BuilderOnboardingBanner({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 dark:bg-amber-900/10"
+                      className="rounded-lg border border-white/5 bg-white/[0.02] p-3"
                     >
                       <div className="mb-1 flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-600">
+                        <div className="flex h-5 w-5 items-center justify-center rounded border border-amber-500/30 bg-amber-500/15 text-xs font-bold text-amber-400">
                           {index + 1}
                         </div>
                         <span className="text-foreground text-xs font-medium">{tip.title}</span>

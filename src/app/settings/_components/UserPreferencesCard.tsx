@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Sun, Moon, Monitor, ChevronDown, ChevronUp, Zap, Sparkles, Layers, Minimize2 } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Monitor,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  Sparkles,
+  Layers,
+  Minimize2,
+} from "lucide-react";
 import { AnimatedThemeToggler } from "~/components/magicui/animated-theme-toggler";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Switch } from "~/components/ui/switch";
@@ -11,9 +21,12 @@ interface UserPreferencesCardProps {
   onThemeChange?: (theme: "light" | "dark" | "system") => void;
 }
 
-export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThemeChange }: UserPreferencesCardProps) {
+export function UserPreferencesCard({
+  theme: propTheme,
+  onThemeChange: propOnThemeChange,
+}: UserPreferencesCardProps) {
   const context = useTheme();
-  
+
   // Backward compatibility with props
   const activeTheme = propTheme ?? context.theme;
   const handleThemeChange = propOnThemeChange ?? context.setTheme;
@@ -37,9 +50,9 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
     <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="diagonal" opacity={0.03} />
-        
+
         {/* Card Header */}
-        <div className="mb-6 flex items-center justify-between relative z-10">
+        <div className="relative z-10 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -52,10 +65,10 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
           </div>
         </div>
 
-        <div className="space-y-6 relative z-10">
+        <div className="relative z-10 space-y-6">
           {/* Theme Selector */}
           <div>
-            <span className="mb-3 block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <span className="mb-3 block text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Theme Mode
             </span>
             <div className="grid grid-cols-3 gap-3">
@@ -99,7 +112,7 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
 
           {/* Density Settings */}
           <div className="space-y-4">
-            <span className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <span className="block text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Display & Density
             </span>
             <div className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
@@ -108,7 +121,10 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
                   <Minimize2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <Label htmlFor="compact-mode" className="text-sm font-bold text-slate-900 dark:text-white">
+                  <Label
+                    htmlFor="compact-mode"
+                    className="text-sm font-bold text-slate-900 dark:text-white"
+                  >
                     Compact Layout Mode
                   </Label>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -129,7 +145,7 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
 
           {/* Accessibility and Performance Settings */}
           <div className="space-y-4">
-            <span className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <span className="block text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Performance & Motion
             </span>
 
@@ -140,7 +156,10 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
                   <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <Label htmlFor="reduce-animations" className="text-sm font-bold text-slate-900 dark:text-white">
+                  <Label
+                    htmlFor="reduce-animations"
+                    className="text-sm font-bold text-slate-900 dark:text-white"
+                  >
                     Reduced Motion
                   </Label>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -163,7 +182,10 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
                   <Layers className="h-5 w-5" />
                 </div>
                 <div>
-                  <Label htmlFor="low-fidelity" className="text-sm font-bold text-slate-900 dark:text-white">
+                  <Label
+                    htmlFor="low-fidelity"
+                    className="text-sm font-bold text-slate-900 dark:text-white"
+                  >
                     Low Fidelity Mode
                   </Label>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -186,21 +208,28 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
           <div>
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex w-full items-center justify-between py-2 text-left text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="flex w-full items-center justify-between py-2 text-left text-sm font-bold text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-indigo-500" />
                 <span>More Visual Settings</span>
               </div>
-              {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showAdvanced ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
             </button>
 
             {showAdvanced && (
-              <div className="mt-4 space-y-4 animate-fade-in pl-1">
+              <div className="animate-fade-in mt-4 space-y-4 pl-1">
                 {/* Background Textures Toggle */}
                 <div className="flex items-center justify-between rounded-xl bg-slate-50/30 p-3.5 dark:bg-slate-800/20">
                   <div>
-                    <Label htmlFor="enable-textures" className="text-xs font-bold text-slate-900 dark:text-white">
+                    <Label
+                      htmlFor="enable-textures"
+                      className="text-xs font-bold text-slate-900 dark:text-white"
+                    >
                       Glass Surface Textures
                     </Label>
                     <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -219,7 +248,10 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
                 {/* Hover transform depth toggle */}
                 <div className="flex items-center justify-between rounded-xl bg-slate-50/30 p-3.5 dark:bg-slate-800/20">
                   <div>
-                    <Label htmlFor="interactive-hover" className="text-xs font-bold text-slate-900 dark:text-white">
+                    <Label
+                      htmlFor="interactive-hover"
+                      className="text-xs font-bold text-slate-900 dark:text-white"
+                    >
                       Interactive Hover Lift
                     </Label>
                     <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -237,10 +269,8 @@ export function UserPreferencesCard({ theme: propTheme, onThemeChange: propOnThe
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>
   );
 }
-

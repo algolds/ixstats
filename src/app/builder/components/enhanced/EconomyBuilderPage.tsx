@@ -26,6 +26,8 @@ import {
   Gauge,
   Eye,
   Loader2,
+  Shield,
+  HelpCircle,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
@@ -33,8 +35,9 @@ import { isEqual } from "lodash";
 
 // Economy Builder Components
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
-
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import { EconomicWelcomeModal } from "~/components/economy/atomic";
+import { Checkbox } from "~/components/ui/checkbox";
 
 // Types and Services
 import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
@@ -195,6 +198,8 @@ export function EconomyBuilderPage({
   onTabChange,
 }: EconomyBuilderPageProps) {
   const notify = useNotify();
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   // Removed auto-save state - using global builder autosave instead
 
   // State Management - Memoized to prevent unnecessary re-renders
@@ -332,12 +337,7 @@ export function EconomyBuilderPage({
   const [selectedComponents, setSelectedComponents] =
     useState<EconomicComponentType[]>(propsSelectedComponents);
 
-  const [activeStructureTab, setActiveStructureTab] = useState<
-    "sectors" | "labor" | "demographics"
-  >("sectors");
-  const [activeFiscalTab, setActiveFiscalTab] = useState<"taxes" | "exemptions" | "calculator">(
-    "taxes"
-  );
+
 
   const currentStep = useMemo(() => {
     const rawTab = activeTab || "components";
@@ -373,16 +373,7 @@ export function EconomyBuilderPage({
     [onTabChange]
   );
 
-  // Sync external tab changes with internal sub-tabs
-  useEffect(() => {
-    if (activeTab === "sectors" || activeTab === "labor" || activeTab === "demographics") {
-      setActiveStructureTab(activeTab);
-    } else if (activeTab === "taxes" || activeTab === "tax") {
-      setActiveFiscalTab("taxes");
-    } else if (activeTab === "exemptions" || activeTab === "calculator") {
-      setActiveFiscalTab(activeTab);
-    }
-  }, [activeTab]);
+
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
@@ -560,10 +551,12 @@ export function EconomyBuilderPage({
   useEffect(() => {
     if (builderContext && countryId && triggerTaxSync) {
       builderContext.registerAutoSync("taxSystem", triggerTaxSync);
-      return () => {
-        builderContext.unregisterAutoSync("taxSystem");
-      };
     }
+    return () => {
+      if (builderContext) {
+        builderContext.unregisterAutoSync("taxSystem");
+      }
+    };
   }, [countryId, triggerTaxSync, builderContext]);
 
   // Preview data transformations
@@ -984,6 +977,10 @@ export function EconomyBuilderPage({
     };
   }, [economyBuilder.isValid, economyBuilder.validation]);
 
+  const validation = useMemo(() => {
+    return validateEconomyConfiguration();
+  }, [validateEconomyConfiguration]);
+
   // Use prop economicHealthMetrics or create fallback
   const healthMetrics: EconomicHealthMetrics = useMemo(() => {
     if (economicHealthMetrics) return economicHealthMetrics;
@@ -1030,60 +1027,11 @@ export function EconomyBuilderPage({
   ] as const;
   const tabs = steps as unknown as TabDefinition[];
 
-  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
-
-  const handleNext = useCallback(() => {
-    if (currentStep === "components") {
-      setCurrentStep("structure");
-      setActiveStructureTab("sectors");
-    } else if (currentStep === "structure") {
-      if (activeStructureTab === "sectors") {
-        setActiveStructureTab("labor");
-      } else if (activeStructureTab === "labor") {
-        setActiveStructureTab("demographics");
-      } else {
-        setCurrentStep("fiscal");
-        setActiveFiscalTab("taxes");
-      }
-    } else if (currentStep === "fiscal") {
-      if (activeFiscalTab === "taxes") {
-        setActiveFiscalTab("exemptions");
-      } else if (activeFiscalTab === "exemptions") {
-        setActiveFiscalTab("calculator");
-      } else {
-        setCurrentStep("preview");
-      }
-    } else if (currentStep === "preview") {
-      handleSave();
-    }
-  }, [currentStep, activeStructureTab, activeFiscalTab, setCurrentStep, handleSave]);
-
-  const handlePrevious = useCallback(() => {
-    if (currentStep === "preview") {
-      setCurrentStep("fiscal");
-      setActiveFiscalTab("calculator");
-    } else if (currentStep === "fiscal") {
-      if (activeFiscalTab === "calculator") {
-        setActiveFiscalTab("exemptions");
-      } else if (activeFiscalTab === "exemptions") {
-        setActiveFiscalTab("taxes");
-      } else {
-        setCurrentStep("structure");
-        setActiveStructureTab("demographics");
-      }
-    } else if (currentStep === "structure") {
-      if (activeStructureTab === "demographics") {
-        setActiveStructureTab("labor");
-      } else if (activeStructureTab === "labor") {
-        setActiveStructureTab("sectors");
-      } else {
-        setCurrentStep("components");
-      }
-    }
-  }, [currentStep, activeStructureTab, activeFiscalTab, setCurrentStep]);
+  const _currentStepIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
     <div className={`space-y-6 ${className}`}>
+      <EconomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
       {/* Main Content Area */}
       <div className="space-y-6">
         {/* Header */}
@@ -1095,6 +1043,7 @@ export function EconomyBuilderPage({
           showSuccessAnimation={showSuccessAnimation}
           validationStatus={validationStatus}
           onPresetsClick={() => setIsPresetsOpen(true)}
+          onHelpClick={() => setWelcomeOpen(true)}
         />
 
         {/* Progress Steps */}
@@ -1147,10 +1096,7 @@ export function EconomyBuilderPage({
                 textureOpacity={0.04}
               >
                 <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Zap className="h-5 w-5 text-emerald-400" />
-                    Economic Atomic Components
-                  </h3>
+                 
                   <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
                 </div>
                 <GlassCardContent className="space-y-6 p-6">
@@ -1325,6 +1271,7 @@ export function EconomyBuilderPage({
                     onComponentChange={handleComponentChange}
                     maxComponents={12}
                     governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
+                    hideSelectedList={true}
                   />
                 </GlassCardContent>
               </GlassCard>
@@ -1340,6 +1287,7 @@ export function EconomyBuilderPage({
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
+              {/* Card 1: Economic Sectors */}
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -1347,99 +1295,72 @@ export function EconomyBuilderPage({
                 texture="chevron"
                 textureOpacity={0.04}
               >
-                {/* Horizontal Glass Segmented Sub-tabs inside card header */}
-                <div className="border-border/40 flex flex-col items-start justify-between gap-4 border-b bg-white/[0.02] px-6 py-4 sm:flex-row sm:items-center dark:bg-black/[0.1]">
+                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                   <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
                     <Factory className="h-5 w-5 text-emerald-400" />
-                    Economic Structure
+                    Economic Sectors
                   </h3>
-
-                  {/* Segmented Pill controls */}
-                  <div className="flex gap-1.5 rounded-lg border border-zinc-800/40 bg-black/20 p-1">
-                    {[
-                      { id: "sectors", label: "Sectors", icon: Factory },
-                      { id: "labor", label: "Labor & Employment", icon: Users },
-                      { id: "demographics", label: "Demographics", icon: Globe },
-                    ].map((subTab) => {
-                      const isActive = activeStructureTab === subTab.id;
-                      const Icon = subTab.icon;
-                      return (
-                        <button
-                          key={subTab.id}
-                          onClick={() => setActiveStructureTab(subTab.id as any)}
-                          className={cn(
-                            "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all duration-200",
-                            isActive
-                              ? "bg-emerald-500 font-bold text-zinc-950 shadow-sm"
-                              : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                          <span>{subTab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
-
                 <GlassCardContent className="p-6">
-                  <AnimatePresence mode="wait">
-                    {activeStructureTab === "sectors" && (
-                      <motion.div
-                        key="sectors"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Suspense fallback={<TabLoadingFallback />}>
-                          <EconomySectorsTab
-                            economyBuilder={economyBuilder}
-                            onEconomyBuilderChange={handleEconomyBuilderChange}
-                            selectedComponents={selectedComponents}
-                            showAdvanced={showAdvanced}
-                          />
-                        </Suspense>
-                      </motion.div>
-                    )}
+                  <Suspense fallback={<TabLoadingFallback />}>
+                    <EconomySectorsTab
+                      economyBuilder={economyBuilder}
+                      onEconomyBuilderChange={handleEconomyBuilderChange}
+                      selectedComponents={selectedComponents}
+                      showAdvanced={showAdvanced}
+                    />
+                  </Suspense>
+                </GlassCardContent>
+              </GlassCard>
 
-                    {activeStructureTab === "labor" && (
-                      <motion.div
-                        key="labor"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Suspense fallback={<TabLoadingFallback />}>
-                          <LaborEmploymentTab
-                            economyBuilder={economyBuilder}
-                            onEconomyBuilderChange={handleEconomyBuilderChange}
-                            selectedComponents={selectedComponents}
-                          />
-                        </Suspense>
-                      </motion.div>
-                    )}
+              {/* Card 2: Labor & Employment */}
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Users className="h-5 w-5 text-emerald-400" />
+                    Labor & Employment
+                  </h3>
+                </div>
+                <GlassCardContent className="p-6">
+                  <Suspense fallback={<TabLoadingFallback />}>
+                    <LaborEmploymentTab
+                      economyBuilder={economyBuilder}
+                      onEconomyBuilderChange={handleEconomyBuilderChange}
+                      selectedComponents={selectedComponents}
+                    />
+                  </Suspense>
+                </GlassCardContent>
+              </GlassCard>
 
-                    {activeStructureTab === "demographics" && (
-                      <motion.div
-                        key="demographics"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Suspense fallback={<TabLoadingFallback />}>
-                          <DemographicsPopulationTab
-                            economyBuilder={economyBuilder}
-                            onEconomyBuilderChange={handleEconomyBuilderChange}
-                            selectedComponents={selectedComponents}
-                            showAdvanced={showAdvanced}
-                          />
-                        </Suspense>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              {/* Card 3: Demographics & Population */}
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Globe className="h-5 w-5 text-emerald-400" />
+                    Demographics & Population
+                  </h3>
+                </div>
+                <GlassCardContent className="p-6">
+                  <Suspense fallback={<TabLoadingFallback />}>
+                    <DemographicsPopulationTab
+                      economyBuilder={economyBuilder}
+                      onEconomyBuilderChange={handleEconomyBuilderChange}
+                      selectedComponents={selectedComponents}
+                      showAdvanced={showAdvanced}
+                    />
+                  </Suspense>
                 </GlassCardContent>
               </GlassCard>
             </motion.div>
@@ -1454,6 +1375,45 @@ export function EconomyBuilderPage({
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
+              {/* Card 1: Fiscal Blueprint Templates */}
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20 bg-emerald-500/5"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <GlassCardContent className="p-6">
+                  <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-emerald-400">
+                    <Sparkles className="h-5 w-5" />
+                    Fiscal Blueprint Templates
+                  </h3>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Select a pre-designed tax blueprint model to instantly configure your
+                    nation's fiscal system. You can customize it further below.
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    {taxSystemTemplates.map((template) => (
+                      <Button
+                        key={template.name}
+                        variant="outline"
+                        className="hover:text-foreground flex h-auto flex-col items-start gap-1 border-zinc-800 bg-zinc-950/40 p-4 text-left hover:border-emerald-500/50 hover:bg-emerald-500/5"
+                        onClick={() => {
+                          taxBuilder.applyTemplate(template);
+                          notify.success(`Applied ${template.name}`);
+                        }}
+                      >
+                        <span className="text-sm font-bold">{template.name}</span>
+                        <span className="text-muted-foreground line-clamp-2 text-xs">
+                          {template.description}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                </GlassCardContent>
+              </GlassCard>
+
+              {/* Card 2: Tax Rates & Brackets */}
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -1461,141 +1421,81 @@ export function EconomyBuilderPage({
                 texture="chevron"
                 textureOpacity={0.04}
               >
-                {/* Horizontal Glass Segmented Sub-tabs inside card header */}
-                <div className="border-border/40 flex flex-col items-start justify-between gap-4 border-b bg-white/[0.02] px-6 py-4 sm:flex-row sm:items-center dark:bg-black/[0.1]">
+                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                   <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    Fiscal & Taxes
+                    <DollarSign className="h-5 w-5 text-emerald-400" />
+                    Tax Rates & Brackets
                   </h3>
-
-                  {/* Segmented Pill controls */}
-                  <div className="flex gap-1.5 rounded-lg border border-zinc-800/40 bg-black/20 p-1">
-                    {[
-                      { id: "taxes", label: "Rates & Brackets", icon: DollarSign },
-                      { id: "exemptions", label: "Tax Exemptions", icon: Coins },
-                      { id: "calculator", label: "Tax Calculator", icon: Calculator },
-                    ].map((subTab) => {
-                      const isActive = activeFiscalTab === subTab.id;
-                      const Icon = subTab.icon;
-                      return (
-                        <button
-                          key={subTab.id}
-                          onClick={() => setActiveFiscalTab(subTab.id as any)}
-                          className={cn(
-                            "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all duration-200",
-                            isActive
-                              ? "bg-emerald-500 font-bold text-zinc-950 shadow-sm"
-                              : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                          <span>{subTab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
-
                 <GlassCardContent className="p-6">
-                  <AnimatePresence mode="wait">
-                    {activeFiscalTab === "taxes" && (
-                      <motion.div
-                        key="taxes"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className="space-y-6"
-                      >
-                        {/* Fiscal Blueprint Templates Banner */}
-                        <GlassCard className="border-emerald-500/20 bg-emerald-500/5">
-                          <GlassCardContent className="p-6">
-                            <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-emerald-400">
-                              <Sparkles className="h-5 w-5" />
-                              Fiscal Blueprint Templates
-                            </h3>
-                            <p className="text-muted-foreground mb-4 text-sm">
-                              Select a pre-designed tax blueprint model to instantly configure your
-                              nation's fiscal system. You can customize it further on this page.
-                            </p>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                              {taxSystemTemplates.map((template) => (
-                                <Button
-                                  key={template.name}
-                                  variant="outline"
-                                  className="hover:text-foreground flex h-auto flex-col items-start gap-1 border-zinc-800 bg-zinc-950/40 p-4 text-left hover:border-emerald-500/50 hover:bg-emerald-500/5"
-                                  onClick={() => {
-                                    taxBuilder.applyTemplate(template);
-                                    notify.success(`Applied ${template.name}`);
-                                  }}
-                                >
-                                  <span className="text-sm font-bold">{template.name}</span>
-                                  <span className="text-muted-foreground line-clamp-2 text-xs">
-                                    {template.description}
-                                  </span>
-                                </Button>
-                              ))}
-                            </div>
-                          </GlassCardContent>
-                        </GlassCard>
+                  <AtomicComponentsStep
+                    taxSystem={activeTaxBuilderState.taxSystem}
+                    onTaxSystemChange={(taxSystem) => {
+                      setActiveTaxBuilderState((prev) => ({ ...prev, taxSystem }));
+                    }}
+                    selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+                    onAtomicComponentsChange={setSelectedAtomicTaxComponents}
+                    activeGovernmentComponents={governmentComponents}
+                    economicData={{
+                      gdp: economicInputs.coreIndicators?.nominalGDP || 0,
+                      sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
+                      population: economicInputs.coreIndicators?.totalPopulation || 1000000,
+                    }}
+                    validationErrors={activeTaxBuilderState.errors}
+                    isReadOnly={false}
+                    showAtomicIntegration={true}
+                    countryId={countryId || undefined}
+                    previewTaxSystem={previewTaxSystem}
+                  />
+                </GlassCardContent>
+              </GlassCard>
 
-                        <AtomicComponentsStep
-                          taxSystem={activeTaxBuilderState.taxSystem}
-                          onTaxSystemChange={(taxSystem) => {
-                            setActiveTaxBuilderState((prev) => ({ ...prev, taxSystem }));
-                          }}
-                          selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-                          onAtomicComponentsChange={setSelectedAtomicTaxComponents}
-                          activeGovernmentComponents={governmentComponents}
-                          economicData={{
-                            gdp: economicInputs.coreIndicators?.nominalGDP || 0,
-                            sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
-                            population: economicInputs.coreIndicators?.totalPopulation || 1000000,
-                          }}
-                          validationErrors={activeTaxBuilderState.errors}
-                          isReadOnly={false}
-                          showAtomicIntegration={true}
-                          countryId={countryId || undefined}
-                          previewTaxSystem={previewTaxSystem}
-                        />
-                      </motion.div>
-                    )}
+              {/* Card 3: Tax Exemptions & Deductions */}
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Coins className="h-5 w-5 text-emerald-400" />
+                    Tax Exemptions & Deductions
+                  </h3>
+                </div>
+                <GlassCardContent className="p-6">
+                  <ExemptionsDeductionsStep isReadOnly={false} />
+                </GlassCardContent>
+              </GlassCard>
 
-                    {activeFiscalTab === "exemptions" && (
-                      <motion.div
-                        key="exemptions"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <ExemptionsDeductionsStep isReadOnly={false} />
-                      </motion.div>
-                    )}
-
-                    {activeFiscalTab === "calculator" && (
-                      <motion.div
-                        key="calculator"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <CalculatorPreviewStep
-                          previewTaxSystem={previewTaxSystem}
-                          previewCategories={previewCategories}
-                          previewBrackets={previewBrackets}
-                          onCalculationChange={() => {}}
-                          economicData={{
-                            gdp: economicInputs.coreIndicators?.nominalGDP || 0,
-                            sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
-                            population: economicInputs.coreIndicators?.totalPopulation || 1000000,
-                          }}
-                          governmentData={governmentBuilderData}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              {/* Card 4: Tax Revenue Calculator */}
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    <Calculator className="h-5 w-5 text-emerald-400" />
+                    Tax Revenue Calculator
+                  </h3>
+                </div>
+                <GlassCardContent className="p-6">
+                  <CalculatorPreviewStep
+                    previewTaxSystem={previewTaxSystem}
+                    previewCategories={previewCategories}
+                    previewBrackets={previewBrackets}
+                    onCalculationChange={() => {}}
+                    economicData={{
+                      gdp: economicInputs.coreIndicators?.nominalGDP || 0,
+                      sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
+                      population: economicInputs.coreIndicators?.totalPopulation || 1000000,
+                    }}
+                    governmentData={governmentBuilderData}
+                  />
                 </GlassCardContent>
               </GlassCard>
             </motion.div>
@@ -1608,47 +1508,111 @@ export function EconomyBuilderPage({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 gap-6 lg:grid-cols-12"
             >
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Eye className="h-5 w-5 text-emerald-400" />
-                    Economy Configuration Preview
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <PreviewStep
-                    economyBuilder={economyBuilder}
-                    economicInputs={economicInputs}
-                    selectedComponents={selectedComponents}
-                    economicHealthMetrics={healthMetrics}
-                  />
-                </GlassCardContent>
-              </GlassCard>
+              {/* Preview content left 7 cols */}
+              <div className="space-y-6 lg:col-span-7">
+                <GlassCard
+                  depth="base"
+                  theme="emerald"
+                  className="border-emerald-500/20"
+                  texture="chevron"
+                  textureOpacity={0.04}
+                >
+                  <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                      <Eye className="h-5 w-5 text-emerald-400" />
+                      Economy Configuration Preview
+                    </h3>
+                  </div>
+                  <GlassCardContent className="p-6">
+                    <PreviewStep
+                      economyBuilder={economyBuilder}
+                      economicInputs={economicInputs}
+                      selectedComponents={selectedComponents}
+                      economicHealthMetrics={healthMetrics}
+                    />
+                  </GlassCardContent>
+                </GlassCard>
+              </div>
+
+              {/* Verification checkpoint right 5 cols */}
+              <div className="space-y-6 lg:col-span-5">
+                <GlassCard
+                  depth="base"
+                  theme="emerald"
+                  className="border-emerald-500/20 shadow-xl"
+                  texture="chevron"
+                  textureOpacity={0.04}
+                >
+                  <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                      <Shield className="h-5 w-5 text-emerald-400" />
+                      Verification Checkpoint
+                    </h3>
+                  </div>
+                  <GlassCardContent className="space-y-4 p-6">
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Review critical adjustments and resolve any validation issues before authorization
+                    </p>
+
+                    <div className="space-y-2.5">
+                      {validation.errors.length > 0 ? (
+                        validation.errors.map((err, idx) => (
+                          <div key={idx} className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
+                            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500 dark:text-amber-400" />
+                            <span>{err}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-[11px] text-emerald-800 dark:bg-emerald-500/5 dark:text-emerald-200">
+                          <CheckCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          <span>
+                            No high-risk adjustments detected. Structural variables are within safe boundaries.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-start gap-2.5 pt-2 select-none">
+                      <Checkbox
+                        id="verify-checkbox"
+                        checked={isVerified}
+                        onCheckedChange={(checked) => setIsVerified(checked === true)}
+                        className="mt-0.5 border-zinc-300 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500 dark:border-zinc-700"
+                      />
+                      <Label
+                        htmlFor="verify-checkbox"
+                        className="cursor-pointer text-xs leading-normal text-zinc-600 dark:text-zinc-400"
+                      >
+                        I verify these economic adjustments are intentional and authorization should be finalized.
+                      </Label>
+                    </div>
+
+                    <div className="pt-2">
+                      <Button
+                        onClick={async () => {
+                          if (!isVerified || validation.errors.length > 0) return;
+                          await handleSave();
+                        }}
+                        disabled={!isVerified || validation.errors.length > 0 || isSaving}
+                        className="h-9 w-full rounded-lg bg-emerald-500 text-xs font-semibold text-zinc-950 hover:bg-emerald-600 disabled:bg-zinc-200 disabled:text-zinc-400 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+                      >
+                        {isSaving ? (
+                          <span className="flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" /> Saving...
+                          </span>
+                        ) : (
+                          "Save & Finalize Economy"
+                        )}
+                      </Button>
+                    </div>
+                  </GlassCardContent>
+                </GlassCard>
+              </div>
             </motion.div>
           )}
         </BuilderTabCard>
-
-        {/* Navigation */}
-        <NavigationButtons
-          currentStepIndex={currentStepIndex}
-          totalSteps={steps.length}
-          validationStatus={{
-            isValid: validationStatus?.isValid ?? true,
-            errorCount: validationStatus?.errorCount ?? 0,
-          }}
-          isSaving={saveEconomyMutation.isPending}
-          countryId={countryId}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          onSave={handleSave}
-        />
       </div>
 
       {/* Presets Modal (Economic Archetypes) */}

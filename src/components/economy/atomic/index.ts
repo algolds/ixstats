@@ -12,6 +12,7 @@ export { CategoryFilter } from "./CategoryFilter";
 export { ComponentSearch } from "./ComponentSearch";
 export { MetricsPanel } from "./MetricsPanel";
 export { TemplateSelector } from "./TemplateSelector";
+export { EconomicWelcomeModal } from "./EconomicWelcomeModal";
 
 export type { ComponentCardProps } from "./ComponentCard";
 export type { ComponentLibraryProps } from "./ComponentLibrary";

@@ -46,6 +46,7 @@ export function CountrySelector({
     confirmHandlerRef,
     onNavigate,
     setGridWidth,
+    triggerDIExpansion,
   } = useBuilderFilter();
   const filteredCountries = useMemo(() => {
     const filtered = filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
@@ -158,6 +159,7 @@ export function CountrySelector({
               setSoftSelectedCountry(country);
               setNewCountryName(country.name);
               setFoundationPreviewCountry(country);
+              triggerDIExpansion();
             }}
             onClearFilters={handleClearFilters}
             softSelectedCountryId={softSelectedCountry?.countryCode || null}
@@ -171,11 +173,11 @@ export function CountrySelector({
           <div className="space-y-2">
             <button
               onClick={() => setShowScratchDialog(true)}
-              className="group relative w-full overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-emerald-400/40 hover:from-emerald-500/20 hover:via-teal-500/15 hover:to-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/10"
+              className="group relative w-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-left transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.06]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
               <div className="relative flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 transition-all duration-300 group-hover:bg-emerald-500/30 group-hover:shadow-lg group-hover:shadow-emerald-500/20">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 transition-all duration-300 group-hover:bg-emerald-500/20">
                   <FilePlus className="h-4 w-4 text-emerald-400" />
                 </div>
                 <div>
@@ -187,11 +189,11 @@ export function CountrySelector({
 
             <button
               onClick={handleImportClick}
-              className="group relative w-full overflow-hidden rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-blue-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-blue-400/40 hover:from-blue-500/20 hover:via-indigo-500/15 hover:to-blue-500/20 hover:shadow-lg hover:shadow-blue-500/10"
+              className="group relative w-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-left transition-all duration-300 hover:border-blue-500/30 hover:bg-white/[0.06]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
               <div className="relative flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 transition-all duration-300 group-hover:bg-blue-500/30 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-500/30 bg-blue-500/10 transition-all duration-300 group-hover:bg-blue-500/20">
                   <Download className="h-4 w-4 text-blue-400" />
                 </div>
                 <div>

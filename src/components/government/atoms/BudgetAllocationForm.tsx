@@ -41,27 +41,27 @@ interface BudgetAllocationFormProps {
 
 const budgetStatusConfig = {
   Allocated: {
-    color: "bg-blue-500/10 border-blue-500/20 text-blue-400",
+    color: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
     icon: Clock,
     label: "Allocated",
   },
   "In Use": {
-    color: "bg-green-500/10 border-green-500/20 text-green-400",
+    color: "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
     icon: TrendingUp,
     label: "In Use",
   },
   Overspent: {
-    color: "bg-red-500/10 border-red-500/20 text-red-400",
+    color: "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400",
     icon: AlertTriangle,
     label: "Overspent",
   },
   Underutilized: {
-    color: "bg-yellow-500/10 border-yellow-500/20 text-yellow-400",
+    color: "bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400",
     icon: TrendingDown,
     label: "Underutilized",
   },
   Completed: {
-    color: "bg-zinc-500/10 border-zinc-500/20 text-zinc-400",
+    color: "bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400",
     icon: CheckCircle,
     label: "Completed",
   },
@@ -148,10 +148,10 @@ export function BudgetAllocationForm({
       depth="base"
       theme="teal"
       className={cn(
-        "relative overflow-hidden border-white/5 transition-all duration-200",
+        "relative overflow-hidden border-zinc-200/50 transition-all duration-200 dark:border-white/5",
         isCollapsed
-          ? "hover:border-cyan-500/20 hover:bg-white/[0.01]"
-          : "border-cyan-500/10 shadow-lg"
+          ? "hover:border-cyan-500/20 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01]"
+          : "border-cyan-500/20 shadow-lg dark:border-cyan-500/10"
       )}
       texture="chevron"
       textureOpacity={0.03}
@@ -165,7 +165,7 @@ export function BudgetAllocationForm({
               variant="ghost"
               size="sm"
               onClick={onToggleCollapse}
-              className="h-6 w-6 p-1 text-zinc-400 hover:bg-white/5 hover:text-white"
+              className="h-6 w-6 p-1 text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
             >
               {isCollapsed ? (
                 <ChevronRight className="h-4 w-4" />
@@ -177,13 +177,13 @@ export function BudgetAllocationForm({
 
           <div className="flex items-center gap-2">
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/5 bg-zinc-950/40 shadow-inner"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 shadow-inner dark:border-white/5 dark:bg-zinc-950/40"
               style={{ boxShadow: `inset 0 0 10px ${departmentColor}22` }}
             >
               <DollarSign className="h-4.5 w-4.5" style={{ color: departmentColor }} />
             </div>
             <div className="flex flex-col">
-              <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+              <span className="flex items-center gap-1.5 text-sm font-bold text-zinc-900 dark:text-white">
                 {departmentName}
                 {parentName && (
                   <span
@@ -198,7 +198,7 @@ export function BudgetAllocationForm({
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-semibold tracking-wider text-zinc-400 uppercase">
+              <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {utilizationRate > 0 ? `Utilization: ${utilizationRate.toFixed(0)}%` : "Unfunded"}
               </span>
             </div>
@@ -209,11 +209,11 @@ export function BudgetAllocationForm({
         <div className="flex flex-wrap items-center gap-4 lg:mr-4 lg:ml-auto">
           {/* Allocated Amount */}
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Amount
             </span>
             <div className="relative w-36 sm:w-40">
-              <span className="absolute top-1.5 left-2.5 text-xs font-semibold text-zinc-600">
+              <span className="absolute top-1.5 left-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
                 $
               </span>
               <input
@@ -223,14 +223,14 @@ export function BudgetAllocationForm({
                 disabled={isReadOnly || isLocked("budgetAllocations")}
                 min="0"
                 step="1000000"
-                className="w-full rounded border border-white/10 bg-zinc-950/60 py-1 pr-2 pl-6 text-xs font-semibold text-white focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50"
+                className="w-full rounded border border-zinc-200 bg-white py-1 pr-2 pl-6 text-xs font-semibold text-zinc-900 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-white"
               />
             </div>
           </div>
 
           {/* Allocation Share (Percentage) */}
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Share
             </span>
             <div className="flex items-center gap-2">
@@ -256,9 +256,9 @@ export function BudgetAllocationForm({
                   min="0"
                   max="100"
                   step="0.1"
-                  className="w-full rounded border border-white/10 bg-zinc-950/60 py-1 pr-4 pl-1.5 text-right text-xs font-semibold text-white focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50"
+                  className="w-full rounded border border-zinc-200 bg-white py-1 pr-4 pl-1.5 text-right text-xs font-semibold text-zinc-900 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-white"
                 />
-                <span className="absolute top-1.5 right-1 text-[10px] font-bold text-zinc-600">
+                <span className="absolute top-1.5 right-1 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
                   %
                 </span>
               </div>
@@ -267,16 +267,16 @@ export function BudgetAllocationForm({
         </div>
 
         {/* Right Section: Status badge + current value text */}
-        <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-3 sm:justify-end lg:border-t-0 lg:pt-0">
+        <div className="flex items-center justify-between gap-3 border-t border-zinc-200/50 pt-3 sm:justify-end lg:border-t-0 lg:pt-0 dark:border-white/5">
           <Badge className={cn("border bg-transparent shadow-none", statusConfig.color)}>
             <StatusIcon className="mr-1 h-3 w-3 shrink-0" />
             {statusConfig.label}
           </Badge>
           <div className="text-right">
-            <div className="text-xs font-extrabold text-zinc-300">
+            <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-300">
               {formatCurrency(data.allocatedAmount)}
             </div>
-            <div className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase">
+            <div className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Calculated Outflow
             </div>
           </div>
@@ -294,7 +294,7 @@ export function BudgetAllocationForm({
             className="overflow-hidden"
           >
             <div className="space-y-4 px-4 pb-4">
-              <div className="h-px bg-white/5" />
+              <div className="h-px bg-zinc-200 dark:bg-white/5" />
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Left side: Inputs */}
                 <div className="space-y-4">
@@ -302,7 +302,7 @@ export function BudgetAllocationForm({
                   <div className="space-y-1.5">
                     <Label
                       htmlFor={`budgetYear-${data.departmentId}`}
-                      className="text-xs font-semibold text-zinc-300"
+                      className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
                     >
                       Budget Cycle Year
                     </Label>
@@ -320,7 +320,7 @@ export function BudgetAllocationForm({
                       disabled={isReadOnly}
                       min="2020"
                       max="2035"
-                      className="h-8 border-white/10 bg-zinc-950/40 text-white focus:border-cyan-500/30 focus:ring-cyan-500/20"
+                      className="h-8 border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                     />
                   </div>
 
@@ -328,7 +328,7 @@ export function BudgetAllocationForm({
                   <div className="space-y-1.5">
                     <Label
                       htmlFor={`notes-${data.departmentId}`}
-                      className="text-xs font-semibold text-zinc-300"
+                      className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
                     >
                       Allocation Directives & Guidelines
                     </Label>
@@ -339,7 +339,7 @@ export function BudgetAllocationForm({
                       placeholder="Input additional directives, spending limitations, or policy goals..."
                       disabled={isReadOnly}
                       rows={3}
-                      className="w-full resize-none rounded-md border border-white/10 bg-zinc-950/40 px-3 py-2 text-xs text-white placeholder:text-zinc-600 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none"
+                      className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none dark:border-white/10 dark:bg-zinc-950/40 dark:text-white dark:placeholder:text-zinc-600"
                     />
                   </div>
 
@@ -350,7 +350,7 @@ export function BudgetAllocationForm({
                         variant="outline"
                         size="sm"
                         onClick={() => handleChange("allocatedPercent", 5)}
-                        className="h-7 border-white/10 text-[10px] text-zinc-400 hover:text-white"
+                        className="h-7 border-zinc-200 text-[10px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
                       >
                         Reset to 5%
                       </Button>
@@ -358,7 +358,7 @@ export function BudgetAllocationForm({
                         variant="outline"
                         size="sm"
                         onClick={() => handleChange("allocatedPercent", 10)}
-                        className="h-7 border-white/10 text-[10px] text-zinc-400 hover:text-white"
+                        className="h-7 border-zinc-200 text-[10px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
                       >
                         Reset to 10%
                       </Button>
@@ -366,7 +366,7 @@ export function BudgetAllocationForm({
                         variant="outline"
                         size="sm"
                         onClick={() => handleChange("allocatedPercent", 15)}
-                        className="h-7 border-white/10 text-[10px] text-zinc-400 hover:text-white"
+                        className="h-7 border-zinc-200 text-[10px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
                       >
                         Reset to 15%
                       </Button>
@@ -377,9 +377,9 @@ export function BudgetAllocationForm({
                 {/* Right side: Progress meter & contextual analysis */}
                 <div className="space-y-4">
                   {/* Budget Utilization Visualizer */}
-                  <div className="space-y-3 rounded-lg border border-white/5 bg-black/15 p-4 shadow-inner">
+                  <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-100/50 p-4 shadow-inner dark:border-white/5 dark:bg-black/15">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold tracking-wider text-zinc-300 uppercase">
+                      <h4 className="text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
                         Budget Utilization
                       </h4>
                       <span className="text-sm font-extrabold" style={{ color: departmentColor }}>
@@ -387,7 +387,7 @@ export function BudgetAllocationForm({
                       </span>
                     </div>
 
-                    <div className="relative h-2 w-full overflow-hidden rounded-full border border-white/5 bg-zinc-950">
+                    <div className="relative h-2 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950">
                       <div
                         className="h-full rounded-full transition-all duration-300"
                         style={{
@@ -398,26 +398,28 @@ export function BudgetAllocationForm({
                       />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-2 text-center">
+                    <div className="grid grid-cols-3 gap-2 border-t border-zinc-200 pt-2 text-center dark:border-white/5">
                       <div>
-                        <div className="text-xs font-bold text-white">
+                        <div className="text-xs font-bold text-zinc-800 dark:text-white">
                           {formatNumber(data.allocatedAmount)}
                         </div>
-                        <div className="text-[8px] font-bold text-zinc-500 uppercase">
+                        <div className="text-[8px] font-bold text-zinc-500 uppercase dark:text-zinc-400">
                           Allocated
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-zinc-300">
+                        <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
                           {formatNumber(data.allocatedAmount * 0.9)}
                         </div>
-                        <div className="text-[8px] font-bold text-zinc-500 uppercase">Utilized</div>
+                        <div className="text-[8px] font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                          Utilized
+                        </div>
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-zinc-300">
+                        <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
                           {formatNumber(data.allocatedAmount * 0.1)}
                         </div>
-                        <div className="text-[8px] font-bold text-zinc-500 uppercase">
+                        <div className="text-[8px] font-bold text-zinc-500 uppercase dark:text-zinc-400">
                           Remaining
                         </div>
                       </div>
@@ -426,31 +428,31 @@ export function BudgetAllocationForm({
 
                   {/* Context stats */}
                   <div className="space-y-2">
-                    <h4 className="flex items-center gap-1 text-xs font-bold tracking-wider text-zinc-400 uppercase">
+                    <h4 className="flex items-center gap-1 text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-400">
                       <Calculator className="h-3.5 w-3.5" />
                       Context Analytics
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-zinc-950/20 p-3">
-                        <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase">
+                      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-100/50 p-3 dark:border-white/5 dark:bg-zinc-950/20">
+                        <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           Share of Budget
                         </div>
-                        <div className="mt-2 text-base font-extrabold text-white">
+                        <div className="mt-2 text-base font-extrabold text-zinc-800 dark:text-white">
                           {data.allocatedPercent.toFixed(1)}%
                         </div>
-                        <div className="mt-1 text-[9px] leading-normal text-zinc-400">
+                        <div className="mt-1 text-[9px] leading-normal text-zinc-500 dark:text-zinc-400">
                           of {formatNumber(totalBudget)} total outflow
                         </div>
                       </div>
 
-                      <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-zinc-950/20 p-3">
-                        <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase">
+                      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-100/50 p-3 dark:border-white/5 dark:bg-zinc-950/20">
+                        <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           Per Capita Cost
                         </div>
-                        <div className="mt-2 text-base font-extrabold text-white">
+                        <div className="mt-2 text-base font-extrabold text-zinc-800 dark:text-white">
                           {formatNumber(data.allocatedAmount / 100000)}
                         </div>
-                        <div className="mt-1 text-[9px] leading-normal text-zinc-400">
+                        <div className="mt-1 text-[9px] leading-normal text-zinc-500 dark:text-zinc-400">
                           estimated per citizen
                         </div>
                       </div>
@@ -468,10 +470,10 @@ export function BudgetAllocationForm({
   // Render parent nesting curve line if sub-department
   if (parentName) {
     return (
-      <div className="relative ml-2 border-l border-white/10 pl-6 md:ml-4 md:pl-8">
+      <div className="relative ml-2 border-l border-zinc-200 pl-6 md:ml-4 md:pl-8 dark:border-white/10">
         {/* visual curved line connecting to parent */}
         <div
-          className="absolute top-10 left-0 h-4 w-4 rounded-bl-lg border-b border-l border-white/20"
+          className="absolute top-10 left-0 h-4 w-4 rounded-bl-lg border-b border-l border-zinc-200 dark:border-white/20"
           style={{ borderColor: parentColor ? `${parentColor}33` : undefined }}
         />
         {cardElement}

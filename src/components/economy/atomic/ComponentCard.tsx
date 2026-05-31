@@ -12,7 +12,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Plus, Check } from "lucide-react";
-import type { AtomicEconomicComponent } from "~/lib/atomic-economic-data";
+import { COMPONENT_CATEGORIES, type AtomicEconomicComponent } from "~/lib/atomic-economic-data";
 import { formatCurrency } from "~/lib/atomic-economic-utils";
 
 export interface ComponentCardProps {
@@ -32,6 +32,7 @@ function ComponentCardComponent({
   disabled = false,
 }: ComponentCardProps) {
   const Icon = component.icon;
+  const CategoryIcon = COMPONENT_CATEGORIES[component.category]?.icon;
 
   return (
     <Card
@@ -48,8 +49,8 @@ function ComponentCardComponent({
               <h4 className="mb-1 truncate text-sm font-semibold">{component.name}</h4>
               <p className="mb-2 line-clamp-2 text-xs text-gray-600">{component.description}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {component.category}
+                <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center justify-center" title={component.category}>
+                  {CategoryIcon ? <CategoryIcon className="h-3.5 w-3.5" /> : component.category}
                 </Badge>
                 <Badge
                   variant={

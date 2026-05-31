@@ -453,10 +453,6 @@ export function useDynamicIslandState() {
       const firstViewKey = Object.keys(activePlugin.expandedViews)[0];
       if (firstViewKey) {
         setExpandedMode(`plugin:${firstViewKey}`);
-        if (activePlugin.id === "builder") {
-          setIsExpanded(true);
-          setMode(`plugin:${firstViewKey}`);
-        }
       }
     } else {
       // If the active plugin does not have expanded views and we are currently in a plugin mode, collapse!

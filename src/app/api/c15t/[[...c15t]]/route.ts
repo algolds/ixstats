@@ -1,4 +1,4 @@
-import { c15t } from '~/lib/c15t';
+import { c15t } from "~/lib/c15t";
 
 const handler = c15t.handler;
 

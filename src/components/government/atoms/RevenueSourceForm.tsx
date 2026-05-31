@@ -297,7 +297,7 @@ export function RevenueSourceForm({
           >
             {data.length} Channels
           </Badge>
-          <Badge className="border border-white/5 bg-zinc-800 font-semibold text-zinc-300">
+          <Badge className="border border-zinc-200 bg-zinc-100 font-semibold text-zinc-700 dark:border-white/5 dark:bg-zinc-800 dark:text-zinc-300">
             {formatCurrency(totalCalculated)}
           </Badge>
         </div>
@@ -306,32 +306,32 @@ export function RevenueSourceForm({
       <GlassCardContent className="space-y-6 p-6">
         {/* Revenue KPI Summary Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-white/5 bg-zinc-950/40 p-4 text-center">
-            <div className="text-xl font-extrabold tracking-tight text-white">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
+            <div className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
               {formatNumber(totalCalculated)}
             </div>
             <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
               Total Revenue
             </div>
           </div>
-          <div className="rounded-xl border border-white/5 bg-zinc-950/40 p-4 text-center">
-            <div className="text-xl font-extrabold tracking-tight text-emerald-400">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
+            <div className="text-xl font-extrabold tracking-tight text-emerald-500 dark:text-emerald-400">
               {data.filter((r) => r.category.includes("Tax")).length}
             </div>
             <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
               Tax Sources
             </div>
           </div>
-          <div className="rounded-xl border border-white/5 bg-zinc-950/40 p-4 text-center">
-            <div className="text-xl font-extrabold tracking-tight text-cyan-400">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
+            <div className="text-xl font-extrabold tracking-tight text-cyan-500 dark:text-cyan-400">
               {data.filter((r) => !r.category.includes("Tax")).length}
             </div>
             <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
               Non-Tax Sources
             </div>
           </div>
-          <div className="rounded-xl border border-white/5 bg-zinc-950/40 p-4 text-center">
-            <div className="text-xl font-extrabold tracking-tight text-purple-400">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
+            <div className="text-xl font-extrabold tracking-tight text-purple-500 dark:text-purple-400">
               {data.length > 0 ? formatNumber(totalCalculated / data.length) : "0"}
             </div>
             <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
@@ -343,7 +343,7 @@ export function RevenueSourceForm({
         {/* Category Breakdown list */}
         {getCategoryStats().length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-xs font-bold tracking-wider text-zinc-400 uppercase">
+            <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Revenue Shares by Category
             </h4>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -353,22 +353,24 @@ export function RevenueSourceForm({
                 return (
                   <div
                     key={stat.category}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-zinc-950/20 p-3"
+                    className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-white/5 dark:bg-zinc-950/20"
                     style={{ borderLeft: `3px solid ${color}` }}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/5 bg-zinc-900">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 dark:border-white/5 dark:bg-zinc-900">
                         <Icon className="h-4 w-4" style={{ color }} />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-white">{stat.category}</div>
+                        <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                          {stat.category}
+                        </div>
                         <div className="text-[9px] font-semibold text-zinc-500 uppercase">
                           {stat.count} active channels
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs font-extrabold text-zinc-300">
+                      <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-300">
                         {formatNumber(stat.amount)}
                       </div>
                       <div className="text-[10px] font-bold text-zinc-500">
@@ -391,7 +393,7 @@ export function RevenueSourceForm({
             return (
               <div
                 key={index}
-                className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/40 p-4 transition-all hover:bg-zinc-900/60"
+                className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 transition-all hover:bg-zinc-100/50 dark:border-white/5 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60"
                 style={{ borderLeft: `3px solid ${color}` }}
               >
                 {!isReadOnly && (
@@ -409,7 +411,7 @@ export function RevenueSourceForm({
                   {/* Column 1: Basic Info */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-white/5 bg-zinc-950">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-zinc-200 bg-zinc-100 dark:border-white/5 dark:bg-zinc-950">
                         <Icon className="h-4 w-4" style={{ color }} />
                       </div>
                       <Input
@@ -417,7 +419,7 @@ export function RevenueSourceForm({
                         onChange={(e) => handleUpdate(index, "name", e.target.value)}
                         placeholder="Revenue source name"
                         disabled={isReadOnly}
-                        className="h-8 border-white/10 bg-zinc-950/40 font-bold text-white placeholder:text-zinc-600 focus:border-cyan-500/30"
+                        className="h-8 border-zinc-200 bg-white font-bold text-zinc-900 placeholder:text-zinc-400 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white dark:placeholder:text-zinc-600"
                       />
                     </div>
 
@@ -428,17 +430,17 @@ export function RevenueSourceForm({
                       }
                       disabled={isReadOnly}
                     >
-                      <SelectTrigger className="h-8 border-white/10 bg-zinc-950/40 text-white">
+                      <SelectTrigger className="h-8 border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                      <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                         {revenueCategories.map((category) => {
                           const CategoryIcon = revenueCategoryIcons[category];
                           return (
                             <SelectItem
                               key={category}
                               value={category}
-                              className="focus:bg-zinc-800"
+                              className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                             >
                               <div className="flex items-center">
                                 <CategoryIcon
@@ -459,14 +461,14 @@ export function RevenueSourceForm({
                       placeholder="Specify funding notes or legislative codes..."
                       disabled={isReadOnly}
                       rows={2}
-                      className="w-full resize-none rounded-md border border-white/10 bg-zinc-950/40 px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none"
+                      className="dark:placeholder:text-zinc-650 w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                     />
                   </div>
 
                   {/* Column 2: Financial Details */}
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                      <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Annual Yield Amount
                       </Label>
                       <div className="relative">
@@ -480,10 +482,10 @@ export function RevenueSourceForm({
                           disabled={isReadOnly || isLocked("revenueSources")}
                           min="0"
                           step="1000000"
-                          className="h-8 border-white/10 bg-zinc-950/40 pl-6 text-white focus:border-cyan-500/30"
+                          className="h-8 border-zinc-200 bg-white pl-6 text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                         />
                       </div>
-                      <p className="mt-1 text-[10px] font-semibold text-zinc-400">
+                      <p className="mt-1 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                         {formatCurrency(item.revenueAmount)} (
                         {(item.revenuePercent ?? 0).toFixed(1)}% share)
                       </p>
@@ -491,7 +493,7 @@ export function RevenueSourceForm({
 
                     {item.category.includes("Tax") && (
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                        <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           Active Tax Rate (%)
                         </Label>
                         <div className="relative">
@@ -505,7 +507,7 @@ export function RevenueSourceForm({
                             min="0"
                             max="100"
                             step="0.1"
-                            className="h-8 border-white/10 bg-zinc-950/40 pr-6 text-white focus:border-cyan-500/30"
+                            className="h-8 border-zinc-200 bg-white pr-6 text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                           />
                           <span className="absolute top-1.5 right-2.5 text-xs text-zinc-500">
                             %
@@ -518,7 +520,7 @@ export function RevenueSourceForm({
                   {/* Column 3: Administration */}
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                      <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Collection Channel
                       </Label>
                       <Select
@@ -526,17 +528,17 @@ export function RevenueSourceForm({
                         onValueChange={(value) => handleUpdate(index, "collectionMethod", value)}
                         disabled={isReadOnly}
                       >
-                        <SelectTrigger className="h-8 border-white/10 bg-zinc-950/40 text-xs text-white">
+                        <SelectTrigger className="h-8 border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                           <SelectValue placeholder="Select collection method" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-80 border-white/10 bg-zinc-950/95 text-white">
+                        <SelectContent className="max-h-80 border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                           {getCollectionMethodsForCategory(item.category).map((method) => {
                             const IconComponent = getCollectionMethodIcon(method.icon);
                             return (
                               <SelectItem
                                 key={method.id}
                                 value={method.id}
-                                className="focus:bg-zinc-800"
+                                className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                               >
                                 <div className="flex items-center gap-2">
                                   <IconComponent
@@ -558,7 +560,7 @@ export function RevenueSourceForm({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                      <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Administrative Authority
                       </Label>
                       {availableDepartments.length > 0 ? (
@@ -567,17 +569,17 @@ export function RevenueSourceForm({
                           onValueChange={(value) => handleUpdate(index, "administeredBy", value)}
                           disabled={isReadOnly}
                         >
-                          <SelectTrigger className="h-8 border-white/10 bg-zinc-950/40 text-xs text-white">
+                          <SelectTrigger className="h-8 border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                             <SelectValue placeholder="Select department" />
                           </SelectTrigger>
-                          <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                          <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                             {availableDepartments
                               .filter((dept) => dept.name && dept.name.trim() !== "")
                               .map((dept) => (
                                 <SelectItem
                                   key={dept.id}
                                   value={dept.name}
-                                  className="focus:bg-zinc-800"
+                                  className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                                 >
                                   {dept.name}
                                 </SelectItem>
@@ -590,7 +592,7 @@ export function RevenueSourceForm({
                           onChange={(e) => handleUpdate(index, "administeredBy", e.target.value)}
                           placeholder="Ministry or Agency Name"
                           disabled={isReadOnly}
-                          className="h-8 border-white/10 bg-zinc-950/40 text-white focus:border-cyan-500/30"
+                          className="h-8 border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                         />
                       )}
                     </div>
@@ -609,21 +611,21 @@ export function RevenueSourceForm({
                 <Button
                   variant="outline"
                   onClick={() => setIsAddingNew(true)}
-                  className="h-12 w-full rounded-xl border-2 border-dashed border-white/10 bg-zinc-950/10 text-zinc-300 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-white"
+                  className="h-12 w-full rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-100 text-zinc-600 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-zinc-900 dark:border-white/10 dark:bg-zinc-950/10 dark:text-zinc-300 dark:hover:text-white"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Custom Revenue Source
                 </Button>
 
                 {/* Quick Add Presets badges */}
-                <div className="space-y-2.5 rounded-xl border border-white/5 bg-black/10 p-4">
-                  <Label className="text-xs font-bold tracking-wider text-zinc-400 uppercase">
+                <div className="space-y-2.5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-white/5 dark:bg-black/10">
+                  <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                     Quick Add Common Channels:
                   </Label>
                   <div className="space-y-3">
                     {revenueCategories.map((category) => (
                       <div key={category} className="space-y-1.5">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           {React.createElement(revenueCategoryIcons[category], {
                             className: "h-3.5 w-3.5",
                             style: { color: revenueCategoryColors[category] },
@@ -640,7 +642,7 @@ export function RevenueSourceForm({
                                 setSelectedCategory(category);
                                 addPresetRevenue(source);
                               }}
-                              className="h-7 border-white/5 bg-zinc-900 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                              className="h-7 border-zinc-200 bg-zinc-100 text-xs text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 dark:border-white/5 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                             >
                               <Plus className="mr-1 h-3 w-3" />
                               {source}
@@ -654,7 +656,7 @@ export function RevenueSourceForm({
               </div>
             ) : (
               <div className="space-y-4 rounded-xl border-2 border-dashed border-cyan-500/25 bg-cyan-500/5 p-4">
-                <div className="text-xs font-bold tracking-wider text-cyan-400 uppercase">
+                <div className="text-xs font-bold tracking-wider text-cyan-500 uppercase dark:text-cyan-400">
                   Configure Custom Revenue Channel
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -663,7 +665,7 @@ export function RevenueSourceForm({
                       value={newRevenue.name}
                       onChange={(e) => setNewRevenue((prev) => ({ ...prev, name: e.target.value }))}
                       placeholder="Revenue channel name (e.g. Carbon Levy)"
-                      className="border-white/10 bg-zinc-950/40 text-white"
+                      className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                     />
 
                     <Select
@@ -672,17 +674,17 @@ export function RevenueSourceForm({
                         setNewRevenue((prev) => ({ ...prev, category: value }))
                       }
                     >
-                      <SelectTrigger className="border-white/10 bg-zinc-950/40 text-white">
+                      <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                      <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                         {revenueCategories.map((category) => {
                           const CategoryIcon = revenueCategoryIcons[category];
                           return (
                             <SelectItem
                               key={category}
                               value={category}
-                              className="focus:bg-zinc-800"
+                              className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                             >
                               <div className="flex items-center">
                                 <CategoryIcon
@@ -711,7 +713,7 @@ export function RevenueSourceForm({
                       placeholder="Annual yield amount"
                       min="0"
                       step="1000000"
-                      className="border-white/10 bg-zinc-950/40 text-white"
+                      className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                     />
 
                     {newRevenue.category.includes("Tax") && (
@@ -728,7 +730,7 @@ export function RevenueSourceForm({
                         min="0"
                         max="100"
                         step="0.1"
-                        className="border-white/10 bg-zinc-950/40 text-white"
+                        className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                       />
                     )}
                   </div>
@@ -736,24 +738,26 @@ export function RevenueSourceForm({
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-zinc-300">Collection Method</Label>
+                    <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      Collection Method
+                    </Label>
                     <Select
                       value={newRevenue.collectionMethod || ""}
                       onValueChange={(value) =>
                         setNewRevenue((prev) => ({ ...prev, collectionMethod: value }))
                       }
                     >
-                      <SelectTrigger className="border-white/10 bg-zinc-950/40 text-xs text-white">
+                      <SelectTrigger className="border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                         <SelectValue placeholder="Select collection method" />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                      <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                         {getCollectionMethodsForCategory(newRevenue.category).map((method) => {
                           const IconComponent = getCollectionMethodIcon(method.icon);
                           return (
                             <SelectItem
                               key={method.id}
                               value={method.id}
-                              className="focus:bg-zinc-800"
+                              className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                             >
                               <div className="flex items-center gap-2">
                                 <IconComponent
@@ -775,7 +779,7 @@ export function RevenueSourceForm({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-zinc-300">
+                    <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                       Administrative Authority
                     </Label>
                     {availableDepartments.length > 0 ? (
@@ -785,17 +789,17 @@ export function RevenueSourceForm({
                           setNewRevenue((prev) => ({ ...prev, administeredBy: value }))
                         }
                       >
-                        <SelectTrigger className="border-white/10 bg-zinc-950/40 text-xs text-white">
+                        <SelectTrigger className="border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                           <SelectValue placeholder="Select department" />
                         </SelectTrigger>
-                        <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                        <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                           {availableDepartments
                             .filter((dept) => dept.name && dept.name.trim() !== "")
                             .map((dept) => (
                               <SelectItem
                                 key={dept.id}
                                 value={dept.name}
-                                className="focus:bg-zinc-800"
+                                className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                               >
                                 {dept.name}
                               </SelectItem>
@@ -809,21 +813,23 @@ export function RevenueSourceForm({
                           setNewRevenue((prev) => ({ ...prev, administeredBy: e.target.value }))
                         }
                         placeholder="Department or agency name"
-                        className="border-white/10 bg-zinc-950/40 text-white"
+                        className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                       />
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-zinc-300">Description</Label>
+                  <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    Description
+                  </Label>
                   <Input
                     value={newRevenue.description || ""}
                     onChange={(e) =>
                       setNewRevenue((prev) => ({ ...prev, description: e.target.value }))
                     }
                     placeholder="Brief description of this revenue source"
-                    className="border-white/10 bg-zinc-950/40 text-white"
+                    className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                   />
                 </div>
 
@@ -840,7 +846,7 @@ export function RevenueSourceForm({
                     variant="outline"
                     onClick={() => setIsAddingNew(false)}
                     size="sm"
-                    className="border-white/10 text-zinc-300 hover:bg-white/5"
+                    className="text-zinc-650 border-zinc-200 hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/5"
                   >
                     Cancel
                   </Button>

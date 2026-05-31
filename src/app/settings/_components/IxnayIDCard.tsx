@@ -229,7 +229,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
     >
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="noise" opacity={0.04} />
-        <div className="mb-6 flex items-center justify-between relative z-10">
+        <div className="relative z-10 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">IxnayID©</h2>

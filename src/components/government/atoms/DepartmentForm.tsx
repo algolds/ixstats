@@ -9,6 +9,7 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { cn } from "~/lib/utils";
+import { useTheme } from "~/context/theme-context";
 import { Input } from "~/components/ui/input";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import { Label } from "~/components/ui/label";
@@ -443,6 +444,8 @@ export function DepartmentForm({
   governmentComponents = [],
   onGovernmentComponentsChange,
 }: DepartmentFormProps) {
+  const { effectiveTheme } = useTheme();
+  const isDark = effectiveTheme === "dark";
   const [newFunction, setNewFunction] = useState("");
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
@@ -501,7 +504,7 @@ export function DepartmentForm({
       {/* Basic Info */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="name" className="text-xs font-semibold text-zinc-300">
+          <Label htmlFor="name" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             Department Name *
           </Label>
           <Input
@@ -510,13 +513,16 @@ export function DepartmentForm({
             onChange={(e) => handleChange("name", e.target.value)}
             placeholder="e.g., Ministry of Defense"
             disabled={isReadOnly}
-            className="h-9 text-sm"
+            className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100"
           />
           {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name[0]}</p>}
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="shortName" className="text-xs font-semibold text-zinc-300">
+          <Label
+            htmlFor="shortName"
+            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+          >
             Short Name / Acronym
           </Label>
           <Input
@@ -525,14 +531,17 @@ export function DepartmentForm({
             onChange={(e) => handleChange("shortName", e.target.value)}
             placeholder="e.g., MoD"
             disabled={isReadOnly}
-            className="h-9 text-sm"
+            className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="category" className="text-xs font-semibold text-zinc-300">
+          <Label
+            htmlFor="category"
+            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+          >
             Category *
           </Label>
           <Select
@@ -546,15 +555,19 @@ export function DepartmentForm({
             }}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
+            <SelectTrigger className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
-            <SelectContent className="border-white/10 bg-zinc-950 text-white">
+            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950 dark:text-white">
               {departmentCategories.map((category) => {
                 const Icon =
                   categoryIcons[category as keyof typeof categoryIcons] || MoreHorizontal;
                 return (
-                  <SelectItem key={category} value={category} className="hover:bg-zinc-800">
+                  <SelectItem
+                    key={category}
+                    value={category}
+                    className="hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
                     <div className="flex items-center">
                       <Icon
                         className="mr-2 h-4 w-4"
@@ -570,7 +583,9 @@ export function DepartmentForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-zinc-300">Theme Color & Symbol</Label>
+          <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            Theme Color & Symbol
+          </Label>
           <div className="flex items-center gap-2">
             {(() => {
               const isValidColor = (c: string) => {
@@ -597,8 +612,8 @@ export function DepartmentForm({
             {/* Logo/Symbol Upload Button (Brings standard MediaSearchModal) */}
             <div className="relative shrink-0">
               {data.icon ? (
-                <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-zinc-900/60 p-1">
-                  <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-zinc-950">
+                <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-zinc-900/60">
+                  <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-950">
                     <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />
                   </div>
                   {!isReadOnly && (
@@ -620,7 +635,7 @@ export function DepartmentForm({
                   variant="outline"
                   onClick={() => setIsMediaModalOpen(true)}
                   disabled={isReadOnly}
-                  className="flex h-9 items-center gap-1 border-white/10 bg-zinc-900/60 px-3 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  className="flex h-9 items-center gap-1 border-zinc-200 bg-white px-3 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                 >
                   <Upload className="h-3.5 w-3.5" />
                   <span>Upload Logo</span>
@@ -633,7 +648,10 @@ export function DepartmentForm({
 
       {/* Details */}
       <div className="space-y-1.5">
-        <Label htmlFor="description" className="text-xs font-semibold text-zinc-300">
+        <Label
+          htmlFor="description"
+          className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+        >
           Role & Description
         </Label>
         <Textarea
@@ -643,14 +661,17 @@ export function DepartmentForm({
           placeholder="Brief description of the department's role and responsibilities..."
           disabled={isReadOnly}
           rows={3}
-          className="border-white/10 bg-zinc-900/60 text-sm transition-all focus:scale-[1.01]"
+          className="border-zinc-200 bg-white text-sm text-zinc-900 transition-all focus:scale-[1.01] dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100"
         />
       </div>
 
       {/* Minister info */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="ministerTitle" className="text-xs font-semibold text-zinc-300">
+          <Label
+            htmlFor="ministerTitle"
+            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+          >
             Ministerial Title
           </Label>
           <Input
@@ -659,11 +680,14 @@ export function DepartmentForm({
             onChange={(e) => handleChange("ministerTitle", e.target.value)}
             placeholder="e.g., Minister, Secretary"
             disabled={isReadOnly}
-            className="h-9 text-sm"
+            className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100"
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="minister" className="text-xs font-semibold text-zinc-300">
+          <Label
+            htmlFor="minister"
+            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+          >
             {data.ministerTitle || "Minister"} Name
           </Label>
           <Input
@@ -672,7 +696,7 @@ export function DepartmentForm({
             onChange={(e) => handleChange("minister", e.target.value)}
             placeholder="e.g., Jane Doe"
             disabled={isReadOnly}
-            className="h-9 text-sm"
+            className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100"
           />
         </div>
       </div>
@@ -683,11 +707,13 @@ export function DepartmentForm({
         const priorityInfo = getPriorityDetails(uiPriority);
 
         return (
-          <div className="space-y-3 rounded-xl border border-white/5 bg-zinc-900/20 p-4">
+          <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-100/50 p-4 dark:border-white/5 dark:bg-zinc-900/20">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label className="text-xs font-semibold text-zinc-300">Priority Level</Label>
-                <p className="text-[10px] text-zinc-500">
+                <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Priority Level
+                </Label>
+                <p className="text-zinc-550 text-[10px] dark:text-zinc-400">
                   Determines sector crisis resistance and resolution speed
                 </p>
               </div>
@@ -709,10 +735,10 @@ export function DepartmentForm({
               disabled={isReadOnly}
               className="py-2"
             />
-            <div className="relative overflow-hidden rounded-lg border border-white/5 bg-black/30 p-2.5 text-[10px] leading-relaxed text-zinc-400">
+            <div className="relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200/40 p-2.5 text-[10px] leading-relaxed text-zinc-600 dark:border-white/5 dark:bg-black/30 dark:text-zinc-400">
               <TextureOverlay texture="chevron" opacity={0.03} />
               <div className="relative z-10">
-                <span className="mb-0.5 block font-semibold text-zinc-300">
+                <span className="mb-0.5 block font-semibold text-zinc-800 dark:text-zinc-300">
                   Calculation Outcomes:
                 </span>
                 {priorityInfo.desc}
@@ -726,18 +752,21 @@ export function DepartmentForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <div className="flex items-center gap-1">
-            <Label htmlFor="organizationalLevel" className="text-xs font-semibold text-zinc-300">
+            <Label
+              htmlFor="organizationalLevel"
+              className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            >
               Organizational Level
             </Label>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="flex cursor-help text-zinc-500 hover:text-zinc-300">
+                <span className="flex cursor-help text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
                   <Info className="h-3.5 w-3.5" />
                 </span>
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="max-w-[220px] border-white/10 bg-zinc-900 p-2 text-[11px] text-white"
+                className="max-w-[220px] border-zinc-200 bg-white p-2 text-[11px] text-zinc-900 dark:border-white/10 dark:bg-zinc-900 dark:text-white"
               >
                 Determines the bureaucratic tier and administrative status of this unit.
               </TooltipContent>
@@ -750,10 +779,10 @@ export function DepartmentForm({
             }
             disabled={isReadOnly}
           >
-            <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
+            <SelectTrigger className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100">
               <SelectValue placeholder="Select level" />
             </SelectTrigger>
-            <SelectContent className="z-[100030] border-white/10 bg-zinc-950 text-white">
+            <SelectContent className="z-[100030] border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950 dark:text-white">
               {organizationalLevels.map((level) => {
                 const levelDescriptions: Record<OrganizationalLevel, string> = {
                   Ministry:
@@ -773,14 +802,17 @@ export function DepartmentForm({
                   <Tooltip key={level}>
                     <TooltipTrigger asChild>
                       <div className="w-full">
-                        <SelectItem value={level} className="w-full hover:bg-zinc-800">
+                        <SelectItem
+                          value={level}
+                          className="w-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
                           {level}
                         </SelectItem>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent
                       side="right"
-                      className="z-[100040] max-w-xs border-white/10 bg-zinc-900 p-2 text-[11px] text-white"
+                      className="z-[100040] max-w-xs border-zinc-200 bg-white p-2 text-[11px] text-zinc-900 dark:border-white/10 dark:bg-zinc-900 dark:text-white"
                     >
                       {levelDescriptions[level]}
                     </TooltipContent>
@@ -792,7 +824,10 @@ export function DepartmentForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="parentDepartment" className="text-xs font-semibold text-zinc-300">
+          <Label
+            htmlFor="parentDepartment"
+            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+          >
             Parent Department
           </Label>
           <Select
@@ -802,22 +837,26 @@ export function DepartmentForm({
             }
             disabled={isReadOnly || availableParents.length === 0}
           >
-            <SelectTrigger className="h-9 border-white/10 bg-zinc-900/60 text-sm">
+            <SelectTrigger className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100">
               <SelectValue placeholder="Select parent" />
             </SelectTrigger>
-            <SelectContent className="border-white/10 bg-zinc-950 text-white">
-              <SelectItem value="no-parent" className="hover:bg-zinc-800">
+            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950 dark:text-white">
+              <SelectItem value="no-parent" className="hover:bg-zinc-100 dark:hover:bg-zinc-800">
                 No Parent
               </SelectItem>
               {availableParents.map((parent) => (
-                <SelectItem key={parent.id} value={parent.id} className="hover:bg-zinc-800">
+                <SelectItem
+                  key={parent.id}
+                  value={parent.id}
+                  className="hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
                   {parent.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {availableParents.length === 0 && (
-            <p className="text-[10px] text-zinc-500 italic">
+            <p className="text-zinc-550 text-[10px] italic dark:text-zinc-400">
               Create other departments first to establish hierarchy.
             </p>
           )}
@@ -826,7 +865,9 @@ export function DepartmentForm({
 
       {/* Functions Tags */}
       <div className="space-y-3">
-        <Label className="text-xs font-semibold text-zinc-300">Responsibilities & Functions</Label>
+        <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          Responsibilities & Functions
+        </Label>
         {!isReadOnly && (
           <div className="flex gap-2">
             <Input
@@ -834,12 +875,12 @@ export function DepartmentForm({
               onChange={(e) => setNewFunction(e.target.value)}
               placeholder="e.g., Maintain national cybersecurity networks"
               onKeyDown={(e) => e.key === "Enter" && addFunction()}
-              className="h-9 text-sm"
+              className="h-9 border-zinc-200 bg-white text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900/60 dark:text-zinc-100"
             />
             <Button
               onClick={addFunction}
               size="sm"
-              className="h-9 bg-zinc-800 text-white hover:bg-zinc-700"
+              className="h-9 bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -848,8 +889,8 @@ export function DepartmentForm({
 
         {/* Suggested popular functions based on category */}
         {!isReadOnly && (
-          <div className="space-y-1.5 rounded-lg border border-white/[0.03] bg-black/10 p-2.5">
-            <div className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+          <div className="space-y-1.5 rounded-lg border border-zinc-200/50 bg-zinc-100/50 p-2.5 dark:border-white/[0.03] dark:bg-black/10">
+            <div className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Popular Suggested Functions ({data.category})
             </div>
             <div className="flex max-h-[120px] scrollbar-thin flex-wrap gap-1.5 overflow-y-auto pr-1">
@@ -866,7 +907,7 @@ export function DepartmentForm({
                         "flex items-center gap-1 rounded-md border px-2 py-0.5 text-left text-[10px] transition-all select-none",
                         isSelected
                           ? "cursor-default border-emerald-500/20 bg-emerald-500/10 text-emerald-400 opacity-60"
-                          : "border-white/5 bg-zinc-900/50 text-zinc-400 hover:border-white/10 hover:bg-zinc-800 hover:text-zinc-200"
+                          : "text-zinc-650 border-zinc-200 bg-zinc-100 hover:border-zinc-300 hover:bg-zinc-200 hover:text-zinc-800 dark:border-white/5 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:border-white/10 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                       )}
                     >
                       <span>{suggestion}</span>
@@ -885,7 +926,7 @@ export function DepartmentForm({
             <Badge
               key={index}
               variant="secondary"
-              className="flex items-center gap-1 border-white/5 bg-zinc-900 px-2 py-0.5 text-xs text-zinc-300"
+              className="flex items-center gap-1 border-zinc-200 bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:border-white/5 dark:bg-zinc-900 dark:text-zinc-300"
             >
               {func}
               {!isReadOnly && (
@@ -901,10 +942,12 @@ export function DepartmentForm({
 
       {/* Contextual Atomic Components selection section */}
       {onGovernmentComponentsChange && (
-        <div className="space-y-3 border-t border-white/10 pt-4">
+        <div className="space-y-3 border-t border-zinc-200 pt-4 dark:border-white/10">
           <div>
-            <h4 className="text-sm font-bold text-zinc-200">Linked Governance Infrastructure</h4>
-            <p className="mt-0.5 text-[11px] text-zinc-400">
+            <h4 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+              Linked Governance Infrastructure
+            </h4>
+            <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
               Toggle atomic components directly related to this ministry
             </p>
           </div>
@@ -942,8 +985,8 @@ export function DepartmentForm({
                   className={cn(
                     "relative flex cursor-pointer items-start gap-3 overflow-hidden rounded-lg border p-3 transition-all duration-200 select-none",
                     isSelected
-                      ? "text-white"
-                      : "border-white/[0.05] bg-zinc-950/40 text-zinc-400 hover:border-[var(--hover-border-color)] hover:bg-[var(--hover-bg-color)]",
+                      ? "text-zinc-900 dark:text-white"
+                      : "border-zinc-200 bg-zinc-50/50 text-zinc-500 hover:border-[var(--hover-border-color)] hover:bg-[var(--hover-bg-color)] dark:border-white/[0.05] dark:bg-zinc-950/40 dark:text-zinc-400",
                     isConflicting && isSelected && "border-red-500/40 bg-red-500/5"
                   )}
                 >
@@ -951,7 +994,11 @@ export function DepartmentForm({
                   <div
                     className="relative z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors"
                     style={{
-                      backgroundColor: isSelected ? `${cardColor}25` : "rgba(24, 24, 27, 0.5)",
+                      backgroundColor: isSelected
+                        ? `${cardColor}25`
+                        : isDark
+                          ? "rgba(24, 24, 27, 0.5)"
+                          : "rgba(240, 240, 245, 0.8)",
                       color: isSelected ? cardColor : "#71717a",
                     }}
                   >
@@ -962,7 +1009,9 @@ export function DepartmentForm({
                       <span
                         className={cn(
                           "text-xs font-semibold",
-                          isSelected ? "text-zinc-100" : "text-zinc-300"
+                          isSelected
+                            ? "text-zinc-900 dark:text-zinc-100"
+                            : "text-zinc-700 dark:text-zinc-300"
                         )}
                       >
                         {comp.name}
@@ -974,7 +1023,7 @@ export function DepartmentForm({
                         />
                       )}
                     </div>
-                    <p className="mt-1 text-[10px] leading-normal text-zinc-400">
+                    <p className="mt-1 text-[10px] leading-normal text-zinc-600 dark:text-zinc-400">
                       {comp.description}
                     </p>
                     <div className="mt-1.5 flex items-center gap-3 text-[9px] font-medium text-zinc-500">
@@ -998,7 +1047,7 @@ export function DepartmentForm({
 
       {/* Delete / Actions */}
       {onDelete && !isReadOnly && (
-        <div className="flex justify-end border-t border-white/10 pt-4">
+        <div className="flex justify-end border-t border-zinc-200 pt-4 dark:border-white/10">
           <Button
             variant="outline"
             size="sm"

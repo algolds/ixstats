@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { X, Package } from "lucide-react";
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS, COMPONENT_CATEGORIES, type EconomicComponentType } from "~/lib/atomic-economic-data";
 import { formatCurrency } from "~/lib/atomic-economic-utils";
 
 export interface SelectedComponentsListProps {
@@ -65,6 +65,7 @@ function SelectedComponentsListComponent({
             if (!component) return null;
 
             const Icon = component.icon;
+            const CategoryIcon = COMPONENT_CATEGORIES[component.category]?.icon;
 
             return (
               <div
@@ -78,8 +79,8 @@ function SelectedComponentsListComponent({
                   <div className="min-w-0 flex-1">
                     <h4 className="truncate text-sm font-medium">{component.name}</h4>
                     <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {component.category}
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center justify-center" title={component.category}>
+                        {CategoryIcon ? <CategoryIcon className="h-3.5 w-3.5" /> : component.category}
                       </Badge>
                       <span className="text-xs text-gray-500">
                         {formatCurrency(component.implementationCost)}

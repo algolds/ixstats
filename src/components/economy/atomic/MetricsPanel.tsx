@@ -1,160 +1,137 @@
+"use client";
+
 /**
  * Metrics Panel
  *
- * Display comprehensive economic metrics for selected components.
- * Optimized with React.memo for performance.
+ * Displays key economic metrics: total components, effectiveness, implementation/maintenance costs, synergies, and conflicts.
+ * Interactive layout matching the government builder.
+ *
+ * @module MetricsPanel
  */
 
-"use client";
-
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { DollarSign, TrendingUp, Users, Gauge } from "lucide-react";
-import type { EconomicMetrics } from "~/lib/atomic-economic-utils";
-import { formatCurrency, getEffectivenessColor } from "~/lib/atomic-economic-utils";
+import { TrendingUp, DollarSign, Zap, AlertTriangle, Package, Target } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 export interface MetricsPanelProps {
-  metrics: EconomicMetrics;
+  metrics: {
+    totalComponents: number;
+    totalEffectiveness: number;
+    implementationCost: number;
+    maintenanceCost: number;
+    synergyCount: number;
+    conflictCount: number;
+  };
+  onComponentsClick?: () => void;
+  onEffectivenessClick?: () => void;
+  onImplementationClick?: () => void;
+  onMaintenanceClick?: () => void;
+  onSynergiesClick?: () => void;
+  onConflictsClick?: () => void;
 }
 
 /**
- * Metrics Panel Component
+ * Display economic metrics in glass pill layouts
  */
-function MetricsPanelComponent({ metrics }: MetricsPanelProps) {
-  const effectivenessColor = getEffectivenessColor(metrics.effectiveness.totalEffectiveness);
+export const MetricsPanel = React.memo<MetricsPanelProps>(
+  ({
+    metrics,
+    onComponentsClick,
+    onEffectivenessClick,
+    onImplementationClick,
+    onMaintenanceClick,
+    onSynergiesClick,
+    onConflictsClick,
+  }) => {
+    const metricItems = [
+      {
+        label: "Components",
+        value: metrics.totalComponents,
+        icon: Package,
+        color: "text-blue-400 border-blue-500/20 bg-blue-500/5 hover:border-blue-400/30",
+        iconColor: "text-blue-400",
+        onClick: onComponentsClick,
+      },
+      {
+        label: "Effectiveness",
+        value: `${metrics.totalEffectiveness.toFixed(1)}%`,
+        icon: Target,
+        color: "text-purple-400 border-purple-500/20 bg-purple-500/5 hover:border-purple-400/30",
+        iconColor: "text-purple-400",
+        onClick: onEffectivenessClick,
+      },
+      {
+        label: "Implementation",
+        value: `$${(metrics.implementationCost / 1000).toFixed(0)}k`,
+        icon: DollarSign,
+        color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-400/30",
+        iconColor: "text-emerald-400",
+        onClick: onImplementationClick,
+      },
+      {
+        label: "Maintenance",
+        value: `$${(metrics.maintenanceCost / 1000).toFixed(0)}k/yr`,
+        icon: TrendingUp,
+        color: "text-amber-400 border-amber-500/20 bg-amber-500/5 hover:border-amber-400/30",
+        iconColor: "text-amber-400",
+        onClick: onMaintenanceClick,
+      },
+      {
+        label: "Synergies",
+        value: metrics.synergyCount,
+        icon: Zap,
+        color: "text-green-400 border-green-500/20 bg-green-500/5 hover:border-green-400/30",
+        iconColor: "text-green-400",
+        onClick: onSynergiesClick,
+      },
+      {
+        label: "Conflicts",
+        value: metrics.conflictCount,
+        icon: AlertTriangle,
+        color: cn(
+          metrics.conflictCount > 0
+            ? "text-red-400 border-red-500/30 bg-red-500/10 shadow-[0_0_8px_rgba(239,68,68,0.1)] animate-pulse hover:border-red-400/30"
+            : "text-zinc-500 border-zinc-800 bg-zinc-900/10 hover:border-zinc-700/30"
+        ),
+        iconColor: metrics.conflictCount > 0 ? "text-red-400" : "text-zinc-500",
+        onClick: onConflictsClick,
+      },
+    ];
 
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {/* Effectiveness */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <Gauge className="h-4 w-4" />
-            Effectiveness
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex items-baseline gap-2">
-              <span className={`text-2xl font-bold text-${effectivenessColor}-600`}>
-                {metrics.effectiveness.totalEffectiveness.toFixed(1)}
-              </span>
-              <span className="text-sm text-gray-500">/ 100</span>
-            </div>
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Base:</span>
-                <span className="font-medium">
-                  {metrics.effectiveness.baseEffectiveness.toFixed(1)}
-                </span>
-              </div>
-              {metrics.effectiveness.synergyBonus > 0 && (
-                <div className="flex justify-between text-emerald-600">
-                  <span>Synergies:</span>
-                  <span className="font-medium">+{metrics.effectiveness.synergyBonus}</span>
-                </div>
+    return (
+      <div className="grid w-full grid-cols-2 gap-2.5 select-none sm:grid-cols-3 lg:grid-cols-6">
+        {metricItems.map((item) => {
+          const Icon = item.icon || Package;
+          const isClickable = !!item.onClick;
+          const Component = isClickable ? "button" : "div";
+          return (
+            <Component
+              key={item.label}
+              onClick={item.onClick}
+              type={isClickable ? "button" : undefined}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border p-3 text-left backdrop-blur-md transition-all duration-200",
+                isClickable
+                  ? "cursor-pointer hover:scale-[1.03] hover:shadow-md"
+                  : "hover:scale-[1.02]",
+                item.color
               )}
-              {metrics.effectiveness.conflictPenalty > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Conflicts:</span>
-                  <span className="font-medium">-{metrics.effectiveness.conflictPenalty}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Costs */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <DollarSign className="h-4 w-4" />
-            Costs
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div>
-              <div className="mb-1 text-xs text-gray-600">Implementation</div>
-              <div className="text-lg font-bold text-gray-900">
-                {formatCurrency(metrics.totalCost)}
+            >
+              <div className="shrink-0 rounded-lg bg-black/10 p-1.5">
+                <Icon className={cn("h-4 w-4", item.iconColor)} />
               </div>
-            </div>
-            <div>
-              <div className="mb-1 text-xs text-gray-600">Annual Maintenance</div>
-              <div className="text-sm font-medium text-gray-700">
-                {formatCurrency(metrics.maintenanceCost)}
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                  {item.label}
+                </p>
+                <p className="text-foreground truncate text-sm font-black">{item.value}</p>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </Component>
+          );
+        })}
+      </div>
+    );
+  }
+);
 
-      {/* Tax Rates */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <TrendingUp className="h-4 w-4" />
-            Optimal Tax Rates
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div>
-              <div className="mb-1 text-xs text-gray-600">Corporate Tax</div>
-              <div className="text-lg font-bold text-gray-900">
-                {metrics.optimalTaxRates.corporate}%
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 text-xs text-gray-600">Income Tax</div>
-              <div className="text-sm font-medium text-gray-700">
-                {metrics.optimalTaxRates.income}%
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Employment Impact */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <Users className="h-4 w-4" />
-            Employment Impact
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Unemployment:</span>
-              <Badge
-                variant={metrics.employmentImpact.unemployment < 0 ? "default" : "destructive"}
-                className="text-xs"
-              >
-                {metrics.employmentImpact.unemployment > 0 ? "+" : ""}
-                {metrics.employmentImpact.unemployment.toFixed(1)}%
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Participation:</span>
-              <Badge variant="secondary" className="text-xs">
-                {metrics.employmentImpact.participation.toFixed(2)}x
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Wage Growth:</span>
-              <Badge variant="secondary" className="text-xs">
-                {metrics.employmentImpact.wageGrowth.toFixed(2)}x
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-export const MetricsPanel = React.memo(MetricsPanelComponent);
+MetricsPanel.displayName = "MetricsPanel";

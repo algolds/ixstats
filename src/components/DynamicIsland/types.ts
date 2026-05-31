@@ -45,6 +45,7 @@ export type TimeDisplayMode = "time" | "date" | "both";
 /** Props passed to plugin-provided expanded views */
 export interface DIViewProps {
   onClose: () => void;
+  onSwitchMode?: (mode: ViewMode) => void;
 }
 
 /** An action button a plugin can inject into the pill */
@@ -147,6 +148,7 @@ export interface SettingsViewProps {
 export interface ExpandedViewProps {
   mode: ViewMode;
   onClose: () => void;
+  onSwitchMode: (mode: ViewMode) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   searchFilter: SearchFilter;

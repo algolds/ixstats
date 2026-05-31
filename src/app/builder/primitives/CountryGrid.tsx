@@ -86,23 +86,29 @@ export function CountryGrid({
     }
   }, [filteredCountries, generateRandomChunk]);
 
-  const handleCardHoverChange = useCallback((countryId: string | null) => {
-    if (countryId) {
-      const originalId = countryId.split("-card-")[0] || countryId;
-      const hovered = countries.find((c) => c.countryCode === originalId);
-      onCountryHover(hovered || null);
-    } else {
-      onCountryHover(null);
-    }
-  }, [countries, onCountryHover]);
+  const handleCardHoverChange = useCallback(
+    (countryId: string | null) => {
+      if (countryId) {
+        const originalId = countryId.split("-card-")[0] || countryId;
+        const hovered = countries.find((c) => c.countryCode === originalId);
+        onCountryHover(hovered || null);
+      } else {
+        onCountryHover(null);
+      }
+    },
+    [countries, onCountryHover]
+  );
 
-  const handleCardClick = useCallback((countryId: string) => {
-    const originalId = countryId.split("-card-")[0] || countryId;
-    const selected = filteredCountries.find((c) => c.countryCode === originalId);
-    if (selected) {
-      onCountryClick(selected);
-    }
-  }, [filteredCountries, onCountryClick]);
+  const handleCardClick = useCallback(
+    (countryId: string) => {
+      const originalId = countryId.split("-card-")[0] || countryId;
+      const selected = filteredCountries.find((c) => c.countryCode === originalId);
+      if (selected) {
+        onCountryClick(selected);
+      }
+    },
+    [filteredCountries, onCountryClick]
+  );
 
   const runAutoScroll = useCallback(() => {
     const container = scrollContainerRef.current;
@@ -188,7 +194,7 @@ export function CountryGrid({
   return (
     <div className="relative">
       <div
-        className="relative overflow-hidden rounded-xl border-t border-l border-zinc-300/80 dark:border-black/80 border-r border-b border-white/60 dark:border-white/10 bg-zinc-100/70 dark:bg-zinc-950/40 shadow-[inset_0_5px_15px_rgba(0,0,0,0.12)] dark:shadow-[inset_0_6px_20px_rgba(0,0,0,0.65)] backdrop-blur-md"
+        className="relative overflow-hidden rounded-xl border-t border-r border-b border-l border-white/60 border-zinc-300/80 bg-zinc-100/70 shadow-[inset_0_5px_15px_rgba(0,0,0,0.12)] backdrop-blur-md dark:border-black/80 dark:border-white/10 dark:bg-zinc-950/40 dark:shadow-[inset_0_6px_20px_rgba(0,0,0,0.65)]"
         style={{
           marginTop: `-${heroHeight}px`,
         }}
@@ -270,7 +276,7 @@ export function CountryGrid({
         </div>
 
         {/* Top fade gradient */}
-        <div className="pointer-events-none absolute top-0 left-0 right-0 z-20 h-8 bg-gradient-to-b from-[var(--color-bg-primary)] via-[var(--color-bg-primary)]/50 to-transparent" />
+        <div className="pointer-events-none absolute top-0 right-0 left-0 z-20 h-8 bg-gradient-to-b from-[var(--color-bg-primary)] via-[var(--color-bg-primary)]/50 to-transparent" />
 
         {/* Fused Refractive U-Bezel */}
         <RefractiveGridBezel countryCount={filteredCountries.length} />

@@ -66,9 +66,11 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight text-white">Budget Allocation</h2>
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Budget Allocation
+          </h2>
         </div>
-        <Alert className="border-white/10 bg-zinc-950/40 text-zinc-300">
+        <Alert className="border-zinc-200 bg-zinc-100/40 text-zinc-700 dark:border-white/10 dark:bg-zinc-950/40 dark:text-zinc-300">
           <AlertTriangle className="h-4 w-4 text-amber-400" />
           <AlertDescription>
             Add departments first in the Administration tab before setting up budget allocations.
@@ -82,8 +84,10 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-white">Budget Allocation</h2>
-          <p className="mt-1 text-xs text-zinc-400">
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Budget Allocation
+          </h2>
+          <p className="text-zinc-550 mt-1 text-xs dark:text-zinc-400">
             Distribute funding across active ministries and manage fiscal limits
           </p>
         </div>
@@ -92,7 +96,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             variant="outline"
             size="sm"
             onClick={onExpandAll}
-            className="h-8 border-white/10 text-xs text-zinc-300 hover:bg-white/5"
+            className="h-8 border-zinc-200 bg-white text-xs text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-transparent dark:text-zinc-300 dark:hover:bg-white/5"
           >
             <ChevronDown className="mr-1 h-3 w-3" />
             Expand All
@@ -101,7 +105,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             variant="outline"
             size="sm"
             onClick={onCollapseAll}
-            className="h-8 border-white/10 text-xs text-zinc-300 hover:bg-white/5"
+            className="h-8 border-zinc-200 bg-white text-xs text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-transparent dark:text-zinc-300 dark:hover:bg-white/5"
           >
             <ChevronRight className="mr-1 h-3.5 w-3.5" />
             Collapse All

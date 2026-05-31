@@ -32,16 +32,16 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
       : "from-cyan-500 to-blue-600 shadow-cyan-500/20";
 
   const glowColor = isOverBudget
-    ? "bg-red-500/10 border-red-500/20 text-red-200"
+    ? "bg-red-500/5 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-800 dark:text-red-200"
     : isWarning
-      ? "bg-amber-500/5 border-amber-500/20 text-amber-200"
-      : "bg-cyan-500/5 border-cyan-500/20 text-cyan-200";
+      ? "bg-amber-500/5 border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-200"
+      : "bg-cyan-500/5 border-cyan-200 dark:border-cyan-500/20 text-cyan-800 dark:text-cyan-200";
 
   const textColor = isOverBudget
-    ? "text-red-400 font-bold"
+    ? "text-red-600 dark:text-red-400 font-bold"
     : isWarning
-      ? "text-amber-400 font-semibold"
-      : "text-cyan-400 font-semibold";
+      ? "text-amber-600 dark:text-amber-400 font-semibold"
+      : "text-cyan-600 dark:text-cyan-400 font-semibold";
 
   return (
     <div
@@ -64,7 +64,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
             ) : (
               <CheckCircle className="h-5 w-5 text-cyan-400" />
             )}
-            <span className="text-sm font-bold tracking-wider text-zinc-300 uppercase">
+            <span className="text-sm font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
               Fiscal Allocation Status
             </span>
           </div>
@@ -72,22 +72,24 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
             <span className={cn("mr-1 text-base font-extrabold", textColor)}>
               {totalAllocatedPercent.toFixed(1)}%
             </span>
-            <span className="text-zinc-400">allocated</span>
-            <span className="mx-2 text-zinc-600">•</span>
+            <span className="text-zinc-500 dark:text-zinc-400">allocated</span>
+            <span className="mx-2 text-zinc-400 dark:text-zinc-600">•</span>
             <span
               className={cn(
                 "mr-1 font-bold",
-                remainingPercent < 0 ? "text-red-400" : "text-zinc-300"
+                remainingPercent < 0
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-zinc-750 dark:text-zinc-300"
               )}
             >
               {remainingPercent.toFixed(1)}%
             </span>
-            <span className="text-zinc-400">remaining</span>
+            <span className="text-zinc-500 dark:text-zinc-400">remaining</span>
           </div>
         </div>
 
         {/* Dynamic dual-track track bar */}
-        <div className="relative h-3 w-full overflow-hidden rounded-full border border-white/5 bg-zinc-950/60">
+        <div className="relative h-3 w-full overflow-hidden rounded-full border border-zinc-200 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950/60">
           <motion.div
             className={cn(
               "h-full rounded-full bg-gradient-to-r shadow-[0_0_12px_rgba(0,0,0,0.5)]",
@@ -101,7 +103,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
 
         {/* Warning / status messages */}
         {isOverBudget ? (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-red-400">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             <span>
               Budget Alert: Total allocated spending exceeds 100%. Please scale back department
@@ -109,7 +111,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
             </span>
           </div>
         ) : isWarning ? (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-amber-400">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
             <TrendingUp className="h-3.5 w-3.5 shrink-0" />
             <span>
               Fiscal Precaution: Approaching maximum target budget. Maintain tight control over
@@ -117,7 +119,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
             </span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="h-3.5 w-3.5 shrink-0" />
             <span>
               Fiscal Health: Allocation structure is optimal and conforms to stability directives.

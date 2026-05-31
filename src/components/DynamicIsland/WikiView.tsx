@@ -22,6 +22,8 @@ import {
   Clock,
   ExternalLink,
   Users,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
@@ -30,6 +32,7 @@ import { api } from "~/trpc/react";
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
 import { PreText } from "~/components/ui/pretext";
+import type { DIViewProps } from "./types";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -39,11 +42,9 @@ const CountryMapEmbed = dynamic(
   { ssr: false, loading: () => null }
 );
 
-interface WikiViewProps {
-  onClose: () => void;
-}
+interface WikiViewProps extends DIViewProps {}
 
-export function WikiView({ onClose }: WikiViewProps) {
+export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -122,14 +123,44 @@ export function WikiView({ onClose }: WikiViewProps) {
             </PreText>
           )}
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {onSwitchMode && (
+            <>
+              <button
+                onClick={() => onSwitchMode("search")}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                title="Global Search"
+                type="button"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onSwitchMode("notifications")}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                title="Notifications"
+                type="button"
+              >
+                <Bell className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onSwitchMode("settings")}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                title="Settings"
+                type="button"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

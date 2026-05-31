@@ -4,7 +4,16 @@ import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { Badge } from "../ui/badge";
-import { Bell, Settings, TrendingUp, Users, Activity, Crown, AlertTriangle } from "lucide-react";
+import {
+  Bell,
+  Settings,
+  TrendingUp,
+  Users,
+  Activity,
+  Crown,
+  AlertTriangle,
+  Search,
+} from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { SimpleFlag } from "../SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
@@ -332,8 +341,27 @@ function MyCountryCompactViewComponent({
               </AnimatePresence>
             </div>
 
-            {/* RIGHT: Notifications + Crisis + Settings */}
+            {/* RIGHT: Search + Notifications + Crisis + Settings */}
             <div className={`flex items-center justify-center ${isSticky ? "gap-1" : "gap-1.5"}`}>
+              {/* Search */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onSwitchMode("search")}
+                    className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
+                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                    }`}
+                  >
+                    <Search
+                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Search</TooltipContent>
+              </Tooltip>
+
               {/* Notifications Bell */}
               <Tooltip>
                 <TooltipTrigger asChild>

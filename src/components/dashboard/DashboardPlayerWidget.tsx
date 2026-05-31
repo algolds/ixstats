@@ -227,7 +227,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                         <Icon className="h-3 w-3" />
                         {config.label}
                       </span>
-                      <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-blue-600 dark:text-blue-400">
+                      <span className="rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-blue-600 dark:text-blue-400">
                         {count}
                       </span>
                     </div>
@@ -256,7 +256,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 </span>
                 <span className="flex items-center gap-1">
                   {urgentCount > 0 && (
-                    <span className="rounded-full bg-red-500 px-1 py-0.5 text-[7px] font-bold text-white">
+                    <span className="rounded-md bg-red-500 px-1 py-0.5 text-[7px] font-bold text-white">
                       {urgentCount}
                     </span>
                   )}

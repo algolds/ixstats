@@ -16,16 +16,17 @@ import {
   Bookmark,
   RefreshCw,
   X,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { PreText } from "~/components/ui/pretext";
+import type { DIViewProps, ViewMode } from "./types";
 
-interface ForumViewProps {
-  onClose: () => void;
-}
+interface ForumViewProps extends DIViewProps {}
 
 // ─── Section label ───────────────────────────────────────────────────────────
 
@@ -92,10 +93,12 @@ function ForumRow({
 
 function ForumHeader({
   onClose,
+  onSwitchMode,
   onRefresh,
   isRefreshing,
 }: {
   onClose: () => void;
+  onSwitchMode?: (mode: ViewMode) => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }) {
@@ -108,6 +111,34 @@ function ForumHeader({
         </PreText>
       </div>
       <div className="flex items-center gap-1">
+        {onSwitchMode && (
+          <>
+            <button
+              onClick={() => onSwitchMode("search")}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+              title="Global Search"
+              type="button"
+            >
+              <Search className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => onSwitchMode("notifications")}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+              title="Notifications"
+              type="button"
+            >
+              <Bell className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => onSwitchMode("settings")}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+              title="Settings"
+              type="button"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </button>
+          </>
+        )}
         {onRefresh && (
           <button
             onClick={onRefresh}
@@ -120,7 +151,7 @@ function ForumHeader({
         )}
         <button
           onClick={onClose}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -131,7 +162,7 @@ function ForumHeader({
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export function ForumView({ onClose }: ForumViewProps) {
+export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
   const router = useRouter();
   const { currentThread, currentForum, recentThreads, unreadAlerts } = useForumContext();
   const { isSignedIn } = useUser();
@@ -168,6 +199,7 @@ export function ForumView({ onClose }: ForumViewProps) {
     <div className="p-4">
       <ForumHeader
         onClose={onClose}
+        onSwitchMode={onSwitchMode}
         onRefresh={isSignedIn ? handleRefresh : undefined}
         isRefreshing={isRefreshing}
       />

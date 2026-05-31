@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, memo } from "react";
+import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -252,14 +253,12 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
     return (
       <div key={archetype.id} className="group">
-        <Card className="hover:border-primary/30 border-2 bg-gradient-to-br from-white to-gray-50/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+        <Card className="hover:border-primary/30 border border-white/5 bg-white/[0.02] transition-all duration-300 hover:scale-[1.01] hover:bg-white/[0.04] dark:bg-zinc-900/30">
           {/* Compact Header */}
           <CardHeader className="px-4 pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div
-                className={`rounded-lg bg-gradient-to-br p-2 ${colors.bg} shrink-0 shadow-md transition-shadow duration-300 group-hover:shadow-lg`}
-              >
-                <IconComponent className="h-4 w-4 text-white" />
+              <div className="shrink-0 rounded-lg border border-white/10 bg-white/[0.03] p-2 transition-colors">
+                <IconComponent className={cn("h-4 w-4", colors.text)} />
               </div>
               <div className="min-w-0 flex-1">
                 <CardTitle className="mb-1 text-sm leading-tight font-bold text-gray-900 dark:text-white">
@@ -363,7 +362,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-green-200/50 bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-2 dark:border-green-800/50">
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2">
                   <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 Growth Metrics
@@ -413,7 +412,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-blue-200/50 bg-gradient-to-br from-blue-500/10 to-cyan-600/10 p-2 dark:border-blue-800/50">
+                <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
                   <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 Employment
@@ -463,7 +462,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-purple-200/50 bg-gradient-to-br from-purple-500/10 to-violet-600/10 p-2 dark:border-purple-800/50">
+                <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-2">
                   <Building2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 Tax Profile
@@ -521,7 +520,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-green-200/50 bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-2 dark:border-green-800/50">
+                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-2">
                   <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 Strengths
@@ -543,7 +542,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-orange-200/50 bg-gradient-to-br from-orange-500/10 to-amber-600/10 p-2 dark:border-orange-800/50">
+                <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-2">
                   <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
                 Challenges
@@ -566,7 +565,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-              <div className="rounded-lg border border-yellow-200/50 bg-gradient-to-br from-yellow-500/10 to-amber-600/10 p-2 dark:border-yellow-800/50">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
                 <Lightbulb className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
               </div>
               Implementation Recommendations
@@ -588,7 +587,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-              <div className="rounded-lg border border-indigo-200/50 bg-gradient-to-br from-indigo-500/10 to-blue-600/10 p-2 dark:border-indigo-800/50">
+              <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
                 <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
               </div>
               Historical Context & Examples
@@ -622,7 +621,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg border border-blue-200/50 bg-gradient-to-br from-blue-500/10 to-purple-600/10 p-2 dark:border-blue-800/50">
+          <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
             <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <h2 className="text-2xl font-bold">Economic Archetypes</h2>

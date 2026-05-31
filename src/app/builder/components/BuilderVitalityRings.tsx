@@ -53,8 +53,12 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
   activeSection,
   showHeader = true,
 }) => {
-  const themeTextClass = activeSection ? (sectionThemeTextClasses[activeSection] || "text-white") : "";
-  const themeBorderClass = activeSection ? (sectionThemeBorderClasses[activeSection] || "border-white/10") : "border-white/10";
+  const themeTextClass = activeSection
+    ? sectionThemeTextClasses[activeSection] || "text-white"
+    : "";
+  const themeBorderClass = activeSection
+    ? sectionThemeBorderClasses[activeSection] || "border-white/10"
+    : "border-white/10";
   // Check if a specific ring should be highlighted based on the active tab/section
   const isRingHighlighted = (ringId: string) => {
     if (!activeSection) return true;
@@ -264,10 +268,21 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
                     </div>
                   </div>
                 </div>
-                <span className={cn("text-center text-xs font-medium transition-colors", activeSection ? themeTextClass : "text-foreground")}>
+                <span
+                  className={cn(
+                    "text-center text-xs font-medium transition-colors",
+                    activeSection ? themeTextClass : "text-foreground"
+                  )}
+                >
                   {ring.label.split(" ")[0]}
                 </span>
-                <span className={cn("w-full truncate text-center text-xs transition-colors", activeSection ? themeTextClass : "text-muted-foreground", activeSection && "opacity-75")}>
+                <span
+                  className={cn(
+                    "w-full truncate text-center text-xs transition-colors",
+                    activeSection ? themeTextClass : "text-muted-foreground",
+                    activeSection && "opacity-75"
+                  )}
+                >
                   {ring.metric}
                 </span>
                 {/* Momentum Indicator */}
@@ -297,7 +312,12 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
   return (
     <div className={cn("space-y-6", className)}>
       {/* Country Header with Symbols */}
-      <div className={cn("flex items-center gap-4 rounded-lg border bg-white/5 p-6 transition-all duration-300", themeBorderClass)}>
+      <div
+        className={cn(
+          "flex items-center gap-4 rounded-lg border bg-white/5 p-6 transition-all duration-300",
+          themeBorderClass
+        )}
+      >
         <div className="flex gap-2">
           {flagUrl && (
             <div className="h-8 w-12 overflow-hidden rounded border border-white/20">
@@ -312,18 +332,40 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
         </div>
 
         <div className="flex-1">
-          <h2 className={cn("text-xl font-bold transition-colors duration-300", activeSection ? themeTextClass : "text-white")}>
+          <h2
+            className={cn(
+              "text-xl font-bold transition-colors duration-300",
+              activeSection ? themeTextClass : "text-white"
+            )}
+          >
             {economicInputs.countryName}
           </h2>
-          <p className={cn("transition-colors duration-300", activeSection ? themeTextClass : "text-white", activeSection ? "opacity-60 text-sm" : "text-white/60")}>
+          <p
+            className={cn(
+              "transition-colors duration-300",
+              activeSection ? themeTextClass : "text-white",
+              activeSection ? "text-sm opacity-60" : "text-white/60"
+            )}
+          >
             Live Economic Dashboard
           </p>
         </div>
         <div className="text-right">
-          <div className={cn("text-2xl font-bold transition-colors duration-300", activeSection ? themeTextClass : "text-white")}>
+          <div
+            className={cn(
+              "text-2xl font-bold transition-colors duration-300",
+              activeSection ? themeTextClass : "text-white"
+            )}
+          >
             {Math.round((economicHealth + socialHealth + governmentHealth) / 3)}%
           </div>
-          <p className={cn("text-sm transition-colors duration-300", activeSection ? themeTextClass : "text-white", activeSection ? "opacity-60" : "opacity-60")}>
+          <p
+            className={cn(
+              "text-sm transition-colors duration-300",
+              activeSection ? themeTextClass : "text-white",
+              activeSection ? "opacity-60" : "opacity-60"
+            )}
+          >
             Overall Vitality
           </p>
         </div>
@@ -391,7 +433,14 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
               {/* Info Section */}
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">
-                  <h4 className={cn("font-semibold transition-colors", activeSection ? themeTextClass : "text-foreground group-hover:text-foreground/80")}>
+                  <h4
+                    className={cn(
+                      "font-semibold transition-colors",
+                      activeSection
+                        ? themeTextClass
+                        : "text-foreground group-hover:text-foreground/80"
+                    )}
+                  >
                     {ring.label}
                   </h4>
                   <Badge variant={ring.badgeVariant as any} className="text-xs">
@@ -414,15 +463,32 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
                   )}
                 </div>
                 <div
-                  className={cn("mb-1 text-2xl font-bold transition-colors", activeSection ? themeTextClass : "")}
+                  className={cn(
+                    "mb-1 text-2xl font-bold transition-colors",
+                    activeSection ? themeTextClass : ""
+                  )}
                   style={activeSection ? undefined : { color: ring.color }}
                 >
                   {ring.metric}
                 </div>
-                <p className={cn("mb-2 text-sm transition-colors", activeSection ? themeTextClass : "text-muted-foreground", activeSection && "opacity-75")}>
+                <p
+                  className={cn(
+                    "mb-2 text-sm transition-colors",
+                    activeSection ? themeTextClass : "text-muted-foreground",
+                    activeSection && "opacity-75"
+                  )}
+                >
                   {ring.subtitle}
                 </p>
-                <p className={cn("text-xs transition-all", activeSection ? themeTextClass : "text-muted-foreground", activeSection ? "opacity-60 group-hover:opacity-90" : "opacity-80 group-hover:opacity-100")}>
+                <p
+                  className={cn(
+                    "text-xs transition-all",
+                    activeSection ? themeTextClass : "text-muted-foreground",
+                    activeSection
+                      ? "opacity-60 group-hover:opacity-90"
+                      : "opacity-80 group-hover:opacity-100"
+                  )}
+                >
                   {ring.description}
                 </p>
               </div>
@@ -430,7 +496,10 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
               {/* Performance Indicator */}
               <div className="flex flex-col items-center gap-2">
                 <div
-                  className={cn("glow-text text-lg font-bold transition-colors", activeSection ? themeTextClass : "")}
+                  className={cn(
+                    "text-lg font-extrabold tracking-tight transition-colors",
+                    activeSection ? themeTextClass : ""
+                  )}
                   style={activeSection ? undefined : { color: ring.color }}
                 >
                   {Math.round(ring.value)}%

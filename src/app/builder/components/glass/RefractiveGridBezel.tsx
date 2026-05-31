@@ -31,7 +31,7 @@ export function RefractiveGridBezel({ countryCount, children }: RefractiveGridBe
   const { width, height } = dimensions;
 
   return (
-    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-30 w-full h-full">
+    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-30 h-full w-full">
       {width > 0 && height > 0 && (
         <>
           {/* Glass Fill - Left Segment */}
@@ -39,24 +39,34 @@ export function RefractiveGridBezel({ countryCount, children }: RefractiveGridBe
             className="pointer-events-none absolute top-0 bottom-0 left-0 w-[16px] overflow-hidden"
             style={DYNAMIC_ISLAND_STYLE}
           >
-            <DynamicIslandEffects showShimmer={true} showGlow={true} glowOpacity={0.4} orientation="vertical" />
+            <DynamicIslandEffects
+              showShimmer={true}
+              showGlow={true}
+              glowOpacity={0.4}
+              orientation="vertical"
+            />
             <TextureOverlay texture="paperGrain" opacity={0.09} className="mix-blend-overlay" />
             <TextureOverlay texture="diagonal" opacity={0.06} className="mix-blend-overlay" />
           </div>
 
           {/* Glass Fill - Right Segment */}
           <div
-            className="pointer-events-none absolute top-0 bottom-0 right-0 w-[16px] overflow-hidden"
+            className="pointer-events-none absolute top-0 right-0 bottom-0 w-[16px] overflow-hidden"
             style={DYNAMIC_ISLAND_STYLE}
           >
-            <DynamicIslandEffects showShimmer={true} showGlow={true} glowOpacity={0.4} orientation="vertical" />
+            <DynamicIslandEffects
+              showShimmer={true}
+              showGlow={true}
+              glowOpacity={0.4}
+              orientation="vertical"
+            />
             <TextureOverlay texture="paperGrain" opacity={0.09} className="mix-blend-overlay" />
             <TextureOverlay texture="diagonal" opacity={0.06} className="mix-blend-overlay" />
           </div>
 
           {/* Glass Fill - Bottom Segment */}
           <div
-            className="pointer-events-none absolute bottom-0 left-[16px] right-[16px] h-8 overflow-hidden flex items-center justify-center"
+            className="pointer-events-none absolute right-[16px] bottom-0 left-[16px] flex h-8 items-center justify-center overflow-hidden"
             style={DYNAMIC_ISLAND_STYLE}
           >
             <DynamicIslandEffects showShimmer={true} showGlow={true} glowOpacity={0.4} />
@@ -73,7 +83,7 @@ export function RefractiveGridBezel({ countryCount, children }: RefractiveGridBe
           </div>
 
           {/* Continuous SVG overlay for borders and light leaks */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
+          <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible">
             <defs>
               <filter id="white-light-leak">
                 <feGaussianBlur stdDeviation="5" />

@@ -359,9 +359,9 @@ export function BuilderSidebarNav({
                 className={cn(
                   "relative flex shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-[10px] font-semibold transition-all duration-200",
                   isActive
-                    ? "bg-amber-500 font-bold text-zinc-950 shadow-md"
+                    ? "bg-amber-500 font-bold text-zinc-950"
                     : accessible
-                      ? "border-zinc-800/40 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                      ? "border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
                       : "cursor-not-allowed text-zinc-600"
                 )}
               >
@@ -409,9 +409,9 @@ export function BuilderSidebarNav({
             <span>Overall Completion</span>
             <span className="font-bold text-zinc-200">{completionPercent}%</span>
           </div>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
+          <div className="h-1.5 w-full overflow-hidden rounded border border-white/5 bg-zinc-800/60">
             <div
-              className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 transition-all duration-500"
+              className="h-full rounded bg-amber-500 transition-all duration-500"
               style={{ width: `${completionPercent}%` }}
             />
           </div>
@@ -433,9 +433,9 @@ export function BuilderSidebarNav({
                 className={cn(
                   "group flex w-full items-center justify-between rounded-md border border-transparent p-1.5 text-left transition-all duration-200",
                   isActive
-                    ? "border-amber-500/20 bg-amber-500/10 font-bold"
+                    ? "border-amber-500/20 bg-amber-500/10 font-bold text-amber-400"
                     : accessible
-                      ? cn("text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200", item.bgClass)
+                      ? "border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
                       : "cursor-not-allowed text-zinc-600 opacity-60"
                 )}
               >

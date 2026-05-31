@@ -14,10 +14,9 @@ export { EconomyBuilderSidebar } from "./EconomyBuilderSidebar";
 
 import type { ComponentType } from "react";
 
-// Lazy-loaded large components (code-split)
-export const EconomyBuilderPage = lazy<ComponentType<any>>(() =>
-  import("./EconomyBuilderPage").then((module) => ({ default: module.EconomyBuilderPage }))
-);
+import { EconomyBuilderPage } from "./EconomyBuilderPage";
+export { EconomyBuilderPage };
+
 
 export const EconomicArchetypeDisplay = lazy<ComponentType<any>>(() =>
   import("./EconomicArchetypeDisplay").then((module) => ({

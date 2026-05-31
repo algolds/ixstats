@@ -502,7 +502,16 @@ const DynamicIslandContent = ({
       if (entry) {
         const height = element.scrollHeight || entry.contentRect.height;
         if (height > 0) {
-          setMeasuredHeight(height);
+          // Debounce React render to next frame using requestAnimationFrame to prevent rendering conflicts
+          requestAnimationFrame(() => {
+            setMeasuredHeight((prev) => {
+              // Only update state if height changes by more than 1.5px to avoid layout-measurement stutters
+              if (prev !== null && Math.abs(prev - height) < 1.5) {
+                return prev;
+              }
+              return height;
+            });
+          });
         }
       }
     });
@@ -525,18 +534,24 @@ const DynamicIslandContent = ({
     <div className="relative">
       {/* Outer glow — multi-layer halos for depth, matching maps DI */}
       <motion.div
-        className="pointer-events-none absolute inset-0"
+        layout
+        layoutId="dynamic-island-glow"
+        className="pointer-events-none absolute inset-0 force-gpu"
         animate={{
           borderRadius: currentSize.borderRadius,
           opacity: isCompactSize(state.size) ? 0.6 : 0.15,
-          transition: {
-            type: "spring",
-            stiffness,
-            damping,
-            mass,
-          },
         }}
-        style={{ willChange }}
+        transition={{
+          type: "spring",
+          stiffness,
+          damping,
+          mass,
+        }}
+        style={{
+          willChange: "transform, opacity",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
+        }}
       >
         <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
         <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
@@ -545,7 +560,9 @@ const DynamicIslandContent = ({
       {/* Main dynamic island — matching maps DI background and borders */}
       <motion.div
         id={id}
-        className="focus-within:bg-accent/80 relative mx-auto items-center justify-center border border-white/20 text-center transition-colors duration-200 will-change-auto shadow-2xl shadow-black/40 dark:border-white/10"
+        layout
+        layoutId="dynamic-island-main"
+        className="focus-within:bg-accent/80 relative mx-auto items-center justify-center border border-white/20 text-center transition-colors duration-200 force-gpu shadow-2xl shadow-black/40 dark:border-white/10"
         initial={{
           width: dimensions.width,
           height: targetHeight,
@@ -555,20 +572,21 @@ const DynamicIslandContent = ({
           width: dimensions.width,
           height: targetHeight,
           borderRadius: currentSize.borderRadius,
-          transition: {
-            type: "spring",
-            stiffness,
-            damping,
-            mass,
-          },
+        }}
+        transition={{
+          type: "spring",
+          stiffness,
+          damping,
+          mass,
         }}
         style={{
-          willChange: willChange || "transform",
+          willChange: "transform, width, height, border-radius",
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-          backdropFilter: `blur(20px) saturate(${isCompactSize(state.size) ? 170 : 130}%)`,
-          WebkitBackdropFilter: `blur(20px) saturate(${isCompactSize(state.size) ? 170 : 130}%)`,
-          transform: "translateZ(0)",
+          backdropFilter: "blur(20px) saturate(145%)",
+          WebkitBackdropFilter: "blur(20px) saturate(145%)",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
           isolation: "isolate",
           overflow: isAutoHeight ? "visible" : "hidden",
         }}

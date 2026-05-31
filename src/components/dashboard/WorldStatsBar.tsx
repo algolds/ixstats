@@ -74,14 +74,12 @@ export function WorldStatsBar({ globalStats }: WorldStatsBarProps) {
           const colors = COLOR_MAP[stat.color]!;
           return (
             <div key={stat.key} className="flex items-center gap-2.5">
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${colors.bg}`}
-              >
+              <div className="border-border/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-white/[0.02]">
                 <Icon className={`h-4 w-4 ${colors.text}`} />
               </div>
               <div className="min-w-0">
                 <div className="text-muted-foreground text-[11px]">{stat.label}</div>
-                <div className={`text-xs font-semibold ${colors.text}`}>
+                <div className="text-xs font-semibold">
                   {globalStats ? stat.format(globalStats) : "—"}
                 </div>
               </div>

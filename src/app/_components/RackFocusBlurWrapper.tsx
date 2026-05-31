@@ -35,7 +35,7 @@ export function RackFocusBlurWrapper({ children }: { children: React.ReactNode }
           : "filter 0.7s cubic-bezier(0.16, 1, 0.3, 1)", // Smooth rack-focus settle
         willChange: "filter",
       }}
-      className="w-full h-full"
+      className="h-full w-full"
     >
       {children}
     </div>

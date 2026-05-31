@@ -93,10 +93,10 @@ export function DashboardSidebarNav({
           {DASHBOARD_NAV_ITEMS.map((item) => {
             const isActive = item.id === activeId;
             const cls = cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
+              "flex shrink-0 items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
-                ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                ? "bg-white/[0.08] text-foreground border-b-2 border-blue-500 rounded-t-lg"
+                : "rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             );
 
             return isControlled ? (
@@ -134,9 +134,9 @@ export function DashboardSidebarNav({
         const rowEl = (
           <div
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
+              "flex items-center gap-2.5 rounded-l-none rounded-r-lg px-2.5 py-2 transition-all duration-200",
               isActive
-                ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
+                ? "text-foreground border-l-2 border-blue-500 bg-white/[0.08]"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           >

@@ -9,6 +9,7 @@
 
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
+import { useTheme } from "~/context/theme-context";
 import { Plus, Users, Edit2, Trash2, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import {
@@ -72,6 +73,8 @@ export const DepartmentList = React.memo(function DepartmentList({
   governmentComponents = [],
   onGovernmentComponentsChange,
 }: DepartmentListProps) {
+  const { effectiveTheme } = useTheme();
+  const isDark = effectiveTheme === "dark";
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -93,8 +96,10 @@ export const DepartmentList = React.memo(function DepartmentList({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-white">Government Departments</h2>
-          <p className="mt-1 text-xs text-zinc-400">
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Government Departments
+          </h2>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Configure ministries, priorities, and link institutional components
           </p>
         </div>
@@ -139,11 +144,19 @@ export const DepartmentList = React.memo(function DepartmentList({
                   hover={true}
                   className="flex h-full flex-col justify-between border transition-all duration-300"
                   style={{
-                    background: `linear-gradient(135deg, ${cardColor}12, rgba(15, 23, 42, 0.45))`,
-                    borderColor: hasError ? "rgba(239, 68, 68, 0.4)" : `${cardColor}30`,
+                    background: isDark
+                      ? `linear-gradient(135deg, ${cardColor}12, rgba(15, 23, 42, 0.45))`
+                      : `linear-gradient(135deg, ${cardColor}08, rgba(255, 255, 255, 0.75))`,
+                    borderColor: hasError
+                      ? "rgba(239, 68, 68, 0.4)"
+                      : isDark
+                        ? `${cardColor}30`
+                        : `${cardColor}20`,
                     boxShadow: hasError
                       ? "0 4px 20px -2px rgba(239, 68, 68, 0.15)"
-                      : `0 4px 20px -2px ${cardColor}08, inset 0 1px 0 0 rgba(255, 255, 255, 0.05)`,
+                      : isDark
+                        ? `0 4px 20px -2px ${cardColor}08, inset 0 1px 0 0 rgba(255, 255, 255, 0.05)`
+                        : `0 4px 20px -2px ${cardColor}04, inset 0 1px 0 0 rgba(255, 255, 255, 0.45)`,
                   }}
                   onClick={() => handleEditRow(index)}
                 >
@@ -173,20 +186,20 @@ export const DepartmentList = React.memo(function DepartmentList({
                         </div>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <h4 className="truncate text-sm font-bold text-zinc-100 group-hover:text-white">
+                            <h4 className="truncate text-sm font-bold text-zinc-900 group-hover:text-zinc-950 dark:text-zinc-100 dark:group-hover:text-white">
                               {department.name || `Department ${index + 1}`}
                             </h4>
                             {department.shortName && (
                               <Badge
                                 variant="outline"
-                                className="border-white/10 bg-white/5 px-1.5 py-0 text-[9px] font-bold"
+                                className="border-zinc-200 bg-zinc-100 px-1.5 py-0 text-[9px] font-bold dark:border-white/10 dark:bg-white/5"
                                 style={{ borderColor: `${cardColor}30`, color: cardColor }}
                               >
                                 {department.shortName}
                               </Badge>
                             )}
                           </div>
-                          <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+                          <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                             {department.category}
                           </span>
                         </div>
@@ -218,7 +231,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 rounded-md p-0 text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+                          className="h-7 w-7 rounded-md p-0 text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditRow(index);
@@ -231,17 +244,17 @@ export const DepartmentList = React.memo(function DepartmentList({
 
                     {/* Description (if exists) */}
                     {department.description && (
-                      <p className="line-clamp-2 text-[11px] leading-relaxed text-zinc-400">
+                      <p className="line-clamp-2 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
                         {department.description}
                       </p>
                     )}
 
                     {/* Stats & Priority Progress */}
-                    <div className="space-y-2.5 rounded-lg border border-white/[0.03] bg-black/15 p-3">
-                      <div className="flex items-center justify-between text-[11px] text-zinc-400">
-                        <span className="font-semibold text-zinc-300">
+                    <div className="space-y-2.5 rounded-lg border border-zinc-200/50 bg-zinc-100/50 p-3 dark:border-white/[0.03] dark:bg-black/15">
+                      <div className="flex items-center justify-between text-[11px] text-zinc-600 dark:text-zinc-400">
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-300">
                           {department.ministerTitle}:{" "}
-                          <span className="font-normal text-zinc-400">
+                          <span className="text-zinc-650 font-normal dark:text-zinc-400">
                             {department.minister || "Vacant"}
                           </span>
                         </span>
@@ -256,7 +269,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                               style={{ color: cardColor }}
                             >
                               <span>Priority {priorityLevel}/10</span>
-                              <span className="rounded border border-white/5 bg-white/5 px-1 py-0 text-[9px] uppercase">
+                              <span className="rounded border border-zinc-200/50 bg-zinc-200/40 px-1 py-0 text-[9px] uppercase dark:border-white/5 dark:bg-white/5">
                                 {getPriorityLabel(department.priority)}
                               </span>
                             </span>
@@ -265,7 +278,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                       </div>
 
                       {/* Priority Indicator */}
-                      <div className="h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-black/40">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-black/40">
                         <div
                           className="h-full rounded-full transition-all duration-300"
                           style={{
@@ -282,9 +295,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                         const parent = departments[parseInt(department.parentDepartmentId)];
                         if (!parent) return null;
                         return (
-                          <div className="mt-1 flex items-center gap-1 text-[10px] text-zinc-500">
+                          <div className="mt-1 flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
                             <span>Reporting to:</span>
-                            <span className="truncate font-bold text-zinc-400">
+                            <span className="truncate font-bold text-zinc-700 dark:text-zinc-300">
                               {parent.name ||
                                 `Department ${parseInt(department.parentDepartmentId) + 1}`}
                             </span>
@@ -295,9 +308,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                   </GlassCardContent>
 
                   {/* Footer: Linked Infrastructure */}
-                  <GlassCardFooter className="mt-auto border-t border-white/[0.04] bg-black/25 px-5 py-2.5">
+                  <GlassCardFooter className="mt-auto border-t border-zinc-200/50 bg-zinc-50/50 px-5 py-2.5 dark:border-white/[0.04] dark:bg-black/25">
                     <div className="space-y-1.5">
-                      <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase">
+                      <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Linked Infrastructure ({activeLinkedComponents.length})
                       </div>
                       {activeLinkedComponents.length > 0 ? (
@@ -310,7 +323,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                               <Badge
                                 key={compType}
                                 variant="outline"
-                                className="flex items-center gap-1 border-white/5 bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-semibold text-zinc-300 hover:bg-white/5"
+                                className="text-zinc-655 flex items-center gap-1 border-zinc-200 bg-zinc-100 px-1.5 py-0.5 text-[9px] font-semibold hover:bg-zinc-200 dark:border-white/5 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/5"
                               >
                                 {CompIcon && (
                                   <span style={{ color: cardColor }} className="flex shrink-0">
@@ -323,7 +336,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                           })}
                         </div>
                       ) : (
-                        <span className="block text-[10px] text-zinc-500 italic">
+                        <span className="block text-[10px] text-zinc-500 italic dark:text-zinc-400">
                           No governance components linked
                         </span>
                       )}
@@ -336,11 +349,13 @@ export const DepartmentList = React.memo(function DepartmentList({
         </AnimatePresence>
 
         {departments.length === 0 && (
-          <div className="relative col-span-full rounded-xl border border-white/[0.08] bg-zinc-950/40 p-12 text-center backdrop-blur-md">
+          <div className="relative col-span-full rounded-xl border border-zinc-200 bg-zinc-100/50 p-12 text-center backdrop-blur-md dark:border-white/[0.08] dark:bg-zinc-950/40">
             <TextureOverlay texture="chevron" opacity={0.03} />
-            <Users className="mx-auto mb-3 h-10 w-10 animate-pulse text-zinc-600" />
-            <h3 className="text-sm font-semibold text-zinc-300">No Departments Active</h3>
-            <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500">
+            <Users className="mx-auto mb-3 h-10 w-10 animate-pulse text-zinc-400 dark:text-zinc-600" />
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-300">
+              No Departments Active
+            </h3>
+            <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
               Your nation needs departments to administer services. Add a department to get started.
             </p>
             {!isReadOnly && (
@@ -359,7 +374,7 @@ export const DepartmentList = React.memo(function DepartmentList({
       {/* Floating Dialog Modal for Department Details */}
       <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <DialogContent
-          className="max-h-[85vh] w-[90vw] scrollbar-thin scrollbar-thumb-zinc-800 overflow-y-auto border-white/10 bg-zinc-950/95 p-6 text-white shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl sm:max-w-4xl"
+          className="max-h-[85vh] w-[90vw] scrollbar-thin scrollbar-thumb-zinc-300 overflow-y-auto border-zinc-200 bg-white p-6 text-zinc-900 shadow-2xl backdrop-blur-2xl sm:max-w-4xl dark:scrollbar-thumb-zinc-800 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white"
           style={
             currentEditingDept
               ? {
@@ -369,8 +384,8 @@ export const DepartmentList = React.memo(function DepartmentList({
               : undefined
           }
         >
-          <DialogHeader className="border-b border-white/10 pb-4">
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-zinc-100">
+          <DialogHeader className="border-b border-zinc-200 pb-4 dark:border-white/10">
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">
               {currentEditingDept &&
                 (() => {
                   const Icon = categoryIcons[currentEditingDept.category] || Users;

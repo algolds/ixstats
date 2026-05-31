@@ -53,9 +53,27 @@ export function DynamicIslandEffects({
           )}
           style={{ opacity: glowOpacity }}
         >
-          <div className={cn("absolute inset-0 blur-xl", gradientDirection, "from-blue-500/30 via-purple-500/30 to-blue-500/30")} />
-          <div className={cn("absolute inset-0 blur-lg", gradientDirection, "from-cyan-400/20 via-indigo-500/20 to-purple-400/20")} />
-          <div className={cn("absolute inset-0 blur-md", gradientDirection, "from-blue-300/15 via-purple-300/15 to-blue-300/15")} />
+          <div
+            className={cn(
+              "absolute inset-0 blur-xl",
+              gradientDirection,
+              "from-blue-500/30 via-purple-500/30 to-blue-500/30"
+            )}
+          />
+          <div
+            className={cn(
+              "absolute inset-0 blur-lg",
+              gradientDirection,
+              "from-cyan-400/20 via-indigo-500/20 to-purple-400/20"
+            )}
+          />
+          <div
+            className={cn(
+              "absolute inset-0 blur-md",
+              gradientDirection,
+              "from-blue-300/15 via-purple-300/15 to-blue-300/15"
+            )}
+          />
         </div>
       )}
 
@@ -69,7 +87,11 @@ export function DynamicIslandEffects({
         {/* Inner Shimmer */}
         {showShimmer && (
           <div
-            className={cn("absolute inset-0 animate-pulse", gradientDirection, "from-transparent via-white/10 to-transparent")}
+            className={cn(
+              "absolute inset-0 animate-pulse",
+              gradientDirection,
+              "from-transparent via-white/10 to-transparent"
+            )}
             style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
           />
         )}

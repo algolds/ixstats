@@ -80,6 +80,93 @@ const createSynergySchema = z.object({
 // ============================================================================
 
 /**
+ * Parse JSON field safely with fallback
+ */
+function safeJSONParse<T>(jsonString: string | null, fallback: T): T {
+  if (!jsonString) return fallback;
+
+  try {
+    return JSON.parse(jsonString) as T;
+  } catch (error) {
+    console.warn("[governmentComponents] Failed to parse JSON:", error);
+    return fallback;
+  }
+}
+
+/**
+ * Transform database component to parsed format
+ */
+function transformDatabaseComponent(dbComp: any): ParsedComponent {
+  const synergies = safeJSONParse<ComponentType[]>(dbComp.synergies, []);
+  const conflicts = safeJSONParse<ComponentType[]>(dbComp.conflicts, []);
+  const prerequisites = safeJSONParse<string[]>(dbComp.prerequisites, []);
+  const metadata = safeJSONParse<ParsedComponent["metadata"]>(dbComp.metadata, {
+    complexity: "Medium",
+    timeToImplement: "12-18 months",
+    staffRequired: 10,
+    technologyRequired: false,
+  });
+
+  return {
+    id: dbComp.id || dbComp.componentType.toLowerCase(),
+    type: dbComp.componentType,
+    name: dbComp.name,
+    description: dbComp.description || "",
+    effectiveness: dbComp.effectiveness || 50,
+    synergies,
+    conflicts,
+    implementationCost: dbComp.implementationCost || 0,
+    maintenanceCost: dbComp.maintenanceCost || 0,
+    requiredCapacity: dbComp.requiredCapacity || 50,
+    category: dbComp.category || "general",
+    prerequisites,
+    color: dbComp.color || "blue",
+    metadata,
+    usageCount: dbComp.usageCount || 0,
+    isActive: dbComp.isActive ?? true,
+  };
+}
+
+/**
+ * Ensure database is seeded with government component reference data
+ */
+async function ensureSeeded(db: any) {
+  try {
+    const count = await db.governmentComponentData.count();
+    if (count === 0) {
+      console.info("[governmentComponents] Reference database is empty. Seeding components...");
+      const components = getFallbackComponents();
+      const dataToInsert = components.map((comp) => ({
+        componentType: comp.type,
+        name: comp.name,
+        description: comp.description,
+        category: comp.category,
+        effectiveness: comp.effectiveness,
+        implementationCost: comp.implementationCost,
+        maintenanceCost: comp.maintenanceCost,
+        requiredCapacity: comp.requiredCapacity,
+        synergies: JSON.stringify(comp.synergies),
+        conflicts: JSON.stringify(comp.conflicts),
+        prerequisites: JSON.stringify(comp.prerequisites),
+        metadata: JSON.stringify(comp.metadata),
+        color: comp.color,
+        iconName: comp.type.toLowerCase(),
+        isActive: true,
+        usageCount: 0,
+      }));
+
+      await db.governmentComponentData.createMany({
+        data: dataToInsert,
+        skipDuplicates: true,
+      });
+      console.info(`[governmentComponents] Successfully seeded ${dataToInsert.length} components.`);
+    }
+  } catch (error) {
+    console.error("[governmentComponents] Failed to self-seed reference database:", error);
+  }
+}
+
+/**
  * Get fallback component data from ATOMIC_COMPONENTS library
  */
 function getFallbackComponents(): ParsedComponent[] {
@@ -168,38 +255,64 @@ export const governmentComponentsRouter = createTRPCRouter({
    */
   getAllComponents: publicProcedure.input(getAllComponentsSchema).query(async ({ ctx, input }) => {
     try {
-      // For now, use fallback data as the source of truth
-      // In the future, this could query a ComponentLibrary table
-      let components = getFallbackComponents();
+      // Ensure database has reference data
+      await ensureSeeded(ctx.db);
 
-      // Apply filters
-      if (input?.category) {
-        components = components.filter((comp) => comp.category === input.category);
-      }
-
-      if (input?.isActive !== undefined) {
-        components = components.filter((comp) => comp.isActive === input.isActive);
-      }
-
-      // Sort by category and name
-      components.sort((a, b) => {
-        if (a.category !== b.category) {
-          return a.category.localeCompare(b.category);
-        }
-        return a.name.localeCompare(b.name);
+      // Query database
+      const dbComponents = await ctx.db.governmentComponentData.findMany({
+        where: {
+          ...(input?.isActive !== undefined && { isActive: input.isActive }),
+          ...(input?.category && { category: input.category }),
+        },
+        orderBy: [{ category: "asc" }, { usageCount: "desc" }],
       });
+
+      if (dbComponents.length === 0) {
+        let components = getFallbackComponents();
+
+        // Apply filters
+        if (input?.category) {
+          components = components.filter((comp) => comp.category === input.category);
+        }
+
+        if (input?.isActive !== undefined) {
+          components = components.filter((comp) => comp.isActive === input.isActive);
+        }
+
+        // Sort by category and name
+        components.sort((a, b) => {
+          if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+          }
+          return a.name.localeCompare(b.name);
+        });
+
+        return {
+          success: true,
+          components,
+          count: components.length,
+          isUsingFallback: true,
+        };
+      }
+
+      // Parse and return database components
+      const components = dbComponents.map(transformDatabaseComponent);
 
       return {
         success: true,
         components,
         count: components.length,
+        isUsingFallback: false,
       };
     } catch (error) {
       console.error("Error fetching components:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch government components",
-      });
+      const fallbackComponents = getFallbackComponents();
+      return {
+        success: true,
+        components: fallbackComponents,
+        count: fallbackComponents.length,
+        isUsingFallback: true,
+      };
     }
   }),
 
@@ -210,6 +323,20 @@ export const governmentComponentsRouter = createTRPCRouter({
     .input(getComponentByTypeSchema)
     .query(async ({ ctx, input }) => {
       try {
+        await ensureSeeded(ctx.db);
+
+        const dbComponent = await ctx.db.governmentComponentData.findUnique({
+          where: { componentType: input.componentType },
+        });
+
+        if (dbComponent) {
+          return {
+            success: true,
+            component: transformDatabaseComponent(dbComponent),
+            isUsingFallback: false,
+          };
+        }
+
         const component = getFallbackComponentByType(input.componentType);
 
         if (!component) {
@@ -222,6 +349,7 @@ export const governmentComponentsRouter = createTRPCRouter({
         return {
           success: true,
           component,
+          isUsingFallback: true,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -239,12 +367,46 @@ export const governmentComponentsRouter = createTRPCRouter({
    */
   getComponentsByCategory: publicProcedure.query(async ({ ctx }) => {
     try {
-      const grouped = getComponentsByCategory();
+      await ensureSeeded(ctx.db);
+
+      const dbComponents = await ctx.db.governmentComponentData.findMany({
+        where: { isActive: true },
+        orderBy: { usageCount: "desc" },
+      });
+
+      if (dbComponents.length === 0) {
+        const grouped = getComponentsByCategory();
+
+        return {
+          success: true,
+          categories: grouped,
+          categoryCount: Object.keys(grouped).length,
+          isUsingFallback: true,
+        };
+      }
+
+      const parsed = dbComponents.map(transformDatabaseComponent);
+      const grouped: Record<string, ParsedComponent[]> = {};
+
+      // Initialize all categories
+      Object.keys(COMPONENT_CATEGORIES).forEach((category) => {
+        grouped[category] = [];
+      });
+
+      parsed.forEach((component) => {
+        for (const [categoryName, componentTypes] of Object.entries(COMPONENT_CATEGORIES)) {
+          if ((componentTypes as ComponentType[]).includes(component.type)) {
+            grouped[categoryName].push(component);
+            break;
+          }
+        }
+      });
 
       return {
         success: true,
         categories: grouped,
         categoryCount: Object.keys(grouped).length,
+        isUsingFallback: false,
       };
     } catch (error) {
       console.error("Error fetching components by category:", error);
@@ -261,7 +423,11 @@ export const governmentComponentsRouter = createTRPCRouter({
    */
   getSynergies: publicProcedure.input(getSynergiesSchema).query(async ({ ctx, input }) => {
     try {
-      const component = getFallbackComponentByType(input.componentType);
+      await ensureSeeded(ctx.db);
+      
+      const component = await ctx.db.governmentComponentData.findUnique({
+        where: { componentType: input.componentType },
+      }).then(res => res ? transformDatabaseComponent(res) : getFallbackComponentByType(input.componentType));
 
       if (!component) {
         throw new TRPCError({
@@ -304,25 +470,49 @@ export const governmentComponentsRouter = createTRPCRouter({
   }),
 
   /**
-   * Increment component usage count (silent failure)
+   * Increment component usage count
    * This tracks how often components are used across all countries
    */
   incrementComponentUsage: publicProcedure
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        // In a real implementation, this would increment a counter in the database
-        // For now, we just return success since we're using static data
+        await ensureSeeded(ctx.db);
+
+        const existing = await ctx.db.governmentComponentData.findUnique({
+          where: { componentType: input.componentType },
+        });
+
+        if (!existing) {
+          return {
+            success: true,
+            componentType: input.componentType,
+            newUsageCount: 0,
+            message: "Component not found in database",
+          };
+        }
+
+        const updated = await ctx.db.governmentComponentData.update({
+          where: { componentType: input.componentType },
+          data: {
+            usageCount: {
+              increment: 1,
+            },
+          },
+        });
+
         return {
           success: true,
           componentType: input.componentType,
+          newUsageCount: updated.usageCount,
         };
       } catch (error) {
-        // Silent failure - just log and return success
         console.error("Error incrementing component usage:", error);
         return {
           success: true,
           componentType: input.componentType,
+          newUsageCount: 0,
+          message: "Failed to track usage",
         };
       }
     }),
@@ -336,7 +526,9 @@ export const governmentComponentsRouter = createTRPCRouter({
    */
   getComponentUsageStats: adminProcedure.query(async ({ ctx }) => {
     try {
-      const components = getFallbackComponents();
+      await ensureSeeded(ctx.db);
+      const dbComponents = await ctx.db.governmentComponentData.findMany();
+      const components = dbComponents.map(transformDatabaseComponent);
       const totalComponents = components.length;
       const activeComponents = components.filter((c) => c.isActive).length;
 

@@ -71,13 +71,11 @@ function ProfileContent() {
     userProfile,
   });
 
-  const {
-    data: thinkpagesAccount,
-    refetch: refetchThinkpagesAccount,
-  } = api.thinkpages.getThinkpagesAccountByUserId.useQuery(
-    { clerkUserId: user?.id || "placeholder-disabled" },
-    { enabled: !!user?.id }
-  );
+  const { data: thinkpagesAccount, refetch: refetchThinkpagesAccount } =
+    api.thinkpages.getThinkpagesAccountByUserId.useQuery(
+      { clerkUserId: user?.id || "placeholder-disabled" },
+      { enabled: !!user?.id }
+    );
 
   const updateThinkpagesAccountMutation = api.thinkpages.updateAccount.useMutation();
 
@@ -241,7 +239,7 @@ function ProfileContent() {
                   </div>
                 )}
               </div>
-              <div className="lg:sticky lg:top-6 h-fit lg:col-span-4">
+              <div className="h-fit lg:sticky lg:top-6 lg:col-span-4">
                 <CutoutCard
                   className={cn(cutoutCardSurfaceClassName, "w-full overflow-hidden rounded-xl")}
                   trackPointerHover={false}
@@ -255,7 +253,10 @@ function ProfileContent() {
                       Account Settings
                     </div>
                     <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-                    <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+                    <CutoutCorner
+                      className="text-card absolute right-0 -bottom-px -scale-x-100"
+                      size={16}
+                    />
                   </div>
 
                   <CutoutCardContent className="space-y-2 p-4 pt-2">
@@ -274,17 +275,26 @@ function ProfileContent() {
                       }}
                       className={cn(
                         "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
-                        showVault ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                        showVault
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        <Coins className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showVault ? "text-amber-500" : "text-slate-400")} />
+                        <Coins
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showVault ? "text-amber-500" : "text-slate-400"
+                          )}
+                        />
                         Vault Upgrades & Rewards
                       </div>
                       <div
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
-                          showVault ? "animate-pulse bg-amber-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                          showVault
+                            ? "scale-110 animate-pulse bg-amber-500"
+                            : "bg-slate-300 dark:bg-slate-700"
                         )}
                       />
                     </button>
@@ -304,17 +314,26 @@ function ProfileContent() {
                       }}
                       className={cn(
                         "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
-                        showPrivacy ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                        showPrivacy
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        <Shield className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showPrivacy ? "text-purple-500" : "text-slate-400")} />
+                        <Shield
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showPrivacy ? "text-purple-500" : "text-slate-400"
+                          )}
+                        />
                         Privacy & Security
                       </div>
                       <div
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
-                          showPrivacy ? "animate-pulse bg-purple-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                          showPrivacy
+                            ? "scale-110 animate-pulse bg-purple-500"
+                            : "bg-slate-300 dark:bg-slate-700"
                         )}
                       />
                     </button>
@@ -334,17 +353,26 @@ function ProfileContent() {
                       }}
                       className={cn(
                         "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
-                        showIxnayID ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                        showIxnayID
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        <Link2 className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showIxnayID ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")} />
+                        <Link2
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showIxnayID ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"
+                          )}
+                        />
                         IxnayID© Settings
                       </div>
                       <div
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
-                          showIxnayID ? "animate-pulse bg-indigo-600 dark:bg-indigo-400 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                          showIxnayID
+                            ? "scale-110 animate-pulse bg-indigo-600 dark:bg-indigo-400"
+                            : "bg-slate-300 dark:bg-slate-700"
                         )}
                       />
                     </button>
@@ -364,17 +392,26 @@ function ProfileContent() {
                       }}
                       className={cn(
                         "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
-                        showPreferences ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                        showPreferences
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        <Palette className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showPreferences ? "text-indigo-500" : "text-slate-400")} />
+                        <Palette
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showPreferences ? "text-indigo-500" : "text-slate-400"
+                          )}
+                        />
                         Interface Preferences
                       </div>
                       <div
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
-                          showPreferences ? "animate-pulse bg-indigo-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                          showPreferences
+                            ? "scale-110 animate-pulse bg-indigo-500"
+                            : "bg-slate-300 dark:bg-slate-700"
                         )}
                       />
                     </button>
@@ -394,17 +431,26 @@ function ProfileContent() {
                       }}
                       className={cn(
                         "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
-                        showLore ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                        showLore
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        <BookOpen className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showLore ? "text-blue-500" : "text-slate-400")} />
+                        <BookOpen
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showLore ? "text-blue-500" : "text-slate-400"
+                          )}
+                        />
                         LoreScanner Preferences
                       </div>
                       <div
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
-                          showLore ? "animate-pulse bg-blue-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                          showLore
+                            ? "scale-110 animate-pulse bg-blue-500"
+                            : "bg-slate-300 dark:bg-slate-700"
                         )}
                       />
                     </button>
@@ -424,17 +470,26 @@ function ProfileContent() {
                       }}
                       className={cn(
                         "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
-                        showThinkpages ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                        showThinkpages
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        <User className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showThinkpages ? "text-purple-500" : "text-slate-400")} />
+                        <User
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showThinkpages ? "text-purple-500" : "text-slate-400"
+                          )}
+                        />
                         Thinkpages Preferences
                       </div>
                       <div
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
-                          showThinkpages ? "animate-pulse bg-purple-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                          showThinkpages
+                            ? "scale-110 animate-pulse bg-purple-500"
+                            : "bg-slate-300 dark:bg-slate-700"
                         )}
                       />
                     </button>
@@ -456,14 +511,14 @@ function ProfileContent() {
 
 function SettingsSkeleton() {
   return (
-    <div className="relative bg-slate-50 dark:bg-slate-950 min-h-screen">
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 z-0">
         <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/5 blur-[120px] dark:bg-indigo-500/10" />
         <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/5 blur-[100px] dark:bg-blue-500/10" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 relative z-10">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
             <Skeleton className="h-10 w-64 rounded-xl" />
@@ -483,7 +538,7 @@ function SettingsSkeleton() {
           <div className="space-y-8 lg:col-span-8">
             {/* Account Information Card Skeleton */}
             <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
-              <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40 space-y-6">
+              <div className="space-y-6 rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-10 w-10 rounded-xl" />
@@ -492,19 +547,19 @@ function SettingsSkeleton() {
                   <Skeleton className="h-8 w-8 rounded-full" />
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                  <div className="space-y-2 rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                     <Skeleton className="h-3 w-16 rounded" />
                     <Skeleton className="h-5 w-32 rounded-lg" />
                   </div>
-                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                  <div className="space-y-2 rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                     <Skeleton className="h-3 w-24 rounded" />
                     <Skeleton className="h-5 w-40 rounded-lg" />
                   </div>
-                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                  <div className="space-y-2 rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                     <Skeleton className="h-3 w-16 rounded" />
                     <Skeleton className="h-5 w-24 rounded-lg" />
                   </div>
-                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                  <div className="space-y-2 rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                     <Skeleton className="h-3 w-28 rounded" />
                     <Skeleton className="h-5 w-36 rounded-lg" />
                   </div>
@@ -514,7 +569,7 @@ function SettingsSkeleton() {
 
             {/* Country Info Card Skeleton */}
             <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
-              <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40 space-y-6">
+              <div className="space-y-6 rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-xl" />
                   <Skeleton className="h-6 w-52 rounded-lg" />
@@ -540,18 +595,21 @@ function SettingsSkeleton() {
           </div>
 
           {/* Quick Links Sidebar Skeletons */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="space-y-6 lg:col-span-4">
             <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
-              <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="space-y-4 rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+                <div className="mb-2 flex items-center gap-2">
                   <Skeleton className="h-5 w-5 rounded" />
                   <Skeleton className="h-5 w-36 rounded" />
                 </div>
-                
+
                 {/* 6 Quick link buttons skeletonized */}
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-xl bg-slate-50/50 p-3.5 dark:bg-slate-800/30">
-                    <div className="flex items-center gap-3 w-full">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-xl bg-slate-50/50 p-3.5 dark:bg-slate-800/30"
+                  >
+                    <div className="flex w-full items-center gap-3">
                       <Skeleton className="h-4 w-4 rounded" />
                       <Skeleton className="h-4 w-3/4 rounded" />
                     </div>

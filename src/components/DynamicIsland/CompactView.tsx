@@ -24,6 +24,7 @@ import { isStandaloneClient } from "~/lib/standalone-detection";
 import { MapsProfileDropdown } from "./MapsProfileDropdown";
 import { WikiProfileButton as _WikiProfileButton } from "./WikiProfileButton";
 import { PreText } from "~/components/ui/pretext";
+import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
@@ -198,14 +199,22 @@ function CompactViewComponent({
                   }`}
                 >
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <img
-                    src={withBasePath("/images/ix-logo.svg")}
-                    alt="IxLogo"
-                    className={`relative z-10 ${isSticky ? "h-4 w-4" : "h-5 w-5"} opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert`}
-                  />
+                  {activePlugin?.id === "builder" ? (
+                    <div className="relative z-10 flex origin-center scale-60 items-center justify-center sm:scale-75">
+                      <MyCountryLogo size="sm" variant="icon-only" animated={false} />
+                    </div>
+                  ) : (
+                    <img
+                      src={withBasePath("/images/ix-logo.svg")}
+                      alt="IxLogo"
+                      className={`relative z-10 ${isSticky ? "h-4 w-4" : "h-5 w-5"} opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert`}
+                    />
+                  )}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">Home</TooltipContent>
+              <TooltipContent side="bottom">
+                {activePlugin?.id === "builder" ? "Builder Home" : "Home"}
+              </TooltipContent>
             </Tooltip>
 
             {/* ── Sticky: peek text or wiki breadcrumb ──────────────── */}
@@ -403,9 +412,7 @@ function CompactViewComponent({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
-                    onSwitchMode(activePlugin?.id === "wiki" ? "plugin:wiki" : "search")
-                  }
+                  onClick={() => onSwitchMode("search")}
                   className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
                     isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                   }`}

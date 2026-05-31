@@ -2,30 +2,30 @@
 @import "@c15t/nextjs/styles.css";
 
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
+  --color-background: var(--color-bg-primary);
+  --color-foreground: var(--color-text-primary);
+  --color-card: var(--color-bg-secondary);
+  --color-card-foreground: var(--color-text-primary);
+  --color-popover: var(--color-bg-secondary);
+  --color-popover-foreground: var(--color-text-primary);
+  --color-primary: var(--color-text-primary);
+  --color-primary-foreground: var(--color-bg-primary);
+  --color-secondary: var(--color-bg-tertiary);
+  --color-secondary-foreground: var(--color-text-primary);
+  --color-muted: var(--color-bg-tertiary);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-accent: var(--color-bg-tertiary);
+  --color-accent-foreground: var(--color-text-primary);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-text-primary);
+  --color-border: var(--color-border-primary);
+  --color-input: var(--color-input-border);
+  --color-ring: var(--color-brand-primary);
+  --color-chart-1: var(--color-chart-1);
+  --color-chart-2: var(--color-chart-2);
+  --color-chart-3: var(--color-chart-3);
+  --color-chart-4: var(--color-chart-4);
+  --color-chart-5: var(--color-chart-5);
 }
 
 /* Import modular CSS files */
@@ -769,4 +769,104 @@
 [data-sonner-toaster].dynamic-island-toaster [data-sonner-toast][data-mounted="false"] {
   transform: translateY(-30px) scale(0.8) !important;
   opacity: 0 !important;
+}
+
+/* ==========================================
+   NAVIGATION BACKGROUND TRANSPARENCY & OVERLAP
+   ========================================== */
+
+/* Make the navigation bar absolute by default so it sits on top of page backgrounds */
+.navigation-bar {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50; /* Above background, but below dropdowns/overlays */
+}
+
+/* On pages with headless builder, preserve fixed positioning */
+body:has([data-builder-headless]) .navigation-bar {
+  position: fixed !important;
+}
+
+/* Offset the main element's content by the height of the absolute navigation bar */
+main {
+  padding-top: 56px; /* standard mobile navigation height */
+}
+
+@media (min-width: 1024px) {
+  main {
+    padding-top: 64px; /* standard desktop navigation height */
+  }
+}
+
+/* Support compact mode */
+body.compact-mode main {
+  padding-top: 48px;
+}
+
+/* Headless builder mode should have zero padding at the top since it starts hidden */
+body:has([data-builder-headless]) main {
+  padding-top: 0 !important;
+}
+
+/* ==========================================
+   PAGE BACKGROUND EXTENSION & STICKY OFFSETS
+   ========================================== */
+
+/* Background wrapper that extends to the top behind the navigation */
+.extend-under-nav {
+  position: absolute !important;
+  top: -56px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+@media (min-width: 1024px) {
+  .extend-under-nav {
+    top: -64px;
+  }
+}
+
+body.compact-mode .extend-under-nav {
+  top: -48px;
+}
+
+body:has([data-builder-headless]) .extend-under-nav {
+  top: 0 !important;
+}
+
+/* Correct the sticky sidebar top position for standard mode (64px) on lg screens */
+.wikios-icon-rail,
+.forum-icon-rail {
+  top: 64px !important;
+  height: calc(100vh - 64px) !important;
+}
+
+/* Override for compact mode (48px) */
+body.compact-mode .wikios-icon-rail,
+body.compact-mode .forum-icon-rail {
+  top: 48px !important;
+  height: calc(100vh - 48px) !important;
+}
+
+/* Override for headless mode (0px) */
+body:has([data-builder-headless]) .wikios-icon-rail,
+body:has([data-builder-headless]) .forum-icon-rail {
+  top: 0 !important;
+  height: 100vh !important;
+}
+
+/* Ensure sticky top-6 widgets in MyCountry, Dashboard, Vault, and Admin layouts sit below the navigation bar */
+.sticky.top-6 {
+  top: 80px !important; /* 64px nav height + 16px (1rem) spacing */
+}
+
+body.compact-mode .sticky.top-6 {
+  top: 64px !important; /* 48px nav height + 16px (1rem) spacing */
+}
+
+body:has([data-builder-headless]) .sticky.top-6 {
+  top: 24px !important; /* 0px nav height + 24px (1.5rem) spacing */
 }

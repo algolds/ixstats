@@ -277,7 +277,7 @@ export function GovernmentStructureForm({
                   }).format(Number(val))
                 }
                 placeholder="Enter budget limit..."
-                className="animate-fade-in text-white"
+                className="animate-fade-in text-zinc-900 dark:text-white"
               />
               <div className="flex flex-col gap-1">
                 {gdpData?.nominalGDP &&
@@ -293,16 +293,19 @@ export function GovernmentStructureForm({
                     let colorClass = "";
                     let statusText = "";
                     if (deficitSurplus <= 0) {
-                      colorClass = "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+                      colorClass =
+                        "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20";
                       statusText = `Fully Funded (Surplus: ${Math.abs(deficitSurplus).toFixed(1)}% of GDP)`;
                     } else if (deficitSurplus <= 5) {
-                      colorClass = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                      colorClass =
+                        "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
                       statusText = `Mild Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
                     } else if (deficitSurplus <= 15) {
-                      colorClass = "bg-orange-500/10 text-orange-400 border-orange-500/20";
+                      colorClass =
+                        "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
                       statusText = `Moderate Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
                     } else {
-                      colorClass = "bg-red-500/10 text-red-400 border-red-500/20";
+                      colorClass = "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
                       statusText = `Critical Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
                     }
                     return (
@@ -328,7 +331,7 @@ export function GovernmentStructureForm({
             <div className="space-y-2">
               <Label
                 htmlFor="fiscalStance"
-                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-300"
+                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
               >
                 Fiscal Stance & Strategy
                 <FieldHelpTooltip
@@ -341,15 +344,15 @@ export function GovernmentStructureForm({
                 onValueChange={(value) => handleConfigChange("stance", value)}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className="border-white/10 bg-zinc-950/40 text-white focus:border-cyan-500/30 focus:ring-cyan-500/20">
+                <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                   <SelectValue placeholder="Select budget stance" />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                   {Object.entries(stanceDetails).map(([val, info]) => (
                     <SelectItem
                       key={val}
                       value={val}
-                      className="focus:bg-zinc-800"
+                      className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                       title={info.tooltip}
                       description={info.desc}
                     >
@@ -364,7 +367,7 @@ export function GovernmentStructureForm({
             <div className="space-y-2">
               <Label
                 htmlFor="auditLevel"
-                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-300"
+                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
               >
                 Auditing & Transparency
                 <FieldHelpTooltip
@@ -377,15 +380,15 @@ export function GovernmentStructureForm({
                 onValueChange={(value) => handleConfigChange("audit", value)}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className="border-white/10 bg-zinc-950/40 text-white focus:border-cyan-500/30 focus:ring-cyan-500/20">
+                <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                   <SelectValue placeholder="Select transparency level" />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                   {Object.entries(auditDetails).map(([val, info]) => (
                     <SelectItem
                       key={val}
                       value={val}
-                      className="focus:bg-zinc-800"
+                      className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                       title={info.tooltip}
                       description={info.desc}
                     >
@@ -400,7 +403,7 @@ export function GovernmentStructureForm({
             <div className="space-y-2">
               <Label
                 htmlFor="reserveTarget"
-                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-300"
+                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
               >
                 Emergency Reserve Target
                 <FieldHelpTooltip
@@ -413,15 +416,15 @@ export function GovernmentStructureForm({
                 onValueChange={(value) => handleConfigChange("reserve", value)}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className="border-white/10 bg-zinc-950/40 text-white focus:border-cyan-500/30 focus:ring-cyan-500/20">
+                <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                   <SelectValue placeholder="Select reserve target" />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                   {Object.entries(reserveDetails).map(([val, info]) => (
                     <SelectItem
                       key={val}
                       value={val}
-                      className="focus:bg-zinc-800"
+                      className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                       title={info.tooltip}
                       description={info.desc}
                     >
@@ -436,7 +439,7 @@ export function GovernmentStructureForm({
             <div className="space-y-2">
               <Label
                 htmlFor="debtLimit"
-                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-300"
+                className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
               >
                 Debt Financing Limit
                 <FieldHelpTooltip
@@ -449,15 +452,15 @@ export function GovernmentStructureForm({
                 onValueChange={(value) => handleConfigChange("debt", value)}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className="border-white/10 bg-zinc-950/40 text-white focus:border-cyan-500/30 focus:ring-cyan-500/20">
+                <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
                   <SelectValue placeholder="Select debt limit" />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-zinc-950/95 text-white">
+                <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
                   {Object.entries(debtDetails).map(([val, info]) => (
                     <SelectItem
                       key={val}
                       value={val}
-                      className="focus:bg-zinc-800"
+                      className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
                       title={info.tooltip}
                       description={info.desc}
                     >

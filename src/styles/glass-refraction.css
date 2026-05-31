@@ -80,6 +80,26 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transform: translateY(-1px);
 }
 
+/* Flat, highly-polished semi-transparent colors for light mode */
+[data-theme="light"] .glass-base,
+[data-theme="light"] .glass-surface,
+[data-theme="light"] .glass-floating,
+[data-theme="light"] .glass-overlay,
+[data-theme="light"] .glass-depth-1,
+[data-theme="light"] .glass-depth-2,
+[data-theme="light"] .glass-depth-3,
+[data-theme="light"] .glass-depth-4,
+html:not([data-theme="dark"]) .glass-base,
+html:not([data-theme="dark"]) .glass-surface,
+html:not([data-theme="dark"]) .glass-floating,
+html:not([data-theme="dark"]) .glass-overlay,
+html:not([data-theme="dark"]) .glass-depth-1,
+html:not([data-theme="dark"]) .glass-depth-2,
+html:not([data-theme="dark"]) .glass-depth-3,
+html:not([data-theme="dark"]) .glass-depth-4 {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
 /* ===================================
    BASE GLASS CLASSES
    =================================== */
@@ -89,11 +109,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-light)) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -104,11 +120,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-surface);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-light)) 0%,
-    rgba(255, 255, 255, 0.03) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
 }
 
 .glass-floating {
@@ -116,11 +128,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-light)) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   box-shadow:
@@ -136,11 +144,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-overlay);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-medium)) 0%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.15),
     0 8px 32px rgba(0, 0, 0, 0.1),
@@ -158,11 +162,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-surface);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-light)) 0%,
-    rgba(255, 255, 255, 0.03) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   transform: translateZ(0);
 }
 
@@ -171,11 +171,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-light)) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   box-shadow:
@@ -197,11 +193,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transform: translateZ(20px);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-strong)) 0%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
 }
 
 .glass-depth-4 {
@@ -212,11 +204,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transform: translateZ(30px);
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, var(--refraction-intense)) 0%,
-    rgba(255, 255, 255, 0.12) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   box-shadow:
     0 24px 96px rgba(0, 0, 0, 0.2),
     0 12px 48px rgba(0, 0, 0, 0.15),
@@ -1006,11 +994,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode specific adaptations */
 .dark .glass-base {
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, calc(var(--refraction-light) * 0.6)) 0%,
-    rgba(255, 255, 255, 0.015) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     0 4px 16px rgba(0, 0, 0, 0.2),
@@ -1018,11 +1002,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-surface {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, calc(var(--refraction-light) * 0.5)) 0%,
-    rgba(255, 255, 255, 0.01) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
 }
 
 .dark .glass-floating {
@@ -1033,11 +1013,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-overlay {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%,
-    rgba(255, 255, 255, 0.04) 100%
-  );
+  background: rgba(22, 24, 29, 0.7);
   box-shadow:
     0 20px 80px rgba(0, 0, 0, 0.5),
     0 10px 40px rgba(0, 0, 0, 0.3),
@@ -1392,5 +1368,12 @@ html[data-low-fidelity="true"] .texture-overlay {
 html[data-interactive-hover="false"] .glass-interactive:hover {
   transform: none !important;
   box-shadow: inherit !important;
+}
+
+/* GPU Hardware Acceleration Promotion */
+.force-gpu {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 

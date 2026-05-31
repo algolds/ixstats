@@ -72,14 +72,18 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                       {isStandalone ? (
                         <div className="flex min-h-screen flex-col">
                           <Navigation />
-                          <main className="flex-1">{children}</main>
+                          <main className="flex-1">
+                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                          </main>
                         </div>
                       ) : (
                         <div className="flex min-h-screen flex-col">
                           <Navigation />
                           {/* <GlobalActivityMarquee /> */}
                           <SetupRedirect />
-                          <main className="flex-1">{children}</main>
+                          <main className="flex-1">
+                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                          </main>
                         </div>
                       )}
                     </DIPluginProvider>

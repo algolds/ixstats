@@ -12,8 +12,6 @@ interface CountriesHeaderProps {
 export const CountriesHeader: React.FC<CountriesHeaderProps> = ({ onOpenCommandPalette }) => {
   return (
     <div className="mb-12 text-center">
-     
-
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

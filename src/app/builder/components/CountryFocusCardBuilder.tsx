@@ -34,11 +34,15 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     const [isHovered, setIsHovered] = useState(false);
     const [imgError, setImgError] = useState(false);
 
-    const isPlaceholder = !serverFlagUrl || serverFlagUrl.includes("placeholder-flag.svg") || serverFlagUrl.includes("placeholder");
+    const isPlaceholder =
+      !serverFlagUrl ||
+      serverFlagUrl.includes("placeholder-flag.svg") ||
+      serverFlagUrl.includes("placeholder");
     // Only fetch from browser if no server-provided flag URL or it is a placeholder
     const { flag, loading, error } = useCountryFlagRouteAware(isPlaceholder ? country.name : "");
 
-    const resolvedFlagUrl = (!serverFlagUrl || isPlaceholder) ? (flag?.flagUrl ?? serverFlagUrl) : serverFlagUrl;
+    const resolvedFlagUrl =
+      !serverFlagUrl || isPlaceholder ? (flag?.flagUrl ?? serverFlagUrl) : serverFlagUrl;
 
     // Reset error when resolved flag changes
     React.useEffect(() => {
@@ -47,19 +51,19 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
 
     const _isLoaded = !!resolvedFlagUrl;
     const isLoading = isPlaceholder && (loading || (!flag && !error));
-    const hasError = isPlaceholder ? (!!error || imgError) : imgError;
+    const hasError = isPlaceholder ? !!error || imgError : imgError;
     const showFlag = resolvedFlagUrl && !imgError;
 
     const aspectClass = cardSize === "small" ? "aspect-square" : "aspect-[3/4]";
 
     return (
-      <div className={cn("relative rounded-xl overflow-visible", aspectClass)}>
+      <div className={cn("relative overflow-visible rounded-xl", aspectClass)}>
         {/* Recessed Indent / Card Slot (always underneath, visible when card floats up) */}
-        <div className="absolute inset-0 rounded-xl bg-zinc-200/40 dark:bg-zinc-950/60 shadow-[inset_0_4px_10px_rgba(0,0,0,0.25)] dark:shadow-[inset_0_6px_16px_rgba(0,0,0,0.85)] border-t border-l border-zinc-400/40 dark:border-black/80 border-r border-b border-white/60 dark:border-white/10 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 rounded-xl border-t border-r border-b border-l border-white/60 border-zinc-400/40 bg-zinc-200/40 shadow-[inset_0_4px_10px_rgba(0,0,0,0.25)] dark:border-black/80 dark:border-white/10 dark:bg-zinc-950/60 dark:shadow-[inset_0_6px_16px_rgba(0,0,0,0.85)]" />
 
         <motion.div
           layout
-          className="country-focus-card relative cursor-pointer h-full w-full"
+          className="country-focus-card relative h-full w-full cursor-pointer"
           onMouseEnter={() => {
             setIsHovered(true);
             onHoverChange(country.id);
@@ -101,9 +105,9 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         >
           <div
             className={cn(
-              "glass-floating glass-refraction glass-interactive relative overflow-hidden transition-all duration-500 ease-out h-full w-full rounded-xl border border-black/5 dark:border-white/10",
+              "glass-floating glass-refraction glass-interactive relative h-full w-full overflow-hidden rounded-xl border border-black/5 transition-all duration-500 ease-out dark:border-white/10",
               isHovered
-                ? "shadow-2xl shadow-black/25 dark:shadow-black/60 brightness-105 saturate-110 backdrop-blur-md"
+                ? "shadow-2xl shadow-black/25 brightness-105 saturate-110 backdrop-blur-md dark:shadow-black/60"
                 : "shadow-md shadow-black/10 dark:shadow-black/35",
               softSelectedCountryId === country.id &&
                 "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"

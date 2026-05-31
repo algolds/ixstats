@@ -64,7 +64,6 @@ function sanitizeSvg(svgContent: string): string {
   return sanitized;
 }
 
-
 function generateSafeFileName(originalName: string, userId: string, fileType: string): string {
   // Create a hash combining user ID and timestamp for uniqueness
   const hash = crypto
@@ -142,9 +141,9 @@ export async function POST(request: NextRequest) {
     // Generate safe file name and ensure no directory traversal
     const fileName = path.basename(generateSafeFileName(file.name, userId, file.type));
 
-
     // Ensure uploads directory exists
-    const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "public", "images", "uploads");
+    const uploadsDir =
+      process.env.UPLOAD_DIR || path.join(process.cwd(), "public", "images", "uploads");
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
       console.log(`[ImageUpload] Created directory: ${uploadsDir}`);

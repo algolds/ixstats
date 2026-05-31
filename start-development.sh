@@ -129,6 +129,15 @@ if [ -d ".next" ]; then
     echo "   Stale artifacts removed ✓"
 fi
 
+# Restore uploaded images from backup in development
+if [ -d "public/images/uploads_backup" ]; then
+    echo "🖼️  Restoring uploaded images from backup to public/images/uploads/..."
+    mkdir -p public/images/uploads
+    cp -n public/images/uploads_backup/* public/images/uploads/ 2>/dev/null || true
+    echo "   Uploaded images restored ✓"
+fi
+
+
 # Start Redis cache in background to avoid blocking
 echo "💾 Starting Redis cache server (background)..."
 ./scripts/setup-redis.sh start > /dev/null 2>&1 &

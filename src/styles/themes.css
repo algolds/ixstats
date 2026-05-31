@@ -95,30 +95,30 @@
   
   /* Tailwind CSS Variables - Dark Theme (WikiOS-aligned) */
   --radius: 0.625rem;
-  --background: 220 14% 7%;           /* #0f1114 WikiOS bg */
-  --foreground: 240 5% 90%;           /* #e4e4e7 WikiOS text */
-  --card: 222 13% 10%;                /* #16181d WikiOS surface */
-  --card-foreground: 240 5% 90%;      /* #e4e4e7 */
-  --popover: 222 13% 10%;             /* #16181d */
-  --popover-foreground: 240 5% 90%;   /* #e4e4e7 */
-  --primary: 240 5% 90%;
-  --primary-foreground: 220 14% 7%;
-  --secondary: 223 14% 14%;           /* #1e2028 */
-  --secondary-foreground: 240 5% 90%;
-  --muted: 223 14% 14%;               /* #1e2028 */
-  --muted-foreground: 240 4% 63%;     /* #a1a1aa WikiOS text-muted */
-  --accent: 223 14% 14%;
-  --accent-foreground: 240 5% 90%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 240 5% 90%;
-  --border: 223 14% 14%;              /* Slightly visible */
-  --input: 223 14% 14%;
-  --ring: 212.7 26.8% 83.9%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --background: var(--color-bg-primary);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-bg-secondary);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-bg-secondary);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-text-primary);
+  --primary-foreground: var(--color-bg-primary);
+  --secondary: var(--color-bg-tertiary);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-bg-tertiary);
+  --muted-foreground: var(--color-text-muted);
+  --accent: var(--color-bg-tertiary);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--color-text-primary);
+  --border: var(--color-border-primary);
+  --input: var(--color-input-border);
+  --ring: var(--color-brand-primary);
+  --chart-1: var(--color-chart-1);
+  --chart-2: var(--color-chart-2);
+  --chart-3: var(--color-chart-3);
+  --chart-4: var(--color-chart-4);
+  --chart-5: var(--color-chart-5);
 
   /* === GLASS MORPHISM SYSTEM === */
   --glass-diplomatic: rgba(16, 24, 40, 0.15);
@@ -136,12 +136,12 @@
   --glass-security-hover: rgba(16, 16, 40, 0.2);
   /* Blur Levels — values synchronized with glass-refraction.css */
   --blur-dramatic: 24px;
-  /* Glow Effects */
-  --glow-diplomatic: 0 0 20px rgba(99, 102, 241, 0.3);
-  --glow-interactive: 0 0 12px rgba(99, 102, 241, 0.2);
-  --glow-success: 0 0 16px rgba(16, 185, 129, 0.3);
-  --glow-warning: 0 0 16px rgba(245, 158, 11, 0.3);
-  --glow-error: 0 0 16px rgba(239, 68, 68, 0.3);
+  /* Glow Effects - Toned down soft shadows and inset border highlights */
+  --glow-diplomatic: 0 4px 12px rgba(99, 102, 241, 0.1), inset 0 0 0 1px rgba(99, 102, 241, 0.15);
+  --glow-interactive: 0 2px 8px rgba(99, 102, 241, 0.08), inset 0 0 0 1px rgba(99, 102, 241, 0.1);
+  --glow-success: 0 4px 12px rgba(16, 185, 129, 0.1), inset 0 0 0 1px rgba(16, 185, 129, 0.15);
+  --glow-warning: 0 4px 12px rgba(245, 158, 11, 0.1), inset 0 0 0 1px rgba(245, 158, 11, 0.15);
+  --glow-error: 0 4px 12px rgba(239, 68, 68, 0.1), inset 0 0 0 1px rgba(239, 68, 68, 0.15);
   /* Glass Shadows */
   --shadow-glass-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-glass-md: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -212,23 +212,23 @@
   --glass-cultural: rgba(245, 243, 255, 0.8);
 
   /* Tailwind CSS Variables - Light Theme */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --background: var(--color-bg-primary);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-bg-secondary);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-bg-secondary);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-text-primary);
+  --primary-foreground: var(--color-bg-primary);
+  --secondary: var(--color-bg-tertiary);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-bg-tertiary);
+  --muted-foreground: var(--color-text-muted);
+  --accent: var(--color-bg-tertiary);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--color-text-primary);
+  --border: var(--color-border-primary);
+  --input: var(--color-input-border);
+  --ring: var(--color-brand-primary);
 }

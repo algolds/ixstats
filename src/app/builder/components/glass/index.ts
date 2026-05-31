@@ -39,4 +39,3 @@ export {
 } from "./SectionBase";
 
 export { RefractiveGridBezel } from "./RefractiveGridBezel";
-

@@ -13,6 +13,7 @@ import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { ATOMIC_COMPONENTS, type AtomicGovernmentComponent } from "~/lib/atomic-government-data";
 import type { ComponentType } from "@prisma/client";
+import { Shield } from "lucide-react";
 
 /**
  * useGovernmentComponentsData - Fetch government component reference data
@@ -138,23 +139,7 @@ export function useGovernmentComponentsData(category?: string) {
  * This ensures backward compatibility with existing component consumers.
  */
 function transformDatabaseComponent(dbComp: any): AtomicGovernmentComponent {
-  // TODO: Implement actual transformation when database schema is finalized
-  // Expected database schema:
-  // {
-  //   id: string,
-  //   componentType: ComponentType,
-  //   name: string,
-  //   description: string,
-  //   effectiveness: number,
-  //   synergies: ComponentType[],
-  //   conflicts: ComponentType[],
-  //   implementationCost: number,
-  //   maintenanceCost: number,
-  //   requiredCapacity: number,
-  //   category: string,
-  //   color: string,
-  //   metadata: { complexity, timeToImplement, staffRequired, technologyRequired }
-  // }
+  const localConfig = ATOMIC_COMPONENTS[dbComp.componentType as ComponentType];
 
   return {
     id: dbComp.id || dbComp.componentType.toLowerCase(),
@@ -170,7 +155,7 @@ function transformDatabaseComponent(dbComp: any): AtomicGovernmentComponent {
     category: dbComp.category || "general",
     prerequisites: dbComp.prerequisites || [],
     color: dbComp.color || "blue",
-    icon: dbComp.icon || (() => null), // Placeholder - icons should be mapped from string to component
+    icon: localConfig?.icon || Shield,
     metadata: dbComp.metadata || {
       complexity: "Medium" as const,
       timeToImplement: "12-18 months",

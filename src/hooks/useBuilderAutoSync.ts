@@ -210,7 +210,7 @@ export function useGovernmentBuilderAutoSync(
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    handleAutoSync();
+    return handleAutoSync();
   }, [handleAutoSync]);
 
   // Clear pending changes
@@ -409,7 +409,7 @@ export function useTaxBuilderAutoSync(
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    handleAutoSync();
+    return handleAutoSync();
   }, [handleAutoSync]);
 
   // Clear pending changes

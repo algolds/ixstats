@@ -12,13 +12,13 @@ import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
-import { BuilderFilterProvider } from "./builder-filter-context";
+import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
 import { BuilderDIPlugin } from "~/components/DynamicIsland/plugins/BuilderDIPlugin";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { PreText } from "~/components/ui/pretext";
-import { BuilderSectionHero } from "./BuilderSectionHero";
+import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
 import { ImportSection } from "./sections/ImportSection";
 import { BuilderNotchBar } from "./BuilderNotchBar";
 import { useBuilderActions } from "../hooks/useBuilderActions";
@@ -77,6 +77,9 @@ function getSectionFromUrl(mode?: "create" | "edit"): BuilderSection {
   const params = new URLSearchParams(window.location.search);
   const section = params.get("section");
   if (section && (section === "import" || SECTION_TITLES[section as BuilderSection])) {
+    if (mode === "edit" && section === "foundation") {
+      return "identity";
+    }
     return section as BuilderSection;
   }
   return mode === "edit" ? "identity" : "foundation";
@@ -89,6 +92,21 @@ function buildSectionUrl(section: BuilderSection, mode?: "create" | "edit"): str
   }
   if (section === "foundation") return "/builder";
   return `/builder?section=${section}`;
+}
+
+function WelcomeModalWrapper() {
+  const { welcomeModalOpen, setWelcomeModalOpen, triggerDIExpansion } = useBuilderFilter();
+  return (
+    <BuilderWelcomeModal
+      open={welcomeModalOpen}
+      onOpenChange={(open) => {
+        setWelcomeModalOpen(open);
+        if (!open) {
+          triggerDIExpansion();
+        }
+      }}
+    />
+  );
 }
 
 // ─── Inner Router (consumes BuilderStateContext) ───
@@ -116,12 +134,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     mode,
   });
 
-  const previewFlag = foundationPreviewCountry?.flag || foundationPreviewCountry?.flagUrl;
-  const rawFlagUrl =
-    activeSection === "foundation"
-      ? previewFlag || builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag
-      : builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag;
-  const countryFlagUrl = rawFlagUrl?.replace("flagcdn.com/w320/", "flagcdn.com/w1280/");
   const [heroCollapsed, setHeroCollapsed] = useState(false);
 
   // Ref to track current builderState.step for use in callbacks without stale closures
@@ -222,6 +234,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Navigate to a section — also briefly flashes the section name in DI
   const handleNavigate = useCallback(
     (section: BuilderSection) => {
+      if (mode === "edit" && section === "foundation") return;
       if (section === activeSection) return;
 
       setActiveSection(section);
@@ -323,8 +336,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     };
     return colors[activeSection] || "text-amber-400";
   }, [activeSection]);
-
-
 
   // Handle browser back/forward
   useEffect(() => {
@@ -443,24 +454,9 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Always use sidebar layout now (no welcome screen)
   return (
     <BuilderFilterProvider onNavigate={handleNavigate}>
-      {activeSection === "foundation" ? <BuilderDIPlugin /> : <MyCountryDIPlugin />}
+      <BuilderDIPlugin />
+      <WelcomeModalWrapper />
       <div className="relative min-h-screen w-full">
-        {/* Dynamic Background Flag */}
-        {countryFlagUrl && (
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
-            <div
-              className={cn(
-                "absolute inset-x-0 top-0 h-[60vh] bg-cover bg-center bg-no-repeat blur-[80px] saturate-50 transition-all duration-700",
-                activeSection === "foundation" ? "opacity-[0.12]" : "opacity-[0.08]"
-              )}
-              style={{
-                backgroundImage: `url(${countryFlagUrl})`,
-                maskImage: "linear-gradient(to bottom, black 20%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 20%, transparent 100%)",
-              }}
-            />
-          </div>
-        )}
         <BuilderSidebarLayout
           activeSection={activeSection}
           onNavigate={handleNavigate}
@@ -469,17 +465,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           mode={mode}
           heroCollapsed={heroCollapsed}
           onHeroExpand={() => setHeroCollapsed(false)}
-          heroSection={
-            !heroCollapsed &&
-            activeSection === "foundation" && (
-              <BuilderSectionHero
-                section={activeSection}
-                mode={mode}
-                countryId={countryId}
-                onNavigate={handleNavigate}
-              />
-            )
-          }
+          heroSection={null}
           notchBar={
             activeSection !== "foundation" && (
               <BuilderNotchBar

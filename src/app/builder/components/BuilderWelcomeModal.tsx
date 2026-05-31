@@ -155,7 +155,7 @@ export function BuilderWelcomeModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[100000] bg-zinc-950/40 backdrop-blur-[12px] dark:bg-black/60"
+            className="fixed inset-0 z-[120000] bg-zinc-950/40 backdrop-blur-[12px] dark:bg-black/60"
             onClick={handleClose}
           />
 
@@ -166,40 +166,39 @@ export function BuilderWelcomeModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 20 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-1/2 left-1/2 z-[100001] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 focus:outline-none"
+            className="fixed top-1/2 left-1/2 z-[120001] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 focus:outline-none"
           >
-            <div className="border-border/50 from-background via-background to-muted/30 relative overflow-hidden rounded-2xl border bg-gradient-to-b shadow-2xl dark:border-white/10 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+            <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-white/70 shadow-2xl backdrop-blur-2xl dark:border-white/20 dark:bg-zinc-950/70">
               {/* Close button */}
               <button
                 onClick={handleClose}
-                className="text-muted-foreground/60 hover:bg-muted hover:text-foreground absolute top-3 right-3 z-10 cursor-pointer rounded-full p-1.5 transition-colors dark:hover:bg-white/10"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-3 right-3 z-10 cursor-pointer rounded-lg p-1.5 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
 
               {/* Header */}
               <div className="relative px-6 pt-6 pb-2">
-                <div className="pointer-events-none absolute -top-20 -left-20 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl" />
-                <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" />
-
                 <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <MyCountryLogo size="md" variant="icon-only" animated={true} />
                     <div>
-                      <h2 className="text-foreground text-lg font-semibold">MyCountry Builder Guide</h2>
+                      <h2 className="text-foreground text-lg font-semibold">
+                        MyCountry Builder Guide
+                      </h2>
                       <p className="text-muted-foreground text-xs">
                         Create your custom nation exactly as you want it.
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5 font-mono text-[10px] dark:bg-white/5">
+                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
                     v{BUILDER_VERSION}
                   </span>
                 </div>
               </div>
 
               {/* Tab Selector */}
-              <div className="border-border/30 flex border-b bg-zinc-500/5 px-6 dark:border-white/5 dark:bg-black/15">
+              <div className="border-border/30 bg-muted/20 flex border-b px-6">
                 {TABS.map((tab, i) => (
                   <button
                     key={tab}
@@ -207,7 +206,7 @@ export function BuilderWelcomeModal({
                     className={cn(
                       "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
                       activeTab === i
-                        ? "border-amber-500 font-bold text-amber-600 dark:text-amber-400"
+                        ? "border-amber-500 font-bold text-amber-500"
                         : "text-muted-foreground hover:text-foreground border-transparent"
                     )}
                   >
@@ -233,29 +232,60 @@ export function BuilderWelcomeModal({
                           Welcome to the MyCountry Builder!
                         </h3>
                         <p className="text-muted-foreground text-xs leading-relaxed">
-                          Here, you will construct a sovereign state
-                          from the ground up by choosing its unique identity and policies. You can customize
-                          your country by selecting its government, economy, industries, culture, and more.
+                          Here, you will construct a sovereign state from the ground up by choosing
+                          its unique identity and policies. You can customize your country by
+                          selecting its government, economy, industries, culture, and more.
                         </p>
                         <p className="text-muted-foreground text-xs leading-relaxed">
-                          Once finalized, your country joins the World with other players. You will be able to
-                          draft laws, enage in diplomacy, trade or form treaties, and more. Your actions
-                          will affect your country's development and its relations with other countries.
+                          Once finalized, your country joins the World with other players. You will
+                          be able to draft laws, enage in diplomacy, trade or form treaties, and
+                          more. Your actions will affect your country's development and its
+                          relations with other countries.
                         </p>
                       </div>
 
-                      <div className="border-border/30 rounded-xl border bg-gradient-to-r from-amber-500/10 to-yellow-500/10 p-3 dark:border-white/5">
-                        <div className="mb-1.5 flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-amber-400" />
-                          <span className="text-foreground/90 text-xs font-medium">
-                            How It Works
-                          </span>
+                      <div
+                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-all duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
+                        style={{
+                          backdropFilter: "blur(20px) saturate(145%)",
+                          WebkitBackdropFilter: "blur(20px) saturate(145%)",
+                          isolation: "isolate",
+                        }}
+                      >
+                        {/* Refraction edges - identical to Dynamic Island */}
+                        <div className="pointer-events-none absolute inset-0 z-0">
+                          {/* Top Highlight Edge */}
+                          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/15 to-transparent dark:via-white/35" />
+                          {/* Bottom Highlight Edge */}
+                          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/10 to-transparent dark:via-white/25" />
+                          {/* Left Highlight Edge */}
+                          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-black/15 to-transparent dark:via-white/35" />
+                          {/* Right Highlight Edge */}
+                          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/10 to-transparent dark:via-white/25" />
+                          {/* Inner shimmer pulsing */}
+                          <div
+                            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10"
+                            style={{
+                              animationDuration: "3s",
+                              animationTimingFunction: "ease-in-out",
+                            }}
+                          />
                         </div>
-                        <p className="text-muted-foreground text-[11px] leading-relaxed">
-                          Every decision applies real-time modifiers to your GDP growth, stability index, and
-                          currency value. All components and sliders can be customized and re-allocated at
-                          any time without penalty once your nation is active.
-                        </p>
+
+                        {/* Content */}
+                        <div className="relative z-10 text-left">
+                          <div className="mb-1.5 flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-amber-500" />
+                            <span className="text-foreground/90 text-xs font-semibold">
+                              How It Works
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                            Every decision applies real-time modifiers to your GDP growth, stability
+                            index, and currency value. All components and sliders can be customized
+                            and re-allocated at any time without penalty once your nation is active.
+                          </p>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -274,11 +304,11 @@ export function BuilderWelcomeModal({
                         return (
                           <div
                             key={step.title}
-                            className={`rounded-xl ${step.bg} border-border/30 hover:border-border/60 border p-3 transition-colors dark:border-white/5 dark:hover:border-white/10`}
+                            className="border-border bg-card hover:border-border-accent hover:bg-muted/50 rounded-xl border p-3 transition-colors"
                           >
                             <div className="mb-1.5 flex items-center gap-2">
                               <Icon className={`h-3.5 w-3.5 ${step.color}`} />
-                              <span className="dark:text-foreground/90 text-xs font-semibold text-zinc-800">
+                              <span className="text-foreground/90 text-xs font-semibold">
                                 {step.title}
                               </span>
                             </div>
@@ -300,16 +330,15 @@ export function BuilderWelcomeModal({
                       transition={{ duration: 0.2 }}
                       className="space-y-3 text-left"
                     >
-                      
                       <div className="space-y-2">
                         {ADVANCED_TIPS.map((item) => {
                           const Icon = item.icon;
                           return (
                             <div
                               key={item.title}
-                              className="bg-muted/30 border-border/10 flex items-start gap-3 rounded-lg border p-2.5 dark:bg-white/5"
+                              className="border-border bg-card flex items-start gap-3 rounded-lg border p-2.5"
                             >
-                              <div className="shrink-0 rounded-md bg-white/5 p-1">
+                              <div className="bg-muted shrink-0 rounded p-1">
                                 <Icon className={`h-3.5 w-3.5 ${item.color}`} />
                               </div>
                               <div className="space-y-0.5">
@@ -372,11 +401,11 @@ export function BuilderWelcomeModal({
               </div>
 
               {/* Footer */}
-              <div className="border-border/30 flex items-center justify-between border-t px-6 py-4 dark:border-white/5">
+              <div className="border-border/30 flex items-center justify-between border-t px-6 py-4">
                 <div />
                 <button
                   onClick={handleClose}
-                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-amber-500 px-4 py-1.5 text-xs font-semibold text-zinc-950 shadow-lg shadow-amber-500/20 transition-colors hover:bg-amber-400"
+                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-amber-500 px-4 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
                 >
                   Start Building
                 </button>

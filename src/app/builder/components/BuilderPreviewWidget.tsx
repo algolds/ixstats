@@ -53,13 +53,12 @@ function AttributeSlider({ label, value, color }: { label: string; value: number
         <span>{label}</span>
         <span style={{ color }}>{Math.round(value)}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full border border-white/5 bg-zinc-900/60 p-[1px]">
+      <div className="h-2 w-full overflow-hidden rounded border border-white/5 bg-zinc-900/60 p-[1px]">
         <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
+          className="h-full rounded transition-all duration-500 ease-out"
           style={{
             width: `${value}%`,
             backgroundColor: color,
-            boxShadow: `0 0 6px ${color}40`,
           }}
         />
       </div>
@@ -87,7 +86,9 @@ export function BuilderPreviewWidget({
   const { setPreviewWidgetHeight } = foundationFilter;
 
   const sectionTheme = activeSection ? BUILDER_SECTION_THEMES[activeSection] : null;
-  const themeTextColor = activeSection ? (sectionThemeTextClasses[activeSection]?.split(" ")[0] || "text-zinc-400") : "text-zinc-400";
+  const themeTextColor = activeSection
+    ? sectionThemeTextClasses[activeSection]?.split(" ")[0] || "text-zinc-400"
+    : "text-zinc-400";
 
   const economicHealthMetrics = useMemo(() => {
     return {
@@ -348,11 +349,11 @@ export function BuilderPreviewWidget({
                   rounded={false}
                   className="h-full w-full object-cover opacity-75 brightness-75 transition-all duration-300 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/15 via-black/30 to-black/60" />
+                <div className="absolute inset-0 z-10 bg-black/45" />
               </div>
             ) : (
-              <div className="absolute inset-0 z-0 flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
-                <Globe className="h-8 w-8 text-blue-500/20" />
+              <div className="absolute inset-0 z-0 flex items-center justify-center bg-white/[0.02]">
+                <Globe className="h-8 w-8 text-white/10" />
               </div>
             )}
 
@@ -453,11 +454,11 @@ export function BuilderPreviewWidget({
                   rounded={false}
                   className="h-full w-full object-cover opacity-75 brightness-75 transition-all duration-300 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/15 via-black/30 to-black/60" />
+                <div className="absolute inset-0 z-10 bg-black/45" />
               </div>
             ) : (
-              <div className="absolute inset-0 z-0 flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
-                <Globe className="h-8 w-8 text-blue-500/20" />
+              <div className="absolute inset-0 z-0 flex items-center justify-center bg-white/[0.02]">
+                <Globe className="h-8 w-8 text-white/10" />
               </div>
             )}
 
@@ -570,7 +571,12 @@ export function BuilderPreviewWidget({
                       label="Legitimacy"
                       tooltip={`Legitimacy: ${govMetrics.legitimacy.toFixed(1)}% - Public alignment and democratic mandate`}
                     />
-                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
+                    <span
+                      className={cn(
+                        "max-w-[50px] truncate text-[8px] font-medium transition-colors",
+                        themeTextColor
+                      )}
+                    >
                       Legitimacy
                     </span>
                   </div>
@@ -582,7 +588,12 @@ export function BuilderPreviewWidget({
                       label="Effectiveness"
                       tooltip={`Effectiveness: ${govMetrics.effectiveness.toFixed(1)}% - Policy cohesion and executive capability`}
                     />
-                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
+                    <span
+                      className={cn(
+                        "max-w-[50px] truncate text-[8px] font-medium transition-colors",
+                        themeTextColor
+                      )}
+                    >
                       Effectiveness
                     </span>
                   </div>
@@ -594,7 +605,12 @@ export function BuilderPreviewWidget({
                       label="Budget"
                       tooltip={`Budget Health: ${govMetrics.budgetHealth.toFixed(1)}% - Match accuracy of allocations to total budget`}
                     />
-                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
+                    <span
+                      className={cn(
+                        "max-w-[50px] truncate text-[8px] font-medium transition-colors",
+                        themeTextColor
+                      )}
+                    >
                       Budget
                     </span>
                   </div>
@@ -662,7 +678,12 @@ export function BuilderPreviewWidget({
                       label="Econ Health"
                       tooltip={`Economic Health: ${econMetrics.economicHealth.toFixed(1)}%`}
                     />
-                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
+                    <span
+                      className={cn(
+                        "max-w-[50px] truncate text-[8px] font-medium transition-colors",
+                        themeTextColor
+                      )}
+                    >
                       Health
                     </span>
                   </div>
@@ -674,7 +695,12 @@ export function BuilderPreviewWidget({
                       label="Integration"
                       tooltip={`Integration Score: ${econMetrics.crossBuilderScore.toFixed(1)}%`}
                     />
-                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
+                    <span
+                      className={cn(
+                        "max-w-[50px] truncate text-[8px] font-medium transition-colors",
+                        themeTextColor
+                      )}
+                    >
                       Integration
                     </span>
                   </div>
@@ -686,7 +712,12 @@ export function BuilderPreviewWidget({
                       label="Component Quality"
                       tooltip={`Component Quality: ${econMetrics.overallEffectiveness.toFixed(1)}%`}
                     />
-                    <span className={cn("max-w-[50px] truncate text-[8px] font-medium transition-colors", themeTextColor)}>
+                    <span
+                      className={cn(
+                        "max-w-[50px] truncate text-[8px] font-medium transition-colors",
+                        themeTextColor
+                      )}
+                    >
                       Quality
                     </span>
                   </div>
@@ -789,10 +820,8 @@ export function BuilderPreviewWidget({
                     </span>
                     <span
                       className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        symbolsConfigured
-                          ? "bg-emerald-500 shadow-[0_0_3px_rgba(16,185,129,0.5)]"
-                          : "bg-zinc-700"
+                        "h-1.5 w-1.5 shrink-0 rounded-[1.5px]",
+                        symbolsConfigured ? "bg-emerald-500" : "bg-zinc-700"
                       )}
                     />
                   </div>
@@ -813,10 +842,8 @@ export function BuilderPreviewWidget({
                     </span>
                     <span
                       className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        coreConfigured
-                          ? "bg-emerald-500 shadow-[0_0_3px_rgba(16,185,129,0.5)]"
-                          : "bg-zinc-700"
+                        "h-1.5 w-1.5 shrink-0 rounded-[1.5px]",
+                        coreConfigured ? "bg-emerald-500" : "bg-zinc-700"
                       )}
                     />
                   </div>
@@ -837,10 +864,8 @@ export function BuilderPreviewWidget({
                     </span>
                     <span
                       className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        govConfigured
-                          ? "bg-emerald-500 shadow-[0_0_3px_rgba(16,185,129,0.5)]"
-                          : "bg-zinc-700"
+                        "h-1.5 w-1.5 shrink-0 rounded-[1.5px]",
+                        govConfigured ? "bg-emerald-500" : "bg-zinc-700"
                       )}
                     />
                   </div>
@@ -861,10 +886,8 @@ export function BuilderPreviewWidget({
                     </span>
                     <span
                       className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        taxConfigured
-                          ? "bg-emerald-500 shadow-[0_0_3px_rgba(16,185,129,0.5)]"
-                          : "bg-zinc-700"
+                        "h-1.5 w-1.5 shrink-0 rounded-[1.5px]",
+                        taxConfigured ? "bg-emerald-500" : "bg-zinc-700"
                       )}
                     />
                   </div>

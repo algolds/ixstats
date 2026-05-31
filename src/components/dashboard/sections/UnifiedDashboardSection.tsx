@@ -673,13 +673,13 @@ export function UnifiedDashboardSection({
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="space-y-4 sm:space-y-6"
+      className="space-y-5 md:space-y-7"
     >
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="grid gap-5 lg:grid-cols-3">
           {/* Feed stream (left 2/3) */}
-          <div className="space-y-4 lg:col-span-2">
+          <div className="space-y-5 lg:col-span-2">
             {/* Feed Tab Bar */}
             <motion.div variants={staggerItem}>
               <div className="glass-surface glass-refraction relative flex gap-1 rounded-xl p-1">
@@ -735,7 +735,7 @@ export function UnifiedDashboardSection({
                 variants={staggerItem}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-surface glass-refraction flex items-center justify-between gap-3 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4"
+                className="glass-surface glass-refraction flex items-center justify-between gap-3 rounded-xl border border-purple-500/20 bg-purple-500/5 p-5"
               >
                 <div className="flex items-center gap-2.5">
                   <Newspaper className="h-4.5 w-4.5 shrink-0 text-purple-400" />
@@ -768,7 +768,7 @@ export function UnifiedDashboardSection({
               <div className="mb-4">
                 {!hasCountry ? (
                   <Card className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
-                    <CardContent className="flex items-center justify-between gap-4 p-4">
+                    <CardContent className="flex items-center justify-between gap-5 p-5 md:p-6">
                       <div className="flex items-start gap-2.5">
                         <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                         <div>
@@ -876,7 +876,7 @@ export function UnifiedDashboardSection({
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="space-y-4 md:sticky md:top-6 md:self-start lg:col-span-1">
+          <div className="space-y-5 md:sticky md:top-6 md:self-start lg:col-span-1">
             {/* Trending Now — Compact */}
             <CutoutCard
               className={cn(
@@ -1163,7 +1163,7 @@ function UnifiedFeedContent({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-4">
+          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-5">
             <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
             <div className="bg-muted/60 h-3 w-1/2 rounded" />
           </div>
@@ -1259,7 +1259,7 @@ function FollowingFeedContent({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-4">
+          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-5">
             <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
             <div className="bg-muted/60 h-3 w-1/2 rounded" />
           </div>
@@ -1346,7 +1346,7 @@ function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "
       <div className="flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
@@ -1385,7 +1385,7 @@ function ForumPreviewContent({ threadId }: { threadId: number }) {
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
+        <span className="inline-block rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
           {thread.forumName}
         </span>
       )}
@@ -1462,16 +1462,17 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
               <div
                 key={c.id}
                 className="border-border/30 relative flex items-center gap-2 overflow-hidden rounded-lg border p-2"
-                style={
-                  c.flagUrl
-                    ? {
-                        backgroundImage: `linear-gradient(to right, hsl(var(--card)) 40%, transparent 70%), url(${c.flagUrl})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "right center",
-                      }
-                    : undefined
-                }
               >
+                {c.flagUrl && (
+                  <div className="pointer-events-none absolute inset-0 z-0 opacity-40">
+                    <img
+                      src={c.flagUrl}
+                      alt=""
+                      className="h-full w-full object-cover object-right"
+                    />
+                    <div className="from-card via-card/80 absolute inset-0 bg-gradient-to-r to-transparent" />
+                  </div>
+                )}
                 <div className="relative z-10 flex items-center gap-2">
                   <SimpleFlag countryName={c.name} size="sm" className="shrink-0" />
                   <div className="min-w-0">
@@ -1648,9 +1649,9 @@ function BlurbResponseModal({
                 placeholder="Share your country's perspective..."
                 maxLength={1000}
                 rows={3}
-                className="w-full resize-none rounded-lg border border-border/40 bg-white/5 px-3 py-2 text-xs focus:border-purple-500 focus:outline-none"
+                className="border-border/40 w-full resize-none rounded-lg border bg-white/5 px-3 py-2 text-xs focus:border-purple-500 focus:outline-none"
               />
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between text-[10px]">
                 <span>{newResponse.length}/1000 characters</span>
                 <Button
                   size="sm"
@@ -1661,13 +1662,15 @@ function BlurbResponseModal({
                       content: newResponse,
                     })
                   }
-                  disabled={!newResponse.trim() || newResponse.length > 1000 || submitMutation.isPending}
+                  disabled={
+                    !newResponse.trim() || newResponse.length > 1000 || submitMutation.isPending
+                  }
                 >
                   {submitMutation.isPending ? "Submitting..." : "Submit Response"}
                 </Button>
               </div>
               {submitMutation.error && (
-                <p className="text-[10px] text-red-400 mt-1">{submitMutation.error.message}</p>
+                <p className="mt-1 text-[10px] text-red-400">{submitMutation.error.message}</p>
               )}
             </div>
           </div>
@@ -1675,9 +1678,11 @@ function BlurbResponseModal({
 
         {/* User's existing response */}
         {isSignedIn && myResponse && (
-          <div className="border-border/20 bg-emerald-500/5 border-b px-5 py-3">
-            <h4 className="text-emerald-400 mb-1 text-[10px] font-bold tracking-wider uppercase">Your Submitted Response</h4>
-            <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-relaxed">
+          <div className="border-border/20 border-b bg-emerald-500/5 px-5 py-3">
+            <h4 className="mb-1 text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
+              Your Submitted Response
+            </h4>
+            <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
               {myResponse.content}
             </p>
           </div>

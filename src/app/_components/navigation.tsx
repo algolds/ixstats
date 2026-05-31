@@ -874,7 +874,7 @@ export function Navigation() {
         className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
-            : "from-background/95 via-secondary/95 to-background/95 border-border bg-gradient-to-r shadow-2xl"
+            : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
         }`}
         style={{
           opacity: 1 - morphProgress * 0.6,

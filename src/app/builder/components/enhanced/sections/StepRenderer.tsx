@@ -345,7 +345,7 @@ import { AtomicComponentSelector } from "~/components/government/atoms/AtomicGov
 import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
 import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
 import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
-import { EconomyBuilderPage } from "../index"; // Lazy-loaded from index
+import { EconomyBuilderPage } from "../index"; // Eagerly loaded from index
 import { BuilderLoadingFallback } from "../../LoadingFallback";
 import { EnhancedTabsList, EnhancedTabsTrigger } from "../BuilderTabs";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
@@ -515,25 +515,23 @@ export const StepRenderer = memo(function StepRenderer({
     );
   }
 
-  // Economics Step (lazy-loaded)
+  // Economics Step (eagerly-loaded)
   if (builderState.step === "economics" && builderState.economicInputs) {
     return (
-      <Suspense fallback={<BuilderLoadingFallback />}>
-        <EconomyBuilderPage
-          economicInputs={builderState.economicInputs}
-          onEconomicInputsChange={handleEconomicInputsChange}
-          governmentComponents={builderState.governmentComponents}
-          governmentBuilderData={builderState.governmentStructure}
-          taxSystemData={builderState.taxSystemData}
-          countryId={builderState.selectedCountry?.countryCode}
-          showAdvanced={builderState.showAdvancedMode}
-          persistedEconomyBuilder={builderState.economyBuilderState}
-          onPersistEconomyBuilder={handlePersistEconomyBuilder}
-          onPersistTaxSystem={handlePersistTaxSystem}
-          activeTab={builderState.activeEconomicsTab}
-          onTabChange={(tab: string) => handleTabChange("economics", tab)}
-        />
-      </Suspense>
+      <EconomyBuilderPage
+        economicInputs={builderState.economicInputs}
+        onEconomicInputsChange={handleEconomicInputsChange}
+        governmentComponents={builderState.governmentComponents}
+        governmentBuilderData={builderState.governmentStructure}
+        taxSystemData={builderState.taxSystemData}
+        countryId={builderState.selectedCountry?.countryCode}
+        showAdvanced={builderState.showAdvancedMode}
+        persistedEconomyBuilder={builderState.economyBuilderState}
+        onPersistEconomyBuilder={handlePersistEconomyBuilder}
+        onPersistTaxSystem={handlePersistTaxSystem}
+        activeTab={builderState.activeEconomicsTab}
+        onTabChange={(tab: string) => handleTabChange("economics", tab)}
+      />
     );
   }
 

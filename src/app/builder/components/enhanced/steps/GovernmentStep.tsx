@@ -209,7 +209,7 @@ export function GovernmentStep({
               <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                 <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
                   <Settings className="h-5 w-5 text-cyan-400" />
-                  MyGovernment Components Builder
+                  Government Components
                   <button
                     onClick={() => setWelcomeOpen(true)}
                     className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-cyan-400"
@@ -497,28 +497,28 @@ export function GovernmentStep({
                   </h3>
                 </div>
                 <GlassCardContent className="space-y-4 p-6">
-                  <p className="text-[11px] text-zinc-400">
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                     Review critical adjustments compared to initial setup before authorization
                   </p>
 
                   <div className="space-y-2.5">
                     {deltaWarning && (
-                      <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] text-amber-200">
-                        <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
+                      <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
+                        <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500 dark:text-amber-400" />
                         <span>{deltaWarning}</span>
                       </div>
                     )}
 
                     {currencyChangeWarning && (
-                      <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] text-amber-200">
-                        <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
+                      <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
+                        <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500 dark:text-amber-400" />
                         <span>{currencyChangeWarning}</span>
                       </div>
                     )}
 
                     {!deltaWarning && !currencyChangeWarning && (
-                      <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-[11px] text-emerald-200">
-                        <CheckCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-400" />
+                      <div className="flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-[11px] text-emerald-800 dark:bg-emerald-500/5 dark:text-emerald-200">
+                        <CheckCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                         <span>
                           No high-risk adjustments detected. Structural variables are within safe
                           boundaries.
@@ -532,11 +532,11 @@ export function GovernmentStep({
                       id="verify-checkbox"
                       checked={isVerified}
                       onCheckedChange={(checked) => setIsVerified(checked === true)}
-                      className="mt-0.5 border-zinc-700 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500"
+                      className="mt-0.5 border-zinc-300 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500 dark:border-zinc-700"
                     />
                     <Label
                       htmlFor="verify-checkbox"
-                      className="cursor-pointer text-xs leading-normal text-zinc-400"
+                      className="cursor-pointer text-xs leading-normal text-zinc-600 dark:text-zinc-400"
                     >
                       I verify these governance adjustments are intentional and authorization should
                       be finalized.
@@ -550,7 +550,7 @@ export function GovernmentStep({
                         await onGovernmentStructureSave(governmentStructure);
                       }}
                       disabled={!isVerified || !!gdpCapWarning}
-                      className="h-9 w-full rounded-lg bg-cyan-500 text-xs font-semibold text-black hover:bg-cyan-600 disabled:bg-zinc-800 disabled:text-zinc-500"
+                      className="h-9 w-full rounded-lg bg-cyan-500 text-xs font-semibold text-black hover:bg-cyan-600 disabled:bg-zinc-200 disabled:text-zinc-400 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
                     >
                       Save & Finalize Governance
                     </Button>

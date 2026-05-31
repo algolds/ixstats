@@ -187,7 +187,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       className={cn(
         "sticky top-0 z-[6000] overflow-hidden rounded-b-xl shadow-lg shadow-black/20 transition-all duration-300",
         isFoundation
-          ? "border border-white/20 dark:border-white/10 h-14"
+          ? "h-14 border border-white/20 dark:border-white/10"
           : "glass-surface glass-refraction glass-edge backdrop-blur-xl",
         "lg:ml-[248px]",
         isFoundation ? "lg:mr-[344px]" : "lg:mr-[16px]"
@@ -231,7 +231,9 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       </div>
 
       {/* Spacer to clear Dynamic Island */}
-      <div className={cn("transition-all duration-300", isFoundation ? "h-6 lg:h-8" : "h-10 lg:h-12")} />
+      <div
+        className={cn("transition-all duration-300", isFoundation ? "h-6 lg:h-8" : "h-10 lg:h-12")}
+      />
 
       {section !== "import" && !isFoundation && (
         <div
@@ -275,11 +277,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                 <div
                   className="hidden shrink-0 transition-all duration-300 lg:block"
                   style={{
-                    width: !showContinueButton
-                      ? "0px"
-                      : isSearchExpanded
-                        ? "24px"
-                        : "120px",
+                    width: !showContinueButton ? "0px" : isSearchExpanded ? "24px" : "120px",
                   }}
                 />
                 <div
@@ -567,7 +565,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
 
                 {/* Right column: Spacer containing Continue button */}
                 <div
-                  className="flex shrink-0 items-center justify-end transition-all duration-300 overflow-hidden"
+                  className="flex shrink-0 items-center justify-end overflow-hidden transition-all duration-300"
                   style={{ width: showContinueButton ? "120px" : "0px" }}
                 >
                   {showContinueButton && (

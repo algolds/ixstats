@@ -107,7 +107,11 @@ export function SplashThinkPagesPeek() {
                 >
                   <div className="border-border bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-md border">
                     {flag ? (
-                      <img src={proxyDiscordUrl(flag)} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={proxyDiscordUrl(flag)}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <span className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
                         TP

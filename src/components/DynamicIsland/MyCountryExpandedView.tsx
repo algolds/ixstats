@@ -36,7 +36,7 @@ export function MyCountryExpandedView({
   return (
     <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] -translate-x-1/2 transform sm:w-[90vw] md:w-[600px] lg:max-w-2xl">
       <div
-        className="command-palette-dropdown border border-white/20 relative mx-auto w-full overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
+        className="command-palette-dropdown relative mx-auto w-full overflow-hidden rounded-xl border border-white/20 shadow-2xl dark:border-white/10"
         style={{
           background:
             "linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.05) 100%)",

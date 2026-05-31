@@ -75,7 +75,7 @@ export function MetricCard({
   const themeStyles = theme
     ? {
         borderColor: theme.accent,
-        background: `linear-gradient(135deg, ${theme.bg} 0%, transparent 100%)`,
+        backgroundColor: theme.bg,
       }
     : undefined;
 
@@ -95,10 +95,13 @@ export function MetricCard({
               <div
                 className={cn(
                   "rounded-lg p-1.5",
-                  theme ? `bg-gradient-to-br ${theme.primary}` : "bg-primary/10"
+                  theme ? "bg-white/[0.02] border border-border/30" : "bg-primary/10"
                 )}
               >
-                <Icon className={cn("h-3.5 w-3.5", theme ? "text-white" : "text-primary")} />
+                <Icon
+                  className={cn("h-3.5 w-3.5", theme ? "" : "text-primary")}
+                  style={theme ? { color: theme.accent } : undefined}
+                />
               </div>
             )}
             <div className="flex-1">

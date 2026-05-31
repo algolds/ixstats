@@ -157,9 +157,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
       <div
         className={cn(
           "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-          isRaw
-            ? ""
-            : "glass-surface overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm"
+          isRaw ? "" : "glass-surface overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm"
         )}
       >
         {visibleCountries.map((country, index) => {
@@ -211,13 +209,19 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
         </div>
       )}
 
-      {!isLoading && !hasMore && !isAutoScrolling && visibleCount >= countries.length && countries.length > 0 && (
-        <div className="mt-12 text-center">
-          <div className="glass-floating glass-refraction inline-block px-6 py-4">
-            <p className="text-muted-foreground">You've viewed all {countries.length} countries</p>
+      {!isLoading &&
+        !hasMore &&
+        !isAutoScrolling &&
+        visibleCount >= countries.length &&
+        countries.length > 0 && (
+          <div className="mt-12 text-center">
+            <div className="glass-floating glass-refraction inline-block px-6 py-4">
+              <p className="text-muted-foreground">
+                You've viewed all {countries.length} countries
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">

@@ -213,6 +213,49 @@ function getFallbackComponentByType(
   };
 }
 
+/**
+ * Ensure database is seeded with economic component reference data
+ */
+async function ensureSeeded(db: any) {
+  try {
+    const count = await db.economicComponentData.count();
+    if (count === 0) {
+      console.info("[economicComponents] Reference database is empty. Seeding components...");
+      const components = getFallbackComponents();
+      const dataToInsert = components.map((comp) => ({
+        componentType: comp.type,
+        name: comp.name,
+        description: comp.description,
+        category: comp.category,
+        effectiveness: comp.effectiveness,
+        synergies: JSON.stringify(comp.synergies),
+        conflicts: JSON.stringify(comp.conflicts),
+        governmentSynergies: JSON.stringify(comp.governmentSynergies),
+        governmentConflicts: JSON.stringify(comp.governmentConflicts),
+        taxImpact: JSON.stringify(comp.taxImpact),
+        sectorImpact: JSON.stringify(comp.sectorImpact),
+        employmentImpact: JSON.stringify(comp.employmentImpact),
+        implementationCost: comp.implementationCost,
+        maintenanceCost: comp.maintenanceCost,
+        requiredCapacity: comp.requiredCapacity,
+        color: comp.color,
+        iconName: comp.type.toLowerCase(),
+        metadata: JSON.stringify(comp.metadata),
+        isActive: true,
+        usageCount: 0,
+      }));
+
+      await db.economicComponentData.createMany({
+        data: dataToInsert,
+        skipDuplicates: true,
+      });
+      console.info(`[economicComponents] Successfully seeded ${dataToInsert.length} components.`);
+    }
+  } catch (error) {
+    console.error("[economicComponents] Failed to self-seed reference database:", error);
+  }
+}
+
 // ============================================================================
 // Router Definition
 // ============================================================================
@@ -231,6 +274,9 @@ export const economicComponentsRouter = createTRPCRouter({
    */
   getAllComponents: publicProcedure.input(getAllComponentsSchema).query(async ({ ctx, input }) => {
     try {
+      // Ensure seeded
+      await ensureSeeded(ctx.db);
+
       // Query database
       const dbComponents = await ctx.db.economicComponentData.findMany({
         where: {
@@ -292,6 +338,9 @@ export const economicComponentsRouter = createTRPCRouter({
     .input(getComponentByTypeSchema)
     .query(async ({ ctx, input }) => {
       try {
+        // Ensure seeded
+        await ensureSeeded(ctx.db);
+
         // Try database first
         const dbComponent = await ctx.db.economicComponentData.findUnique({
           where: { componentType: input.componentType },
@@ -405,6 +454,9 @@ export const economicComponentsRouter = createTRPCRouter({
    */
   getComponentsByCategory: publicProcedure.query(async ({ ctx }) => {
     try {
+      // Ensure seeded
+      await ensureSeeded(ctx.db);
+
       // Query database
       const dbComponents = await ctx.db.economicComponentData.findMany({
         where: { isActive: true },

@@ -16,7 +16,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   type EconomicComponentType,
   type EconomicCategory,
@@ -123,6 +123,12 @@ export function useAtomicEconomicBuilder({
   const [categoryFilter, setCategoryFilter] = useState<EconomicCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Sync state if initialSelection changes
+  useEffect(() => {
+    setSelectedComponents(initialSelection);
+  }, [initialSelection]);
+
+
   // ============================================================================
   // Computed Values (Memoized)
   // ============================================================================
@@ -200,22 +206,14 @@ export function useAtomicEconomicBuilder({
    */
   const handleSelect = useCallback(
     (component: EconomicComponentType) => {
-      setSelectedComponents((prev) => {
-        // Don't add if already selected
-        if (prev.includes(component)) return prev;
+      if (selectedComponents.includes(component)) return;
+      if (selectedComponents.length >= maxComponents) return;
 
-        // Don't add if max reached
-        if (prev.length >= maxComponents) return prev;
-
-        const newSelection = [...prev, component];
-
-        // Notify parent if callback provided
-        onSelectionChange?.(newSelection);
-
-        return newSelection;
-      });
+      const newSelection = [...selectedComponents, component];
+      setSelectedComponents(newSelection);
+      onSelectionChange?.(newSelection);
     },
-    [maxComponents, onSelectionChange]
+    [selectedComponents, maxComponents, onSelectionChange]
   );
 
   /**
@@ -223,16 +221,11 @@ export function useAtomicEconomicBuilder({
    */
   const handleDeselect = useCallback(
     (component: EconomicComponentType) => {
-      setSelectedComponents((prev) => {
-        const newSelection = prev.filter((c) => c !== component);
-
-        // Notify parent if callback provided
-        onSelectionChange?.(newSelection);
-
-        return newSelection;
-      });
+      const newSelection = selectedComponents.filter((c) => c !== component);
+      setSelectedComponents(newSelection);
+      onSelectionChange?.(newSelection);
     },
-    [onSelectionChange]
+    [selectedComponents, onSelectionChange]
   );
 
   /**

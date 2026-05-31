@@ -51,17 +51,21 @@ export function FoundationStep({
   onCreateFromScratch,
   onBackToIntro,
 }: FoundationStepProps) {
-  const { updateArchetypeId } = useBuilderContext();
+  const { builderState, updateArchetypeId } = useBuilderContext();
   const { selectedTemplate, setSelectedTemplate } = useBuilderFilter();
   const [localSelectedArchetype, setLocalSelectedArchetype] = useState<any | null>(null);
   const [activeEra, setActiveEra] = useState<"modern" | "historical">("modern");
   const [visibleCount, setVisibleCount] = useState(6);
 
-  // Reset selections on mount so navigating back to this step starts fresh at the template selector
+  // Preserve selections on mount so navigating back to this step keeps the chosen template
   React.useEffect(() => {
-    setSelectedTemplate(null);
+    if (builderState.selectedCountry) {
+      setSelectedTemplate(builderState.selectedCountry);
+    } else {
+      setSelectedTemplate(null);
+    }
     setLocalSelectedArchetype(null);
-  }, [setSelectedTemplate]);
+  }, [setSelectedTemplate, builderState.selectedCountry]);
 
   // Reset visibleCount when activeEra changes
   React.useEffect(() => {

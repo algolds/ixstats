@@ -18,6 +18,7 @@ import { useDynamicIslandState } from "./hooks";
 import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
+import { IOSActivityIndicator } from "~/components/ui/loader";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -59,6 +60,20 @@ function CommandPaletteContent({
   const [diPulseClass, setDiPulseClass] = useState("");
   const [navTrayOpen, setNavTrayOpen] = useState(false);
   const [pillBounce, setPillBounce] = useState(false);
+  const [isNavLoading, setIsNavLoading] = useState(false);
+
+  useEffect(() => {
+    const handleStart = () => setIsNavLoading(true);
+    const handleEnd = () => setIsNavLoading(false);
+
+    window.addEventListener("ixstats-nav-start", handleStart);
+    window.addEventListener("ixstats-nav-end", handleEnd);
+
+    return () => {
+      window.removeEventListener("ixstats-nav-start", handleStart);
+      window.removeEventListener("ixstats-nav-end", handleEnd);
+    };
+  }, []);
 
   // Use shared state management
   const {
@@ -96,7 +111,9 @@ function CommandPaletteContent({
     let newSize: SizePresets;
     const isForumActive = activePlugin?.id === "forum";
 
-    if (isExpanded) {
+    if (isNavLoading) {
+      newSize = SIZE_PRESETS.WIKI_COMPACT; // compact loading pill size (180x40)
+    } else if (isExpanded) {
       if (expandedMode === "search") {
         newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else if (expandedMode === "notifications") {
@@ -136,7 +153,16 @@ function CommandPaletteContent({
       }
     }
     setSize(newSize);
-  }, [setSize, isSticky, isCollapsed, isWikiActive, activePlugin?.id, isExpanded, expandedMode]);
+  }, [
+    setSize,
+    isSticky,
+    isCollapsed,
+    isWikiActive,
+    activePlugin?.id,
+    isExpanded,
+    expandedMode,
+    isNavLoading,
+  ]);
 
   useEffect(() => {
     if (isWikiActive && diPathname !== prevNavRef.current) {
@@ -200,19 +226,73 @@ function CommandPaletteContent({
     };
   }, [isSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
 
-  // Scroll-based collapse/expand for the builder hero DI
+  // Track manual close state to prevent unwanted auto-expansion
+  const wasManuallyClosedRef = useRef(true); // Start compact on mount
+
+  // Reset manual close when the URL (section/step) changes
+  const lastUrlRef = useRef("");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const currentUrl = window.location.pathname + window.location.search;
+      if (lastUrlRef.current && currentUrl !== lastUrlRef.current) {
+        wasManuallyClosedRef.current = false;
+      }
+      lastUrlRef.current = currentUrl;
+    }
+  }, [diPathname, activePlugin]);
+
+  // Reset manual close flag when builder plugin view is manually expanded
+  useEffect(() => {
+    if (activePlugin?.id === "builder" && mode === "plugin:builder") {
+      wasManuallyClosedRef.current = false;
+    }
+  }, [mode, activePlugin]);
+
+  // Set manual close flag when leaving builder plugin mode
+  const prevModeRef = useRef(mode);
   useEffect(() => {
     if (activePlugin?.id === "builder") {
-      if (isSticky && isExpanded) {
+      if (
+        prevModeRef.current === "plugin:builder" &&
+        (mode === "compact" || mode === "search" || mode === "settings" || mode === "notifications")
+      ) {
+        wasManuallyClosedRef.current = true;
+      }
+    }
+    prevModeRef.current = mode;
+  }, [mode, activePlugin]);
+
+  // Scroll-based collapse/expand for the builder hero DI
+  const prevIsStickyRef = useRef(isSticky);
+  useEffect(() => {
+    if (activePlugin?.id === "builder") {
+      if (isSticky && !prevIsStickyRef.current && isExpanded) {
         switchMode("compact");
-      } else if (!isSticky && !isExpanded) {
-        const firstViewKey = Object.keys(activePlugin.expandedViews || {})[0];
-        if (firstViewKey) {
-          switchMode(`plugin:${firstViewKey}`);
+      } else if (!isSticky && prevIsStickyRef.current && !isExpanded) {
+        if (!wasManuallyClosedRef.current && !activePlugin?.filter?.selectedTemplate) {
+          switchMode("plugin:builder");
         }
       }
     }
+    prevIsStickyRef.current = isSticky;
   }, [isSticky, activePlugin, isExpanded, switchMode]);
+
+  // Trigger-based expansion (e.g. on country select, or welcome modal close)
+  const lastProcessedTriggerRef = useRef(0);
+  useEffect(() => {
+    if (activePlugin?.id === "builder") {
+      const pluginTrigger = (activePlugin as any).filter?.diExpansionTrigger;
+      if (pluginTrigger !== undefined) {
+        if (pluginTrigger > lastProcessedTriggerRef.current) {
+          lastProcessedTriggerRef.current = pluginTrigger;
+          wasManuallyClosedRef.current = false; // Reset on trigger expansion
+          switchMode("plugin:builder");
+        } else if (pluginTrigger < lastProcessedTriggerRef.current) {
+          lastProcessedTriggerRef.current = pluginTrigger;
+        }
+      }
+    }
+  }, [activePlugin, switchMode]);
 
   // Ring + bump animation on any new toast
   const [ringActive, setRingActive] = useState(false);
@@ -280,7 +360,17 @@ function CommandPaletteContent({
           style={{ touchAction: "none" }}
         >
           <DynamicIsland id="command-palette">
-            {!isExpanded ? (
+            {isNavLoading ? (
+              <div
+                key="loading"
+                className="flex h-10 w-full items-center justify-center gap-2 px-3 text-neutral-200"
+              >
+                <IOSActivityIndicator size="sm" />
+                <span className="animate-pulse text-xs font-semibold tracking-wide">
+                  Loading...
+                </span>
+              </div>
+            ) : !isExpanded ? (
               <div key="compact" className="h-full w-full">
                 <CompactView
                   mode={mode}
@@ -303,6 +393,7 @@ function CommandPaletteContent({
                 <ExpandedView
                   mode={expandedMode}
                   onClose={() => switchMode("compact")}
+                  onSwitchMode={switchMode}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   searchFilter={searchFilter}

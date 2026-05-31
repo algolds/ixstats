@@ -8,4 +8,3 @@ export { QuickActionsSection } from "./QuickActionsSection";
 export { IxnayIDCard } from "./IxnayIDCard";
 export { VaultSettingsCard } from "./VaultSettingsCard";
 export { PrivacySecurityCard } from "./PrivacySecurityCard";
-

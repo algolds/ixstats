@@ -64,19 +64,6 @@ export function BuilderHeader({
             </Badge>
           </div>
           <div className="flex items-center gap-3">
-            {/* Autosave indicator */}
-            {lastSaved && (
-              <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                <div
-                  className={`h-2 w-2 rounded-full ${
-                    isAutoSaving ? "animate-pulse bg-amber-500" : "bg-green-500"
-                  }`}
-                />
-                <span className="hidden sm:inline">
-                  {isAutoSaving ? "Saving..." : `Saved ${lastSaved.toLocaleTimeString()}`}
-                </span>
-              </div>
-            )}
 
             {/* Manual save button */}
             {onManualSave && (

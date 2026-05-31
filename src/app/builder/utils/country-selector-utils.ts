@@ -91,7 +91,7 @@ const REGIONS_AND_GROUPS = new Set([
   "middle east & north africa (ida & ibrd countries)",
   "sub-saharan africa (excluding high income)",
   "sub-saharan africa (ida & ibrd countries)",
-  "south asia (ida & ibrd)"
+  "south asia (ida & ibrd)",
 ]);
 
 export const filterCountries = (

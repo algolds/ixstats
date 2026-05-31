@@ -27,6 +27,10 @@ interface BuilderFilterState {
   setHeroHeight: (h: number) => void;
   previewWidgetHeight: number;
   setPreviewWidgetHeight: (h: number) => void;
+  welcomeModalOpen: boolean;
+  setWelcomeModalOpen: (v: boolean) => void;
+  diExpansionTrigger: number;
+  triggerDIExpansion: () => void;
 }
 
 const BuilderFilterCtx = createContext<BuilderFilterState | null>(null);
@@ -45,9 +49,25 @@ export function BuilderFilterProvider({
   const [showFilters, setShowFilters] = useState(false);
   const [gridWidth, setGridWidth] = useState<number>(0);
   const [selectedTemplate, setSelectedTemplate] = useState<RealCountryData | null>(null);
-  const [heroHeight, setHeroHeight] = useState<number>(125);
+  const [heroHeight, setHeroHeight] = useState<number>(0);
   const [previewWidgetHeight, setPreviewWidgetHeight] = useState<number>(82);
+  const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
+  const [diExpansionTrigger, setDiExpansionTrigger] = useState(0);
   const confirmHandlerRef = useRef<(() => void) | null>(null);
+
+  // Auto-open guide on first visit
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const seen = localStorage.getItem("mycountry-builder-welcome-seen");
+      if (!seen || seen !== "1.5") {
+        timer = setTimeout(() => setWelcomeModalOpen(true), 800);
+      }
+    } catch {}
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm("");
@@ -62,6 +82,10 @@ export function BuilderFilterProvider({
 
   const toggleFilters = useCallback(() => {
     setShowFilters((prev) => !prev);
+  }, []);
+
+  const triggerDIExpansion = useCallback(() => {
+    setDiExpansionTrigger((prev) => prev + 1);
   }, []);
 
   return (
@@ -90,6 +114,10 @@ export function BuilderFilterProvider({
         setHeroHeight,
         previewWidgetHeight,
         setPreviewWidgetHeight,
+        welcomeModalOpen,
+        setWelcomeModalOpen,
+        diExpansionTrigger,
+        triggerDIExpansion,
       }}
     >
       {children}

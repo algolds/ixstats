@@ -2,16 +2,16 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { GlobalLoader } from "~/components/ui/loader";
 
 function NavigationTransitionHandlerContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, setIsPending] = useState(false);
 
-  // Reset loading state when the path or parameters change
+  // Dispatch navigation end when path or parameters change
   useEffect(() => {
     setIsPending(false);
+    window.dispatchEvent(new CustomEvent("ixstats-nav-end"));
   }, [pathname, searchParams]);
 
   useEffect(() => {
@@ -57,8 +57,18 @@ function NavigationTransitionHandlerContent() {
       // Command/Control/Shift clicks should open in a new tab/window without showing the loader
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;
 
+      // Exclude specialized builder and maps routes
+      const targetPath = href.startsWith("/") ? href : new URL(href, window.location.href).pathname;
+      const isExcluded =
+        targetPath.startsWith("/builder") ||
+        targetPath.startsWith("/maps") ||
+        targetPath.includes("/projects/ixstates/maps");
+
+      if (isExcluded) return;
+
       // Trigger transition state instantly
       setIsPending(true);
+      window.dispatchEvent(new CustomEvent("ixstats-nav-start"));
     };
 
     document.addEventListener("click", handleAnchorClick);
@@ -72,17 +82,12 @@ function NavigationTransitionHandlerContent() {
     if (!isPending) return;
     const timer = setTimeout(() => {
       setIsPending(false);
+      window.dispatchEvent(new CustomEvent("ixstats-nav-end"));
     }, 8000);
     return () => clearTimeout(timer);
   }, [isPending]);
 
-  if (!isPending) return null;
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/10 dark:bg-black/35 backdrop-blur-[2px] transition-all duration-300">
-      <GlobalLoader className="min-h-0 w-auto" />
-    </div>
-  );
+  return null;
 }
 
 export function NavigationTransitionHandler() {

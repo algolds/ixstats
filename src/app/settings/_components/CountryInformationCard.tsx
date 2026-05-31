@@ -84,7 +84,7 @@ export function CountryInformationCard({
     <div className="glass-surface glass-refraction group overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="grid" opacity={0.025} />
-        <div className="mb-8 flex items-center justify-between relative z-10">
+        <div className="relative z-10 mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -151,21 +151,26 @@ export function CountryInformationCard({
                     <p className="text-lg font-bold text-slate-900 dark:text-white">
                       {country.name}
                     </p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1 relative z-10">
+                    <div className="relative z-10 mt-1 flex flex-wrap items-center gap-1.5">
                       <span className="text-[10px] font-bold tracking-tighter text-indigo-500 uppercase dark:text-indigo-400">
                         Active Player Country
                       </span>
                       {role && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:bg-purple-400/20 dark:text-purple-400 border border-purple-500/20" title={role.description || undefined}>
+                        <span
+                          className="inline-flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:bg-purple-400/20 dark:text-purple-400"
+                          title={role.description || undefined}
+                        >
                           👑 {role.displayName || role.name}
                         </span>
                       )}
                       {membershipTier && (
-                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold border ${
-                          membershipTier === "premium"
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                            : "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-                        }`}>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold ${
+                            membershipTier === "premium"
+                              ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              : "border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
                           ✨ {membershipTier.toUpperCase()}
                         </span>
                       )}
