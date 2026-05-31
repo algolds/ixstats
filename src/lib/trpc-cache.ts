@@ -114,6 +114,26 @@ export interface TrpcCacheOptions {
 }
 
 /**
+ * Safe JSON stringify that handles circular references and filters out database/client pointers
+ */
+function safeJsonStringify(obj: unknown): string {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return "[Circular]";
+      }
+      seen.add(value);
+      // Filter out internal database client pointers to avoid circular serializations
+      if (key === "_originalClient" || key === "prisma" || key === "db") {
+        return undefined;
+      }
+    }
+    return value;
+  });
+}
+
+/**
  * Generate a cache key from procedure path and input
  * Uses MD5 hash for input to reduce key length and improve Redis performance
  */
@@ -126,7 +146,7 @@ function generateCacheKey(
   // Use hash-based key generation for better performance with complex inputs
   // MD5 is fast and collision-resistant enough for cache keys
   const inputHash = input
-    ? createHash("md5").update(JSON.stringify(input)).digest("hex").substring(0, 16)
+    ? createHash("md5").update(safeJsonStringify(input)).digest("hex").substring(0, 16)
     : "no-input";
   const userPart = userId ? `:u:${userId.substring(0, 12)}` : "";
   return `trpc:${namespace}:${path}${userPart}:${inputHash}`;
@@ -187,7 +207,7 @@ function shouldSkipCache(path: string, skipPatterns?: RegExp[]): boolean {
 async function getCachedValue(key: string): Promise<unknown | null> {
   const redisClient = getRedisClient();
 
-  if (redisClient) {
+  if (redisClient && redisClient.status === "ready") {
     try {
       const cached = await redisClient.get(key);
       if (cached) {
@@ -219,9 +239,9 @@ async function setCachedValue(key: string, value: unknown, ttlSeconds: number): 
   const redisClient = getRedisClient();
 
   // Try to set in Redis
-  if (redisClient) {
+  if (redisClient && redisClient.status === "ready") {
     try {
-      await redisClient.setex(key, ttlSeconds, JSON.stringify(value));
+      await redisClient.setex(key, ttlSeconds, safeJsonStringify(value));
     } catch (err) {
       console.warn("[TRPC_CACHE] Redis set error:", err);
     }

@@ -83,7 +83,7 @@ export class AchievementService {
     this.processingSet.add(key);
 
     const redis = getRedisClient();
-    if (redis) {
+    if (redis && redis.status === "ready") {
       redis.rpush("achievements:queue", JSON.stringify({ userId, countryId })).catch((err) => {
         console.warn("[Achievement Service] Redis enqueue failed, falling back to memory:", err);
         this.inMemoryQueue.push({ userId, countryId });
@@ -103,7 +103,7 @@ export class AchievementService {
     let item: { userId: string; countryId: string } | null = null;
     const redis = getRedisClient();
 
-    if (redis) {
+    if (redis && redis.status === "ready") {
       try {
         const data = await redis.lpop("achievements:queue");
         if (data) {

@@ -103,7 +103,7 @@ export function FoundationStep({
     }),
     []
   );
-  const isIntersecting = useIntersectionObserver(loaderRef, observerOptions);
+  const isIntersecting = useIntersectionObserver(loaderRef as React.RefObject<Element>, observerOptions);
 
   React.useEffect(() => {
     if (hasScrolled && isIntersecting && visibleCount < archetypes.length) {

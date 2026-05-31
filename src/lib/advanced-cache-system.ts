@@ -47,6 +47,23 @@ class InMemoryCache {
     this.cache.delete(key);
   }
 
+  deleteByPattern(pattern: string): void {
+    const isWildcard = pattern.includes("*");
+    if (isWildcard) {
+      const regexStr = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) =>
+        ch === "*" ? ".*" : "\\" + ch
+      );
+      const regex = new RegExp(`^${regexStr}$`);
+      for (const key of this.cache.keys()) {
+        if (regex.test(key)) {
+          this.cache.delete(key);
+        }
+      }
+    } else {
+      this.cache.delete(pattern);
+    }
+  }
+
   clear(): void {
     this.cache.clear();
   }
@@ -110,7 +127,7 @@ class RedisCache {
   }
 
   async set(key: string, value: any, ttlSeconds = 300): Promise<void> {
-    if (!this.enabled || !this.redis) return;
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
 
     try {
       await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
@@ -120,7 +137,7 @@ class RedisCache {
   }
 
   async get(key: string): Promise<any | null> {
-    if (!this.enabled || !this.redis) return null;
+    if (!this.enabled || !this.redis || !this.isConnected()) return null;
 
     try {
       const value = await this.redis.get(key);
@@ -132,7 +149,7 @@ class RedisCache {
   }
 
   async delete(key: string): Promise<void> {
-    if (!this.enabled || !this.redis) return;
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
 
     try {
       await this.redis.del(key);
@@ -141,8 +158,21 @@ class RedisCache {
     }
   }
 
+  async deleteByPattern(pattern: string): Promise<void> {
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
+
+    try {
+      const keys = await this.redis.keys(pattern);
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+      }
+    } catch (error) {
+      console.error("[RedisCache] Delete by pattern failed:", error);
+    }
+  }
+
   async clear(): Promise<void> {
-    if (!this.enabled || !this.redis) return;
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
 
     try {
       await this.redis.flushdb();
@@ -257,6 +287,15 @@ export class AdvancedCacheSystem {
       await this.redisCache.delete(key);
     } catch (error) {
       console.error("[AdvancedCacheSystem] Delete error:", error);
+    }
+  }
+
+  async deleteByPattern(pattern: string): Promise<void> {
+    try {
+      this.memoryCache.deleteByPattern(pattern);
+      await this.redisCache.deleteByPattern(pattern);
+    } catch (error) {
+      console.error("[AdvancedCacheSystem] Delete by pattern error:", error);
     }
   }
 
@@ -390,9 +429,7 @@ export class CacheUtils {
    * Invalidate cache by pattern
    */
   static async invalidatePattern(pattern: string): Promise<void> {
-    // This would require Redis SCAN in production
-    // For now, we'll clear memory cache
-    globalCache.clear();
+    await globalCache.deleteByPattern(pattern);
   }
 }
 

@@ -4,6 +4,8 @@ import { publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from 
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { fetchWikiIntro } from "./utils";
+import { invalidateCache } from "~/lib/trpc-cache";
+import { clearLayerCache } from "~/server/api/routers/geo/core";
 
 export const identityProcedures = {
   getByIdBasic: rateLimitedPublicProcedure
@@ -99,6 +101,9 @@ export const identityProcedures = {
             updatedAt: new Date(),
           },
         });
+
+        await invalidateCache(["countries."]);
+        clearLayerCache("political");
 
         return nationalIdentity;
       } catch (error) {

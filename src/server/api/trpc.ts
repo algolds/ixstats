@@ -872,20 +872,8 @@ const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput
   return cacheFactory({ ctx, path, input: rawInput, next });
 });
 
-const userSpecificCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
-  return cacheFactory({ ctx, path, input: rawInput, next });
-});
-
 // Cached public procedure (60s cache)
 export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);
 
-// Cached protected procedure (60s cache)
-export const cachedProtectedProcedure = protectedProcedure.use(standardCacheMiddleware);
-
 // Cached static procedure (1hr cache) - for reference data that rarely changes
 export const cachedStaticProcedure = publicProcedure.use(staticCacheMiddleware);
-
-// Cached user-specific procedure (30s cache) - uses user ID in cache key
-export const cachedUserSpecificProcedure = protectedProcedure.use(userSpecificCacheMiddleware);

@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { GovernmentStructure } from "~/types/government";
 
 // Import government preview components
 import { StructureOverview } from "../government-preview/StructureOverview";
@@ -161,16 +162,17 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
   };
 
   // Normalize government structure for preview components
-  const normalizedGovernmentStructure = useMemo(() => {
+  const normalizedGovernmentStructure = useMemo<GovernmentStructure | null>(() => {
     if (!governmentStructure) return null;
 
+    const rawStructure = governmentStructure as any;
     // If it's already a GovernmentStructure, return as is
-    if ("id" in governmentStructure && "countryId" in governmentStructure) {
-      return governmentStructure;
+    if (rawStructure && "id" in rawStructure && "countryId" in rawStructure) {
+      return rawStructure as GovernmentStructure;
     }
 
     // If it's a GovernmentBuilderState, convert it
-    const builderState = governmentStructure as any;
+    const builderState = governmentStructure;
     return {
       id: "preview",
       countryId: "preview",
@@ -235,7 +237,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         id: index.toString(),
         governmentStructureId: "preview",
         name: source.name,
-        category: source.category,
+        category: source.category as any,
         description: source.description,
         revenueAmount: source.revenueAmount,
         revenuePercent: source.revenuePercent || 0,
@@ -246,7 +248,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         createdAt: new Date(),
         updatedAt: new Date(),
       })),
-    };
+    } as GovernmentStructure;
   }, [governmentStructure]);
 
   return (

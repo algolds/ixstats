@@ -14,6 +14,42 @@ import { getThinkPagesServer } from "~/server/websocket-server";
 import { notificationAPI } from "~/lib/notification-api";
 import { validateNoXSS } from "~/lib/sanitize-html";
 import { vaultService } from "~/lib/vault-service";
+import { globalCache } from "~/lib/advanced-cache-system";
+
+const invalidateFeeds = async () => {
+  try {
+    await Promise.all([
+      globalCache.deleteByPattern("thinkpages_feed:*"),
+      globalCache.deleteByPattern("global_activity_feed:*"),
+      globalCache.deleteByPattern("user_following_feed:*"),
+    ]);
+  } catch (error) {
+    console.error("Failed to invalidate feeds:", error);
+  }
+};
+
+const hydratePostDates = (post: any) => {
+  if (!post) return post;
+  return {
+    ...post,
+    createdAt: post.createdAt ? new Date(post.createdAt) : undefined,
+    ixTimeTimestamp: post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : undefined,
+    parentPost: post.parentPost ? {
+      ...post.parentPost,
+      createdAt: post.parentPost.createdAt ? new Date(post.parentPost.createdAt) : undefined,
+      ixTimeTimestamp: post.parentPost.ixTimeTimestamp ? new Date(post.parentPost.ixTimeTimestamp) : undefined,
+    } : undefined,
+    repostOf: post.repostOf ? {
+      ...post.repostOf,
+      createdAt: post.repostOf.createdAt ? new Date(post.repostOf.createdAt) : undefined,
+      ixTimeTimestamp: post.repostOf.ixTimeTimestamp ? new Date(post.repostOf.ixTimeTimestamp) : undefined,
+    } : undefined,
+    reactions: post.reactions ? post.reactions.map((r: any) => ({
+      ...r,
+      createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
+    })) : undefined,
+  };
+};
 
 const SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
@@ -942,6 +978,8 @@ export const thinkpagesRouter = createTRPCRouter({
       }
     }
 
+    await invalidateFeeds();
+
     return {
       ...post,
       creditsEarned,
@@ -1066,6 +1104,8 @@ export const thinkpagesRouter = createTRPCRouter({
         }
       }
 
+      await invalidateFeeds();
+
       return updatedPost;
     }),
 
@@ -1171,6 +1211,8 @@ export const thinkpagesRouter = createTRPCRouter({
         }
       }
 
+      await invalidateFeeds();
+
       return { success: true, postId: deletedPost.id };
     }),
 
@@ -1263,6 +1305,7 @@ export const thinkpagesRouter = createTRPCRouter({
           }
         }
 
+        await invalidateFeeds();
         return { removed: true };
       }
 
@@ -1301,6 +1344,7 @@ export const thinkpagesRouter = createTRPCRouter({
         }
       }
 
+      await invalidateFeeds();
       return { updated: true, reactionType: input.reactionType };
     } else {
       // New reaction - create it
@@ -1356,6 +1400,7 @@ export const thinkpagesRouter = createTRPCRouter({
         }
       }
 
+      await invalidateFeeds();
       return reaction;
     }
   }),
@@ -1458,6 +1503,7 @@ export const thinkpagesRouter = createTRPCRouter({
           }
         }
 
+        await invalidateFeeds();
         return { success: true };
       }
 
@@ -1466,129 +1512,154 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
-    const { db } = ctx;
+    try {
+      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
+      
+      const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
+      if (cached) {
+        const hydratedPosts = cached.posts.map((post) => hydratePostDates(post));
+        return {
+          posts: hydratedPosts,
+          nextCursor: cached.nextCursor,
+        };
+      }
 
-    const whereClause: any = {
-      visibility: "public", // Only show public posts for now
-    };
+      const { db } = ctx;
 
-    // Add country filter if specified
-    if ((input as any).countryId) {
-      whereClause.account = {
-        countryId: (input as any).countryId,
+      const whereClause: any = {
+        visibility: "public", // Only show public posts for now
       };
-    }
 
-    // Add trending filter
-    if (input.filter === "trending") {
-      whereClause.trending = true;
-    }
+      // Add country filter if specified
+      if ((input as any).countryId) {
+        whereClause.account = {
+          countryId: (input as any).countryId,
+        };
+      }
 
-    if (input.hashtag) {
-      whereClause.hashtags = {
-        contains: `"${input.hashtag}"`,
-      };
-    }
+      // Add trending filter
+      if (input.filter === "trending") {
+        whereClause.trending = true;
+      }
 
-    const posts = await db.thinkpagesPost.findMany({
-      where: whereClause,
-      include: {
-        account: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            profileImageUrl: true,
-            accountType: true,
-            verified: true,
-            clerkUserId: true,
-            country: {
-              select: {
-                id: true,
-                name: true,
-                flag: true,
+      if (input.hashtag) {
+        whereClause.hashtags = {
+          contains: `"${input.hashtag}"`,
+        };
+      }
+
+      const posts = await db.thinkpagesPost.findMany({
+        where: whereClause,
+        include: {
+          account: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              profileImageUrl: true,
+              accountType: true,
+              verified: true,
+              clerkUserId: true,
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  flag: true,
+                },
               },
             },
           },
-        },
-        parentPost: {
-          include: {
-            account: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                profileImageUrl: true,
-                accountType: true,
-                verified: true,
-                clerkUserId: true,
+          parentPost: {
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                },
               },
             },
           },
-        },
-        repostOf: {
-          include: {
-            account: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                profileImageUrl: true,
-                accountType: true,
-                verified: true,
-                clerkUserId: true,
+          repostOf: {
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                },
               },
             },
           },
-        },
-        reactions: true,
-        mediaAttachments: true,
-        reposts: {
-          select: { accountId: true },
-        },
-        _count: {
-          select: {
-            replies: true,
-            reposts: true,
+          reactions: true,
+          mediaAttachments: true,
+          reposts: {
+            select: { accountId: true },
+          },
+          _count: {
+            select: {
+              replies: true,
+              reposts: true,
+            },
           },
         },
-      },
-      orderBy: [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }],
-      take: input.limit,
-      cursor: input.cursor ? { id: input.cursor } : undefined,
-      skip: input.cursor ? 1 : 0,
-    });
+        orderBy: [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }],
+        take: input.limit,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0,
+      });
 
-    // Transform posts to include parsed hashtags and reaction counts
-    const transformedPosts = posts.map((post) => ({
-      ...post,
-      hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-      reactionCounts: (() => {
-        let baseline: Record<string, number> = {};
-        try {
-          if (post.reactionCounts) {
-            baseline =
-              typeof post.reactionCounts === "string"
-                ? JSON.parse(post.reactionCounts)
-                : post.reactionCounts;
+      // Transform posts to include parsed hashtags and reaction counts
+      const transformedPosts = posts.map((post) => ({
+        ...post,
+        hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
+        reactionCounts: (() => {
+          let baseline: Record<string, number> = {};
+          try {
+            if (post.reactionCounts) {
+              baseline =
+                typeof post.reactionCounts === "string"
+                  ? JSON.parse(post.reactionCounts)
+                  : post.reactionCounts;
+            }
+          } catch {
+            // ignore
           }
-        } catch {
-          // ignore
-        }
-        return (post as any).reactions.reduce((acc: any, reaction: any) => {
-          acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-          return acc;
-        }, baseline);
-      })(),
-      timestamp: post.isAutoGenerated
-        ? post.ixTimeTimestamp.toISOString()
-        : post.createdAt.toISOString(),
-    }));
+          return (post as any).reactions.reduce((acc: any, reaction: any) => {
+            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+            return acc;
+          }, baseline);
+        })(),
+        timestamp: post.isAutoGenerated
+          ? post.ixTimeTimestamp.toISOString()
+          : post.createdAt.toISOString(),
+      }));
 
-    return {
-      posts: transformedPosts,
-      nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null,
-    };
+      const nextCursor = posts.length === input.limit ? posts[posts.length - 1]?.id : null;
+
+      const result = {
+        posts: transformedPosts,
+        nextCursor,
+      };
+
+      await globalCache.set(cacheKey, result, { ttl: 15 });
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching thinkpages feed:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch thinkpages feed",
+      });
+    }
   }),
 
   // Get trending topics

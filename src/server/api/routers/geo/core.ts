@@ -115,7 +115,24 @@ const CLIMATE_COLOR_MAP: Record<string, string> = {
 // In-memory cache for assembled FeatureCollections
 // ──────────────────────────────────────────────
 
-const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
+export const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
+
+/**
+ * Clear entries from the shared layerCache.
+ * If layerType is provided, deletes all zoom-level keys for that layer (e.g. "political", "political:z0", "political:z1", "political:z2").
+ * If no layerType is provided, clears the entire cache.
+ */
+export function clearLayerCache(layerType?: string): void {
+  if (layerType) {
+    for (const key of layerCache.keys()) {
+      if (key === layerType || key.startsWith(`${layerType}:`)) {
+        layerCache.delete(key);
+      }
+    }
+  } else {
+    layerCache.clear();
+  }
+}
 /** Per-layer cache TTL — static layers imported from SVGs rarely change */
 const CACHE_TTLS: Record<string, number> = {
   political: 15 * 60 * 1000, // 15 min (editable)
@@ -284,7 +301,7 @@ export async function warmGeoCacheDev(db: any): Promise<void> {
 // ──────────────────────────────────────────────
 
 /** Recursively extract all [lng, lat] positions from a GeoJSON geometry */
-function extractAllPositions(geometry: Geometry): [number, number][] {
+export function extractAllPositions(geometry: Geometry): [number, number][] {
   const positions: [number, number][] = [];
   function scan(coords: unknown): void {
     if (!Array.isArray(coords)) return;
@@ -1435,18 +1452,20 @@ export const geoCoreRouter = createTRPCRouter({
             id: true,
             name: true,
             countryId: true,
+            geometry: true,
           },
           take: limit,
         });
 
         for (const s of subs) {
+          const [cLng, cLat] = s.geometry ? computeVisualCenter(s.geometry) : [0, 0];
           results.push({
             type: "subdivision",
             id: s.id,
             name: s.name,
             countryId: s.countryId,
-            centroidLng: 0,
-            centroidLat: 0,
+            centroidLng: cLng,
+            centroidLat: cLat,
           });
         }
       }

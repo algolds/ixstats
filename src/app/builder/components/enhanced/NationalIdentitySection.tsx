@@ -18,6 +18,7 @@ import { BuilderTabCard, type TabDefinition } from "~/app/builder/primitives/Bui
 import { BasicInfoForm, GeographyForm, CultureForm } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 import { useBuilderContext } from "./context/BuilderStateContext";
+import type { GovernmentType } from "~/types/government";
 
 /**
  * Props for the NationalIdentitySection component
@@ -192,7 +193,7 @@ export function NationalIdentitySection({
             ...prev.governmentStructure,
             structure: {
               ...prev.governmentStructure.structure,
-              governmentType: value,
+              governmentType: value as GovernmentType,
             },
           },
         };

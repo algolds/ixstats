@@ -4,6 +4,9 @@ import { isSystemOwner } from "~/lib/system-owner-constants";
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
 import { checkComponentSynergy } from "~/lib/government-synergy";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
+import { invalidateCache } from "~/lib/trpc-cache";
+import { globalCache } from "~/lib/advanced-cache-system";
+import { clearLayerCache } from "~/server/api/routers/geo/core";
 import {
   type CoreEconomicIndicators,
   type LaborEmploymentData,
@@ -60,6 +63,9 @@ export const managementProcedures = {
             updatedAt: new Date(),
           },
         });
+
+        await invalidateCache(["countries."]);
+        clearLayerCache("political");
 
         return updatedCountry;
       } catch (error) {
@@ -175,6 +181,8 @@ export const managementProcedures = {
       // Invalidate cache for this country
       const atomicService = getAtomicEffectivenessService(ctx.db);
       atomicService.invalidateCache(input.countryId);
+
+      await invalidateCache(["countries."]);
 
       return updated;
     }),
@@ -950,6 +958,10 @@ export const managementProcedures = {
 
           return country;
         });
+
+        await invalidateCache(["countries.getAll"]);
+        clearLayerCache("political");
+        await globalCache.delete(`user_profile:${userId}`);
 
         return result;
       } catch (error) {
@@ -1795,6 +1807,9 @@ export const managementProcedures = {
           return country;
         });
 
+        await invalidateCache(["countries."]);
+        clearLayerCache("political");
+
         return result;
       } catch (error) {
         console.error("[updateCountry] Transaction failed:", error);
@@ -1838,7 +1853,7 @@ export const managementProcedures = {
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.storytellerEffect.create({
+      const result = await ctx.db.storytellerEffect.create({
         data: {
           countryId: input.countryId || null,
           inputType: input.inputType,
@@ -1849,6 +1864,11 @@ export const managementProcedures = {
           ixTimeTimestamp: new Date(),
         },
       });
+
+      await invalidateCache(["countries."]);
+      await globalCache.deleteByPattern("user_profile:*");
+
+      return result;
     }),
 
   updateStorytellerEffect: protectedProcedure
@@ -1863,10 +1883,15 @@ export const managementProcedures = {
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return ctx.db.storytellerEffect.update({
+      const result = await ctx.db.storytellerEffect.update({
         where: { id },
         data,
       });
+
+      await invalidateCache(["countries."]);
+      await globalCache.deleteByPattern("user_profile:*");
+
+      return result;
     }),
 
   deleteStorytellerEffect: protectedProcedure
@@ -1876,8 +1901,13 @@ export const managementProcedures = {
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.storytellerEffect.delete({
+      const result = await ctx.db.storytellerEffect.delete({
         where: { id: input.id },
       });
+
+      await invalidateCache(["countries."]);
+      await globalCache.deleteByPattern("user_profile:*");
+
+      return result;
     }),
 };

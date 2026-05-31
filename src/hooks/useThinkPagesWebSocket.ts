@@ -69,6 +69,15 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       return;
     }
 
+    // Check if WebSocket should be enabled based on environment
+    const isProduction = process.env.NODE_ENV === "production";
+    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === "true";
+
+    if (!isProduction && !websocketEnabled) {
+      console.log("[ThinkPagesWebSocket] WebSocket disabled in development mode");
+      return;
+    }
+
     // Stop retrying after max attempts
     if (retryCount.current >= maxRetries) {
       console.warn("WebSocket: Max retry attempts reached, disabling real-time features");

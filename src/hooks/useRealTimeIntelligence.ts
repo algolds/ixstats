@@ -70,6 +70,15 @@ export function useRealTimeIntelligence(
       return;
     }
 
+    // Check if WebSocket should be enabled based on environment
+    const isProduction = process.env.NODE_ENV === "production";
+    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === "true";
+
+    if (!isProduction && !websocketEnabled) {
+      console.log("[RealTimeIntelligence] WebSocket disabled in development mode");
+      return;
+    }
+
     setConnectionState((prev) => ({ ...prev, status: "connecting" }));
 
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;

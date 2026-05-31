@@ -36,6 +36,7 @@ import { getPopulationTierFromPopulation } from "~/types/ixstats";
 
 import { CountrySymbolsUploader } from "../../CountrySymbolsUploader";
 import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
+import type { GovernmentType } from "~/types/government";
 
 interface BasicInfoFormProps {
   identity: NationalIdentityData;

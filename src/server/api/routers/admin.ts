@@ -30,6 +30,7 @@ import type {
 import { generateSlug } from "~/lib/slug-utils";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache } from "~/lib/trpc-cache";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 // Remove unused import - we use ctx.db instead
 
@@ -1301,6 +1302,10 @@ export const adminRouter = createTRPCRouter({
           create: { clerkUserId: input.userId, countryId: input.countryId },
         });
       }
+
+      await globalCache.delete(`user_profile:${input.userId}`);
+      await invalidateCache(["countries."]);
+
       return { success: true };
     }),
 
@@ -1312,6 +1317,10 @@ export const adminRouter = createTRPCRouter({
         where: { clerkUserId: input.userId, countryId: input.countryId },
         data: { countryId: null },
       });
+
+      await globalCache.delete(`user_profile:${input.userId}`);
+      await invalidateCache(["countries."]);
+
       return { success: true };
     }),
 
@@ -2877,7 +2886,7 @@ export const adminRouter = createTRPCRouter({
         },
         select: { id: true, name: true, wikiPageTitle: true, wikiSource: true },
       });
-      await invalidateCache(["countries.getAll"]);
+      await invalidateCache(["countries."]);
       return result;
     }),
 
@@ -2909,7 +2918,7 @@ export const adminRouter = createTRPCRouter({
           })
         )
       );
-      await invalidateCache(["countries.getAll"]);
+      await invalidateCache(["countries."]);
       return { updated: results.length, countries: results };
     }),
 
@@ -2928,6 +2937,7 @@ export const adminRouter = createTRPCRouter({
             data: { wikiLastSynced: new Date() },
           });
         }
+        await invalidateCache(["countries."]);
         return { cleared: 1 };
       }
       // Clear all wiki cache
@@ -2935,6 +2945,7 @@ export const adminRouter = createTRPCRouter({
       await ctx.db.country.updateMany({
         data: { wikiLastSynced: new Date() },
       });
+      await invalidateCache(["countries."]);
       return { cleared: result.count };
     }),
 });
