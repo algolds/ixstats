@@ -121,6 +121,7 @@ export type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultVa
   texture?: TextureType;
   /** Opacity override for the texture overlay. */
   textureOpacity?: number;
+  children?: React.ReactNode;
 };
 
 export function CutoutCard({

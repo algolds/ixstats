@@ -13,7 +13,7 @@ export async function getCachedData<T = unknown>(key: string): Promise<T | null>
 }
 
 export async function setCachedData(key: string, data: unknown, ttlMs = 30000): Promise<void> {
-  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000), skipRedis: true });
+  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000) });
 }
 
 // Validation functions

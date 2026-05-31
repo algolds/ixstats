@@ -17,6 +17,7 @@ import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
 import { getVaultConfig } from "~/lib/vault-service";
 import { grantCardXp } from "~/lib/card-xp-utils";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 /**
  * Trade offer creation schema
@@ -232,6 +233,12 @@ export const tradingRouter = createTRPCRouter({
           console.warn("[Notifications] trading.createtradeOffer:", e);
         }
 
+        await Promise.all([
+          globalCache.delete(`user_vault_stats:${initiatorDbId}`),
+          globalCache.delete(`user_vault_balance:${initiatorDbId}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+        ]);
+
         return trade;
       }
     ),
@@ -309,7 +316,7 @@ export const tradingRouter = createTRPCRouter({
 
         // Handle different actions
         if (input.action === "REJECT") {
-          return await ctx.db.$transaction(async (tx: any) => {
+          const result = await ctx.db.$transaction(async (tx: any) => {
             const initiatorCardIds = trade.initiatorCardIds as string[];
 
             await tx.cardOwnership.updateMany({
@@ -322,6 +329,14 @@ export const tradingRouter = createTRPCRouter({
               data: { status: TradeStatus.REJECTED },
             });
           });
+
+          await Promise.all([
+            globalCache.delete(`user_vault_stats:${trade.initiatorId}`),
+            globalCache.delete(`user_vault_balance:${trade.initiatorId}`),
+            ...(trade.initiator.clerkUserId ? [globalCache.delete(`user_vault_balance:${trade.initiator.clerkUserId}`)] : []),
+          ]);
+
+          return result;
         }
 
         if (input.action === "COUNTER") {
@@ -383,7 +398,7 @@ export const tradingRouter = createTRPCRouter({
           }
 
           // Atomically unlock original offer's cards, lock counter-offer's cards, and create counter
-          return await ctx.db.$transaction(async (tx: any) => {
+          const result = await ctx.db.$transaction(async (tx: any) => {
             const originalInitiatorCardIds = trade.initiatorCardIds as string[];
 
             await tx.cardOwnership.updateMany({
@@ -416,6 +431,17 @@ export const tradingRouter = createTRPCRouter({
               },
             });
           });
+
+          await Promise.all([
+            globalCache.delete(`user_vault_stats:${trade.initiatorId}`),
+            globalCache.delete(`user_vault_stats:${trade.recipientId}`),
+            globalCache.delete(`user_vault_balance:${trade.initiatorId}`),
+            globalCache.delete(`user_vault_balance:${trade.recipientId}`),
+            ...(trade.initiator.clerkUserId ? [globalCache.delete(`user_vault_balance:${trade.initiator.clerkUserId}`)] : []),
+            ...(trade.recipient.clerkUserId ? [globalCache.delete(`user_vault_balance:${trade.recipient.clerkUserId}`)] : []),
+          ]);
+
+          return result;
         }
 
         // ACCEPT - Execute the trade atomically
@@ -535,6 +561,15 @@ export const tradingRouter = createTRPCRouter({
         syncUserToForum(trade.recipientId).catch((err: unknown) => {
           console.error("[Trading] Background op failed:", (err as Error).message);
         });
+
+        await Promise.all([
+          globalCache.delete(`user_vault_stats:${trade.initiatorId}`),
+          globalCache.delete(`user_vault_stats:${trade.recipientId}`),
+          globalCache.delete(`user_vault_balance:${trade.initiatorId}`),
+          globalCache.delete(`user_vault_balance:${trade.recipientId}`),
+          ...(trade.initiator.clerkUserId ? [globalCache.delete(`user_vault_balance:${trade.initiator.clerkUserId}`)] : []),
+          ...(trade.recipient.clerkUserId ? [globalCache.delete(`user_vault_balance:${trade.recipient.clerkUserId}`)] : []),
+        ]);
 
         // Notify initiator that their trade was accepted
         try {
@@ -725,7 +760,7 @@ export const tradingRouter = createTRPCRouter({
           });
         }
 
-        return await ctx.db.$transaction(async (tx: any) => {
+        const result = await ctx.db.$transaction(async (tx: any) => {
           const initiatorCardIds = trade.initiatorCardIds as string[];
 
           await tx.cardOwnership.updateMany({
@@ -738,6 +773,14 @@ export const tradingRouter = createTRPCRouter({
             data: { status: TradeStatus.CANCELLED },
           });
         });
+
+        await Promise.all([
+          globalCache.delete(`user_vault_stats:${userId}`),
+          globalCache.delete(`user_vault_balance:${userId}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+        ]);
+
+        return result;
       }
     ),
 

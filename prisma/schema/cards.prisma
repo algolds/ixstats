@@ -140,6 +140,7 @@ model CardAuction {
   @@index([endTime])
   @@index([sellerId])
   @@index([status])
+  @@index([cardInstanceId])
 }
 
 model CardCollection {

@@ -15,6 +15,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/auction-service";
 import { notificationAPI } from "~/lib/notification-api";
 import { grantCardXp } from "~/lib/card-xp-utils";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 /**
  * Card Market Router
@@ -77,6 +78,12 @@ export const cardMarketRouter = createTRPCRouter({
           });
         } catch {}
 
+        await Promise.all([
+          globalCache.delete(`user_vault_stats:${ctx.user.id}`),
+          globalCache.delete(`user_vault_balance:${ctx.user.id}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+        ]);
+
         return {
           success: true,
           auction,
@@ -114,6 +121,20 @@ export const cardMarketRouter = createTRPCRouter({
           });
         }
 
+        const auctionBefore = await ctx.db.cardAuction.findUnique({
+          where: { id: input.auctionId },
+          select: { currentBidderId: true },
+        });
+        const previousBidderId = auctionBefore?.currentBidderId;
+        let previousBidderClerkId: string | null = null;
+        if (previousBidderId) {
+          const prevUser = await ctx.db.user.findUnique({
+            where: { id: previousBidderId },
+            select: { clerkUserId: true }
+          });
+          previousBidderClerkId = prevUser?.clerkUserId ?? null;
+        }
+
         await auctionService.placeBid(
           {
             userId: ctx.user.id,
@@ -146,6 +167,15 @@ export const cardMarketRouter = createTRPCRouter({
             });
           }
         } catch {}
+
+        await Promise.all([
+          globalCache.delete(`user_vault_balance:${ctx.user.id}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          ...(previousBidderId ? [
+            globalCache.delete(`user_vault_balance:${previousBidderId}`),
+            ...(previousBidderClerkId ? [globalCache.delete(`user_vault_balance:${previousBidderClerkId}`)] : []),
+          ] : []),
+        ]);
 
         return {
           success: true,
@@ -181,6 +211,16 @@ export const cardMarketRouter = createTRPCRouter({
             message: "User ID not found in authentication context",
           });
         }
+
+        const auctionInfo = await ctx.db.cardAuction.findUnique({
+          where: { id: input.auctionId },
+          select: {
+            sellerId: true,
+            User: {
+              select: { clerkUserId: true },
+            },
+          },
+        });
 
         await auctionService.executeBuyout(
           {
@@ -222,6 +262,19 @@ export const cardMarketRouter = createTRPCRouter({
           }
         } catch {}
 
+        if (auctionInfo) {
+          await Promise.all([
+            // Invalidate buyer
+            globalCache.delete(`user_vault_stats:${ctx.user.id}`),
+            globalCache.delete(`user_vault_balance:${ctx.user.id}`),
+            ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+            // Invalidate seller
+            globalCache.delete(`user_vault_stats:${auctionInfo.sellerId}`),
+            globalCache.delete(`user_vault_balance:${auctionInfo.sellerId}`),
+            ...(auctionInfo.User?.clerkUserId ? [globalCache.delete(`user_vault_balance:${auctionInfo.User.clerkUserId}`)] : []),
+          ]);
+        }
+
         return {
           success: true,
           message: "Card purchased successfully!",
@@ -262,14 +315,16 @@ export const cardMarketRouter = createTRPCRouter({
 
         // Get bidder before cancellation (fire-and-forget notification)
         let currentBidderClerkId: string | null = null;
+        let currentBidderId: string | null = null;
         try {
           const auction = await ctx.db.cardAuction.findUnique({
             where: { id: input.auctionId },
             select: { currentBidderId: true },
           });
-          if (auction?.currentBidderId) {
+          currentBidderId = auction?.currentBidderId ?? null;
+          if (currentBidderId) {
             const bidder = await ctx.db.user.findUnique({
-              where: { id: auction.currentBidderId },
+              where: { id: currentBidderId },
               select: { clerkUserId: true },
             });
             currentBidderClerkId = bidder?.clerkUserId ?? null;
@@ -298,6 +353,16 @@ export const cardMarketRouter = createTRPCRouter({
             });
           }
         } catch {}
+
+        await Promise.all([
+          // Invalidate seller
+          globalCache.delete(`user_vault_stats:${ctx.user.id}`),
+          globalCache.delete(`user_vault_balance:${ctx.user.id}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          // Invalidate current bidder if refunded
+          ...(currentBidderId ? [globalCache.delete(`user_vault_balance:${currentBidderId}`)] : []),
+          ...(currentBidderClerkId ? [globalCache.delete(`user_vault_balance:${currentBidderClerkId}`)] : []),
+        ]);
 
         return {
           success: true,

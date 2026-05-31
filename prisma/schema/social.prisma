@@ -68,6 +68,7 @@ model ThinkpagesPost {
   @@index([visibility])
   @@index([postType])
   @@index([parentPostId])
+  @@index([repostOfId])
 }
 
 model PostReaction {
@@ -208,6 +209,7 @@ model ThinktankMessage {
   @@index([ixTimeTimestamp])
   @@index([messageType])
   @@index([groupId, ixTimeTimestamp])  // Compound index for chronological group messages
+  @@index([replyToId])
 }
 
 model ThinktankInvite {
@@ -326,6 +328,7 @@ model ThinkshareMessage {
   @@index([status])
   @@index([source])
   @@index([conversationId, ixTimeTimestamp])
+  @@index([replyToId])
 }
 
 model MessageReadReceipt {

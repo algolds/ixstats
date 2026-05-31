@@ -3,7 +3,7 @@
  * Multi-layer caching with Redis, in-memory, and intelligent invalidation
  */
 
-// import { Redis } from '@upstash/redis'; // Commented out for now - will be enabled when Redis is configured
+import { Redis } from "ioredis";
 // Note: Using globalThis.performance (available in Node.js 16+ and browsers)
 
 import { memoryConfig } from "./dev-memory-config";
@@ -66,7 +66,7 @@ class InMemoryCache {
 
 // Redis cache interface
 class RedisCache {
-  private redis: any | null = null; // Using any for now since Redis import is commented out
+  private redis: Redis | null = null;
   private enabled = false;
 
   constructor() {
@@ -75,20 +75,38 @@ class RedisCache {
 
   private async initializeRedis(): Promise<void> {
     try {
-      if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        // Redis initialization commented out for now
-        // this.redis = new Redis({
-        //   url: process.env.UPSTASH_REDIS_REST_URL,
-        //   token: process.env.UPSTASH_REDIS_REST_TOKEN,
-        // });
-        this.enabled = false; // Disabled for now
-        console.log("[RedisCache] Redis initialization disabled - using in-memory fallback");
+      const redisUrl = process.env.REDIS_URL;
+      const redisEnabled = process.env.REDIS_ENABLED === "true";
+
+      if (redisUrl && redisEnabled) {
+        this.redis = new Redis(redisUrl, {
+          maxRetriesPerRequest: 3,
+          lazyConnect: true,
+        });
+
+        this.redis.on("error", (err) => {
+          console.warn("[RedisCache] Redis connection error:", err.message);
+        });
+
+        this.redis.on("connect", () => {
+          console.log("[RedisCache] Connected to Redis");
+        });
+
+        this.enabled = true;
       } else {
-        console.warn("[RedisCache] Redis not configured, using in-memory fallback");
+        console.warn("[RedisCache] Redis not configured or not enabled, using in-memory fallback");
       }
     } catch (error) {
       console.error("[RedisCache] Failed to initialize:", error);
     }
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  isConnected(): boolean {
+    return this.redis?.status === "ready";
   }
 
   async set(key: string, value: any, ttlSeconds = 300): Promise<void> {
@@ -271,8 +289,8 @@ export class AdvancedCacheSystem {
     return {
       memory: memoryStats,
       redis: {
-        enabled: true,
-        connected: true, // Simplified for now
+        enabled: this.redisCache.isEnabled(),
+        connected: this.redisCache.isConnected(),
       },
       performance: {
         averageGetTime: avgGetTime,

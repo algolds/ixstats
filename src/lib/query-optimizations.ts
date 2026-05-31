@@ -28,7 +28,7 @@ export async function getCachedResult<T>(key: string): Promise<T | null> {
 }
 
 export async function setCachedResult<T>(key: string, data: T, ttlMs: number): Promise<void> {
-  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000), skipRedis: true });
+  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000) });
 }
 
 // Optimized query functions

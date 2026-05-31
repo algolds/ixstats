@@ -253,7 +253,7 @@ export function useGovernmentSpending({
 
   // Track last sent values to prevent redundant updates
   const lastSentComponentsRef = useRef<ComponentType[]>([]);
-  const lastSentGovernmentBuilderRef = useRef<any>(null);
+  const lastSentGovernmentBuilderRef = useRef<GovernmentBuilderState | null>(null);
   const lastSentInputsRef = useRef<EconomicInputs | null>(null);
 
   // Subscribe to atomic integration service once
@@ -308,17 +308,15 @@ export function useGovernmentSpending({
 
   // Track previous values to prevent unnecessary updates
   const prevSelectedComponentsRef = useRef<ComponentType[]>([]);
-  const prevGovernmentSpendingRef = useRef<any>(null);
+  const prevGovernmentSpendingRef = useRef<EconomicInputs["governmentSpending"] | null>(null);
 
   // Initialize selected policies from atomic components and current state
   useEffect(() => {
     // Check if dependencies have actually changed
     const componentsChanged =
-      JSON.stringify(selectedAtomicComponents) !==
-      JSON.stringify(prevSelectedComponentsRef.current);
+      !isEqual(selectedAtomicComponents, prevSelectedComponentsRef.current);
     const spendingChanged =
-      JSON.stringify(inputs.governmentSpending) !==
-      JSON.stringify(prevGovernmentSpendingRef.current);
+      !isEqual(inputs.governmentSpending, prevGovernmentSpendingRef.current);
 
     if (!componentsChanged && !spendingChanged) {
       return; // No changes, skip update

@@ -83,6 +83,7 @@ model IntelligenceRecommendation {
   @@index([category])
   @@index([urgency])
   @@index([isActive])
+  @@index([briefingId])
 }
 
 model IntelligenceAlert {
@@ -113,6 +114,7 @@ model IntelligenceAlert {
   @@index([category])
   @@index([isActive])
   @@index([detectedAt])
+  @@index([briefingId])
 }
 
 model IntelligenceAlertThreshold {

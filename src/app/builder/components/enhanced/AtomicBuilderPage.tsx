@@ -12,7 +12,7 @@ import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
 import type { RealCountryData } from "../../lib/economy-data-service";
 import { parseEconomyData, createDefaultEconomicInputs } from "../../lib/economy-data-service";
-import type { DepartmentInput, BudgetAllocationInput } from "~/types/government";
+import type { DepartmentInput, BudgetAllocationInput, GovernmentBuilderState } from "~/types/government";
 import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
@@ -176,20 +176,21 @@ function AtomicBuilderPageInner({
   }, [builderState.governmentComponents, setBuilderState]);
 
   // Track last processed government structure to prevent loops
-  const lastProcessedGovStructureRef = useRef<any>(null);
+  const lastProcessedGovStructureRef = useRef<GovernmentBuilderState | null>(null);
 
   // Sync government structure to economic inputs
   // Phase 2 fix: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
-    if (builderState.governmentStructure && builderState.economicInputs) {
+    const govStructure = builderState.governmentStructure;
+    if (govStructure && builderState.economicInputs) {
       // Only update if government structure actually changed (using deep comparison)
-      if (!isEqual(builderState.governmentStructure, lastProcessedGovStructureRef.current)) {
-        lastProcessedGovStructureRef.current = builderState.governmentStructure;
+      if (!isEqual(govStructure, lastProcessedGovStructureRef.current)) {
+        lastProcessedGovStructureRef.current = govStructure;
 
         const updatedInputs = { ...builderState.economicInputs };
 
-        if (builderState.governmentStructure.structure?.totalBudget) {
-          const totalBudget = builderState.governmentStructure.structure.totalBudget;
+        if (govStructure.structure?.totalBudget) {
+          const totalBudget = govStructure.structure.totalBudget;
           const gdp = builderState.economicInputs.coreIndicators.nominalGDP;
 
           updatedInputs.governmentSpending = {
@@ -200,13 +201,13 @@ function AtomicBuilderPageInner({
         }
 
         if (
-          builderState.governmentStructure.departments &&
-          builderState.governmentStructure.budgetAllocations
+          govStructure.departments &&
+          govStructure.budgetAllocations
         ) {
           updatedInputs.governmentSpending.spendingCategories =
-            builderState.governmentStructure.departments.map(
+            govStructure.departments.map(
               (dept: DepartmentInput, index: number) => {
-                const allocation = builderState.governmentStructure.budgetAllocations.find(
+                const allocation = govStructure.budgetAllocations.find(
                   (a: BudgetAllocationInput) => a.departmentId === index.toString()
                 );
                 return {

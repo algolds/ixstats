@@ -20,7 +20,7 @@ import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import { toast } from "sonner";
-import type { GovernmentDepartment } from "~/types/government";
+import type { GovernmentDepartment, GovernmentBuilderState } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
@@ -85,7 +85,7 @@ export interface BuilderState {
   /** Tax system configuration and brackets */
   taxSystemData: TaxBuilderState | null;
   /** Traditional government builder structure */
-  governmentStructure: any;
+  governmentStructure: GovernmentBuilderState | null;
   /** Steps that have been completed by the user */
   completedSteps: BuilderStep[];
   /** Active tab within the Core step */
@@ -431,12 +431,12 @@ export function useBuilderState(
       };
 
       // Convert existing government to builder format
-      let governmentStructure = null;
+      let governmentStructure: GovernmentBuilderState | null = null;
       if (existingGovernment) {
         governmentStructure = {
           structure: {
             governmentName: existingGovernment.governmentName,
-            governmentType: existingGovernment.governmentType,
+            governmentType: existingGovernment.governmentType as GovernmentType,
             headOfState: existingGovernment.headOfState ?? undefined,
             headOfGovernment: existingGovernment.headOfGovernment ?? undefined,
             legislatureName: existingGovernment.legislatureName ?? undefined,
@@ -474,7 +474,7 @@ export function useBuilderState(
         governmentStructure = {
           structure: {
             governmentName: `Government of ${existingCountry.name}`,
-            governmentType: (existingCountry.governmentType || "Other") as any,
+            governmentType: (existingCountry.governmentType || "Other") as GovernmentType,
             headOfState: "",
             headOfGovernment: "",
             legislatureName: "",
@@ -753,9 +753,9 @@ export function useBuilderState(
 
             // Government Structure Pre-population
             if (wikiData.government_type || wikiData.head_of_state) {
-              const govType = wikiData.government_type
+              const govType = (wikiData.government_type
                 ? normalizeGovernmentType(wikiData.government_type)
-                : "Other";
+                : "Other") as GovernmentType;
               stateUpdate.governmentStructure = {
                 structure: {
                   governmentName: `Government of ${wikiData.name || "the Nation"}`,
@@ -1102,9 +1102,9 @@ export function useBuilderState(
 
   // Track last sent values to prevent redundant updates
   // Phase 2 optimization: Store actual values instead of JSON strings for isEqual comparison
-  const lastSentNationalIdentityRef = useRef<any>(null);
+  const lastSentNationalIdentityRef = useRef<EconomicInputs["nationalIdentity"] | null>(null);
   const lastSentGovernmentComponentsRef = useRef<ComponentType[]>([]);
-  const lastSentGovernmentStructureRef = useRef<any>(null);
+  const lastSentGovernmentStructureRef = useRef<GovernmentBuilderState | null>(null);
   const lastSentTaxSystemDataRef = useRef<TaxBuilderState | null>(null);
 
   // Phase 2 optimization: Replaced JSON.stringify with isEqual for performance
@@ -1176,7 +1176,7 @@ export function useBuilderState(
   const syncError = updateMutation.error;
   const isSyncing = updateMutation.isPending;
 
-  const lastSyncedStateRef = useRef<any>(null);
+  const lastSyncedStateRef = useRef<Parameters<typeof updateMutation.mutateAsync>[0] | null>(null);
 
   useEffect(() => {
     if (mode !== "edit" || !countryId || !editModeInitialized.current || isLoadingCountry) {

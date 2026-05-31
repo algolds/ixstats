@@ -1678,30 +1678,6 @@ export const managementProcedures = {
             }
           }
 
-          await tx.historicalDataPoint.create({
-            data: {
-              countryId: country.id,
-              ixTimeTimestamp: new Date(),
-              population: population,
-              gdpPerCapita: gdpPerCapita,
-              totalGdp: totalGdp,
-              populationGrowthRate:
-                demographics.populationGrowthRate !== undefined
-                  ? demographics.populationGrowthRate
-                  : existingCountry.populationGrowthRate,
-              gdpGrowthRate:
-                coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate
-                  : existingCountry.adjustedGdpGrowth,
-              landArea: existingCountry.landArea || 100000,
-              populationDensity: existingCountry.landArea
-                ? population / existingCountry.landArea
-                : undefined,
-              gdpDensity: existingCountry.landArea
-                ? totalGdp / existingCountry.landArea
-                : undefined,
-            },
-          });
 
           if (input.governmentComponents) {
             await tx.governmentComponent.deleteMany({

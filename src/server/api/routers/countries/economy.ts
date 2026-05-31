@@ -71,7 +71,7 @@ export const economyProcedures = {
       }
 
       if (!country) {
-        throw new Error(`Country with identifier ${input.id} not found`);
+        return null;
       }
 
       const econCfg = await getEconomicConfigFromDB(ctx.db);
@@ -267,7 +267,7 @@ export const economyProcedures = {
         },
       });
 
-      if (!country) throw new Error("Country not found");
+      if (!country) return null;
 
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const econCfg = await getEconomicConfigFromDB(ctx.db);

@@ -99,6 +99,7 @@ model City {
   @@index([type, isNationalCapital])
   @@index([status, createdAt])
   @@index([geom_postgis], map: "idx_city_geom", type: Gist)
+  @@index([subdivisionId])
   @@map("cities")
 }
 
@@ -129,6 +130,7 @@ model PointOfInterest {
   @@index([category, status])
   @@index([status, createdAt])
   @@index([geom_postgis], map: "idx_poi_geom", type: Gist)
+  @@index([subdivisionId])
   @@map("points_of_interest")
 }
 
@@ -168,6 +170,7 @@ model StoryPin {
   @@index([countryId, ixTimeYear])
   @@index([status, createdAt])
   @@index([storylineId, storylineOrder])
+  @@index([subdivisionId])
   @@map("story_pins")
 }
 
@@ -578,5 +581,6 @@ model TransportHub {
   @@index([countryId])
   @@index([hubType])
   @@index([worldId])
+  @@index([cityId])
   @@map("transport_hubs")
 }

@@ -22,6 +22,7 @@ import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/ixcard-sea
 import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
 import { notificationAPI } from "~/lib/notification-api";
 import { type VaultTransactionType } from "@prisma/client";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 /**
  * Vault transaction type enum for validation
@@ -51,7 +52,12 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
+        const cacheKey = `user_vault_balance:${input.userId}`;
+        const cached = await globalCache.get<any>(cacheKey);
+        if (cached) return cached;
+
         const balance = await vaultService.getBalance(input.userId, ctx.db as any);
+        await globalCache.set(cacheKey, balance, { ttl: 30 });
         return balance;
       } catch (error) {
         console.error("[Vault Router] Error getting balance:", error);
@@ -110,6 +116,8 @@ export const vaultRouter = createTRPCRouter({
         throw new Error(result.message || "Failed to claim daily bonus");
       }
 
+      await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
+
       // Notification: daily bonus claimed (fire-and-forget)
       try {
         await notificationAPI.create({
@@ -159,6 +167,11 @@ export const vaultRouter = createTRPCRouter({
           throw new Error(result.message || "Failed to claim daily reward");
         }
 
+        await Promise.all([
+          globalCache.delete(`user_vault_balance:${ctx.auth.userId}`),
+          globalCache.delete(`user_vault_stats:${ctx.user.id}`),
+        ]);
+
         // Send notification
         try {
           const rewardMessage =
@@ -200,6 +213,8 @@ export const vaultRouter = createTRPCRouter({
       }
 
       const newStreak = await vaultService.updateLoginStreak(ctx.auth.userId, ctx.db as any);
+
+      await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
 
       return {
         success: true,
@@ -247,6 +262,8 @@ export const vaultRouter = createTRPCRouter({
         if (!result.success) {
           throw new Error(result.message || "Failed to spend credits");
         }
+
+        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
 
         return {
           success: true,
@@ -439,6 +456,8 @@ export const vaultRouter = createTRPCRouter({
           throw new Error(result.message || "Failed to earn credits");
         }
 
+        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
+
         return {
           success: true,
           newBalance: result.newBalance,
@@ -487,6 +506,15 @@ export const vaultRouter = createTRPCRouter({
         const newStreak = Math.max(0, (vault.loginStreak ?? 0) + input.delta);
 
         await ctx.db.myVault.update({ where: { id: vault.id }, data: { loginStreak: newStreak } });
+
+        const targetUser = await ctx.db.user.findUnique({
+          where: { id: input.targetUserId },
+          select: { clerkUserId: true },
+        });
+        if (targetUser?.clerkUserId) {
+          await globalCache.delete(`user_vault_balance:${targetUser.clerkUserId}`);
+        }
+        await globalCache.delete(`user_vault_balance:${input.targetUserId}`);
 
         return { success: true, newStreak };
       } catch (error) {
@@ -537,6 +565,10 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("User not found in authentication context");
       }
 
+      const cacheKey = `user_vault_stats:${ctx.user.id}`;
+      const cached = await globalCache.get<any>(cacheKey);
+      if (cached) return cached;
+
       // Count owned card instances live
       const totalCards = await ctx.db.cardOwnership.count({
         where: { ownerId: ctx.user.id },
@@ -560,13 +592,17 @@ export const vaultRouter = createTRPCRouter({
 
       const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
 
-      return {
+      const stats = {
         totalCards,
         deckValue,
         collectorLevel: ctx.user.collectorLevel ?? 1,
         collectorXp: ctx.user.collectorXp ?? 0,
         capacityBoost,
       };
+
+      await globalCache.set(cacheKey, stats, { ttl: 30 });
+
+      return stats;
     } catch (error) {
       console.error("[Vault Router] Error getting user stats:", error);
       throw new Error("Failed to retrieve user stats");

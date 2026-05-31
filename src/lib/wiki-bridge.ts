@@ -1451,6 +1451,8 @@ async function althistorySearch(query: string, limit: number = 10): Promise<Wiki
 // Public API — WikiBridge
 // ──────────────────────────────────────────────
 
+const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
+
 /**
  * Get raw article wikitext. Uses MySQL for ixwiki, HTTP for iiwiki/althistory.
  */
@@ -1458,9 +1460,21 @@ export async function getArticleWikitext(
   title: string,
   wiki: WikiSource = "ixwiki"
 ): Promise<WikiArticle | null> {
-  if (wiki === "ixwiki") return ixwikiGetWikitext(title);
-  if (wiki === "althistory") return althistoryGetWikitext(title);
-  return iiwikiGetWikitext(title);
+  const key = `${wiki}:${title}`;
+  let promise = wikitextPromises.get(key);
+  if (!promise) {
+    promise = (async () => {
+      try {
+        if (wiki === "ixwiki") return await ixwikiGetWikitext(title);
+        if (wiki === "althistory") return await althistoryGetWikitext(title);
+        return await iiwikiGetWikitext(title);
+      } finally {
+        wikitextPromises.delete(key);
+      }
+    })();
+    wikitextPromises.set(key, promise);
+  }
+  return promise;
 }
 
 /**

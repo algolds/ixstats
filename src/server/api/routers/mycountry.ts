@@ -20,6 +20,7 @@ import {
 } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 import { notificationAPI } from "~/lib/notification-api";
 import { notificationHooks } from "~/lib/notification-hooks";
@@ -34,29 +35,15 @@ import type {
   NationalSummary,
 } from "~/types/mycountry";
 
-// Cache for expensive operations
-const myCountryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-
 /**
  * Cache helper functions for MyCountry-specific data
  */
-function getMyCountryCache(key: string): any | null {
-  const cached = myCountryCache.get(key);
-  if (cached && Date.now() - cached.timestamp < cached.ttl) {
-    return cached.data;
-  }
-  if (cached) {
-    myCountryCache.delete(key);
-  }
-  return null;
+async function getMyCountryCache<T = any>(key: string): Promise<T | null> {
+  return globalCache.get<T>(key);
 }
 
-function setMyCountryCache(key: string, data: any, ttl = 60000): void {
-  myCountryCache.set(key, {
-    data,
-    timestamp: Date.now(),
-    ttl,
-  });
+async function setMyCountryCache(key: string, data: any, ttl = 60000): Promise<void> {
+  await globalCache.set(key, data, { ttl: Math.round(ttl / 1000) });
 }
 
 /**
@@ -116,7 +103,7 @@ function calculateVitalityScores(country: CountryWithEconomicData): VitalityScor
  */
 async function generateIntelligenceFeed(countryId: string): Promise<IntelligenceItem[]> {
   const cacheKey = `intelligence_${countryId}`;
-  const cached = getMyCountryCache(cacheKey);
+  const cached = await getMyCountryCache<IntelligenceItem[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -226,7 +213,7 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
     });
 
     const result = intelligenceItems.slice(0, 20); // Limit to 20 items
-    setMyCountryCache(cacheKey, result, 120000); // Cache for 2 minutes
+    await setMyCountryCache(cacheKey, result, 120000); // Cache for 2 minutes
     return result;
   } catch (error) {
     console.error("[MyCountry Intelligence Feed] Error:", error);
@@ -239,7 +226,7 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
  */
 async function calculateAchievements(countryId: string): Promise<Achievement[]> {
   const cacheKey = `achievements_${countryId}`;
-  const cached = getMyCountryCache(cacheKey);
+  const cached = await getMyCountryCache<Achievement[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -303,7 +290,7 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
     }
 
     const result = achievements.slice(0, 10);
-    setMyCountryCache(cacheKey, result, 300000); // Cache for 5 minutes
+    await setMyCountryCache(cacheKey, result, 300000); // Cache for 5 minutes
     return result;
   } catch (error) {
     console.error("[MyCountry Achievements] Error:", error);
@@ -316,7 +303,7 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
  */
 async function generateRankings(countryId: string): Promise<Ranking[]> {
   const cacheKey = `rankings_${countryId}`;
-  const cached = getMyCountryCache(cacheKey);
+  const cached = await getMyCountryCache<Ranking[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -411,7 +398,7 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
     });
 
     const result = rankings;
-    setMyCountryCache(cacheKey, result, 600000); // Cache for 10 minutes
+    await setMyCountryCache(cacheKey, result, 600000); // Cache for 10 minutes
     return result;
   } catch (error) {
     console.error("[MyCountry Rankings] Error:", error);
@@ -424,7 +411,7 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
  */
 async function generateMilestones(countryId: string): Promise<Milestone[]> {
   const cacheKey = `milestones_${countryId}`;
-  const cached = getMyCountryCache(cacheKey);
+  const cached = await getMyCountryCache<Milestone[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -480,7 +467,7 @@ async function generateMilestones(countryId: string): Promise<Milestone[]> {
     milestones.sort((a, b) => b.achievedAt - a.achievedAt);
 
     const result = milestones.slice(0, 15);
-    setMyCountryCache(cacheKey, result, 900000); // Cache for 15 minutes
+    await setMyCountryCache(cacheKey, result, 900000); // Cache for 15 minutes
     return result;
   } catch (error) {
     console.error("[MyCountry Milestones] Error:", error);
@@ -500,7 +487,11 @@ export const myCountryRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      const cacheKey = `dashboard_${input.countryId}_hist_${input.includeHistory}`;
       try {
+        const cached = await globalCache.get<any>(cacheKey);
+        if (cached) return cached;
+
         const country = await db.country.findUnique({
           where: { id: input.countryId },
           include: {
@@ -526,12 +517,15 @@ export const myCountryRouter = createTRPCRouter({
         // Calculate vitality scores
         const vitalityScores = calculateVitalityScores(country as any);
 
-        return {
+        const result = {
           ...country,
           ...vitalityScores,
           lastCalculated: country.lastCalculated.getTime(),
           baselineDate: country.baselineDate.getTime(),
         };
+
+        await globalCache.set(cacheKey, result, { ttl: 15 });
+        return result;
       } catch (error) {
         console.error("[MyCountry Dashboard] Error:", error);
         throw new Error("Failed to get country dashboard data");
@@ -915,8 +909,10 @@ export const myCountryRouter = createTRPCRouter({
           `achievements_${input.countryId}`,
           `rankings_${input.countryId}`,
           `summary_${input.countryId}`,
+          `dashboard_${input.countryId}_hist_true`,
+          `dashboard_${input.countryId}_hist_false`,
         ];
-        cacheKeys.forEach((key) => myCountryCache.delete(key));
+        await Promise.all(cacheKeys.map(key => globalCache.delete(key)));
 
         // Return success with action details
         return {
@@ -947,7 +943,7 @@ export const myCountryRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const cacheKey = `summary_${input.countryId}`;
-      const cached = getMyCountryCache(cacheKey);
+      const cached = await getMyCountryCache<NationalSummary>(cacheKey);
       if (cached) return cached;
 
       try {
@@ -980,7 +976,7 @@ export const myCountryRouter = createTRPCRouter({
           lastUpdated: country.lastCalculated.getTime(),
         };
 
-        setMyCountryCache(cacheKey, summary, 180000); // Cache for 3 minutes
+        await setMyCountryCache(cacheKey, summary, 180000); // Cache for 3 minutes
         return summary;
       } catch (error) {
         console.error("[MyCountry Summary] Error:", error);

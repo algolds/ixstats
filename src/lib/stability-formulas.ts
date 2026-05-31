@@ -108,7 +108,7 @@ export function calculateCrimeRate(
   const urbanFactor = (demographic.urbanizationRate / 100) * 5;
 
   // Police budget effectiveness (per capita spending)
-  const policingPerCapita = government.policingBudget / demographic.population;
+  const policingPerCapita = government.policingBudget / Math.max(1, demographic.population);
   const policingFactor = Math.max(0, 10 - (policingPerCapita / 100) * 10);
 
   // Calculate base rates per 100k population
@@ -165,7 +165,7 @@ export function calculatePolicingEffectiveness(
   demographic: DemographicData
 ): number {
   // Budget per capita
-  const budgetPerCapita = government.policingBudget / demographic.population;
+  const budgetPerCapita = government.policingBudget / Math.max(1, demographic.population);
   const budgetFactor = Math.min(50, (budgetPerCapita / 200) * 50);
 
   // Corruption undermines effectiveness

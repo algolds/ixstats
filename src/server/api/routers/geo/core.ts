@@ -185,7 +185,8 @@ function getCompressionForLayer(layerType: string, zoomBucket: ZoomBucket): Comp
 function getCached(key: string): FeatureCollection | null {
   const entry = layerCache.get(key);
   if (!entry) return null;
-  const ttl = CACHE_TTLS[key] ?? DEFAULT_CACHE_TTL;
+  const baseLayerType = key.split(":")[0] || key;
+  const ttl = CACHE_TTLS[baseLayerType] ?? DEFAULT_CACHE_TTL;
   if (Date.now() - entry.timestamp > ttl) {
     layerCache.delete(key);
     return null;
@@ -199,7 +200,8 @@ function setCache(key: string, data: FeatureCollection): void {
   if (layerCache.size > 20) {
     const now = Date.now();
     for (const [k, v] of layerCache) {
-      const ttl = CACHE_TTLS[k] ?? DEFAULT_CACHE_TTL;
+      const baseLayerType = k.split(":")[0] || k;
+      const ttl = CACHE_TTLS[baseLayerType] ?? DEFAULT_CACHE_TTL;
       if (now - v.timestamp > ttl) layerCache.delete(k);
     }
   }

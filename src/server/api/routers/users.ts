@@ -17,8 +17,30 @@ import { notificationHooks } from "~/lib/notification-hooks";
 import { UserManagementService } from "~/lib/user-management-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import type { BaseCountryData } from "~/types/ixstats";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 // Temporary storage for user-country mappings until we fix the User model
+
+function hydrateProfileDates(profile: any) {
+  if (!profile) return profile;
+  if (profile.createdAt) {
+    profile.createdAt = new Date(profile.createdAt);
+  }
+  if (profile.country) {
+    const c = profile.country;
+    if (c.baselineDate) c.baselineDate = new Date(c.baselineDate);
+    if (c.lastCalculated) c.lastCalculated = new Date(c.lastCalculated);
+    if (c.createdAt) c.createdAt = new Date(c.createdAt);
+    if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
+    if (Array.isArray(c.storytellerEffects)) {
+      c.storytellerEffects = c.storytellerEffects.map((e: any) => ({
+        ...e,
+        ixTimeTimestamp: e.ixTimeTimestamp ? new Date(e.ixTimeTimestamp) : undefined,
+      }));
+    }
+  }
+  return profile;
+}
 
 export const usersRouter = createTRPCRouter({
   // Get current user's profile using auth context (no input required)
@@ -37,6 +59,11 @@ export const usersRouter = createTRPCRouter({
       }
 
       const clerkUserId = ctx.auth.userId;
+      const cacheKey = `user_profile:${clerkUserId}`;
+      const cached = await globalCache.get<any>(cacheKey);
+      if (cached) {
+        return hydrateProfileDates(cached);
+      }
 
       // Re-use user from context when available to avoid duplicate queries
       let userRecord: any = null;
@@ -116,7 +143,7 @@ export const usersRouter = createTRPCRouter({
         });
       }
 
-      return {
+      const profile = {
         userId: clerkUserId,
         countryId: countryRecord?.id ?? null,
         country: countryRecord,
@@ -127,6 +154,10 @@ export const usersRouter = createTRPCRouter({
         forumUsername: userRecord?.forumUsername ?? null,
         hasCompletedSetup: Boolean(countryRecord),
       };
+
+      await globalCache.set(cacheKey, profile, { ttl: 30 });
+
+      return profile;
     } catch (error) {
       console.error("Error fetching user profile:", error);
       return {
@@ -319,6 +350,8 @@ export const usersRouter = createTRPCRouter({
           console.error("Failed to send country assignment notification:", notifError);
           // Don't fail the whole operation if notification fails
         }
+
+        await globalCache.delete(`user_profile:${input.userId}`);
 
         return {
           success: true,
@@ -563,6 +596,7 @@ export const usersRouter = createTRPCRouter({
             },
           });
         }
+        await globalCache.delete(`user_profile:${input.userId}`);
         return {
           success: true,
           country: newCountry,
@@ -598,6 +632,7 @@ export const usersRouter = createTRPCRouter({
           where: { clerkUserId: input.userId },
           data: { countryId: null },
         });
+        await globalCache.delete(`user_profile:${input.userId}`);
         return {
           success: true,
           message: "Country unlinked successfully",
@@ -660,6 +695,8 @@ export const usersRouter = createTRPCRouter({
         // For now, we'll store user preferences in a simple way
         // In a real implementation, you might have a UserProfile table
         console.log("Updating profile for user:", input.userId, "with settings:", input.settings);
+
+        await globalCache.delete(`user_profile:${input.userId}`);
 
         return {
           success: true,

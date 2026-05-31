@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -24,6 +23,19 @@ import {
  * @returns Data sync state and control functions
  */
 
+export interface CountryDashboardData {
+  id: string;
+  name: string;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  economicTier: string;
+  populationTier: string;
+  economicVitality: number | null;
+  populationWellbeing: number | null;
+  [key: string]: any;
+}
+
 export interface DataSyncState {
   isConnected: boolean;
   lastUpdate: number;
@@ -38,7 +50,10 @@ export interface DataSyncOptions {
   retryAttempts?: number;
   retryDelay?: number;
   notificationsEnabled?: boolean;
-  onDataChange?: (data: any, changes: string[]) => void;
+  onDataChange?: (
+    data: CountryDashboardData,
+    changes: string[]
+  ) => void;
   onError?: (error: Error) => void;
   onStatusChange?: (status: DataSyncState["status"]) => void;
 }
@@ -90,11 +105,11 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   });
 
   // Refs for tracking
-  const previousDataRef = useRef<any>(null);
+  const previousDataRef = useRef<CountryDashboardData | null>(null);
   const retryCountRef = useRef(0);
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // const lastIxTimeRef = useRef<number>(0); // Not currently used, available for future temporal tracking
-  const processDataUpdateRef = useRef<(data: any) => void>(() => {});
+  const processDataUpdateRef = useRef<(data: CountryDashboardData) => void>(() => {});
 
   // Stable timestamp to prevent infinite re-renders
   const [stableTimestamp] = useState(() => IxTime.getCurrentIxTime());
@@ -128,8 +143,9 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   // }, [onStatusChange]);
 
   // Detect data changes
-  const detectChanges = useCallback((current: any, previous: any): string[] => {
-    if (!previous || !current) return [];
+  const detectChanges = useCallback(
+    (current: CountryDashboardData, previous: CountryDashboardData | null): string[] => {
+      if (!previous || !current) return [];
 
     const changes: string[] = [];
     const CHANGE_THRESHOLD = 0.001; // 0.1% threshold for numerical changes
@@ -187,7 +203,7 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
 
   // Generate notifications for changes
   const generateChangeNotifications = useCallback(
-    (data: any, changes: string[]) => {
+    (data: CountryDashboardData, changes: string[]) => {
       if (!notificationsEnabled || changes.length === 0) return;
 
       changes.forEach((changeType) => {
@@ -291,7 +307,7 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
 
   // Process data updates
   const processDataUpdate = useCallback(
-    (newData: any) => {
+    (newData: CountryDashboardData) => {
       if (!newData) return;
 
       const changes = detectChanges(newData, previousDataRef.current);
@@ -324,10 +340,15 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
 
   // Error handling
   const handleError = useCallback(
-    (error: Error | any) => {
+    (error: unknown) => {
       console.error("[useDataSync] Error:", error);
 
-      const errorMessage = error?.message || "Unknown sync error";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Unknown sync error";
 
       setSyncState((prev) => ({
         ...prev,
@@ -336,7 +357,7 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
         errors: [...prev.errors.slice(-4), errorMessage], // Keep last 5 errors
       }));
 
-      onError?.(error);
+      onError?.(error instanceof Error ? error : new Error(String(error)));
 
       // Generate error notification
       if (notificationsEnabled && retryCountRef.current === 0) {
@@ -397,7 +418,7 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   const forceUpdateStats = useCallback(async () => {
     try {
       setSyncState((prev) => ({ ...prev, status: "syncing" as const }));
-      await updateStatsMutation.mutateAsync({ countryId });
+      await updateStatsMutation.mutateAsync({ id: countryId });
       await forceRefresh();
 
       if (notificationsEnabled) {

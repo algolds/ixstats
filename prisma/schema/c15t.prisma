@@ -6,7 +6,7 @@ model subject {
   updatedAt DateTime @default(now())
   tenantId String?
   consents consent[] @relation("consent_subject")
-  auditLogs auditLog[] @relation("auditLog_subject")
+  auditLogs C15tAuditLog[] @relation("auditLog_subject")
 }
 
 model domain {
@@ -84,9 +84,15 @@ model consent {
   domain domain @relation("consent_domain", fields: [domainId], references: [id], onUpdate: Restrict, onDelete: Restrict)
   policy consentPolicy? @relation("consent_consentPolicy", fields: [policyId], references: [id], onUpdate: Restrict, onDelete: Restrict)
   runtimePolicyDecision runtimePolicyDecision? @relation("consent_runtimePolicyDecision", fields: [runtimePolicyDecisionId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+
+  @@index([subjectId])
+  @@index([domainId])
+  @@index([policyId])
+  @@index([runtimePolicyDecisionId])
+  @@index([givenAt])
 }
 
-model auditLog {
+model C15tAuditLog {
   id String @id @db.VarChar(255)
   entityType String
   entityId String
@@ -99,6 +105,10 @@ model auditLog {
   createdAt DateTime @default(now())
   tenantId String?
   subject subject? @relation("auditLog_subject", fields: [subjectId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+
+  @@index([subjectId])
+  @@index([createdAt])
+  @@map("auditLog")
 }
 
 model private_c15t_settings {

@@ -138,6 +138,13 @@ export function useEconomyBuilderState(
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const latestEconomyBuilderRef = useRef(economyBuilder);
+  latestEconomyBuilderRef.current = economyBuilder;
+  const latestEconomicInputsRef = useRef(economicInputs);
+  latestEconomicInputsRef.current = economicInputs;
+  const latestOnEconomicInputsChangeRef = useRef(onEconomicInputsChange);
+  latestOnEconomicInputsChangeRef.current = onEconomicInputsChange;
+
   // tRPC queries and mutations with standardized staleTime
   const { data: existingConfiguration, isLoading: isLoadingConfig } =
     api.economics.getEconomyBuilderState.useQuery(
@@ -217,12 +224,12 @@ export function useEconomyBuilderState(
   // Subscribe to integration service once (no dependencies to prevent loops)
   useEffect(() => {
     const unsubscribe = economyIntegrationService.subscribe((state) => {
-      if (state.economyBuilder && state.economyBuilder !== economyBuilder) {
+      if (state.economyBuilder && state.economyBuilder !== latestEconomyBuilderRef.current) {
         setEconomyBuilder(state.economyBuilder);
       }
       // Phase 3 optimization: Replaced JSON.stringify with isEqual
-      if (state.economicInputs && !isEqual(state.economicInputs, economicInputs)) {
-        onEconomicInputsChange(state.economicInputs);
+      if (state.economicInputs && !isEqual(state.economicInputs, latestEconomicInputsRef.current)) {
+        latestOnEconomicInputsChangeRef.current(state.economicInputs);
       }
     });
 

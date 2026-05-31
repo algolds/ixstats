@@ -16,6 +16,7 @@ import {
 import { CardRarity, CardType } from "@prisma/client";
 import { searchForumThreads } from "~/modules/forum";
 import { vaultService } from "~/lib/vault-service";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 /**
  * Cards router for IxCards system
@@ -419,6 +420,23 @@ export const cardsRouter = createTRPCRouter({
         }
 
         const result = await transferCard(ctx.db, ctx.user.id, input.toUserId, input.cardId);
+
+        const targetUser = await ctx.db.user.findFirst({
+          where: {
+            OR: [{ id: input.toUserId }, { clerkUserId: input.toUserId }],
+          },
+          select: { id: true, clerkUserId: true }
+        });
+        const recipientDbId = targetUser?.id ?? input.toUserId;
+        const recipientClerkId = targetUser?.clerkUserId;
+
+        await Promise.all([
+          globalCache.delete(`user_vault_stats:${ctx.user.id}`),
+          globalCache.delete(`user_vault_stats:${recipientDbId}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          ...(recipientClerkId ? [globalCache.delete(`user_vault_balance:${recipientClerkId}`)] : []),
+          globalCache.delete(`user_vault_balance:${recipientDbId}`),
+        ]);
 
         return result;
       } catch (error) {
@@ -901,6 +919,12 @@ export const cardsRouter = createTRPCRouter({
             newBalance: updatedVault.credits,
           };
         });
+
+        await Promise.all([
+          globalCache.delete(`user_vault_stats:${userId}`),
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          globalCache.delete(`user_vault_balance:${userId}`),
+        ]);
 
         return {
           success: true,

@@ -7,6 +7,7 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/a
 import { purchasePack, openPack, getAvailablePacks, getUserPacks } from "~/lib/card-pack-service";
 import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 /**
  * Card Packs Router
@@ -163,6 +164,11 @@ export const cardPacksRouter = createTRPCRouter({
           });
         } catch {}
 
+        await Promise.all([
+          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          globalCache.delete(`user_vault_balance:${ctx.user.id}`),
+        ]);
+
         return {
           success: true,
           message: "Pack purchased successfully",
@@ -253,6 +259,8 @@ export const cardPacksRouter = createTRPCRouter({
             metadata: { cardCount: results.length, bestRarity },
           });
         } catch {}
+
+        await globalCache.delete(`user_vault_stats:${ctx.user.id}`);
 
         return {
           success: true,
