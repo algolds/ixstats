@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getMarketWebSocketClient } from "~/lib/market-websocket-client";
+import { api } from "~/trpc/react";
 import type { AuctionListing, Bid } from "~/types/marketplace";
 
 interface UseLiveAuctionOptions {
@@ -43,6 +44,7 @@ export function useLiveAuction(options: UseLiveAuctionOptions): UseLiveAuctionRe
   const wsClient = useRef(getMarketWebSocketClient());
   const unsubscribeBidRef = useRef<(() => void) | null>(null);
   const unsubscribeCompleteRef = useRef<(() => void) | null>(null);
+  const utils = api.useUtils();
 
   /**
    * Handle new bid update
@@ -93,15 +95,12 @@ export function useLiveAuction(options: UseLiveAuctionOptions): UseLiveAuctionRe
    */
   const refetch = useCallback(async () => {
     try {
-      // TODO: Replace with actual tRPC query when Agent 6 implements
-      // const updated = await api.auctions.getAuction.query({ auctionId });
-      // setAuction(updated);
-
-      console.log("[useLiveAuction] Refetching auction:", auctionId);
+      const data = await utils.client.cardMarket.getAuctionById.query({ auctionId });
+      setAuction(data as unknown as AuctionListing);
     } catch (error) {
       console.error("[useLiveAuction] Error refetching auction:", error);
     }
-  }, [auctionId]);
+  }, [auctionId, utils.client]);
 
   /**
    * Update connection state periodically

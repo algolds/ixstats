@@ -28,10 +28,16 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
   const [articlePreview, setArticlePreview] = useState<string>("");
   const [loadingPreview, setLoadingPreview] = useState(false);
 
+  const { data: tokenData } = api.loreCards.getLoreTokensBalance.useQuery(undefined, {
+    staleTime: 30000,
+  });
+  const tokenBalance = tokenData?.balance ?? 0;
+
   const utils = api.useUtils();
   const requestLoreCardMutation = api.loreCards.requestLoreCard.useMutation({
     onSuccess: () => {
       utils.loreCards.getMyRequests.invalidate();
+      utils.loreCards.getLoreTokensBalance.invalidate();
     },
   });
 
@@ -145,10 +151,20 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-white/60">Request Cost</div>
-            <div className="text-gold-400 text-2xl font-bold">50 IxC</div>
+            {tokenBalance > 0 ? (
+              <div className="text-gold-400 text-2xl font-bold">Free (Token Available)</div>
+            ) : (
+              <div className="text-gold-400 text-2xl font-bold">50 IxC</div>
+            )}
           </div>
           <div className="text-right">
-            <div className="text-xs text-white/60">Per lore card request</div>
+            {tokenBalance > 0 ? (
+              <div className="text-xs text-white/60 font-semibold text-emerald-400">
+                Lore Token Balance: {tokenBalance}
+              </div>
+            ) : (
+              <div className="text-xs text-white/60">Per lore card request</div>
+            )}
             <div className="mt-1 text-xs text-white/60">Admin approval required</div>
           </div>
         </div>
@@ -160,7 +176,11 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
         disabled={!selectedArticle || requestLoreCardMutation.isPending}
         className="glass-interactive w-full rounded-lg px-6 py-4 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {requestLoreCardMutation.isPending ? "Submitting..." : "Request Lore Card (50 IxC)"}
+        {requestLoreCardMutation.isPending
+          ? "Submitting..."
+          : tokenBalance > 0
+            ? "Request Lore Card (Free with Token)"
+            : "Request Lore Card (50 IxC)"}
       </button>
 
       {/* Recent Requests */}

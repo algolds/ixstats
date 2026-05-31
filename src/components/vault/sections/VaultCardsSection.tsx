@@ -104,6 +104,7 @@ interface VaultCardsSectionProps {
 function InventorySidebarContent({
   totalCards,
   totalValue,
+  capacityBoost,
   filters,
   setFilters,
   sortBy,
@@ -112,10 +113,13 @@ function InventorySidebarContent({
   setViewMode,
   selectMode,
   setSelectMode,
+  hideValue,
+  setHideValue,
   onResetFilters,
 }: {
   totalCards: number;
   totalValue: number;
+  capacityBoost: number;
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   sortBy: string;
@@ -124,6 +128,8 @@ function InventorySidebarContent({
   setViewMode: (v: ViewMode) => void;
   selectMode: boolean;
   setSelectMode: (v: boolean) => void;
+  hideValue: boolean;
+  setHideValue: (v: boolean) => void;
   onResetFilters: () => void;
 }) {
   return (
@@ -138,7 +144,7 @@ function InventorySidebarContent({
         </div>
         <div className="mt-1.5 flex items-baseline gap-1">
           <span className="text-xl font-extrabold tracking-tighter text-cyan-600 dark:text-cyan-400">
-            <NumberFlow value={totalCards} />
+            {totalCards} / {150 + capacityBoost}
           </span>
           <span className="text-muted-foreground text-[10px]">cards</span>
         </div>
@@ -297,15 +303,25 @@ function InventorySidebarContent({
           </div>
         </div>
 
-        {/* Multi-Select */}
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/5">
-          <Checkbox
-            checked={selectMode}
-            onCheckedChange={(checked) => setSelectMode(checked as boolean)}
-            className="h-3.5 w-3.5"
-          />
-          <span className="text-xs font-medium">Multi-Select Mode</span>
-        </label>
+        {/* Multi-Select & Hide Value */}
+        <div className="flex flex-col gap-1">
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/5">
+            <Checkbox
+              checked={selectMode}
+              onCheckedChange={(checked) => setSelectMode(checked as boolean)}
+              className="h-3.5 w-3.5"
+            />
+            <span className="text-xs font-medium">Multi-Select Mode</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/5">
+            <Checkbox
+              checked={hideValue}
+              onCheckedChange={(checked) => setHideValue(checked as boolean)}
+              className="h-3.5 w-3.5"
+            />
+            <span className="text-xs font-medium">Hide Card Values</span>
+          </label>
+        </div>
       </div>
 
       {/* Clear Filters */}
@@ -522,6 +538,7 @@ function InventoryTab({
   viewMode,
   selectMode,
   setSelectMode,
+  hideValue,
   filters,
   onResetFilters,
 }: {
@@ -531,6 +548,7 @@ function InventoryTab({
   viewMode: ViewMode;
   selectMode: boolean;
   setSelectMode: (v: boolean) => void;
+  hideValue: boolean;
   filters: FilterState;
   onResetFilters: () => void;
 }) {
@@ -728,6 +746,7 @@ function InventoryTab({
                   card={card}
                   size={viewMode === "compact" ? "small" : "medium"}
                   onClick={handleCardClick}
+                  hideValue={hideValue}
                   className={cn(
                     "transition-all",
                     selectMode &&
@@ -1234,10 +1253,15 @@ export function VaultCardsSection() {
     return resolveInitialTab(subTab);
   });
 
+  const { data: userStatsData } = api.vault.getUserStats.useQuery(undefined, {
+    staleTime: 30000,
+  });
+
   // ─── Lifted Inventory State ───────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<string>("acquired");
   const [selectMode, setSelectMode] = useState(false);
+  const [hideValue, setHideValue] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     rarity: "all",
@@ -1275,16 +1299,27 @@ export function VaultCardsSection() {
       wikiUrl: ownership.cards.wikiUrl || null,
       countryId: ownership.cards.countryId,
       stats: ownership.cards.stats || {},
+      baseStats: ownership.cards.stats || {},
       marketValue: ownership.cards.marketValue || 0,
       totalSupply: ownership.cards.totalSupply || 0,
-      level: ownership.cards.level || 1,
+      level: ownership.level ?? 1,
       evolutionStage: ownership.cards.evolutionStage || 0,
       enhancements: ownership.cards.enhancements || null,
+      serialNumber: ownership.serialNumber,
+      experience: ownership.experience,
+      lastSalePrice: ownership.lastSalePrice,
+      lastSaleDate: ownership.lastSaleDate,
+      acquiredAt: ownership.acquiredAt,
       createdAt: ownership.cards.createdAt,
       updatedAt: ownership.cards.updatedAt,
       lastTrade: ownership.cards.lastTrade || null,
       country: ownership.cards.country,
-      owners: [],
+      owners: [{
+        userId: ownership.ownerId,
+        quantity: ownership.quantity,
+        acquiredDate: ownership.acquiredAt,
+        acquiredMethod: "acquired",
+      }],
     }));
   }, [ownerships]);
 
@@ -1341,6 +1376,7 @@ export function VaultCardsSection() {
         <InventorySidebarContent
           totalCards={totalCards}
           totalValue={totalValue}
+          capacityBoost={userStatsData?.capacityBoost ?? 0}
           filters={filters}
           setFilters={setFilters}
           sortBy={sortBy}
@@ -1349,6 +1385,8 @@ export function VaultCardsSection() {
           setViewMode={setViewMode}
           selectMode={selectMode}
           setSelectMode={setSelectMode}
+          hideValue={hideValue}
+          setHideValue={setHideValue}
           onResetFilters={handleResetFilters}
         />
       )}
@@ -1481,6 +1519,7 @@ export function VaultCardsSection() {
                     viewMode={viewMode}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
+                    hideValue={hideValue}
                     filters={filters}
                     onResetFilters={handleResetFilters}
                   />

@@ -19,6 +19,7 @@
 
 import { db } from "~/server/db";
 import { CardType, CardRarity } from "@prisma/client";
+import { getCurrentIxCardSeason } from "~/lib/ixcard-season";
 import type { WikiSource } from "~/lib/mediawiki-config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/mediawiki-config";
 import { LORE_CATEGORIES } from "./lore-card-constants";
@@ -685,6 +686,7 @@ export class WikiLoreCardGenerator {
    * Create card in database from candidate
    */
   async createCard(candidate: LoreCardCandidate): Promise<string> {
+    const season = await getCurrentIxCardSeason(db);
     const card = await db.card.create({
       data: {
         title: candidate.title,
@@ -692,7 +694,7 @@ export class WikiLoreCardGenerator {
         artwork: candidate.artwork,
         cardType: CardType.LORE,
         rarity: candidate.rarity,
-        season: 1, // TODO: Use current season
+        season,
         wikiSource: candidate.wikiSource,
         wikiArticleTitle: candidate.wikiArticleTitle,
         stats: candidate.stats,

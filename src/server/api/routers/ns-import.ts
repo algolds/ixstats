@@ -9,11 +9,12 @@ import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure }
 import { nsApiClient, type NSCard } from "~/lib/ns-api-client";
 import { nsImportService } from "~/lib/ns-import-service";
 import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
-import { checkpointManager } from "~/lib/ns-sync-checkpoint";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
+import { getVaultConfig, vaultService } from "~/lib/vault-service";
 
 const SYNC_TYPE = "NS_CARD_SYNC";
+const activeRunningJobs = new Set<string>();
 
 // ─── Background Processing Functions ──────────────────────────────
 
@@ -153,244 +154,98 @@ async function processRegionNationsInBackground(
   startFromIndex = 0,
   initialCounts = { cardsCreated: 0, cardsUpdated: 0, errors: [] as string[] }
 ) {
-  let nationsProcessed = startFromIndex;
-  let cardsCreated = initialCounts.cardsCreated;
-  let cardsUpdated = initialCounts.cardsUpdated;
-  const errors: string[] = [...initialCounts.errors];
+  activeRunningJobs.add(syncLogId);
+  try {
+    let nationsProcessed = startFromIndex;
+    let cardsCreated = initialCounts.cardsCreated;
+    let cardsUpdated = initialCounts.cardsUpdated;
+    const errors: string[] = [...initialCounts.errors];
 
-  if (startFromIndex > 0) {
-    console.log(
-      `[NS Import] Resuming region ${regionName} from nation ${startFromIndex}/${nations.length} (${cardsCreated} cards already created)`
-    );
-  }
-
-  for (let i = startFromIndex; i < nations.length; i++) {
-    const nationName = nations[i]!;
-    try {
-      const result = await processNationDeck(db, nationName, regionName);
-      cardsCreated += result.cardsCreated;
-      cardsUpdated += result.cardsUpdated;
-      errors.push(...result.errors);
-    } catch (nationError) {
-      const msg = nationError instanceof Error ? nationError.message : String(nationError);
-      errors.push(`Nation ${nationName}: ${msg}`);
+    if (startFromIndex > 0) {
+      console.log(
+        `[NS Import] Resuming region ${regionName} from nation ${startFromIndex}/${nations.length} (${cardsCreated} cards already created)`
+      );
     }
 
-    nationsProcessed = i + 1;
+    for (let i = startFromIndex; i < nations.length; i++) {
+      // Check if the job was paused or stopped/cancelled in the DB
+      const currentJob = await db.syncLog.findUnique({
+        where: { id: syncLogId },
+        select: { status: true },
+      });
+      if (currentJob?.status === "PAUSED") {
+        console.log(`[NS Import] Region ${regionName} fetch paused at nation index ${i}/${nations.length}`);
+        return; // Exit graceful pause
+      }
+      if (currentJob?.status === "FAILED") {
+        console.log(`[NS Import] Region ${regionName} fetch stopped at nation index ${i}/${nations.length}`);
+        return; // Exit stopped job
+      }
 
-    // Save progress after EVERY nation so we can resume precisely
+      const nationName = nations[i]!;
+      try {
+        const result = await processNationDeck(db, nationName, regionName);
+        cardsCreated += result.cardsCreated;
+        cardsUpdated += result.cardsUpdated;
+        errors.push(...result.errors);
+      } catch (nationError) {
+        const msg = nationError instanceof Error ? nationError.message : String(nationError);
+        errors.push(`Nation ${nationName}: ${msg}`);
+      }
+
+      nationsProcessed = i + 1;
+
+      // Save progress after EVERY nation so we can resume precisely
+      await db.syncLog.update({
+        where: { id: syncLogId },
+        data: {
+          itemsProcessed: nationsProcessed,
+          cardsProcessed: cardsCreated + cardsUpdated,
+          cardsCreated,
+          cardsUpdated,
+          metadata: {
+            regionName,
+            totalNations: nations.length,
+            nations, // Full nation list stored for resume
+            nationsProcessed,
+            cardsCreated,
+            cardsUpdated,
+            errorCount: errors.length,
+            lastProcessedIndex: i,
+          },
+        },
+      });
+    }
+
+    // Final update — mark complete
     await db.syncLog.update({
       where: { id: syncLogId },
       data: {
+        status: errors.length > nations.length / 2 ? "FAILED" : "SUCCESS",
         itemsProcessed: nationsProcessed,
+        itemsFailed: errors.length,
         cardsProcessed: cardsCreated + cardsUpdated,
         cardsCreated,
         cardsUpdated,
+        errorMessage: errors.length > 0 ? errors.slice(0, 20).join("; ") : null,
+        completedAt: new Date(),
         metadata: {
           regionName,
           totalNations: nations.length,
-          nations, // Full nation list stored for resume
+          nations, // Keep for reference
           nationsProcessed,
           cardsCreated,
           cardsUpdated,
           errorCount: errors.length,
-          lastProcessedIndex: i,
-        },
-      },
-    });
-  }
-
-  // Final update — mark complete
-  await db.syncLog.update({
-    where: { id: syncLogId },
-    data: {
-      status: errors.length > nations.length / 2 ? "FAILED" : "SUCCESS",
-      itemsProcessed: nationsProcessed,
-      itemsFailed: errors.length,
-      cardsProcessed: cardsCreated + cardsUpdated,
-      cardsCreated,
-      cardsUpdated,
-      errorMessage: errors.length > 0 ? errors.slice(0, 20).join("; ") : null,
-      completedAt: new Date(),
-      metadata: {
-        regionName,
-        totalNations: nations.length,
-        nations, // Keep for reference
-        nationsProcessed,
-        cardsCreated,
-        cardsUpdated,
-        errorCount: errors.length,
-      },
-    },
-  });
-
-  console.log(
-    `[NS Import] Region ${regionName} complete: ${nationsProcessed} nations, ${cardsCreated} created, ${cardsUpdated} updated, ${errors.length} errors`
-  );
-}
-
-/**
- * Process a full season card dump in the background.
- * Parses pre-supplied XML data and batch-upserts all cards.
- */
-async function processSeasonDumpInBackground(
-  db: PrismaClient,
-  syncLogId: string,
-  season: number,
-  xmlData: string
-) {
-  try {
-    console.log(
-      `[NS Import] Parsing season ${season} card dump (${(xmlData.length / 1024 / 1024).toFixed(2)} MB)...`
-    );
-    const parsedCards = await nsApiClient.parseNSDump(xmlData);
-
-    console.log(`[NS Import] Parsed ${parsedCards.length} cards from season ${season} dump`);
-
-    let cardsCreated = 0;
-    let cardsUpdated = 0;
-    let errorCount = 0;
-    const BATCH_SIZE = 50;
-
-    for (let i = 0; i < parsedCards.length; i += BATCH_SIZE) {
-      const batch = parsedCards.slice(i, i + BATCH_SIZE);
-
-      const results = await Promise.allSettled(
-        batch.map(async (nsCard: NSCard) => {
-          const nsCardId = parseInt(nsCard.id);
-          const nsSeason = parseInt(nsCard.season);
-          if (isNaN(nsCardId) || isNaN(nsSeason)) return;
-
-          const name = nsCard.name || `Nation ${nsCard.id}`;
-          const artwork = nsCard.flag || "/images/cards/placeholder-nation.png";
-
-          await db.card.upsert({
-            where: {
-              nsCardId_nsSeason: { nsCardId, nsSeason },
-            },
-            update: {
-              title: name,
-              marketValue: parseFloat(nsCard.market_value || "0"),
-              rarity: nsCard.rarity || "COMMON",
-              stats: {
-                region: nsCard.region,
-                category: nsCard.cardcategory || nsCard.category,
-                marketValue: nsCard.market_value,
-                badge: nsCard.badge,
-                trophies: nsCard.trophies,
-              },
-            },
-            create: {
-              id: `card_ns_${nsCard.id}_s${nsCard.season}`,
-              title: name,
-              description:
-                nsCard.slogan ||
-                `${nsCard.cardcategory || "Nation"} from ${nsCard.region || "Unknown"}`,
-              artwork,
-              cardType: "NS_IMPORT",
-              rarity: nsCard.rarity || "COMMON",
-              season: nsSeason,
-              nsCardId,
-              nsSeason,
-              stats: {
-                region: nsCard.region,
-                category: nsCard.cardcategory || nsCard.category,
-                marketValue: nsCard.market_value,
-                badge: nsCard.badge,
-                trophies: nsCard.trophies,
-              },
-              metadata: {
-                nsData: nsCard as any,
-                importedFrom: `dump:season_${season}`,
-                importedAt: new Date().toISOString(),
-              },
-              marketValue: parseFloat(nsCard.market_value || "0"),
-              totalSupply: 1,
-              level: 1,
-            },
-          });
-        })
-      );
-
-      cardsCreated += results.filter((r) => r.status === "fulfilled").length;
-      errorCount += results.filter((r) => r.status === "rejected").length;
-
-      const cardsProcessed = Math.min(i + BATCH_SIZE, parsedCards.length);
-
-      // Save checkpoint every 500 cards
-      if (cardsProcessed % 500 === 0 || cardsProcessed === parsedCards.length) {
-        await checkpointManager.saveCheckpoint({
-          season,
-          status: "IN_PROGRESS",
-          cardsProcessed,
-          totalCards: parsedCards.length,
-          lastProcessedCardId: batch[batch.length - 1]?.id || null,
-          errorCount,
-          startedAt: new Date(),
-          lastCheckpointAt: new Date(),
-          completedAt: null,
-        });
-      }
-
-      // Update sync log every 1000 cards
-      if (cardsProcessed % 1000 === 0 || cardsProcessed === parsedCards.length) {
-        await db.syncLog.update({
-          where: { id: syncLogId },
-          data: {
-            itemsProcessed: cardsProcessed,
-            cardsProcessed,
-            cardsCreated,
-            itemsFailed: errorCount,
-            metadata: {
-              season,
-              totalCards: parsedCards.length,
-              cardsProcessed,
-              cardsCreated,
-              errorCount,
-            },
-          },
-        });
-      }
-    }
-
-    // Mark complete
-    await checkpointManager.markCompleted(season);
-    await db.syncLog.update({
-      where: { id: syncLogId },
-      data: {
-        status: "SUCCESS",
-        itemsProcessed: parsedCards.length,
-        cardsProcessed: parsedCards.length,
-        cardsCreated,
-        cardsUpdated,
-        itemsFailed: errorCount,
-        completedAt: new Date(),
-        metadata: {
-          season,
-          totalCards: parsedCards.length,
-          cardsCreated,
-          cardsUpdated,
-          errorCount,
         },
       },
     });
 
     console.log(
-      `[NS Import] Season ${season} dump complete: ${cardsCreated} processed, ${errorCount} errors`
+      `[NS Import] Region ${regionName} complete: ${nationsProcessed} nations, ${cardsCreated} created, ${cardsUpdated} updated, ${errors.length} errors`
     );
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error(`[NS Import] Season dump failed:`, msg);
-
-    await checkpointManager.markFailed(season, msg);
-    await db.syncLog.update({
-      where: { id: syncLogId },
-      data: {
-        status: "FAILED",
-        errorMessage: msg,
-        completedAt: new Date(),
-      },
-    });
+  } finally {
+    activeRunningJobs.delete(syncLogId);
   }
 }
 
@@ -708,8 +563,28 @@ export const nsImportRouter = createTRPCRouter({
       }[] = [];
       const skippedCards: string[] = [];
 
+      // Get vault config and calculate user's maximum capacity limit
+      const config = await getVaultConfig(ctx.db as any);
+      const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
+      const maxCards = 150 + capacityBoost;
+
+      // Check if user is exempt (role level <= 20 and exemption toggle is enabled)
+      const userRoleLevel = ctx.user.role?.level ?? 100;
+      const isExempt = config.exemptStaffFromLimit && userRoleLevel <= 20;
+
+      const currentCardsCount = await ctx.db.cardOwnership.count({
+        where: { userId: ctx.user.id },
+      });
+
       // Process cards in batches
       for (const nsCard of deckData.cards) {
+        // Enforce inventory capacity limit check (only if not exempt)
+        if (!isExempt && (currentCardsCount + importedCardIds.length >= maxCards)) {
+          console.warn(`[NS Import] User ${ctx.user.id} hit capacity limit of ${maxCards} cards during deck import.`);
+          const cardLabel = nsCard.name ? `${nsCard.name}` : `Card ${nsCard.id} S${nsCard.season}`;
+          skippedCards.push(`${cardLabel} (Inventory Full)`);
+          continue;
+        }
         try {
           // Fetch full card info since deck API may only provide id, season, rarity
           if (
@@ -935,250 +810,11 @@ export const nsImportRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Get sync status for a specific season
-   */
-  getSyncStatus: adminProcedure
-    .input(
-      z.object({
-        season: z.number().int().min(1).max(4),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const checkpoint = await ctx.db.syncCheckpoint.findUnique({
-        where: {
-          syncType_season: {
-            syncType: SYNC_TYPE,
-            season: input.season,
-          },
-        },
-      });
-
-      if (!checkpoint) {
-        return {
-          season: input.season,
-          status: "NOT_STARTED",
-          cardsProcessed: 0,
-          totalCards: 0,
-          progress: 0,
-          errorCount: 0,
-          lastCheckpoint: null,
-          completedAt: null,
-        };
-      }
-
-      const cp = (checkpoint.checkpoint as any) || {};
-      const cardsProcessed = Number(cp.cardsProcessed ?? 0);
-      const totalCards = Number(cp.totalCards ?? 0);
-      const errorCount = Number(cp.errorCount ?? 0);
-      const lastCheckpoint = cp.lastCheckpointAt
-        ? new Date(cp.lastCheckpointAt)
-        : new Date(checkpoint.updatedAt);
-      const completedAt = cp.completedAt ? new Date(cp.completedAt) : null;
-
-      const progress = totalCards > 0 ? (cardsProcessed / totalCards) * 100 : 0;
-
-      return {
-        season: input.season,
-        status: (cp.status as string) || "IN_PROGRESS",
-        cardsProcessed,
-        totalCards,
-        progress,
-        errorCount,
-        lastCheckpoint,
-        completedAt,
-        lastProcessedCardId: checkpoint.lastCardId ?? null,
-      };
-    }),
-
-  /**
-   * Admin: Get comprehensive sync health across all seasons
+   * Admin: Get comprehensive sync health across all NS import operations
    */
   getSyncHealth: adminProcedure.query(async () => {
     return await SyncHealthMonitor.getHealthStats();
   }),
-
-  /**
-   * Admin: Retry failed cards for a specific season
-   */
-  retryFailedCards: adminProcedure
-    .input(
-      z.object({
-        season: z.number().int().min(1).max(4),
-        cardIds: z.array(z.string()).min(1).max(100),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { season, cardIds } = input;
-
-      const results = {
-        successful: 0,
-        failed: 0,
-        errors: [] as string[],
-      };
-
-      for (const cardId of cardIds) {
-        try {
-          // Fetch card info from NS API
-          const cardInfo = await nsApiClient.fetchCardInfo(cardId, season.toString());
-
-          if (!cardInfo || !cardInfo.name) {
-            results.failed++;
-            results.errors.push(`Card ${cardId}: Failed to fetch from NS API`);
-            continue;
-          }
-
-          // Create or update card in database
-          const description =
-            cardInfo.description ||
-            cardInfo.slogan ||
-            cardInfo.motto ||
-            `${cardInfo.category || "Unknown"} from ${cardInfo.region || "Unknown"}`;
-
-          await ctx.db.card.upsert({
-            where: {
-              nsCardId_nsSeason: {
-                nsCardId: parseInt(cardId),
-                nsSeason: season,
-              },
-            },
-            update: {
-              title: cardInfo.name,
-              description,
-              artwork: cardInfo.flag || "/images/cards/placeholder-nation.png",
-              rarity: cardInfo.rarity,
-              marketValue: parseFloat(cardInfo.market_value || "0"),
-              stats: {
-                region: cardInfo.region,
-                category: cardInfo.category,
-                govt: cardInfo.govt,
-                cardcategory: cardInfo.cardcategory,
-                marketValue: cardInfo.market_value,
-                badge: cardInfo.badge,
-                trophies: cardInfo.trophies,
-              },
-              metadata: {
-                nsData: cardInfo,
-                lastSyncAt: new Date().toISOString(),
-              },
-            },
-            create: {
-              id: `card_ns_${cardId}_s${season}`,
-              title: cardInfo.name,
-              description,
-              artwork: cardInfo.flag || "/images/cards/placeholder-nation.png",
-              cardType: "NS_IMPORT",
-              rarity: cardInfo.rarity || "COMMON",
-              season,
-              nsCardId: parseInt(cardId),
-              nsSeason: season,
-              wikiSource: null,
-              wikiArticleTitle: cardInfo.name,
-              countryId: null,
-              stats: {
-                region: cardInfo.region,
-                category: cardInfo.category,
-                govt: cardInfo.govt,
-                cardcategory: cardInfo.cardcategory,
-                marketValue: cardInfo.market_value,
-                badge: cardInfo.badge,
-                trophies: cardInfo.trophies,
-              },
-              metadata: {
-                nsData: cardInfo,
-                importedAt: new Date().toISOString(),
-              },
-              marketValue: parseFloat(cardInfo.market_value || "0"),
-              totalSupply: 1,
-              level: 1,
-            },
-          });
-
-          results.successful++;
-        } catch (error) {
-          results.failed++;
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          results.errors.push(`Card ${cardId}: ${errorMessage}`);
-
-          // Log the error
-          await SyncHealthMonitor.logError({
-            season,
-            cardId,
-            error: errorMessage,
-          });
-        }
-      }
-
-      // Track the retry operation
-      await SyncHealthMonitor.trackSync({
-        season,
-        status: results.failed === 0 ? "SUCCESS" : "FAILED",
-        cardsProcessed: results.successful,
-        cardsCreated: results.successful,
-        errorMessage: results.errors.length > 0 ? results.errors.join("; ") : undefined,
-        metadata: { operation: "retry", cardIds },
-      });
-
-      return results;
-    }),
-
-  /**
-   * Admin: Reset sync checkpoint for a season (clear and start fresh)
-   */
-  resetSync: adminProcedure
-    .input(
-      z.object({
-        season: z.number().int().min(1).max(4),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { season } = input;
-
-      // Delete existing checkpoint
-      await ctx.db.syncCheckpoint.deleteMany({
-        where: { syncType: SYNC_TYPE, season },
-      });
-
-      // Log the reset
-      await SyncHealthMonitor.trackSync({
-        season,
-        status: "SUCCESS",
-        metadata: { operation: "reset" },
-      });
-
-      return {
-        success: true,
-        message: `Sync checkpoint for season ${season} has been reset`,
-      };
-    }),
-
-  /**
-   * Admin: Trigger manual sync for a specific season
-   */
-  triggerManualSync: adminProcedure
-    .input(
-      z.object({
-        season: z.number().int().min(1).max(4),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { season } = input;
-
-      // Note: This would typically trigger a background job
-      // For now, we just return a success message
-      // The actual sync logic should be implemented separately
-
-      await SyncHealthMonitor.trackSync({
-        season,
-        status: "IN_PROGRESS",
-        metadata: { operation: "manual_trigger", triggeredAt: new Date().toISOString() },
-      });
-
-      return {
-        success: true,
-        message: `Manual sync for season ${season} has been queued`,
-        season,
-      };
-    }),
 
   /**
    * Admin: Get recent sync logs
@@ -1186,24 +822,14 @@ export const nsImportRouter = createTRPCRouter({
   getSyncLogs: adminProcedure
     .input(
       z.object({
-        season: z.number().int().min(1).max(4).optional(),
-        syncTypeFilter: z.enum(["all", "season", "region", "dump"]).optional().default("all"),
+        syncTypeFilter: z.enum(["all", "region"]).optional().default("all"),
         limit: z.number().int().min(1).max(100).default(50),
       })
     )
     .query(async ({ ctx, input }) => {
       let where: Record<string, unknown>;
-      if (input.season) {
-        where = { syncType: `NS_SEASON_${input.season}` };
-      } else if (input.syncTypeFilter === "region") {
+      if (input.syncTypeFilter === "region") {
         where = { syncType: { startsWith: "NS_REGION_" } };
-      } else if (input.syncTypeFilter === "dump") {
-        where = { syncType: { startsWith: "NS_SEASON_DUMP_" } };
-      } else if (input.syncTypeFilter === "season") {
-        where = {
-          syncType: { startsWith: "NS_SEASON_" },
-          NOT: { syncType: { startsWith: "NS_SEASON_DUMP_" } },
-        };
       } else {
         where = { syncType: { startsWith: "NS_" } };
       }
@@ -1369,141 +995,94 @@ export const nsImportRouter = createTRPCRouter({
    * Admin: Fetch and import all cards from a specific NS region
    * Returns immediately — processing runs in the background
    */
+  /**
+   * Admin: Fetch and import all cards from specific NS regions (comma-separated names)
+   * Returns immediately — processing runs in parallel in the background
+   */
   fetchRegionCards: adminProcedure
     .input(
       z.object({
-        regionName: z.string().min(1).max(100),
+        regionNames: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { regionName } = input;
+      const regions = input.regionNames
+        .split(",")
+        .map((r) => r.trim())
+        .filter((r) => r.length > 0);
 
-      // Fetch nation list (single API call)
-      const nations = await nsApiClient.fetchRegionNations(regionName);
+      if (regions.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No valid region names provided",
+        });
+      }
 
-      if (!nations || nations.length === 0) {
+      const results = [];
+      for (const regionName of regions) {
+        let nations;
+        try {
+          nations = await nsApiClient.fetchRegionNations(regionName);
+        } catch (err) {
+          console.error(`Failed to fetch nations for region ${regionName}:`, err);
+          continue;
+        }
+
+        if (!nations || nations.length === 0) {
+          continue;
+        }
+
+        // Create sync log entry for tracking
+        const syncLog = await ctx.db.syncLog.create({
+          data: {
+            syncType: `NS_REGION_${regionName.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`,
+            status: "IN_PROGRESS",
+            season: null,
+            itemsProcessed: 0,
+            itemsFailed: 0,
+            metadata: {
+              regionName,
+              totalNations: nations.length,
+              nations, // Store full list so we can resume
+              nationsProcessed: 0,
+              cardsCreated: 0,
+              cardsUpdated: 0,
+              errorCount: 0,
+              lastProcessedIndex: -1,
+              startedBy: ctx.user.id,
+            },
+            startedAt: new Date(),
+          },
+        });
+
+        // Fire-and-forget background processing
+        processRegionNationsInBackground(
+          ctx.db as unknown as PrismaClient,
+          syncLog.id,
+          nations,
+          regionName
+        ).catch((error) => {
+          console.error(`[NS Import] Background region fetch failed:`, error);
+        });
+
+        results.push({
+          regionName,
+          syncLogId: syncLog.id,
+          nationsFound: nations.length,
+        });
+      }
+
+      if (results.length === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: `No nations found in region "${regionName}"`,
+          message: "No nations found in any of the specified regions",
         });
       }
-
-      // Create sync log entry for tracking (includes full nation list for resume)
-      const syncLog = await ctx.db.syncLog.create({
-        data: {
-          syncType: `NS_REGION_${regionName.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`,
-          status: "IN_PROGRESS",
-          season: null,
-          itemsProcessed: 0,
-          itemsFailed: 0,
-          metadata: {
-            regionName,
-            totalNations: nations.length,
-            nations, // Store full list so we can resume after restart
-            nationsProcessed: 0,
-            cardsCreated: 0,
-            cardsUpdated: 0,
-            errorCount: 0,
-            lastProcessedIndex: -1,
-            startedBy: ctx.user.id,
-          },
-          startedAt: new Date(),
-        },
-      });
-
-      // Fire-and-forget background processing
-      processRegionNationsInBackground(
-        ctx.db as unknown as PrismaClient,
-        syncLog.id,
-        nations,
-        regionName
-      ).catch((error) => {
-        console.error(`[NS Import] Background region fetch failed:`, error);
-      });
 
       return {
         success: true,
-        syncLogId: syncLog.id,
-        nationsFound: nations.length,
-        message: `Started importing cards from ${nations.length} nations in ${regionName}`,
-      };
-    }),
-
-  /**
-   * Admin: Import full season card dump from NationStates
-   * Downloads the gzipped XML dump and batch-upserts all cards
-   * Returns immediately — processing runs in the background
-   */
-  importSeasonDump: adminProcedure
-    .input(
-      z.object({
-        season: z.number().int().min(1).max(4),
-        // Base64-encoded gzipped XML, or raw XML string
-        fileData: z.string().min(100),
-        isGzipped: z.boolean().default(true),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { season, fileData, isGzipped } = input;
-
-      let xmlData: string;
-      try {
-        const buffer = Buffer.from(fileData, "base64");
-        if (isGzipped) {
-          const zlib = await import("zlib");
-          const { promisify } = await import("util");
-          const gunzip = promisify(zlib.gunzip);
-          const decompressed = await gunzip(buffer);
-          xmlData = decompressed.toString("utf-8");
-        } else {
-          xmlData = buffer.toString("utf-8");
-        }
-      } catch (error) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Failed to decompress file: ${error instanceof Error ? error.message : "Invalid data"}`,
-        });
-      }
-
-      if (!xmlData.includes("<CARD>")) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "File does not appear to contain NS card data (no <CARD> elements found)",
-        });
-      }
-
-      // Create sync log
-      const syncLog = await ctx.db.syncLog.create({
-        data: {
-          syncType: `NS_SEASON_DUMP_${season}`,
-          status: "IN_PROGRESS",
-          season,
-          itemsProcessed: 0,
-          itemsFailed: 0,
-          metadata: {
-            operation: "season_dump",
-            season,
-            startedBy: ctx.user.id,
-            fileSize: xmlData.length,
-          },
-          startedAt: new Date(),
-        },
-      });
-
-      // Fire-and-forget background processing
-      processSeasonDumpInBackground(
-        ctx.db as unknown as PrismaClient,
-        syncLog.id,
-        season,
-        xmlData
-      ).catch((error) => {
-        console.error(`[NS Import] Background season dump failed:`, error);
-      });
-
-      return {
-        success: true,
-        syncLogId: syncLog.id,
-        message: `Started importing season ${season} card dump (${(xmlData.length / 1024 / 1024).toFixed(1)} MB XML). This may take several minutes.`,
+        results,
+        message: `Started importing cards for ${results.map((r) => `"${r.regionName}" (${r.nationsFound} nations)`).join(", ")}`,
       };
     }),
 
@@ -1547,50 +1126,42 @@ export const nsImportRouter = createTRPCRouter({
       };
     }),
 
-  // ─── Resume / Interrupted Jobs ─────────────────────────────────
+  // ─── Pause / Play / Stop controls ───
 
   /**
-   * Get any interrupted (IN_PROGRESS) region import jobs that can be resumed.
-   * These are SyncLogs with status IN_PROGRESS and a nations list in metadata.
+   * Get all active (IN_PROGRESS or PAUSED) region import jobs.
    */
-  getInterruptedJobs: adminProcedure.query(async ({ ctx }) => {
+  getActiveJobs: adminProcedure.query(async ({ ctx }) => {
     const jobs = await ctx.db.syncLog.findMany({
       where: {
-        status: "IN_PROGRESS",
+        status: { in: ["IN_PROGRESS", "PAUSED"] },
         syncType: { startsWith: "NS_REGION_" },
       },
       orderBy: { startedAt: "desc" },
-      take: 10,
     });
 
-    return jobs
-      .filter((job) => {
-        const meta = job.metadata as Record<string, any> | null;
-        return meta?.nations && Array.isArray(meta.nations) && meta.nations.length > 0;
-      })
-      .map((job) => {
-        const meta = job.metadata as Record<string, any>;
-        return {
-          id: job.id,
-          syncType: job.syncType,
-          regionName: (meta.regionName as string) ?? "Unknown",
-          totalNations: (meta.totalNations as number) ?? 0,
-          nationsProcessed: job.itemsProcessed ?? 0,
-          cardsCreated: job.cardsCreated ?? 0,
-          cardsUpdated: job.cardsUpdated ?? 0,
-          errorCount: job.itemsFailed ?? 0,
-          startedAt: job.startedAt,
-          lastProcessedIndex: (meta.lastProcessedIndex as number) ?? -1,
-        };
-      });
+    return jobs.map((job) => {
+      const meta = (job.metadata as Record<string, any>) || {};
+      return {
+        id: job.id,
+        syncType: job.syncType,
+        regionName: (meta.regionName as string) ?? "Unknown",
+        totalNations: (meta.totalNations as number) ?? 0,
+        nationsProcessed: job.itemsProcessed ?? 0,
+        cardsCreated: job.cardsCreated ?? 0,
+        cardsUpdated: job.cardsUpdated ?? 0,
+        errorCount: job.itemsFailed ?? 0,
+        startedAt: job.startedAt,
+        status: job.status,
+        lastProcessedIndex: (meta.lastProcessedIndex as number) ?? -1,
+      };
+    });
   }),
 
   /**
-   * Resume an interrupted region import job.
-   * Reads the nation list and progress from the SyncLog, then continues
-   * background processing from where it left off.
+   * Admin: Pause an active region import job.
    */
-  resumeRegionFetch: adminProcedure
+  pauseRegionFetch: adminProcedure
     .input(z.object({ syncLogId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const syncLog = await ctx.db.syncLog.findUnique({
@@ -1604,8 +1175,50 @@ export const nsImportRouter = createTRPCRouter({
       if (syncLog.status !== "IN_PROGRESS") {
         throw new TRPCError({
           code: "BAD_REQUEST",
+          message: `Job is already ${syncLog.status}, only running jobs can be paused`,
+        });
+      }
+
+      await ctx.db.syncLog.update({
+        where: { id: input.syncLogId },
+        data: { status: "PAUSED" },
+      });
+
+      return {
+        success: true,
+        message: "Pause requested. The job will pause after the current nation finishes processing.",
+      };
+    }),
+
+  /**
+   * Admin: Resume a paused or interrupted region import job.
+   */
+  resumeRegionFetch: adminProcedure
+    .input(z.object({ syncLogId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const syncLog = await ctx.db.syncLog.findUnique({
+        where: { id: input.syncLogId },
+      });
+
+      if (!syncLog) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Sync job not found" });
+      }
+
+      if (syncLog.status !== "IN_PROGRESS" && syncLog.status !== "PAUSED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
           message: `Job is already ${syncLog.status}, cannot resume`,
         });
+      }
+
+      // If it is already running in memory, skip starting another loop.
+      if (activeRunningJobs.has(syncLog.id)) {
+        return {
+          success: true,
+          syncLogId: syncLog.id,
+          message: "Job is already running.",
+          resumed: false,
+        };
       }
 
       const meta = syncLog.metadata as Record<string, any> | null;
@@ -1615,17 +1228,14 @@ export const nsImportRouter = createTRPCRouter({
       if (!nations || !Array.isArray(nations) || nations.length === 0 || !regionName) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Job metadata is missing the nation list — cannot resume. Start a new import instead.",
+          message: "Job metadata is missing the nation list — cannot resume.",
         });
       }
 
-      // Resume from the nation after the last fully processed one
       const lastProcessedIndex = (meta?.lastProcessedIndex as number) ?? -1;
       const resumeFromIndex = lastProcessedIndex + 1;
 
       if (resumeFromIndex >= nations.length) {
-        // Already done — just mark complete
         await ctx.db.syncLog.update({
           where: { id: syncLog.id },
           data: { status: "SUCCESS", completedAt: new Date() },
@@ -1633,17 +1243,22 @@ export const nsImportRouter = createTRPCRouter({
         return {
           success: true,
           syncLogId: syncLog.id,
-          message: `Job was already complete (${nations.length} nations processed).`,
+          message: `Job was already complete.`,
           resumed: false,
         };
       }
 
+      // Update DB status to IN_PROGRESS
+      await ctx.db.syncLog.update({
+        where: { id: syncLog.id },
+        data: { status: "IN_PROGRESS" },
+      });
+
       console.log(
-        `[NS Import] Resuming region "${regionName}" from nation ${resumeFromIndex}/${nations.length} ` +
-          `(${syncLog.cardsCreated ?? 0} cards already created)`
+        `[NS Import] Resuming region "${regionName}" from nation ${resumeFromIndex}/${nations.length}`
       );
 
-      // Fire-and-forget background processing, continuing from where we left off
+      // Fire-and-forget background processing
       processRegionNationsInBackground(
         ctx.db as unknown as PrismaClient,
         syncLog.id,
@@ -1662,9 +1277,44 @@ export const nsImportRouter = createTRPCRouter({
       return {
         success: true,
         syncLogId: syncLog.id,
-        message: `Resumed: continuing from nation ${resumeFromIndex + 1}/${nations.length} in "${regionName}"`,
+        message: `Resumed import for region "${regionName}".`,
         resumed: true,
-        remaining: nations.length - resumeFromIndex,
+      };
+    }),
+
+  /**
+   * Admin: Stop/cancel a running or paused region import job.
+   */
+  stopRegionFetch: adminProcedure
+    .input(z.object({ syncLogId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const syncLog = await ctx.db.syncLog.findUnique({
+        where: { id: input.syncLogId },
+      });
+
+      if (!syncLog) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Sync job not found" });
+      }
+
+      if (syncLog.status !== "IN_PROGRESS" && syncLog.status !== "PAUSED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Job status is ${syncLog.status}, cannot stop`,
+        });
+      }
+
+      await ctx.db.syncLog.update({
+        where: { id: input.syncLogId },
+        data: {
+          status: "FAILED",
+          errorMessage: "Stopped by administrator",
+          completedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        message: "Job stopped successfully.",
       };
     }),
 
@@ -1677,41 +1327,51 @@ export const nsImportRouter = createTRPCRouter({
    */
   discoverTopRegions: adminProcedure
     .input(
-      z
-        .object({
-          limit: z.number().int().min(1).max(50).default(15),
-        })
-        .optional()
+      z.object({
+        limit: z.number().int().min(1).max(50).default(15),
+        tag: z.string().min(1).default("massive"),
+      })
     )
-    .mutation(async ({ input }) => {
-      const limit = input?.limit ?? 15;
+    .mutation(async ({ ctx, input }) => {
+      const { limit, tag } = input;
 
-      console.log(`[NS Import] Discovering top regions (limit: ${limit})...`);
+      console.log(`[NS Import] Discovering top regions matching tag "${tag}" (limit: ${limit})...`);
 
-      // Fetch regions with the largest size tags
-      // "massive" = 2501+ nations, "enormous" = 501-2500 nations
-      const massiveRegions = await nsApiClient.fetchRegionsByTag("massive");
-      const enormousRegions = await nsApiClient.fetchRegionsByTag("enormous");
+      const tagsToFetch = [tag];
+      if (tag === "massive") {
+        tagsToFetch.push("gargantuan");
+      }
 
       const allRegionNames = new Set<string>();
-      if (massiveRegions) massiveRegions.forEach((r) => allRegionNames.add(r));
-      if (enormousRegions) enormousRegions.forEach((r) => allRegionNames.add(r));
+      for (const t of tagsToFetch) {
+        try {
+          const regions = await nsApiClient.fetchRegionsByTag(t);
+          if (regions) {
+            regions.forEach((r) => allRegionNames.add(r));
+          }
+        } catch (err) {
+          console.error(`Failed to fetch regions by tag "${t}":`, err);
+        }
+      }
 
       if (allRegionNames.size === 0) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch region lists from NS API",
+          message: `Failed to fetch region lists for tag "${tag}" from NS API`,
         });
       }
 
       console.log(
-        `[NS Import] Found ${allRegionNames.size} large regions, querying nation counts...`
+        `[NS Import] Found ${allRegionNames.size} matching regions, querying nation counts...`
       );
 
       // Query nation counts - limit concurrent requests to stay within rate limits
       const regionData: { id: string; name: string; numnations: number }[] = [];
 
-      for (const regionId of allRegionNames) {
+      // Query first 30 candidates to prevent hitting API rate limits
+      const candidates = Array.from(allRegionNames).slice(0, 30);
+
+      for (const regionId of candidates) {
         const info = await nsApiClient.fetchRegionNationCount(regionId);
         if (info) {
           regionData.push({

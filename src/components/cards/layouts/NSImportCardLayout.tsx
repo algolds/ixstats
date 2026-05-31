@@ -23,9 +23,9 @@ import {
   getRarityGlow,
   getRarityConfig,
   getCardWidth,
-  formatMarketValue,
   getCardTypeLabel,
 } from "~/lib/card-display-utils";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   getPremiumBorderConfig,
   getFoilStampConfig,
@@ -309,6 +309,7 @@ export const NSImportCardLayout = React.memo<NSImportCardLayoutProps>(
             <div className="flex items-start justify-between">
               <RarityBadge
                 rarity={card.rarity}
+                season={card.season}
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
@@ -368,7 +369,7 @@ export const NSImportCardLayout = React.memo<NSImportCardLayoutProps>(
                   fonts.type
                 )}
               >
-                <span className="font-medium text-white/80">Season {card.season}</span>
+                <span className="font-medium text-white/80">Est. Value</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
@@ -377,7 +378,8 @@ export const NSImportCardLayout = React.memo<NSImportCardLayoutProps>(
                   animate={!performanceMode && isHovered ? { scale: [1, 1.1, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 >
-                  {formatMarketValue(card.marketValue)}
+                  <IxCreditsSymbol size="0.8em" variant="ic" className="mr-1" />
+                  {card.marketValue.toLocaleString()}
                 </motion.span>
               </div>
 
@@ -415,7 +417,8 @@ export const NSImportCardLayout = React.memo<NSImportCardLayoutProps>(
                       <div className="flex flex-col">
                         <span className="text-[9px] font-medium text-white/70">NS Value</span>
                         <span className="font-black text-emerald-400">
-                          {formatMarketValue(nsMarketValue)}
+                          <IxCreditsSymbol size="0.7em" variant="ic" className="mr-0.5" />
+                          {nsMarketValue.toLocaleString()}
                         </span>
                       </div>
                     </div>

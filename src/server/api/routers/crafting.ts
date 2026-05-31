@@ -14,6 +14,8 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { vaultService, getVaultConfig } from "~/lib/vault-service";
+import { grantCardXp } from "~/lib/card-xp-utils";
+import { getCurrentIxCardSeason } from "~/lib/ixcard-season";
 import { type CardType } from "@prisma/client";
 
 /**
@@ -343,7 +345,33 @@ export const craftingRouter = createTRPCRouter({
 
       // Validate materials match recipe requirements
       const materialsRequired = recipe.requiredCardIds as any[];
-      // TODO: Add validation logic for material requirements
+      if (materialsRequired && materialsRequired.length > 0) {
+        if (materialsRequired.every((m: any) => typeof m === "string")) {
+          // Specific card IDs required — each material card must match a required card (by cardId)
+          const materialBaseIds = ownedCards.map((oc) => oc.cardId);
+          for (const requiredId of materialsRequired) {
+            const idx = materialBaseIds.indexOf(requiredId);
+            if (idx === -1) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Missing required card: ${requiredId}`,
+              });
+            }
+            materialBaseIds.splice(idx, 1);
+          }
+        } else {
+          // Criteria-based validation — check count only; criteria assumed to be pre-validated
+          if (input.materialCardIds.length < recipe.requiredCount) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Need at least ${recipe.requiredCount} materials`,
+            });
+          }
+        }
+      }
+
+      // Get current IxCard season
+      const currentSeason = await getCurrentIxCardSeason(ctx.db);
 
       // Calculate success
       const roll = Math.random() * 100;
@@ -385,7 +413,7 @@ export const craftingRouter = createTRPCRouter({
               artwork: baseCard?.artwork ?? "",
               rarity: recipe.resultRarity ?? "COMMON",
               cardType: "NATION" as CardType, // Default card type
-              season: 1, // TODO: Get current season
+              season: currentSeason,
               stats: {},
               marketValue: 0,
               totalSupply: 1,
@@ -408,23 +436,9 @@ export const craftingRouter = createTRPCRouter({
             },
           });
 
-          // Award XP
-          const user = await tx.user.findUnique({
-            where: { id: userId },
-            select: { collectorXp: true, collectorLevel: true },
-          });
-
-          if (user) {
-            const newXP = user.collectorXp + recipe.collectorXPGain;
-            const newLevel = Math.floor(newXP / 1000) + 1; // 1000 XP per level
-
-            await tx.user.update({
-              where: { id: userId },
-              data: {
-                collectorXp: newXP,
-                collectorLevel: newLevel,
-              },
-            });
+          // Award XP to the crafted card
+          if (resultCard) {
+            await grantCardXp(tx as any, resultCard.id, recipe.collectorXPGain, "CRAFT", JSON.stringify({ recipeId: recipe.id, recipeName: recipe.name }));
           }
         }
 

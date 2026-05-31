@@ -23,9 +23,9 @@ import {
   getRarityGlow,
   getRarityConfig,
   getCardWidth,
-  formatMarketValue,
   getCardTypeLabel,
 } from "~/lib/card-display-utils";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   getPremiumBorderConfig,
   getFoilStampConfig,
@@ -282,6 +282,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
             <div className="flex items-start justify-between">
               <RarityBadge
                 rarity={card.rarity}
+                season={card.season}
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
@@ -332,7 +333,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                   </p>
                   {card.country.continent && (
                     <p className={cn("font-medium text-white/70", fonts.stats)}>
-                      {card.country.continent}
+                       {card.country.continent}
                       {card.country.region && ` • ${card.country.region}`}
                     </p>
                   )}
@@ -359,7 +360,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                   fonts.type
                 )}
               >
-                <span className="font-medium text-white/80">Season {card.season}</span>
+                <span className="font-medium text-white/80">Est. Value</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
@@ -368,7 +369,8 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                   animate={!performanceMode && isHovered ? { scale: [1, 1.1, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 >
-                  {formatMarketValue(card.marketValue)}
+                  <IxCreditsSymbol size="0.8em" variant="ic" className="mr-1" />
+                  {card.marketValue.toLocaleString()}
                 </motion.span>
               </div>
 

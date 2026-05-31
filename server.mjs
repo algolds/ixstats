@@ -130,113 +130,118 @@ app.prepare().then(async () => {
   }
 
   // ──────────────────────────────────────────────
-  // Cron jobs (production only, individually isolated)
+  // Cron jobs (individually isolated)
   // ──────────────────────────────────────────────
-  if (!dev) {
-    let cron = null;
-    let cronJobsScheduled = 0;
-    let cronJobsFailed = 0;
+  let cron = null;
+  let cronJobsScheduled = 0;
+  let cronJobsFailed = 0;
 
-    try {
-      cron = await import('node-cron');
-    } catch (error) {
-      console.error('[Cron] ✗ Failed to import node-cron:', error.message);
-      console.warn('[Cron] Continuing without scheduled jobs');
-    }
+  try {
+    cron = await import('node-cron');
+  } catch (error) {
+    console.error('[Cron] ✗ Failed to import node-cron:', error.message);
+    console.warn('[Cron] Continuing without scheduled jobs');
+  }
 
-    if (cron) {
-      // Helper: schedule a cron job with isolated error handling
-      const scheduleCron = (name, schedule, handler) => {
-        try {
-          cron.default.schedule(schedule, handler, { timezone: 'UTC' });
-          cronJobsScheduled++;
-          console.log(`[Cron] ✓ ${name}`);
-        } catch (error) {
-          cronJobsFailed++;
-          console.error(`[Cron] ✗ Failed to schedule ${name}:`, error.message);
+  if (cron) {
+    // Helper: schedule a cron job with isolated error handling
+    const scheduleCron = (name, schedule, handler) => {
+      try {
+        cron.default.schedule(schedule, handler, { timezone: 'UTC' });
+        cronJobsScheduled++;
+        console.log(`[Cron] ✓ ${name}`);
+      } catch (error) {
+        cronJobsFailed++;
+        console.error(`[Cron] ✗ Failed to schedule ${name}:`, error.message);
+      }
+    };
+
+    // 1. Auction completion (every minute)
+    scheduleCron('Auction completion (every minute)', '* * * * *', async () => {
+      try {
+        const { processExpiredAuctions } = await import('./src/lib/auction-completion-cron.js');
+        await processExpiredAuctions();
+      } catch (error) {
+        console.error('[Cron] Auction completion failed:', error);
+      }
+    });
+
+    // 2. Passive income distribution (daily at 00:00 UTC)
+    scheduleCron('Passive income distribution (daily at 00:00 UTC)', '0 0 * * *', async () => {
+      try {
+        const { distributePassiveIncome } = await import('./src/lib/passive-income-distribution-cron.js');
+        await distributePassiveIncome();
+      } catch (error) {
+        console.error('[Cron] Passive income distribution failed:', error);
+      }
+    });
+
+    // 3. Card value tracking (every 6 hours)
+    scheduleCron('Card value tracking (every 6 hours)', '0 */6 * * *', async () => {
+      try {
+        const { updateCardValues } = await import('./src/lib/nation-card-value-update-cron.js');
+        await updateCardValues();
+      } catch (error) {
+        console.error('[Cron] Card value update failed:', error);
+      }
+    });
+
+    // 4. Lore card generation (daily at 02:00 UTC)
+    scheduleCron('Lore card generation (daily at 02:00 UTC)', '0 2 * * *', async () => {
+      try {
+        const { generateDailyLoreCards } = await import('./src/lib/lore-card-generation-cron.js');
+        await generateDailyLoreCards();
+      } catch (error) {
+        console.error('[Cron] Lore card generation failed:', error);
+      }
+    });
+
+    // 5. IxTwitter Discord sync (every hour)
+    scheduleCron('IxTwitter Discord sync (every hour)', '0 * * * *', async () => {
+      try {
+        const { syncIxTwitterToThinkPages } = await import('./src/lib/discord-ixtwitter-sync.js');
+        const result = await syncIxTwitterToThinkPages();
+        if (result.posted > 0) {
+          console.log(`[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`);
         }
-      };
+      } catch (error) {
+        console.error('[Cron] IxTwitter sync failed:', error);
+      }
+    });
 
-      // 1. Auction completion (every minute)
-      scheduleCron('Auction completion (every minute)', '* * * * *', async () => {
-        try {
-          const { processExpiredAuctions } = await import('./src/lib/auction-completion-cron.js');
-          await processExpiredAuctions();
-        } catch (error) {
-          console.error('[Cron] Auction completion failed:', error);
-        }
-      });
+    // 6. Lorewards full sync (daily at 06:00 UTC)
+    let loreSyncRunning = false;
+    scheduleCron('Lorewards fullSync (daily at 06:00 UTC)', '0 6 * * *', async () => {
+      if (loreSyncRunning) {
+        console.log('[Cron] Lorewards fullSync already running, skipping this run');
+        return;
+      }
+      loreSyncRunning = true;
+      try {
+        const { fullSync } = await import('./src/lib/lorewards-sync.js');
+        await fullSync();
+        console.log('[Cron] Lorewards fullSync completed successfully');
+      } catch (error) {
+        console.error('[Cron] Lorewards fullSync failed:', error);
+      } finally {
+        loreSyncRunning = false;
+      }
+    });
 
-      // 2. Passive income distribution (daily at 00:00 UTC)
-      scheduleCron('Passive income distribution (daily at 00:00 UTC)', '0 0 * * *', async () => {
-        try {
-          const { distributePassiveIncome } = await import('./src/lib/passive-income-distribution-cron.js');
-          await distributePassiveIncome();
-        } catch (error) {
-          console.error('[Cron] Passive income distribution failed:', error);
-        }
-      });
+    // 7. Trade expiry (every 5 minutes)
+    scheduleCron('Trade expiry (every 5 minutes)', '*/5 * * * *', async () => {
+      try {
+        const { processExpiredTrades } = await import('./src/lib/trade-expiry-cron.js');
+        await processExpiredTrades();
+      } catch (error) {
+        console.error('[Cron] Trade expiry failed:', error);
+      }
+    });
 
-      // 3. Card value tracking (every 6 hours)
-      scheduleCron('Card value tracking (every 6 hours)', '0 */6 * * *', async () => {
-        try {
-          const { updateCardValues } = await import('./src/lib/nation-card-value-update-cron.js');
-          await updateCardValues();
-        } catch (error) {
-          console.error('[Cron] Card value update failed:', error);
-        }
-      });
-
-      // 4. Lore card generation (daily at 02:00 UTC)
-      scheduleCron('Lore card generation (daily at 02:00 UTC)', '0 2 * * *', async () => {
-        try {
-          const { generateDailyLoreCards } = await import('./src/lib/lore-card-generation-cron.js');
-          await generateDailyLoreCards();
-        } catch (error) {
-          console.error('[Cron] Lore card generation failed:', error);
-        }
-      });
-
-      // 5. IxTwitter Discord sync (every hour)
-      scheduleCron('IxTwitter Discord sync (every hour)', '0 * * * *', async () => {
-        try {
-          const { syncIxTwitterToThinkPages } = await import('./src/lib/discord-ixtwitter-sync.js');
-          const result = await syncIxTwitterToThinkPages();
-          if (result.posted > 0) {
-            console.log(`[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`);
-          }
-        } catch (error) {
-          console.error('[Cron] IxTwitter sync failed:', error);
-        }
-      });
-
-      // 6. Lorewards full sync (daily at 06:00 UTC)
-      let loreSyncRunning = false;
-      scheduleCron('Lorewards fullSync (daily at 06:00 UTC)', '0 6 * * *', async () => {
-        if (loreSyncRunning) {
-          console.log('[Cron] Lorewards fullSync already running, skipping this run');
-          return;
-        }
-        loreSyncRunning = true;
-        try {
-          const { fullSync } = await import('./src/lib/lorewards-sync.js');
-          await fullSync();
-          console.log('[Cron] Lorewards fullSync completed successfully');
-        } catch (error) {
-          console.error('[Cron] Lorewards fullSync failed:', error);
-        } finally {
-          loreSyncRunning = false;
-        }
-      });
-
-      subsystems.cron = {
-        status: cronJobsFailed === 0 ? 'ok' : 'partial',
-        detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,
-      };
-    }
-  } else {
-    subsystems.cron = { status: 'disabled', detail: 'dev mode' };
-    console.log('[Cron] ⚠ Cron jobs disabled in development mode');
+    subsystems.cron = {
+      status: cronJobsFailed === 0 ? 'ok' : 'partial',
+      detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,
+    };
   }
 
   // ──────────────────────────────────────────────

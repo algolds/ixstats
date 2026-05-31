@@ -41,27 +41,32 @@ export class MarketWebSocketClient {
   private readonly wsUrl: string;
 
   constructor() {
-    // Determine WebSocket URL based on environment
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = process.env.NODE_ENV === "production" ? window.location.host : "localhost:3000";
+    const host = window.location.host;
     this.wsUrl = `${protocol}//${host}/api/market-ws`;
   }
 
-  /**
-   * Connect to WebSocket server
-   */
-  connect(): void {
-    if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
-      console.log("[MarketWS] Already connected or connecting");
-      return;
-    }
+    /**
+     * Connect to WebSocket server
+     */
+    connect(): void {
+        if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
+            console.log("[MarketWS] Already connected or connecting");
+            return;
+        }
 
-    this.isConnecting = true;
-    this.isIntentionallyClosed = false;
+        // WebSocket server only runs in production (server.mjs); skip in dev to avoid console errors
+        if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+            console.log("[MarketWS] Skipping connection in development mode");
+            return;
+        }
 
-    try {
-      console.log(`[MarketWS] Connecting to ${this.wsUrl}`);
-      this.ws = new WebSocket(this.wsUrl);
+        this.isConnecting = true;
+        this.isIntentionallyClosed = false;
+
+        try {
+            console.log(`[MarketWS] Connecting to ${this.wsUrl}`);
+            this.ws = new WebSocket(this.wsUrl);
 
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);

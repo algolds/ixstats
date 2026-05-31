@@ -18,6 +18,7 @@ import { type VaultTransactionType } from "@prisma/client";
 import { budgetVaultCalculator } from "./budget-vault-calculator";
 import { syncUserToForum } from "~/modules/forum";
 import { Cache } from "~/lib/cache";
+import { grantCardXp } from "./card-xp-utils";
 
 /**
  * Vault Service
@@ -525,12 +526,201 @@ export class VaultService {
         streak: newStreak,
       };
     } catch (error) {
-      console.error(`[Vault Service] Failed to claim daily bonus for ${userId}:`, error);
+      console.error(`[Vault Service] Failed to claim daily login bonus for ${userId}:`, error);
       return {
         success: false,
         bonus: 0,
         streak: 0,
         message: "Failed to claim daily bonus",
+      };
+    }
+  }
+
+  /**
+   * Claim combined daily claim (credits jackpot OR random card of the day)
+   */
+  async claimCombinedDailyClaim(
+    userId: string,
+    choice: "CREDITS" | "CARD",
+    db: PrismaClient
+  ): Promise<{
+    success: boolean;
+    rewardType: "credits" | "card";
+    creditsAwarded?: number;
+    cardAwarded?: { id: string; title: string; rarity: string; artwork: string };
+    streak: number;
+    message?: string;
+  }> {
+    try {
+      const dbAny = db as any;
+      const vault = await this.getOrCreateVault(userId, db);
+
+      // Check if already claimed today
+      const lastLogin = vault.lastLoginDate ? new Date(vault.lastLoginDate) : null;
+      const now = new Date();
+
+      if (lastLogin) {
+        const isSameDay =
+          lastLogin.getUTCFullYear() === now.getUTCFullYear() &&
+          lastLogin.getUTCMonth() === now.getUTCMonth() &&
+          lastLogin.getUTCDate() === now.getUTCDate();
+
+        if (isSameDay) {
+          return {
+            success: false,
+            rewardType: choice === "CREDITS" ? "credits" : "card",
+            streak: vault.loginStreak,
+            message: "Daily claim already made today",
+          };
+        }
+      }
+
+      // Update login streak
+      const newStreak = await this.updateLoginStreak(userId, db);
+
+      if (choice === "CREDITS") {
+        // Roll standard jackpot odds:
+        // 0.1% chance: 5000-10000
+        // 1.0% chance: 1000-5000
+        // 5.0% chance: 200-1000
+        // Otherwise: 10-200
+        const roll = Math.random() * 100;
+        let baseCredits = 0;
+        if (roll < 0.1) {
+          baseCredits = Math.floor(Math.random() * 5000) + 5000;
+        } else if (roll < 1.1) {
+          baseCredits = Math.floor(Math.random() * 4000) + 1000;
+        } else if (roll < 6.1) {
+          baseCredits = Math.floor(Math.random() * 800) + 200;
+        } else {
+          baseCredits = Math.floor(Math.random() * 190) + 10;
+        }
+
+        // Multipliers
+        const streakMultiplier = 1 + Math.min(newStreak * 0.05, 1.5);
+        const levelMultiplier = 1 + Math.min(vault.vaultLevel * 0.02, 1.0);
+        const totalCredits = Math.min(10000, Math.floor(baseCredits * streakMultiplier * levelMultiplier));
+
+        const earnResult = await this.earnCredits(userId, totalCredits, "EARN_ACTIVE", "DAILY_LOGIN_CREDITS", db, {
+          streak: newStreak,
+        });
+
+        if (!earnResult.success) {
+          return {
+            success: false,
+            rewardType: "credits",
+            streak: newStreak,
+            message: earnResult.message,
+          };
+        }
+
+        return {
+          success: true,
+          rewardType: "credits",
+          creditsAwarded: totalCredits,
+          streak: newStreak,
+          message: `Claimed ${totalCredits} IxC daily bonus!`,
+        };
+      } else {
+        // choice === "CARD"
+        const totalCardsCount = await dbAny.card.count({ where: { isRetired: false } });
+        let card;
+        if (totalCardsCount > 0) {
+          const randomOffset = Math.floor(Math.random() * totalCardsCount);
+          card = await dbAny.card.findFirst({
+            where: { isRetired: false },
+            skip: randomOffset,
+          });
+        } else {
+          // fallback if all cards are retired or none exist
+          const fallbackCount = await dbAny.card.count();
+          if (fallbackCount === 0) {
+            return {
+              success: false,
+              rewardType: "card",
+              streak: newStreak,
+              message: "No cards exist in the database to award.",
+            };
+          }
+          const randomOffset = Math.floor(Math.random() * fallbackCount);
+          card = await dbAny.card.findFirst({
+            skip: randomOffset,
+          });
+        }
+
+        if (!card) {
+          return {
+            success: false,
+            rewardType: "card",
+            streak: newStreak,
+            message: "Failed to pick a random card.",
+          };
+        }
+
+        // Create CardOwnership
+        const maxSerial = await db.cardOwnership.findFirst({
+          where: { cardId: card.id },
+          orderBy: { serialNumber: "desc" },
+          select: { serialNumber: true },
+        });
+        const nextSerial = (maxSerial?.serialNumber || 0) + 1;
+        
+        const ownership = await db.cardOwnership.create({
+          data: {
+            id: `co_${Date.now()}_${vault.userId}_${card.id}`,
+            userId: vault.userId,
+            cardId: card.id,
+            ownerId: vault.userId,
+            serialNumber: nextSerial,
+            level: 1,
+            experience: 0,
+          },
+        });
+
+        // Log provenance
+        await dbAny.cardTransferEvent.create({
+          data: {
+            ownershipId: ownership.id,
+            toUserId: vault.userId,
+            action: "DAILY_CLAIM",
+          },
+        });
+
+        // Grant XP
+        await grantCardXp(db, ownership.id, 10, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }));
+
+        // Log transaction for activity ledger
+        await db.vaultTransaction.create({
+          data: {
+            vaultId: vault.id,
+            credits: 0,
+            balanceAfter: vault.credits,
+            type: "EARN_ACTIVE",
+            source: "DAILY_LOGIN_CARD",
+            metadata: JSON.stringify({ cardId: card.id, cardTitle: card.title }),
+          },
+        });
+
+        return {
+          success: true,
+          rewardType: "card",
+          cardAwarded: {
+            id: card.id,
+            title: card.title,
+            rarity: card.rarity,
+            artwork: card.artwork || "/images/cards/placeholder-nation.png",
+          },
+          streak: newStreak,
+          message: `Claimed daily card: ${card.title}!`,
+        };
+      }
+    } catch (error) {
+      console.error("[Vault Service] Failed to claim combined daily claim:", error);
+      return {
+        success: false,
+        rewardType: choice === "CREDITS" ? "credits" : "card",
+        streak: 0,
+        message: "Failed to claim daily reward",
       };
     }
   }
@@ -628,12 +818,25 @@ export class VaultService {
       const budgetMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(countryId, db);
 
       // Apply budget multiplier to final income
-      const totalDividend = baseIncome * budgetMultiplier;
+      let totalDividend = baseIncome * budgetMultiplier;
+
+      // Apply store yield boost if available
+      let yieldBoost = 0;
+      const user = await db.user.findFirst({
+        where: { countryId },
+        select: { id: true },
+      });
+      if (user) {
+        yieldBoost = await this.getYieldBoostMultiplier(user.id, db);
+      }
+      if (yieldBoost > 0) {
+        totalDividend = totalDividend * (1 + yieldBoost);
+      }
 
       console.log(
         `[Vault Service] Calculated passive income for ${countryId}: ${totalDividend.toFixed(2)} IxC ` +
           `(base: ${baseRate.toFixed(2)}, pop: ${populationBonus.toFixed(2)}, growth: ${growthBonus.toFixed(2)}, ` +
-          `budget: ${budgetMultiplier.toFixed(3)}x)`
+          `budget: ${budgetMultiplier.toFixed(3)}x, yieldBoost: ${yieldBoost.toFixed(2)}x)`
       );
 
       return Math.round(totalDividend * 100) / 100; // Round to 2 decimals
@@ -693,6 +896,138 @@ export class VaultService {
       };
     }
   }
+
+  /**
+   * Helper to fetch active effects from purchased store items
+   */
+  async getPurchasedItemsEffects(userId: string, db: any): Promise<Record<string, any>[]> {
+    try {
+      const transactions = await db.vaultTransaction.findMany({
+        where: {
+          vault: { userId },
+          type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
+        },
+        select: {
+          metadata: true,
+        },
+      });
+
+      const purchasedItemIds = new Set<string>();
+      for (const tx of transactions) {
+        let meta = tx.metadata;
+        if (typeof meta === "string") {
+          try {
+            meta = JSON.parse(meta);
+          } catch {}
+        }
+        if (meta && typeof meta === "object") {
+          const metaObj = meta as Record<string, any>;
+          if (metaObj.itemId && typeof metaObj.itemId === "string") {
+            purchasedItemIds.add(metaObj.itemId);
+          }
+        }
+      }
+
+      if (purchasedItemIds.size === 0) {
+        return [];
+      }
+
+      const storeItems = await db.vaultStoreItem.findMany({
+        where: {
+          id: { in: Array.from(purchasedItemIds) },
+          isActive: true,
+        },
+        select: {
+          effects: true,
+        },
+      });
+
+      return storeItems
+        .map((item: any) => item.effects)
+        .filter((effects: any): effects is Record<string, any> => !!effects && typeof effects === "object");
+    } catch (error) {
+      console.error("[Vault Service] Error getting purchased items effects:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Calculate total card capacity boost from store upgrades
+   */
+  async getCardCapacityBoost(userId: string, db: any): Promise<number> {
+    const effects = await this.getPurchasedItemsEffects(userId, db);
+    let totalBoost = 0;
+    for (const eff of effects) {
+      const perks = eff.perks as Record<string, any> | undefined;
+      if (perks && typeof perks.cardCapacity === "number") {
+        totalBoost += perks.cardCapacity;
+      }
+    }
+    return totalBoost;
+  }
+
+  /**
+   * Calculate passive yield boost multiplier from store upgrades
+   */
+  async getYieldBoostMultiplier(userId: string, db: any): Promise<number> {
+    const effects = await this.getPurchasedItemsEffects(userId, db);
+    let totalBoost = 0;
+    for (const eff of effects) {
+      const perks = eff.perks as Record<string, any> | undefined;
+      if (perks && typeof perks.yieldBoost === "number") {
+        totalBoost += perks.yieldBoost;
+      }
+    }
+    return totalBoost;
+  }
+
+  /**
+   * Calculate current lore request tokens balance
+   */
+  async getLoreTokensBalance(userId: string, db: any): Promise<number> {
+    const effects = await this.getPurchasedItemsEffects(userId, db);
+    let totalGranted = 0;
+    for (const eff of effects) {
+      const perks = eff.perks as Record<string, any> | undefined;
+      if (perks && typeof perks.loreTokens === "number") {
+        totalGranted += perks.loreTokens;
+      }
+    }
+
+    const vault = await db.myVault.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!vault) return 0;
+
+    const transactions = await db.vaultTransaction.findMany({
+      where: {
+        vaultId: vault.id,
+        source: "LORE_CARD_REQUEST",
+      },
+      select: {
+        metadata: true,
+      },
+    });
+
+    let usedTokenCount = 0;
+    for (const tx of transactions) {
+      let meta = tx.metadata;
+      if (typeof meta === "string") {
+        try {
+          meta = JSON.parse(meta);
+        } catch {}
+      }
+      if (meta && typeof meta === "object") {
+        const metaObj = meta as Record<string, any>;
+        if (metaObj.useToken === true) {
+          usedTokenCount++;
+        }
+      }
+    }
+
+    return Math.max(0, totalGranted - usedTokenCount);
+  }
 }
 
 // ============================================================================
@@ -718,6 +1053,7 @@ export interface VaultConfig {
   isCraftingEnabled: boolean;
   isPacksEnabled: boolean;
   isMaintenanceMode: boolean;
+  exemptStaffFromLimit: boolean;
 }
 
 const VAULT_CONFIG_DEFAULTS: VaultConfig = {
@@ -739,6 +1075,7 @@ const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   isCraftingEnabled: true,
   isPacksEnabled: true,
   isMaintenanceMode: false,
+  exemptStaffFromLimit: true,
 };
 
 const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
@@ -760,6 +1097,7 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   isCraftingEnabled: "vault_isCraftingEnabled",
   isPacksEnabled: "vault_isPacksEnabled",
   isMaintenanceMode: "vault_isMaintenanceMode",
+  exemptStaffFromLimit: "vault_exemptStaffFromLimit",
 };
 
 const vaultConfigCache = new Cache({
@@ -856,6 +1194,10 @@ export async function getVaultConfig(db: {
         m.vault_isMaintenanceMode !== undefined
           ? m.vault_isMaintenanceMode === "true"
           : VAULT_CONFIG_DEFAULTS.isMaintenanceMode,
+      exemptStaffFromLimit:
+        m.vault_exemptStaffFromLimit !== undefined
+          ? m.vault_exemptStaffFromLimit === "true"
+          : VAULT_CONFIG_DEFAULTS.exemptStaffFromLimit,
     };
 
     vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);

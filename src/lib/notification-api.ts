@@ -45,6 +45,7 @@ export type NotificationCategory =
   | "achievement"
   | "crisis"
   | "opportunity"
+  | "cards"
   | "policy"
   | "intelligence"
   | "global"

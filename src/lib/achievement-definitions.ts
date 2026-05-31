@@ -81,6 +81,11 @@ export interface ExtendedAchievementData {
   // Activity metrics
   daysActive?: number;
   totalAchievements?: number;
+
+  // Card metrics
+  loreCardCount?: number;
+  retiredCardCount?: number;
+  distinctCountryIdCount?: number;
 }
 
 export interface AchievementDefinition {
@@ -820,6 +825,36 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     points: 50,
     iconUrl: "📖",
     condition: (data) => (data.followerCount ?? 0) >= 30,
+  },
+  {
+    id: "collect-lore-keeper",
+    title: "Lore Keeper",
+    description: "Own 50 or more Lore cards in your vault",
+    category: "General",
+    rarity: "Rare",
+    points: 50,
+    iconUrl: "📜",
+    condition: (data) => (data.loreCardCount ?? 0) >= 50,
+  },
+  {
+    id: "collect-archaeologist",
+    title: "Archaeologist",
+    description: "Own 10 or more Retired cards in your vault",
+    category: "General",
+    rarity: "Rare",
+    points: 50,
+    iconUrl: "🏺",
+    condition: (data) => (data.retiredCardCount ?? 0) >= 10,
+  },
+  {
+    id: "collect-diplomat",
+    title: "Diplomat",
+    description: "Own cards from at least 20 distinct countries",
+    category: "Diplomatic",
+    rarity: "Rare",
+    points: 50,
+    iconUrl: "🤝",
+    condition: (data) => (data.distinctCountryIdCount ?? 0) >= 20,
   },
 ];
 

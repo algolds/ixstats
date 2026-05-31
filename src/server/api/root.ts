@@ -94,6 +94,7 @@ import { cardPacksRouter } from "./routers/card-packs";
 import { cardMarketRouter } from "./routers/card-market";
 import { cardAnalyticsRouter } from "./routers/card-analytics";
 import { cardImagesRouter } from "./routers/cardImages";
+import { cardXpRouter } from "./routers/card-xp";
 import { loreCardsRouter } from "./routers/lore-cards";
 import { nsImportRouter } from "./routers/ns-import";
 import { vaultRouter } from "./routers/vault";
@@ -214,6 +215,7 @@ export const appRouter = createTRPCRouter({
   cardMarket: safeRouter("cardMarket", () => cardMarketRouter),
   cardAnalytics: safeRouter("cardAnalytics", () => cardAnalyticsRouter),
   cardImages: safeRouter("cardImages", () => cardImagesRouter),
+  cardXp: safeRouter("cardXp", () => cardXpRouter),
   loreCards: safeRouter("loreCards", () => loreCardsRouter),
   nsImport: safeRouter("nsImport", () => nsImportRouter),
   vault: safeRouter("vault", () => vaultRouter),

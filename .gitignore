@@ -150,9 +150,24 @@ CLAUDE.md
 # --------------------------------------------------------------------------------
 # Extra tsconfigs (typecheck commands crash server)
 # --------------------------------------------------------------------------------
-tsconfig.check.json
-tsconfig.components.json
-tsconfig.server.json
+tsconfig.*.json
+!tsconfig.json
+
+# --------------------------------------------------------------------------------
+# Specific Config Files & Local Tooling (keep on disk, not in repo)
+# --------------------------------------------------------------------------------
+c15t-backend.config.ts
+prisma.config.ts
+eslint.config.js
+next.config.js
+opencode.json
+skills-lock.json
+
+# --------------------------------------------------------------------------------
+# Session Data & Temp Drafts
+# --------------------------------------------------------------------------------
+session-*.md
+public/*_feature_ideas.html
 
 # --------------------------------------------------------------------------------
 # User Uploaded Content

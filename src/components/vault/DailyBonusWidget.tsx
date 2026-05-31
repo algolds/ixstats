@@ -1,0 +1,290 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { motion, AnimatePresence } from "motion/react";
+import { Coins, Sparkles, Trophy, Flame } from "lucide-react";
+import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { vaultNotify } from "~/lib/vault-notifications";
+import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+
+const IxCardIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="5" y="3" width="14" height="18" rx="2" ry="2" />
+    <path d="M5 9h14" />
+    <path d="M5 15h14" />
+    <circle cx="12" cy="12" r="1.5" />
+  </svg>
+);
+
+export const DailyBonusWidget: React.FC = () => {
+  const { userId } = useAuth();
+  const utils = api.useUtils();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  const [claiming, setClaiming] = useState<"CREDITS" | "CARD" | null>(null);
+  const [claimResult, setClaimResult] = useState<{
+    creditsAwarded?: number;
+    cardAwarded?: { id: string; title: string; rarity: string; artwork: string };
+    streak: number;
+    message?: string;
+  } | null>(null);
+
+  const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(
+    { userId: userId ?? "" },
+    { enabled: !!userId }
+  );
+
+  // Auto-open modal on first load if claim is available
+  useEffect(() => {
+    if (balanceData?.canClaimDailyBonus && !hasAutoOpened) {
+      setIsOpen(true);
+      setHasAutoOpened(true);
+    }
+  }, [balanceData?.canClaimDailyBonus, hasAutoOpened]);
+
+  const claimMutation = api.vault.claimCombinedDailyClaim.useMutation({
+    onSuccess: (data) => {
+      setClaimResult(data);
+      setClaiming(null);
+      vaultNotify.success(data.message ?? "Daily claim successful!");
+      void utils.vault.getBalance.invalidate();
+      void utils.cards.getMyCards.invalidate();
+    },
+    onError: (err) => {
+      setClaiming(null);
+      vaultNotify.error(err.message || "Failed to make daily claim");
+    },
+  });
+
+  const handleClaim = (choice: "CREDITS" | "CARD") => {
+    setClaiming(choice);
+    claimMutation.mutate({ choice });
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    // Delay clearing the claim result slightly to avoid flash during exit animation
+    setTimeout(() => {
+      setClaimResult(null);
+    }, 200);
+  };
+
+  if (isLoading || !userId) {
+    return (
+      <div className="flex w-full items-center justify-between rounded-lg border border-slate-200/40 bg-slate-500/5 px-2.5 py-1.5">
+        <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+        <div className="h-3 w-8 animate-pulse rounded bg-white/10" />
+      </div>
+    );
+  }
+
+  const canClaim = balanceData?.canClaimDailyBonus;
+
+  if (!canClaim && !claimResult && !isOpen) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Clean, integrated trigger box that matches Vault sidebar items perfectly */}
+      <div className="w-full">
+        {canClaim ? (
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="flex w-full items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-xs font-black text-amber-500 hover:bg-amber-500/15 transition-all shadow-md shadow-amber-500/5 cursor-pointer"
+          >
+            <Trophy className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <span className="flex-1 text-left text-[11px] leading-tight select-none">
+               Daily Reward
+            </span>
+            {balanceData?.loginStreak > 0 && (
+              <span className="flex items-center gap-0.5 text-[9px] font-black text-amber-500 opacity-90">
+                <Flame className="h-2.5 w-2.5 fill-amber-500/25 text-amber-500" />
+                {balanceData.loginStreak}d
+              </span>
+            )}
+          </button>
+        ) : (
+          <div className="flex w-full items-center justify-between rounded-lg border border-slate-200/40 bg-slate-500/5 px-2.5 py-1.5 text-[10px] text-muted-foreground dark:border-white/5 dark:bg-white/5 select-none">
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+              <Trophy className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+              Daily Claimed
+            </span>
+            {(balanceData?.loginStreak ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5 text-[9px] font-bold text-slate-500">
+                <Flame className="h-2.5 w-2.5 fill-slate-500/10" />
+                {balanceData?.loginStreak}d streak
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modal Dialog for choice / result reveal */}
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+        <DialogContent className="border-amber-500/35 dark:border-amber-500/30 max-w-sm sm:max-w-md overflow-hidden rounded-2xl p-6 shadow-2xl">
+          <DialogTitle className="sr-only">Daily Reward Choice</DialogTitle>
+          <DialogDescription className="sr-only">
+            Select your preferred daily reward choice: credits or a card pull.
+          </DialogDescription>
+
+          <AnimatePresence mode="wait">
+            {!claimResult ? (
+              /* Choice Screen */
+              <motion.div
+                key="choice-screen"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-amber-500" />
+                    <h4 className="text-sm font-black tracking-wider text-amber-500 uppercase">
+                      Daily Reward
+                    </h4>
+                  </div>
+                  {(balanceData?.loginStreak ?? 0) > 0 && (
+                    <div className="flex items-center gap-1 rounded-full bg-amber-500/10 dark:bg-amber-500/15 px-2.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/25 leading-none">
+                      <Flame className="h-3 w-3 fill-amber-500/25 text-amber-500 shrink-0 relative -top-[0.5px]" />
+                      <span>{balanceData?.loginStreak} Streak</span>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Choose between a payout of IxCredits or a random collectible card. You never know what you'll get!
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  {/* Credits Option */}
+                  <button
+                    type="button"
+                    onClick={() => handleClaim("CREDITS")}
+                    disabled={claiming !== null}
+                    className="group relative flex flex-col items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 text-center transition-all hover:bg-amber-500/10 hover:border-amber-500/40 disabled:opacity-50 cursor-pointer"
+                  >
+                    <div className="rounded-full bg-amber-500/25 p-3 text-amber-500 transition-transform group-hover:scale-110">
+                      <IxCreditsSymbol className="h-6 w-6" />
+                    </div>
+                    <span className="mt-2 text-xs font-black text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                      IxCredits
+                    </span>
+                    <span className="mt-0.5 text-[9px] text-muted-foreground leading-tight">
+                      1-10k credits scaled by level & streak
+                    </span>
+                  </button>
+
+                  {/* Card Option */}
+                  <button
+                    type="button"
+                    onClick={() => handleClaim("CARD")}
+                    disabled={claiming !== null}
+                    className="group relative flex flex-col items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/5 p-5 text-center transition-all hover:bg-blue-500/10 hover:border-blue-500/40 disabled:opacity-50 cursor-pointer"
+                  >
+                    <div className="rounded-full bg-blue-500/25 p-3 text-blue-500 transition-transform group-hover:scale-110">
+                      <IxCardIcon className="h-6 w-6" />
+                    </div>
+                    <span className="mt-2 text-xs font-black text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      Card Pull
+                    </span>
+                    <span className="mt-0.5 text-[9px] text-muted-foreground leading-tight">
+                      Pulls 1 completely random card from the database
+                    </span>
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              /* Reward Reveal Screen */
+              <motion.div
+                key="reveal-screen"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col items-center text-center space-y-4 pt-2"
+              >
+                <div className="rounded-full bg-amber-500/20 p-3.5 ring-2 ring-amber-500/40">
+                  <Sparkles className="h-7 w-7 text-amber-500 animate-spin" style={{ animationDuration: "4s" }} />
+                </div>
+                
+                <div>
+                  <h4 className="text-base font-black tracking-wider text-amber-550 dark:text-amber-400 uppercase">
+                    Reward Claimed!
+                  </h4>
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    {claimResult.message}
+                  </p>
+                </div>
+
+                {claimResult.creditsAwarded && (
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center gap-1.5 font-mono text-4xl font-black text-amber-600 dark:text-amber-450"
+                  >
+                    <Coins className="h-9 w-9 shrink-0 text-amber-500" />
+                    +{claimResult.creditsAwarded.toLocaleString()}
+                  </motion.div>
+                )}
+
+                {claimResult.cardAwarded && (
+                  <motion.div
+                    initial={{ y: 20, rotate: -2 }}
+                    animate={{ y: 0, rotate: 0 }}
+                    className="relative h-48 w-36 rounded-xl border border-slate-200 dark:border-white/15 overflow-hidden bg-black/40 shadow-2xl"
+                  >
+                    <CardHolographicCover
+                      cardType="LORE"
+                      rarity={claimResult.cardAwarded.rarity}
+                      title={claimResult.cardAwarded.title}
+                    />
+                    {claimResult.cardAwarded.artwork && (
+                      <img
+                        src={claimResult.cardAwarded.artwork}
+                        alt={claimResult.cardAwarded.title}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/85 px-2 py-1.5 text-center">
+                      <span className="block truncate text-[10px] font-bold text-white">
+                        {claimResult.cardAwarded.title}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+                <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-black bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/15">
+                  <Flame className="h-4 w-4 fill-amber-500/20" />
+                  {claimResult.streak} Day Streak
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={handleClose}
+                  className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-white py-2"
+                >
+                  Collect & Return to Vault
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};

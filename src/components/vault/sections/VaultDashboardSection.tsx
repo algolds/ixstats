@@ -322,7 +322,9 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                   <Layers className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
                   <span>
                     Total Cards:{" "}
-                    <strong className="text-foreground font-bold">{stats?.totalCards ?? 0}</strong>
+                    <strong className="text-foreground font-bold">
+                      {stats?.totalCards ?? 0} / {150 + (stats?.capacityBoost ?? 0)}
+                    </strong>
                   </span>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-1 rounded-full border border-slate-200/50 bg-slate-500/10 px-2.5 py-0.5 font-medium dark:border-white/5 dark:bg-white/5">

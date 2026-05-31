@@ -37,6 +37,7 @@ export function VaultSystemConfig() {
     isCraftingEnabled: true,
     isPacksEnabled: true,
     isMaintenanceMode: false,
+    exemptStaffFromLimit: true,
   });
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export function VaultSystemConfig() {
         isCraftingEnabled: vaultConfig.isCraftingEnabled ?? true,
         isPacksEnabled: vaultConfig.isPacksEnabled ?? true,
         isMaintenanceMode: vaultConfig.isMaintenanceMode ?? false,
+        exemptStaffFromLimit: vaultConfig.exemptStaffFromLimit ?? true,
       });
     }
   }, [vaultConfig]);
@@ -320,6 +322,23 @@ export function VaultSystemConfig() {
                       checked={configForm.isMaintenanceMode}
                       onCheckedChange={(val) =>
                         setConfigForm((f) => ({ ...f, isMaintenanceMode: val }))
+                      }
+                    />
+                  </div>
+                  {/* Exempt Staff from Card Limits */}
+                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-foreground text-xs font-semibold">
+                        Exempt Staff
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        Exempt role levels 20 & lower from capacity limit.
+                      </span>
+                    </div>
+                    <Switch
+                      checked={configForm.exemptStaffFromLimit}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, exemptStaffFromLimit: val }))
                       }
                     />
                   </div>

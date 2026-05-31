@@ -219,6 +219,8 @@ model User {
   AuctionBid          AuctionBid[]
   CardAuction         CardAuction[]
   CardCollection      CardCollection[]
+  CollectionLike      CollectionLike[]
+  CollectionComment   CollectionComment[]
   CardOwnership       CardOwnership[]
   scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
   country             Country?                 @relation("UserCountry", fields: [countryId], references: [id])
@@ -241,6 +243,7 @@ model User {
   discordUsername      String?
   lastDiscordSync     DateTime?
   blurbResponses      BlurbResponse[]          @relation("UserBlurbResponses")
+  CardWatchlist       CardWatchlist[]
 
   @@index([clerkUserId])
   @@index([countryId])

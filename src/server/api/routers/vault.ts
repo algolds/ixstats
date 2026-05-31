@@ -18,6 +18,7 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { vaultService, getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault-service";
+import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/ixcard-season";
 import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
 import { notificationAPI } from "~/lib/notification-api";
 import { type VaultTransactionType } from "@prisma/client";
@@ -136,6 +137,58 @@ export const vaultRouter = createTRPCRouter({
       throw new Error("Failed to claim daily bonus");
     }
   }),
+
+  /**
+   * Claim combined daily claim (credits jackpot OR random card)
+   */
+  claimCombinedDailyClaim: protectedProcedure
+    .input(z.object({ choice: z.enum(["CREDITS", "CARD"]) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (!ctx.auth?.userId) {
+          throw new Error("User ID not found in authentication context");
+        }
+
+        const result = await vaultService.claimCombinedDailyClaim(
+          ctx.auth.userId,
+          input.choice,
+          ctx.db as any
+        );
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to claim daily reward");
+        }
+
+        // Send notification
+        try {
+          const rewardMessage =
+            result.rewardType === "credits"
+              ? `+${result.creditsAwarded} IxC! ${result.streak}-day streak`
+              : `Pulled daily card: ${result.cardAwarded?.title}! ${result.streak}-day streak`;
+
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            title: "Daily Claim Successful",
+            message: rewardMessage,
+            type: "info",
+            category: "achievement",
+            priority: "low",
+            metadata: {
+              rewardType: result.rewardType,
+              credits: result.creditsAwarded,
+              card: result.cardAwarded,
+              streak: result.streak,
+            },
+          });
+        } catch {}
+
+        return result;
+      } catch (error) {
+        console.error("[Vault Router] Error claiming combined daily reward:", error);
+        if (error instanceof Error) throw error;
+        throw new Error("Failed to claim combined daily reward");
+      }
+    }),
 
   /**
    * Claim streak bonus (updates login streak)
@@ -505,11 +558,14 @@ export const vaultRouter = createTRPCRouter({
         return sum + (own.cards?.marketValue ?? 0) * own.quantity;
       }, 0);
 
+      const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
+
       return {
         totalCards,
         deckValue,
         collectorLevel: ctx.user.collectorLevel ?? 1,
         collectorXp: ctx.user.collectorXp ?? 0,
+        capacityBoost,
       };
     } catch (error) {
       console.error("[Vault Router] Error getting user stats:", error);
@@ -581,12 +637,159 @@ export const vaultRouter = createTRPCRouter({
     }),
 
   // ============================================
+  // COLLECTION CRUD
+  // ============================================
+
+  /**
+   * Get current user's collections
+   */
+  getMyCollections: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).optional().default(50),
+        offset: z.number().min(0).optional().default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const where = { userId: ctx.user.id };
+        const [collections, total] = await Promise.all([
+          ctx.db.cardCollection.findMany({
+            where,
+            include: {
+              items: {
+                include: {
+                  cardOwnership: {
+                    include: { cards: true },
+                  },
+                },
+              },
+              _count: { select: { likes: true, comments: true } },
+            },
+            orderBy: { updatedAt: "desc" },
+            skip: input.offset,
+            take: input.limit,
+          }),
+          ctx.db.cardCollection.count({ where }),
+        ]);
+
+        return {
+          collections: collections.map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+            description: c.description,
+            isPublic: c.isPublic,
+            cardCount: c.items.length,
+            totalValue: c.items.reduce((sum, i) => sum + (i.cardOwnership.cards?.marketValue ?? 0), 0),
+            thumbnailCards: c.items.slice(0, 4).map((i) => i.cardOwnership.cards?.id).filter(Boolean),
+            createdAt: c.createdAt,
+          })),
+          total,
+          hasMore: input.offset + input.limit < total,
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting my collections:", error);
+        throw new Error("Failed to retrieve collections");
+      }
+    }),
+
+  /**
+   * Create a new collection
+   */
+  createCollection: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().max(500).optional(),
+        isPublic: z.boolean().optional().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const collection = await ctx.db.cardCollection.create({
+          data: {
+            userId: ctx.user.id,
+            name: input.name,
+            description: input.description ?? null,
+            isPublic: input.isPublic,
+          },
+        });
+
+        return {
+          success: true,
+          collection: {
+            ...collection,
+            slug: collection.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+          },
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error creating collection:", error);
+        throw new Error("Failed to create collection");
+      }
+    }),
+
+  /**
+   * Update collection (owner only)
+   */
+  updateCollection: protectedProcedure
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().max(500).optional().nullable(),
+        isPublic: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const existing = await ctx.db.cardCollection.findUnique({ where: { id: input.collectionId } });
+        if (!existing || existing.userId !== ctx.user.id) {
+          throw new Error("Collection not found or not owned by you");
+        }
+
+        await ctx.db.cardCollection.update({
+          where: { id: input.collectionId },
+          data: {
+            ...(input.name !== undefined ? { name: input.name } : {}),
+            ...(input.description !== undefined ? { description: input.description } : {}),
+            ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
+          },
+        });
+
+        return { success: true };
+      } catch (error) {
+        console.error("[Vault Router] Error updating collection:", error);
+        throw new Error("Failed to update collection");
+      }
+    }),
+
+  /**
+   * Delete collection (owner only)
+   */
+  deleteCollection: protectedProcedure
+    .input(z.object({ collectionId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const existing = await ctx.db.cardCollection.findUnique({ where: { id: input.collectionId } });
+        if (!existing || existing.userId !== ctx.user.id) {
+          throw new Error("Collection not found or not owned by you");
+        }
+
+        await ctx.db.cardCollection.delete({ where: { id: input.collectionId } });
+        return { success: true };
+      } catch (error) {
+        console.error("[Vault Router] Error deleting collection:", error);
+        throw new Error("Failed to delete collection");
+      }
+    }),
+
+  // ============================================
   // COLLECTION SOCIAL FEATURES
   // ============================================
 
   /**
    * Get public collections (browse all)
-   * Public endpoint with rate limiting
    */
   getPublicCollections: rateLimitedPublicProcedure
     .input(
@@ -603,39 +806,37 @@ export const vaultRouter = createTRPCRouter({
       try {
         const { limit, offset, sortBy } = input;
 
-        // Build order by clause
-        let orderBy: any = { createdAt: "desc" };
-        if (sortBy === "newest") orderBy = { createdAt: "desc" };
-        if (sortBy === "mostValuable") orderBy = { updatedAt: "desc" }; // Placeholder for value
-        if (sortBy === "mostCards") orderBy = { updatedAt: "desc" }; // Placeholder for card count
-        if (sortBy === "topRated") orderBy = { updatedAt: "desc" }; // Placeholder for likes
-
         const collections = await ctx.db.cardCollection.findMany({
-          where: {
-            isPublic: true,
-          },
+          where: { isPublic: true },
           include: {
-            User: {
-              select: {
-                id: true,
-                clerkUserId: true,
+            User: { select: { id: true, clerkUserId: true } },
+            items: {
+              include: {
+                cardOwnership: { include: { cards: { select: { marketValue: true, id: true } } } },
               },
             },
+            _count: { select: { likes: true, comments: true } },
           },
-          orderBy,
           skip: offset,
           take: limit,
         });
 
-        const total = await ctx.db.cardCollection.count({
-          where: { isPublic: true },
-        });
+        const total = await ctx.db.cardCollection.count({ where: { isPublic: true } });
 
-        return {
-          collections,
-          total,
-          hasMore: offset + limit < total,
-        };
+        const enriched = collections.map((c) => ({
+          ...c,
+          cardCount: c.items.length,
+          totalValue: c.items.reduce((s, i) => s + (i.cardOwnership.cards?.marketValue ?? 0), 0),
+          likes: c._count.likes,
+          comments: c._count.comments,
+          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        }));
+
+        if (sortBy === "mostValuable") enriched.sort((a, b) => b.totalValue - a.totalValue);
+        else if (sortBy === "mostCards") enriched.sort((a, b) => b.cardCount - a.cardCount);
+        else if (sortBy === "topRated") enriched.sort((a, b) => b.likes - a.likes);
+
+        return { collections: enriched.slice(0, limit), total, hasMore: offset + limit < total };
       } catch (error) {
         console.error("[Vault Router] Error getting public collections:", error);
         throw new Error("Failed to retrieve public collections");
@@ -643,8 +844,7 @@ export const vaultRouter = createTRPCRouter({
     }),
 
   /**
-   * Get collection leaderboard
-   * Public endpoint with rate limiting
+   * Get collection leaderboard with real aggregations
    */
   getCollectionLeaderboard: rateLimitedPublicProcedure
     .input(
@@ -655,35 +855,43 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Placeholder: In production, calculate actual values
-        // For now, return sorted by updatedAt
         const collections = await ctx.db.cardCollection.findMany({
-          where: {
-            isPublic: true,
-          },
+          where: { isPublic: true },
           include: {
-            User: {
-              select: {
-                id: true,
-                clerkUserId: true,
+            User: { select: { id: true, clerkUserId: true } },
+            items: {
+              include: {
+                cardOwnership: { include: { cards: { select: { marketValue: true } } } },
               },
             },
+            _count: { select: { likes: true } },
           },
-          orderBy: {
-            updatedAt: "desc",
-          },
-          take: input.limit,
         });
+
+        const enriched = collections.map((c) => ({
+          id: c.id,
+          userId: c.userId,
+          name: c.name,
+          description: c.description,
+          isPublic: c.isPublic,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+          User: c.User,
+          cardCount: c.items.length,
+          value: c.items.reduce((s, i) => s + (i.cardOwnership.cards?.marketValue ?? 0), 0),
+          completeness: 0,
+          likes: c._count.likes,
+          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        }));
+
+        const sorted = [...enriched];
+        if (input.category === "mostValuable") sorted.sort((a, b) => b.value - a.value);
+        else if (input.category === "mostCards") sorted.sort((a, b) => b.cardCount - a.cardCount);
+        else if (input.category === "mostComplete") sorted.sort((a, b) => b.cardCount - a.cardCount);
 
         return {
           category: input.category,
-          collections: collections.map((c, index) => ({
-            ...c,
-            rank: index + 1,
-            value: 0, // Placeholder
-            completeness: 0, // Placeholder
-            cardCount: 0, // Placeholder
-          })),
+          collections: sorted.slice(0, input.limit).map((c, i) => ({ ...c, rank: i + 1 })),
         };
       } catch (error) {
         console.error("[Vault Router] Error getting collection leaderboard:", error);
@@ -693,7 +901,6 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Like/unlike a collection
-   * Protected endpoint
    */
   likeCollection: protectedProcedure
     .input(
@@ -704,8 +911,23 @@ export const vaultRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Note: Collection likes would need a CollectionLike model in schema
-        // For now, return success placeholder
+        if (input.unlike) {
+          await ctx.db.collectionLike.deleteMany({
+            where: { collectionId: input.collectionId, userId: ctx.user.id },
+          });
+        } else {
+          await ctx.db.collectionLike.upsert({
+            where: {
+              collectionId_userId: {
+                collectionId: input.collectionId,
+                userId: ctx.user.id,
+              },
+            },
+            update: {},
+            create: { collectionId: input.collectionId, userId: ctx.user.id },
+          });
+        }
+
         return {
           success: true,
           liked: !input.unlike,
@@ -720,7 +942,6 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Add comment to collection
-   * Protected endpoint
    */
   addCollectionComment: protectedProcedure
     .input(
@@ -731,22 +952,15 @@ export const vaultRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found");
-        }
-
-        // Note: Collection comments would need a CollectionComment model in schema
-        // For now, return success placeholder
-        return {
-          success: true,
-          comment: {
-            id: `comment_${Date.now()}`,
+        const comment = await ctx.db.collectionComment.create({
+          data: {
             collectionId: input.collectionId,
-            userId: ctx.auth.userId,
+            userId: ctx.user.id,
             content: input.content,
-            createdAt: new Date(),
           },
-        };
+        });
+
+        return { success: true, comment };
       } catch (error) {
         console.error("[Vault Router] Error adding comment:", error);
         throw new Error("Failed to add comment");
@@ -755,7 +969,6 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get comments for a collection
-   * Public endpoint with rate limiting
    */
   getCollectionComments: rateLimitedPublicProcedure
     .input(
@@ -767,13 +980,18 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Note: Collection comments would need a CollectionComment model in schema
-        // For now, return empty array placeholder
-        return {
-          comments: [],
-          total: 0,
-          hasMore: false,
-        };
+        const [comments, total] = await Promise.all([
+          ctx.db.collectionComment.findMany({
+            where: { collectionId: input.collectionId },
+            include: { User: { select: { id: true, clerkUserId: true } } },
+            orderBy: { createdAt: "desc" },
+            skip: input.offset,
+            take: input.limit,
+          }),
+          ctx.db.collectionComment.count({ where: { collectionId: input.collectionId } }),
+        ]);
+
+        return { comments, total, hasMore: input.offset + input.limit < total };
       } catch (error) {
         console.error("[Vault Router] Error getting comments:", error);
         throw new Error("Failed to retrieve comments");
@@ -781,8 +999,7 @@ export const vaultRouter = createTRPCRouter({
     }),
 
   /**
-   * Get collection details with stats
-   * Public endpoint for viewing any public collection
+   * Get collection details with real stats
    */
   getCollectionDetails: rateLimitedPublicProcedure
     .input(
@@ -793,16 +1010,15 @@ export const vaultRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const collection = await ctx.db.cardCollection.findUnique({
-          where: {
-            id: input.collectionId,
-          },
+          where: { id: input.collectionId },
           include: {
-            User: {
-              select: {
-                id: true,
-                clerkUserId: true,
+            User: { select: { id: true, clerkUserId: true } },
+            items: {
+              include: {
+                cardOwnership: { include: { cards: { select: { marketValue: true } } } },
               },
             },
+            _count: { select: { likes: true, comments: true } },
           },
         });
 
@@ -810,18 +1026,28 @@ export const vaultRouter = createTRPCRouter({
           throw new Error("Collection not found");
         }
 
-        // Check if public or if user owns it
         if (!collection.isPublic && collection.userId !== ctx.auth?.userId) {
           throw new Error("Collection is private");
         }
 
+        const cardCount = collection.items.length;
+        const totalValue = collection.items.reduce(
+          (s, i) => s + (i.cardOwnership.cards?.marketValue ?? 0),
+          0
+        );
+
         return {
-          collection,
+          collection: {
+            ...collection,
+            items: undefined,
+            _count: undefined,
+            slug: collection.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+          },
           stats: {
-            cardCount: 0, // Placeholder
-            totalValue: 0, // Placeholder
-            likes: 0, // Placeholder
-            comments: 0, // Placeholder
+            cardCount,
+            totalValue,
+            likes: collection._count.likes,
+            comments: collection._count.comments,
           },
         };
       } catch (error) {
@@ -990,10 +1216,16 @@ export const vaultRouter = createTRPCRouter({
 
       const purchasedItemIds = new Set<string>();
       for (const tx of transactions) {
-        if (tx.metadata && typeof tx.metadata === "object") {
-          const meta = tx.metadata as Record<string, any>;
-          if (meta.itemId && typeof meta.itemId === "string") {
-            purchasedItemIds.add(meta.itemId);
+        let meta = tx.metadata;
+        if (typeof meta === "string") {
+          try {
+            meta = JSON.parse(meta);
+          } catch {}
+        }
+        if (meta && typeof meta === "object") {
+          const metaObj = meta as Record<string, any>;
+          if (metaObj.itemId && typeof metaObj.itemId === "string") {
+            purchasedItemIds.add(metaObj.itemId);
           }
         }
       }
@@ -1007,6 +1239,75 @@ export const vaultRouter = createTRPCRouter({
       throw new Error("Failed to retrieve purchased items");
     }
   }),
+
+  /**
+   * Spend credits to purchase a storefront item (cosmetic or upgrade)
+   */
+  purchaseStoreItem: protectedProcedure
+    .input(z.object({ itemId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (!ctx.auth?.userId) {
+          throw new Error("Unauthorized");
+        }
+
+        // 1. Fetch item definition from DB
+        const item = await ctx.db.vaultStoreItem.findUnique({
+          where: { id: input.itemId },
+        });
+
+        if (!item || !item.isActive) {
+          throw new Error("Store item not found or inactive");
+        }
+
+        // 2. Fetch existing cosmetic/boost transactions to check if already owned
+        const existingPurchases = await ctx.db.vaultTransaction.findMany({
+          where: {
+            vault: { userId: ctx.auth.userId },
+            type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
+          },
+          select: { metadata: true },
+        });
+
+        const alreadyOwned = existingPurchases.some((tx) => {
+          let meta = tx.metadata;
+          if (typeof meta === "string") {
+            try {
+              meta = JSON.parse(meta);
+            } catch {}
+          }
+          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
+        });
+
+        if (alreadyOwned) {
+          throw new Error("You already own this item");
+        }
+
+        // 3. Spend credits using vaultService helper
+        const transactionType = item.category === "cosmetics" ? "SPEND_COSMETIC" : "SPEND_BOOST";
+        const result = await vaultService.spendCredits(
+          ctx.auth.userId,
+          item.price,
+          transactionType,
+          `Purchase: ${item.name}`,
+          ctx.db as any,
+          { itemId: item.id }
+        );
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to purchase item");
+        }
+
+        return {
+          success: true,
+          message: `Successfully purchased ${item.name}!`,
+          newBalance: result.newBalance,
+        };
+      } catch (error) {
+        console.error("[Vault Router] purchaseStoreItem error:", error);
+        throw new Error(error instanceof Error ? error.message : "Failed to purchase store item");
+      }
+    }),
 
   /**
    * Get vault configuration for store prices and caps (accessible to all authenticated users)
@@ -1042,6 +1343,7 @@ export const vaultRouter = createTRPCRouter({
         isCraftingEnabled: z.boolean(),
         isPacksEnabled: z.boolean(),
         isMaintenanceMode: z.boolean(),
+        exemptStaffFromLimit: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1065,6 +1367,7 @@ export const vaultRouter = createTRPCRouter({
           { key: "vault_isCraftingEnabled", value: input.isCraftingEnabled.toString() },
           { key: "vault_isPacksEnabled", value: input.isPacksEnabled.toString() },
           { key: "vault_isMaintenanceMode", value: input.isMaintenanceMode.toString() },
+          { key: "vault_exemptStaffFromLimit", value: input.exemptStaffFromLimit.toString() },
         ];
 
         await ctx.db.$transaction(
@@ -1095,17 +1398,10 @@ export const vaultRouter = createTRPCRouter({
    */
   listStoreItems: protectedProcedure.query(async ({ ctx }) => {
     try {
-      let items = await ctx.db.vaultStoreItem.findMany({
+      const items = await ctx.db.vaultStoreItem.findMany({
         where: { isActive: true },
         orderBy: { price: "asc" },
       });
-      if (items.length === 0) {
-        await seedVaultStoreItems(ctx.db);
-        items = await ctx.db.vaultStoreItem.findMany({
-          where: { isActive: true },
-          orderBy: { price: "asc" },
-        });
-      }
       return items;
     } catch (error) {
       console.error("[Vault Router] listStoreItems error:", error);
@@ -1118,15 +1414,9 @@ export const vaultRouter = createTRPCRouter({
    */
   adminListStoreItemsAll: adminProcedure.query(async ({ ctx }) => {
     try {
-      let items = await ctx.db.vaultStoreItem.findMany({
+      const items = await ctx.db.vaultStoreItem.findMany({
         orderBy: { createdAt: "desc" },
       });
-      if (items.length === 0) {
-        await seedVaultStoreItems(ctx.db);
-        items = await ctx.db.vaultStoreItem.findMany({
-          orderBy: { createdAt: "desc" },
-        });
-      }
       return items;
     } catch (error) {
       console.error("[Vault Router] adminListStoreItemsAll error:", error);
@@ -1300,6 +1590,21 @@ export const vaultRouter = createTRPCRouter({
   /**
    * Admin: Get all storefront purchase transactions.
    */
+  getIxCardSeason: protectedProcedure.query(async ({ ctx }) => {
+    return getCurrentIxCardSeason(ctx.db);
+  }),
+
+  adminGetIxCardSeason: adminProcedure.query(async ({ ctx }) => {
+    return getCurrentIxCardSeason(ctx.db);
+  }),
+
+  adminSetIxCardSeason: adminProcedure
+    .input(z.object({ season: z.number().int().min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      await setCurrentIxCardSeason(ctx.db, input.season);
+      return { success: true, season: input.season };
+    }),
+
   adminGetPurchaseLogs: adminProcedure.query(async ({ ctx }) => {
     try {
       const txs = await ctx.db.vaultTransaction.findMany({
@@ -1330,9 +1635,15 @@ export const vaultRouter = createTRPCRouter({
 
       return txs.map((tx: any) => {
         let itemId = "";
-        if (tx.metadata && typeof tx.metadata === "object") {
-          const meta = tx.metadata as Record<string, any>;
-          itemId = meta.itemId || "";
+        let meta = tx.metadata;
+        if (typeof meta === "string") {
+          try {
+            meta = JSON.parse(meta);
+          } catch {}
+        }
+        if (meta && typeof meta === "object") {
+          const metaObj = meta as Record<string, any>;
+          itemId = metaObj.itemId || "";
         }
         return {
           id: tx.id,
@@ -1360,92 +1671,4 @@ export const vaultRouter = createTRPCRouter({
   }),
 });
 
-/**
- * Helper function to seed dynamic VaultStoreItem database table if empty.
- */
-async function seedVaultStoreItems(db: any) {
-  const standardItems = [
-    {
-      id: "cosmetic_gold_glow",
-      name: "Golden Profile Glow",
-      description: "Adds a premium golden aura surrounding your user badges and avatar.",
-      price: 500,
-      icon: "Sparkles",
-      glowColor: "rgba(245,158,11,0.35)",
-      quality: "EPIC",
-      badgeText: "Badge Custom",
-      category: "cosmetics",
-      isActive: true,
-    },
-    {
-      id: "cosmetic_neon_frame",
-      name: "Neon Cyber Frame",
-      description: "Wraps your card profiles with a neon-glowing futuristic cybernetic border.",
-      price: 750,
-      icon: "Cpu",
-      glowColor: "rgba(59,130,246,0.35)",
-      quality: "RARE",
-      badgeText: "Card Border",
-      category: "cosmetics",
-      isActive: true,
-    },
-    {
-      id: "cosmetic_chat_badge",
-      name: "Elite Chat Badge",
-      description: "Displays a premium golden crown symbol next to your name in community grids.",
-      price: 1000,
-      icon: "Crown",
-      glowColor: "rgba(168,85,247,0.35)",
-      quality: "EPIC",
-      badgeText: "Profile Title",
-      category: "cosmetics",
-      isActive: true,
-    },
-    {
-      id: "upgrade_lore_token",
-      name: "Lore Request Token",
-      description:
-        "Grants 1 submission token to request a custom lore card using any Wiki Article.",
-      price: 2500,
-      icon: "BookOpen",
-      glowColor: "rgba(59,130,246,0.35)",
-      quality: "RARE",
-      badgeText: "Lore Token",
-      category: "upgrades",
-      isActive: true,
-    },
-    {
-      id: "upgrade_card_capacity",
-      name: "Card Capacity +50",
-      description: "Permanently expands your personal vault collection limit by +50 cards.",
-      price: 5000,
-      icon: "Database",
-      glowColor: "rgba(245,158,11,0.35)",
-      quality: "LEGENDARY",
-      badgeText: "Capacity Boost",
-      category: "upgrades",
-      isActive: true,
-    },
-    {
-      id: "upgrade_yield_boost",
-      name: "Passive Yield Boost (+5%)",
-      description:
-        "Adds a permanent +5% multiplier to all passive daily credit allowance earnings.",
-      price: 5000,
-      icon: "TrendingUp",
-      glowColor: "rgba(245,158,11,0.35)",
-      quality: "LEGENDARY",
-      badgeText: "Yield Multiplier",
-      category: "upgrades",
-      isActive: true,
-    },
-  ];
 
-  for (const item of standardItems) {
-    await db.vaultStoreItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: item,
-    });
-  }
-}

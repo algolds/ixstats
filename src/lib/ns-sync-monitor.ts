@@ -2,13 +2,11 @@
  * NS Sync Health Monitor
  *
  * Monitors NationStates card sync operations and tracks health metrics
- * across multiple seasons. Provides alerting when error rates exceed
- * acceptable thresholds.
+ * across all region imports and NS operations.
  */
 
 import { db } from "~/server/db";
 import { env } from "~/env";
-import { Prisma } from "@prisma/client";
 
 interface SyncMetrics {
   totalSyncs: number;
@@ -20,22 +18,11 @@ interface SyncMetrics {
   lastSyncAt: Date | null;
 }
 
-interface SeasonHealth {
-  season: number;
-  status: string;
-  cardsProcessed: number;
-  totalCards: number;
-  errorCount: number;
-  progress: number;
-  lastCheckpoint: Date;
-  isHealthy: boolean;
-}
-
 interface SyncHealthStats {
   overall: SyncMetrics;
-  bySeason: SeasonHealth[];
+  bySeason: any[];
   recentErrors: Array<{
-    season: number;
+    type: string;
     error: string;
     timestamp: Date;
     cardsAffected: number;
@@ -49,63 +36,14 @@ export class SyncHealthMonitor {
   private static WEBHOOK_URL = env.DISCORD_WEBHOOK_URL;
 
   /**
-   * Track a sync operation (success or failure)
-   */
-  static async trackSync(params: {
-    season: number;
-    status: "SUCCESS" | "FAILED" | "IN_PROGRESS";
-    cardsProcessed?: number;
-    cardsCreated?: number;
-    cardsUpdated?: number;
-    errorMessage?: string;
-    metadata?: Record<string, any>;
-  }): Promise<void> {
-    const { season, status, cardsProcessed, cardsCreated, cardsUpdated, errorMessage, metadata } =
-      params;
-
-    try {
-      // Create sync log entry
-      const syncLog = await db.syncLog.create({
-        data: {
-          syncType: `NS_SEASON_${season}`,
-          status,
-          itemsProcessed: cardsProcessed ?? 0,
-          itemsFailed: status === "FAILED" ? 1 : 0,
-          errorMessage,
-          season,
-          cardsProcessed,
-          cardsCreated,
-          cardsUpdated,
-          errors: errorMessage,
-          metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
-          startedAt: new Date(),
-          completedAt: status !== "IN_PROGRESS" ? new Date() : null,
-        },
-      });
-
-      console.log(`[NS Sync Monitor] Tracked sync for season ${season}: ${status}`);
-
-      // Check health and send alerts if needed
-      if (status === "FAILED") {
-        await this.checkHealthAndAlert(season);
-      }
-
-      return;
-    } catch (error) {
-      console.error("[NS Sync Monitor] Failed to track sync:", error);
-      // Don't throw - monitoring should not break the sync process
-    }
-  }
-
-  /**
-   * Get comprehensive health statistics across all seasons
+   * Get comprehensive health statistics across all sync operations
    */
   static async getHealthStats(): Promise<SyncHealthStats> {
     try {
       // Get recent sync logs (last 100)
       const recentLogs = await db.syncLog.findMany({
         where: {
-          syncType: { startsWith: "NS_SEASON_" },
+          syncType: { startsWith: "NS_" },
         },
         orderBy: { startedAt: "desc" },
         take: 100,
@@ -125,35 +63,10 @@ export class SyncHealthMonitor {
 
       const lastSyncAt = recentLogs.length > 0 ? recentLogs[0]!.startedAt : null;
 
-      // Get checkpoint status for each season
-      const checkpoints = await db.syncCheckpoint.findMany({
-        orderBy: { season: "desc" },
-      });
-
-      const bySeason: SeasonHealth[] = checkpoints.map((checkpoint: any) => {
-        const progress =
-          checkpoint.totalCards > 0 ? (checkpoint.cardsProcessed / checkpoint.totalCards) * 100 : 0;
-
-        const isHealthy =
-          checkpoint.status === "COMPLETED" ||
-          (checkpoint.status === "IN_PROGRESS" && checkpoint.errorCount < 10);
-
-        return {
-          season: checkpoint.season,
-          status: checkpoint.status,
-          cardsProcessed: checkpoint.cardsProcessed,
-          totalCards: checkpoint.totalCards,
-          errorCount: checkpoint.errorCount,
-          progress,
-          lastCheckpoint: checkpoint.lastCheckpointAt,
-          isHealthy,
-        };
-      });
-
       // Get recent errors (last 50)
       const errorLogs = await db.syncLog.findMany({
         where: {
-          syncType: { startsWith: "NS_SEASON_" },
+          syncType: { startsWith: "NS_" },
           status: "FAILED",
         },
         orderBy: { startedAt: "desc" },
@@ -161,7 +74,7 @@ export class SyncHealthMonitor {
       });
 
       const recentErrors = errorLogs.map((log) => ({
-        season: log.season ?? 0,
+        type: log.syncType.replace("NS_REGION_", "Region Fetch: ").replace(/_/g, " "),
         error: log.errorMessage ?? "Unknown error",
         timestamp: log.startedAt,
         cardsAffected: log.itemsFailed,
@@ -172,16 +85,8 @@ export class SyncHealthMonitor {
 
       if (errorRate > this.ERROR_RATE_THRESHOLD) {
         alerts.push(
-          `⚠️ High error rate detected: ${(errorRate * 100).toFixed(1)}% (threshold: ${this.ERROR_RATE_THRESHOLD * 100}%)`
+          `⚠️ High error rate detected on recent region imports: ${(errorRate * 100).toFixed(1)}% (threshold: ${this.ERROR_RATE_THRESHOLD * 100}%)`
         );
-      }
-
-      for (const seasonHealth of bySeason) {
-        if (!seasonHealth.isHealthy && seasonHealth.status !== "COMPLETED") {
-          alerts.push(
-            `⚠️ Season ${seasonHealth.season} sync unhealthy: ${seasonHealth.errorCount} errors, ${seasonHealth.progress.toFixed(1)}% complete`
-          );
-        }
       }
 
       return {
@@ -194,35 +99,13 @@ export class SyncHealthMonitor {
           avgCardsProcessed,
           lastSyncAt,
         },
-        bySeason,
+        bySeason: [],
         recentErrors,
         alerts,
       };
     } catch (error) {
       console.error("[NS Sync Monitor] Failed to get health stats:", error);
       throw error;
-    }
-  }
-
-  /**
-   * Check sync health and send Discord alert if error rate exceeds threshold
-   */
-  private static async checkHealthAndAlert(season: number): Promise<void> {
-    try {
-      const stats = await this.getHealthStats();
-
-      // Check if error rate exceeds threshold
-      if (stats.overall.errorRate > this.ERROR_RATE_THRESHOLD) {
-        await this.sendAlert({
-          title: "🚨 NS Sync Health Alert",
-          message: `Season ${season} sync has high error rate: ${(stats.overall.errorRate * 100).toFixed(1)}%`,
-          stats,
-          severity: "high",
-        });
-      }
-    } catch (error) {
-      console.error("[NS Sync Monitor] Failed to check health and alert:", error);
-      // Don't throw - alerting failures should not break the sync
     }
   }
 
@@ -269,7 +152,7 @@ export class SyncHealthMonitor {
         embed.fields.push({
           name: "Latest Error",
           value: [
-            `Season: ${recentError.season}`,
+            `Type: ${recentError.type}`,
             `Error: ${recentError.error.substring(0, 200)}`,
             `Time: ${recentError.timestamp.toISOString()}`,
           ].join("\n"),
@@ -305,38 +188,6 @@ export class SyncHealthMonitor {
       }
     } catch (error) {
       console.error("[NS Sync Monitor] Failed to send Discord alert:", error);
-    }
-  }
-
-  /**
-   * Log detailed error with full context
-   */
-  static async logError(params: {
-    season: number;
-    cardId: string;
-    error: string;
-    context?: Record<string, any>;
-  }): Promise<void> {
-    const { season, cardId, error, context } = params;
-
-    try {
-      await db.syncLog.create({
-        data: {
-          syncType: `NS_SEASON_${season}_CARD_ERROR`,
-          status: "FAILED",
-          itemsProcessed: 0,
-          itemsFailed: 1,
-          errorMessage: `Card ${cardId}: ${error}`,
-          season,
-          metadata: context ? (context as Prisma.InputJsonValue) : Prisma.JsonNull,
-          startedAt: new Date(),
-          completedAt: new Date(),
-        },
-      });
-
-      console.error(`[NS Sync Monitor] Error logged for season ${season}, card ${cardId}:`, error);
-    } catch (dbError) {
-      console.error("[NS Sync Monitor] Failed to log error to database:", dbError);
     }
   }
 }

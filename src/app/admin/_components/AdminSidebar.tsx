@@ -89,13 +89,13 @@ const NAV_ITEMS: NavItem[] = [
     label: "Card Management",
     href: "/admin/cards",
     icon: Package,
-    description: "Sync, Packs, Lore & Vaults",
+    description: "NS Sync, Card Packs",
   },
   {
     label: "Vault & Economy",
     href: "/admin/vault",
     icon: Coins,
-    description: "Balances, Streaks & Store CRUD",
+    description: "Balances, Streaks & Store",
   },
   {
     label: "Reference Data",

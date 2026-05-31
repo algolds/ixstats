@@ -88,6 +88,8 @@ const createPrismaClient = () => {
     "CraftingRecipe",
     "VaultStoreItem",
     "VaultStorePriceHistory",
+    "CardWatchlist",
+    "CardTransferEvent",
     // NS sync management
     "SyncLog",
     "SyncCheckpoint",

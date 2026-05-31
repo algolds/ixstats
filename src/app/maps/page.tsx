@@ -18,11 +18,10 @@
  * When running on maps.ixwiki.com, renders full-screen (standalone mode).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { MapContainer } from "~/components/maps/core/MapContainer";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/standalone-detection";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { MapLayerType } from "~/lib/map-config";
@@ -38,7 +37,7 @@ export default function WorldMapPage() {
   const isEmbed = searchParams.get("embed") === "true";
 
   usePageTitle({
-    title: isEmbed ? "IxWorld" : isStandalone ? "IxWorld Map" : "World Map",
+    title: isEmbed ? "IxWorld" : isStandalone ? "IxMaps" : "World Map",
   });
 
   // --- Country resolution: by ID or by name ---
@@ -68,17 +67,17 @@ export default function WorldMapPage() {
     ? (["background", "political", layerParam] as MapLayerType[])
     : undefined;
 
-  const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
+  const [, setSelectedCountry] = useState<SelectedCountry | null>(null);
 
   const handleCountrySelect = useCallback((country: SelectedCountry | null) => {
     setSelectedCountry(country);
   }, []);
 
   // In embed mode: hide navigation, controls, use full viewport
-  const containerClass = isEmbed ? "h-dvh w-dvw" : isStandalone ? "h-dvh" : "h-[calc(100dvh-64px)]";
+  const containerClass = isEmbed ? "h-dvh w-dvw" : "h-dvh";
 
   return (
-    <div className={`relative ${containerClass}`}>
+    <div className={`relative ${containerClass}`} data-maps-page>
       <MapContainer
         showControls={!isEmbed}
         showTools={!isEmbed}

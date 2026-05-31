@@ -5,6 +5,7 @@
  */
 
 import type { CardRarity, CardType } from "@prisma/client";
+import type { CardStatDef } from "~/lib/card-stat-config";
 
 /**
  * Card display size options
@@ -30,8 +31,9 @@ export interface CardInstance {
   wikiArticleTitle: string | null;
   wikiUrl: string | null;
   countryId: string | null;
-  stats: any;
+  stats: Record<string, number>;
   metadata?: any;
+  attributes?: Record<string, unknown>;
   ownershipId?: string;
   isLocked?: boolean;
   marketValue: number;
@@ -42,6 +44,19 @@ export interface CardInstance {
   createdAt: Date;
   updatedAt: Date;
   lastTrade: Date | null;
+  isRetired?: boolean;
+  retiredAt?: Date | null;
+  /** Ownership-specific fields */
+  serialNumber?: number;
+  experience?: number;
+  lastSalePrice?: number | null;
+  lastSaleDate?: Date | null;
+  acquiredAt?: Date;
+  inscription?: string | null;
+  inscribedById?: string | null;
+  inscribedAt?: Date | null;
+  /** Base card stats (before level bonuses) */
+  baseStats?: Record<string, number>;
   country?: {
     id: string;
     name: string;
@@ -60,27 +75,25 @@ export interface CardInstance {
 /**
  * Formatted card stats for display
  */
+export interface FormattedStatEntry {
+  value: number;
+  baseValue: number;
+  bonus: number;
+  def: CardStatDef;
+}
+
+export interface FormattedSpecialStatEntry {
+  normalizedValue: number;
+  rawValue: number;
+  formattedRaw: string;
+  def: CardStatDef;
+}
+
 export interface FormattedStats {
-  economic: {
-    value: number;
-    label: string;
-    color: string;
-  };
-  diplomatic: {
-    value: number;
-    label: string;
-    color: string;
-  };
-  military: {
-    value: number;
-    label: string;
-    color: string;
-  };
-  social: {
-    value: number;
-    label: string;
-    color: string;
-  };
+  base: Record<string, FormattedStatEntry>;
+  specials: FormattedSpecialStatEntry[];
+  level: number;
+  totalBoost: number;
 }
 
 /**

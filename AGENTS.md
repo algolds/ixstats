@@ -181,3 +181,4 @@ Subsystem versions are centralized in [src/lib/buildVersion.ts](file:///ixwiki/p
 - `docs/reference/api-complete.md` — Full tRPC API catalog (1,329 endpoints)
 - `docs/systems/` — System-specific guides
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)
+-  `/ixwiki/.cursor/rules/design.mdc` — for design token mappings and usage guidelines

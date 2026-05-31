@@ -84,6 +84,14 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     { countryId },
     { enabled: hasCountry }
   );
+  const { data: achievements } = api.achievements.getAllWithStatus.useQuery(
+    { userId: user?.id ?? "" },
+    { enabled: !!user?.id }
+  );
+
+  const unlockedCollectorAchievements = achievements?.filter(
+    (a) => a.isUnlocked && ["collect-lore-keeper", "collect-archaeologist", "collect-diplomat"].includes(a.key)
+  ) ?? [];
 
   if (!isSignedIn) return null;
 
@@ -151,6 +159,22 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         >
           {userProfile?.country?.name ?? "My Country"}
         </Link>
+
+        {/* Unlocked Collector Title Badges */}
+        {unlockedCollectorAchievements.length > 0 && (
+          <div className="relative z-20 mt-1.5 flex flex-wrap justify-center gap-1 px-1">
+            {unlockedCollectorAchievements.map((ach) => (
+              <span
+                key={ach.key}
+                title={ach.description}
+                className="inline-flex items-center gap-0.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[8px] font-medium text-white backdrop-blur-md border border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:bg-white/20 transition-colors cursor-help"
+              >
+                <span>{ach.iconUrl || "🏆"}</span>
+                <span>{ach.title}</span>
+              </span>
+            ))}
+          </div>
+        )}
 
         <CutoutCorner className="text-card absolute -bottom-px left-0 z-20" size={16} />
         <CutoutCorner

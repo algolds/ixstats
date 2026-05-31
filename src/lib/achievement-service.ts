@@ -274,7 +274,7 @@ export class AchievementService {
         }),
         db.user.findUnique({
           where: { clerkUserId: userId },
-          select: { createdAt: true },
+          select: { id: true, createdAt: true },
         }),
       ]);
 
@@ -283,6 +283,42 @@ export class AchievementService {
         : 0;
 
       const totalAchievements = existingAchievements.length;
+
+      let loreCardCount = 0;
+      let retiredCardCount = 0;
+      let distinctCountryIdCount = 0;
+
+      if (user?.id) {
+        const [loreCount, retiredCount, distinctCountries] = await Promise.all([
+          db.cardOwnership.count({
+            where: {
+              ownerId: user.id,
+              cards: { cardType: "LORE" },
+            },
+          }).catch(() => 0),
+          db.cardOwnership.count({
+            where: {
+              ownerId: user.id,
+              cards: { isRetired: true } as any,
+            },
+          }).catch(() => 0),
+          db.cardOwnership.findMany({
+            where: { ownerId: user.id },
+            select: { cards: { select: { countryId: true } } },
+          }).then((ownerships) => {
+            const countryIds = new Set(
+              ownerships
+                .map((o) => o.cards?.countryId)
+                .filter(Boolean)
+            );
+            return countryIds.size;
+          }).catch(() => 0),
+        ]);
+
+        loreCardCount = loreCount;
+        retiredCardCount = retiredCount;
+        distinctCountryIdCount = distinctCountries;
+      }
 
       const militaryBranches = await db.militaryBranch.findMany({
         where: { countryId },
@@ -373,6 +409,9 @@ export class AchievementService {
           .catch(() => 0),
         daysActive,
         totalAchievements,
+        loreCardCount,
+        retiredCardCount,
+        distinctCountryIdCount,
       };
 
       const alreadyUnlocked = new Set<string>(existingAchievements.map((a) => a.achievementId));

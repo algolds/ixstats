@@ -5,12 +5,24 @@
  */
 
 import { CardRarity } from "~/lib/card-enums";
+import type { CardType } from "~/lib/card-enums";
 import type {
   CardInstance,
   FormattedStats,
+  FormattedStatEntry,
+  FormattedSpecialStatEntry,
   RarityConfig,
   CardDisplaySize,
 } from "~/types/cards-display";
+import {
+  getBaseStatDefs,
+  getBaseStatDef,
+  getSpecialStatsForType,
+  STAT_PROGRESSION,
+  LEGACY_KEY_MAP,
+} from "~/lib/card-stat-config";
+import { formatCompactValue, normalizeSpecialStat } from "~/lib/format-number";
+import { computeSpecialStats, type SpecialStats } from "~/lib/special-stats-populator";
 
 /**
  * Rarity constants (matching database string values)
@@ -198,15 +210,11 @@ export function getRarityVisualHierarchy(rarity: string): {
 }
 
 /**
- * Format card stats for display
- * Extracts and formats stats from card instance
- * @param card - Card instance with stats JSON
- * @returns Formatted stats object with labels and colors
+ * Resolve raw stat values from a card instance, translating legacy keys
  */
-export function formatCardStats(card: CardInstance): FormattedStats {
-  let stats = (card.stats as Record<string, number>) || {};
+function resolveCardStats(card: CardInstance): Record<string, number> {
+  let stats = card.stats ?? {};
 
-  // For old lore cards: stats were stored in metadata.stats, not the stats column
   if (Object.keys(stats).length === 0 && card.metadata) {
     const metaStats = (card.metadata as Record<string, unknown>)?.stats;
     if (metaStats && typeof metaStats === "object" && !Array.isArray(metaStats)) {
@@ -214,54 +222,116 @@ export function formatCardStats(card: CardInstance): FormattedStats {
     }
   }
 
-  // Handle legacy lore card stats format (historicalSignificance/culturalImpact/rarity/preserved)
-  if (stats.historicalSignificance !== undefined && stats.economic === undefined) {
+  const baseStats = card.baseStats ?? stats;
+
+  if (Object.keys(baseStats).length === 0 && stats.historicalSignificance !== undefined) {
     return {
-      economic: {
-        value: Math.round(Math.min((stats.preserved ?? stats.rarity ?? 0) * 0.3, 100)),
-        label: "Economic",
-        color: "text-emerald-500",
-      },
-      diplomatic: {
-        value: Math.round(Math.min((stats.culturalImpact ?? 0) * 0.5, 100)),
-        label: "Diplomatic",
-        color: "text-blue-500",
-      },
-      military: {
-        value: Math.round(Math.min((stats.rarity ?? 0) * 0.2, 100)),
-        label: "Military",
-        color: "text-red-500",
-      },
-      social: {
-        value: Math.round(Math.min((stats.historicalSignificance ?? 0) * 0.5, 100)),
-        label: "Social",
-        color: "text-purple-500",
-      },
+      force: Math.round(Math.min((stats.preserved ?? stats.rarity ?? 0) * 0.3, 100)),
+      wealth: Math.round(Math.min((stats.culturalImpact ?? 0) * 0.5, 100)),
+      influence: Math.round(Math.min((stats.rarity ?? 0) * 0.2, 100)),
+      legacy: Math.round(Math.min((stats.historicalSignificance ?? 0) * 0.5, 100)),
     };
   }
 
-  return {
-    economic: {
-      value: stats.economic ?? 0,
-      label: "Economic",
-      color: "text-emerald-500",
-    },
-    diplomatic: {
-      value: stats.diplomatic ?? 0,
-      label: "Diplomatic",
-      color: "text-blue-500",
-    },
-    military: {
-      value: stats.military ?? 0,
-      label: "Military",
-      color: "text-red-500",
-    },
-    social: {
-      value: stats.social ?? 0,
-      label: "Social",
-      color: "text-purple-500",
-    },
-  };
+  const resolved: Record<string, number> = {};
+  const source = Object.keys(baseStats).length > 0 ? baseStats : stats;
+
+  for (const [oldKey, val] of Object.entries(source)) {
+    const newKey = LEGACY_KEY_MAP[oldKey] ?? oldKey;
+    resolved[newKey] = val as number;
+  }
+
+  return resolved;
+}
+
+/**
+ * Format special stats for a card instance
+ */
+function formatSpecialStats(card: CardInstance): FormattedSpecialStatEntry[] {
+  const specialDefs = getSpecialStatsForType(card.cardType as unknown as import("~/lib/card-enums").CardType);
+  if (specialDefs.length === 0) return [];
+
+  const rawSpecials: Record<string, number> =
+    (card.attributes?.specials as Record<string, number>) ?? {};
+
+  const hasSpecials = Object.keys(rawSpecials).length > 0;
+
+  if (!hasSpecials) {
+    const computed = computeSpecialStats({
+      cardType: card.cardType,
+      attributes: card.attributes,
+      nsData: card.nsData,
+      country: card.country,
+    });
+    const computedEntries: FormattedSpecialStatEntry[] = [];
+    for (const def of specialDefs) {
+      const label = computed[def.key as keyof SpecialStats];
+      if (label) {
+        computedEntries.push({
+          normalizedValue: label,
+          rawValue: 0,
+          formattedRaw: label,
+          def,
+        });
+      }
+    }
+    return computedEntries;
+  }
+
+  return specialDefs
+    .map((def) => {
+      const rawValue = rawSpecials[def.key] ?? 0;
+      const normalizedValue = normalizeSpecialStat(def.key, rawValue);
+      return {
+        normalizedValue,
+        rawValue,
+        formattedRaw: formatCompactValue(rawValue),
+        def,
+      };
+    })
+    .filter((s) => s.rawValue > 0);
+}
+
+/**
+ * Format card stats for display
+ * Extracts and formats stats from card instance
+ * @param card - Card instance with stats JSON
+ * @returns Formatted stats object with labels and colors
+ */
+export function formatCardStats(card: CardInstance): FormattedStats {
+  const rawStats = resolveCardStats(card);
+  const level = card.level ?? 1;
+  const boost = (level - 1) * STAT_PROGRESSION.boostPerLevel;
+  const baseStatDefs = getBaseStatDefs();
+
+  const base: Record<string, FormattedStatEntry> = {};
+  let hasAnyBase = false;
+
+  for (const def of baseStatDefs) {
+    const rawVal = rawStats[def.key] ?? 0;
+    const baseVal = rawStats[`base_${def.key}`] ?? rawVal;
+    const capped = Math.min(baseVal + boost, STAT_PROGRESSION.cap);
+    base[def.key] = {
+      value: capped,
+      baseValue: baseVal,
+      bonus: boost,
+      def,
+    };
+    if (capped > 0) hasAnyBase = true;
+  }
+
+  const specials = formatSpecialStats(card);
+
+  if (!hasAnyBase) {
+    return {
+      base: {},
+      specials,
+      level,
+      totalBoost: boost,
+    };
+  }
+
+  return { base, specials, level, totalBoost: boost };
 }
 
 /**

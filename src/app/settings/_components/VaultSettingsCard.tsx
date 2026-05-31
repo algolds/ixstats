@@ -49,6 +49,19 @@ export function VaultSettingsCard() {
     },
   });
 
+  // Purchase Store Item Mutation
+  const utils = api.useUtils();
+  const purchaseMutation = api.vault.purchaseStoreItem.useMutation({
+    onSuccess: (data) => {
+      notify.success("Purchase Successful!", data.message || "Store item purchased successfully.");
+      void refreshBalance();
+      void utils.vault.getPurchasedItems.invalidate();
+    },
+    onError: (err) => {
+      notify.error("Purchase Failed", err.message);
+    },
+  });
+
   // Local state for cosmetics toggled on/off (stored in localStorage)
   const [activeCosmetics, setActiveCosmetics] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
@@ -258,9 +271,24 @@ export function VaultSettingsCard() {
                           </button>
                         </>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-400">
-                          <Lock className="h-3 w-3" /> Locked
-                        </span>
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 font-mono">
+                            <Lock className="h-3.5 w-3.5 text-slate-400" /> {item.price} IxC
+                          </span>
+                          <button
+                            onClick={() => purchaseMutation.mutate({ itemId: item.id })}
+                            disabled={balance < item.price || purchaseMutation.isPending}
+                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${
+                              balance >= item.price
+                                ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-95"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                            }`}
+                          >
+                            {purchaseMutation.isPending && purchaseMutation.variables?.itemId === item.id
+                              ? "Buying..."
+                              : "Buy"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -334,9 +362,24 @@ export function VaultSettingsCard() {
                           </button>
                         </>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-400">
-                          <Lock className="h-3 w-3" /> Locked
-                        </span>
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 font-mono">
+                            <Lock className="h-3.5 w-3.5 text-slate-400" /> {item.price} IxC
+                          </span>
+                          <button
+                            onClick={() => purchaseMutation.mutate({ itemId: item.id })}
+                            disabled={balance < item.price || purchaseMutation.isPending}
+                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${
+                              balance >= item.price
+                                ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-95"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                            }`}
+                          >
+                            {purchaseMutation.isPending && purchaseMutation.variables?.itemId === item.id
+                              ? "Buying..."
+                              : "Buy"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

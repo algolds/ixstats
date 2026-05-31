@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { api } from "~/trpc/react";
 
 export interface Collection {
   id: string;
@@ -10,31 +10,56 @@ export interface Collection {
   cardCount: number;
   isPublic: boolean;
   totalValue: number;
-  thumbnailCards: string[]; // Card IDs for thumbnail preview
+  thumbnailCards: string[];
   createdAt: Date;
 }
 
-/**
- * Hook to manage user's card collections
- * Provides CRUD operations for collections
- */
 export function useCollections() {
-  // TODO: This will integrate with cards API once implemented
-  // For now, provide basic structure
-  const [collections, setCollections] = useState<Collection[]>([]);
+  const utils = api.useUtils();
 
-  const createCollection = async (data: {
+  const { data, isLoading, refetch } = api.vault.getMyCollections.useQuery({});
+
+  const createCollectionMutation = api.vault.createCollection.useMutation({
+    onSuccess: () => {
+      void utils.vault.getMyCollections.invalidate();
+    },
+  });
+
+  const updateCollectionMutation = api.vault.updateCollection.useMutation({
+    onSuccess: () => {
+      void utils.vault.getMyCollections.invalidate();
+    },
+  });
+
+  const deleteCollectionMutation = api.vault.deleteCollection.useMutation({
+    onSuccess: () => {
+      void utils.vault.getMyCollections.invalidate();
+    },
+  });
+
+  const collections: Collection[] =
+    data?.collections.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description,
+      cardCount: c.cardCount,
+      isPublic: c.isPublic,
+      totalValue: c.totalValue,
+      thumbnailCards: c.thumbnailCards ?? [],
+      createdAt: c.createdAt,
+    })) ?? [];
+
+  const createCollection = async (params: {
     name: string;
     description?: string;
     isPublic: boolean;
   }) => {
-    // TODO: Call tRPC mutation
-    console.log("Creating collection:", data);
+    return createCollectionMutation.mutateAsync(params);
   };
 
   const deleteCollection = async (id: string) => {
-    // TODO: Call tRPC mutation
-    console.log("Deleting collection:", id);
+    return deleteCollectionMutation.mutateAsync({ collectionId: id });
   };
 
   const updateCollection = async (
@@ -45,16 +70,15 @@ export function useCollections() {
       isPublic?: boolean;
     }
   ) => {
-    // TODO: Call tRPC mutation
-    console.log("Updating collection:", id, data);
+    return updateCollectionMutation.mutateAsync({ collectionId: id, ...data });
   };
 
   return {
     collections,
-    loading: false,
+    loading: isLoading,
     createCollection,
     deleteCollection,
     updateCollection,
-    refetch: () => Promise.resolve(),
+    refetch,
   };
 }

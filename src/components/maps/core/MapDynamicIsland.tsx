@@ -32,12 +32,11 @@ import {
   User,
   LogIn,
   Crown,
-  Map as MapIcon,
+  LayoutDashboard,
   Clock,
   Calendar,
   Bell,
   MessageCircle,
-  Link2,
 } from "lucide-react";
 import { useUser, SignInButton } from "~/context/auth-context";
 import { useTheme, type Theme } from "~/context/theme-context";
@@ -51,7 +50,6 @@ import { api } from "~/trpc/react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { getNationUrl } from "~/lib/slug-utils";
 import { flagService } from "~/lib/flag-service";
-import { isStandaloneClient } from "~/lib/standalone-detection";
 import { useRouter } from "next/navigation";
 import type { ProjectionMode } from "~/lib/map-config";
 import { cn } from "~/lib/utils";
@@ -546,6 +544,7 @@ export function MapDynamicIsland({
                     theme={theme}
                     effectiveTheme={effectiveTheme}
                     setTheme={setTheme}
+                    router={router}
                   />
                 </motion.div>
               )}
@@ -706,11 +705,11 @@ function AuthSection({
         {/* Quick actions */}
         <div className="space-y-0.5 p-1.5">
           <button
-            onClick={() => router.push("/settings")}
+            onClick={() => router.push("/dashboard")}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
           >
-            <User className="h-3.5 w-3.5" />
-            User Settings
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            Dashboard
           </button>
 
           {countryName && (
@@ -738,12 +737,14 @@ function MapSettingsPopover({
   theme,
   effectiveTheme,
   setTheme,
+  router,
 }: {
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
   theme: Theme;
   effectiveTheme: string;
   setTheme: (t: Theme) => void;
+  router: ReturnType<typeof useRouter>;
 }) {
   return (
     <Popover>
@@ -805,6 +806,17 @@ function MapSettingsPopover({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* User Settings */}
+        <div className="border-border mt-3 border-t pt-2">
+          <button
+            onClick={() => router.push("/settings")}
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors"
+          >
+            <User className="h-3.5 w-3.5" />
+            User Settings
+          </button>
         </div>
       </PopoverContent>
     </Popover>

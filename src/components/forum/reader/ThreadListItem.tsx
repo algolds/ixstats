@@ -6,10 +6,14 @@
 import Link from "next/link";
 import { Pin, Lock, Eye, MessageSquare } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
+import { api } from "~/trpc/react";
+import * as LucideIcons from "lucide-react";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 
 interface ThreadListItemProps {
   threadId: number;
   title: string;
+  authorId?: number; // NormalizedThread includes this
   authorName: string;
   authorAvatar: string | null;
   postDate: number;
@@ -35,6 +39,7 @@ function formatTimeAgo(unixTimestamp: number): string {
 export function ThreadListItem({
   threadId,
   title,
+  authorId,
   authorName,
   authorAvatar,
   postDate,
@@ -45,6 +50,16 @@ export function ThreadListItem({
   isSticky,
   isOpen,
 }: ThreadListItemProps) {
+  // Get linked forum user ID
+  const { data: linkStatus } = api.forum.getLinkStatus.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
+  const currentForumUserId = linkStatus?.forumUserId ?? null;
+  const isOwnThread = currentForumUserId != null && authorId != null && currentForumUserId === authorId;
+
+  const { chatBadge } = useActiveCosmetics();
+  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+
   return (
     <div
       className={`forum-thread-row ${isSticky ? "forum-thread-row-sticky" : ""} ${!isOpen ? "opacity-75" : ""}`}
@@ -78,9 +93,12 @@ export function ThreadListItem({
             {title}
           </Link>
         </div>
-        <div className="forum-thread-meta mt-0.5">
+        <div className="forum-thread-meta mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{authorName}</span>
-          <span className="mx-1">·</span>
+          {isOwnThread && chatBadge.enabled && (
+            <CrownIcon className="h-3 w-3 shrink-0" style={{ color: chatBadge.color }} />
+          )}
+          <span className="mx-0.5">·</span>
           <span>{formatTimeAgo(postDate)}</span>
         </div>
       </div>

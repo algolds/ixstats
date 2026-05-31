@@ -22,6 +22,7 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
+import { vaultService } from "~/lib/vault-service";
 import type { WikiSource } from "~/lib/mediawiki-config";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
@@ -31,8 +32,20 @@ const LORE_CARD_REQUEST_COST = 50; // IxCredits
  */
 export const loreCardsRouter = createTRPCRouter({
   /**
+   * Get the current user's lore request tokens balance
+   */
+  getLoreTokensBalance: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user?.id;
+    if (!userId) {
+      return { balance: 0 };
+    }
+    const balance = await vaultService.getLoreTokensBalance(userId, ctx.db as any);
+    return { balance };
+  }),
+
+  /**
    * Request a lore card for a specific wiki article
-   * Costs 50 IxCredits
+   * Costs 50 IxCredits or 1 Lore Request Token
    */
   requestLoreCard: protectedProcedure
     .input(
@@ -63,7 +76,11 @@ export const loreCardsRouter = createTRPCRouter({
           });
         }
 
-        if (vault.credits < LORE_CARD_REQUEST_COST) {
+        // Check token balance first
+        const tokens = await vaultService.getLoreTokensBalance(userId, ctx.db as any);
+        const useToken = tokens > 0;
+
+        if (!useToken && vault.credits < LORE_CARD_REQUEST_COST) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxC to request a lore card (current balance: ${vault.credits} IxC)`,
@@ -104,27 +121,30 @@ export const loreCardsRouter = createTRPCRouter({
           });
         }
 
-        // Deduct IxCredits
-        await ctx.db.myVault.update({
-          where: { userId },
-          data: {
-            credits: {
-              decrement: LORE_CARD_REQUEST_COST,
+        // Deduct IxCredits if not using token
+        if (!useToken) {
+          await ctx.db.myVault.update({
+            where: { userId },
+            data: {
+              credits: {
+                decrement: LORE_CARD_REQUEST_COST,
+              },
             },
-          },
-        });
+          });
+        }
 
         // Log transaction
         await ctx.db.vaultTransaction.create({
           data: {
             vaultId: vault.id,
-            credits: -LORE_CARD_REQUEST_COST,
-            balanceAfter: vault.credits - LORE_CARD_REQUEST_COST,
+            credits: useToken ? 0 : -LORE_CARD_REQUEST_COST,
+            balanceAfter: useToken ? vault.credits : vault.credits - LORE_CARD_REQUEST_COST,
             type: "EXPENSE",
             source: "LORE_CARD_REQUEST",
             metadata: {
               articleTitle: input.articleTitle,
               wikiSource: input.wikiSource,
+              useToken,
             },
           },
         });
@@ -140,14 +160,17 @@ export const loreCardsRouter = createTRPCRouter({
         });
 
         console.log(
-          `[Lore Cards] User ${userId} requested lore card for "${input.articleTitle}" (${input.wikiSource})`
+          `[Lore Cards] User ${userId} requested lore card for "${input.articleTitle}" (${input.wikiSource}) using ${useToken ? "token" : "credits"}`
         );
 
         return {
           success: true,
           requestId: request.id,
-          cost: LORE_CARD_REQUEST_COST,
-          message: "Lore card request submitted for admin review",
+          cost: useToken ? 0 : LORE_CARD_REQUEST_COST,
+          useToken,
+          message: useToken
+            ? "Lore card request submitted for admin review (Free with Token)"
+            : "Lore card request submitted for admin review",
         };
       } catch (error) {
         console.error("[Lore Cards] Error in requestLoreCard:", error);

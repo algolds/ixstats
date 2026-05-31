@@ -16,6 +16,7 @@ import { TradeStatus, type Prisma } from "@prisma/client";
 import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
 import { getVaultConfig } from "~/lib/vault-service";
+import { grantCardXp } from "~/lib/card-xp-utils";
 
 /**
  * Trade offer creation schema
@@ -56,9 +57,6 @@ export const tradingRouter = createTRPCRouter({
       async ({
         ctx,
         input,
-      }: {
-        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
-        input: CreateTradeOfferInput;
       }) => {
         const initiatorDbId = ctx.user.id;
 
@@ -107,6 +105,13 @@ export const tradingRouter = createTRPCRouter({
           });
         }
 
+        if (initiatorCards.some((c: any) => c.inscription !== null)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Inscribed cards cannot be traded",
+          });
+        }
+
         // Verify recipient owns the cards being requested
         const recipientCards = await ctx.db.cardOwnership.findMany({
           where: {
@@ -123,6 +128,13 @@ export const tradingRouter = createTRPCRouter({
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "The recipient doesn't own all the requested cards",
+          });
+        }
+
+        if (recipientCards.some((c: any) => c.inscription !== null)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Inscribed cards cannot be traded",
           });
         }
 
@@ -150,48 +162,55 @@ export const tradingRouter = createTRPCRouter({
           recipientCards.reduce((sum: number, c: any) => sum + c.cards.marketValue, 0) +
           input.recipientCredits;
 
-        // Create trade offer (expires in 24 hours)
+        // Create trade offer (expires in 24 hours) — atomically lock initiator's cards
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
 
-        const trade = await ctx.db.tradeOffer.create({
-          data: {
-            initiatorId: initiatorDbId,
-            recipientId: recipientDbId,
-            initiatorCardIds: input.initiatorCardIds,
-            recipientCardIds: input.recipientCardIds,
-            initiatorCredits: input.initiatorCredits,
-            recipientCredits: input.recipientCredits,
-            message: input.message,
-            status: "PENDING",
-            expiresAt,
-          },
-          include: {
-            initiator: {
-              select: {
-                id: true,
-                clerkUserId: true,
-                country: {
-                  select: {
-                    name: true,
-                    flag: true,
+        const trade = await ctx.db.$transaction(async (tx: any) => {
+          await tx.cardOwnership.updateMany({
+            where: { id: { in: input.initiatorCardIds } },
+            data: { isLocked: true },
+          });
+
+          return await tx.tradeOffer.create({
+            data: {
+              initiatorId: initiatorDbId,
+              recipientId: recipientDbId,
+              initiatorCardIds: input.initiatorCardIds,
+              recipientCardIds: input.recipientCardIds,
+              initiatorCredits: input.initiatorCredits,
+              recipientCredits: input.recipientCredits,
+              message: input.message,
+              status: "PENDING",
+              expiresAt,
+            },
+            include: {
+              initiator: {
+                select: {
+                  id: true,
+                  clerkUserId: true,
+                  country: {
+                    select: {
+                      name: true,
+                      flag: true,
+                    },
+                  },
+                },
+              },
+              recipient: {
+                select: {
+                  id: true,
+                  clerkUserId: true,
+                  country: {
+                    select: {
+                      name: true,
+                      flag: true,
+                    },
                   },
                 },
               },
             },
-            recipient: {
-              select: {
-                id: true,
-                clerkUserId: true,
-                country: {
-                  select: {
-                    name: true,
-                    flag: true,
-                  },
-                },
-              },
-            },
-          },
+          });
         });
 
         // Notify the recipient about the incoming trade offer
@@ -226,9 +245,6 @@ export const tradingRouter = createTRPCRouter({
       async ({
         ctx,
         input,
-      }: {
-        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
-        input: RespondToTradeInput;
       }) => {
         const userId = ctx.user.id;
 
@@ -293,9 +309,18 @@ export const tradingRouter = createTRPCRouter({
 
         // Handle different actions
         if (input.action === "REJECT") {
-          return await ctx.db.tradeOffer.update({
-            where: { id: input.tradeId },
-            data: { status: TradeStatus.REJECTED },
+          return await ctx.db.$transaction(async (tx: any) => {
+            const initiatorCardIds = trade.initiatorCardIds as string[];
+
+            await tx.cardOwnership.updateMany({
+              where: { id: { in: initiatorCardIds } },
+              data: { isLocked: false },
+            });
+
+            return await tx.tradeOffer.update({
+              where: { id: input.tradeId },
+              data: { status: TradeStatus.REJECTED },
+            });
           });
         }
 
@@ -328,6 +353,13 @@ export const tradingRouter = createTRPCRouter({
             });
           }
 
+          if (counterInitiatorCards.some((c: any) => c.inscription !== null)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Inscribed cards cannot be traded",
+            });
+          }
+
           const counterRecipientCards = await ctx.db.cardOwnership.findMany({
             where: {
               id: { in: newRecipientCardIds },
@@ -343,57 +375,105 @@ export const tradingRouter = createTRPCRouter({
             });
           }
 
-          // Mark original trade as rejected
-          await ctx.db.tradeOffer.update({
-            where: { id: input.tradeId },
-            data: { status: TradeStatus.REJECTED },
-          });
+          if (counterRecipientCards.some((c: any) => c.inscription !== null)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Inscribed cards cannot be traded",
+            });
+          }
 
-          // Create counter-offer
-          return await ctx.db.tradeOffer.create({
-            data: {
-              initiatorId: userId,
-              recipientId: trade.initiatorId,
-              initiatorCardIds: newInitiatorCardIds,
-              recipientCardIds: newRecipientCardIds,
-              initiatorCredits: newInitiatorCredits,
-              recipientCredits: newRecipientCredits,
-              message: input.counterMessage,
-              status: "PENDING",
-              expiresAt,
-              counterOfferFromId: input.tradeId,
-            },
+          // Atomically unlock original offer's cards, lock counter-offer's cards, and create counter
+          return await ctx.db.$transaction(async (tx: any) => {
+            const originalInitiatorCardIds = trade.initiatorCardIds as string[];
+
+            await tx.cardOwnership.updateMany({
+              where: { id: { in: originalInitiatorCardIds } },
+              data: { isLocked: false },
+            });
+
+            await tx.cardOwnership.updateMany({
+              where: { id: { in: newInitiatorCardIds } },
+              data: { isLocked: true },
+            });
+
+            await tx.tradeOffer.update({
+              where: { id: input.tradeId },
+              data: { status: TradeStatus.REJECTED },
+            });
+
+            return await tx.tradeOffer.create({
+              data: {
+                initiatorId: userId,
+                recipientId: trade.initiatorId,
+                initiatorCardIds: newInitiatorCardIds,
+                recipientCardIds: newRecipientCardIds,
+                initiatorCredits: newInitiatorCredits,
+                recipientCredits: newRecipientCredits,
+                message: input.counterMessage,
+                status: "PENDING",
+                expiresAt,
+                counterOfferFromId: input.tradeId,
+              },
+            });
           });
         }
 
         // ACCEPT - Execute the trade atomically
-        const completedTrade = await ctx.db.$transaction(async (tx: Prisma.TransactionClient) => {
+        const completedTrade = await ctx.db.$transaction(async (tx: any) => {
           // Cast Json card IDs to string arrays
           const initiatorCardIds = trade.initiatorCardIds as string[];
           const recipientCardIds = trade.recipientCardIds as string[];
           const now = new Date();
 
-          // Transfer cards from initiator to recipient (batch update - fixes N+1)
+          // Unlock and transfer cards from initiator to recipient (batch update)
           await tx.cardOwnership.updateMany({
             where: { id: { in: initiatorCardIds } },
             data: {
               ownerId: trade.recipientId,
               userId: trade.recipientId,
+              isLocked: false,
               acquiredAt: now,
               lastSaleDate: now,
             },
           });
 
-          // Transfer cards from recipient to initiator (batch update - fixes N+1)
+          // Grant 25 XP per card traded to recipient and log transfer
+          for (const ownershipId of initiatorCardIds) {
+            await grantCardXp(tx as any, ownershipId, 25, "TRADE", JSON.stringify({ tradeId: input.tradeId }));
+            await (tx as any).cardTransferEvent.create({
+              data: {
+                ownershipId,
+                fromUserId: trade.initiatorId,
+                toUserId: trade.recipientId,
+                action: "TRADE",
+              },
+            });
+          }
+
+          // Unlock and transfer cards from recipient to initiator (batch update)
           await tx.cardOwnership.updateMany({
             where: { id: { in: recipientCardIds } },
             data: {
               ownerId: trade.initiatorId,
               userId: trade.initiatorId,
+              isLocked: false,
               acquiredAt: now,
               lastSaleDate: now,
             },
           });
+
+          // Grant 25 XP per card traded to initiator and log transfer
+          for (const ownershipId of recipientCardIds) {
+            await grantCardXp(tx as any, ownershipId, 25, "TRADE", JSON.stringify({ tradeId: input.tradeId }));
+            await (tx as any).cardTransferEvent.create({
+              data: {
+                ownershipId,
+                fromUserId: trade.recipientId,
+                toUserId: trade.initiatorId,
+                action: "TRADE",
+              },
+            });
+          }
 
           // Transfer credits if any
           if (trade.initiatorCredits > 0) {
@@ -483,8 +563,6 @@ export const tradingRouter = createTRPCRouter({
   getActiveTrades: protectedProcedure.query(
     async ({
       ctx,
-    }: {
-      ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
     }) => {
       const userId = ctx.user.id;
 
@@ -541,9 +619,6 @@ export const tradingRouter = createTRPCRouter({
       async ({
         ctx,
         input,
-      }: {
-        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
-        input: { limit: number; offset: number };
       }) => {
         const userId = ctx.user.id;
 
@@ -621,9 +696,6 @@ export const tradingRouter = createTRPCRouter({
       async ({
         ctx,
         input,
-      }: {
-        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
-        input: { tradeId: string };
       }) => {
         const userId = ctx.user.id;
 
@@ -653,9 +725,18 @@ export const tradingRouter = createTRPCRouter({
           });
         }
 
-        return await ctx.db.tradeOffer.update({
-          where: { id: input.tradeId },
-          data: { status: TradeStatus.CANCELLED },
+        return await ctx.db.$transaction(async (tx: any) => {
+          const initiatorCardIds = trade.initiatorCardIds as string[];
+
+          await tx.cardOwnership.updateMany({
+            where: { id: { in: initiatorCardIds } },
+            data: { isLocked: false },
+          });
+
+          return await tx.tradeOffer.update({
+            where: { id: input.tradeId },
+            data: { status: TradeStatus.CANCELLED },
+          });
         });
       }
     ),
@@ -669,9 +750,6 @@ export const tradingRouter = createTRPCRouter({
       async ({
         ctx,
         input,
-      }: {
-        ctx: { auth: { userId: string }; user: { id: string }; db: Prisma.TransactionClient | any };
-        input: { tradeId: string };
       }) => {
         const userId = ctx.user.id;
 
@@ -752,6 +830,145 @@ export const tradingRouter = createTRPCRouter({
         };
       }
     ),
+
+  /**
+   * Gift a card to another player
+   */
+  giftCard: protectedProcedure
+    .input(z.object({
+      recipientId: z.string().min(1, "Recipient ID is required"),
+      cardId: z.string().min(1, "Card ID is required"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const initiatorDbId = ctx.user.id;
+
+      const config = await getVaultConfig(ctx.db);
+      if (config.isMaintenanceMode) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Vault economy is currently in maintenance mode.",
+        });
+      }
+      if (!config.isTradingEnabled) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Gifting/trading is currently disabled globally.",
+        });
+      }
+
+      // Resolve recipient's clerkUserId to database CUID
+      const recipientUser = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.recipientId },
+      });
+      if (!recipientUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Recipient user not found",
+        });
+      }
+      const recipientDbId = recipientUser.id;
+
+      if (recipientDbId === initiatorDbId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot gift a card to yourself",
+        });
+      }
+
+      // Verify initiator owns the card and it is not locked/inscribed
+      const ownership = (await ctx.db.cardOwnership.findFirst({
+        where: {
+          id: input.cardId,
+          ownerId: initiatorDbId,
+          isLocked: false,
+        },
+      })) as any;
+
+      if (!ownership) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You do not own this card or it is locked",
+        });
+      }
+
+      if (ownership.inscription !== null) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Inscribed cards cannot be gifted",
+        });
+      }
+
+      const now = new Date();
+
+      // Execute 1-way trade (gift) atomically
+      const trade = await ctx.db.$transaction(async (tx: any) => {
+        // Create accepted trade offer record for logging
+        const tradeOffer = await tx.tradeOffer.create({
+          data: {
+            initiatorId: initiatorDbId,
+            recipientId: recipientDbId,
+            initiatorCardIds: [ownership.id],
+            recipientCardIds: [],
+            initiatorCredits: 0,
+            recipientCredits: 0,
+            status: "ACCEPTED",
+            respondedAt: now,
+            expiresAt: now,
+            message: "Gift",
+          },
+        });
+
+        // Transfer card ownership
+        await tx.cardOwnership.update({
+          where: { id: ownership.id },
+          data: {
+            ownerId: recipientDbId,
+            userId: recipientDbId,
+            isLocked: false,
+            acquiredAt: now,
+            lastSaleDate: now,
+          },
+        });
+
+        // Log provenance event
+        await tx.cardTransferEvent.create({
+          data: {
+            ownershipId: ownership.id,
+            fromUserId: initiatorDbId,
+            toUserId: recipientDbId,
+            action: "GIFT",
+          },
+        });
+
+        // Grant 25 XP
+        await grantCardXp(tx, ownership.id, 25, "GIFT", JSON.stringify({ tradeId: tradeOffer.id }));
+
+        return tradeOffer;
+      });
+
+      // Notify the recipient
+      try {
+        const sender = await ctx.db.user.findUnique({
+          where: { id: initiatorDbId },
+          include: { country: true },
+        });
+        const senderName = sender?.country?.name ?? "A player";
+        await notificationAPI.create({
+          title: "Card Gift Received",
+          message: `${senderName} gifted you a card!`,
+          userId: input.recipientId,
+          category: "economic",
+          priority: "high",
+          type: "success",
+          source: "trading",
+          href: "/vault",
+        });
+      } catch (e) {
+        console.warn("[Notifications] giftCard:", e);
+      }
+
+      return trade;
+    }),
 
   /**
    * Search potential trading partners by country name or username

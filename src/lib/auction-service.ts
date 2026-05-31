@@ -18,6 +18,10 @@ import { vaultService, getVaultConfig } from "./vault-service";
 import { IxTime } from "./ixtime";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
+import { getMarketWebSocketServer } from "~/lib/market-websocket-server";
+import { notificationAPI } from "~/lib/notification-api";
+import { grantCardXp } from "~/lib/card-xp-utils";
+import { SYSTEM_OWNER_IDS } from "~/lib/system-owner-constants";
 
 export class AuctionService {
   /**
@@ -57,8 +61,8 @@ export class AuctionService {
     // 1. Validate card ownership
     const ownership = await db.cardOwnership.findFirst({
       where: {
+        id: params.cardId,
         ownerId: params.userId,
-        cardId: params.cardId,
         isLocked: false,
       },
       include: {
@@ -155,6 +159,46 @@ export class AuctionService {
       console.log(
         `[Auction Service] Created auction ${auction.id} for card ${params.cardId} by user ${params.userId}`
       );
+
+      getMarketWebSocketServer()?.broadcastAuctionCreated(auction);
+
+      // Trigger watchlist price alerts (fire-and-forget)
+      try {
+        const dbAny = db as any;
+        const watchlists = await dbAny.cardWatchlist.findMany({
+          where: {
+            cardId: params.cardId,
+            userId: { not: params.userId }, // Don't notify the seller
+            OR: [
+              { targetPrice: null },
+              { targetPrice: { gte: params.startingPrice } },
+              params.buyoutPrice ? { targetPrice: { gte: params.buyoutPrice } } : {},
+            ],
+          },
+          include: {
+            user: {
+              select: { clerkUserId: true },
+            },
+          },
+        });
+
+        const cardTitle = ownership.cards.title;
+        for (const watch of watchlists) {
+          if (watch.user?.clerkUserId) {
+            await notificationAPI.create({
+              userId: watch.user.clerkUserId,
+              title: "Watchlist Card Listed!",
+              message: `A card on your watchlist (${cardTitle}) has been listed for auction starting at ${params.startingPrice} IxC!`,
+              type: "info",
+              category: "cards",
+              priority: "medium",
+              metadata: { auctionId: auction.id, cardId: params.cardId },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[Auction Service] Failed to trigger watchlist alerts:", e);
+      }
 
       return auction;
     } catch (error) {
@@ -339,12 +383,38 @@ export class AuctionService {
         `[Auction Service] User ${params.userId} placed bid of ${params.amount} IxC on auction ${params.auctionId}`
       );
 
-      // 8. Broadcast bid event (will be handled by WebSocket server)
-      await this.broadcastBidEvent({
-        auctionId: params.auctionId,
-        bidderId: params.userId,
-        amount: params.amount,
-      });
+      // 8. Broadcast bid event via WebSocket
+      {
+        const ws = getMarketWebSocketServer();
+        if (ws) {
+          const bidder = await db.user.findUnique({ where: { id: params.userId }, select: { clerkUserId: true } });
+          ws.broadcastBid({
+            id: `bid_${Date.now()}`,
+            auctionId: params.auctionId,
+            bidderId: params.userId,
+            bidderName: bidder?.clerkUserId ?? params.userId,
+            amount: params.amount,
+            timestamp: Date.now(),
+            isAutoBid: false,
+          });
+        }
+      }
+
+      // 9. Notify previous bidder if outbid (fire-and-forget)
+      if (auction.currentBidderId && auction.currentBidderId !== params.userId) {
+        try {
+          const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
+          await notificationAPI.create({
+            userId: auction.currentBidderId,
+            title: "You've Been Outbid!",
+            message: `Someone placed a higher bid of ${params.amount} IxC on ${cardTitle}`,
+            type: "warning",
+            category: "cards",
+            priority: "high",
+            metadata: { auctionId: params.auctionId, newBid: params.amount },
+          });
+        } catch {}
+      }
 
       return { success: true };
     } catch (error) {
@@ -489,7 +559,7 @@ export class AuctionService {
           }
         );
 
-        // 2.5. Award nation card royalties (2% of sale price to nation owner)
+        // 2.5. Award nation card royalties (2% of sale price to nation owner with fallback)
         if (
           auction.CardOwnership?.cards?.cardType === "NATION" &&
           auction.CardOwnership?.cards?.countryId
@@ -501,14 +571,38 @@ export class AuctionService {
             where: { countryId: auction.CardOwnership.cards.countryId },
           });
 
+          let royaltyRecipientClerkId: string | null = null;
+
           if (
             nationOwner &&
             nationOwner.clerkUserId !== auction.sellerId &&
             nationOwner.clerkUserId !== params.userId
           ) {
-            // Award royalty to nation owner (only if they're not the buyer or seller)
+            royaltyRecipientClerkId = nationOwner.clerkUserId;
+          } else {
+            // Fallback: earliest non-system user pull of this cardId
+            const earliestOwnerships = await (tx as PrismaClient).cardOwnership.findMany({
+              where: { cardId: auction.CardOwnership.cards.id },
+              orderBy: { createdAt: "asc" },
+              include: { User: true },
+            });
+            const firstHuman = earliestOwnerships.find((o) => {
+              const clerkId = o.User.clerkUserId;
+              return clerkId &&
+                clerkId.startsWith("user_") &&
+                !SYSTEM_OWNER_IDS.includes(clerkId) &&
+                clerkId !== auction.sellerId &&
+                clerkId !== params.userId;
+            });
+            if (firstHuman) {
+              royaltyRecipientClerkId = firstHuman.User.clerkUserId;
+            }
+          }
+
+          if (royaltyRecipientClerkId) {
+            // Award royalty
             await vaultService.earnCredits(
-              nationOwner.clerkUserId,
+              royaltyRecipientClerkId,
               royaltyAmount,
               "EARN_PASSIVE",
               "nation_card_royalty",
@@ -523,7 +617,7 @@ export class AuctionService {
             );
 
             console.log(
-              `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
+              `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
                 `for nation card sale`
             );
           }
@@ -567,6 +661,12 @@ export class AuctionService {
       console.log(
         `[Auction Service] User ${params.userId} bought card instance ${auction.cardInstanceId} via buyout for ${buyoutPrice} IxC`
       );
+
+      getMarketWebSocketServer()?.broadcastAuctionComplete({
+        auctionId: params.auctionId,
+        winnerId: params.userId,
+        finalPrice: buyoutPrice,
+      });
 
       return { success: true };
     } catch (error) {
@@ -635,7 +735,7 @@ export class AuctionService {
             }
           );
 
-          // Award nation card royalties (2% of sale price to nation owner)
+          // Award nation card royalties (2% of sale price to nation owner with fallback)
           if (
             auction.CardOwnership?.cards?.cardType === "NATION" &&
             auction.CardOwnership?.cards?.countryId
@@ -647,14 +747,38 @@ export class AuctionService {
               where: { countryId: auction.CardOwnership.cards.countryId },
             });
 
+            let royaltyRecipientClerkId: string | null = null;
+
             if (
               nationOwner &&
               nationOwner.clerkUserId !== auction.sellerId &&
               nationOwner.clerkUserId !== auction.currentBidderId
             ) {
+              royaltyRecipientClerkId = nationOwner.clerkUserId;
+            } else {
+              // Fallback: earliest non-system user pull of this cardId
+              const earliestOwnerships = await (tx as PrismaClient).cardOwnership.findMany({
+                where: { cardId: auction.CardOwnership.cards.id },
+                orderBy: { createdAt: "asc" },
+                include: { User: true },
+              });
+              const firstHuman = earliestOwnerships.find((o) => {
+                const clerkId = o.User.clerkUserId;
+                return clerkId &&
+                  clerkId.startsWith("user_") &&
+                  !SYSTEM_OWNER_IDS.includes(clerkId) &&
+                  clerkId !== auction.sellerId &&
+                  clerkId !== auction.currentBidderId;
+              });
+              if (firstHuman) {
+                royaltyRecipientClerkId = firstHuman.User.clerkUserId;
+              }
+            }
+
+            if (royaltyRecipientClerkId) {
               // Award royalty to nation owner (only if they're not the buyer or seller)
               await vaultService.earnCredits(
-                nationOwner.clerkUserId,
+                royaltyRecipientClerkId,
                 royaltyAmount,
                 "EARN_PASSIVE",
                 "nation_card_royalty",
@@ -669,7 +793,7 @@ export class AuctionService {
               );
 
               console.log(
-                `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
+                `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
                   `for nation card sale`
               );
             }
@@ -699,6 +823,9 @@ export class AuctionService {
             });
           }
 
+          // Grant 50 XP to the winner's card instance
+          await grantCardXp(tx as any, auction.cardInstanceId, 50, "AUCTION_COMPLETE", JSON.stringify({ auctionId }));
+
           // Complete auction
           await tx.cardAuction.update({
             where: { id: auctionId },
@@ -712,6 +839,40 @@ export class AuctionService {
           console.log(
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
           );
+
+          getMarketWebSocketServer()?.broadcastAuctionComplete({
+            auctionId,
+            winnerId: auction.currentBidderId,
+            finalPrice,
+          });
+
+          // Notify winner (fire-and-forget)
+          try {
+            const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
+            await notificationAPI.create({
+              userId: auction.currentBidderId,
+              title: "You Won an Auction!",
+              message: `Congratulations! You won ${cardTitle} for ${finalPrice} IxC`,
+              type: "success",
+              category: "cards",
+              priority: "high",
+              metadata: { auctionId, cardInstanceId: auction.cardInstanceId, finalPrice },
+            });
+          } catch {}
+
+          // Notify seller (fire-and-forget)
+          try {
+            const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
+            await notificationAPI.create({
+              userId: auction.sellerId,
+              title: "Card Sold!",
+              message: `Your ${cardTitle} sold for ${finalPrice} IxC`,
+              type: "success",
+              category: "cards",
+              priority: "high",
+              metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
+            });
+          } catch {}
         } else {
           // No bids - return card to seller, refund 50% of listing fee
           await tx.cardOwnership.update({
@@ -745,6 +906,27 @@ export class AuctionService {
           console.log(
             `[Auction Service] Expired auction ${auctionId} with no bids - Refunded ${refund} IxC to seller`
           );
+
+          // No bids expired — treat as complete/cancelled for WS
+          getMarketWebSocketServer()?.broadcastAuctionComplete({
+            auctionId,
+            winnerId: auction.sellerId,
+            finalPrice: 0,
+          });
+
+          // Notify seller (fire-and-forget)
+          try {
+            const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
+            await notificationAPI.create({
+              userId: auction.sellerId,
+              title: "Auction Ended — No Bids",
+              message: `Your auction for ${cardTitle} ended without any bids`,
+              type: "info",
+              category: "cards",
+              priority: "low",
+              metadata: { auctionId },
+            });
+          } catch {}
         }
       });
     } catch (error) {
@@ -846,6 +1028,12 @@ export class AuctionService {
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);
 
+      getMarketWebSocketServer()?.broadcastAuctionComplete({
+        auctionId: params.auctionId,
+        winnerId: params.userId,
+        finalPrice: 0,
+      });
+
       return { success: true };
     } catch (error) {
       console.error("[Auction Service] Failed to cancel auction:", error);
@@ -930,6 +1118,11 @@ export class AuctionService {
       cardId?: string;
       sellerId?: string;
       isFeatured?: boolean;
+      rarity?: string;
+      cardType?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      sortBy?: "ending_soon" | "newest" | "price_low" | "price_high";
       limit?: number;
       offset?: number;
     },
@@ -938,11 +1131,40 @@ export class AuctionService {
     const limit = Math.min(params.limit ?? 20, 100);
     const offset = params.offset ?? 0;
 
-    const where = {
-      status: "ACTIVE" as const,
+    const where: any = {
+      status: "ACTIVE",
+      endTime: { gt: new Date() },
       ...(params.sellerId ? { sellerId: params.sellerId } : {}),
       ...(params.isFeatured !== undefined ? { isFeatured: params.isFeatured } : {}),
     };
+
+    // Card-owned filters (rarity + cardType are on Card model through CardOwnership)
+    const cardsFilter: any = {};
+    if (params.rarity) cardsFilter.rarity = params.rarity;
+    if (params.cardType) cardsFilter.cardType = params.cardType;
+    if (Object.keys(cardsFilter).length > 0) {
+      where.CardOwnership = { cards: cardsFilter };
+    }
+
+    // Price range filters (currentBid is on the auction)
+    if (params.minPrice !== undefined || params.maxPrice !== undefined) {
+      where.currentBid = {};
+      if (params.minPrice !== undefined) where.currentBid.gte = params.minPrice;
+      if (params.maxPrice !== undefined) where.currentBid.lte = params.maxPrice;
+    }
+
+    // Sorting
+    let orderBy: any[] = [{ isFeatured: "desc" }];
+    if (params.sortBy === "newest") {
+      orderBy.push({ createdAt: "desc" });
+    } else if (params.sortBy === "price_low") {
+      orderBy.push({ currentBid: "asc" });
+    } else if (params.sortBy === "price_high") {
+      orderBy.push({ currentBid: "desc" });
+    } else {
+      // Default: ending soon
+      orderBy.push({ endTime: "asc" });
+    }
 
     const [total, auctions] = await Promise.all([
       db.cardAuction.count({ where }),
@@ -959,13 +1181,13 @@ export class AuctionService {
             take: 1,
           },
         },
-        orderBy: [{ isFeatured: "desc" }, { endTime: "asc" }],
+        orderBy,
         take: limit,
         skip: offset,
       }),
     ]);
 
-    // Filter by cardId if provided
+    // Filter by cardId if provided (post-query since it's on related model)
     const filteredAuctions = params.cardId
       ? auctions.filter((a) => a.CardOwnership?.cards?.id === params.cardId)
       : auctions;
@@ -977,15 +1199,6 @@ export class AuctionService {
     };
   }
 
-  /**
-   * Broadcast bid event via WebSocket
-   * Placeholder for WebSocket integration
-   */
-  private async broadcastBidEvent(event: { auctionId: string; bidderId: string; amount: number }) {
-    // This will be implemented by WebSocket server
-    // For now, just log the event
-    console.log("[Auction Service] Bid event:", event);
-  }
 }
 
 // Export singleton instance

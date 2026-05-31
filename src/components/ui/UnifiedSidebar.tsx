@@ -12,6 +12,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { api } from "../../trpc/react";
 import { useUser, UserButton } from "~/context/auth-context";
 import { createUrl } from "~/lib/url-utils";
+import * as LucideIcons from "lucide-react";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 
 interface Notification {
   id: string;
@@ -75,6 +77,8 @@ export function UnifiedSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
+  const { avatarGlow, chatBadge } = useActiveCosmetics();
+  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
   // Fetch notifications from backend (single query, derive unread count)
   const { data: notificationsData } = api.intelCore.getIntelligenceFeed?.useQuery?.(
     { countryId: countryId || "" },
@@ -247,7 +251,17 @@ export function UnifiedSidebar({
       >
         <div className="flex w-full items-center gap-3">
           {/* Avatar with UserButton overlayed in the shadow location */}
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-200 text-lg font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+          <div
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-200 text-lg font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+            style={
+              avatarGlow.enabled
+                ? {
+                    boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
+                    border: `1px solid ${avatarGlow.color}`,
+                  }
+                : undefined
+            }
+          >
             {profile?.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
@@ -268,7 +282,12 @@ export function UnifiedSidebar({
           {/* Name/role (hide if collapsed) */}
           {!isCollapsed && profile?.name && profile.role && (
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-semibold">{profile.name}</span>
+              <span className="flex items-center gap-1 truncate text-sm font-semibold">
+                <span>{profile.name}</span>
+                {chatBadge.enabled && (
+                  <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
+                )}
+              </span>
               <span className="truncate text-xs text-blue-500 dark:text-blue-300">
                 {profile.role}
               </span>

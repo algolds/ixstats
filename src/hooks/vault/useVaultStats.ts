@@ -9,6 +9,7 @@ export interface VaultStats {
   deckValue: number;
   unopenedPacks: number;
   activeAuctions: number;
+  capacityBoost: number;
 }
 
 /**
@@ -59,6 +60,7 @@ export function useVaultStats() {
     deckValue: userData?.deckValue ?? 0,
     unopenedPacks: myPacksData?.packs?.length ?? 0,
     activeAuctions: myAuctionsData?.auctions?.length ?? 0,
+    capacityBoost: userData?.capacityBoost ?? 0,
   };
 
   return {

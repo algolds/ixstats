@@ -19,9 +19,9 @@ import {
   getCardWidth,
   getCardAspectRatio,
   formatCardStats,
-  formatMarketValue,
   getCardTypeLabel,
 } from "~/lib/card-display-utils";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   getPremiumBorderConfig,
   getFoilStampConfig,
@@ -52,6 +52,8 @@ export interface CardDisplayProps {
   enableHolographic?: boolean;
   /** Performance mode - disable heavy effects */
   performanceMode?: boolean;
+  /** Hide market value (default: false) */
+  hideValue?: boolean;
 }
 
 /**
@@ -74,6 +76,7 @@ export interface CardDisplayProps {
  *   size="medium"
  *   onClick={(card) => console.log('Clicked:', card.title)}
  *   enableHolographic={true}
+ *   hideValue={false}
  * />
  * ```
  */
@@ -87,6 +90,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
     enable3D = true,
     enableHolographic,
     performanceMode = false,
+    hideValue = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -299,6 +303,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             <div className="flex items-start justify-between">
               <RarityBadge
                 rarity={card.rarity}
+                season={card.season}
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
@@ -374,60 +379,51 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                   fonts.type
                 )}
               >
-                <span className="font-medium text-white/80">Season {card.season}</span>
-                <motion.span
-                  className={cn("font-black", rarityConfig.color)}
-                  style={{
-                    textShadow: `0 0 10px ${rarityConfig.color.includes("yellow") ? "rgba(234, 179, 8, 0.8)" : "rgba(147, 51, 234, 0.8)"}`,
-                  }}
-                  animate={
-                    !performanceMode && isHovered
-                      ? {
-                          scale: [1, 1.1, 1],
-                        }
-                      : {}
-                  }
-                  transition={{ duration: 0.5 }}
-                >
-                  {formatMarketValue(card.marketValue)}
-                </motion.span>
+                <span className="font-medium text-white/80">Est. Value</span>
+                {hideValue ? (
+                  <span className="text-white/30 italic text-[10px]">Hidden</span>
+                ) : (
+                  <motion.span
+                    className={cn("font-black", rarityConfig.color)}
+                    style={{
+                      textShadow: `0 0 10px ${rarityConfig.color.includes("yellow") ? "rgba(234, 179, 8, 0.8)" : "rgba(147, 51, 234, 0.8)"}`,
+                    }}
+                    animate={
+                      !performanceMode && isHovered
+                        ? {
+                            scale: [1, 1.1, 1],
+                          }
+                        : {}
+                    }
+                    transition={{ duration: 0.5 }}
+                  >
+                    <IxCreditsSymbol size="0.8em" variant="ic" className="mr-1" />
+                    {card.marketValue.toLocaleString()}
+                  </motion.span>
+                )}
               </div>
 
               {/* Stat bars — always visible compact indicator */}
-              {(stats.economic.value > 0 ||
-                stats.diplomatic.value > 0 ||
-                stats.military.value > 0 ||
-                stats.social.value > 0) && (
-                <div className="flex gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1.5 backdrop-blur-md">
-                  {Object.entries(stats).map(([key, stat]) => (
-                    <div key={key} className="flex-1 space-y-0.5">
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${stat.value}%`,
-                            backgroundColor:
-                              key === "economic"
-                                ? "#22c55e"
-                                : key === "diplomatic"
-                                  ? "#3b82f6"
-                                  : key === "military"
-                                    ? "#ef4444"
-                                    : "#a855f7",
-                          }}
-                        />
+              {Object.keys(stats.base).length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1.5 backdrop-blur-md">
+                    {Object.entries(stats.base).map(([key, stat]) => (
+                      <div key={key} className="flex-1 space-y-0.5">
+                        <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${stat.value}%`,
+                              backgroundColor: stat.def.color,
+                            }}
+                          />
+                        </div>
+                        <div className="text-center text-[7px] leading-none font-bold text-white/50">
+                          {stat.def.label.substring(0, 3).toUpperCase()}
+                        </div>
                       </div>
-                      <div className="text-center text-[7px] leading-none font-bold text-white/50">
-                        {key === "economic"
-                          ? "ECO"
-                          : key === "diplomatic"
-                            ? "DIP"
-                            : key === "military"
-                              ? "MIL"
-                              : "SOC"}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -448,13 +444,14 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                       boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
                     }}
                   >
-                    {Object.entries(stats).map(([key, stat]) => (
+                    {Object.entries(stats.base).map(([key, stat]) => (
                       <div key={key} className="flex items-center justify-between px-1">
-                        <span className="font-medium text-white/70">{stat.label}</span>
+                        <span className="font-medium text-white/70">{stat.def.label}</span>
                         <span
-                          className={cn("font-black", stat.color)}
+                          className="font-black"
                           style={{
-                            textShadow: `0 0 8px currentColor`,
+                            color: stat.def.color,
+                            textShadow: `0 0 8px ${stat.def.color}`,
                           }}
                         >
                           {stat.value}

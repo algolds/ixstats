@@ -16,9 +16,9 @@ import {
   getRarityConfig,
   getCardWidth,
   formatCardStats,
-  formatMarketValue,
   getCardTypeLabel,
 } from "~/lib/card-display-utils";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   getPokemon3DTiltStyle,
   getSparkleGridGradient,
@@ -400,6 +400,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
             <div className="flex items-start justify-between">
               <RarityBadge
                 rarity={card.rarity}
+                season={card.season}
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
@@ -475,7 +476,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                   fonts.type
                 )}
               >
-                <span className="font-medium text-white/80">Season {card.season}</span>
+                <span className="font-medium text-white/80">Est. Value</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
@@ -490,7 +491,8 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                   }
                   transition={{ duration: 0.5 }}
                 >
-                  {formatMarketValue(card.marketValue)}
+                  <IxCreditsSymbol size="0.8em" variant="ic" className="mr-1" />
+                  {card.marketValue.toLocaleString()}
                 </motion.span>
               </div>
 
@@ -510,13 +512,14 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                     boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
                   }}
                 >
-                  {Object.entries(stats).map(([key, stat]) => (
+                  {Object.entries(stats.base).map(([key, stat]) => (
                     <div key={key} className="flex items-center justify-between px-1">
-                      <span className="font-medium text-white/70">{stat.label}</span>
+                      <span className="font-medium text-white/70">{stat.def.label}</span>
                       <span
-                        className={cn("font-black", stat.color)}
+                        className="font-black"
                         style={{
-                          textShadow: `0 0 8px currentColor`,
+                          color: stat.def.color,
+                          textShadow: `0 0 8px ${stat.def.color}`,
                         }}
                       >
                         {stat.value}

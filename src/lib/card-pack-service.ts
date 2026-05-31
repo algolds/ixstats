@@ -3,7 +3,8 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { PackType, CardRarity } from "@prisma/client";
-import { getVaultConfig } from "./vault-service";
+import { getVaultConfig, vaultService } from "./vault-service";
+import { grantCardXp } from "./card-xp-utils";
 
 /**
  * Pack odds validation - ensures all rarity odds sum to 100%
@@ -299,6 +300,26 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       throw new Error("Pack has already been opened");
     }
 
+    // 3.5 Check inventory capacity limits
+    const config = await getVaultConfig(tx as any);
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+    const userRoleLevel = user?.role?.level ?? 100;
+    const isExempt = config.exemptStaffFromLimit && userRoleLevel <= 20;
+
+    if (!isExempt) {
+      const capacityBoost = await vaultService.getCardCapacityBoost(userId, tx as any);
+      const maxCards = 150 + capacityBoost;
+      const currentCardsCount = await tx.cardOwnership.count({
+        where: { userId },
+      });
+      if (currentCardsCount + userPack.pack.cardCount > maxCards) {
+        throw new Error(`Your inventory is full. Maximum capacity is ${maxCards} cards. Purchase a Card Capacity Upgrade in the Store to hold more.`);
+      }
+    }
+
     // 4. Generate card rarities based on pack odds
     const rarities = generatePackCards(userPack.pack);
 
@@ -310,7 +331,8 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
         rarity: CardRarity;
         cardType?: string;
         season?: number;
-      } = { rarity };
+        isRetired: boolean;
+      } = { rarity, isRetired: false };
 
       // Apply pack filters
       if (userPack.pack.cardType) {
@@ -348,19 +370,31 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       });
       const nextSerial = (maxSerial?.serialNumber || 0) + 1;
 
-      const ownership = await tx.cardOwnership.create({
-        data: {
-          id: `co_${Date.now()}_${userId}_${card.id}`,
-          userId,
-          cardId: card.id,
-          ownerId: userId,
-          serialNumber: nextSerial,
-          level: 1,
-          experience: 0,
-        },
-      });
+        const ownership = await tx.cardOwnership.create({
+          data: {
+            id: `co_${Date.now()}_${userId}_${card.id}`,
+            userId,
+            cardId: card.id,
+            ownerId: userId,
+            serialNumber: nextSerial,
+            level: 1,
+            experience: 0,
+          },
+        });
 
-      cardsWithOwnership.push({ card, ownershipId: ownership.id });
+        // Log provenance
+        const txAny = tx as any;
+        await txAny.cardTransferEvent.create({
+          data: {
+            ownershipId: ownership.id,
+            toUserId: userId,
+            action: "PACK_OPEN",
+          },
+        });
+
+        await grantCardXp(tx as any, ownership.id, 10, "PACK_OPEN", JSON.stringify({ packId: userPack.pack.id, packName: userPack.pack.name }));
+
+        cardsWithOwnership.push({ card, ownershipId: ownership.id });
     }
 
     // 7. Mark pack as opened

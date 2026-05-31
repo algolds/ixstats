@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Sparkles } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 
 interface TiltCardProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export function TiltCard({
   disableTilt = false,
   onClick,
 }: TiltCardProps) {
+  const { neonFrame } = useActiveCosmetics();
   const [isHovering, setIsHovering] = useState(false);
 
   // Mouse position tracking
@@ -152,6 +154,29 @@ export function TiltCard({
 
         {/* Content (with 3D transform) */}
         <div style={{ transform: "translateZ(20px)" }}>{children}</div>
+
+        {/* Neon Frame Overlay */}
+        {neonFrame.enabled && (
+          <motion.div
+            className="absolute inset-0 z-20 pointer-events-none rounded-xl"
+            style={{
+              border: `2px solid ${neonFrame.color}`,
+              boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
+            }}
+            animate={
+              neonFrame.style === "pulse"
+                ? {
+                    opacity: [0.5, 1, 0.5],
+                  }
+                : undefined
+            }
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        )}
 
         {/* Bottom glow line */}
         <motion.div

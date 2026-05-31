@@ -271,6 +271,20 @@ export const achievementsRouter = createTRPCRouter({
     return { success: true };
   }),
 
+  // User action: Retroactively sync collector achievements and titles
+  syncMyCollectorAchievements: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.user.clerkUserId;
+    const user = await ctx.db.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { countryId: true },
+    });
+    if (!user?.countryId) {
+      return { success: false, message: "No claimed country found for this user." };
+    }
+    const unlocked = await achievementService.checkAndUnlock(userId, user.countryId, ctx.db);
+    return { success: true, unlocked };
+  }),
+
   // Unlock achievement (internal use & backward compatibility)
   unlock: protectedProcedure
     .input(

@@ -1,4 +1,3 @@
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * CardDetailsModal Component
  * Enhanced expanded card view with 3D viewer, tabs, market history, and social features
@@ -22,15 +21,20 @@ import {
   Info,
   Sparkles,
   ScrollText,
+  History,
+  Gift,
+  ShoppingBag,
+  Package,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { CardPriceHistoryChart } from "./CardPriceHistoryChart";
 import { RarityBadge } from "./RarityBadge";
 import { Card3DViewer } from "./Card3DViewer";
 import {
   formatCardStats,
-  formatMarketValue,
   getCardTypeLabel,
   getOwnerCount,
   getRarityConfig,
@@ -40,6 +44,10 @@ import type { CardInstance } from "~/types/cards-display";
 import { CardHolographicCover } from "./CardHolographicCover";
 import { LoreForumSection } from "./LoreForumSection";
 import { LoreWikiExcerpt } from "./LoreWikiExcerpt";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { GlassLineChart } from "~/components/charts/RechartsIntegration";
+import { api } from "~/trpc/react";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 
 /**
  * CardDetailsModal component props
@@ -100,8 +108,20 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
     onShare,
     onDownloadImage,
   }) => {
+    const { neonFrame } = useActiveCosmetics();
     // Tab state
     const [activeTab, setActiveTab] = useState("overview");
+
+    // Memoized hooks — must be called before any conditional returns
+    const valueHistoryQuery = api.cardMarket.getCardValueHistory.useQuery(
+      { cardId: card?.id ?? "" },
+      { enabled: !!card && activeTab === "market" }
+    );
+
+    const transferHistoryQuery = api.cardMarket.getCardTransferHistory.useQuery(
+      { ownershipId: card?.ownershipId ?? "" },
+      { enabled: !!card && !!card.ownershipId && activeTab === "provenance" }
+    );
 
     // Memoize formatted stats
     const stats = useMemo(() => (card ? formatCardStats(card) : null), [card]);
@@ -166,7 +186,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 <DialogTitle className="text-foreground text-lg font-bold sm:text-xl">
                   {card.title}
                 </DialogTitle>
-                <RarityBadge rarity={card.rarity} size="medium" animated />
+                <RarityBadge rarity={card.rarity} season={card.season} size="medium" animated />
               </div>
               <div className="flex items-center gap-2">
                 {/* Share button */}
@@ -263,9 +283,23 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <BarChart3 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                Market
+                <TrendingUp className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                Price History
               </TabsTrigger>
+              {card.ownershipId && (
+                <TabsTrigger
+                  value="provenance"
+                  className={cn(
+                    "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
+                    activeTab === "provenance"
+                      ? "glass-hierarchy-interactive text-foreground dark:text-white"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <History className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Provenance
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="stats"
                 className={cn(
@@ -289,7 +323,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   )}
                 >
                   <ScrollText className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  Lore
+                  Lore Excerpt
                 </TabsTrigger>
               )}
               {comparisonCard && (
@@ -347,6 +381,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                             (e.target as HTMLImageElement).style.display = "none";
                           }}
                         />
+                        {card.isRetired && (
+                          <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                            <div className="rotate-[-12deg] rounded-lg border-4 border-red-500/80 bg-red-950/90 px-4 py-2 text-center text-xl font-black tracking-widest text-red-500 uppercase shadow-2xl backdrop-blur-xs select-none">
+                              Retired
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {/* Rarity glow */}
                       <div
@@ -356,30 +397,100 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           rarityConfig.glowIntensity
                         )}
                       />
+
+                      {/* Neon Frame Overlay */}
+                      {neonFrame.enabled && (
+                        <motion.div
+                          className="absolute inset-0 z-30 pointer-events-none rounded-2xl"
+                          style={{
+                            border: `2px solid ${neonFrame.color}`,
+                            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
+                          }}
+                          animate={
+                            neonFrame.style === "pulse"
+                              ? {
+                                  opacity: [0.5, 1, 0.5],
+                                }
+                              : undefined
+                          }
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+                      )}
                     </div>
 
                     {/* Market value & ownership */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="glass-hierarchy-child rounded-lg p-3">
                         <div className="text-muted-foreground flex items-center gap-2 text-xs">
                           <TrendingUp className="h-4 w-4" />
                           Market Value
                         </div>
-                        <div className={cn("mt-1 text-xl font-bold", rarityConfig.color)}>
-                          {formatMarketValue(card.marketValue)}
+                        <div className={cn("mt-1 flex items-baseline gap-1 text-xl font-bold", rarityConfig.color)}>
+                          <IxCreditsSymbol size="1em" variant="ic" />
+                          {card.marketValue.toLocaleString()}
                         </div>
                       </div>
 
                       <div className="glass-hierarchy-child rounded-lg p-3">
                         <div className="text-muted-foreground flex items-center gap-2 text-xs">
                           <Users className="h-4 w-4" />
-                          Ownership
+                          Owners
                         </div>
                         <div className="text-foreground mt-1 text-lg font-semibold">
                           {getOwnerCount(card.owners)}
                         </div>
                       </div>
+
+                      <div className="glass-hierarchy-child rounded-lg p-3">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                          <Calendar className="h-4 w-4" />
+                          Serial #{card.serialNumber ?? "—"}
+                        </div>
+                        <div className="text-foreground mt-1 text-lg font-semibold">
+                          {card.level > 0 ? `Lv.${card.level}` : "—"}
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Ownership metadata */}
+                    {card.acquiredAt && (
+                      <div className="glass-hierarchy-child rounded-lg p-3">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                          <Calendar className="h-4 w-4" />
+                          Acquired
+                        </div>
+                        <div className="text-foreground mt-1 text-sm font-semibold">
+                          {new Date(card.acquiredAt).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {card.lastSalePrice != null && (
+                      <div className="glass-hierarchy-child rounded-lg p-3">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                          <TrendingUp className="h-4 w-4" />
+                          Last Sale
+                        </div>
+                        <div className="text-foreground mt-1 flex items-baseline gap-1 text-sm font-semibold">
+                          <IxCreditsSymbol size="0.8em" variant="ic" />
+                          {card.lastSalePrice.toLocaleString()}
+                          {card.lastSaleDate && (
+                            <span className="text-muted-foreground ml-2 text-xs font-normal">
+                              {new Date(card.lastSaleDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                   </motion.div>
 
                   {/* Right: Card details */}
@@ -389,6 +500,22 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     transition={{ duration: 0.3, delay: 0.1 }}
                     className="space-y-4"
                   >
+                    {card.inscription && (
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 shadow-sm backdrop-blur-xs">
+                        <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-wider mb-2">
+                          <ScrollText className="h-4 w-4" />
+                          Card Inscription
+                        </div>
+                        <p className="italic text-foreground text-sm font-medium border-l-2 border-amber-500/40 pl-3 py-1 bg-amber-500/[0.02]">
+                          "{card.inscription}"
+                        </p>
+                        <div className="mt-2 text-muted-foreground text-[10px] text-right font-medium">
+                          Inscribed by user {card.inscribedById ? card.inscribedById.substring(0, 8) : "System"}
+                          {card.inscribedAt && ` on ${new Date(card.inscribedAt).toLocaleDateString()}`}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Description */}
                     {card.description && (
                       <div className="glass-hierarchy-child rounded-lg p-4">
@@ -399,13 +526,23 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
                     {/* Quick stats */}
                     <div className="glass-hierarchy-child rounded-lg p-4">
-                      <h3 className="text-foreground mb-3 text-sm font-semibold">Quick Stats</h3>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-foreground text-sm font-semibold">Quick Stats</h3>
+                        {card.level > 1 && (
+                          <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-500 dark:text-amber-400">
+                            Lv.{card.level} +{stats.totalBoost}
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
-                        {Object.entries(stats).map(([key, stat]) => (
+                        {Object.entries(stats.base).map(([key, stat]) => (
                           <div key={key}>
-                            <div className="text-muted-foreground text-xs">{stat.label}</div>
+                            <div className="text-muted-foreground text-xs">{stat.def.label}</div>
                             <div className="mt-1 flex items-baseline gap-2">
-                              <span className={cn("text-xl font-bold", stat.color)}>
+                              <span
+                                className="text-xl font-bold"
+                                style={{ color: stat.def.color }}
+                              >
                                 {stat.value}
                               </span>
                               <span className="text-muted-foreground/50 text-xs">/100</span>
@@ -414,18 +551,6 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         ))}
                       </div>
                     </div>
-
-                    {/* Enhancement level */}
-                    {card.level > 1 && (
-                      <div className="glass-hierarchy-child rounded-lg p-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Enhancement Level</span>
-                          <span className="font-bold text-amber-500 dark:text-amber-400">
-                            Level {card.level}
-                          </span>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Quick actions */}
                     <div className="grid grid-cols-2 gap-3">
@@ -514,8 +639,9 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     <div className="mb-6 grid grid-cols-3 gap-4">
                       <div className="glass-hierarchy-child rounded-lg p-4">
                         <p className="text-muted-foreground mb-1 text-xs">Current Value</p>
-                        <p className={cn("text-2xl font-bold", rarityConfig.color)}>
-                          {formatMarketValue(card.marketValue)}
+                        <p className={cn("flex items-baseline gap-1 text-2xl font-bold", rarityConfig.color)}>
+                          <IxCreditsSymbol size="1em" variant="ic" />
+                          {card.marketValue.toLocaleString()}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
@@ -532,21 +658,106 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       </div>
                     </div>
 
-                    {/* Placeholder chart */}
-                    <div className="border-border bg-muted/20 flex h-64 items-center justify-center rounded-lg border">
-                      <div className="text-center">
-                        <BarChart3 className="text-muted-foreground/35 mx-auto mb-3 h-12 w-12" />
-                        <p className="text-muted-foreground text-sm">
-                          Market chart will display trade history
-                        </p>
-                        <p className="text-muted-foreground/50 mt-2 text-xs">
-                          Coming soon: Price trends, volume analysis
-                        </p>
-                      </div>
+                    {/* Market chart */}
+                    <div className="mt-4">
+                      <CardPriceHistoryChart cardId={card.id} />
                     </div>
                   </div>
                 </motion.div>
               </TabsContent>
+
+              {/* Provenance Tab */}
+              {card.ownershipId && (
+                <TabsContent value="provenance" className="space-y-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="glass-hierarchy-child rounded-lg p-6">
+                      <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+                        <History className="h-5 w-5" />
+                        Provenance Timeline
+                      </h3>
+
+                      {transferHistoryQuery.isLoading ? (
+                        <div className="flex h-32 items-center justify-center">
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        </div>
+                      ) : !transferHistoryQuery.data || transferHistoryQuery.data.length === 0 ? (
+                        <div className="flex h-32 items-center justify-center text-muted-foreground text-sm">
+                          No ownership transfer events found
+                        </div>
+                      ) : (
+                        <div className="relative border-l border-slate-200 pl-6 dark:border-white/10 space-y-6 ml-3">
+                          {transferHistoryQuery.data.map((event: any) => {
+                            let icon = <Package className="h-4 w-4 text-white" />;
+                            let actionLabel = "Transferred";
+                            let colorClass = "bg-blue-500";
+
+                            if (event.action === "PACK_OPEN") {
+                              icon = <Package className="h-4 w-4 text-white" />;
+                              actionLabel = "Pulled from Card Pack";
+                              colorClass = "bg-purple-500";
+                            } else if (event.action === "DAILY_CLAIM") {
+                              icon = <Sparkles className="h-4 w-4 text-white" />;
+                              actionLabel = "Claimed as Daily Bonus";
+                              colorClass = "bg-yellow-500";
+                            } else if (event.action === "GIFT") {
+                              icon = <Gift className="h-4 w-4 text-white" />;
+                              actionLabel = event.fromUserName 
+                                ? `Gifted from ${event.fromUserName} to ${event.toUserName}`
+                                : `Gifted to ${event.toUserName}`;
+                              colorClass = "bg-pink-500";
+                            } else if (event.action === "TRADE") {
+                              icon = <ArrowRightLeft className="h-4 w-4 text-white" />;
+                              actionLabel = event.fromUserName
+                                ? `Traded from ${event.fromUserName} to ${event.toUserName}`
+                                : `Traded to ${event.toUserName}`;
+                              colorClass = "bg-teal-500";
+                            } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
+                              icon = <ShoppingBag className="h-4 w-4 text-white" />;
+                              actionLabel = `Purchased at Auction by ${event.toUserName}`;
+                              if (event.price) {
+                                actionLabel += ` for ${event.price.toLocaleString()} IxC`;
+                              }
+                              colorClass = "bg-amber-500";
+                            } else if (event.action === "ADMIN") {
+                              icon = <Star className="h-4 w-4 text-white" />;
+                              actionLabel = `Assigned by Admin to ${event.toUserName}`;
+                              colorClass = "bg-red-500";
+                            }
+
+                            return (
+                              <div key={event.id} className="relative flex flex-col items-start gap-1 text-left">
+                                {/* Dot Indicator */}
+                                <div className={cn(
+                                  "absolute -left-[37px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full shadow-md",
+                                  colorClass
+                                )}>
+                                  {icon}
+                                </div>
+                                <div className="text-foreground text-sm font-semibold">
+                                  {actionLabel}
+                                </div>
+                                <div className="text-muted-foreground text-xs">
+                                  {new Date(event.createdAt).toLocaleString(undefined, {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </TabsContent>
+              )}
 
               {/* Stats Tab */}
               <TabsContent value="stats" className="space-y-4">
@@ -556,18 +767,26 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                   className="glass-hierarchy-child rounded-lg p-6"
                 >
-                  <h3 className="text-foreground mb-6 flex items-center gap-2 text-lg font-semibold">
+                  <h3 className="text-foreground mb-2 flex items-center gap-2 text-lg font-semibold">
                     <Star className="h-5 w-5" />
                     Detailed Statistics
                   </h3>
+                  {card.level > 1 && (
+                    <p className="text-muted-foreground/70 mb-6 text-xs">
+                      Level {card.level} boost applied: +{stats.totalBoost} to all stats
+                    </p>
+                  )}
 
                   <div className="space-y-6">
-                    {Object.entries(stats).map(([key, stat]) => (
+                    {Object.entries(stats.base).map(([key, stat]) => (
                       <div key={key} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <div className="text-muted-foreground text-sm">{stat.label}</div>
+                          <div className="text-muted-foreground text-sm">{stat.def.label}</div>
                           <div className="flex items-baseline gap-2">
-                            <span className={cn("text-3xl font-bold", stat.color)}>
+                            <span
+                              className="text-3xl font-bold"
+                              style={{ color: stat.def.color }}
+                            >
                               {stat.value}
                             </span>
                             <span className="text-muted-foreground/50 text-sm">/100</span>
@@ -576,25 +795,69 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         {/* Progress bar */}
                         <div className="bg-muted/20 h-3 w-full overflow-hidden rounded-full">
                           <motion.div
-                            className={cn(
-                              "h-full rounded-full",
-                              stat.color.replace("text-", "bg-")
-                            )}
+                            className="h-full rounded-full"
                             initial={{ width: 0 }}
                             animate={{ width: `${stat.value}%` }}
                             transition={{ duration: 0.8, delay: 0.2 }}
+                            style={{ backgroundColor: stat.def.color }}
                           />
                         </div>
+                        {/* Base + Bonus breakdown */}
+                        {stat.bonus > 0 && (
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-muted-foreground/60">
+                              Base: <span className="text-foreground/70">{stat.baseValue}</span>
+                            </span>
+                            <span className="text-muted-foreground/40">+</span>
+                            <span className="text-amber-500 dark:text-amber-400">
+                              Level bonus: +{stat.bonus}
+                            </span>
+                          </div>
+                        )}
                         {/* Stat description */}
-                        <p className="text-muted-foreground/75 text-xs">
-                          {key === "economic" && "Economic power and resource generation"}
-                          {key === "diplomatic" && "International influence and relations"}
-                          {key === "military" && "Defense capabilities and force projection"}
-                          {key === "social" && "Cultural impact and soft power"}
-                        </p>
+                        <p className="text-muted-foreground/75 text-xs">{stat.def.description}</p>
                       </div>
                     ))}
                   </div>
+
+                  {/* Special Stats */}
+                  {stats.specials.length > 0 && (
+                    <div className="mt-8 space-y-4">
+                      <h4 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                        <Sparkles className="h-4 w-4" />
+                        Special Stats
+                      </h4>
+                      <div className="space-y-4">
+                        {stats.specials.map((special) => (
+                          <div key={special.def.key} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-muted-foreground text-sm">{special.def.label}</div>
+                              <div className="flex items-baseline gap-2">
+                                <span
+                                  className="text-xl font-bold"
+                                  style={{ color: special.def.color }}
+                                >
+                                  {special.rawValue === 0 ? "—" : special.formattedRaw}
+                                </span>
+                              </div>
+                            </div>
+                            {special.normalizedValue > 0 && (
+                              <div className="bg-muted/20 h-2 w-full overflow-hidden rounded-full">
+                                <motion.div
+                                  className="h-full rounded-full"
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${special.normalizedValue}%` }}
+                                  transition={{ duration: 0.8, delay: 0.3 }}
+                                  style={{ backgroundColor: special.def.color }}
+                                />
+                              </div>
+                            )}
+                            <p className="text-muted-foreground/75 text-xs">{special.def.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               </TabsContent>
 
@@ -624,11 +887,15 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                             ? "IIWiki"
                             : "Wiki"}
                       </span>
-                      {(card.metadata as Record<string, unknown>)?.category && (
-                        <span className="rounded-md border border-purple-500/30 bg-purple-600/80 px-3 py-1 text-sm font-bold text-white">
-                          {String((card.metadata as Record<string, unknown>).category)}
-                        </span>
-                      )}
+                      {(() => {
+                        const meta = card.metadata as Record<string, unknown> | null | undefined;
+                        const category = meta?.category;
+                        return category ? (
+                          <span className="rounded-md border border-purple-500/30 bg-purple-600/80 px-3 py-1 text-sm font-bold text-white">
+                            {String(category)}
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
 
                     {/* Wiki article excerpt (full paragraphs) */}
@@ -690,10 +957,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       <div className="glass-hierarchy-child rounded-lg p-4">
                         <h4 className="text-foreground mb-4 text-sm font-semibold">{card.title}</h4>
                         <div className="space-y-3">
-                          {Object.entries(stats).map(([key, stat]) => (
+                          {Object.entries(stats.base).map(([key, stat]) => (
                             <div key={key}>
-                              <div className="text-muted-foreground text-xs">{stat.label}</div>
-                              <div className={cn("text-2xl font-bold", stat.color)}>
+                              <div className="text-muted-foreground text-xs">{stat.def.label}</div>
+                              <div
+                                className="text-2xl font-bold"
+                                style={{ color: stat.def.color }}
+                              >
                                 {stat.value}
                               </div>
                             </div>
@@ -707,10 +977,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           {comparisonCard.title}
                         </h4>
                         <div className="space-y-3">
-                          {Object.entries(comparisonStats).map(([key, stat]) => (
+                          {Object.entries(comparisonStats.base).map(([key, stat]) => (
                             <div key={key}>
-                              <div className="text-muted-foreground text-xs">{stat.label}</div>
-                              <div className={cn("text-2xl font-bold", stat.color)}>
+                              <div className="text-muted-foreground text-xs">{stat.def.label}</div>
+                              <div
+                                className="text-2xl font-bold"
+                                style={{ color: stat.def.color }}
+                              >
                                 {stat.value}
                               </div>
                             </div>

@@ -56,7 +56,7 @@ Always choose the lowest-power tool that solves the task. Do not jump between mu
 1. Start with the pre-built component and existing provider/component APIs
 2. For copy changes, prefer `ConsentManagerProvider.options.i18n`
 3. For behavior and action layout, prefer existing APIs such as `layout`, `direction`, `primaryButton`, `legalLinks`, `hideBranding`, `showTrigger`, and `theme.consentActions`
-4. For visuals, use design tokens for colors, typography, radius, shadows, spacing, and motion
+4. For visuals, use design tokens for colors, typography, radius, shadows, spacing, and motion.
 5. For targeted subparts, use **slots**
 6. Only then consider CSS variables or className-level overrides
 7. Escalate to compound components only when markup order or structure must change while still using c15t primitives

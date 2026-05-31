@@ -538,12 +538,23 @@ export class NSApiClient {
     }
   }
 
+  private static lastRequestTime = 0;
+
   /**
    * Rate limit helper (NS API rate limit: 50 requests per 30 seconds)
-   * Using 800ms delay to be more conservative and avoid 429 errors
+   * Using a static reservation queue to space all concurrent outgoing requests by at least 800ms
    */
   private async rateLimit() {
-    await new Promise((resolve) => setTimeout(resolve, 800)); // 800ms between requests
+    const now = Date.now();
+    const minDelay = 800; // ms
+    const timeSinceLast = now - NSApiClient.lastRequestTime;
+    if (timeSinceLast < minDelay) {
+      const waitTime = minDelay - timeSinceLast;
+      NSApiClient.lastRequestTime = now + waitTime;
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    } else {
+      NSApiClient.lastRequestTime = now;
+    }
   }
 
   /**

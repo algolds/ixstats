@@ -810,6 +810,11 @@ body:has([data-builder-headless]) main {
   padding-top: 0 !important;
 }
 
+/* Maps pages manage their own top positioning via MapDynamicIsland — no main padding needed */
+body:has([data-maps-page]) main {
+  padding-top: 0 !important;
+}
+
 /* ==========================================
    PAGE BACKGROUND EXTENSION & STICKY OFFSETS
    ========================================== */

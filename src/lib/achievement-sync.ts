@@ -19,6 +19,12 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
     if (def.id.startsWith("vid-")) {
       rewards.cardPacks = ["vidmaster-lore-pack"];
       rewards.titles = ["Vidmaster"];
+    } else if (def.id === "collect-lore-keeper") {
+      rewards.titles = ["Lore Keeper"];
+    } else if (def.id === "collect-archaeologist") {
+      rewards.titles = ["Archaeologist"];
+    } else if (def.id === "collect-diplomat") {
+      rewards.titles = ["Diplomat"];
     }
 
     // Build trigger condition JSON based on standard baseline definition keys
@@ -505,6 +511,26 @@ function determineCondition(id: string): ConditionConfig {
         return {
           triggerType: "SOCIAL",
           rules: { metric: "followerCount", operator: ">=", value: 30 },
+        };
+      }
+    }
+    if (id.startsWith("collect-")) {
+      if (id === "collect-lore-keeper") {
+        return {
+          triggerType: "GENERAL",
+          rules: { metric: "loreCardCount", operator: ">=", value: 50 },
+        };
+      }
+      if (id === "collect-archaeologist") {
+        return {
+          triggerType: "GENERAL",
+          rules: { metric: "retiredCardCount", operator: ">=", value: 10 },
+        };
+      }
+      if (id === "collect-diplomat") {
+        return {
+          triggerType: "DIPLOMATIC",
+          rules: { metric: "distinctCountryIdCount", operator: ">=", value: 20 },
         };
       }
     }

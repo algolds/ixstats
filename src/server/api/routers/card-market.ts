@@ -11,9 +11,10 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/auction-service";
 import { notificationAPI } from "~/lib/notification-api";
+import { grantCardXp } from "~/lib/card-xp-utils";
 
 /**
  * Card Market Router
@@ -190,12 +191,14 @@ export const cardMarketRouter = createTRPCRouter({
         );
 
         // Notification: notify seller about buyout (fire-and-forget)
+        let auctionXpResult: Awaited<ReturnType<typeof grantCardXp>> | null = null;
         try {
           const auction = await ctx.db.cardAuction.findUnique({
             where: { id: input.auctionId },
             select: {
               sellerId: true,
               buyoutPrice: true,
+              cardInstanceId: true,
               User: {
                 select: { clerkUserId: true },
               },
@@ -212,11 +215,19 @@ export const cardMarketRouter = createTRPCRouter({
               metadata: { auctionId: input.auctionId },
             });
           }
+
+          // Grant XP to the purchased card (50 XP for winning via buyout)
+          if (auction?.cardInstanceId) {
+            auctionXpResult = await grantCardXp(ctx.db, auction.cardInstanceId, 50, "BUYOUT");
+          }
         } catch {}
 
         return {
           success: true,
           message: "Card purchased successfully!",
+          leveledUp: auctionXpResult?.leveledUp ?? false,
+          newLevel: auctionXpResult?.newLevel,
+          xpGained: auctionXpResult?.xpGained,
         };
       } catch (error) {
         console.error("[Card Market Router] Error executing buyout:", error);
@@ -314,6 +325,11 @@ export const cardMarketRouter = createTRPCRouter({
         cardId: z.string().optional(),
         sellerId: z.string().optional(),
         isFeatured: z.boolean().optional(),
+        rarity: z.string().optional(),
+        cardType: z.string().optional(),
+        minPrice: z.number().int().min(0).optional(),
+        maxPrice: z.number().int().min(0).optional(),
+        sortBy: z.enum(["ending_soon", "newest", "price_low", "price_high"]).optional(),
         limit: z.number().int().min(1).max(100).optional().default(20),
         offset: z.number().int().min(0).optional().default(0),
       })
@@ -325,6 +341,11 @@ export const cardMarketRouter = createTRPCRouter({
             cardId: input.cardId,
             sellerId: input.sellerId,
             isFeatured: input.isFeatured,
+            rarity: input.rarity,
+            cardType: input.cardType,
+            minPrice: input.minPrice,
+            maxPrice: input.maxPrice,
+            sortBy: input.sortBy,
             limit: input.limit,
             offset: input.offset,
           },
@@ -774,127 +795,388 @@ export const cardMarketRouter = createTRPCRouter({
     }),
 
   /**
-   * Seed demo auctions for marketplace demonstration
-   * Admin-only endpoint — creates sample cards, ownership, and auction records
+   * Get card value history for market chart
+   * Returns CardValueHistory records if available, or computes from completed auctions
    */
-  seedDemoAuctions: adminProcedure.mutation(async ({ ctx }) => {
-    const adminUserId = ctx.user?.id;
-    if (!adminUserId) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
-    }
+  getCardValueHistory: protectedProcedure
+    .input(z.object({ cardId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const history = await ctx.db.cardValueHistory.findMany({
+          where: { cardId: input.cardId },
+          orderBy: { recordedAt: "asc" },
+          take: 100,
+        });
 
-    // Find or verify admin user record
-    const adminUser = await ctx.db.user.findUnique({ where: { id: adminUserId } });
-    if (!adminUser) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Admin user record not found in DB" });
-    }
+        if (history.length > 0) return history;
 
-    const now = new Date();
-    const demoCards = [
-      {
-        title: "History of Ixnay",
-        rarity: "RARE",
-        cardType: "LORE",
-        marketValue: 250,
-        description: "A comprehensive overview of the history of Ixnay, the primary continent.",
-      },
-      {
-        title: "Battle of Corumm",
-        rarity: "EPIC",
-        cardType: "LORE",
-        marketValue: 800,
-        description:
-          "The decisive battle that shaped the geopolitical landscape of the modern era.",
-      },
-      {
-        title: "Treaty of Kiro",
-        rarity: "UNCOMMON",
-        cardType: "LORE",
-        marketValue: 120,
-        description: "The landmark treaty establishing diplomatic relations between major powers.",
-      },
-      {
-        title: "The Great Migration",
-        rarity: "ULTRA_RARE",
-        cardType: "LORE",
-        marketValue: 1500,
-        description:
-          "A rare account of the mass migration that populated the southern territories.",
-      },
-      {
-        title: "Cathedral of Stars",
-        rarity: "LEGENDARY",
-        cardType: "LORE",
-        marketValue: 5000,
-        description: "The legendary cathedral, said to hold the secrets of the ancient world.",
-      },
-      {
-        title: "Port of Alkharsis",
-        rarity: "COMMON",
-        cardType: "LORE",
-        marketValue: 50,
-        description: "The bustling trade port that connects the eastern and western regions.",
-      },
-    ];
+        // Fallback: compute from completed auctions for this card
+        const ownerships = await ctx.db.cardOwnership.findMany({
+          where: { cardId: input.cardId },
+          select: { id: true },
+        });
 
-    const createdAuctions = [];
+        if (ownerships.length === 0) return [];
 
-    for (let i = 0; i < demoCards.length; i++) {
-      const demo = demoCards[i]!;
-      const uid = `demo_${Date.now()}_${i}`;
+        const auctions = await ctx.db.cardAuction.findMany({
+          where: {
+            cardInstanceId: { in: ownerships.map((o) => o.id) },
+            status: "COMPLETED",
+            finalPrice: { not: null },
+          },
+          orderBy: { endTime: "asc" },
+          select: { finalPrice: true, endTime: true },
+          take: 100,
+        });
 
-      // Create card
-      const card = await ctx.db.card.create({
-        data: {
-          title: demo.title,
-          description: demo.description,
-          rarity: demo.rarity,
-          cardType: demo.cardType,
-          marketValue: demo.marketValue,
-          season: 1,
-          wikiSource: "ixwiki",
+        return auctions.map((a) => ({
+          cardId: input.cardId,
+          value: a.finalPrice!,
+          recordedAt: a.endTime,
+        }));
+      } catch (error) {
+        console.error("[Card Market Router] Error getting card value history:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch value history",
+        });
+      }
+    }),
+
+  /**
+   * Get past auctions the current user participated in
+   * Returns completed/cancelled auctions where user was seller, winner, or bidder
+   */
+  getMyAuctionParticipation: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(100).optional().default(20),
+        offset: z.number().int().min(0).optional().default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const userId = ctx.user.id;
+
+        const where = {
+          status: { in: ["COMPLETED", "CANCELLED"] as string[] },
+          OR: [
+            { sellerId: userId },
+            { winnerId: userId },
+            { AuctionBid: { some: { bidderId: userId } } },
+          ],
+        };
+
+        const [total, auctions] = await Promise.all([
+          ctx.db.cardAuction.count({ where }),
+          ctx.db.cardAuction.findMany({
+            where,
+            include: {
+              CardOwnership: {
+                include: {
+                  cards: {
+                    select: {
+                      id: true,
+                      title: true,
+                      artwork: true,
+                      rarity: true,
+                      cardType: true,
+                    },
+                  },
+                },
+              },
+              User: {
+                select: {
+                  id: true,
+                  clerkUserId: true,
+                },
+              },
+            },
+            orderBy: { updatedAt: "desc" },
+            take: input.limit,
+            skip: input.offset,
+          }),
+        ]);
+
+        const enriched = auctions.map((a) => {
+          let role: "won" | "sold" | "bid" | "cancelled" = "bid";
+          if (a.status === "CANCELLED") {
+            role = "cancelled";
+          } else if (a.winnerId === userId) {
+            role = "won";
+          } else if (a.sellerId === userId) {
+            role = "sold";
+          }
+          return { ...a, participation: role };
+        });
+
+        return {
+          auctions: enriched,
+          total,
+          hasMore: input.offset + input.limit < total,
+        };
+      } catch (error) {
+        console.error("[Card Market Router] Error getting auction participation:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch auction history",
+        });
+      }
+    }),
+
+  /**
+   * Dust a card for credits (30% of its market value)
+   */
+  dustCard: protectedProcedure
+    .input(z.object({ cardId: z.string().min(1, "Card ID is required") }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+
+      // Find the ownership record
+      const ownership = await ctx.db.cardOwnership.findFirst({
+        where: {
+          id: input.cardId,
+          ownerId: userId,
+          isLocked: false,
+        },
+        include: {
+          cards: true,
         },
       });
 
-      // Create ownership
-      const ownership = await ctx.db.cardOwnership.create({
-        data: {
-          id: `own_${uid}`,
-          cardId: card.id,
-          userId: adminUserId,
-          ownerId: adminUserId,
-          serialNumber: i + 1,
-          isLocked: true, // Locked because listed
+      if (!ownership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Card not found or is locked",
+        });
+      }
+
+      // Calculate dusted credits amount: 30% of card's market value
+      const marketValue = ownership.cards.marketValue || 0;
+      const creditsAmount = Math.max(1, Math.round(marketValue * 0.3));
+
+      // Retrieve user's vault
+      const vault = await ctx.db.myVault.findUnique({
+        where: { userId },
+      });
+      if (!vault) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Vault not found for user",
+        });
+      }
+
+      // Atomically delete ownership and award credits
+      await ctx.db.$transaction(async (tx) => {
+        // Delete ownership record
+        await tx.cardOwnership.delete({
+          where: { id: ownership.id },
+        });
+
+        // Award credits to the user's vault
+        const updatedVault = await tx.myVault.update({
+          where: { userId },
+          data: { credits: { increment: creditsAmount } },
+        });
+
+        // Log the vault transaction
+        await tx.vaultTransaction.create({
+          data: {
+            vaultId: vault.id,
+            credits: creditsAmount,
+            balanceAfter: updatedVault.credits,
+            type: "REFUND",
+            source: "CARD_DUST",
+            metadata: { cardId: ownership.cardId, serialNumber: ownership.serialNumber, marketValue },
+          },
+        });
+      });
+
+      return {
+        success: true,
+        creditsAwarded: creditsAmount,
+        message: `Successfully dusted card for ${creditsAmount} IxC.`,
+      };
+    }),
+
+  /**
+   * Add a card to the user's watchlist
+   */
+  addToWatchlist: protectedProcedure
+    .input(
+      z.object({
+        cardId: z.string().min(1),
+        targetPrice: z.number().int().min(1).optional().nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+      // Ensure the card exists
+      const cardExists = await ctx.db.card.findUnique({
+        where: { id: input.cardId },
+      });
+      if (!cardExists) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Card not found",
+        });
+      }
+
+      const watch = await ctx.db.cardWatchlist.upsert({
+        where: {
+          userId_cardId: {
+            userId,
+            cardId: input.cardId,
+          },
+        },
+        create: {
+          userId,
+          cardId: input.cardId,
+          targetPrice: input.targetPrice,
+        },
+        update: {
+          targetPrice: input.targetPrice,
         },
       });
 
-      // Create auction with staggered end times (30-120 min from now)
-      const endMinutes = 30 + i * 18;
-      const endTime = new Date(now.getTime() + endMinutes * 60 * 1000);
-      const startingPrice = Math.max(10, Math.round(demo.marketValue * 0.3));
-      const buyoutPrice = Math.round(demo.marketValue * 1.2);
+      return { success: true, watch };
+    }),
 
-      const auction = await ctx.db.cardAuction.create({
-        data: {
-          id: `auc_${uid}`,
-          cardInstanceId: ownership.id,
-          sellerId: adminUserId,
-          startingPrice,
-          currentBid: startingPrice,
-          buyoutPrice,
-          status: "ACTIVE",
-          isFeatured: i < 2, // First 2 are featured
-          endTime,
+  /**
+   * Remove a card from the user's watchlist
+   */
+  removeFromWatchlist: protectedProcedure
+    .input(z.object({ cardId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+      try {
+        await ctx.db.cardWatchlist.delete({
+          where: {
+            userId_cardId: {
+              userId,
+              cardId: input.cardId,
+            },
+          },
+        });
+      } catch (e) {
+        // Ignore if doesn't exist
+      }
+      return { success: true };
+    }),
+
+  /**
+   * Get user's watchlist
+   */
+  getWatchlist: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user.id;
+    const watchlist = await ctx.db.cardWatchlist.findMany({
+      where: { userId },
+      include: {
+        card: {
+          include: {
+            CardOwnership: {
+              where: { ownerId: userId },
+              select: { id: true },
+            },
+          },
         },
-      });
-
-      createdAuctions.push({ card: card.title, auctionId: auction.id });
-    }
-
-    return {
-      success: true,
-      message: `Created ${createdAuctions.length} demo auctions`,
-      auctions: createdAuctions,
-    };
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return watchlist;
   }),
+
+  /**
+   * Permanent inscription on a card ownership record
+   */
+  inscribeCard: protectedProcedure
+    .input(
+      z.object({
+        ownershipId: z.string().min(1, "Ownership ID is required"),
+        inscription: z.string().min(1, "Inscription cannot be empty").max(60, "Inscription must be 60 characters or less"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+
+      const ownership = await ctx.db.cardOwnership.findFirst({
+        where: {
+          id: input.ownershipId,
+          ownerId: userId,
+          isLocked: false,
+        },
+      });
+
+      if (!ownership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Card not owned or is locked",
+        });
+      }
+
+      if (ownership.inscription !== null) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This card is already inscribed",
+        });
+      }
+
+      const updated = await ctx.db.cardOwnership.update({
+        where: { id: ownership.id },
+        data: {
+          inscription: input.inscription,
+          inscribedById: userId,
+          inscribedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        message: "Card successfully inscribed!",
+        card: updated,
+      };
+    }),
+
+  getCardTransferHistory: protectedProcedure
+    .input(z.object({ ownershipId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const dbAny = ctx.db as any;
+      const events = await dbAny.cardTransferEvent.findMany({
+        where: { ownershipId: input.ownershipId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // Fetch user names for all unique user IDs involved
+      const userIds = Array.from(
+        new Set(
+          events
+            .flatMap((e: any) => [e.fromUserId, e.toUserId])
+            .filter(Boolean)
+        )
+      ) as string[];
+
+      const users = await ctx.db.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+          id: true,
+          country: {
+            select: { name: true, flag: true },
+          },
+        },
+      });
+
+      const userMap = new Map(
+        users.map((u) => [
+          u.id,
+          u.country?.name || "System/Unknown",
+        ])
+      );
+
+      return events.map((event: any) => ({
+        ...event,
+        fromUserName: event.fromUserId ? (userMap.get(event.fromUserId) || "Unknown") : null,
+        toUserName: userMap.get(event.toUserId) || "Unknown",
+      }));
+    }),
+
 });

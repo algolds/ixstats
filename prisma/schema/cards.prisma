@@ -70,8 +70,11 @@ model Card {
   artworkVariants  Json?
   name             String?
   metadata         Json?
+  isRetired        Boolean         @default(false)
+  retiredAt        DateTime?
   CardOwnership    CardOwnership[]
   valueHistory     CardValueHistory[]
+  watchlist        CardWatchlist[]
 
   @@unique([nsCardId, nsSeason])
   @@index([cardType, rarity, season])
@@ -149,6 +152,8 @@ model CardCollection {
   updatedAt   DateTime             @default(now())
   User        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   items       CardCollectionItem[]
+  likes       CollectionLike[]
+  comments    CollectionComment[]
 
   @@index([userId])
 }
@@ -166,6 +171,32 @@ model CardCollectionItem {
   @@index([cardOwnershipId])
 }
 
+model CollectionLike {
+  id           String         @id @default(cuid())
+  collectionId String
+  userId       String
+  createdAt    DateTime       @default(now())
+  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, userId])
+  @@index([collectionId])
+  @@index([userId])
+}
+
+model CollectionComment {
+  id           String         @id @default(cuid())
+  collectionId String
+  userId       String
+  content      String         @db.VarChar(500)
+  createdAt    DateTime       @default(now())
+  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId])
+  @@index([userId])
+}
+
 model CardOwnership {
   id            String        @id
   cardId        String
@@ -181,10 +212,15 @@ model CardOwnership {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now())
   quantity      Int           @default(1)
+  inscription   String?       @db.VarChar(60)
+  inscribedById String?
+  inscribedAt   DateTime?
   CardAuction      CardAuction[]
   collectionItems  CardCollectionItem[]
   cards            Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
   User             User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  transferEvents   CardTransferEvent[]
+  experienceEvents CardExperienceEvent[]
 
   @@index([cardId])
   @@index([ownerId])
@@ -324,6 +360,24 @@ model CardValueHistory {
   @@map("card_value_history")
 }
 
+/// Card Experience Event Model
+/// Tracks XP grants for audit and history purposes
+model CardExperienceEvent {
+  id           String   @id @default(cuid())
+  ownershipId  String
+  amount       Int
+  resultLevel  Int
+  resultXP     Int
+  source       String   // e.g. "AUCTION_COMPLETE", "BUYOUT", "TRADE", "CRAFT", "PACK_OPEN"
+  metadata     String?  // JSON string with additional context
+  createdAt    DateTime @default(now())
+  ownership    CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
+
+  @@index([ownershipId, createdAt])
+  @@index([source])
+  @@map("card_experience_events")
+}
+
 model CardTrade {
   id          String    @id
   fromUserId  String
@@ -425,6 +479,7 @@ model VaultStoreItem {
   badgeText    String?
   category     String                   @default("cosmetics") // cosmetics | upgrades
   isActive     Boolean                  @default(true)
+  effects      Json?                    // Custom effects/modifiers JSON
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   priceHistory VaultStorePriceHistory[]
@@ -444,3 +499,35 @@ model VaultStorePriceHistory {
   @@index([itemId])
   @@map("vault_store_price_history")
 }
+
+model CardWatchlist {
+  id          String   @id @default(cuid())
+  userId      String
+  cardId      String
+  targetPrice Int?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, cardId])
+  @@index([userId])
+  @@index([cardId])
+  @@map("card_watchlist")
+}
+
+model CardTransferEvent {
+  id          String   @id @default(cuid())
+  ownershipId String
+  fromUserId  String?
+  toUserId    String
+  action      String   // "PACK_OPEN" | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "ADMIN" | "DAILY_CLAIM"
+  price       Int?
+  createdAt   DateTime @default(now())
+  
+  ownership   CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
+  
+  @@index([ownershipId])
+  @@map("card_transfer_events")
+}
+

@@ -35,6 +35,8 @@ import {
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { PreText } from "~/components/ui/pretext";
 
+import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
+
 export function VaultWidget() {
   const { userId } = useAuth();
   const [showPassiveIncome, setShowPassiveIncome] = useState(false);
@@ -243,32 +245,12 @@ export function VaultWidget() {
                 </div>
               )}
 
-              {/* Vault Level — compact inline */}
-              {balanceData && (
-                <div className="flex items-center justify-between rounded-md bg-purple-500/10 px-2 py-1 text-[10px]">
-                  <span className="flex items-center gap-1 font-semibold text-purple-600 dark:text-purple-400">
-                    <svg
-                      className="h-3 w-3 text-amber-600 dark:text-amber-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      />
-                    </svg>
-                    Lv.{balanceData.vaultLevel}
-                  </span>
-                  <span className="text-muted-foreground text-[9px]">
-                    {balanceData.vaultXp % 1000}/1k XP
-                  </span>
-                </div>
-              )}
+
             </>
           )}
+
+          {/* Daily Claim Modal Trigger */}
+          <DailyBonusWidget />
 
           {/* Quick Actions / Integrated Navigation */}
           {isOnVault ? (

@@ -9,6 +9,8 @@ import { Heart, Quote, Reply, Bookmark, Pencil, Trash2, X, Check, Send } from "l
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import * as LucideIcons from "lucide-react";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 
 interface PostCardProps {
   postId: number;
@@ -88,6 +90,8 @@ export function PostCard({
 
   const isOwnPost = currentForumUserId != null && currentForumUserId === authorId;
   const utils = api.useUtils();
+  const { chatBadge } = useActiveCosmetics();
+  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
 
   const reactMutation = api.forum.reactToPost.useMutation({
     onMutate: () => {
@@ -167,8 +171,11 @@ export function PostCard({
             </div>
           )}
         </Link>
-        <Link href={withBasePath(`/forum/members/${authorId}`)} className="forum-post-username">
-          {authorName}
+        <Link href={withBasePath(`/forum/members/${authorId}`)} className="forum-post-username flex items-center gap-1">
+          <span>{authorName}</span>
+          {isOwnPost && chatBadge.enabled && (
+            <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
+          )}
         </Link>
         {authorTitle && <span className="forum-post-user-title">{authorTitle}</span>}
         <div className="forum-post-user-stats">
@@ -199,9 +206,12 @@ export function PostCard({
             )}
             <Link
               href={withBasePath(`/forum/members/${authorId}`)}
-              className="text-xs font-medium text-[var(--forum-text)]"
+              className="flex items-center gap-1 text-xs font-medium text-[var(--forum-text)]"
             >
-              {authorName}
+              <span>{authorName}</span>
+              {isOwnPost && chatBadge.enabled && (
+                <CrownIcon className="h-3 w-3 shrink-0" style={{ color: chatBadge.color }} />
+              )}
             </Link>
           </div>
           <span className="forum-post-date">{formatDate(postDate)}</span>

@@ -18,6 +18,8 @@ import type { CardRarity } from "~/lib/card-enums";
 export interface RarityBadgeProps {
   /** Card rarity tier */
   rarity: string;
+  /** Season number */
+  season?: number;
   /** Badge size variant */
   size?: "small" | "medium" | "large";
   /** Enable shimmer animation for rare+ cards */
@@ -27,7 +29,7 @@ export interface RarityBadgeProps {
 }
 
 /**
- * RarityBadge - Displays card rarity with color-coded styling
+ * RarityBadge - Displays card rarity and season with color-coded styling
  *
  * Features:
  * - Color-coded by rarity tier (gray → gold gradient)
@@ -37,30 +39,30 @@ export interface RarityBadgeProps {
  *
  * @example
  * ```tsx
- * <RarityBadge rarity={CardRarity.LEGENDARY} size="medium" animated />
+ * <RarityBadge rarity={CardRarity.LEGENDARY} season={1} size="medium" animated />
  * ```
  */
 export const RarityBadge = React.memo<RarityBadgeProps>(
-  ({ rarity, size = "medium", animated = true, className }) => {
+  ({ rarity, season, size = "medium", animated = true, className }) => {
     const config = getRarityConfig(rarity);
     const shimmer = getShimmerEffect(rarity as CardRarity, animated);
 
     // Size-specific classes
     const sizeClasses = {
-      small: "px-2 py-0.5 text-xs",
-      medium: "px-3 py-1 text-sm",
-      large: "px-4 py-1.5 text-base",
+      small: "px-1.5 py-0.5 text-[10px]",
+      medium: "px-2.5 py-1 text-xs",
+      large: "px-3 py-1 text-sm",
     };
 
     return (
       <motion.div
         className={cn(
           // Base styles
-          "inline-flex items-center justify-center",
-          "rounded-full font-semibold",
+          "inline-flex items-center justify-center gap-1",
+          "rounded-full font-bold",
           "border backdrop-blur-sm",
           // Glass effect
-          "bg-black/20",
+          "bg-black/40",
           // Rarity-specific styles
           config.color,
           config.borderColor,
@@ -85,13 +87,32 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
             : undefined
         }
       >
-        {/* Rarity label */}
-        <span className="relative z-10">{config.label}</span>
+        {/* Rarity Diamond Icon */}
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          stroke="none"
+          className={cn(
+            "fill-current shrink-0",
+            size === "small" ? "h-2.5 w-2.5" : size === "medium" ? "h-3 w-3" : "h-3.5 w-3.5"
+          )}
+        >
+          <path d="M12 2L2 12l10 10 10-10L12 2z" />
+        </svg>
+
+        {/* Label or Season */}
+        {season !== undefined ? (
+          <span className="relative z-10 text-white font-bold leading-none tracking-wide">
+            S{season}
+          </span>
+        ) : (
+          <span className="relative z-10 leading-none">{config.label}</span>
+        )}
 
         {/* Static shimmer gradient for legendary - no animation */}
         {animated && rarity === CARD_RARITIES.LEGENDARY && (
           <div
-            className="absolute inset-0 rounded-full opacity-30"
+            className="absolute inset-0 rounded-full opacity-30 pointer-events-none"
             style={{
               background: "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
               backgroundSize: "200% 200%",
