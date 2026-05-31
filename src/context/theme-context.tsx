@@ -13,6 +13,18 @@ interface ThemeContextType {
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
   toggleCompactMode: () => void;
+  reduceAnimations: boolean;
+  setReduceAnimations: (reduce: boolean) => void;
+  toggleReduceAnimations: () => void;
+  lowFidelityMode: boolean;
+  setLowFidelityMode: (lowFidelity: boolean) => void;
+  toggleLowFidelityMode: () => void;
+  enableTextures: boolean;
+  setEnableTextures: (enable: boolean) => void;
+  toggleEnableTextures: () => void;
+  interactiveHover: boolean;
+  setInteractiveHover: (hover: boolean) => void;
+  toggleInteractiveHover: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -31,6 +43,10 @@ export function ThemeProvider({
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">("dark");
   const [compactMode, setCompactModeState] = useState<boolean>(false);
+  const [reduceAnimations, setReduceAnimationsState] = useState<boolean>(false);
+  const [lowFidelityMode, setLowFidelityModeState] = useState<boolean>(false);
+  const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
+  const [interactiveHover, setInteractiveHoverState] = useState<boolean>(true);
 
   // Initialize theme and compact mode from localStorage
   useEffect(() => {
@@ -43,6 +59,26 @@ export function ThemeProvider({
       const storedCompactMode = localStorage.getItem("ixstats-compact-mode");
       if (storedCompactMode !== null) {
         setCompactModeState(storedCompactMode === "true");
+      }
+
+      const storedReduceAnimations = localStorage.getItem("ixstats-reduce-animations");
+      if (storedReduceAnimations !== null) {
+        setReduceAnimationsState(storedReduceAnimations === "true");
+      }
+
+      const storedLowFidelityMode = localStorage.getItem("ixstats-low-fidelity");
+      if (storedLowFidelityMode !== null) {
+        setLowFidelityModeState(storedLowFidelityMode === "true");
+      }
+
+      const storedEnableTextures = localStorage.getItem("ixstats-enable-textures");
+      if (storedEnableTextures !== null) {
+        setEnableTexturesState(storedEnableTextures === "true");
+      }
+
+      const storedInteractiveHover = localStorage.getItem("ixstats-interactive-hover");
+      if (storedInteractiveHover !== null) {
+        setInteractiveHoverState(storedInteractiveHover === "true");
       }
     } catch (error) {
       console.warn("Failed to load theme settings from localStorage:", error);
@@ -90,9 +126,27 @@ export function ThemeProvider({
         root.classList.remove("compact-mode");
       }
 
+      // Apply reduce animations class
+      if (reduceAnimations) {
+        root.classList.add("reduce-animations");
+      } else {
+        root.classList.remove("reduce-animations");
+      }
+
+      // Apply low fidelity class
+      if (lowFidelityMode) {
+        root.classList.add("low-fidelity");
+      } else {
+        root.classList.remove("low-fidelity");
+      }
+
       // Set data attributes for CSS
       root.setAttribute("data-theme", effectiveTheme);
       root.setAttribute("data-compact", compactMode.toString());
+      root.setAttribute("data-reduce-animations", reduceAnimations.toString());
+      root.setAttribute("data-low-fidelity", lowFidelityMode.toString());
+      root.setAttribute("data-enable-textures", enableTextures.toString());
+      root.setAttribute("data-interactive-hover", interactiveHover.toString());
 
       // Update meta theme-color for mobile browsers
       const metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -104,7 +158,7 @@ export function ThemeProvider({
     // Debounce theme application
     const timeoutId = setTimeout(applyTheme, 0);
     return () => clearTimeout(timeoutId);
-  }, [effectiveTheme, compactMode]);
+  }, [effectiveTheme, compactMode, reduceAnimations, lowFidelityMode, enableTextures, interactiveHover]);
 
   // Memoize theme functions to prevent re-renders
   const setTheme = useCallback(
@@ -145,6 +199,62 @@ export function ThemeProvider({
     setCompactMode(!compactMode);
   }, [compactMode, setCompactMode]);
 
+  const setReduceAnimations = useCallback((reduce: boolean) => {
+    try {
+      localStorage.setItem("ixstats-reduce-animations", reduce.toString());
+      setReduceAnimationsState(reduce);
+    } catch (error) {
+      console.warn("Failed to save reduce animations to localStorage:", error);
+      setReduceAnimationsState(reduce);
+    }
+  }, []);
+
+  const toggleReduceAnimations = useCallback(() => {
+    setReduceAnimations(!reduceAnimations);
+  }, [reduceAnimations, setReduceAnimations]);
+
+  const setLowFidelityMode = useCallback((lowFidelity: boolean) => {
+    try {
+      localStorage.setItem("ixstats-low-fidelity", lowFidelity.toString());
+      setLowFidelityModeState(lowFidelity);
+    } catch (error) {
+      console.warn("Failed to save low fidelity to localStorage:", error);
+      setLowFidelityModeState(lowFidelity);
+    }
+  }, []);
+
+  const toggleLowFidelityMode = useCallback(() => {
+    setLowFidelityMode(!lowFidelityMode);
+  }, [lowFidelityMode, setLowFidelityMode]);
+
+  const setEnableTextures = useCallback((enable: boolean) => {
+    try {
+      localStorage.setItem("ixstats-enable-textures", enable.toString());
+      setEnableTexturesState(enable);
+    } catch (error) {
+      console.warn("Failed to save enable textures to localStorage:", error);
+      setEnableTexturesState(enable);
+    }
+  }, []);
+
+  const toggleEnableTextures = useCallback(() => {
+    setEnableTextures(!enableTextures);
+  }, [enableTextures, setEnableTextures]);
+
+  const setInteractiveHover = useCallback((hover: boolean) => {
+    try {
+      localStorage.setItem("ixstats-interactive-hover", hover.toString());
+      setInteractiveHoverState(hover);
+    } catch (error) {
+      console.warn("Failed to save interactive hover to localStorage:", error);
+      setInteractiveHoverState(hover);
+    }
+  }, []);
+
+  const toggleInteractiveHover = useCallback(() => {
+    setInteractiveHover(!interactiveHover);
+  }, [interactiveHover, setInteractiveHover]);
+
   // Memoize context value to prevent unnecessary re-renders
   const value: ThemeContextType = useMemo(
     () => ({
@@ -155,8 +265,40 @@ export function ThemeProvider({
       compactMode,
       setCompactMode,
       toggleCompactMode,
+      reduceAnimations,
+      setReduceAnimations,
+      toggleReduceAnimations,
+      lowFidelityMode,
+      setLowFidelityMode,
+      toggleLowFidelityMode,
+      enableTextures,
+      setEnableTextures,
+      toggleEnableTextures,
+      interactiveHover,
+      setInteractiveHover,
+      toggleInteractiveHover,
     }),
-    [theme, effectiveTheme, setTheme, toggleTheme, compactMode, setCompactMode, toggleCompactMode]
+    [
+      theme,
+      effectiveTheme,
+      setTheme,
+      toggleTheme,
+      compactMode,
+      setCompactMode,
+      toggleCompactMode,
+      reduceAnimations,
+      setReduceAnimations,
+      toggleReduceAnimations,
+      lowFidelityMode,
+      setLowFidelityMode,
+      toggleLowFidelityMode,
+      enableTextures,
+      setEnableTextures,
+      toggleEnableTextures,
+      interactiveHover,
+      setInteractiveHover,
+      toggleInteractiveHover,
+    ]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

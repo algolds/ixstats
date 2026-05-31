@@ -200,6 +200,20 @@ function CommandPaletteContent({
     };
   }, [isSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
 
+  // Scroll-based collapse/expand for the builder hero DI
+  useEffect(() => {
+    if (activePlugin?.id === "builder") {
+      if (isSticky && isExpanded) {
+        switchMode("compact");
+      } else if (!isSticky && !isExpanded) {
+        const firstViewKey = Object.keys(activePlugin.expandedViews || {})[0];
+        if (firstViewKey) {
+          switchMode(`plugin:${firstViewKey}`);
+        }
+      }
+    }
+  }, [isSticky, activePlugin, isExpanded, switchMode]);
+
   // Ring + bump animation on any new toast
   const [ringActive, setRingActive] = useState(false);
   const toastQueue = useToastQueueStore((s) => s.queue);

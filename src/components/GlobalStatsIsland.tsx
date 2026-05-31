@@ -241,7 +241,7 @@ function GlobalStatsIslandContent() {
       { name: "MyCountry®", path: "/mycountry", icon: Crown },
       { name: "ECI", path: "/eci", icon: Target },
       { name: "Builder", path: "/builder", icon: Plus },
-      { name: "Profile", path: "/profile", icon: Users },
+      { name: "Settings", path: "/settings", icon: Settings },
       { name: "Admin", path: "/admin", icon: Settings },
     ];
 
@@ -679,11 +679,11 @@ function GlobalStatsIslandContent() {
                         Dashboard
                       </a>
                       <a
-                        href={"/profile"}
+                        href={"/settings"}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        <User className="h-4 w-4" />
-                        Profile Settings
+                        <Settings className="h-4 w-4" />
+                        Settings
                       </a>
                     </div>
                     {/* Divider */}
@@ -1015,11 +1015,11 @@ function GlobalStatsIslandContent() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => (window.location.href = createAbsoluteUrl("/profile"))}
+                    onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
                     className="flex items-center gap-2 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                   >
-                    <User className="h-4 w-4" />
-                    Profile
+                    <Settings className="h-4 w-4" />
+                    Settings
                   </Button>
                 </div>
               </div>

@@ -291,7 +291,7 @@ export async function onSocialActivity(params: {
     userId: params.toUserId,
     category: "social",
     priority: "low",
-    href: params.contentId ? `/content/${params.contentId}` : `/profile/${params.fromUserId}`,
+    href: params.contentId ? `/content/${params.contentId}` : `/settings/${params.fromUserId}`,
     actionable: true,
     metadata: {
       fromUserId: params.fromUserId,

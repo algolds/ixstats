@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { Loader2 } from "lucide-react";
+import { IOSActivityIndicator } from "~/components/ui/loader";
 
 export interface LoadingStateProps {
   variant?: "spinner" | "skeleton" | "dots" | "pulse" | "bars";
@@ -37,7 +38,7 @@ export function LoadingState({
   if (variant === "spinner") {
     return (
       <div className={containerClasses}>
-        <Loader2 className={cn("text-primary animate-spin", sizeClasses[size])} />
+        <IOSActivityIndicator size={size} />
         {message && <p className="text-muted-foreground text-sm">{message}</p>}
       </div>
     );

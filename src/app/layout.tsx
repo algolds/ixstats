@@ -8,7 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { Navigation } from "~/app/_components";
+import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
 import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ChunkLoadErrorBoundary";
@@ -24,6 +24,7 @@ import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { DIPluginProvider } from "~/components/DynamicIsland";
+import { ConsentManager } from "../components/consent-manager";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -67,6 +68,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                     <DIPluginProvider>
                       <WebGLErrorHandler />
                       <MapPrefetcher />
+                      <NavigationTransitionHandler />
                       {isStandalone ? (
                         <div className="flex min-h-screen flex-col">
                           <Navigation />
@@ -100,21 +102,23 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
-        <ChunkLoadErrorHandler />
-        <ChunkLoadErrorBoundary>
-          <ClerkProvider
-            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-            nonce={headersList.get("x-csp-nonce") ?? undefined}
-            signInUrl={signInPath}
-            signUpUrl={signUpPath}
-            signInFallbackRedirectUrl={dashboardPath}
-          >
-            <AuthProvider>
-              <AppContent />
-            </AuthProvider>
-          </ClerkProvider>
-          {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
-        </ChunkLoadErrorBoundary>
+        <ConsentManager>
+          <ChunkLoadErrorHandler />
+          <ChunkLoadErrorBoundary>
+            <ClerkProvider
+              publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+              nonce={headersList.get("x-csp-nonce") ?? undefined}
+              signInUrl={signInPath}
+              signUpUrl={signUpPath}
+              signInFallbackRedirectUrl={dashboardPath}
+            >
+              <AuthProvider>
+                <AppContent />
+              </AuthProvider>
+            </ClerkProvider>
+            {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
+          </ChunkLoadErrorBoundary>
+        </ConsentManager>
       </body>
     </html>
   );

@@ -273,7 +273,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             (window.location.href =
               isOnWikiPage && wikiUsername
                 ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
-                : createAbsoluteUrl("/profile"))
+                : createAbsoluteUrl("/settings"))
           }
           className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
         >
@@ -282,7 +282,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
           </div>
           <div className="min-w-0 flex-1">
             <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
-              {isOnWikiPage ? "Wiki Profile" : "Profile & Settings"}
+              {isOnWikiPage ? "Wiki Profile" : "Settings"}
             </PreText>
             <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
               {isOnWikiPage ? "Contributions and awards" : "Account and preferences"}

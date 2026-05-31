@@ -202,7 +202,7 @@ const config = {
             // Map root-level slugs to countries/[slug] for standalone mode
             // Exclude all top-level app routes so existing pages are not intercepted
             source:
-              "/:slug((?!achievements|admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|images|leaderboards|maps|messages|mycountry|placeholder|profile|setup|sign-in|sign-up|sounds|studio|thinkpages|vault|w|wiki|_next).*)",
+              "/:slug((?!achievements|admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|images|leaderboards|maps|messages|mycountry|placeholder|profile|settings|setup|sign-in|sign-up|sounds|studio|thinkpages|vault|w|wiki|_next).*)",
             destination: "/countries/:slug",
           },
         ],
@@ -211,6 +211,21 @@ const config = {
     }
 
     return baseRewrites;
+  },
+
+  async redirects() {
+    return [
+      {
+        source: "/profile",
+        destination: "/settings",
+        permanent: true,
+      },
+      {
+        source: "/profile/:path*",
+        destination: "/settings/:path*",
+        permanent: true,
+      },
+    ];
   },
 
   async headers() {

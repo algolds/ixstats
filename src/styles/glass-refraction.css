@@ -1326,3 +1326,71 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     background: rgba(var(--background-rgb), 0.95) !important;
   }
 }
+
+/* ==========================================================================
+   USER PREFERENCE OVERRIDES (Animation, Low-Fidelity, Textures, Hover)
+   ========================================================================== */
+
+/* Reduce Animations & Motion */
+html[data-reduce-animations="true"] *,
+html[data-reduce-animations="true"] *::before,
+html[data-reduce-animations="true"] *::after {
+  animation-delay: -1ms !important;
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-reduce-animations="true"] .glass-interactive:hover {
+  transform: none !important;
+}
+
+/* Low Fidelity Mode (Disables blurs, shadows, gradients, highlights) */
+html[data-low-fidelity="true"] .glass-surface,
+html[data-low-fidelity="true"] .glass-base,
+html[data-low-fidelity="true"] .glass-floating,
+html[data-low-fidelity="true"] .glass-overlay,
+html[data-low-fidelity="true"] .glass-depth-1,
+html[data-low-fidelity="true"] .glass-depth-2,
+html[data-low-fidelity="true"] .glass-depth-3,
+html[data-low-fidelity="true"] .glass-depth-4,
+html[data-low-fidelity="true"] .glass-mycountry,
+html[data-low-fidelity="true"] .glass-global,
+html[data-low-fidelity="true"] .glass-eci,
+html[data-low-fidelity="true"] .glass-sdi,
+html[data-low-fidelity="true"] .glass-builder,
+html[data-low-fidelity="true"] .glass-enhanced,
+html[data-low-fidelity="true"] .navigation-glass,
+html[data-low-fidelity="true"] .command-palette-glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html[data-low-fidelity="true"] .glass-refraction::before,
+html[data-low-fidelity="true"] .glass-refraction::after,
+html[data-low-fidelity="true"] .bg-card.glass-enhanced::before,
+html[data-low-fidelity="true"] .bg-card.glass-enhanced::after,
+html[data-low-fidelity="true"] .navigation-glass::before,
+html[data-low-fidelity="true"] .navigation-glass::after,
+html[data-low-fidelity="true"] .command-palette-glass::before,
+html[data-low-fidelity="true"] .command-palette-glass::after {
+  display: none !important;
+}
+
+/* Enable / Disable Textures */
+html[data-enable-textures="false"] .texture-overlay,
+html[data-low-fidelity="true"] .texture-overlay {
+  display: none !important;
+}
+
+/* Enable / Disable Interactive Hover depth transformation */
+html[data-interactive-hover="false"] .glass-interactive:hover {
+  transform: none !important;
+  box-shadow: inherit !important;
+}
+

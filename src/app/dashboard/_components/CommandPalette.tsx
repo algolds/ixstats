@@ -91,9 +91,9 @@ export function CommandPalette({ commandOpen, setCommandOpen, userProfile }: Com
             action: () => (window.location.href = createAbsoluteUrl("/setup")),
           },
           {
-            title: "Configure Profile",
+            title: "Configure Settings",
             icon: <Settings className="h-4 w-4" />,
-            action: () => (window.location.href = createAbsoluteUrl("/profile")),
+            action: () => (window.location.href = createAbsoluteUrl("/settings")),
           },
         ],
       });

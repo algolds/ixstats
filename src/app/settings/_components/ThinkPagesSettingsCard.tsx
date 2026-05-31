@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Edit3, Save, X } from "lucide-react";
+import { Save, X } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Select,
@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface ThinkPagesSettingsCardProps {
   thinkpagesAccount: any;
@@ -55,8 +56,9 @@ export function ThinkPagesSettingsCard({
 
   return (
     <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
-      <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+        <TextureOverlay texture="scatteredDots" opacity={0.03} />
+        <div className="mb-8 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">

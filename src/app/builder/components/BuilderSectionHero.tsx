@@ -187,7 +187,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       className={cn(
         "sticky top-0 z-[6000] overflow-hidden rounded-b-xl shadow-lg shadow-black/20 transition-all duration-300",
         isFoundation
-          ? "border border-white/20 dark:border-white/10"
+          ? "border border-white/20 dark:border-white/10 h-14"
           : "glass-surface glass-refraction glass-edge backdrop-blur-xl",
         "lg:ml-[248px]",
         isFoundation ? "lg:mr-[344px]" : "lg:mr-[16px]"
@@ -232,14 +232,8 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
 
       {/* Spacer to clear Dynamic Island */}
       <div className={cn("transition-all duration-300", isFoundation ? "h-6 lg:h-8" : "h-10 lg:h-12")} />
- 
-      {isFoundation && (
-        <div className="relative z-10 flex w-full items-center justify-center pt-2 pb-1">
-          <MyCountryLogo size="xl" animated={true} showVersion={false} />
-        </div>
-      )}
 
-      {section !== "import" && (
+      {section !== "import" && !isFoundation && (
         <div
           className={cn(
             "relative z-10 w-full overflow-hidden transition-all duration-300",

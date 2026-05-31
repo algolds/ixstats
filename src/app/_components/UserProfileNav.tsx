@@ -43,12 +43,6 @@ export function UserProfileNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/profile">
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-          </Link>
           <Link href="/billing">
             <DropdownMenuItem>
               <CreditCard className="mr-2 h-4 w-4" />

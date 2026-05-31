@@ -116,9 +116,9 @@ export function useCommandItems(userProfile?: UserProfile) {
             action: () => (window.location.href = createAbsoluteUrl("/setup")),
           },
           {
-            title: "Configure Profile",
+            title: "Configure Settings",
             icon: Settings,
-            action: () => (window.location.href = createAbsoluteUrl("/profile")),
+            action: () => (window.location.href = createAbsoluteUrl("/settings")),
           },
         ],
       });
@@ -458,8 +458,14 @@ export function useDynamicIslandState() {
           setMode(`plugin:${firstViewKey}`);
         }
       }
+    } else {
+      // If the active plugin does not have expanded views and we are currently in a plugin mode, collapse!
+      if (typeof mode === "string" && mode.startsWith("plugin:")) {
+        setMode("compact");
+        setIsExpanded(false);
+      }
     }
-  }, [activePlugin, setIsExpanded, setMode]);
+  }, [activePlugin, setIsExpanded, setMode, mode]);
 
   // Forum pages use their own ForumLayout sidebar — no DI forum mode needed.
 
@@ -815,8 +821,8 @@ export const commands = [
 
   // User & Admin
   {
-    name: "Profile Settings",
-    path: "/profile",
+    name: "Account Settings",
+    path: "/settings",
     icon: Settings,
     description: "Manage your account and preferences",
   },
@@ -1058,7 +1064,7 @@ export const features = [
   },
   {
     name: "Profile Management",
-    path: "/profile",
+    path: "/settings",
     icon: Settings,
     description: "Personal account settings and preferences",
   },

@@ -10,7 +10,7 @@ import {
 } from "@clerk/nextjs";
 import type { GetTokenOptions, SignOutOptions, UserResource } from "@clerk/types";
 import { Link2 } from "lucide-react";
-import { IxnayIDCard } from "~/app/profile/_components/IxnayIDCard";
+import { IxnayIDCard } from "~/app/settings/_components/IxnayIDCard";
 import { initConsoleCapture } from "~/lib/console-capture";
 
 if (typeof window !== "undefined") {

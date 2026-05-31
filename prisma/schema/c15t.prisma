@@ -1,0 +1,107 @@
+model subject {
+  id String @id @db.VarChar(255)
+  externalId String?
+  identityProvider String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  tenantId String?
+  consents consent[] @relation("consent_subject")
+  auditLogs auditLog[] @relation("auditLog_subject")
+}
+
+model domain {
+  id String @id @db.VarChar(255)
+  name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  tenantId String?
+  consents consent[] @relation("consent_domain")
+}
+
+model consentPolicy {
+  id String @id @db.VarChar(255)
+  version String
+  type String
+  hash String?
+  effectiveDate DateTime
+  isActive Boolean
+  createdAt DateTime @default(now())
+  tenantId String?
+  consents consent[] @relation("consent_consentPolicy")
+}
+
+model runtimePolicyDecision {
+  id String @id @db.VarChar(255)
+  tenantId String?
+  policyId String
+  fingerprint String
+  matchedBy String
+  countryCode String?
+  regionCode String?
+  jurisdiction String
+  language String?
+  model String
+  policyI18n Json?
+  uiMode String?
+  bannerUi Json?
+  dialogUi Json?
+  categories Json?
+  preselectedCategories Json?
+  proofConfig Json?
+  dedupeKey String @unique
+  createdAt DateTime @default(now())
+  consents consent[] @relation("consent_runtimePolicyDecision")
+}
+
+model consentPurpose {
+  id String @id @db.VarChar(255)
+  code String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  tenantId String?
+}
+
+model consent {
+  id String @id @db.VarChar(255)
+  subjectId String
+  domainId String
+  policyId String?
+  purposeIds Json
+  metadata Json?
+  ipAddress String?
+  userAgent String?
+  givenAt DateTime @default(now())
+  validUntil DateTime?
+  jurisdiction String?
+  jurisdictionModel String?
+  tcString String?
+  uiSource String?
+  consentAction String?
+  runtimePolicyDecisionId String?
+  runtimePolicySource String?
+  tenantId String?
+  subject subject @relation("consent_subject", fields: [subjectId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+  domain domain @relation("consent_domain", fields: [domainId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+  policy consentPolicy? @relation("consent_consentPolicy", fields: [policyId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+  runtimePolicyDecision runtimePolicyDecision? @relation("consent_runtimePolicyDecision", fields: [runtimePolicyDecisionId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+}
+
+model auditLog {
+  id String @id @db.VarChar(255)
+  entityType String
+  entityId String
+  actionType String
+  subjectId String?
+  ipAddress String?
+  userAgent String?
+  changes Json?
+  metadata Json?
+  createdAt DateTime @default(now())
+  tenantId String?
+  subject subject? @relation("auditLog_subject", fields: [subjectId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+}
+
+model private_c15t_settings {
+  key String @db.VarChar(255) @id
+  value String @default("2.0.0")
+}

@@ -15,6 +15,7 @@ import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/Buil
 import { BuilderFilterProvider } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
+import { BuilderDIPlugin } from "~/components/DynamicIsland/plugins/BuilderDIPlugin";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { PreText } from "~/components/ui/pretext";
 import { BuilderSectionHero } from "./BuilderSectionHero";
@@ -442,13 +443,16 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Always use sidebar layout now (no welcome screen)
   return (
     <BuilderFilterProvider onNavigate={handleNavigate}>
-      <MyCountryDIPlugin />
+      {activeSection === "foundation" ? <BuilderDIPlugin /> : <MyCountryDIPlugin />}
       <div className="relative min-h-screen w-full">
-        {/* Dynamic Background Flag for non-foundation steps */}
-        {activeSection !== "foundation" && countryFlagUrl && (
+        {/* Dynamic Background Flag */}
+        {countryFlagUrl && (
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
             <div
-              className="absolute inset-x-0 top-0 h-[60vh] bg-cover bg-center bg-no-repeat opacity-[0.08] blur-[80px] saturate-50"
+              className={cn(
+                "absolute inset-x-0 top-0 h-[60vh] bg-cover bg-center bg-no-repeat blur-[80px] saturate-50 transition-all duration-700",
+                activeSection === "foundation" ? "opacity-[0.12]" : "opacity-[0.08]"
+              )}
               style={{
                 backgroundImage: `url(${countryFlagUrl})`,
                 maskImage: "linear-gradient(to bottom, black 20%, transparent 100%)",

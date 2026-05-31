@@ -77,6 +77,15 @@ else
     echo "   Authentication: 🎭 Demo Mode (No Clerk keys)"
 fi
 
+echo "📦 Platform Stack & Versions:"
+echo "   Active Branch:   v2"
+echo "   Next.js:         v16.2.6 (Turbopack)"
+echo "   React:           v19.2.6"
+echo "   Tailwind CSS:    v4.3.0"
+echo "   Prisma Client:   v6.19.3"
+echo "   tRPC API:        v11.17.0"
+echo "   c15t Backend:    v2.1.0"
+
 echo ""
 
 # Check if port is available
@@ -143,6 +152,7 @@ elif [ -z "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
 else
     echo "   • Clerk authentication (check configuration)"
 fi
+echo "   • c15t Self-Hosted Consent Engine (active at /api/c15t)"
 echo ""
 echo "   Press Ctrl+C to stop the server"
 echo "   Run 'bun run auth:check:dev' to verify auth configuration"

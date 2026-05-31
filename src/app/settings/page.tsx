@@ -2,21 +2,17 @@
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import Link from "next/link";
 import {
   User,
-  ArrowLeft,
   Globe,
   AlertCircle,
   BarChart3,
   Shield,
-  Key,
+  Coins,
   Palette,
-  Disc,
   Settings,
-  UserCircle,
   BookOpen,
   Link2,
 } from "lucide-react";
@@ -24,19 +20,27 @@ import {
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useTheme } from "~/context/theme-context";
-import { createUrl } from "~/lib/url-utils";
 import { LoadingState } from "~/components/shared";
+import { Skeleton } from "~/components/ui/skeleton";
 
 import {
   AccountInformationCard,
   CountryInformationCard,
   UserPreferencesCard,
   ThinkPagesSettingsCard,
-  QuickActionsSection,
   IxnayIDCard,
+  VaultSettingsCard,
+  PrivacySecurityCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
+import { cn } from "~/lib/utils";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 
 import { useProfileSettings, useSetupStatus } from "./_hooks";
 
@@ -46,8 +50,9 @@ const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?
 
 function ProfileContent() {
   const { user, isLoaded, userProfile, country, isLoading: profileLoading } = useUserCountry();
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const [showVault, setShowVault] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showLore, setShowLore] = useState(false);
   const [showThinkpages, setShowThinkpages] = useState(false);
@@ -68,7 +73,6 @@ function ProfileContent() {
 
   const {
     data: thinkpagesAccount,
-    isLoading: thinkpagesAccountLoading,
     refetch: refetchThinkpagesAccount,
   } = api.thinkpages.getThinkpagesAccountByUserId.useQuery(
     { clerkUserId: user?.id || "placeholder-disabled" },
@@ -82,7 +86,7 @@ function ProfileContent() {
   );
 
   if (!isLoaded || profileLoading) {
-    return <LoadingState variant="spinner" size="lg" message="Loading profile..." fullScreen />;
+    return <SettingsSkeleton />;
   }
 
   return (
@@ -104,7 +108,7 @@ function ProfileContent() {
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
                   <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-                    Profile <span className="text-indigo-600 dark:text-indigo-400">Settings</span>
+                    Account <span className="text-indigo-600 dark:text-indigo-400">Settings</span>
                   </h1>
                 </div>
 
@@ -167,6 +171,8 @@ function ProfileContent() {
                     }}
                     isUploadingFlag={profileSettings.isUploadingFlag}
                     updateCountryFlagMutation={profileSettings.updateCountryFlagMutation}
+                    membershipTier={userProfile?.membershipTier}
+                    role={userProfile?.role}
                   />
                 )}
 
@@ -189,6 +195,22 @@ function ProfileContent() {
                       <Globe className="mr-2 h-4 w-4" />
                       Complete Setup
                     </Link>
+                  </div>
+                )}
+
+                {showVault && (
+                  <div id="vault-section">
+                    <VaultSettingsCard />
+                  </div>
+                )}
+
+                {showPrivacy && (
+                  <div id="privacy-section">
+                    <PrivacySecurityCard
+                      countryId={userProfile?.countryId}
+                      initialHideDiplomatic={country?.hideDiplomaticOps || false}
+                      initialHideStratcomm={country?.hideStratcommIntel || false}
+                    />
                   </div>
                 )}
                 {showPreferences && (
@@ -219,15 +241,84 @@ function ProfileContent() {
                   </div>
                 )}
               </div>
-              <div className="glass-surface glass-refraction h-fit overflow-hidden rounded-3xl p-1 lg:col-span-4">
-                <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
-                  <div className="mb-6 flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              <div className="lg:sticky lg:top-6 h-fit lg:col-span-4">
+                <CutoutCard
+                  className={cn(cutoutCardSurfaceClassName, "w-full overflow-hidden rounded-xl")}
+                  trackPointerHover={false}
+                  texture="dots"
+                  textureOpacity={0.06}
+                >
+                  {/* Cutout tab header */}
+                  <div className="relative bg-indigo-500/10 px-4 pt-3.5 pb-5">
+                    <div className="text-card-foreground flex items-center gap-2 text-sm font-bold">
+                      <Settings className="h-4 w-4 text-indigo-500" />
                       Account Settings
-                    </h3>
+                    </div>
+                    <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
+                    <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
                   </div>
 
-                  <div className="space-y-2">
+                  <CutoutCardContent className="space-y-2 p-4 pt-2">
+                    <button
+                      onClick={() => {
+                        const next = !showVault;
+                        setShowVault(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("vault-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showVault ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Coins className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showVault ? "text-amber-500" : "text-slate-400")} />
+                        Vault Upgrades & Rewards
+                      </div>
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showVault ? "animate-pulse bg-amber-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                        )}
+                      />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const next = !showPrivacy;
+                        setShowPrivacy(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("privacy-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showPrivacy ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Shield className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showPrivacy ? "text-purple-500" : "text-slate-400")} />
+                        Privacy & Security
+                      </div>
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showPrivacy ? "animate-pulse bg-purple-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                        )}
+                      />
+                    </button>
+
                     <button
                       onClick={() => {
                         const next = !showIxnayID;
@@ -241,14 +332,20 @@ function ProfileContent() {
                             100
                           );
                       }}
-                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showIxnayID ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                      )}
                     >
                       <div className="flex items-center">
-                        <Link2 className="mr-3 h-4 w-4 text-indigo-600" />
-                        IxnayID Sync
+                        <Link2 className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showIxnayID ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")} />
+                        IxnayID© Settings
                       </div>
                       <div
-                        className={`h-2 w-2 rounded-full ${showIxnayID ? "animate-pulse bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"}`}
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showIxnayID ? "animate-pulse bg-indigo-600 dark:bg-indigo-400 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                        )}
                       />
                     </button>
 
@@ -265,14 +362,20 @@ function ProfileContent() {
                             100
                           );
                       }}
-                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showPreferences ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                      )}
                     >
                       <div className="flex items-center">
-                        <Palette className="mr-3 h-4 w-4 text-indigo-500" />
+                        <Palette className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showPreferences ? "text-indigo-500" : "text-slate-400")} />
                         Interface Preferences
                       </div>
                       <div
-                        className={`h-2 w-2 rounded-full ${showPreferences ? "animate-pulse bg-indigo-500" : "bg-slate-300 dark:bg-slate-700"}`}
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showPreferences ? "animate-pulse bg-indigo-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                        )}
                       />
                     </button>
 
@@ -289,14 +392,20 @@ function ProfileContent() {
                             100
                           );
                       }}
-                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showLore ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                      )}
                     >
                       <div className="flex items-center">
-                        <BookOpen className="mr-3 h-4 w-4 text-blue-500" />
+                        <BookOpen className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showLore ? "text-blue-500" : "text-slate-400")} />
                         LoreScanner Preferences
                       </div>
                       <div
-                        className={`h-2 w-2 rounded-full ${showLore ? "animate-pulse bg-blue-500" : "bg-slate-300 dark:bg-slate-700"}`}
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showLore ? "animate-pulse bg-blue-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                        )}
                       />
                     </button>
 
@@ -313,18 +422,24 @@ function ProfileContent() {
                             100
                           );
                       }}
-                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showThinkpages ? "text-slate-900 dark:text-white bg-white/10 dark:bg-white/5 font-bold" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium"
+                      )}
                     >
                       <div className="flex items-center">
-                        <User className="mr-3 h-4 w-4 text-purple-500" />
+                        <User className={cn("mr-3 h-4 w-4 shrink-0 transition-colors", showThinkpages ? "text-purple-500" : "text-slate-400")} />
                         Thinkpages Preferences
                       </div>
                       <div
-                        className={`h-2 w-2 rounded-full ${showThinkpages ? "animate-pulse bg-purple-500" : "bg-slate-300 dark:bg-slate-700"}`}
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showThinkpages ? "animate-pulse bg-purple-500 scale-110" : "bg-slate-300 dark:bg-slate-700"
+                        )}
                       />
                     </button>
-                  </div>
-                </div>
+                  </CutoutCardContent>
+                </CutoutCard>
               </div>
             </div>
           </DashboardSidebarLayout>
@@ -339,8 +454,121 @@ function ProfileContent() {
   );
 }
 
-export default function ProfilePage() {
-  usePageTitle({ title: "Profile" });
+function SettingsSkeleton() {
+  return (
+    <div className="relative bg-slate-50 dark:bg-slate-950 min-h-screen">
+      {/* Background decoration */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/5 blur-[120px] dark:bg-indigo-500/10" />
+        <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/5 blur-[100px] dark:bg-blue-500/10" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 relative z-10">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64 rounded-xl" />
+            <Skeleton className="h-4 w-40 rounded-lg" />
+          </div>
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/50 bg-white/30 p-2 pr-6 backdrop-blur-md dark:border-slate-800/30 dark:bg-slate-900/30">
+            <Skeleton className="h-12 w-12 rounded-xl" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-20 rounded" />
+              <Skeleton className="h-4 w-28 rounded" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Main Content Area Skeletons */}
+          <div className="space-y-8 lg:col-span-8">
+            {/* Account Information Card Skeleton */}
+            <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+              <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-xl" />
+                    <Skeleton className="h-6 w-48 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                    <Skeleton className="h-3 w-16 rounded" />
+                    <Skeleton className="h-5 w-32 rounded-lg" />
+                  </div>
+                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                    <Skeleton className="h-3 w-24 rounded" />
+                    <Skeleton className="h-5 w-40 rounded-lg" />
+                  </div>
+                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                    <Skeleton className="h-3 w-16 rounded" />
+                    <Skeleton className="h-5 w-24 rounded-lg" />
+                  </div>
+                  <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30 space-y-2">
+                    <Skeleton className="h-3 w-28 rounded" />
+                    <Skeleton className="h-5 w-36 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Country Info Card Skeleton */}
+            <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+              <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40 space-y-6">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-xl" />
+                  <Skeleton className="h-6 w-52 rounded-lg" />
+                </div>
+                <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                  <Skeleton className="h-32 w-48 rounded-2xl" />
+                  <div className="flex-1 space-y-4">
+                    <Skeleton className="h-6 w-3/4 rounded-lg" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-20 rounded" />
+                        <Skeleton className="h-5 w-28 rounded-lg" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-20 rounded" />
+                        <Skeleton className="h-5 w-28 rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Links Sidebar Skeletons */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+              <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-36 rounded" />
+                </div>
+                
+                {/* 6 Quick link buttons skeletonized */}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-xl bg-slate-50/50 p-3.5 dark:bg-slate-800/30">
+                    <div className="flex items-center gap-3 w-full">
+                      <Skeleton className="h-4 w-4 rounded" />
+                      <Skeleton className="h-4 w-3/4 rounded" />
+                    </div>
+                    <Skeleton className="h-2 w-2 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  usePageTitle({ title: "Settings" });
 
   if (!isClerkConfigured) {
     return (

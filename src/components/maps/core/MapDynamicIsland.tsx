@@ -706,7 +706,7 @@ function AuthSection({
         {/* Quick actions */}
         <div className="space-y-0.5 p-1.5">
           <button
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push("/settings")}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
           >
             <User className="h-3.5 w-3.5" />

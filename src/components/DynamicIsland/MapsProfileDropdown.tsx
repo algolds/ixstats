@@ -95,11 +95,11 @@ export function MapsProfileDropdown({
         {/* Quick actions */}
         <div className="space-y-0.5 p-2">
           <button
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push("/settings")}
             className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
           >
             <User className="h-3.5 w-3.5" />
-            <span>Profile & Settings</span>
+            <span>Settings</span>
           </button>
           {countryName && (
             <button

@@ -10,6 +10,7 @@ import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 type WikiSource = "ixwiki_first" | "iiwiki_first" | "both";
 type LoreDisplayMode = "inline" | "sidebar" | "hidden";
@@ -94,8 +95,9 @@ export function WikiPreferencesCard() {
 
   return (
     <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
-      <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
+        <div className="mb-6 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
               <BookOpen className="h-6 w-6" />

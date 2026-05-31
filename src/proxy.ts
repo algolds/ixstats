@@ -11,7 +11,7 @@ const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED === "true";
 
 const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
-  "/profile(.*)",
+  "/settings(.*)",
   // Setup page should be accessible without authentication when using fallback auth
   // '/setup(.*)',
 ]);
@@ -229,10 +229,8 @@ function getClerkMiddleware() {
 
             // Build absolute sign-in URL based on environment
             const baseUrl = req.nextUrl.origin;
-            let signInUrl: string;
-
             const signInPath = `${BASE_PATH}/sign-in`;
-            signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
+            const signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
 
             console.log(`[Middleware] Redirecting to: ${signInUrl}`);
             return NextResponse.redirect(new URL(signInUrl));

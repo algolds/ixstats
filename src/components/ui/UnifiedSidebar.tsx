@@ -283,11 +283,11 @@ export function UnifiedSidebar({
           )}
         >
           <Link
-            href={"/profile"}
+            href={"/settings"}
             className="flex items-center gap-2 text-sm text-blue-500 hover:underline dark:text-blue-300"
           >
             <Settings className="h-4 w-4" />
-            {!isCollapsed && <span>Profile & Settings</span>}
+            {!isCollapsed && <span>Settings</span>}
           </Link>
         </div>
       </div>
