@@ -5,9 +5,10 @@
 Monitoring combines server logs, Discord webhooks, audit scripts, and compliance tooling to keep IxStats healthy.
 
 ## Runtime Monitoring
-- **Error Logger** – `~/lib/error-logger` captures API errors and forwards them to Discord when `DISCORD_WEBHOOK_ENABLED=true`
-- **User Activity Logging** – `~/lib/user-logging-middleware` records API usage for compliance and analytics
-- **Rate Limiting** – `~/lib/rate-limiter` surfaces throttle breaches; watch for warnings in server logs
+- **Error Logger** – `~/lib/error-logger` captures API errors and forwards them to Discord when `DISCORD_WEBHOOK_ENABLED=true`.
+- **User Activity Logging & Telemetry** – `~/lib/user-logging-middleware` records API usage for compliance and analytics. Collection of client usage metrics and diagnostic logs is subject to the user's **Telemetry Opt-Out** toggle (`hideStratcommIntel`) in Settings.
+- **Global Discoverability** – Users can toggle **Global Discoverability** (`hideDiplomaticOps`) in Settings to hide their user account and associated countries from directories and public searches.
+- **Rate Limiting** – `~/lib/rate-limiter` surfaces throttle breaches; watch for warnings in server logs.
 
 ## Alerts & Notifications
 - **Discord Webhooks** – Configure `DISCORD_WEBHOOK_URL` for production alerts
@@ -16,10 +17,11 @@ Monitoring combines server logs, Discord webhooks, audit scripts, and compliance
 
 ## Scheduled & Manual Audits
 Located in `scripts/audit/`:
-- `audit-trpc-wiring.ts` (`npm run audit:wiring`) – Ensures front-end procedures map to live routers
-- `run-all-tests.ts` (`npm run test:all`) – Aggregated regression suite
+- `audit-trpc-wiring.ts` (`bun run audit:wiring`) – Ensures front-end procedures map to live routers
+- `run-all-tests.ts` (`bun run test:all`) – Aggregated regression suite
 - `verify-economic-calculations.ts`, `verify-database-integrity.ts` – Spot-check critical calculations and schema health
 - `audit-production-urls.ts` – Validates page availability under production base path
+
 
 ## Incident Response
 - Historical runbooks retained in `docs/archive/v1/INCIDENT_RESPONSE_RUNBOOK.md`

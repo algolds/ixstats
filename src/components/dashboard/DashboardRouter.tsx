@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { SimpleFlag } from "~/components/SimpleFlag";
@@ -126,6 +128,8 @@ function DashboardHero({
   onCollapsedChange: (v: boolean) => void;
 }) {
   const { user, isSignedIn } = useUser();
+  const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
+  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
   const [activeSection, setActiveSection] = useState<HeroSection>("Overview");
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -540,6 +544,28 @@ function DashboardHero({
 
   return (
     <div className="glass-surface glass-refraction relative overflow-hidden rounded-xl shadow-sm">
+      {/* Neon Frame Overlay */}
+      {neonFrame.enabled && (
+        <motion.div
+          className="absolute inset-0 z-20 pointer-events-none rounded-xl"
+          style={{
+            border: `2px solid ${neonFrame.color}`,
+            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
+          }}
+          animate={
+            neonFrame.style === "pulse"
+              ? {
+                  opacity: [0.5, 1, 0.5],
+                }
+              : undefined
+          }
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      )}
       <button
         onClick={() => onCollapsedChange(true)}
         className="text-muted-foreground hover:bg-muted/30 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
@@ -563,13 +589,28 @@ function DashboardHero({
           <TextureOverlay texture="paperGrain" opacity={0.09} />
           <div>
             <div className="mb-2 flex items-center gap-2.5">
-              <SimpleFlag countryName={stats.countryName} size="lg" className="shrink-0" />
+              <div
+                className="relative rounded-sm overflow-hidden shrink-0 flex items-center justify-center"
+                style={
+                  avatarGlow.enabled
+                    ? {
+                        boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
+                        border: `1px solid ${avatarGlow.color}`,
+                      }
+                    : undefined
+                }
+              >
+                <SimpleFlag countryName={stats.countryName} size="lg" className="shrink-0" />
+              </div>
               <div>
                 <Link
                   href={createUrl(`/countries/${stats.slug}`)}
-                  className="text-sm font-bold hover:underline"
+                  className="text-sm font-bold hover:underline flex items-center gap-1.5"
                 >
-                  {stats.countryName}
+                  <span>{stats.countryName}</span>
+                  {chatBadge.enabled && (
+                    <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
+                  )}
                 </Link>
                 <p className="text-muted-foreground text-[10px]">{stats.leader}</p>
               </div>

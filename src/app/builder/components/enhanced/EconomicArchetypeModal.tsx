@@ -48,12 +48,12 @@ export function EconomicArchetypeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="economic-archetype-modal-v2 flex max-h-[95vh] w-full max-w-[95vw] flex-col gap-0 p-0">
+      <DialogContent className="economic-archetype-modal-v2 flex max-h-[98vh] w-full max-w-7xl flex-col gap-0 p-0">
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-white/5 bg-zinc-950 px-6 pt-6 pb-4">
+        <DialogHeader className="shrink-0 border-b bg-card px-6 pt-6 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              <div className="shrink-0 rounded-xl border bg-muted/50 p-3">
                 <Sparkles className="h-5 w-5 text-amber-400" />
               </div>
               <div className="min-w-0 space-y-1">
@@ -91,7 +91,7 @@ export function EconomicArchetypeModal({
         </div>
 
         {/* Footer */}
-        <div className="bg-muted/30 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+        <div className="shrink-0 border-t bg-card/50 px-6 py-4 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-4">
             <p className="text-muted-foreground flex items-center gap-2 text-sm leading-relaxed">
               <Info className="h-4 w-4 shrink-0" />

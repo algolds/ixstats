@@ -738,6 +738,27 @@ function AdminNSSync() {
 }
 ```
 
+### Region Discovery
+
+The administration panel provides a region discovery feature to find and sync cards from target NationStates regions matching specific playstyle, size, or political categories.
+
+**Tag Mapping System:**
+To prevent invalid queries to the NationStates World API (`q=regionsbytag`), categories are mapped to verified tags:
+- **Largest Regions**: `gargantuan` (Regions with 1,000+ nations)
+- **Roleplay / Active Communities**: `Role Player`
+- **Democratic / Legislative**: `Democratic`
+- **Authoritarian / Dictatorships**: `Totalitarian`
+- **Communist / Leftist**: `Communist`
+- **Capitalist / Trade**: `Capitalist`
+- **Feudalist / Monarchy**: `Monarchist`
+- **Anarchist / Lawless**: `Anarchist`
+
+**Process Flow:**
+1. **Query Tag list**: Fetches list of region names matching the tag from `cgi-bin/api.cgi?q=regionsbytag;tags={tag}`.
+2. **Handle Empty Lists**: Returns empty list gracefully instead of raising internal errors if the query yields no regions.
+3. **Resolve Size Candidates**: Queries first 30 region candidates alphabetically/identifiably using `cgi-bin/api.cgi?region={regionName}&q=name+numnations` with an 800ms rate-limiting throttle to fetch nation counts.
+4. **Sort and Slice**: Sorts by nation count descending and returns the top regions matching the user's limit request.
+
 ## API Reference
 
 See [API Documentation](../reference/api-complete.md#ns-integration-router) for complete endpoint specifications.

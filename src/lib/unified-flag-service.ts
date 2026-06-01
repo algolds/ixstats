@@ -526,7 +526,7 @@ class UnifiedFlagService {
 
         return flagUrl;
       }
-    } catch (error) {
+} catch (_error) {
       // Track API errors with graceful handling
       this.apiErrorCount++;
       this.lastApiError = Date.now();
@@ -703,7 +703,7 @@ class UnifiedFlagService {
 
       // No flag found in any pattern
       return null;
-    } catch (error) {
+    } catch (_error) {
       // Silent error handling
       return null;
     }
@@ -917,7 +917,7 @@ class UnifiedFlagService {
             `[UnifiedFlagService] Loaded from localStorage: ${localCount} local flags, ${cacheCount} cached flags`
           );
         }
-      } catch (error) {
+      } catch (_error) {
         console.log("[UnifiedFlagService] No existing localStorage metadata found");
       }
     }
@@ -955,7 +955,7 @@ class UnifiedFlagService {
               `[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} flags`
             );
           }
-        } catch (fsError) {
+        } catch (_fsError) {
           console.log("[UnifiedFlagService] Server metadata file not found, starting fresh");
         }
       }

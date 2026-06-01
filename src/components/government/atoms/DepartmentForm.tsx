@@ -52,6 +52,8 @@ import {
   CheckCircle,
   Upload,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
 import { checkGovernmentConflict } from "~/lib/atomic-government-utils";
@@ -66,6 +68,22 @@ interface DepartmentFormProps {
   errors?: Record<string, string[]>;
   governmentComponents?: ComponentType[];
   onGovernmentComponentsChange?: (components: ComponentType[]) => void;
+}
+
+export function isImageIconSource(value: string | undefined): value is string {
+  if (!value) return false;
+  return (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/") ||
+    value.startsWith("data:image/")
+  );
+}
+
+export function resolveNamedDepartmentIcon(iconName: string | undefined): LucideIcon | null {
+  if (!iconName || isImageIconSource(iconName)) return null;
+  const icon = (LucideIcons as Record<string, unknown>)[iconName];
+  return typeof icon === "function" ? (icon as LucideIcon) : null;
 }
 
 const departmentCategories: DepartmentCategory[] = [
@@ -614,7 +632,16 @@ export function DepartmentForm({
               {data.icon ? (
                 <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-zinc-900/60">
                   <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-950">
-                    <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />
+                    {(() => {
+                      const IconComponent = resolveNamedDepartmentIcon(data.icon);
+                      if (IconComponent) {
+                        return <IconComponent className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />;
+                      }
+                      if (isImageIconSource(data.icon)) {
+                        return <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />;
+                      }
+                      return <Info className="h-4 w-4 text-zinc-500" />;
+                    })()}
                   </div>
                   {!isReadOnly && (
                     <Button

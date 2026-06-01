@@ -39,6 +39,8 @@ export async function GET(request: Request) {
       estimatedRarity: candidate.rarity,
       category: candidate.category,
       wikiSource: candidate.wikiSource,
+      artwork: candidate.artwork,
+      hasImage: !!candidate.artwork && !candidate.artwork.includes("placeholder"),
       stats: candidate.stats,
     });
   } catch (error) {

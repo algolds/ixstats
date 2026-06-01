@@ -4,14 +4,16 @@ import React from "react";
 import { EnhancedNumberInput, EnhancedSlider } from "../../../../primitives/enhanced";
 import { DollarSign, Users, Shield } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
+import type { LaborBounds } from "../utils/laborCalculations";
 
 interface IncomeSectionProps {
   laborMarket: LaborConfiguration;
   onChange: (field: keyof LaborConfiguration, value: any) => void;
   showAdvanced: boolean;
+  componentBounds?: LaborBounds;
 }
 
-export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSectionProps) {
+export function IncomeSection({ laborMarket, onChange, showAdvanced, componentBounds }: IncomeSectionProps) {
   return (
     <div className="space-y-4">
       <EnhancedNumberInput
@@ -19,8 +21,8 @@ export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSec
         description="Minimum hourly wage rate"
         value={laborMarket.minimumWageHourly}
         onChange={(value) => onChange("minimumWageHourly", value)}
-        min={5}
-        max={50}
+        min={componentBounds?.minimumWage?.min ?? 5}
+        max={componentBounds?.minimumWage?.max ?? 50}
         step={0.25}
         sectionId="labor"
         icon={DollarSign}
@@ -33,8 +35,22 @@ export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSec
         description="Living wage for basic needs"
         value={laborMarket.livingWageHourly}
         onChange={(value) => onChange("livingWageHourly", value)}
-        min={10}
-        max={100}
+        min={componentBounds?.livingWage?.min ?? 10}
+        max={componentBounds?.livingWage?.max ?? 100}
+        step={0.5}
+        sectionId="labor"
+        icon={DollarSign}
+        showButtons={true}
+        format={(value) => `$${Number(value).toFixed(2)}`}
+      />
+
+      <EnhancedNumberInput
+        label="Living Wage (Hourly)"
+        description="Living wage for basic needs"
+        value={laborMarket.livingWageHourly}
+        onChange={(value) => onChange("livingWageHourly", value)}
+        min={componentBounds?.livingWage?.min ?? 10}
+        max={componentBounds?.livingWage?.max ?? 100}
         step={0.5}
         sectionId="labor"
         icon={DollarSign}

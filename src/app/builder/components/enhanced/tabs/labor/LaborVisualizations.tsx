@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
@@ -23,8 +23,8 @@ export function LaborVisualizations({
 }: LaborVisualizationsProps) {
   return (
     <div className="space-y-6">
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>Employment Type Distribution</span>
@@ -36,11 +36,11 @@ export function LaborVisualizations({
             height={300}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Employment by Sector</span>
@@ -53,11 +53,11 @@ export function LaborVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(1)}%`}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Shield className="h-5 w-5" />
             <span>Worker Protection Scores</span>
@@ -70,11 +70,11 @@ export function LaborVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(0)}`}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Labor Market Health</span>
@@ -104,8 +104,8 @@ export function LaborVisualizations({
               </div>
             ))}
           </div>
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
     </div>
   );
 }

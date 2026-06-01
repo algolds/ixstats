@@ -348,13 +348,23 @@ Response:
 - Total entries > 50,000 (cleanup needed)
 - Validation failures > 100/day
 
-## Future Enhancements
+## Redis Caching Tier (May 2026 Update)
 
-1. **Redis Integration**: Add Redis for even faster in-memory cache layer
-2. **CDN Integration**: Cache images on CDN automatically
-3. **Predictive Prefetching**: Pre-fetch likely-needed content
-4. **Smart Revalidation**: ML-based prediction of content changes
-5. **Distributed Caching**: Multi-server cache synchronization
+In May 2026, the Redis caching tier was fully implemented and integrated as the unified `globalCache` system ([advanced-cache-system.ts](file:///ixwiki/public/projects/ixstats/src/lib/advanced-cache-system.ts)).
+
+### Architecture & Features
+
+1. **ioredis Client Integration**: Connects directly to the local or production Redis cluster using `REDIS_URL`.
+2. **Resilient Offline Fallback**: Verifies connection status using `redisClient.status === "ready"`. If Redis is offline, it gracefully falls back to a local `InMemoryCache` (preventing CPU connection loops and application-level log spam/`MaxRetriesPerRequestError`).
+3. **Targeted Invalidation (deleteByPattern)**: Supports clearing cache by pattern (e.g., `global_activity_feed:*` or `thinkpages_feed:*`) for both `InMemoryCache` (using regex compilation mapping) and `RedisCache` (using `KEYS` and `DEL` commands), enabling targeted cache eviction on create/like/share mutations instead of whole-cache flushes.
+4. **Circular-Safe Serialization**: Cache middleware uses circular-reference-safe JSON stringification (`safeJsonStringify`) to handle complex Prisma client references without serializing errors.
+
+### Future Enhancements
+
+1. **CDN Integration**: Cache images on CDN automatically
+2. **Predictive Prefetching**: Pre-fetch likely-needed content
+3. **Smart Revalidation**: ML-based prediction of content changes
+4. **Distributed Caching**: Multi-server cache synchronization
 
 ## Troubleshooting
 

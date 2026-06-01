@@ -12,13 +12,13 @@ IxStats combines automated Jest suites, wiring audits, and manual verification t
 ## Commands
 | Command | Description |
 | --- | --- |
-| `npm run test` | Executes Jest test suites |
-| `npm run test:watch` | Watch mode for Jest |
-| `npm run test:coverage` | Coverage report (text + lcov + HTML) |
-| `npm run test:critical` | Limited smoke suite (CRUD, health, database) |
-| `npm run audit:wiring` | Ensures tRPC procedures are wired to live implementations |
-| `npm run test:crud` | Exercises CRUD endpoints for regression |
-| `npm run test:economics` | Validates economic formulas and projections |
+| `bun run test` | Executes Jest test suites |
+| `bun run test:watch` | Watch mode for Jest |
+| `bun run test:coverage` | Coverage report (text + lcov + HTML) |
+| `bun run test:critical` | Limited smoke suite (CRUD, health, database) |
+| `bun run audit:wiring` | Ensures tRPC procedures are wired to live implementations |
+| `bun run test:crud` | Exercises CRUD endpoints for regression |
+| `bun run test:economics` | Validates economic formulas and projections |
 
 ## Fixtures & Mocks
 - `tests/__mocks__` – Contains SuperJSON and other mocks used by tRPC tests
@@ -27,7 +27,7 @@ IxStats combines automated Jest suites, wiring audits, and manual verification t
 ## Data Considerations
 - **Migration Notice (October 2025)**: Tests now use PostgreSQL database (`localhost:5433/ixstats`)
 - Local tests connect to PostgreSQL database (migrated from SQLite)
-- Automated scripts may require seeded data; run `npm run db:setup` before executing test suites
+- Automated scripts may require seeded data; run `bun run db:setup` before executing test suites
 - Legacy SQLite test databases archived in `prisma/backups/sqlite-legacy/`
 
 ## Manual QA Checklist

@@ -9,18 +9,19 @@
  */
 
 import React, { useMemo } from "react";
-import { Crown } from "lucide-react";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import { BuilderDIView } from "~/components/DynamicIsland/BuilderDIView";
 import { MyCountryDIPlugin } from "./MyCountryDIPlugin";
+import { PreText } from "~/components/ui/pretext";
 
 function BuilderCompactLabel() {
   return (
-    <span className="flex items-center gap-1.5 select-none">
-      <Crown className="h-3 w-3 shrink-0 text-amber-400 opacity-70" />
-      <span className="text-foreground/80 text-xs font-semibold tracking-tight">Builder</span>
+    <span className="flex items-center select-none">
+      <PreText className="text-foreground/80 text-xs font-semibold tracking-tight" whiteSpace="nowrap">
+        MyCountry Builder
+      </PreText>
     </span>
   );
 }
@@ -32,6 +33,10 @@ interface BuilderDIPluginInnerProps {
 
 function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
   React.useEffect(() => {
+    if (context.builderState.step === "foundation") {
+      return;
+    }
+
     if (context.builderState.selectedCountry) {
       if (filter.selectedTemplate?.name !== context.builderState.selectedCountry.name) {
         filter.setSelectedTemplate(context.builderState.selectedCountry);
@@ -61,6 +66,22 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
     filter.selectedTemplate,
     filter.setSelectedTemplate,
   ]);
+
+  const [hasTriggeredRestoreExpansion, setHasTriggeredRestoreExpansion] = React.useState(false);
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    const isLargeScreen = typeof window !== "undefined" && window.innerWidth >= 1024;
+    if (isLargeScreen && !hasTriggeredRestoreExpansion) {
+      setHasTriggeredRestoreExpansion(true);
+      timer = setTimeout(() => {
+        filter.triggerDIExpansion();
+      }, 100);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [hasTriggeredRestoreExpansion, filter]);
 
   const plugin = useMemo(() => {
     return {

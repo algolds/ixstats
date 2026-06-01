@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
@@ -26,8 +26,8 @@ export function DemographicsVisualizations({
   return (
     <div className="space-y-6">
       {/* Age Distribution */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>Age Distribution</span>
@@ -39,12 +39,12 @@ export function DemographicsVisualizations({
             height={300}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Urban-Rural Split */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Urban-Rural Distribution</span>
@@ -57,12 +57,12 @@ export function DemographicsVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(1)}%`}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Education Levels */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <GraduationCap className="h-5 w-5" />
             <span>Education Levels</span>
@@ -75,12 +75,12 @@ export function DemographicsVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(1)}%`}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Regional Distribution */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <MapPin className="h-5 w-5" />
             <span>Regional Distribution</span>
@@ -92,12 +92,12 @@ export function DemographicsVisualizations({
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Demographics Health */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Demographics Health</span>
@@ -139,8 +139,8 @@ export function DemographicsVisualizations({
               <Progress value={demographics.ageDistribution.age15to64} className="h-2" />
             </div>
           </div>
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
     </div>
   );
 }

@@ -55,19 +55,7 @@ export function BuilderFilterProvider({
   const [diExpansionTrigger, setDiExpansionTrigger] = useState(0);
   const confirmHandlerRef = useRef<(() => void) | null>(null);
 
-  // Auto-open guide on first visit
-  React.useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
-    try {
-      const seen = localStorage.getItem("mycountry-builder-welcome-seen");
-      if (!seen || seen !== "1.5") {
-        timer = setTimeout(() => setWelcomeModalOpen(true), 800);
-      }
-    } catch {}
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, []);
+  // Auto-open guide on first visit disabled
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm("");

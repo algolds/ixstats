@@ -7,7 +7,7 @@ The frontend is built entirely on the Next.js 16.1.3 App Router. Client and serv
 ## Layout Composition
 - **App Router** – Each route folder contains `page.tsx`, optional `layout.tsx`, and feature-specific components. The root layout lives at `src/app/layout.tsx`.
 - **Authentication-aware routing** – `src/app/page.tsx` switches between the splash page (`IxStatsSplashPage.tsx`) and the signed-in command center (`EnhancedCommandCenter.tsx`) using the Clerk-backed `useUser` hook.
-- **Dynamic segments** – Features such as countries, profiles, and wiki content use nested routes in `src/app/countries`, `src/app/profile`, and `src/app/wiki`.
+- **Dynamic segments** – Features such as countries, settings, and wiki content use nested routes in `src/app/countries`, `src/app/settings`, and `src/app/wiki`.
 
 ## Component Layers
 - **Design System (`src/components/ui`)** – Buttons, cards, dialogs, badges, and Apple-style carousel components that power the "glass physics" theme.
@@ -99,8 +99,11 @@ Major sections use a client-side routing pattern for instant, SPA-like navigatio
 
 ## Styling & Theming
 - Tailwind CSS 4 with `prettier-plugin-tailwindcss` ensures consistent class ordering.
-- Dark/light mode friendly gradients, blur, and depth levels implemented via utility classes and helper components (`src/components/magicui`).
-- Iconography uses `lucide-react`, with icons imported per use to minimise bundle size.
+- **Glass Physics & Depth**: Dark/light mode friendly gradients, blur, and depth levels are implemented via utility classes and helper components.
+- **GPU Acceleration**: High-performance rendering components utilize `.force-gpu` promotion styles (`transform: translate3d(0,0,0)` and `backface-visibility: hidden`) to promote glows and animated containers to independent hardware compositor layers, preventing browser micro-stuttering.
+- **Rack-Focus Transitions**: Layout shifts and visual swapping jumps are resolved using a custom two-stage animation state machine (`hidden` -> `blurring` -> `focusing` -> `visible`) that fades/blurs out active data, swaps content while fully hidden, and then focuses/scales the new text back into view.
+- **Page Loading Blurs**: App page load states employ custom layout wrappers that apply standard CSS filters (`filter: blur(10px)`) to blur children dynamically without breaking layout flow.
+- **Iconography**: Uses `lucide-react`, with icons imported per use to minimise bundle size.
 
 ## State & Data Fetching
 - **tRPC React Query** – The `api` client from `src/trpc/react.tsx` wraps hooks like `api.countries.getByIdWithEconomicData.useQuery()`.

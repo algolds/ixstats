@@ -194,7 +194,7 @@ export function CountryGrid({
   return (
     <div className="relative">
       <div
-        className="relative overflow-hidden rounded-xl border-t border-r border-b border-l border-white/60 border-zinc-300/80 bg-zinc-100/70 shadow-[inset_0_5px_15px_rgba(0,0,0,0.12)] backdrop-blur-md dark:border-black/80 dark:border-white/10 dark:bg-zinc-950/40 dark:shadow-[inset_0_6px_20px_rgba(0,0,0,0.65)]"
+        className="relative overflow-hidden rounded-xl border border-border/40 bg-card/75 shadow-[inset_0_5px_15px_rgba(0,0,0,0.12)] backdrop-blur-md dark:shadow-[inset_0_6px_20px_rgba(0,0,0,0.65)]"
         style={{
           marginTop: `-${heroHeight}px`,
         }}

@@ -1329,7 +1329,7 @@ export const nsImportRouter = createTRPCRouter({
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).default(15),
-        tag: z.string().min(1).default("massive"),
+        tag: z.string().min(1).default("gargantuan"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1337,10 +1337,7 @@ export const nsImportRouter = createTRPCRouter({
 
       console.log(`[NS Import] Discovering top regions matching tag "${tag}" (limit: ${limit})...`);
 
-      const tagsToFetch = [tag];
-      if (tag === "massive") {
-        tagsToFetch.push("gargantuan");
-      }
+      const tagsToFetch = [tag === "massive" ? "gargantuan" : tag];
 
       const allRegionNames = new Set<string>();
       for (const t of tagsToFetch) {
@@ -1355,10 +1352,11 @@ export const nsImportRouter = createTRPCRouter({
       }
 
       if (allRegionNames.size === 0) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch region lists for tag "${tag}" from NS API`,
-        });
+        console.warn(`[NS Import] No regions found matching tag "${tag}"`);
+        return {
+          regions: [],
+          totalScanned: 0,
+        };
       }
 
       console.log(

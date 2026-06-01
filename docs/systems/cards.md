@@ -353,6 +353,13 @@ enum AcquireMethod {
 }
 ```
 
+### Card Recycling & Junking (May 2026 Update)
+
+To allow players to recycle duplicate or unwanted cards, we implemented the **Card Junking** mechanism:
+- **Mutation**: `api.cards.junkCards` validates ownership of targeted card copies.
+- **Lock Protection**: Only unlocked cards (`isLocked === false`) are eligible. Locked cards are protected to prevent accidental recycling.
+- **Rewards**: Junking cards permanently deletes the corresponding `CardOwnership` records and instantly credits the user's Vault balance with IxCredits scaled according to the card's rarity.
+
 ## Card Statistics
 
 ### Market Metrics

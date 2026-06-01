@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Badge } from "~/components/ui/badge";
 import { Building2 } from "lucide-react";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -27,8 +27,8 @@ export function ConfigurationSummary({
       </div>
 
       {/* Economic Structure Card */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="space-y-4 p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Building2 className="h-5 w-5" />
             <span>Economic Structure</span>
@@ -84,8 +84,8 @@ export function ConfigurationSummary({
               ))}
             </div>
           </div>
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
     </>
   );
 }

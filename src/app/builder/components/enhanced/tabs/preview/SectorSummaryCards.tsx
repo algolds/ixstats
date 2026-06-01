@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { PieChart, BarChart3, Users } from "lucide-react";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
@@ -42,8 +42,8 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Sector Composition */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>Sector Composition</span>
@@ -55,12 +55,12 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Employment Types */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Types</span>
@@ -73,12 +73,12 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             valueFormatter={(value) => `${value.toFixed(1)}%`}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Age Distribution */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Users className="h-5 w-5" />
             <span>Age Distribution</span>
@@ -90,8 +90,8 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
     </div>
   );
 }

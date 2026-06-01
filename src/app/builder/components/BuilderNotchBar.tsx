@@ -24,6 +24,7 @@ import {
   Users,
   Zap,
   Factory,
+  Receipt,
 } from "lucide-react";
 import type { BuilderSection } from "../lib/builder-theme";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
@@ -77,8 +78,8 @@ const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: st
 const SECTION_LABELS: Record<BuilderSection, string> = {
   foundation: "Foundation",
   identity: "Identity",
-  government: "Government",
-  economics: "Economy",
+  government: "Government Builder",
+  economics: "Economy Builder",
   preview: "Preview",
   import: "Import",
 };
@@ -200,20 +201,44 @@ export function BuilderNotchBar({
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" })),
         },
         {
-          id: "structure",
-          label: "Structure",
+          id: "sectors",
+          label: "Sectors",
           icon: Factory,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "structure",
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "sectors",
           onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" })),
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "sectors" })),
+        },
+        {
+          id: "labor",
+          label: "Labor",
+          icon: Users,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "labor",
+          onClick: (st: any) =>
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "labor" })),
+        },
+        {
+          id: "demographics",
+          label: "Demographics",
+          icon: Globe,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "demographics",
+          onClick: (st: any) =>
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "demographics" })),
         },
         {
           id: "fiscal",
-          label: "Fiscal",
-          icon: Coins,
+          label: "Fiscal Policy",
+          icon: Landmark,
           isActive: (st: any) => st.builderState.activeEconomicsTab === "fiscal",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" })),
+        },
+        {
+          id: "tax",
+          label: "Tax System",
+          icon: Receipt,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "tax",
+          onClick: (st: any) =>
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" })),
         },
         {
           id: "preview",

@@ -17,6 +17,9 @@ import {
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import * as LucideIcons from "lucide-react";
+import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/url-utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
@@ -48,6 +51,8 @@ interface DashboardPlayerWidgetProps {
 
 export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: DashboardPlayerWidgetProps) {
   const { user, isSignedIn } = useUser();
+  const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
+  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
@@ -129,13 +134,35 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "group w-48 overflow-hidden rounded-xl")}
+      className={cn(cutoutCardSurfaceClassName, "group w-48 overflow-hidden rounded-xl relative")}
       trackPointerHover={false}
       texture="dots"
       textureOpacity={0.06}
     >
+      {/* Neon Frame Overlay */}
+      {neonFrame.enabled && (
+        <motion.div
+          className="absolute inset-0 z-30 pointer-events-none rounded-xl"
+          style={{
+            border: `2px solid ${neonFrame.color}`,
+            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
+          }}
+          animate={
+            neonFrame.style === "pulse"
+              ? {
+                  opacity: [0.5, 1, 0.5],
+                }
+              : undefined
+          }
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      )}
       {/* Cutout tab header */}
-      <div className="relative flex min-h-[80px] flex-col items-center justify-center overflow-hidden bg-indigo-500/10 px-3 pt-3 pb-6">
+      <div className="relative flex min-h-[90px] flex-col items-center justify-center overflow-hidden bg-indigo-500/10 px-3 pt-3 pb-6">
         {/* Background flag filling the top */}
         {userProfile?.country?.name && (
           <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
@@ -152,12 +179,46 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           </div>
         )}
 
+        {/* Small Avatar/Flag with avatar glow */}
+        <div
+          className="relative z-20 mb-1.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-indigo-950/60 shadow-md backdrop-blur-sm"
+          style={
+            avatarGlow.enabled
+              ? {
+                  boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
+                  border: `1px solid ${avatarGlow.color}`,
+                }
+              : undefined
+          }
+        >
+          {user?.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt=""
+              className="h-full w-full rounded-full object-cover"
+            />
+          ) : userProfile?.country?.name ? (
+            <UnifiedCountryFlag
+              countryName={userProfile.country.name}
+              flagUrl={normalizeFlagUrl(userProfile.country.flag)}
+              size="sm"
+              rounded={true}
+              fitContainer={true}
+              showTooltip={false}
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
+
         {/* Country Name Link */}
         <Link
           href={createUrl(`/countries/${userProfile?.country?.slug ?? ""}`)}
-          className="relative z-20 text-center text-sm font-bold tracking-wide text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] hover:text-white/80 hover:underline"
+          className="relative z-20 text-center text-sm font-bold tracking-wide text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] hover:text-white/80 hover:underline flex items-center justify-center gap-1"
         >
-          {userProfile?.country?.name ?? "My Country"}
+          <span>{userProfile?.country?.name ?? "My Country"}</span>
+          {chatBadge.enabled && (
+            <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
+          )}
         </Link>
 
         {/* Unlocked Collector Title Badges */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, SlidersHorizontal, ArrowRight, X, HelpCircle } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowRight, X, HelpCircle, Save, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useBuilderActions } from "../hooks/useBuilderActions";
 import { type BuilderSection } from "../lib/builder-theme";
@@ -20,6 +20,33 @@ import {
   getArchetypesByConsolidatedCategory,
 } from "../utils/country-archetypes";
 
+/**
+ * Upgrades a flag URL to a high-resolution or SVG version if it is from FlagCDN or Wikimedia Commons.
+ */
+function getHighResFlagUrl(url: string | null | undefined): string | null | undefined {
+  if (!url) return url;
+
+  // 1. Upgrade flagcdn.com thumbnail to SVG
+  // e.g., https://flagcdn.com/w320/us.png -> https://flagcdn.com/us.svg
+  if (url.includes("flagcdn.com")) {
+    return url.replace(/\/w\d+\/([a-z0-9_-]+)\.(png|jpg|jpeg|gif|webp)$/i, "/$1.svg");
+  }
+
+  // 2. Upgrade Wikimedia Commons thumbnail to original (SVG if it is one, or original high-res image)
+  // e.g., https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Flag_of_the_United_States.svg/320px-Flag_of_the_United_States.svg.png
+  // -> https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg
+  if (url.includes("upload.wikimedia.org/wikipedia/commons/thumb/")) {
+    const parts = url.split("/");
+    if (parts[5] === "thumb") {
+      parts.splice(5, 1); // remove "thumb"
+      parts.pop(); // remove trailing thumbnail size filename
+      return parts.join("/");
+    }
+  }
+
+  return url;
+}
+
 interface BuilderSectionHeroProps {
   section: BuilderSection;
   mode?: "create" | "edit";
@@ -37,19 +64,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   const [showHistory, setShowHistory] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
 
-  React.useEffect(() => {
-    if (isEditMode) return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-      const seen = localStorage.getItem("mycountry-builder-welcome-seen");
-      if (!seen || seen !== "1.0") {
-        timer = setTimeout(() => setWelcomeOpen(true), 800);
-      }
-    } catch {}
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isEditMode]);
+  // Auto-open guide on first visit disabled
 
   const {
     builderState,
@@ -58,6 +73,9 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
     isSubmittingGlobal,
     foundationPreviewCountry,
     setFoundationPreviewCountry,
+    isAutoSaving,
+    lastSaved,
+    triggerManualSave,
   } = useBuilderContext();
   const foundationFilter = useBuilderFilter();
   const { setHeroHeight } = foundationFilter;
@@ -171,8 +189,8 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   const rawFlagUrl = isFoundation
     ? previewFlag || builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag
     : builderState.economicInputs?.flagUrl || builderState.selectedCountry?.flag;
-  // Upgrade thumbnail flags (flagcdn.com/w320) to high-res for hero background
-  const countryFlagUrl = rawFlagUrl?.replace("flagcdn.com/w320/", "flagcdn.com/w1280/");
+  // Upgrade flag to high-res / SVG
+  const countryFlagUrl = getHighResFlagUrl(rawFlagUrl);
 
   const steps = isEditMode
     ? ["identity", "government", "economics", "preview"]
@@ -196,6 +214,29 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
     >
       {/* Top Right Version Badge & Help Button */}
       <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5 select-none">
+        {/* Autosave Status Badge */}
+        <button
+          onClick={() => void triggerManualSave()}
+          disabled={isAutoSaving}
+          className={cn(
+            "flex items-center gap-1 cursor-pointer rounded border px-1.5 py-0.5 text-[9px] font-bold shadow-sm backdrop-blur-sm transition-all duration-200 select-none",
+            isAutoSaving
+              ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
+              : lastSaved
+                ? "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"
+                : "border-white/10 bg-black/25 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+          )}
+          title={lastSaved ? `Autosaved at ${lastSaved.toLocaleTimeString()}. Click to save manually.` : "Click to save manually."}
+          type="button"
+        >
+          {isAutoSaving ? (
+            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+          ) : (
+            <Save className="h-2.5 w-2.5" />
+          )}
+          <span>{isAutoSaving ? "Saving..." : "Autosave"}</span>
+        </button>
+
         <span className="text-muted-foreground/80 rounded border border-white/10 bg-black/25 px-1.5 py-0.5 text-[9px] font-bold shadow-sm backdrop-blur-sm dark:border-white/5">
           v{BUILDER_VERSION}
         </span>
@@ -220,8 +261,10 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
           (isFoundation ? foundationPreviewCountry || foundationFilter.selectedTemplate : true) && (
             <div
               className={cn(
-                "absolute inset-0 bg-cover bg-center bg-no-repeat saturate-50 transition-all duration-700",
-                isFoundation ? "opacity-40" : "opacity-[0.08] blur-[2px]"
+                "absolute inset-0 bg-cover bg-center bg-no-repeat saturate-80 dark:saturate-50 transition-all duration-700",
+                isFoundation
+                  ? "opacity-50 dark:opacity-40"
+                  : "opacity-[0.14] dark:opacity-[0.06] blur-[4px]"
               )}
               style={{ backgroundImage: `url(${countryFlagUrl})` }}
             />

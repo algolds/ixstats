@@ -429,6 +429,17 @@ async function canEarnFromSource(userId: string, type: TransactionType) {
 }
 ```
 
+### Feature Governance & Admin Toggles
+
+To protect the platform's virtual economy during updates or dynamic balancing adjustments, administrators can toggle core subsystems via the **Vault System Configuration** panel. These toggles are stored in `VaultConfig` models and verified on transaction writes:
+
+*   **Store Purchases** (`isStoreEnabled`): Controls purchasing of store cosmetics and temporary gameplay boosts.
+*   **Card Crafting** (`isCraftingEnabled`): Controls evolution operations in `craftCard`.
+*   **Card Packs** (`isPacksEnabled`): Governs pack purchasing in `purchasePack`.
+*   **P2P Trading** (`isTradingEnabled`): Blocks or allows creating and responding to trade offers.
+*   **P2P Auctions** (`isAuctionsEnabled`): Blocks or allows listing, bidding, and buyout actions in `auction-service.ts`.
+*   **Global Maintenance Mode**: A master switch that immediately blocks all database writes and transaction executions across all economic endpoints.
+
 ### Inflation Control
 
 Weekly economy audit monitors:
@@ -491,13 +502,12 @@ Weekly economy audit monitors:
 - Card achievements grant traditional badges
 - Meta-achievements unlock exclusive cards
 
-### Profile Page
+### Settings Page & Vault Integration
 
-**New "Vault" Tab:**
-- Card statistics
-- Featured collection
-- Vault level
-- Public collections
+The Vault is integrated into the user's settings dashboard (`src/app/settings/page.tsx`):
+- **VaultSettingsCard**: Managed inside [VaultSettingsCard.tsx](file:///ixwiki/public/projects/ixstats/src/app/settings/_components/VaultSettingsCard.tsx).
+- **Functionality**: Surfaces current Vault balance, XP progression, active login streak tracking, daily login bonus claiming, and account upgrades / active cosmetics toggles.
+- **Card Showcase**: Displays owned cards list, card deck stats, and rarity breakdowns.
 
 ## API Reference
 

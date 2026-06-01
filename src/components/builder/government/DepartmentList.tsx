@@ -16,6 +16,8 @@ import {
   DepartmentForm,
   categoryIcons,
   categoryToComponents,
+  isImageIconSource,
+  resolveNamedDepartmentIcon,
 } from "~/components/government/atoms/DepartmentForm";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -172,11 +174,22 @@ export const DepartmentList = React.memo(function DepartmentList({
                           }}
                         >
                           {department.icon ? (
-                            <img
-                              src={department.icon}
-                              alt="Logo"
-                              className="h-full w-full object-cover"
-                            />
+                            (() => {
+                              const IconComponent = resolveNamedDepartmentIcon(department.icon);
+                              if (IconComponent) {
+                                return <IconComponent className="h-5 w-5" style={{ color: cardColor }} />;
+                              }
+                              if (isImageIconSource(department.icon)) {
+                                return (
+                                  <img
+                                    src={department.icon}
+                                    alt="Logo"
+                                    className="h-full w-full object-cover"
+                                  />
+                                );
+                              }
+                              return <Icon className="h-5 w-5" style={{ color: cardColor }} />;
+                            })()
                           ) : (
                             <Icon
                               className="h-5 w-5"
@@ -395,11 +408,27 @@ export const DepartmentList = React.memo(function DepartmentList({
                       style={{ backgroundColor: `${currentEditingDept.color}20` }}
                     >
                       {currentEditingDept.icon ? (
-                        <img
-                          src={currentEditingDept.icon}
-                          alt="Logo"
-                          className="h-full w-full object-cover"
-                        />
+                        (() => {
+                          const IconComponent = resolveNamedDepartmentIcon(currentEditingDept.icon);
+                          if (IconComponent) {
+                            return (
+                              <IconComponent
+                                className="h-4 w-4"
+                                style={{ color: currentEditingDept.color }}
+                              />
+                            );
+                          }
+                          if (isImageIconSource(currentEditingDept.icon)) {
+                            return (
+                              <img
+                                src={currentEditingDept.icon}
+                                alt="Logo"
+                                className="h-full w-full object-cover"
+                              />
+                            );
+                          }
+                          return <Icon className="h-4 w-4" style={{ color: currentEditingDept.color }} />;
+                        })()
                       ) : (
                         <Icon className="h-4 w-4" style={{ color: currentEditingDept.color }} />
                       )}

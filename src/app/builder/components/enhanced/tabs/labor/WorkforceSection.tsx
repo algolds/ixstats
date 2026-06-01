@@ -4,14 +4,16 @@ import React from "react";
 import { EnhancedSlider } from "../../../../primitives/enhanced";
 import { Users } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
+import type { LaborBounds } from "../utils/laborCalculations";
 
 interface WorkforceSectionProps {
   laborMarket: LaborConfiguration;
   onChange: (field: keyof LaborConfiguration, value: any) => void;
   showAdvanced: boolean;
+  componentBounds?: LaborBounds;
 }
 
-export function WorkforceSection({ laborMarket, onChange, showAdvanced }: WorkforceSectionProps) {
+export function WorkforceSection({ laborMarket, onChange, showAdvanced, componentBounds }: WorkforceSectionProps) {
   return (
     <div className="space-y-4">
       <EnhancedSlider
@@ -19,8 +21,8 @@ export function WorkforceSection({ laborMarket, onChange, showAdvanced }: Workfo
         description="Percentage of working-age population in the labor force"
         value={laborMarket.laborForceParticipationRate}
         onChange={(value) => onChange("laborForceParticipationRate", value)}
-        min={30}
-        max={90}
+        min={componentBounds?.participationRate?.min ?? 30}
+        max={componentBounds?.participationRate?.max ?? 90}
         step={0.1}
         unit="%"
         sectionId="labor"

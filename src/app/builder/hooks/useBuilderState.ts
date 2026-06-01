@@ -20,7 +20,7 @@ import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import { toast } from "sonner";
-import type { GovernmentDepartment, GovernmentBuilderState } from "~/types/government";
+import type { GovernmentDepartment, GovernmentBuilderState, GovernmentType, DepartmentInput } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
@@ -147,6 +147,10 @@ export interface UseBuilderStateReturn {
   clearDraft: () => void;
   /** Check if a step can be accessed (based on completion) */
   canAccessStep: (step: BuilderStep) => boolean;
+  /** Manually trigger save to localStorage and database sync */
+  triggerManualSave: () => Promise<void>;
+  /** Whether a draft or saved state was restored on mount */
+  hasRestoredState: boolean;
 }
 
 const baseInitialState: BuilderState = {
@@ -262,6 +266,7 @@ export function useBuilderState(
   const [builderState, setBuilderState] = useState<BuilderState>(() => getInitialState(mode));
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [hasRestoredState, setHasRestoredState] = useState(false);
   const quickStartProcessed = useRef(false);
   const editModeInitialized = useRef(false);
 
@@ -450,10 +455,10 @@ export function useBuilderState(
             (dept) => ({
               name: dept.name,
               shortName: dept.shortName ?? undefined,
-              category: dept.category,
+              category: dept.category as any,
               description: dept.description ?? undefined,
               minister: dept.minister ?? undefined,
-              ministerTitle: dept.ministerTitle ?? undefined,
+              ministerTitle: dept.ministerTitle || "",
               headquarters: dept.headquarters ?? undefined,
               established: dept.established ?? undefined,
               employeeCount: dept.employeeCount ?? undefined,
@@ -461,12 +466,27 @@ export function useBuilderState(
               color: dept.color ?? undefined,
               priority: dept.priority ?? undefined,
               parentDepartmentId: dept.parentDepartmentId ?? undefined,
-              organizationalLevel: dept.organizationalLevel ?? undefined,
+              organizationalLevel: (dept.organizationalLevel || "Department") as any,
               functions: Array.isArray(dept.functions) ? dept.functions : [],
-            })
+            }) as DepartmentInput
           ),
-          budgetAllocations: existingGovernment.budgetAllocations,
-          revenueSources: existingGovernment.revenueSources,
+          budgetAllocations: existingGovernment.budgetAllocations.map((alloc: any) => ({
+            departmentId: alloc.departmentId,
+            budgetYear: alloc.budgetYear,
+            allocatedAmount: alloc.allocatedAmount,
+            allocatedPercent: alloc.allocatedPercent,
+            notes: alloc.notes ?? undefined,
+          })),
+          revenueSources: existingGovernment.revenueSources.map((rev: any) => ({
+            name: rev.name,
+            category: rev.category as any,
+            description: rev.description ?? undefined,
+            rate: rev.rate ?? undefined,
+            revenueAmount: rev.revenueAmount,
+            revenuePercent: rev.revenuePercent ?? undefined,
+            collectionMethod: rev.collectionMethod ?? undefined,
+            administeredBy: rev.administeredBy ?? undefined,
+          })),
           isValid: true,
           errors: { structure: [], departments: {}, budget: [], revenue: [] },
         };
@@ -584,6 +604,7 @@ export function useBuilderState(
                 activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
               };
             });
+            setHasRestoredState(true);
             console.log("[useBuilderState] Restored saved edits from localStorage");
           }
         }
@@ -999,6 +1020,14 @@ export function useBuilderState(
               ...dataFields,
               economyBuilderState: parsedState.economyBuilderState ?? null,
             }));
+            const hasProgress =
+              !!parsedState.selectedCountry ||
+              !!parsedState.selectedArchetypeId ||
+              (!!parsedState.economicInputs && !!parsedState.economicInputs.countryName) ||
+              (Array.isArray(parsedState.completedSteps) && parsedState.completedSteps.length > 0);
+            if (hasProgress) {
+              setHasRestoredState(true);
+            }
           }
 
           if (savedLastSaved) {
@@ -1228,6 +1257,40 @@ export function useBuilderState(
     isLoadingCountry,
   ]);
 
+  const triggerManualSave = useCallback(async () => {
+    try {
+      const stateKey =
+        mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+      const savedKey =
+        mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
+
+      safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
+      const now = new Date();
+      safeSetItemSync(savedKey, now.toISOString());
+      setLastSaved(now);
+
+      if (mode === "edit" && countryId && !isLoadingCountry) {
+        const currentSyncPayload = {
+          id: countryId,
+          name:
+            builderStateRef.current.economicInputs?.countryName ||
+            builderStateRef.current.economicInputs?.nationalIdentity?.countryName ||
+            "",
+          economicInputs: sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
+          governmentComponents:
+            builderStateRef.current.governmentComponents?.map((comp) => ({ componentType: comp })) || [],
+          taxSystemData: builderStateRef.current.taxSystemData || undefined,
+          governmentStructure: builderStateRef.current.governmentStructure || undefined,
+          economyBuilderState: builderStateRef.current.economyBuilderState || undefined,
+        };
+        lastSyncedStateRef.current = currentSyncPayload;
+        await updateMutation.mutateAsync(currentSyncPayload);
+      }
+    } catch (error) {
+      console.error("Manual save failed:", error);
+    }
+  }, [mode, countryId, isLoadingCountry]);
+
   // Update handlers
   const updateEconomicInputs = useCallback((inputs: EconomicInputs) => {
     setBuilderState((prev) => ({ ...prev, economicInputs: sanitizeEconomicInputs(inputs) }));
@@ -1424,12 +1487,39 @@ export function useBuilderState(
     updateStep,
     clearDraft,
     canAccessStep,
+    triggerManualSave,
+    hasRestoredState,
   };
 }
 
 export function sanitizeEconomicInputs(inputs: any): any {
   if (!inputs) return inputs;
   const clean = { ...inputs };
+  if (clean.laborEmployment) {
+    clean.laborEmployment = { ...clean.laborEmployment };
+    const toBoundedPercent = (value: unknown, fallback: number) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(0, Math.min(100, n));
+    };
+    clean.laborEmployment.laborForceParticipationRate = toBoundedPercent(
+      clean.laborEmployment.laborForceParticipationRate,
+      65
+    );
+    clean.laborEmployment.unemploymentRate = toBoundedPercent(
+      clean.laborEmployment.unemploymentRate,
+      5
+    );
+    if (
+      clean.laborEmployment.employmentRate !== null &&
+      clean.laborEmployment.employmentRate !== undefined
+    ) {
+      clean.laborEmployment.employmentRate = toBoundedPercent(
+        clean.laborEmployment.employmentRate,
+        95
+      );
+    }
+  }
   if (clean.demographics) {
     clean.demographics = { ...clean.demographics };
     if (

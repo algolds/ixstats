@@ -25,7 +25,14 @@ The builder (`/builder`) lets new nations configure identity, government, econom
 - Use primitives in `primitives/` to keep layout consistent (glass depth, animations, navigation)
 - Keep validation synchronous where possible; heavier calculations can call server helpers but must handle loading states gracefully
 
+## May 2026 Optimizations
+- **Template Contexts**: Configured step defaults using the template context state (`selectedTemplate`) during foundation and core step navigation.
+- **Visual Improvements**: Added layout-animated search islands in heroes, color-coded complexity badges on archetypes, and dynamic layout padding.
+- **Lag & Feedback Loops Prevention**: Replaced dependency checkers with Lodash `isEqual` in `useGovernmentSpending` to avoid redundant micro-stutters and wrapped `onChange` callbacks in React Refs.
+- **Wiki Caching**: Leveraged `WikiCacheService` to cache wiki imports persistently for 24 hours.
+
 ## Maintenance Checklist
 - Update `docs/systems/builder.md` and `/help/getting-started/*` after altering steps or data contracts
 - Add regression tests for new validation or calculation logic
 - Ensure new fields persist to Prisma models and appear in MyCountry immediately
+

@@ -28,6 +28,34 @@ import {
   consolidatedCategories,
   getArchetypesByConsolidatedCategory,
 } from "~/app/builder/utils/country-archetypes";
+import { useBuilderActions } from "~/app/builder/hooks/useBuilderActions";
+
+/**
+ * Upgrades a flag URL to a high-resolution or SVG version if it is from FlagCDN or Wikimedia Commons.
+ */
+function getHighResFlagUrl(url: string | null | undefined): string | null | undefined {
+  if (!url) return url;
+
+  // 1. Upgrade flagcdn.com thumbnail to SVG
+  // e.g., https://flagcdn.com/w320/us.png -> https://flagcdn.com/us.svg
+  if (url.includes("flagcdn.com")) {
+    return url.replace(/\/w\d+\/([a-z0-9_-]+)\.(png|jpg|jpeg|gif|webp)$/i, "/$1.svg");
+  }
+
+  // 2. Upgrade Wikimedia Commons thumbnail to original (SVG if it is one, or original high-res image)
+  // e.g., https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Flag_of_the_United_States.svg/320px-Flag_of_the_United_States.svg.png
+  // -> https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg
+  if (url.includes("upload.wikimedia.org/wikipedia/commons/thumb/")) {
+    const parts = url.split("/");
+    if (parts[5] === "thumb") {
+      parts.splice(5, 1); // remove "thumb"
+      parts.pop(); // remove trailing thumbnail size filename
+      return parts.join("/");
+    }
+  }
+
+  return url;
+}
 
 interface BuilderDIViewProps {
   onClose: () => void;
@@ -80,6 +108,12 @@ function BuilderProgressView({ filter, context, onClose }: BuilderProgressViewPr
     return "pending";
   };
 
+  const { handleContinue: actionsContinue } = useBuilderActions({
+    builderState,
+    setBuilderState: context.setBuilderState,
+    mode: context.mode,
+  });
+
   const handleRestart = () => {
     const confirmReset = window.confirm(
       "Are you sure you want to restart the builder? This will clear all current progress and start fresh."
@@ -91,23 +125,18 @@ function BuilderProgressView({ filter, context, onClose }: BuilderProgressViewPr
       filter.setSelectedArchetypes([]);
       filter.setNewCountryName("");
       onClose();
-      // Click foundation notch button
-      const btn = document.querySelector(
-        '[data-notch-foundation="true"]'
-      ) as HTMLButtonElement | null;
-      if (btn) {
-        btn.click();
-      } else {
-        filter.onNavigate?.("foundation");
-      }
+      filter.onNavigate?.("foundation");
     }
   };
 
   const handleContinue = () => {
-    // Navigate using the builder router continue action
-    const btn = document.querySelector('[data-notch-continue="true"]') as HTMLButtonElement | null;
-    if (btn) {
-      btn.click();
+    if (currentStep === "foundation") {
+      const template = filter.selectedTemplate || builderState.selectedCountry;
+      if (template) {
+        context.updateStep("foundation", template);
+      }
+    } else {
+      actionsContinue();
     }
     onClose();
   };
@@ -331,6 +360,13 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
     flag: context.builderState.economicInputs.flagUrl || "",
   } : null);
 
+  const rawFlagUrl =
+    activeTemplate?.flag ||
+    activeTemplate?.flagUrl ||
+    filter.softSelectedCountry?.flag ||
+    filter.softSelectedCountry?.flagUrl;
+  const flagUrl = getHighResFlagUrl(rawFlagUrl);
+
   // Focus naming input when soft-selected country is present
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
@@ -356,19 +392,40 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
 
   const showContinueButton = !!activeTemplate;
 
+  const { handleContinue: actionsContinue } = useBuilderActions({
+    builderState: context.builderState,
+    setBuilderState: context.setBuilderState,
+    mode: context.mode,
+  });
+
   const handleContinue = () => {
-    // Navigate using the builder router continue action
-    const btn = document.querySelector('[data-notch-continue="true"]') as HTMLButtonElement | null;
-    if (btn) {
-      btn.click();
+    const currentStep = context.builderState.step;
+    if (currentStep === "foundation") {
+      const template = filter.selectedTemplate || context.builderState.selectedCountry;
+      if (template) {
+        context.updateStep("foundation", template);
+      }
+    } else {
+      actionsContinue();
     }
     onClose();
   };
 
   return (
     <div className="relative flex w-full flex-col p-4 text-left text-zinc-100 select-none sm:p-5">
+      {/* Background Refracted Flag Watermark */}
+      {flagUrl && (
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none rounded-[inherit]">
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] dark:opacity-[0.06] saturate-[85%] dark:saturate-[50%] blur-[6px] transition-all duration-700"
+            style={{ backgroundImage: `url(${flagUrl})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 mix-blend-overlay" />
+        </div>
+      )}
+
       {/* Top Header */}
-      <div className="mb-2 flex items-center justify-end pb-1">
+      <div className="mb-2 flex items-center justify-end pb-1 relative z-10">
         <div className="flex items-center gap-1.5">
           {onSwitchMode && (
             <>
@@ -446,6 +503,14 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
               onKeyDown={(e) => {
                 if (e.key === "Enter" && filter.newCountryName.trim()) {
                   filter.confirmHandlerRef.current?.();
+                  if (context.builderState.step === "foundation") {
+                    const finalCountry = {
+                      ...filter.softSelectedCountry,
+                      name: filter.newCountryName.trim(),
+                      foundationCountryName: filter.softSelectedCountry?.name,
+                    };
+                    context.updateStep("foundation", finalCountry);
+                  }
                   onClose();
                 }
               }}
@@ -465,6 +530,14 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
               <button
                 onClick={() => {
                   filter.confirmHandlerRef.current?.();
+                  if (context.builderState.step === "foundation") {
+                    const finalCountry = {
+                      ...filter.softSelectedCountry,
+                      name: filter.newCountryName.trim(),
+                      foundationCountryName: filter.softSelectedCountry?.name,
+                    };
+                    context.updateStep("foundation", finalCountry);
+                  }
                   onClose();
                 }}
                 disabled={!filter.newCountryName.trim()}

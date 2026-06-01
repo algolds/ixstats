@@ -93,6 +93,7 @@
     "**/*.spec.tsx",
     "tests/**/*",
     "playwright.config.ts",
-    "jest.config.js"
+    "jest.config.js",
+    "odysseus"
   ]
 }

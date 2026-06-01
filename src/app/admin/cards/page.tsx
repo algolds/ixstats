@@ -2,7 +2,7 @@
 // Unified Card Administration Dashboard - Sync, Packs, Lore Cards, Vault & Credits
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   RefreshCw,
@@ -13,25 +13,19 @@ import {
   Play,
   Pause,
   Square,
-  RotateCcw,
-  Clock,
   TrendingUp,
   AlertTriangle,
   Globe,
   MapPin,
   Layers,
-  Upload,
-  FileUp,
   Search,
   Users,
   Package,
   Gavel,
   BookOpen,
-  Wallet,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import {
   AlertDialog,
@@ -53,11 +47,11 @@ function SeedDemoAuctionsButton() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const seedMutation = api.cardMarket.seedDemoAuctions.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       notify.success("Demo Auctions Seeded", data.message);
       setConfirmOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       notify.error("Seeding Failed", error.message);
       setConfirmOpen(false);
     },
@@ -140,7 +134,7 @@ export default function CardAdminDashboardPage() {
   const [discoveredRegions, setDiscoveredRegions] = useState<
     { id: string; name: string; numnations: number }[] | null
   >(null);
-  const [discoveryTag, setDiscoveryTag] = useState("massive");
+  const [discoveryTag, setDiscoveryTag] = useState("gargantuan");
 
   // Modal confirmation states
   const [confirmFetchRegions, setConfirmFetchRegions] = useState<string | null>(null);
@@ -559,14 +553,14 @@ export default function CardAdminDashboardPage() {
                     onChange={(e) => setDiscoveryTag(e.target.value)}
                     className="border-border bg-background/50 text-foreground rounded-lg border px-3 py-2 text-sm flex-1 outline-none focus:ring-1 focus:ring-purple-500/50"
                   >
-                    <option value="massive">Largest Regions</option>
-                    <option value="roleplay">Roleplay / Active Communities</option>
-                    <option value="democratic">Democratic / Legislative</option>
-                    <option value="authoritarian">Authoritarian / Dictatorships</option>
-                    <option value="communist">Communist / Leftist</option>
-                    <option value="capitalist">Capitalist / Trade</option>
-                    <option value="feudalist">Feudalist / Monarchy</option>
-                    <option value="anarchy">Anarchist / Lawless</option>
+                    <option value="gargantuan">Largest Regions</option>
+                    <option value="Role Player">Roleplay / Active Communities</option>
+                    <option value="Democratic">Democratic / Legislative</option>
+                    <option value="Totalitarian">Totalitarian / Dictatorships</option>
+                    <option value="Communist">Communist / Leftist</option>
+                    <option value="Capitalist">Capitalist / Trade</option>
+                    <option value="Monarchist">Feudalist / Monarchy</option>
+                    <option value="Anarchist">Anarchist / Lawless</option>
                   </select>
                   <Button
                     onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}

@@ -60,6 +60,62 @@ const nationalIdentitySchema = z.object({
   weekStartDay: z.string().optional(),
 });
 
+const NATIONAL_IDENTITY_DB_FIELDS = new Set<string>([
+  "countryName",
+  "officialName",
+  "governmentType",
+  "motto",
+  "mottoNative",
+  "capitalCity",
+  "largestCity",
+  "demonym",
+  "currency",
+  "currencySymbol",
+  "officialLanguages",
+  "nationalLanguage",
+  "nationalAnthem",
+  "nationalReligion",
+  "nationalDay",
+  "callingCode",
+  "internetTLD",
+  "drivingSide",
+  "timeZone",
+  "isoCode",
+  "coordinatesLatitude",
+  "coordinatesLongitude",
+  "emergencyNumber",
+  "postalCodeFormat",
+  "nationalSport",
+  "nationalBird",
+  "nationalFish",
+  "founders",
+  "nationalFlower",
+  "nationalDish",
+  "nationalFruit",
+  "nationalDrink",
+  "nationalInstrument",
+  "nationalSymbol",
+  "nationalAnimalImage",
+  "nationalBirdImage",
+  "nationalFishImage",
+  "foundersImage",
+  "nationalFlowerImage",
+  "nationalDishImage",
+  "nationalFruitImage",
+  "nationalDrinkImage",
+  "nationalInstrumentImage",
+  "nationalSymbolImage",
+  "weekStartDay",
+]);
+
+function toNationalIdentityDbData(input: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(input).filter(
+      ([key, value]) => value !== undefined && NATIONAL_IDENTITY_DB_FIELDS.has(key)
+    )
+  );
+}
+
 export const nationalIdentityRouter = createTRPCRouter({
   /**
    * Autosave national identity data with debouncing
@@ -88,9 +144,7 @@ export const nationalIdentityRouter = createTRPCRouter({
 
       try {
         // Filter out undefined values
-        const filteredData = Object.fromEntries(
-          Object.entries(input.data).filter(([_, value]) => value !== undefined)
-        );
+        const filteredData = toNationalIdentityDbData(input.data);
 
         // Upsert the national identity record
         const result = await ctx.db.nationalIdentity.upsert({
@@ -171,9 +225,7 @@ export const nationalIdentityRouter = createTRPCRouter({
 
       try {
         // Filter out undefined values
-        const filteredData = Object.fromEntries(
-          Object.entries(input.data).filter(([_, value]) => value !== undefined)
-        );
+        const filteredData = toNationalIdentityDbData(input.data);
 
         // Update the national identity record
         const result = await ctx.db.nationalIdentity.update({
@@ -260,9 +312,7 @@ export const nationalIdentityRouter = createTRPCRouter({
 
       try {
         // Filter out undefined values
-        const filteredData = Object.fromEntries(
-          Object.entries(input.data).filter(([_, value]) => value !== undefined)
-        );
+        const filteredData = toNationalIdentityDbData(input.data);
 
         // Create the national identity record
         const result = await ctx.db.nationalIdentity.create({

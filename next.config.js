@@ -127,6 +127,28 @@ const config = {
     },
   },
 
+  // Prevent unrelated sibling workspace directories from polluting Turbopack/webpack build graphs.
+  webpack(config) {
+    if (config.resolve) {
+      config.resolve.symlinks = false;
+    }
+
+    if (!config.watchOptions) {
+      config.watchOptions = {};
+    }
+
+    const existingIgnored = config.watchOptions.ignored || [];
+    config.watchOptions.ignored = [
+      existingIgnored,
+      /[\\/]odysseus[\\/]/,
+      /[\\/]odysseus[\\/]venv[\\/]/,
+    ].flat();
+
+    return config;
+  },
+
+  turbopack: {},
+
   // Compression enabled by default in production (60-70% payload reduction)
   compress: process.env.NODE_ENV === "production",
 

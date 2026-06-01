@@ -2118,4 +2118,34 @@ echo "Total JavaScript: $total"
 
 ---
 
+## Phase 5: Redis & Feed Caching Tier (May 2026)
+
+**Objective**: Implement high-performance, persistent global caching for server-side feeds (tRPC query endpoints) with a Redis tier, resilient in-memory fallbacks, targeted invalidations, and circular-safe serialization to achieve sub-5ms response times.
+
+### Optimized Feed Endpoints & Benchmarks
+
+The integration test suite ([caching-benchmark.test.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/__tests__/caching-benchmark.test.ts)) validates the caching optimizations and records performance under simulated production workloads:
+
+| Query Procedure | Scenario | Database Query (Cache Miss) | Cached Response (Cache Hit) | Speedup Ratio |
+|---|---|---|---|---|
+| `api.activities.getGlobalFeed` | Global Activity Feed | `1,279.04 ms` | `4.85 ms` | **264x faster** |
+| `api.activities.getFollowingFeed` | Following Feed (Custom) | `3.51 ms` | `2.23 ms` | **1.6x faster** |
+| `api.thinkpages.getFeed` | ThinkPages Social Feed | `2,352.05 ms` | `1.41 ms` | **1,668x faster** |
+
+### Architecture & Implementation Details
+
+#### 1. Robust Redis Client Connection & Fallback
+The `globalCache` ([advanced-cache-system.ts](file:///ixwiki/public/projects/ixstats/src/lib/advanced-cache-system.ts)) connects to a Redis instance via `REDIS_URL`. If the client status is not `ready` (e.g., Redis is offline or starting up), the system automatically defaults to a thread-safe `InMemoryCache`. This prevents connection loop errors like `MaxRetriesPerRequestError` and mitigates CPU locks under failure conditions.
+
+#### 2. Targeted Invalidation (`deleteByPattern`)
+To ensure real-time accuracy without full-cache flushes, we implemented pattern-based eviction:
+- **Redis Cache**: Uses `KEYS` to query keys matching a specific pattern (e.g., `thinkpages_feed:*`) and executes batch deletion (`DEL`).
+- **In-Memory Cache**: Uses regex-compiled path matching to scan the key map and delete stale cache entries.
+- **Workflow**: Creating a post or updating an activity triggers `globalCache.deleteByPattern("thinkpages_feed:*")`, guaranteeing that the feed reflects new posts on the next load, while leaving other unrelated caches intact.
+
+#### 3. Circular-Reference-Safe Serialization
+To support caching of complex Prisma model return values (which can contain circular relations or complex prototype properties), the cache tier utilizes a customized stringification utility that gracefully intercepts and removes circular loops without breaking SuperJSON or standard deserialization.
+
+---
+
 **End of Performance Benchmarks Documentation**

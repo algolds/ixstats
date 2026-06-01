@@ -66,8 +66,9 @@ Set any value to an empty string if you intentionally disable a service.
 | `.env` | Shared defaults |
 
 ## Validation & Tooling
-- `npm run auth:check:*` – Validates Clerk configuration for different environments
+- `bun run auth:check:*` – Validates Clerk configuration for different environments
 - `scripts/setup/check-auth-config.js` – CLI script invoked by commands above
-- `npm run audit:wiring` – Uses environment toggles to ensure critical data paths are wired
+- `bun run audit:wiring` – Uses environment toggles to ensure critical data paths are wired
+
 
 Keep this document updated whenever new environment variables or toggles are introduced. Remove deprecated entries as part of cleanup to avoid configuration drift.

@@ -16,7 +16,7 @@ import {
   Target,
 } from "lucide-react";
 import { EnhancedSlider } from "../../../../primitives/enhanced";
-import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
+import { SECTOR_TEMPLATES, type SectorConstraint } from "../utils/sectorCalculations";
 import type { SectorConfiguration } from "~/types/economy-builder";
 
 interface SectorEditorProps {
@@ -28,6 +28,7 @@ interface SectorEditorProps {
   affectingComponents?: Array<{ name: string; impact: number }>;
   effectiveGDP?: number;
   effectiveEmployment?: number;
+  constraint?: SectorConstraint;
   onToggleSelect: () => void;
   onRemove: () => void;
   onChange: (field: keyof SectorConfiguration, value: any) => void;
@@ -42,6 +43,7 @@ export function SectorEditor({
   affectingComponents = [],
   effectiveGDP,
   effectiveEmployment,
+  constraint,
   onToggleSelect,
   onRemove,
   onChange,
@@ -81,6 +83,19 @@ export function SectorEditor({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">{sector.name}</h3>
+              {constraint?.locked && (
+                <Badge variant="secondary" className="bg-red-500/10 text-red-600 dark:text-red-400">
+                  Constrained
+                </Badge>
+              )}
+              {constraint?.recommended && !constraint.locked && (
+                <Badge
+                  variant="default"
+                  className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                >
+                  Recommended
+                </Badge>
+              )}
               {isAffected && (
                 <Badge
                   variant={isBoosted ? "default" : "secondary"}
@@ -198,8 +213,8 @@ export function SectorEditor({
           label="GDP Contribution"
           value={sector.gdpContribution}
           onChange={(value: number) => onChange("gdpContribution", value)}
-          min={0}
-          max={50}
+          min={constraint?.minGDP ?? 0}
+          max={constraint?.maxGDP ?? 50}
           step={0.1}
           unit="%"
           sectionId="sectors"
@@ -249,8 +264,8 @@ export function SectorEditor({
               label="Growth Rate"
               value={sector.growthRate}
               onChange={(value: number) => onChange("growthRate", value)}
-              min={-5}
-              max={15}
+              min={constraint?.minGrowthRate ?? -5}
+              max={constraint?.maxGrowthRate ?? 15}
               step={0.1}
               unit="%"
               sectionId="sectors"

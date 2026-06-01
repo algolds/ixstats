@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Badge } from "~/components/ui/badge";
 import { PieChart, BarChart3, Zap } from "lucide-react";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
@@ -42,8 +42,8 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   return (
     <div className="space-y-6">
       {/* GDP Composition */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>GDP Composition</span>
@@ -61,12 +61,12 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               colors={getColorsFromData(sectorChartData)}
             />
           )}
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Employment Distribution */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Distribution</span>
@@ -85,12 +85,12 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               colors={getColorsFromData(employmentChartData)}
             />
           )}
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
 
       {/* Component Impact Summary */}
-      <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-        <CutoutCardContent className="p-6">
+      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+        <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Zap className="h-5 w-5" />
             <span>Atomic Component Impact</span>
@@ -117,8 +117,8 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               );
             })}
           </div>
-        </CutoutCardContent>
-      </CutoutCard>
+        </GlassCardContent>
+      </GlassCard>
     </div>
   );
 }

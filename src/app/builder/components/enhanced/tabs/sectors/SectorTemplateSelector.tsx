@@ -2,25 +2,31 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Plus, Info } from "lucide-react";
-import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
+import { SECTOR_TEMPLATES, type SectorConstraint } from "../utils/sectorCalculations";
 import type { SectorConfiguration } from "~/types/economy-builder";
 
 interface SectorTemplateSelectorProps {
   existingSectors: SectorConfiguration[];
+  sectorConstraints?: Record<string, SectorConstraint>;
   onAddSector: (sectorType: string) => void;
 }
 
 export function SectorTemplateSelector({
   existingSectors,
+  sectorConstraints = {},
   onAddSector,
 }: SectorTemplateSelectorProps) {
+  const hasActiveConstraints = Object.values(sectorConstraints).some(
+    (c) => c.locked || c.recommended
+  );
+
   return (
-    <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-      <CutoutCardContent className="p-6">
+    <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCardContent className="p-6">
         <h3 className="mb-4 flex items-center justify-between text-lg font-bold text-emerald-500 dark:text-emerald-400">
           <span className="flex items-center space-x-2">
             <Plus className="h-5 w-5" />
@@ -34,22 +40,37 @@ export function SectorTemplateSelector({
             characteristics that you can customize.
           </p>
 
+          {hasActiveConstraints && (
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400">
+              Component selections are affecting sector availability. Locked sectors are
+              incompatible with your chosen components.
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {Object.entries(SECTOR_TEMPLATES).map(([sectorType, template]) => {
               const Icon = template.icon;
               const isAlreadyAdded = existingSectors.some((s) => s.id.startsWith(sectorType));
+              const constraint = sectorConstraints[sectorType];
+              const isLocked = constraint?.locked && !isAlreadyAdded;
 
               return (
                 <motion.div
                   key={sectorType}
-                  whileHover={{ scale: isAlreadyAdded ? 1 : 1.02 }}
-                  className={`relative ${isAlreadyAdded ? "opacity-50" : ""}`}
+                  whileHover={{ scale: isAlreadyAdded || isLocked ? 1 : 1.02 }}
+                  className={`relative ${isAlreadyAdded ? "opacity-50" : ""} ${isLocked ? "opacity-40" : ""}`}
                 >
                   <Button
                     variant="outline"
-                    onClick={() => onAddSector(sectorType)}
-                    disabled={isAlreadyAdded}
-                    className="flex h-auto w-full flex-col items-start space-y-2 p-4"
+                    onClick={() => !isLocked && onAddSector(sectorType)}
+                    disabled={isAlreadyAdded || isLocked}
+                    className={`flex h-auto w-full flex-col items-start space-y-2 p-4 ${
+                      isLocked
+                        ? "cursor-not-allowed border-red-500/30"
+                        : constraint?.recommended && !isAlreadyAdded
+                          ? "border-emerald-500/50"
+                          : ""
+                    }`}
                   >
                     <div className="flex w-full items-center space-x-3">
                       <div
@@ -65,11 +86,33 @@ export function SectorTemplateSelector({
                           {template.baseContribution}% base contribution
                         </div>
                       </div>
+                      {isLocked && (
+                        <Badge variant="secondary" className="bg-red-500/10 text-red-600 dark:text-red-400">
+                          Locked
+                        </Badge>
+                      )}
+                      {constraint?.recommended && !isAlreadyAdded && !isLocked && (
+                        <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          Recommended
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="text-muted-foreground text-left text-xs">
                       {template.description}
                     </div>
+
+                    {isLocked && constraint.lockedBy.length > 0 && (
+                      <div className="text-left text-[10px] text-red-500">
+                        Incompatible with: {constraint.lockedBy.join(", ")}
+                      </div>
+                    )}
+
+                    {constraint?.recommended && !isLocked && constraint.recommendedBy.length > 0 && (
+                      <div className="text-left text-[10px] text-emerald-500">
+                        Recommended by: {constraint.recommendedBy.join(", ")}
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap gap-1">
                       {template.characteristics.map((char, idx) => (
@@ -100,7 +143,7 @@ export function SectorTemplateSelector({
             </div>
           </div>
         </div>
-      </CutoutCardContent>
-    </CutoutCard>
+      </GlassCardContent>
+    </GlassCard>
   );
 }

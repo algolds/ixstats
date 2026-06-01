@@ -7,6 +7,8 @@
  */
 
 import type { LaborConfiguration } from "~/types/economy-builder";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 
 /**
  * Derived labor market metrics calculated from base labor configuration
@@ -173,4 +175,81 @@ export function getProtectionColor(protection: string): string {
     collectiveRights: "orange",
   };
   return colors[protection] || "gray";
+}
+
+/**
+ * Bounds for labor market sliders, adjusted by atomic component impacts
+ */
+export interface LaborBounds {
+  /** Min/max for unemployment rate slider */
+  unemploymentRate?: { min: number; max: number };
+  /** Min/max for participation rate slider */
+  participationRate?: { min: number; max: number };
+  /** Min/max for minimum wage slider */
+  minimumWage?: { min: number; max: number };
+  /** Min/max for living wage slider */
+  livingWage?: { min: number; max: number };
+}
+
+/**
+ * Compute labor market slider bounds from selected atomic components
+ *
+ * Uses employmentImpact values to adjust slider ranges:
+ * - unemploymentModifier → narrows/broadens unemployment rate range
+ * - participationModifier → shifts participation rate range
+ * - wageGrowthModifier → adjusts wage slider ranges
+ *
+ * @param selectedComponents - Array of selected economic component types
+ * @returns Bounds overrides for labor sliders (undefined fields use defaults)
+ */
+export function getLaborBounds(
+  selectedComponents: EconomicComponentType[]
+): LaborBounds {
+  if (selectedComponents.length === 0) return {};
+
+  let totalUnemploymentMod = 0;
+  let totalParticipationMod = 1;
+  let totalWageGrowthMod = 1;
+
+  selectedComponents.forEach((compType) => {
+    const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
+    if (!component?.employmentImpact) return;
+
+    totalUnemploymentMod += component.employmentImpact.unemploymentModifier || 0;
+    totalParticipationMod *= component.employmentImpact.participationModifier || 1;
+    totalWageGrowthMod *= component.employmentImpact.wageGrowthModifier || 1;
+  });
+
+  const bounds: LaborBounds = {};
+
+  // Unemployment: default 0-30, narrowed by strong modifiers
+  if (totalUnemploymentMod < -2) {
+    bounds.unemploymentRate = { min: 0, max: 15 };
+  } else if (totalUnemploymentMod > 2) {
+    bounds.unemploymentRate = { min: 0, max: 20 };
+  }
+
+  // Participation: default 30-90, shifted by participation modifier
+  if (totalParticipationMod > 1.2) {
+    bounds.participationRate = {
+      min: Math.round(30 * totalParticipationMod),
+      max: Math.min(95, Math.round(90 * totalParticipationMod)),
+    };
+  } else if (totalParticipationMod < 0.8) {
+    bounds.participationRate = {
+      min: 20,
+      max: Math.round(70 * totalParticipationMod),
+    };
+  }
+
+  // Wages: default 5-50 min, 10-100 living, adjusted by wage growth modifier
+  if (totalWageGrowthMod > 1.3) {
+    bounds.minimumWage = { min: 8, max: 50 };
+    bounds.livingWage = { min: 15, max: 100 };
+  } else if (totalWageGrowthMod < 0.7) {
+    bounds.minimumWage = { min: 3, max: 30 };
+    bounds.livingWage = { min: 8, max: 60 };
+  }
+
+  return bounds;
 }

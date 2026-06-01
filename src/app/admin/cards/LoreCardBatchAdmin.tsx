@@ -65,6 +65,8 @@ interface ArticlePreview {
   qualityScore: number;
   estimatedRarity: string;
   wikiSource: string;
+  artwork?: string;
+  hasImage?: boolean;
   approved: boolean;
   generating?: boolean;
   generated?: boolean;
@@ -140,8 +142,10 @@ export function LoreCardBatchAdmin() {
     skipped: number;
   }>({ success: 0, failed: 0, skipped: 0 });
 
-  // Fetch articles
+  // Fetch articles (concurrent previews, prefer images, enforce min quality)
   const handleFetchArticles = async () => {
+    const MIN_QUALITY = 20; // enforce minimum quality when finding lore cards
+
     if (articleCount < 10 || articleCount > 100) {
       notify.error("Invalid Count", "Please enter a number between 10 and 100");
       return;
@@ -153,39 +157,45 @@ export function LoreCardBatchAdmin() {
 
     try {
       const sources = wikiSource === "both" ? ["ixwiki", "iiwiki"] : [wikiSource];
-      const articlesPerSource = Math.ceil(articleCount / sources.length);
+      // Fetch more candidates to compensate for filtering (images / quality)
+      const MULTIPLIER = 3;
+      const articlesPerSource = Math.ceil((articleCount * MULTIPLIER) / sources.length);
       const allArticles: ArticlePreview[] = [];
 
       for (const source of sources) {
-        const response = await fetch(
-          `/api/wiki/random-articles?source=${source}&count=${articlesPerSource}`
-        );
-        if (!response.ok) throw new Error(`Failed to fetch articles from ${source}`);
+        const url = `/api/wiki/random-articles?source=${source}&count=${articlesPerSource}&minQuality=${MIN_QUALITY}&preferImages=true`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          console.warn(`Random articles preview failed for ${source}`);
+          continue;
+        }
 
         const data = await response.json();
-        const titles: string[] = data.articles || [];
+        const previews: any[] = data.articles || [];
 
-        for (const title of titles) {
-          try {
-            const previewResponse = await fetch(
-              `/api/wiki/preview-article?source=${source}&title=${encodeURIComponent(title)}`
-            );
-            if (previewResponse.ok) {
-              const preview = await previewResponse.json();
-              allArticles.push({
-                title,
-                excerpt: preview.excerpt || "No excerpt available",
-                qualityScore: preview.qualityScore || 0,
-                estimatedRarity: preview.estimatedRarity || "COMMON",
-                wikiSource: source,
-                approved: preview.qualityScore >= 40,
-              });
-            }
-          } catch (error) {
-            console.error(`Failed to preview article "${title}":`, error);
-          }
+        for (const preview of previews) {
+          const q = preview.qualityScore || 0;
+          const artwork = preview.artwork || null;
+          const hasImage = !!artwork && !artwork.includes("placeholder");
+
+          allArticles.push({
+            title: preview.title,
+            excerpt: preview.excerpt || "No excerpt available",
+            qualityScore: q,
+            estimatedRarity: preview.estimatedRarity || "COMMON",
+            wikiSource: preview.wikiSource || source,
+            approved: true,
+            artwork,
+            hasImage,
+          });
         }
       }
+
+      // Prefer articles with images, then highest quality
+      allArticles.sort((a, b) => {
+        if ((b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0)) return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
+        return b.qualityScore - a.qualityScore;
+      });
 
       setArticles(allArticles.slice(0, articleCount));
       notify.success("Articles Fetched", `Found ${allArticles.length} eligible articles`);
@@ -718,7 +728,7 @@ export function LoreCardBatchAdmin() {
                               {isPending && (
                                 <>
                                   <Button
-                                    size="xs"
+                                    size="sm"
                                     onClick={() =>
                                       approveMutation.mutate({ requestId: request.id })
                                     }
@@ -728,7 +738,7 @@ export function LoreCardBatchAdmin() {
                                     Approve
                                   </Button>
                                   <Button
-                                    size="xs"
+                                    size="sm"
                                     variant="destructive"
                                     onClick={() => setRejectionRequestId(request.id)}
                                     className="h-7 bg-red-600/20 text-xs text-red-400 hover:bg-red-600/30"
@@ -739,7 +749,7 @@ export function LoreCardBatchAdmin() {
                               )}
                               {isApproved && (
                                 <Button
-                                  size="xs"
+                                  size="sm"
                                   onClick={() =>
                                     generateCardMutation.mutate({ requestId: request.id })
                                   }

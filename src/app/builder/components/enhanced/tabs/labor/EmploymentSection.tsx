@@ -4,12 +4,14 @@ import React from "react";
 import { EnhancedSlider } from "../../../../primitives/enhanced";
 import { TrendingDown, Clock, Briefcase } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
+import type { LaborBounds } from "../utils/laborCalculations";
 
 interface EmploymentSectionProps {
   laborMarket: LaborConfiguration;
   onChange: (field: keyof LaborConfiguration, value: any) => void;
   onNestedChange: (parentField: keyof LaborConfiguration, field: string, value: any) => void;
   showAdvanced: boolean;
+  componentBounds?: LaborBounds;
 }
 
 export function EmploymentSection({
@@ -17,6 +19,7 @@ export function EmploymentSection({
   onChange,
   onNestedChange,
   showAdvanced,
+  componentBounds,
 }: EmploymentSectionProps) {
   return (
     <div className="space-y-4">
@@ -25,8 +28,8 @@ export function EmploymentSection({
         description="Overall unemployment rate"
         value={laborMarket.unemploymentRate}
         onChange={(value) => onChange("unemploymentRate", value)}
-        min={0}
-        max={30}
+        min={componentBounds?.unemploymentRate?.min ?? 0}
+        max={componentBounds?.unemploymentRate?.max ?? 30}
         step={0.1}
         unit="%"
         sectionId="labor"

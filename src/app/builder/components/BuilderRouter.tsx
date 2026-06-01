@@ -111,6 +111,33 @@ function WelcomeModalWrapper() {
 
 // ─── Inner Router (consumes BuilderStateContext) ───
 
+/**
+ * Upgrades a flag URL to a high-resolution or SVG version if it is from FlagCDN or Wikimedia Commons.
+ */
+function getHighResFlagUrl(url: string | null | undefined): string | null | undefined {
+  if (!url) return url;
+
+  // 1. Upgrade flagcdn.com thumbnail to SVG
+  // e.g., https://flagcdn.com/w320/us.png -> https://flagcdn.com/us.svg
+  if (url.includes("flagcdn.com")) {
+    return url.replace(/\/w\d+\/([a-z0-9_-]+)\.(png|jpg|jpeg|gif|webp)$/i, "/$1.svg");
+  }
+
+  // 2. Upgrade Wikimedia Commons thumbnail to original (SVG if it is one, or original high-res image)
+  // e.g., https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Flag_of_the_United_States.svg/320px-Flag_of_the_United_States.svg.png
+  // -> https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg
+  if (url.includes("upload.wikimedia.org/wikipedia/commons/thumb/")) {
+    const parts = url.split("/");
+    if (parts[5] === "thumb") {
+      parts.splice(5, 1); // remove "thumb"
+      parts.pop(); // remove trailing thumbnail size filename
+      return parts.join("/");
+    }
+  }
+
+  return url;
+}
+
 function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) {
   const { user } = useUser();
   const router = useRouter();
@@ -124,6 +151,13 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     submitFn,
     isSubmittingGlobal,
   } = useBuilderContext();
+
+  const rawFlagUrl =
+    foundationPreviewCountry?.flag ||
+    builderState.selectedCountry?.flag ||
+    builderState.economicInputs?.flagUrl;
+
+  const flagUrl = getHighResFlagUrl(rawFlagUrl);
 
   // Initialize section from URL - default to foundation/identity
   const [activeSection, setActiveSection] = useState<BuilderSection>(() => getSectionFromUrl(mode));
@@ -457,6 +491,15 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       <BuilderDIPlugin />
       <WelcomeModalWrapper />
       <div className="relative min-h-screen w-full">
+        {/* Page-wide Background Flag Watermark */}
+        {flagUrl && (
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.09] dark:opacity-[0.08] saturate-[85%] dark:saturate-[60%] blur-[8px] transition-all duration-700"
+              style={{ backgroundImage: `url(${flagUrl})` }}
+            />
+          </div>
+        )}
         <BuilderSidebarLayout
           activeSection={activeSection}
           onNavigate={handleNavigate}

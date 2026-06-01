@@ -38,7 +38,7 @@ export default function WorldMapPage() {
   const isEmbed = searchParams.get("embed") === "true";
 
   usePageTitle({
-    title: isEmbed ? "IxWorld" : isStandalone ? "IxMaps" : "World Map",
+    title: isEmbed ? "World Map" : isStandalone ? "IxMaps" : "World Map",
   });
 
   // --- Country resolution: by ID or by name ---
@@ -75,7 +75,7 @@ export default function WorldMapPage() {
   }, []);
 
   // In embed mode: hide navigation, controls, use full viewport
-  const containerClass = isEmbed ? "h-dvh w-dvw" : "h-dvh";
+  const containerClass = isEmbed ? "h-dvh w-dvw" : isStandalone ? "h-dvh" : "h-[calc(100dvh-64px)]";
 
   return (
     <div className={`relative ${containerClass}`} data-maps-page>

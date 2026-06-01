@@ -301,7 +301,13 @@ Browser ──► React Query (in-memory)
                        political: 15 min
                        climate/altitude: 24 hours
                        rivers/lakes: 24 hours
-```
+
+### Backend & Query Optimizations (May 2026 Update)
+
+*   **Router Deduplication**: Eliminated 2,500 lines of redundant caching, simplification, and geometry loading helpers. All routing sub-modules (`geoSovereignty`, `geoEditor`, `geoAdmin`, `geoFeatures`, `geoWiki`) now query centralized layer configurations and utility handlers inside `geoCore`.
+*   **Zoom-Bucket-Aware Caching**: Fixed a caching TTL bug where zoom-aware keys (e.g. `political:z1`) were compared directly with base keys (`political`), failing matches and defaulting to the 15-minute TTL. The router now extracts the base layer prefix first, ensuring static layers (climate, altitudes, waterbodies) use their configured 24-hour TTL.
+*   **Centroid Detection**: Enhanced coordinate-to-subdivision query resolvers to compute accurate visual centroids using `computeVisualCenter`.
+*   **Synchronized Cache Evictions**: Standardized all geometry cache invalidation patterns under correct namespace paths (`geoCore.*`, `geoEditor.*`, `geoFeatures.*`, `geoSovereignty.*`, and `geoAdmin.*`) to ensure immediate consistency on border approvals or edits.
 
 ---
 

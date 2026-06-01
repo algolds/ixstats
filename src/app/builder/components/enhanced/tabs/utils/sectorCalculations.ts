@@ -7,6 +7,8 @@
  */
 
 import type { SectorConfiguration } from "~/types/economy-builder";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { Factory, Leaf, Users, Zap, DollarSign, Building2, type LucideIcon } from "lucide-react";
 
 /**
@@ -121,6 +123,143 @@ export function getSectorCategory(sectorType: string): "Primary" | "Secondary" |
  * // { totalGDP: 100, totalEmployment: 100, averageProductivity: 85.5 }
  * ```
  */
+/**
+ * Constraint information for a sector based on selected atomic components
+ */
+export interface SectorConstraint {
+  /** Whether this sector template is locked/unavailable */
+  locked: boolean;
+  /** Components that caused this sector to be locked */
+  lockedBy: string[];
+  /** Whether this sector is recommended by selected components */
+  recommended: boolean;
+  /** Components that recommended this sector */
+  recommendedBy: string[];
+  /** Minimum allowed value for GDP contribution */
+  minGDP: number;
+  /** Maximum allowed value for GDP contribution */
+  maxGDP: number;
+  /** Minimum allowed growth rate */
+  minGrowthRate: number;
+  /** Maximum allowed growth rate */
+  maxGrowthRate: number;
+  /** Multiplier to apply to base contribution */
+  impact: number;
+}
+
+/**
+ * Calculate sector constraints from selected atomic components
+ *
+ * Analyzes sectorImpact values across all selected components to determine
+ * which sectors are locked, recommended, and the allowed value ranges.
+ *
+ * @param selectedComponents - Array of selected economic component types
+ * @returns Record of sector constraints keyed by sector template ID
+ */
+export function getSectorConstraints(
+  selectedComponents: EconomicComponentType[]
+): Record<string, SectorConstraint> {
+  const sectorIds = Object.keys(SECTOR_TEMPLATES);
+  const constraints: Record<string, SectorConstraint> = {};
+
+  sectorIds.forEach((sectorId) => {
+    let impact = 1.0;
+    const lockedBy: string[] = [];
+    const recommendedBy: string[] = [];
+
+    if (selectedComponents.length > 0) {
+      selectedComponents.forEach((compType) => {
+        const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
+        const sectorMultiplier = component?.sectorImpact?.[sectorId] || 1.0;
+        impact *= sectorMultiplier;
+
+        if (sectorMultiplier < 0.5) {
+          lockedBy.push(component?.name || compType);
+        } else if (sectorMultiplier >= 1.2) {
+          recommendedBy.push(component?.name || compType);
+        }
+      });
+    }
+
+    const locked = lockedBy.length > 0;
+    const recommended = recommendedBy.length > 0;
+
+    // Scale slider ranges based on impact
+    const baseMaxGDP = 50;
+    const baseMinGDP = 0;
+    const baseMaxGrowth = 15;
+    const baseMinGrowth = -5;
+
+    // Strongly penalized sectors have tighter ranges
+    const gdpRangeFactor = locked ? 0.3 : impact < 0.8 ? 0.5 : 1.0;
+    const growthRangeFactor = locked ? 0.2 : impact < 0.8 ? 0.6 : 1.0;
+
+    constraints[sectorId] = {
+      locked,
+      lockedBy,
+      recommended,
+      recommendedBy,
+      impact,
+      minGDP: Math.max(0, baseMinGDP * gdpRangeFactor),
+      maxGDP: Math.round(baseMaxGDP * gdpRangeFactor),
+      minGrowthRate: Math.max(-5, Math.round(baseMinGrowth * growthRangeFactor)),
+      maxGrowthRate: Math.round(
+        baseMinGrowth + (baseMaxGrowth - baseMinGrowth) * growthRangeFactor
+      ),
+    };
+  });
+
+  return constraints;
+}
+
+/**
+ * Tax optimization info derived from selected atomic components
+ */
+export interface TaxOptimization {
+  optimalCorporateRate: number;
+  optimalIncomeRate: number;
+  revenueEfficiency: number;
+  componentCount: number;
+}
+
+/**
+ * Compute optimal tax rates from selected atomic components
+ *
+ * Averages the taxImpact values across all selected components to
+ * determine the most compatible tax rate range for the current build.
+ *
+ * @param selectedComponents - Array of selected economic component types
+ * @returns Tax optimization info with recommended rates and efficiency
+ */
+export function getTaxOptimization(
+  selectedComponents: EconomicComponentType[]
+): TaxOptimization | null {
+  if (selectedComponents.length === 0) return null;
+
+  let corporateSum = 0;
+  let incomeSum = 0;
+  let efficiencySum = 0;
+  let count = 0;
+
+  selectedComponents.forEach((compType) => {
+    const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
+    if (!component?.taxImpact) return;
+    corporateSum += component.taxImpact.optimalCorporateRate;
+    incomeSum += component.taxImpact.optimalIncomeRate;
+    efficiencySum += component.taxImpact.revenueEfficiency;
+    count++;
+  });
+
+  if (count === 0) return null;
+
+  return {
+    optimalCorporateRate: Math.round(corporateSum / count),
+    optimalIncomeRate: Math.round(incomeSum / count),
+    revenueEfficiency: Math.round((efficiencySum / count) * 100) / 100,
+    componentCount: count,
+  };
+}
+
 export function calculateSectorTotals(sectors: SectorConfiguration[]) {
   const avgGrowthRate =
     sectors.length > 0

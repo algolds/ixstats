@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Factory } from "lucide-react";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 
 // Sub-components
 import {
@@ -18,6 +17,8 @@ import {
   SECTOR_TEMPLATES,
   getSectorCategory,
   calculateSectorTotals,
+  getSectorConstraints,
+  type SectorConstraint,
 } from "./utils/sectorCalculations";
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
@@ -101,6 +102,12 @@ export function EconomySectorsTab({
     });
     return impacts;
   }, [selectedComponents]);
+
+  // Compute sector constraints from selected components
+  const sectorConstraints = useMemo(
+    () => getSectorConstraints(selectedComponents),
+    [selectedComponents]
+  );
 
   // Get the impact multiplier for a specific sector
   const getSectorImpact = (sectorId: string): number => {
@@ -222,12 +229,20 @@ export function EconomySectorsTab({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sector Configuration */}
         <div className="space-y-6">
-          <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-            <CutoutCardContent className="space-y-4 p-6">
-              <h3 className="mb-4 flex items-center space-x-2 text-lg font-bold text-emerald-500 dark:text-emerald-400">
-                <Factory className="h-5 w-5" />
-                <span>Active Sectors</span>
+          <GlassCard
+            depth="base"
+            theme="emerald"
+            className="border-emerald-500/20"
+            texture="chevron"
+            textureOpacity={0.04}
+          >
+            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                <Factory className="h-5 w-5 text-emerald-400" />
+                Active Sectors
               </h3>
+            </div>
+            <GlassCardContent className="space-y-4 p-6">
               {economyBuilder.sectors.map((sector, index) => {
                 const sectorType = sector.id.split("_")[0] as keyof typeof SECTOR_TEMPLATES;
                 const impact = sectorImpacts[sectorType] || 1;
@@ -235,6 +250,7 @@ export function EconomySectorsTab({
                 const effectiveGDP = getEffectiveValue(sector.id, sector.gdpContribution);
                 const effectiveEmployment = getEffectiveValue(sector.id, sector.employmentShare);
 
+                const constraint = sectorConstraints[sectorType];
                 return (
                   <SectorEditor
                     key={sector.id}
@@ -246,6 +262,7 @@ export function EconomySectorsTab({
                     affectingComponents={affectingComponents}
                     effectiveGDP={effectiveGDP}
                     effectiveEmployment={effectiveEmployment}
+                    constraint={constraint}
                     onToggleSelect={() =>
                       setSelectedSector(selectedSector === sector.id ? null : sector.id)
                     }
@@ -254,12 +271,13 @@ export function EconomySectorsTab({
                   />
                 );
               })}
-            </CutoutCardContent>
-          </CutoutCard>
+            </GlassCardContent>
+          </GlassCard>
 
           {/* Template Selector */}
           <SectorTemplateSelector
             existingSectors={economyBuilder.sectors}
+            sectorConstraints={sectorConstraints}
             onAddSector={addSector}
           />
         </div>

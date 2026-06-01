@@ -4,12 +4,14 @@ import React from "react";
 import { EnhancedSlider, EnhancedNumberInput } from "../../../../primitives/enhanced";
 import { Shield, Heart } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
+import type { LaborBounds } from "../utils/laborCalculations";
 
 interface ProtectionsSectionProps {
   laborMarket: LaborConfiguration;
   onChange: (field: keyof LaborConfiguration, value: any) => void;
   onNestedChange: (parentField: keyof LaborConfiguration, field: string, value: any) => void;
   showAdvanced: boolean;
+  componentBounds?: LaborBounds;
 }
 
 export function ProtectionsSection({

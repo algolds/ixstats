@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -17,6 +16,7 @@ import {
   getEmploymentTypeColor,
   getSectorColor,
   getProtectionColor,
+  getLaborBounds,
 } from "./utils/laborCalculations";
 import { WorkforceSection } from "./labor/WorkforceSection";
 import { EmploymentSection } from "./labor/EmploymentSection";
@@ -152,6 +152,8 @@ export function LaborEmploymentTab({
     [economyBuilder.laborMarket]
   );
 
+  const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
+
   const hasComponentImpact =
     employmentImpacts.unemployment !== 0 ||
     employmentImpacts.participation !== 1 ||
@@ -159,14 +161,6 @@ export function LaborEmploymentTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Labor & Employment Configuration</h2>
-          <p className="text-muted-foreground">
-            Configure workforce dynamics, employment rates, and worker protections
-          </p>
-        </div>
-      </div>
 
       {hasComponentImpact && (
         <Alert>
@@ -255,19 +249,28 @@ export function LaborEmploymentTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-          <CutoutCardContent className="space-y-6 p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-emerald-500 dark:text-emerald-400">
+        <GlassCard
+          depth="base"
+          theme="emerald"
+          className="border-emerald-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
               {activeSection === "workforce" && "Workforce Structure"}
               {activeSection === "employment" && "Employment Configuration"}
               {activeSection === "income" && "Income & Wage Settings"}
               {activeSection === "protections" && "Worker Protections"}
             </h3>
+          </div>
+          <GlassCardContent className="space-y-6 p-6">
             {activeSection === "workforce" && (
               <WorkforceSection
                 laborMarket={economyBuilder.laborMarket}
                 onChange={handleLaborChange}
                 showAdvanced={showAdvanced}
+                componentBounds={laborBounds}
               />
             )}
             {activeSection === "employment" && (
@@ -276,6 +279,7 @@ export function LaborEmploymentTab({
                 onChange={handleLaborChange}
                 onNestedChange={handleNestedLaborChange}
                 showAdvanced={showAdvanced}
+                componentBounds={laborBounds}
               />
             )}
             {activeSection === "income" && (
@@ -283,6 +287,7 @@ export function LaborEmploymentTab({
                 laborMarket={economyBuilder.laborMarket}
                 onChange={handleLaborChange}
                 showAdvanced={showAdvanced}
+                componentBounds={laborBounds}
               />
             )}
             {activeSection === "protections" && (
@@ -291,10 +296,11 @@ export function LaborEmploymentTab({
                 onChange={handleLaborChange}
                 onNestedChange={handleNestedLaborChange}
                 showAdvanced={showAdvanced}
+                componentBounds={laborBounds}
               />
             )}
-          </CutoutCardContent>
-        </CutoutCard>
+          </GlassCardContent>
+        </GlassCard>
 
         <LaborVisualizations
           laborMarket={economyBuilder.laborMarket}

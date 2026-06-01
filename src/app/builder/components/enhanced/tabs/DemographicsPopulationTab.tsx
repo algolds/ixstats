@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -116,13 +115,15 @@ export function DemographicsPopulationTab({
   // Calculate demographic impacts from atomic components
   const demographicImpacts = useMemo(() => {
     return selectedComponents.reduce(
-      (sum, compType) => {
+      (acc, compType) => {
         const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
+        const di = component?.demographicImpact;
+        if (!di) return acc;
         return {
-          populationGrowth: sum.populationGrowth * 1.0,
-          lifeExpectancy: sum.lifeExpectancy * 1.0,
-          literacyRate: sum.literacyRate * 1.0,
-          urbanization: sum.urbanization * 1.0,
+          populationGrowth: acc.populationGrowth * (di.populationGrowthModifier ?? 1.0),
+          lifeExpectancy: acc.lifeExpectancy * (di.lifeExpectancyModifier ?? 1.0),
+          literacyRate: acc.literacyRate * (di.literacyModifier ?? 1.0),
+          urbanization: acc.urbanization * (di.urbanizationModifier ?? 1.0),
         };
       },
       { populationGrowth: 1.0, lifeExpectancy: 1.0, literacyRate: 1.0, urbanization: 1.0 }
@@ -331,14 +332,6 @@ export function DemographicsPopulationTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Demographics & Population Configuration</h2>
-          <p className="text-muted-foreground">
-            Configure population structure, geographic distribution, and social indicators
-          </p>
-        </div>
-      </div>
 
       {hasComponentImpact && (
         <Alert>
@@ -419,14 +412,22 @@ export function DemographicsPopulationTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <CutoutCard className="rounded-2xl border border-zinc-800 bg-zinc-950/40 shadow-lg backdrop-blur-md">
-          <CutoutCardContent className="space-y-6 p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-emerald-500 dark:text-emerald-400">
+        <GlassCard
+          depth="base"
+          theme="emerald"
+          className="border-emerald-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
               {activeSection === "population" && "Population Structure"}
               {activeSection === "age" && "Age Distribution"}
               {activeSection === "geographic" && "Geographic Distribution"}
               {activeSection === "social" && "Social Indicators"}
             </h3>
+          </div>
+          <GlassCardContent className="space-y-6 p-6">
             {activeSection === "population" && (
               <PopulationSection
                 demographics={economyBuilder.demographics}
@@ -458,8 +459,8 @@ export function DemographicsPopulationTab({
                 showAdvanced={showAdvanced}
               />
             )}
-          </CutoutCardContent>
-        </CutoutCard>
+          </GlassCardContent>
+        </GlassCard>
 
         <DemographicsVisualizations demographics={economyBuilder.demographics} {...chartData} />
       </div>

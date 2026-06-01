@@ -28,6 +28,7 @@ import {
 import { formatCompactNumber, formatCompactCurrency } from "~/lib/format-utils";
 import { CountryPreview } from "../primitives/CountryPreview";
 import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
+import { useBuilderActions } from "../hooks/useBuilderActions";
 
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -80,8 +81,25 @@ export function BuilderPreviewWidget({
   onHeroExpand,
   activeSection,
 }: BuilderPreviewWidgetProps) {
-  const { builderState, foundationPreviewCountry } = useBuilderContext();
+  const {
+    builderState,
+    setBuilderState,
+    mode,
+    foundationPreviewCountry,
+    setFoundationPreviewCountry,
+    updateStep,
+    submitFn,
+    isSubmittingGlobal,
+  } = useBuilderContext();
   const foundationFilter = useBuilderFilter();
+  const { handleContinue, handlePreviousStep } = useBuilderActions({
+    builderState,
+    setBuilderState,
+    mode,
+  });
+  const isBackDisabled =
+    activeSection === "foundation" || (mode === "edit" && activeSection === "identity");
+  const isLastStep = activeSection === "preview";
   const { economicInputs, selectedCountry } = builderState;
   const { setPreviewWidgetHeight } = foundationFilter;
 
@@ -225,12 +243,11 @@ export function BuilderPreviewWidget({
     if (govComps.includes("SURVEILLANCE_SYSTEM" as GovComponentType)) legitimacy -= 8;
     legitimacy = Math.min(100, Math.max(0, legitimacy));
 
-    const totalAllocatedPercent = builderState.governmentStructure?.budgetAllocations
-      ? builderState.governmentStructure.budgetAllocations.reduce(
-          (sum: number, a: any) => sum + (a.allocatedPercent || 0),
-          0
-        )
-      : 0;
+    const allocations = builderState.governmentStructure?.budgetAllocations || [];
+    const totalAllocatedPercent = allocations.reduce(
+      (sum: number, a: any) => sum + (a.allocatedPercent || 0),
+      0
+    );
     const budgetHealth = Math.max(0, 100 - Math.abs(100 - totalAllocatedPercent));
 
     let efficiency = 50;
@@ -238,8 +255,9 @@ export function BuilderPreviewWidget({
     if (govComps.includes("TECHNOCRATIC_AGENCIES" as GovComponentType)) efficiency += 15;
     if (govComps.includes("PARTISAN_INSTITUTIONS" as GovComponentType)) efficiency -= 15;
     if (govComps.includes("MILITARY_ADMINISTRATION" as GovComponentType)) efficiency -= 10;
-    if (builderState.governmentStructure?.departments?.length > 8) {
-      efficiency -= (builderState.governmentStructure.departments.length - 8) * 3;
+    const deptCount = builderState.governmentStructure?.departments?.length || 0;
+    if (deptCount > 8) {
+      efficiency -= (deptCount - 8) * 3;
     }
     efficiency = Math.min(100, Math.max(10, efficiency));
 
@@ -380,8 +398,44 @@ export function BuilderPreviewWidget({
             />
           </div>
 
-          <CutoutCardContent className="p-3 pt-2">
+          <CutoutCardContent className="space-y-3 p-3 pt-2">
             <CountryPreview country={previewCountry} size="small" />
+
+            <div className="flex gap-2 border-t border-white/5 pt-2">
+              <button
+                onClick={() => {
+                  if (foundationFilter.selectedTemplate) {
+                    // Go back from Part 2 to Part 1
+                    foundationFilter.setSoftSelectedCountry(foundationFilter.selectedTemplate);
+                    foundationFilter.setNewCountryName(foundationFilter.selectedTemplate.name);
+                    foundationFilter.setSelectedTemplate(null);
+                    setFoundationPreviewCountry(foundationFilter.selectedTemplate);
+                  } else {
+                    // Deselect in Part 1
+                    foundationFilter.clearSelection();
+                    setFoundationPreviewCountry(null);
+                  }
+                }}
+                className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/5 py-1.5 text-center text-[10px] font-bold text-zinc-300 transition-all hover:bg-white/10 hover:text-white"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => {
+                  if (foundationFilter.softSelectedCountry) {
+                    if (foundationFilter.confirmHandlerRef.current) {
+                      foundationFilter.confirmHandlerRef.current();
+                    }
+                  } else if (previewCountry) {
+                    updateStep("foundation", previewCountry);
+                  }
+                }}
+                disabled={!!(foundationFilter.softSelectedCountry && !foundationFilter.newCountryName.trim())}
+                className="flex-1 cursor-pointer rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 py-1.5 text-center text-[10px] font-bold text-zinc-950 shadow-md transition-all hover:from-amber-400 hover:to-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Continue
+              </button>
+            </div>
           </CutoutCardContent>
         </CutoutCard>
       </div>
@@ -894,6 +948,35 @@ export function BuilderPreviewWidget({
                 </div>
               </div>
             )}
+
+            {/* Back & Continue/Submit buttons for all other steps */}
+            <div className="flex gap-2 border-t border-white/5 pt-2.5">
+              <button
+                onClick={handlePreviousStep}
+                disabled={isBackDisabled}
+                className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/5 py-1.5 text-center text-[10px] font-bold text-zinc-300 transition-all hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Back
+              </button>
+              <button
+                onClick={isLastStep ? () => submitFn?.() : handleContinue}
+                disabled={isLastStep ? isSubmittingGlobal : false}
+                className={cn(
+                  "flex-1 cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-55",
+                  isLastStep
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white"
+                    : "bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950"
+                )}
+              >
+                {isLastStep
+                  ? isSubmittingGlobal
+                    ? "Submitting..."
+                    : mode === "edit"
+                      ? "Save Changes"
+                      : "Create Nation"
+                  : "Continue"}
+              </button>
+            </div>
           </CutoutCardContent>
         </CutoutCard>
       </div>

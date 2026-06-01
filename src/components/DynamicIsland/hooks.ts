@@ -178,6 +178,7 @@ export function useDynamicIslandState() {
 
   // Timeout cleanup refs
   const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const prevActivePluginIdRef = useRef<string | undefined>(undefined);
 
   // Mode switching with dropdown behavior
   const switchMode = useCallback((newMode: ViewMode) => {
@@ -449,12 +450,15 @@ export function useDynamicIslandState() {
 
   // When active plugin changes, default expanded mode to plugin view
   useEffect(() => {
-    if (activePlugin?.expandedViews) {
+    const pluginIdChanged = activePlugin?.id !== prevActivePluginIdRef.current;
+    prevActivePluginIdRef.current = activePlugin?.id;
+
+    if (pluginIdChanged && activePlugin?.expandedViews) {
       const firstViewKey = Object.keys(activePlugin.expandedViews)[0];
       if (firstViewKey) {
         setExpandedMode(`plugin:${firstViewKey}`);
       }
-    } else {
+    } else if (!activePlugin) {
       // If the active plugin does not have expanded views and we are currently in a plugin mode, collapse!
       if (typeof mode === "string" && mode.startsWith("plugin:")) {
         setMode("compact");

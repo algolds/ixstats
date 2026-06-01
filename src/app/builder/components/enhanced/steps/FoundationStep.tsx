@@ -34,6 +34,19 @@ import { DynamicIslandEffects, DYNAMIC_ISLAND_STYLE } from "../../glass";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { useIntersectionObserver } from "../PerformanceOptimizer";
 
+const HISTORICAL_ARCHETYPE_IDS = [
+  "british-empire",
+  "venetian-republic",
+  "hanseatic-league",
+  "dutch-golden-age",
+  "industrial-revolution",
+  "soviet-command",
+  "american-gilded-age",
+  "french-mercantilism",
+  "ottoman-empire",
+  "chinese-ming-dynasty",
+];
+
 interface FoundationStepProps {
   countries: RealCountryData[];
   isLoadingCountries: boolean;
@@ -52,25 +65,17 @@ export function FoundationStep({
   onBackToIntro,
 }: FoundationStepProps) {
   const { builderState, updateArchetypeId } = useBuilderContext();
-  const { selectedTemplate, setSelectedTemplate } = useBuilderFilter();
+  const {
+    selectedTemplate,
+    setSelectedTemplate,
+    setSoftSelectedCountry,
+    setNewCountryName,
+  } = useBuilderFilter();
   const [localSelectedArchetype, setLocalSelectedArchetype] = useState<any | null>(null);
   const [activeEra, setActiveEra] = useState<"modern" | "historical">("modern");
   const [visibleCount, setVisibleCount] = useState(6);
-
-  // Preserve selections on mount so navigating back to this step keeps the chosen template
-  React.useEffect(() => {
-    if (builderState.selectedCountry) {
-      setSelectedTemplate(builderState.selectedCountry);
-    } else {
-      setSelectedTemplate(null);
-    }
-    setLocalSelectedArchetype(null);
-  }, [setSelectedTemplate, builderState.selectedCountry]);
-
-  // Reset visibleCount when activeEra changes
-  React.useEffect(() => {
-    setVisibleCount(6);
-  }, [activeEra]);
+  const hasInitializedRef = React.useRef(false);
+  const hasRestoredArchetypeRef = React.useRef(false);
 
   // Query archetypes
   const { data: archetypesData, isLoading: isLoadingArchetypes } =
@@ -81,20 +86,42 @@ export function FoundationStep({
   const archetypes = archetypesData?.archetypes || [];
   const visibleArchetypes = archetypes.slice(0, visibleCount);
 
-  const [hasScrolled, setHasScrolled] = useState(() => {
-    return typeof window !== "undefined" && window.scrollY > 10;
-  });
-
+  // Preserve selections on mount so navigating back to this step keeps the chosen template selected
   React.useEffect(() => {
-    if (hasScrolled) return;
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setHasScrolled(true);
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
+    if (builderState.selectedCountry) {
+      setSelectedTemplate(builderState.selectedCountry);
+      setSoftSelectedCountry(builderState.selectedCountry);
+      setNewCountryName(builderState.selectedCountry.name);
+      
+      // Auto-set the active era if a historical archetype was previously chosen
+      if (builderState.selectedArchetypeId && HISTORICAL_ARCHETYPE_IDS.includes(builderState.selectedArchetypeId)) {
+        setActiveEra("historical");
       }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasScrolled]);
+    } else {
+      setSelectedTemplate(null);
+    }
+    setLocalSelectedArchetype(null);
+  }, [setSelectedTemplate, setSoftSelectedCountry, setNewCountryName, builderState.selectedCountry, builderState.selectedArchetypeId]);
+
+  // Restore selected archetype when archetypes data loads
+  React.useEffect(() => {
+    if (hasRestoredArchetypeRef.current) return;
+    if (builderState.selectedArchetypeId && archetypes.length > 0) {
+      const matched = archetypes.find((a) => a.id === builderState.selectedArchetypeId);
+      if (matched) {
+        setLocalSelectedArchetype(matched);
+        hasRestoredArchetypeRef.current = true;
+      }
+    }
+  }, [builderState.selectedArchetypeId, archetypes]);
+
+  // Reset visibleCount when activeEra changes
+  React.useEffect(() => {
+    setVisibleCount(6);
+  }, [activeEra]);
 
   const loaderRef = React.useRef<HTMLDivElement>(null);
   const observerOptions = React.useMemo(
@@ -106,10 +133,10 @@ export function FoundationStep({
   const isIntersecting = useIntersectionObserver(loaderRef as React.RefObject<Element>, observerOptions);
 
   React.useEffect(() => {
-    if (hasScrolled && isIntersecting && visibleCount < archetypes.length) {
+    if (isIntersecting && visibleCount < archetypes.length) {
       setVisibleCount((prev) => Math.min(prev + 6, archetypes.length));
     }
-  }, [isIntersecting, archetypes.length, visibleCount, hasScrolled]);
+  }, [isIntersecting, archetypes.length, visibleCount]);
 
   if (isLoadingCountries) {
     return (
@@ -151,22 +178,7 @@ export function FoundationStep({
           countries={countries}
           onCountrySelect={(country) => setSelectedTemplate(country)}
           onBackToIntro={onBackToIntro}
-          onCreateFromScratch={() => {
-            const scratchCountry: RealCountryData = {
-              name: "Custom Nation",
-              countryCode: "custom",
-              gdp: 250000000000,
-              gdpPerCapita: 25000,
-              unemploymentRate: 5,
-              population: 10000000,
-              foundationCountryName: undefined,
-              growthRate: 3,
-              continent: "Custom",
-              region: "Custom",
-              governmentSpending: 55000000000,
-            };
-            setSelectedTemplate(scratchCountry);
-          }}
+          onCreateFromScratch={onCreateFromScratch}
         />
       </div>
     );
@@ -301,80 +313,121 @@ export function FoundationStep({
           <p className="text-sm text-zinc-400">Decoding faction templates...</p>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {visibleArchetypes.map((arch) => {
-              const IconComponent = getArchetypeIcon(arch.id);
-              const isSelected = localSelectedArchetype?.id === arch.id;
-              const styleClasses = getArchetypeColorClass(arch.id);
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {visibleArchetypes.map((arch) => {
+            const IconComponent = getArchetypeIcon(arch.id);
+            const isSelected = localSelectedArchetype?.id === arch.id;
+            const styleClasses = getArchetypeColorClass(arch.id);
 
-              return (
-                <motion.div
-                  key={arch.id}
-                  whileHover={{ y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => setLocalSelectedArchetype(arch)}
-                  className="h-full cursor-pointer"
+            return (
+              <motion.div
+                key={arch.id}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setLocalSelectedArchetype(arch)}
+                className="h-full cursor-pointer"
+              >
+                <CutoutCard
+                  className={cn(
+                    cutoutCardSurfaceClassName,
+                    "flex h-full flex-col justify-between overflow-hidden border transition-all duration-300",
+                    isSelected
+                      ? "border-blue-500 bg-blue-500/[0.02] shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+                      : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700/80"
+                  )}
+                  texture="dots"
+                  textureOpacity={isSelected ? 0.08 : 0.03}
                 >
-                  <CutoutCard
-                    className={cn(
-                      cutoutCardSurfaceClassName,
-                      "flex h-full flex-col justify-between overflow-hidden border transition-all duration-300",
-                      isSelected
-                        ? "border-blue-500 bg-blue-500/[0.02] shadow-[0_0_20px_rgba(59,130,246,0.15)]"
-                        : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700/80"
-                    )}
-                    texture="dots"
-                    textureOpacity={isSelected ? 0.08 : 0.03}
-                  >
-                    <CutoutCardContent className="flex h-full flex-col justify-between space-y-4 p-5">
-                      {/* Header */}
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div
+                  <CutoutCardContent className="flex h-full flex-col justify-between space-y-4 p-5">
+                    {/* Header */}
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div
+                          className={cn(
+                            "rounded-lg border p-2",
+                            styleClasses.split(" ")[1],
+                            styleClasses.split(" ")[2]
+                          )}
+                        >
+                          <IconComponent className={cn("h-5 w-5", styleClasses.split(" ")[0])} />
+                        </div>
+                        {isSelected && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 font-bold text-white">
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-900 transition-colors duration-200 group-hover:text-blue-600 dark:text-zinc-100 dark:group-hover:text-blue-400">
+                          {arch.name}
+                        </h3>
+                        <div className="mt-1.5 flex flex-wrap gap-2">
+                          <span className="rounded border border-zinc-200/80 bg-zinc-100/80 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-zinc-600 uppercase dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-400">
+                            {arch.region}
+                          </span>
+                          <span
                             className={cn(
-                              "rounded-lg border p-2",
-                              styleClasses.split(" ")[1],
-                              styleClasses.split(" ")[2]
+                              "rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase",
+                              getComplexityBadgeClass(arch.implementationComplexity)
                             )}
                           >
-                            <IconComponent className={cn("h-5 w-5", styleClasses.split(" ")[0])} />
-                          </div>
-                          {isSelected && (
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 font-bold text-white">
-                              <Check className="h-3 w-3 stroke-[3]" />
-                            </span>
-                          )}
+                            Complexity: {arch.implementationComplexity || "Medium"}
+                          </span>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-zinc-900 transition-colors duration-200 group-hover:text-blue-600 dark:text-zinc-100 dark:group-hover:text-blue-400">
-                            {arch.name}
-                          </h3>
-                          <div className="mt-1.5 flex flex-wrap gap-2">
-                            <span className="rounded border border-zinc-200/80 bg-zinc-100/80 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-zinc-600 uppercase dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-400">
-                              {arch.region}
-                            </span>
-                            <span
-                              className={cn(
-                                "rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase",
-                                getComplexityBadgeClass(arch.implementationComplexity)
-                              )}
-                            >
-                              Complexity: {arch.implementationComplexity || "Medium"}
-                            </span>
-                          </div>
+                      </div>
+                      <p className="line-clamp-3 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                        {arch.description}
+                      </p>
+                    </div>
+
+                    {/* Faction traits / characteristics */}
+                    <div className="space-y-2.5">
+                      <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800/60">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                            Traits & Modifiers
+                          </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="cursor-pointer text-zinc-400 hover:text-zinc-200 dark:text-zinc-500 dark:hover:text-zinc-300"
+                                >
+                                  <CircleHelp className="h-3 w-3" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="max-w-xs border border-zinc-200 bg-white/95 px-3 py-2 text-[10px] text-zinc-700 shadow-md backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300"
+                              >
+                                Traits & modifiers seed your nation's starting bonuses, penalties,
+                                and operational characteristics in the simulation.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
-                        <p className="line-clamp-3 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                          {arch.description}
-                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {(arch.characteristics || [])
+                            .slice(0, 3)
+                            .map((trait: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-700 dark:border-zinc-800/80 dark:bg-zinc-900 dark:text-zinc-300"
+                              >
+                                ✦ {trait}
+                              </span>
+                            ))}
+                        </div>
                       </div>
 
-                      {/* Faction traits / characteristics */}
-                      <div className="space-y-2.5">
-                        <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800/60">
+                      {/* Stat Bars (Growth, Innovation, Stability) */}
+                      {arch.growthMetrics && (
+                        <div className="space-y-1.5 border-t border-zinc-200 pt-3 dark:border-zinc-800/60">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                              Traits & Modifiers
+                              Alignment Profile
                             </span>
                             <TooltipProvider>
                               <Tooltip>
@@ -391,104 +444,65 @@ export function FoundationStep({
                                   side="top"
                                   className="max-w-xs border border-zinc-200 bg-white/95 px-3 py-2 text-[10px] text-zinc-700 shadow-md backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300"
                                 >
-                                  Traits & modifiers seed your nation's starting bonuses, penalties,
-                                  and operational characteristics in the simulation.
+                                  The starting position of your nation's values. Innovation
+                                  represents reform/technology focus, while Stability represents
+                                  order/institutions.
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                           </div>
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            {(arch.characteristics || [])
-                              .slice(0, 3)
-                              .map((trait: string, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-700 dark:border-zinc-800/80 dark:bg-zinc-900 dark:text-zinc-300"
-                                >
-                                  ✦ {trait}
-                                </span>
-                              ))}
+                          <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                            <div className="space-y-0.5">
+                              <div className="flex justify-between text-[9px] text-zinc-600 dark:text-zinc-400">
+                                <span>Innovation</span>
+                                <span>{arch.growthMetrics.innovationIndex || 50}%</span>
+                              </div>
+                              <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                                <div
+                                  className="h-full rounded-full bg-cyan-400"
+                                  style={{
+                                    width: `${arch.growthMetrics.innovationIndex || 50}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="flex justify-between text-[9px] text-zinc-600 dark:text-zinc-400">
+                                <span>Stability</span>
+                                <span>{arch.growthMetrics.stability || 50}%</span>
+                              </div>
+                              <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                                <div
+                                  className="h-full rounded-full bg-emerald-400"
+                                  style={{ width: `${arch.growthMetrics.stability || 50}%` }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Stat Bars (Growth, Innovation, Stability) */}
-                        {arch.growthMetrics && (
-                          <div className="space-y-1.5 border-t border-zinc-200 pt-3 dark:border-zinc-800/60">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                                Alignment Profile
-                              </span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="cursor-pointer text-zinc-400 hover:text-zinc-200 dark:text-zinc-500 dark:hover:text-zinc-300"
-                                    >
-                                      <CircleHelp className="h-3 w-3" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent
-                                    side="top"
-                                    className="max-w-xs border border-zinc-200 bg-white/95 px-3 py-2 text-[10px] text-zinc-700 shadow-md backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300"
-                                  >
-                                    The starting position of your nation's values. Innovation
-                                    represents reform/technology focus, while Stability represents
-                                    order/institutions.
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                            <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                              <div className="space-y-0.5">
-                                <div className="flex justify-between text-[9px] text-zinc-600 dark:text-zinc-400">
-                                  <span>Innovation</span>
-                                  <span>{arch.growthMetrics.innovationIndex || 50}%</span>
-                                </div>
-                                <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                                  <div
-                                    className="h-full rounded-full bg-cyan-400"
-                                    style={{
-                                      width: `${arch.growthMetrics.innovationIndex || 50}%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <div className="space-y-0.5">
-                                <div className="flex justify-between text-[9px] text-zinc-600 dark:text-zinc-400">
-                                  <span>Stability</span>
-                                  <span>{arch.growthMetrics.stability || 50}%</span>
-                                </div>
-                                <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                                  <div
-                                    className="h-full rounded-full bg-emerald-400"
-                                    style={{ width: `${arch.growthMetrics.stability || 50}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CutoutCardContent>
-                  </CutoutCard>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Sentinel for infinite loading */}
-          {visibleCount < archetypes.length && (
-            <div ref={loaderRef} className="flex justify-center py-8">
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <div className="h-4 w-4 animate-spin rounded-full border border-blue-500 border-t-transparent" />
-                Loading more archetypes...
-              </div>
-            </div>
-          )}
-        </>
+                      )}
+                    </div>
+                  </CutoutCardContent>
+                </CutoutCard>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
+
+      {/* Sentinel for infinite loading - always rendered so observer ref is attached, hidden visually when done/loading */}
+      <div
+        ref={loaderRef}
+        className={cn(
+          "flex justify-center py-8",
+          (isLoadingArchetypes || visibleCount >= archetypes.length) && "hidden"
+        )}
+      >
+        <div className="flex items-center gap-2 text-xs text-zinc-400">
+          <div className="h-4 w-4 animate-spin rounded-full border border-blue-500 border-t-transparent" />
+          Loading more archetypes...
+        </div>
+      </div>
 
       {/* Confirmation Actions */}
       <AnimatePresence>

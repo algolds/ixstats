@@ -101,6 +101,9 @@ cypress/videos/
 .eslintcache
 .hextaui
 
+# Ignore local sibling workspace development artifacts not part of this repo.
+odysseus/
+
 # --------------------------------------------------------------------------------
 # Project Config Files (keep on disk, not in repo)
 # --------------------------------------------------------------------------------
@@ -127,6 +130,7 @@ prisma/backups/
 docs/archive/
 CHANGELOG.md
 IMPLEMENTATION_STATUS.md
+data/
 
 # --------------------------------------------------------------------------------
 # One-off Scripts & Data
@@ -176,3 +180,7 @@ public/images/uploads/*
 !public/images/uploads/.gitkeep
 public/images/downloaded/*
 !public/images/downloaded/.gitkeep
+economy-builder-refactor-plan.md
+/public/*
+/tests/*
+
