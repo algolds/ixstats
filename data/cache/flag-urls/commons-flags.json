@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "resolvedAt": "2026-06-01T05:07:05.872Z",
+  "resolvedAt": "2026-06-02T04:39:59.011Z",
   "flags": {
     "korea, dem. people's rep.": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Flag_of_North_Korea.png",
@@ -941,6 +941,10 @@
     "angola": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Flag_of_Angola.svg",
       "resolvedAt": 1780139571272
+    },
+    "caphiria": {
+      "url": null,
+      "resolvedAt": 1780375199010
     }
   }
 }

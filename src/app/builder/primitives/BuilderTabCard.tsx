@@ -95,7 +95,7 @@ export function BuilderTabCard({
       {!hideTabList && (
         <div
           role="tablist"
-          className="glass-surface glass-refraction relative flex gap-1 rounded-xl border border-zinc-800/40 bg-black/35 p-1 shadow-md"
+          className="glass-surface glass-refraction relative flex gap-1 rounded-xl border bg-card/50 p-1 shadow-md"
         >
           {/* Sliding indicator behind active tab */}
           {activeIndex !== -1 && (
@@ -126,7 +126,7 @@ export function BuilderTabCard({
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
                   "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors duration-200",
-                  isActive ? currentTheme.activeText : "text-zinc-400 hover:text-zinc-200"
+                  isActive ? currentTheme.activeText : "text-muted-foreground hover:text-foreground"
                 )}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -134,7 +134,7 @@ export function BuilderTabCard({
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 transition-colors duration-200",
-                    isActive ? currentTheme.activeIcon : "text-zinc-500"
+                    isActive ? currentTheme.activeIcon : "text-muted-foreground/60"
                   )}
                 />
                 <span className="hidden sm:inline">{tab.label}</span>

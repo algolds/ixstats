@@ -5,7 +5,6 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Users, TrendingUp, TrendingDown, DollarSign, Shield, Briefcase, Zap } from "lucide-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
@@ -18,6 +17,9 @@ import {
   getProtectionColor,
   getLaborBounds,
 } from "./utils/laborCalculations";
+import { validateEconomy } from "./utils/validation";
+import { ValidationToast } from "./utils/ValidationToast";
+import { FieldIndicator } from "~/app/builder/primitives/FieldIndicator";
 import { WorkforceSection } from "./labor/WorkforceSection";
 import { EmploymentSection } from "./labor/EmploymentSection";
 import { IncomeSection } from "./labor/IncomeSection";
@@ -154,6 +156,11 @@ export function LaborEmploymentTab({
 
   const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
 
+  const validation = useMemo(
+    () => validateEconomy(economyBuilder, selectedComponents),
+    [economyBuilder, selectedComponents]
+  );
+
   const hasComponentImpact =
     employmentImpacts.unemployment !== 0 ||
     employmentImpacts.participation !== 1 ||
@@ -162,32 +169,7 @@ export function LaborEmploymentTab({
   return (
     <div className="space-y-6">
 
-      {hasComponentImpact && (
-        <Alert>
-          <Zap className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center space-x-4">
-              <span>Atomic Component Impact:</span>
-              {employmentImpacts.unemployment !== 0 && (
-                <Badge variant={employmentImpacts.unemployment < 0 ? "default" : "secondary"}>
-                  Unemployment: {employmentImpacts.unemployment > 0 ? "+" : ""}
-                  {employmentImpacts.unemployment.toFixed(1)}%
-                </Badge>
-              )}
-              {employmentImpacts.participation !== 1 && (
-                <Badge variant={employmentImpacts.participation > 1 ? "default" : "secondary"}>
-                  Participation: {((employmentImpacts.participation - 1) * 100).toFixed(1)}%
-                </Badge>
-              )}
-              {employmentImpacts.wageGrowth !== 1 && (
-                <Badge variant={employmentImpacts.wageGrowth > 1 ? "default" : "secondary"}>
-                  Wage Growth: {((employmentImpacts.wageGrowth - 1) * 100).toFixed(1)}%
-                </Badge>
-              )}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      <ValidationToast messages={validation.messages} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -220,7 +202,7 @@ export function LaborEmploymentTab({
         />
       </div>
 
-      <div className="flex space-x-1 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 shadow-inner backdrop-blur-md">
+      <div className="flex space-x-1 rounded-xl border border-border bg-muted/30 p-1 shadow-inner backdrop-blur-md">
         {[
           { id: "workforce", label: "Workforce", icon: Users },
           { id: "employment", label: "Employment", icon: Briefcase },
@@ -237,8 +219,8 @@ export function LaborEmploymentTab({
               className={cn(
                 "flex-1 rounded-lg transition-all duration-205",
                 activeSection === section.id
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/20 hover:bg-emerald-500"
-                  : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
               <Icon className="mr-2 h-4 w-4" />
@@ -266,38 +248,46 @@ export function LaborEmploymentTab({
           </div>
           <GlassCardContent className="space-y-6 p-6">
             {activeSection === "workforce" && (
-              <WorkforceSection
-                laborMarket={economyBuilder.laborMarket}
-                onChange={handleLaborChange}
-                showAdvanced={showAdvanced}
-                componentBounds={laborBounds}
-              />
+              <FieldIndicator fieldKey="participationRate" severity="none">
+                <WorkforceSection
+                  laborMarket={economyBuilder.laborMarket}
+                  onChange={handleLaborChange}
+                  showAdvanced={showAdvanced}
+                  componentBounds={laborBounds}
+                />
+              </FieldIndicator>
             )}
             {activeSection === "employment" && (
-              <EmploymentSection
-                laborMarket={economyBuilder.laborMarket}
-                onChange={handleLaborChange}
-                onNestedChange={handleNestedLaborChange}
-                showAdvanced={showAdvanced}
-                componentBounds={laborBounds}
-              />
+              <FieldIndicator fieldKey="unemploymentRate" severity="none">
+                <EmploymentSection
+                  laborMarket={economyBuilder.laborMarket}
+                  onChange={handleLaborChange}
+                  onNestedChange={handleNestedLaborChange}
+                  showAdvanced={showAdvanced}
+                  componentBounds={laborBounds}
+                />
+              </FieldIndicator>
             )}
             {activeSection === "income" && (
-              <IncomeSection
-                laborMarket={economyBuilder.laborMarket}
-                onChange={handleLaborChange}
-                showAdvanced={showAdvanced}
-                componentBounds={laborBounds}
-              />
+              <FieldIndicator fieldKey="incomeSection" severity="none">
+                <IncomeSection
+                  laborMarket={economyBuilder.laborMarket}
+                  onChange={handleLaborChange}
+                  showAdvanced={showAdvanced}
+                  componentBounds={laborBounds}
+                />
+              </FieldIndicator>
             )}
             {activeSection === "protections" && (
-              <ProtectionsSection
-                laborMarket={economyBuilder.laborMarket}
-                onChange={handleLaborChange}
-                onNestedChange={handleNestedLaborChange}
-                showAdvanced={showAdvanced}
-                componentBounds={laborBounds}
-              />
+              <FieldIndicator fieldKey="protectionsSection" severity="none">
+                <ProtectionsSection
+                  laborMarket={economyBuilder.laborMarket}
+                  onChange={handleLaborChange}
+                  onNestedChange={handleNestedLaborChange}
+                  showAdvanced={showAdvanced}
+                  componentBounds={laborBounds}
+                />
+              </FieldIndicator>
             )}
           </GlassCardContent>
         </GlassCard>

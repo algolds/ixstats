@@ -5,7 +5,6 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Users,
   Heart,
@@ -25,6 +24,8 @@ import type {
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 import { calculateDerivedDemographics, getRegionColor } from "./utils/demographicsCalculations";
+import { validateEconomy } from "./utils/validation";
+import { ValidationToast } from "./utils/ValidationToast";
 import { PopulationSection } from "./demographics/PopulationSection";
 import { AgeDistributionSection } from "./demographics/AgeDistributionSection";
 import { GeographicSection } from "./demographics/GeographicSection";
@@ -328,29 +329,17 @@ export function DemographicsPopulationTab({
     [economyBuilder.demographics]
   );
 
+  const validation = useMemo(
+    () => validateEconomy(economyBuilder, selectedComponents),
+    [economyBuilder, selectedComponents]
+  );
+
   const hasComponentImpact = Object.values(demographicImpacts).some((v) => v !== 1);
 
   return (
     <div className="space-y-6">
 
-      {hasComponentImpact && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center space-x-4">
-              <span>Atomic Component Impact:</span>
-              {Object.entries(demographicImpacts).map(
-                ([key, value]) =>
-                  value !== 1 && (
-                    <Badge key={key} variant={value > 1 ? "default" : "secondary"}>
-                      {key}: {((value - 1) * 100).toFixed(1)}%
-                    </Badge>
-                  )
-              )}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      <ValidationToast messages={validation.messages} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -383,7 +372,7 @@ export function DemographicsPopulationTab({
         />
       </div>
 
-      <div className="flex space-x-1 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 shadow-inner backdrop-blur-md">
+      <div className="flex space-x-1 rounded-xl border border-border bg-muted/30 p-1 shadow-inner backdrop-blur-md">
         {[
           { id: "population", label: "Population", icon: Users },
           { id: "age", label: "Age Structure", icon: Baby },
@@ -400,8 +389,8 @@ export function DemographicsPopulationTab({
               className={cn(
                 "flex-1 rounded-lg transition-all duration-205",
                 activeSection === section.id
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/20 hover:bg-emerald-500"
-                  : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
               <Icon className="mr-2 h-4 w-4" />

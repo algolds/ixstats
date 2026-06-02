@@ -155,34 +155,7 @@ export function BuilderSidebarNav({
           onNav("economics");
         },
       },
-      {
-        title: "Fiscal & Taxes",
-        section: "economics",
-        icon: TrendingUp,
-        colorClass: "text-green-400",
-        bgClass: "bg-green-500/5 hover:bg-green-500/10",
-        tab: "fiscal",
-        isActive: (sec, st) =>
-          sec === "economics" && st.builderState.activeEconomicsTab === "fiscal",
-        onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" }));
-          onNav("economics");
-        },
-      },
-      {
-        title: "Econ Preview",
-        section: "economics",
-        icon: Eye,
-        colorClass: "text-amber-400",
-        bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
-        tab: "preview",
-        isActive: (sec, st) =>
-          sec === "economics" && st.builderState.activeEconomicsTab === "preview",
-        onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" }));
-          onNav("economics");
-        },
-      },
+      // Fiscal & per-economy preview items removed — move to global Preview step
       {
         title: "Preview & Create",
         section: "preview",
@@ -278,34 +251,7 @@ export function BuilderSidebarNav({
           onNav("economics");
         },
       },
-      {
-        title: "Fiscal & Taxes",
-        section: "economics",
-        icon: TrendingUp,
-        colorClass: "text-green-400",
-        bgClass: "bg-green-500/5 hover:bg-green-500/10",
-        tab: "fiscal",
-        isActive: (sec, st) =>
-          sec === "economics" && st.builderState.activeEconomicsTab === "fiscal",
-        onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" }));
-          onNav("economics");
-        },
-      },
-      {
-        title: "Econ Preview",
-        section: "economics",
-        icon: Eye,
-        colorClass: "text-amber-400",
-        bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
-        tab: "preview",
-        isActive: (sec, st) =>
-          sec === "economics" && st.builderState.activeEconomicsTab === "preview",
-        onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" }));
-          onNav("economics");
-        },
-      },
+      // Per-economy preview removed — use global Preview & Save
       {
         title: "Preview & Save",
         section: "preview",

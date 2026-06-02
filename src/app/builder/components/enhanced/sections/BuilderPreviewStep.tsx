@@ -48,6 +48,10 @@ import { ComponentsList } from "../government-preview/ComponentsList";
 import { DepartmentsList } from "../government-preview/DepartmentsList";
 import { BudgetAllocationList } from "../government-preview/BudgetAllocationList";
 import { RevenueSourcesList } from "../government-preview/RevenueSourcesList";
+// Fiscal preview
+import { FiscalTab } from "../tabs/fiscal/FiscalTab";
+import { EconomyPreviewTab } from "../tabs/EconomyPreviewTab";
+import { calculateComponentEffectiveness } from "../tabs/utils/previewCalculations";
 
 interface SectionState {
   nationalIdentity: boolean;
@@ -250,6 +254,89 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
       })),
     } as GovernmentStructure;
   }, [governmentStructure]);
+
+  // Economic health metrics for preview (lightweight approximation)
+  const economicHealthMetrics = useMemo(() => {
+    const selected = builderState.economyBuilderState?.selectedAtomicComponents || [];
+    return {
+      economicHealthScore: 65 + (selected.length ?? 0) * 2,
+      sustainabilityScore: 60,
+      resilienceScore: 60,
+      competitivenessScore: 60,
+      gdpGrowthRate: coreIndicators?.realGDPGrowthRate ?? 2,
+      potentialGrowthRate: 3,
+      growthSustainability: 60,
+      inflationRate: coreIndicators?.inflationRate ?? 2,
+      inflationVolatility: 1,
+      exchangeRateStability: 75,
+      fiscalStability: 70,
+      unemploymentRate: builderState.economyBuilderState?.laborMarket?.unemploymentRate ?? 5,
+      innovationIndex: 65 + (selected.length ?? 0) * 2,
+      productivityIndex: 70 + (selected.length ?? 0) * 1.5,
+      economicRiskLevel: "Medium",
+      externalVulnerability: 25,
+      domesticVulnerability: 35,
+      systemicRisk: 30,
+    } as any;
+  }, [builderState.economyBuilderState, coreIndicators]);
+
+  // Revenue / fiscal integration summary for preview
+  const revenueIntegration = useMemo(() => {
+    const nominalGDP = coreIndicators?.nominalGDP || 0;
+
+    const totalRevenueFromSources = normalizedGovernmentStructure
+      ? normalizedGovernmentStructure.revenueSources.reduce(
+          (sum: number, r: any) => sum + (r.revenueAmount || 0),
+          0
+        )
+      : 0;
+
+    const totalRevenue =
+      totalRevenueFromSources || (economicInputs?.fiscalSystem?.governmentRevenueTotal ?? 0);
+
+    let taxRevenue = 0;
+    if (normalizedGovernmentStructure) {
+      taxRevenue = normalizedGovernmentStructure.revenueSources.reduce((sum: number, r: any) => {
+        const cat = String(r.category || "").toLowerCase();
+        if (
+          cat.includes("tax") ||
+          cat.includes("vat") ||
+          cat.includes("income") ||
+          cat.includes("corporate") ||
+          cat.includes("tariff")
+        ) {
+          return sum + (r.revenueAmount || 0);
+        }
+        return sum;
+      }, 0);
+    }
+
+    // Fallbacks
+    if (!taxRevenue) {
+      if (economicInputs?.fiscalSystem?.taxRevenueGDPPercent && nominalGDP) {
+        taxRevenue = (nominalGDP * (economicInputs.fiscalSystem.taxRevenueGDPPercent || 0)) / 100;
+      } else if (totalRevenue > 0) {
+        taxRevenue = Math.round(totalRevenue * 0.7);
+      }
+    }
+
+    const nonTaxRevenue = Math.max(0, totalRevenue - taxRevenue);
+
+    const taxBurdenRatio = nominalGDP ? (taxRevenue / nominalGDP) * 100 : 0;
+    const revenueToGDPRatio = nominalGDP ? (totalRevenue / nominalGDP) * 100 : 0;
+
+    const governmentSizeIndicator: "Small" | "Medium" | "Large" =
+      revenueToGDPRatio >= 30 ? "Large" : revenueToGDPRatio >= 10 ? "Medium" : "Small";
+
+    return {
+      totalRevenue,
+      taxRevenue,
+      nonTaxRevenue,
+      taxBurdenRatio,
+      revenueToGDPRatio,
+      governmentSizeIndicator,
+    };
+  }, [normalizedGovernmentStructure, economicInputs, coreIndicators]);
 
   return (
     <div className="space-y-6">
@@ -890,6 +977,36 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                         </div>
                         <div className="text-muted-foreground text-sm">Population Growth</div>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Economy Preview Summary (migrated from per-economy preview tab) */}
+                {builderState.economyBuilderState && (
+                  <div className="space-y-6">
+                    <EconomyPreviewTab
+                      economyBuilder={builderState.economyBuilderState}
+                      economicHealthMetrics={economicHealthMetrics}
+                      selectedComponents={
+                        builderState.economyBuilderState.selectedAtomicComponents || []
+                      }
+                      economicInputs={economicInputs as any}
+                    />
+                  </div>
+                )}
+
+                {/* Fiscal / Government Revenue Integration Preview */}
+                {(revenueIntegration.totalRevenue > 0 || !!economicInputs?.fiscalSystem) && (
+                  <div className="space-y-4">
+                    <h4 className="flex items-center gap-2 font-semibold text-green-700">
+                      <Landmark className="h-4 w-4" />
+                      Fiscal Policy
+                    </h4>
+                    <div>
+                      <FiscalTab
+                        revenueIntegration={revenueIntegration}
+                        economicInputs={economicInputs}
+                      />
                     </div>
                   </div>
                 )}

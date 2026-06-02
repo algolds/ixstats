@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
+
 import {
   Shield,
   Info,
@@ -13,19 +13,13 @@ import {
   Crown,
   Coins,
   Eye,
-  Lock,
-  Unlock,
   AlertTriangle,
   CheckCircle,
   Users,
   DollarSign,
-  Package,
 } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Switch } from "~/components/ui/switch";
 import { Checkbox } from "~/components/ui/checkbox";
-import { cn } from "~/lib/utils";
 import { Label } from "~/components/ui/label";
 import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
 import { RevenueSourceForm } from "~/components/government/atoms/RevenueSourceForm";
@@ -34,19 +28,11 @@ import { BudgetAllocationList } from "~/components/builder/government/BudgetAllo
 import { GovernmentSpendingSection } from "~/app/builder/sections/GovernmentSpendingSection";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { ComponentType } from "@prisma/client";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import { BuilderTabCard, type TabDefinition } from "../../../primitives/BuilderTabCard";
 import { AtomicGovernmentComponents } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
-import { SelectedComponentsList, AtomicWelcomeModal } from "~/components/government/atomic";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { AtomicWelcomeModal } from "~/components/government/atomic";
 
 interface GovernmentStepProps {
   economicInputs: EconomicInputs;
@@ -162,7 +148,7 @@ export function GovernmentStep({
   }, [governmentStructure]);
 
   // Selected component objects for the selected list sidebar
-  const selectedComponentObjects = useMemo(() => {
+  const _selectedComponentObjects = useMemo(() => {
     return governmentComponents
       .map((type) => ATOMIC_COMPONENTS[type])
       .filter((comp) => comp !== undefined);
@@ -232,11 +218,8 @@ export function GovernmentStep({
                 />
               </GlassCardContent>
             </GlassCard>
-          </div>
-        )}
 
-        {activeTab === "structure" && (
-          <div className="space-y-6">
+            {/* Departments list */}
             <GlassCard
               depth="base"
               theme="teal"
@@ -247,7 +230,7 @@ export function GovernmentStep({
               <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                 <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
                   <Users className="h-5 w-5 text-cyan-400" />
-                  Departments & Ministries
+                  Government Departments
                 </h3>
               </div>
               <GlassCardContent className="p-6">
@@ -255,22 +238,31 @@ export function GovernmentStep({
                   departments={governmentStructure.departments}
                   onAddDepartment={() => {
                     const newDept = {
-                      name: "",
-                      category: "Other" as const,
+                      name: `Department ${((governmentStructure.departments || []).length || 0) + 1}`,
+                      shortName: "",
+                      category: "executive",
                       description: "",
-                      ministerTitle: "Minister",
-                      organizationalLevel: "Ministry" as const,
+                      minister: "",
+                      ministerTitle: "",
+                      headquarters: "",
+                      established: "",
+                      employeeCount: 0,
+                      icon: "",
                       color: "#06b6d4",
                       priority: 50,
+                      isActive: true,
+                      parentDepartmentId: undefined,
+                      organizationalLevel: "",
                       functions: [],
+                      kpis: [],
                     };
                     onGovernmentStructureChange({
                       ...governmentStructure,
-                      departments: [...governmentStructure.departments, newDept],
+                      departments: [...(governmentStructure.departments || []), newDept],
                     });
                   }}
                   onUpdateDepartment={(idx, updated) => {
-                    const newDepts = [...governmentStructure.departments];
+                    const newDepts = [...(governmentStructure.departments || [])];
                     newDepts[idx] = updated;
                     onGovernmentStructureChange({
                       ...governmentStructure,
@@ -280,7 +272,7 @@ export function GovernmentStep({
                   onRemoveDepartment={(idx) => {
                     onGovernmentStructureChange({
                       ...governmentStructure,
-                      departments: governmentStructure.departments.filter(
+                      departments: (governmentStructure.departments || []).filter(
                         (_: any, i: number) => i !== idx
                       ),
                     });

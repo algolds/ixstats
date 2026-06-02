@@ -101,22 +101,7 @@ export function BuilderSectionNavWidget({ activeSection }: BuilderSectionNavWidg
             onClick: (st) =>
               st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" })),
           },
-          {
-            id: "fiscal",
-            label: "Fiscal & Taxes",
-            icon: TrendingUp,
-            isActive: (st) => st.builderState.activeEconomicsTab === "fiscal",
-            onClick: (st) =>
-              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" })),
-          },
-          {
-            id: "preview",
-            label: "Econ Preview",
-            icon: Eye,
-            isActive: (st) => st.builderState.activeEconomicsTab === "preview",
-            onClick: (st) =>
-              st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" })),
-          },
+          // fiscal & per-economy preview removed; use global Preview step instead
         ];
       default:
         return [];

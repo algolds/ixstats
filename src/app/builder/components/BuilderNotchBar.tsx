@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type { BuilderSection } from "../lib/builder-theme";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
+import { TAX_SYSTEM_TEMP_DISABLED } from "~/app/builder/constants";
 
 // Sub-navigation theme styles mapping
 const SUBNAV_THEME_STYLES: Record<
@@ -210,27 +211,11 @@ export function BuilderNotchBar({
         },
         {
           id: "labor",
-          label: "Labor",
+          label: "Labor & Demographics",
           icon: Users,
           isActive: (st: any) => st.builderState.activeEconomicsTab === "labor",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "labor" })),
-        },
-        {
-          id: "demographics",
-          label: "Demographics",
-          icon: Globe,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "demographics",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "demographics" })),
-        },
-        {
-          id: "fiscal",
-          label: "Fiscal Policy",
-          icon: Landmark,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "fiscal",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "fiscal" })),
         },
         {
           id: "tax",
@@ -239,15 +224,10 @@ export function BuilderNotchBar({
           isActive: (st: any) => st.builderState.activeEconomicsTab === "tax",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" })),
+          // When the global TAX_SYSTEM_TEMP_DISABLED flag is true, mark this subtab as disabled
+          disabled: TAX_SYSTEM_TEMP_DISABLED,
         },
-        {
-          id: "preview",
-          label: "Preview",
-          icon: Eye,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "preview",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "preview" })),
-        },
+        // Per-economy preview/fiscal subtabs removed — moved to global Preview step
       ];
     }
     return [];
@@ -503,20 +483,31 @@ export function BuilderNotchBar({
                             const Icon = subTab.icon;
                             const activeStyle =
                               SUBNAV_THEME_STYLES[activeSection] || SUBNAV_THEME_STYLES.default;
+                            const isDisabled = !!(subTab as any).disabled;
+
                             return (
                               <button
                                 key={subTab.id}
-                                onClick={() => subTab.onClick(state)}
+                                onClick={() => !isDisabled && subTab.onClick(state)}
+                                disabled={isDisabled}
                                 className={cn(
                                   "relative flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1 text-[10px] font-semibold transition-all duration-200",
-                                  isActive ? activeStyle.active : activeStyle.inactive
+                                  isActive
+                                    ? activeStyle.active
+                                    : isDisabled
+                                      ? "text-muted-foreground/30 cursor-not-allowed opacity-50"
+                                      : activeStyle.inactive
                                 )}
                               >
                                 {Icon && (
                                   <Icon
                                     className={cn(
                                       "h-3 w-3",
-                                      isActive ? activeStyle.iconActive : activeStyle.iconInactive
+                                      isActive
+                                        ? activeStyle.iconActive
+                                        : isDisabled
+                                          ? "text-muted-foreground/25"
+                                          : activeStyle.iconInactive
                                     )}
                                   />
                                 )}

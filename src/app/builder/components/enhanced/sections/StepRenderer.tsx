@@ -385,13 +385,6 @@ export const StepRenderer = memo(function StepRenderer({
     [setBuilderState]
   );
 
-  const handlePersistTaxSystem = useCallback(
-    (taxSystemDraft: any) => {
-      setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
-    },
-    [setBuilderState]
-  );
-
   const handleFoundationComplete = useCallback(
     (country: RealCountryData) => {
       updateStep("foundation", country);
@@ -523,12 +516,10 @@ export const StepRenderer = memo(function StepRenderer({
         onEconomicInputsChange={handleEconomicInputsChange}
         governmentComponents={builderState.governmentComponents}
         governmentBuilderData={builderState.governmentStructure}
-        taxSystemData={builderState.taxSystemData}
         countryId={builderState.selectedCountry?.countryCode}
         showAdvanced={builderState.showAdvancedMode}
         persistedEconomyBuilder={builderState.economyBuilderState}
         onPersistEconomyBuilder={handlePersistEconomyBuilder}
-        onPersistTaxSystem={handlePersistTaxSystem}
         activeTab={builderState.activeEconomicsTab}
         onTabChange={(tab: string) => handleTabChange("economics", tab)}
       />

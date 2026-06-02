@@ -1,23 +1,25 @@
 "use client";
 
 import React from "react";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { Factory, PieChart, Users, TrendingUp, Target, AlertTriangle } from "lucide-react";
+import { Factory, PieChart, Users, TrendingUp, Target } from "lucide-react";
 import { MetricCard } from "../../../../primitives/enhanced";
 import type { SectorConfiguration } from "~/types/economy-builder";
 import { calculateSectorTotals } from "../utils/sectorCalculations";
+import type { SectorContribution } from "../utils/validation";
 
 interface SectorMetricsProps {
   sectors: SectorConfiguration[];
   onNormalize: () => void;
+  hasZeroContribution?: SectorContribution[];
 }
 
-export function SectorMetrics({ sectors, onNormalize }: SectorMetricsProps) {
+export function SectorMetrics({ sectors, onNormalize, hasZeroContribution = [] }: SectorMetricsProps) {
   const { totalGDP, totalEmployment, averageProductivity } = calculateSectorTotals(sectors);
 
   const gdpValid = Math.abs(totalGDP - 100) < 1;
   const employmentValid = Math.abs(totalEmployment - 100) < 1;
+  const zeroCount = hasZeroContribution.length;
 
   return (
     <div className="space-y-4">
@@ -40,25 +42,6 @@ export function SectorMetrics({ sectors, onNormalize }: SectorMetricsProps) {
         </Button>
       </div>
 
-      {/* Validation Alerts */}
-      {!gdpValid && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Sector GDP contributions must sum to 100%. Currently: {totalGDP.toFixed(1)}%
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!employmentValid && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Employment shares must sum to 100%. Currently: {totalEmployment.toFixed(1)}%
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Overview Metrics */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
@@ -77,10 +60,10 @@ export function SectorMetrics({ sectors, onNormalize }: SectorMetricsProps) {
         />
         <MetricCard
           label="Active Sectors"
-          value={sectors.length}
+          value={`${sectors.length - zeroCount} / ${sectors.length}`}
           icon={Factory}
           sectionId="sectors"
-          trend="neutral"
+          trend={zeroCount > 0 ? "down" : "neutral"}
         />
         <MetricCard
           label="Avg Productivity"

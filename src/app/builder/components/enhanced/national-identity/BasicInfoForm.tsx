@@ -14,7 +14,6 @@ import {
   Link2Off,
 } from "lucide-react";
 import {
-  CurrencySymbolPicker,
   GlassSelectBox,
   SliderWithDirectInput,
 } from "../../../primitives/enhanced";
@@ -28,7 +27,7 @@ import type {
   RealCountryData,
 } from "~/app/builder/lib/economy-data-service";
 import { getEconomicTier } from "~/app/builder/lib/economy-data-service";
-import { EDIT_MODE_FIELD_LOCKS } from "~/app/builder/components/enhanced/builderConfig";
+
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Switch } from "~/components/ui/switch";
@@ -36,7 +35,6 @@ import { getPopulationTierFromPopulation } from "~/types/ixstats";
 
 import { CountrySymbolsUploader } from "../../CountrySymbolsUploader";
 import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
-import type { GovernmentType } from "~/types/government";
 
 interface BasicInfoFormProps {
   identity: NationalIdentityData;
@@ -121,7 +119,6 @@ export const BasicInfoForm = React.memo(
     onIdentityChange,
     selectedGovernmentType,
     customOfficialName,
-    isEditingCustomName,
     onGovernmentTypeChange,
     onCustomOfficialNameChange,
     onCustomOfficialNameFocus,
@@ -144,9 +141,7 @@ export const BasicInfoForm = React.memo(
     inputs,
     onInputsChange,
     referenceCountry,
-    showAdvanced = false,
     mode = "create",
-    fieldLocks,
   }: BasicInfoFormProps) {
     // Fetch custom government types on mount
     React.useEffect(() => {
@@ -174,12 +169,12 @@ export const BasicInfoForm = React.memo(
       (event: React.ChangeEvent<HTMLInputElement>) => {
         onIdentityChange("countryName", event.target.value);
       },
-      [] // Empty - parent onIdentityChange is stable via refs
+      [onIdentityChange] // Empty - parent onIdentityChange is stable via refs
     );
 
     const handleOfficialNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
       onIdentityChange("officialName", event.target.value);
-    }, []);
+    }, [onIdentityChange]);
 
     const [isLargestLocked, setIsLargestLocked] = React.useState(() => {
       return identity.capitalCity === identity.largestCity && !!identity.capitalCity;
@@ -227,11 +222,10 @@ export const BasicInfoForm = React.memo(
 
     const handleDemonymChange = useCallback((value: string) => {
       onIdentityChange("demonym", value);
-    }, []);
+    }, [onIdentityChange]);
 
     // ─── Core Indicators Logic ───
     const isEditMode = mode === "edit";
-    const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
     // Safe defaults
     const safeInputs = inputs || {
@@ -296,12 +290,12 @@ export const BasicInfoForm = React.memo(
       return Math.round(incomeFactor * sizeFactor * 10) / 10;
     };
 
-    const expectedGrowthRate = calculateExpectedGrowthRate(
+    const _expectedGrowthRate = calculateExpectedGrowthRate(
       sanitizedCoreIndicators.gdpPerCapita,
       sanitizedCoreIndicators.totalPopulation
     );
 
-    const formatCurrency = (value: number | string) => {
+    const _formatCurrency = (value: number | string) => {
       const numValue = Number(value);
       if (numValue >= 1e12) return `$${(numValue / 1e12).toFixed(1)}T`;
       if (numValue >= 1e9) return `$${(numValue / 1e9).toFixed(1)}B`;

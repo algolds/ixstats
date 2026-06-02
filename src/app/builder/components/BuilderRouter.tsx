@@ -347,8 +347,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       const labels: Record<string, string> = {
         components: "Econ Components",
         structure: "Econ Structure",
-        fiscal: "Fiscal & Taxes",
-        preview: "Econ Preview",
       };
       return labels[tab] || tab;
     }

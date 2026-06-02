@@ -18,6 +18,7 @@ import {
 import { EnhancedSlider } from "../../../../primitives/enhanced";
 import { SECTOR_TEMPLATES, type SectorConstraint } from "../utils/sectorCalculations";
 import type { SectorConfiguration } from "~/types/economy-builder";
+import { FieldIndicator } from "~/app/builder/primitives/FieldIndicator";
 
 interface SectorEditorProps {
   sector: SectorConfiguration;
@@ -56,9 +57,20 @@ export function SectorEditor({
   const isAffected = affectingComponents.length > 0;
   const isBoosted = componentImpact > 1.0;
   const isPenalized = componentImpact < 1.0;
+  const isZeroGdp = sector.gdpContribution === 0;
+  const isZeroEmployment = sector.employmentShare === 0;
+  const severity = isZeroGdp || isZeroEmployment ? "warning" as const : "none" as const;
+  const fieldTooltip = isZeroGdp && isZeroEmployment
+    ? "0% GDP and 0% employment"
+    : isZeroGdp
+      ? "0% GDP contribution"
+      : isZeroEmployment
+        ? "0% employment share"
+        : undefined;
 
   return (
-    <motion.div
+    <FieldIndicator fieldKey={sector.id} severity={severity} tooltip={fieldTooltip}>
+      <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
@@ -345,5 +357,6 @@ export function SectorEditor({
         </motion.div>
       )}
     </motion.div>
+    </FieldIndicator>
   );
 }

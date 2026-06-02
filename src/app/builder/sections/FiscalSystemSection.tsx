@@ -32,10 +32,8 @@ import {
 // Help System
 import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
 
-import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
-
-// Note: Tax system building is now handled by the atomic tax builder component
-// integrated into the unified builder workflow via TaxSystemStep component
+import { TaxBuilder } from "~/components/tax-system/TaxBuilder";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
 interface FiscalSystemSectionProps extends ExtendedSectionProps {
   nominalGDP: number;
@@ -59,14 +57,33 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
   countryId,
   showAtomicIntegration = false,
   mode = "create",
-  fieldLocks,
 }: FiscalSystemSectionProps) {
   const isEditMode = mode === "edit";
-  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   const [selectedView, setSelectedView] = useState<
     "overview" | "revenue" | "spending" | "debt" | "atomic" | "builder"
   >("overview");
+
+  const [taxBuilderState, setTaxBuilderState] = useState<TaxBuilderState>(() => ({
+    taxSystem: {
+      taxSystemName: "Fiscal System",
+      fiscalYear: "calendar",
+      progressiveTax: true,
+      alternativeMinTax: false,
+      complianceRate: 85,
+      collectionEfficiency: 90,
+    },
+    categories: [
+      { name: "Personal Income", type: "income", rate: 25, isProgressive: true },
+      { name: "Corporate", type: "corporate", rate: 20, isProgressive: false },
+      { name: "Sales", type: "sales", rate: 10, isProgressive: false },
+    ],
+    brackets: {},
+    exemptions: [],
+    deductions: {},
+    isValid: true,
+    errors: {},
+  }));
 
   // Atomic component integration
   const { data: atomicComponents } = api.government.getComponents.useQuery(
@@ -98,15 +115,6 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
     },
   };
 
-  // DEBUG: Check what we're receiving
-  console.log("FiscalSystemSection - Received fiscalSystem:", fiscalSystem);
-  console.log("FiscalSystemSection - Key values:", {
-    taxRevenueGDPPercent: fiscalSystem?.taxRevenueGDPPercent,
-    governmentBudgetGDPPercent: fiscalSystem?.governmentBudgetGDPPercent,
-    totalDebtGDPRatio: fiscalSystem?.totalDebtGDPRatio,
-    budgetDeficitSurplus: fiscalSystem?.budgetDeficitSurplus,
-  });
-
   const handleFiscalChange = (key: string, value: any) => {
     const keys = key.split(".");
     const updatedFiscal = { ...fiscalSystem };
@@ -128,25 +136,11 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
 
   // Live metrics from fiscal system - NO FALLBACKS
   const metrics = useMemo(() => {
-    console.log("Calculating metrics with fiscalSystem:", fiscalSystem);
-
     // Use actual values with NaN protection
     const taxRevenue = Number(fiscalSystem.taxRevenueGDPPercent);
     const budgetBalance = Number(fiscalSystem.budgetDeficitSurplus);
     const totalDebt = Number(fiscalSystem.totalDebtGDPRatio);
-    const debtService = Number(fiscalSystem.debtServiceCosts);
     const govRevenue = Number(fiscalSystem.governmentRevenueTotal);
-
-    console.log("Parsed metric values:", {
-      taxRevenue,
-      budgetBalance,
-      totalDebt,
-      debtService,
-      govRevenue,
-      isNaN_taxRevenue: isNaN(taxRevenue),
-      isNaN_budgetBalance: isNaN(budgetBalance),
-      isNaN_totalDebt: isNaN(totalDebt),
-    });
 
     // If ANY value is NaN, force defaults
     const safeTaxRevenue = isNaN(taxRevenue) ? 20 : taxRevenue;
@@ -215,18 +209,23 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
 
   // Calculate fiscal health score
   const fiscalHealthScore = useMemo(() => {
+    const safeTaxRev = Number(fiscalSystem.taxRevenueGDPPercent);
+    const safeDebtRatio = Number(fiscalSystem.totalDebtGDPRatio);
+    const safeBudgetBalance = Number(fiscalSystem.budgetDeficitSurplus || 0);
+    if (isNaN(safeTaxRev) || isNaN(safeDebtRatio)) return 0;
+
     let score = 100;
 
     // Tax burden assessment
-    if (fiscalSystem.taxRevenueGDPPercent < 15) score -= 20;
-    else if (fiscalSystem.taxRevenueGDPPercent > 40) score -= 15;
+    if (safeTaxRev < 15) score -= 20;
+    else if (safeTaxRev > 40) score -= 15;
 
     // Debt assessment
-    if (fiscalSystem.totalDebtGDPRatio > 90) score -= 30;
-    else if (fiscalSystem.totalDebtGDPRatio > 60) score -= 20;
+    if (safeDebtRatio > 90) score -= 30;
+    else if (safeDebtRatio > 60) score -= 20;
 
     // Budget balance assessment
-    const deficitPercent = Math.abs((fiscalSystem.budgetDeficitSurplus || 0) / nominalGDP) * 100;
+    const deficitPercent = Math.abs(safeBudgetBalance / (nominalGDP || 1)) * 100;
     if (deficitPercent > 3) score -= 25;
     else if (deficitPercent > 1) score -= 10;
 
@@ -237,7 +236,6 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
   const taxData = useMemo(() => {
     const rates = fiscalSystem.taxRates;
     if (!rates) {
-      console.error("FiscalSystemSection: No tax rates data");
       return [];
     }
 
@@ -265,7 +263,6 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
     const taxRevenuePercent = Number(fiscalSystem.taxRevenueGDPPercent);
 
     if (isNaN(totalRevenue) && isNaN(taxRevenuePercent)) {
-      console.error("FiscalSystemSection: No valid revenue data");
       return [];
     }
 
@@ -321,7 +318,6 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
     // Use government spending data from inputs
     const govSpending = inputs.governmentSpending;
     if (!govSpending || !govSpending.spendingCategories) {
-      console.error("FiscalSystemSection: No government spending data");
       return [];
     }
 
@@ -335,9 +331,9 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
       .filter((item) => !isNaN(item.value) && item.value > 0);
   }, [inputs.governmentSpending]);
 
-  // Ensure all required fields exist - guard after all hooks
-  if (!inputs.fiscalSystem) {
-    console.error("FiscalSystemSection: No fiscal system data provided");
+  // Ensure fiscal system data is usable
+  const hasFiscalData = fiscalSystem && typeof fiscalSystem.taxRevenueGDPPercent === "number";
+  if (!hasFiscalData) {
     return (
       <div className="p-4 text-red-600 dark:text-red-400">
         Error: No fiscal system data available
@@ -611,11 +607,15 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
         <>
           <div className="md:col-span-2">
             <EnhancedBarChart
-              data={[
-                { name: "Internal Debt", value: 25.0 },
-                { name: "External Debt", value: 15.0 },
-                { name: "Total Debt", value: 40.0 },
-              ]}
+              data={(() => {
+                const internalDebt = Math.max(0, Number(fiscalSystem.internalDebtGDPPercent) || 0);
+                const externalDebt = Math.max(0, Number(fiscalSystem.externalDebtGDPPercent) || 0);
+                return [
+                  { name: "Internal Debt", value: internalDebt },
+                  { name: "External Debt", value: externalDebt },
+                  { name: "Total Debt", value: internalDebt + externalDebt },
+                ];
+              })()}
               xKey="name"
               yKey="value"
               title="Government Debt Breakdown"
@@ -716,34 +716,18 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
       {/* Tax Builder */}
       {selectedView === "builder" && (
         <div className="md:col-span-2">
-          <div className="rounded-lg border border-amber-200/50 bg-gradient-to-br from-amber-50/50 to-orange-50/50 p-6 dark:border-amber-700/50 dark:from-amber-950/20 dark:to-orange-950/20">
-            <div className="space-y-4 text-center">
-              <Building2 className="mx-auto h-12 w-12 text-amber-500" />
-              <h4 className="text-foreground text-lg font-bold">Advanced Tax System Builder</h4>
-              <p className="text-muted-foreground mx-auto max-w-md text-sm">
-                Create custom tax brackets, deductions, and complex tax policies. This advanced
-                feature is under development.
-              </p>
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="bg-card rounded-lg border border-amber-200/30 p-3">
-                  <h5 className="mb-2 text-sm font-medium">Coming Soon:</h5>
-                  <ul className="text-muted-foreground space-y-1 text-xs">
-                    <li>• Progressive tax brackets</li>
-                    <li>• Custom deductions</li>
-                    <li>• Corporate tax tiers</li>
-                  </ul>
-                </div>
-                <div className="bg-card rounded-lg border border-amber-200/30 p-3">
-                  <h5 className="mb-2 text-sm font-medium">Advanced Features:</h5>
-                  <ul className="text-muted-foreground space-y-1 text-xs">
-                    <li>• Tax simulation modeling</li>
-                    <li>• Revenue optimization</li>
-                    <li>• Policy impact analysis</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
+          <TaxBuilder
+            countryId={countryId || ""}
+            initialData={taxBuilderState}
+            onChange={setTaxBuilderState}
+            economicData={{
+              gdp: nominalGDP || 0,
+              sectors: [],
+              population: totalPopulation || 1000000,
+            }}
+            enableAutoSync={!!countryId}
+            hideSaveButton={true}
+          />
         </div>
       )}
     </>
@@ -765,21 +749,26 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
   // Generate fiscal insights
   const generateInsights = () => {
     const insights = [];
-    const deficitPercent = Math.abs((fiscalSystem.budgetDeficitSurplus || 0) / nominalGDP) * 100;
+    const safeTaxRev = Number(fiscalSystem.taxRevenueGDPPercent);
+    const safeDebtRatio = Number(fiscalSystem.totalDebtGDPRatio);
+    const safeBudgetBalance = Number(fiscalSystem.budgetDeficitSurplus || 0);
+    if (isNaN(safeTaxRev) || isNaN(safeDebtRatio)) return insights;
+
+    const deficitPercent = Math.abs(safeBudgetBalance / (nominalGDP || 1)) * 100;
 
     if (deficitPercent > 5) {
       insights.push("High budget deficit may require fiscal consolidation measures");
     }
 
-    if (fiscalSystem.totalDebtGDPRatio > 90) {
+    if (safeDebtRatio > 90) {
       insights.push("Public debt exceeds 90% of GDP - consider debt reduction strategies");
-    } else if (fiscalSystem.totalDebtGDPRatio > 60) {
+    } else if (safeDebtRatio > 60) {
       insights.push("Public debt approaching concerning levels - monitor carefully");
     }
 
-    if (fiscalSystem.taxRevenueGDPPercent < 15) {
+    if (safeTaxRev < 15) {
       insights.push("Low tax revenue may limit government's ability to provide public services");
-    } else if (fiscalSystem.taxRevenueGDPPercent > 40) {
+    } else if (safeTaxRev > 40) {
       insights.push("High tax burden may impact economic competitiveness");
     }
 

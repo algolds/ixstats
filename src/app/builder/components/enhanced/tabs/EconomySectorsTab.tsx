@@ -20,6 +20,8 @@ import {
   getSectorConstraints,
   type SectorConstraint,
 } from "./utils/sectorCalculations";
+import { validateEconomy } from "./utils/validation";
+import { ValidationToast } from "./utils/ValidationToast";
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
@@ -107,6 +109,11 @@ export function EconomySectorsTab({
   const sectorConstraints = useMemo(
     () => getSectorConstraints(selectedComponents),
     [selectedComponents]
+  );
+
+  const validation = useMemo(
+    () => validateEconomy(economyBuilder, selectedComponents),
+    [economyBuilder, selectedComponents]
   );
 
   // Get the impact multiplier for a specific sector
@@ -224,7 +231,13 @@ export function EconomySectorsTab({
   return (
     <div className="space-y-6">
       {/* Metrics Overview */}
-      <SectorMetrics sectors={economyBuilder.sectors} onNormalize={normalizeSectors} />
+      <SectorMetrics
+        sectors={economyBuilder.sectors}
+        onNormalize={normalizeSectors}
+        hasZeroContribution={validation.hasZeroContribution}
+      />
+
+      <ValidationToast messages={validation.messages} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sector Configuration */}

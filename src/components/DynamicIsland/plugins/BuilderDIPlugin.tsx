@@ -15,6 +15,8 @@ import { useBuilderContext } from "~/app/builder/components/enhanced/context/Bui
 import { BuilderDIView } from "~/components/DynamicIsland/BuilderDIView";
 import { MyCountryDIPlugin } from "./MyCountryDIPlugin";
 import { PreText } from "~/components/ui/pretext";
+import { useToastQueueStore } from "~/stores/toastQueueStore";
+import { AlertCircle } from "lucide-react";
 
 function BuilderCompactLabel() {
   return (
@@ -83,18 +85,41 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
     };
   }, [hasTriggeredRestoreExpansion, filter]);
 
+  const toastQueue = useToastQueueStore((s) => s.queue);
+  const errorCount = useMemo(
+    () => toastQueue.filter((t) => t.type === "error").length,
+    [toastQueue]
+  );
+  const hasError = errorCount > 0;
+
   const plugin = useMemo(() => {
     return {
       id: "builder",
       priority: 20, // High priority to override mycountry/wiki default plugins
       center: <BuilderCompactLabel />,
       expandedViews: { builder: BuilderDIView as React.ComponentType<any> },
-      accentColor: "#f59e0b",
+      accentColor: hasError ? "#ef4444" : "#f59e0b",
       stickyLabel: "Builder",
+      badge: hasError
+        ? { color: "#ef4444", pulse: true }
+        : undefined,
+      actions: hasError
+        ? [
+            {
+              id: "builder-errors",
+              icon: AlertCircle,
+              label: `${errorCount} validation error${errorCount === 1 ? "" : "s"}`,
+              onClick: () => {
+                window.dispatchEvent(new CustomEvent("ix:open-validation-toast"));
+              },
+              badge: errorCount,
+            },
+          ]
+        : undefined,
       filter,
       context,
     };
-  }, [filter, context]);
+  }, [filter, context, hasError, errorCount]);
 
   useDIPlugin(plugin);
   return null;

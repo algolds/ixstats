@@ -242,20 +242,7 @@ export default function CardAdminDashboardPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-      case "SUCCESS":
-        return <CheckCircle className="h-5 w-5 text-green-400" />;
-      case "IN_PROGRESS":
-        return <RefreshCw className="h-5 w-5 animate-spin text-blue-400" />;
-      case "FAILED":
-        return <XCircle className="h-5 w-5 text-red-400" />;
-      default:
-        return <AlertCircle className="text-muted-foreground h-5 w-5" />;
-    }
-  };
-
+  
   const formatDuration = (ms: number | null) => {
     if (!ms) return "N/A";
     const seconds = Math.floor(ms / 1000);
@@ -362,9 +349,9 @@ export default function CardAdminDashboardPage() {
                 <div className="mb-3 flex items-start gap-3">
                   <RefreshCw className="mt-0.5 h-5 w-5 shrink-0 text-blue-400 animate-spin" />
                   <div>
-                    <h3 className="text-foreground font-semibold">Active & Paused Import Jobs</h3>
+                    <h3 className="text-foreground font-semibold">Region Import Queue</h3>
                     <p className="text-muted-foreground text-sm">
-                      Monitor, pause, resume, or stop running and paused region imports.
+                     Monitor and manage region import jobs.
                     </p>
                   </div>
                 </div>

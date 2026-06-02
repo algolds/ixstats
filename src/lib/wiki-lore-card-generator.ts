@@ -242,7 +242,7 @@ export class WikiLoreCardGenerator {
             !filename.includes("icon") &&
             !filename.includes("flag") &&
             !filename.includes("logo") &&
-            (filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png"))
+            (filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png") || filename.endsWith(".svg"))
           );
         });
         if (firstImage) {
@@ -675,7 +675,7 @@ export class WikiLoreCardGenerator {
   private buildWikiUrl(articleTitle: string, wikiSource: WikiSource): string {
     const baseUrls = {
       ixwiki: "https://ixwiki.com/wiki",
-      iiwiki: "https://iiwiki.com/wiki",
+      iiwiki: "https://iiwiki.com/w",
       althistory: "https://althistory.fandom.com/wiki",
     };
 

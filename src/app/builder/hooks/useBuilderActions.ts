@@ -200,7 +200,7 @@ export function useBuilderActions({
         break;
 
       case "economics":
-        const econTabs = ["components", "structure", "fiscal", "preview"];
+          const econTabs = ["components", "structure", "preview"];
         const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
         if (currentEconIndex < econTabs.length - 1) {
           handleTabChange("economics", econTabs[currentEconIndex + 1]!);
@@ -235,7 +235,7 @@ export function useBuilderActions({
     }
 
     if (step === "economics") {
-      const econTabs = ["components", "structure", "fiscal", "preview"];
+        const econTabs = ["components", "structure", "preview"];
       const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
       if (currentEconIndex > 0) {
         handleTabChange("economics", econTabs[currentEconIndex - 1]!);

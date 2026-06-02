@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge as UIBadge } from "~/components/ui/badge";
-import { Eye, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
+import { Calculator, X, AlertTriangle, Settings, BarChart3 } from "lucide-react";
 import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
 import {
   ConflictWarningDialog,
@@ -15,18 +15,13 @@ import {
 import { useTaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { useTaxDataSync } from "~/hooks/useTaxDataSync";
-import { validateTaxBuilderState, hasStepErrors } from "~/lib/tax-builder-validation";
+import { validateTaxBuilderState } from "~/lib/tax-builder-validation";
 import { computeTaxSuggestions } from "~/lib/tax-suggestions-engine";
 
-// Extracted step components
-import { AtomicComponentsStep } from "./tax-builder/steps/AtomicComponentsStep";
-import { ConfigurationStep } from "./tax-builder/steps/ConfigurationStep";
-import { ExemptionsDeductionsStep } from "./tax-builder/steps/ExemptionsDeductionsStep";
-import { CalculatorPreviewStep } from "./tax-builder/steps/CalculatorPreviewStep";
-
-// Extracted panel components
-import { ValidationPanel } from "./tax-builder/panels/ValidationPanel";
-import { SyncStatusPanel } from "./tax-builder/panels/SyncStatusPanel";
+// Extracted tab components
+import { SettingsTab } from "./tabs/SettingsTab";
+import { PreviewTab } from "./tabs/PreviewTab";
+import { TaxCalculator } from "./atoms/TaxCalculator";
 
 // Existing components
 import { SuggestionsPanel, type SuggestionItem } from "~/components/builders/SuggestionsPanel";
@@ -57,18 +52,14 @@ export interface TaxBuilderProps {
     population: number;
   };
   governmentData?: any;
+  componentOptimization?: {
+    optimalCorporateRate: number;
+    optimalIncomeRate: number;
+    revenueEfficiency: number;
+    componentCount: number;
+  } | null;
 }
 
-/**
- * TaxBuilder - Orchestrator Component
- * Refactored from 1,851 lines to ~400 lines by extracting:
- * - State management to useTaxBuilderState hook
- * - Data sync to useTaxDataSync hook
- * - Validation to tax-builder-validation.ts
- * - Suggestions to tax-suggestions-engine.ts
- * - Step components to tax-builder/steps/
- * - Panel components to tax-builder/panels/
- */
 export function TaxBuilder({
   initialData,
   onSave,
@@ -81,15 +72,16 @@ export function TaxBuilder({
   enableAutoSync = false,
   economicData,
   governmentData,
+  componentOptimization,
 }: TaxBuilderProps) {
   const notify = useNotify();
-  // Step navigation state
-  const [currentStep, setCurrentStep] = useState<
-    "atomic" | "configuration" | "exemptions" | "calculator"
-  >("atomic");
+
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState<"settings" | "preview">("settings");
 
   // UI state
   const [_isSaving, setIsSaving] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [_calculationResult, setCalculationResult] = useState<TaxCalculationResult | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
@@ -97,18 +89,19 @@ export function TaxBuilder({
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [_selectedTaxComponents, _setSelectedTaxComponents] = useState<ComponentType[]>([]);
   const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
+  const [templateToConfirm, setTemplateToConfirm] = useState<(typeof taxSystemTemplates)[number] | null>(null);
 
   // State management hook
   const {
     builderState: localBuilderState,
     setBuilderState: setLocalBuilderState,
     handleTaxSystemChange,
-    handleCategoriesChange: _handleCategoriesChange,
-    handleBracketsChange: _handleBracketsChange,
+    handleCategoriesChange,
+    handleBracketsChange,
     handleExemptionsChange: _handleExemptionsChange,
     handleDeductionsChange: _handleDeductionsChange,
-    addCategory: _addCategory,
-    removeCategory: _removeCategory,
+    addCategory,
+    removeCategory,
     applyTemplate,
     updateValidation,
   } = useTaxBuilderState({ initialData, countryId });
@@ -288,15 +281,6 @@ export function TaxBuilder({
     }
   };
 
-  const handlePreview = () => {
-    const currentValidation = validateTaxBuilderState(builderState);
-    updateValidation(currentValidation);
-
-    if (onPreview) {
-      onPreview({ ...builderState, ...currentValidation });
-    }
-  };
-
   // Preview data transformations
   const previewTaxSystem: TaxSystem = useMemo(
     () => ({
@@ -338,14 +322,10 @@ export function TaxBuilder({
     return brackets;
   }, [builderState.brackets]);
 
-  const steps = [
-    { id: "atomic", label: "Atomic Components", icon: "⚡" },
-    { id: "configuration", label: "Tax System Configuration", icon: "⚙️" },
-    { id: "exemptions", label: "Exemptions & Deductions", icon: "📄" },
-    { id: "calculator", label: "Calculator & Preview", icon: "🧮" },
+  const tabs = [
+    { id: "settings", label: "Tax Settings", icon: Settings },
+    { id: "preview", label: "Preview & Impact", icon: BarChart3 },
   ];
-
-  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -375,71 +355,39 @@ export function TaxBuilder({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowTemplates(true)}
-            disabled={isReadOnly}
-          >
-            Use Template
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePreview}
+            onClick={() => setShowCalculator(true)}
             disabled={builderState.categories.length === 0}
           >
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
+            <Calculator className="mr-2 h-4 w-4" />
+            Tax Calculator
           </Button>
         </div>
       </div>
 
-      {/* Step Navigation */}
-      <div className="bg-muted/50 border-border rounded-lg border p-3 sm:p-4">
-        <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto sm:justify-between">
-          {steps.map((step, index) => {
-            const isActive = step.id === currentStep;
-            const isCompleted = index < currentStepIndex;
-            const stepHasErrors = hasStepErrors(step.id, validation.errors);
-
+      {/* Tab Navigation */}
+      <div className="bg-muted/50 border-border rounded-lg border p-1">
+        <div className="flex items-center gap-1">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTab;
+            const Icon = tab.icon;
             return (
-              <div key={step.id} className="flex shrink-0 items-center">
-                <button
-                  onClick={() => setCurrentStep(step.id as any)}
-                  disabled={isReadOnly}
-                  className={`relative flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs transition-colors sm:gap-2 sm:px-3 sm:text-sm ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : isCompleted && !stepHasErrors
-                        ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
-                        : stepHasErrors
-                          ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                          : "hover:bg-muted text-muted-foreground"
-                  }`}
-                >
-                  <span className="text-base sm:text-lg">{step.icon}</span>
-                  <span className="hidden font-medium sm:inline">{step.label}</span>
-                  {isCompleted && !stepHasErrors && (
-                    <CheckCircle className="hidden h-4 w-4 sm:block" />
-                  )}
-                  {stepHasErrors && <AlertTriangle className="hidden h-4 w-4 sm:block" />}
-                </button>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="text-muted-foreground mx-1 h-3 w-3 shrink-0 sm:mx-2 sm:h-4 sm:w-4" />
-                )}
-              </div>
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as "settings" | "preview")}
+                disabled={isReadOnly}
+                className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
             );
           })}
         </div>
       </div>
-
-      {/* Validation Panel */}
-      <ValidationPanel isValid={validation.isValid} errors={validation.errors} />
-
-      {/* Sync Status Panel */}
-      <SyncStatusPanel
-        governmentData={governmentData}
-        revenueAutoPopulated={revenueAutoPopulated}
-        syncedCategoryIndices={syncedCategoryIndices}
-      />
 
       {/* Suggestions Panel */}
       {process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS === "true" && suggestions.length > 0 && (
@@ -456,47 +404,86 @@ export function TaxBuilder({
         />
       )}
 
-      {/* Step Content */}
+      {/* Tab Content */}
       <div className="space-y-6">
-        {currentStep === "atomic" && (
-          <AtomicComponentsStep
+        {activeTab === "settings" && (
+          <SettingsTab
             taxSystem={builderState.taxSystem}
             onTaxSystemChange={handleTaxSystemChange}
+            categories={builderState.categories}
+            brackets={builderState.brackets}
+            onCategoriesChange={handleCategoriesChange}
+            onBracketsChange={handleBracketsChange}
+            onAddCategory={addCategory}
+            onRemoveCategory={removeCategory}
             selectedAtomicTaxComponents={selectedAtomicTaxComponents}
             onAtomicComponentsChange={setSelectedAtomicTaxComponents}
             activeGovernmentComponents={activeComponents}
-            economicData={economicData}
-            validationErrors={validation.errors.taxSystem || {}}
-            isReadOnly={isReadOnly}
             showAtomicIntegration={showAtomicIntegration}
-            countryId={countryId}
+            economicData={economicData}
             previewTaxSystem={previewTaxSystem}
-          />
-        )}
-
-        {currentStep === "configuration" && (
-          <ConfigurationStep
-            taxSystem={builderState.taxSystem}
-            onTaxSystemChange={handleTaxSystemChange}
-            validationErrors={validation.errors.taxSystem || {}}
+            validation={validation}
             isReadOnly={isReadOnly}
             countryId={countryId}
+            onOpenTemplates={() => setShowTemplates(true)}
+            revenueAutoPopulated={revenueAutoPopulated}
+            syncedCategoryIndices={syncedCategoryIndices}
           />
         )}
 
-        {currentStep === "exemptions" && <ExemptionsDeductionsStep isReadOnly={isReadOnly} />}
-
-        {currentStep === "calculator" && (
-          <CalculatorPreviewStep
+        {activeTab === "preview" && (
+          <PreviewTab
             previewTaxSystem={previewTaxSystem}
-            previewCategories={previewCategories}
-            previewBrackets={previewBrackets}
-            onCalculationChange={setCalculationResult}
             economicData={economicData}
-            governmentData={governmentData}
+            countryId={countryId}
+            componentOptimization={componentOptimization}
+            selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+            activeGovernmentComponents={activeComponents}
+            showAtomicIntegration={showAtomicIntegration}
           />
         )}
       </div>
+
+      {/* Tax Calculator Modal */}
+      {showCalculator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80">
+          <div className="bg-background mx-2 flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl">
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <h2 className="text-foreground text-lg font-semibold">Tax Calculator</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCalculator(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <TaxCalculator
+                taxSystem={previewTaxSystem}
+                categories={previewCategories}
+                brackets={previewBrackets}
+                exemptions={[]}
+                deductions={[]}
+                onCalculationChange={setCalculationResult}
+                economicData={
+                  economicData
+                    ? {
+                        totalPopulation: economicData.population,
+                        nominalGDP: economicData.gdp,
+                        gdpPerCapita: economicData.gdp / economicData.population,
+                        realGDPGrowthRate: 0.03,
+                        inflationRate: 0.02,
+                        currencyExchangeRate: 1.0,
+                      }
+                    : undefined
+                }
+                governmentData={governmentData}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Template Modal */}
       {showTemplates && (
@@ -517,41 +504,38 @@ export function TaxBuilder({
                     <p className="text-muted-foreground text-sm">{template.description}</p>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <UIBadge variant="secondary">
-                          {template.progressiveTax ? "Progressive" : "Flat"} Tax
-                        </UIBadge>
-                        <UIBadge variant="outline" className="ml-2">
-                          {template.categories.length} Categories
-                        </UIBadge>
+                      <div className="space-y-3">
+                        <div>
+                          <UIBadge variant="secondary">
+                            {template.progressiveTax ? "Progressive" : "Flat"} Tax
+                          </UIBadge>
+                          <UIBadge variant="outline" className="ml-2">
+                            {template.categories.length} Categories
+                          </UIBadge>
+                        </div>
+                        <div className="text-sm">
+                          <strong>Categories:</strong>
+                          <ul className="text-muted-foreground mt-1">
+                            {template.categories.slice(0, 3).map((cat) => (
+                              <li key={cat.categoryName}>
+                                • {cat.categoryName} ({cat.baseRate}%)
+                              </li>
+                            ))}
+                            {template.categories.length > 3 && (
+                              <li>• +{template.categories.length - 3} more...</li>
+                            )}
+                          </ul>
+                        </div>
+                        <Button
+                          onClick={() => setTemplateToConfirm(template)}
+                          className="w-full"
+                        >
+                          Use This Template
+                        </Button>
                       </div>
-                      <div className="text-sm">
-                        <strong>Categories:</strong>
-                        <ul className="text-muted-foreground mt-1">
-                          {template.categories.slice(0, 3).map((cat) => (
-                            <li key={cat.categoryName}>
-                              • {cat.categoryName} ({cat.baseRate}%)
-                            </li>
-                          ))}
-                          {template.categories.length > 3 && (
-                            <li>• +{template.categories.length - 3} more...</li>
-                          )}
-                        </ul>
-                      </div>
-                      <Button
-                        onClick={() => {
-                          applyTemplate(template);
-                          setShowTemplates(false);
-                        }}
-                        className="w-full"
-                      >
-                        Use This Template
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           </div>
         </div>
@@ -576,6 +560,45 @@ export function TaxBuilder({
           }}
           builderType="tax"
         />
+      )}
+
+      {/* Template Confirmation Dialog */}
+      {templateToConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70">
+          <div className="bg-background border-border mx-4 w-full max-w-md rounded-lg border p-6 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">Apply Template?</h3>
+                <p className="text-muted-foreground mt-2 text-sm">
+                  This will replace your current tax configuration with{" "}
+                  <strong>{templateToConfirm.name}</strong>. All existing categories, brackets,
+                  exemptions, and deductions will be overwritten.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setTemplateToConfirm(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => {
+                  applyTemplate(templateToConfirm);
+                  setTemplateToConfirm(null);
+                  setShowTemplates(false);
+                }}
+              >
+                Apply Template
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

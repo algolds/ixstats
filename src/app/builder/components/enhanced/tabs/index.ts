@@ -25,3 +25,11 @@ export const EconomySectorsTab = lazy(() =>
 export const EconomyPreviewTab = lazy(() =>
   import("./EconomyPreviewTab").then((module) => ({ default: module.EconomyPreviewTab }))
 );
+
+export const FiscalTab = lazy(() =>
+  import("./fiscal/FiscalTab").then((module) => ({ default: module.FiscalTab }))
+);
+
+export const TaxTab = lazy(() =>
+  import("./tax/TaxTab").then((module) => ({ default: module.TaxTab }))
+);

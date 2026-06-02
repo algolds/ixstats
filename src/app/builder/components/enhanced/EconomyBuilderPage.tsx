@@ -5,23 +5,15 @@ import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
-import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import { Label } from "~/components/ui/label";
 import {
   Factory,
   Users,
-  TrendingUp,
   Target,
   AlertTriangle,
   CheckCircle,
-  Info,
-  Save,
   Zap,
-  BarChart3,
   Globe,
-  DollarSign,
-  Gauge,
   Eye,
   Loader2,
   Shield,
@@ -54,15 +46,9 @@ import { TabLoadingFallback } from "../../components/LoadingFallback";
 
 // Step Components
 import { PreviewStep } from "./steps/PreviewStep";
-import { useTaxBuilderState } from "~/hooks/useTaxBuilderState";
-import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
-import { AtomicComponentsStep } from "~/components/tax-system/tax-builder/steps/AtomicComponentsStep";
-import { ExemptionsDeductionsStep } from "~/components/tax-system/tax-builder/steps/ExemptionsDeductionsStep";
-import { CalculatorPreviewStep } from "~/components/tax-system/tax-builder/steps/CalculatorPreviewStep";
-import { taxSystemTemplates } from "~/components/tax-system/TaxSystemTemplates";
 import { GlassCard, GlassCardContent } from "../glass/GlassCard";
-import { Sparkles, Coins, Calculator } from "lucide-react";
-import { getTaxOptimization, type TaxOptimization } from "./tabs/utils/sectorCalculations";
+import { FiscalTab, TaxTab } from "./tabs";
+import { ComponentErrorBoundary } from "~/components/ui/comprehensive-error-boundary";
 
 // Tab Card Primitive
 import { BuilderTabCard, type TabDefinition } from "../../primitives/BuilderTabCard";
@@ -74,9 +60,6 @@ import { EconomyBuilderHeader } from "./economy-builder/components/EconomyBuilde
 // tRPC API
 import { api } from "~/trpc/react";
 
-// Format utilities
-import { formatCurrency, formatPercent } from "~/lib/format-utils";
-
 // Government types
 import type { RevenueSource } from "~/types/government";
 
@@ -85,6 +68,7 @@ import { useEconomyBuilderAutoSync } from "~/hooks/useEconomyBuilderAutoSync";
 
 // Builder context
 import { useBuilderContextOptional } from "./context/BuilderStateContext";
+import { TAX_SYSTEM_TEMP_DISABLED } from "~/app/builder/constants";
 
 // Shared staleTime constants
 import { STALE_TIME } from "~/hooks/useCountryGovernment";
@@ -110,7 +94,6 @@ interface EconomyBuilderPageProps {
   onEconomicInputsChange: (inputs: EconomicInputs) => void;
   governmentComponents?: any[];
   governmentBuilderData?: any;
-  taxSystemData?: TaxBuilderState | null;
   countryId?: string;
   className?: string;
   onSelectedComponentsChange?: (components: EconomicComponentType[]) => void;
@@ -119,7 +102,6 @@ interface EconomyBuilderPageProps {
   economicHealthMetrics?: EconomicHealthMetrics;
   persistedEconomyBuilder?: EconomyBuilderState | null;
   onPersistEconomyBuilder?: (builder: EconomyBuilderState) => void;
-  onPersistTaxSystem?: (taxSystem: TaxBuilderState) => void;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -182,7 +164,6 @@ export function EconomyBuilderPage({
   onEconomicInputsChange,
   governmentComponents = [],
   governmentBuilderData,
-  taxSystemData,
   countryId,
   className = "",
   onSelectedComponentsChange,
@@ -191,13 +172,16 @@ export function EconomyBuilderPage({
   economicHealthMetrics,
   persistedEconomyBuilder = null,
   onPersistEconomyBuilder,
-  onPersistTaxSystem,
   activeTab,
   onTabChange,
 }: EconomyBuilderPageProps) {
   const notify = useNotify();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  // Local sub-tab for merged Labor & Demographics view
+  const [activeLaborSubTab, setActiveLaborSubTab] = useState<"demographics" | "labor">(
+    "demographics"
+  );
   // Removed auto-save state - using global builder autosave instead
 
   // State Management - Memoized to prevent unnecessary re-renders
@@ -338,8 +322,10 @@ export function EconomyBuilderPage({
   // Resolve current tab with backward compatibility for legacy tab values
   const currentTab = useMemo(() => {
     const raw = activeTab || "components";
-    if (["components", "sectors", "labor", "demographics", "fiscal", "tax", "preview"].includes(raw)) {
-      return raw;
+    // Map legacy/removed 'demographics' tab into the merged 'labor' tab
+    const normalized = raw === "demographics" ? "labor" : raw;
+    if (["components", "sectors", "labor", "fiscal", "tax", "preview"].includes(normalized)) {
+      return normalized;
     }
     // Legacy mapping: old tab names → new tab names
     const legacyMap: Record<string, string> = {
@@ -430,153 +416,26 @@ export function EconomyBuilderPage({
     governmentSizeIndicator: "Medium",
   });
 
-  // Tax System tRPC Queries
-  const { data: fetchedTaxSystemData, refetch: refetchTaxSystem } =
-    api.taxSystem.getByCountryId.useQuery(
-      { countryId: countryId || "" },
-      {
-        enabled: !!countryId,
-        staleTime: 30000,
-      }
-    );
+  // Tax system state sourced from builder context (null while temporarily disabled)
+  // Controlled by central flag in `src/app/builder/constants.ts` to keep the
+  // temporary disable consistent across builder components.
+  const taxSystemData = TAX_SYSTEM_TEMP_DISABLED
+    ? null
+    : builderContext?.builderState?.taxSystemData ?? null;
 
-  const createTaxSystemMutation = api.taxSystem.create.useMutation();
-  const updateTaxSystemMutation = api.taxSystem.update.useMutation();
-
-  // Use fetched tax data or prop tax data
-  const activeTaxSystemData: TaxBuilderState | null =
-    (fetchedTaxSystemData as TaxBuilderState | null) ??
-    (taxSystemData as TaxBuilderState | null) ??
-    null;
-
-  const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
-
-  // State management hook
-  const taxBuilder = useTaxBuilderState({
-    initialData: activeTaxSystemData || undefined,
-    countryId: countryId || undefined,
-  });
-
-  // Sync loaded tax system data into taxBuilder state when it arrives
-  const hasInitializedTaxDataRef = useRef(false);
-  useEffect(() => {
-    if (activeTaxSystemData && !hasInitializedTaxDataRef.current) {
-      taxBuilder.setBuilderState({
-        taxSystem: {
-          taxSystemName: activeTaxSystemData.taxSystem?.taxSystemName || "",
-          fiscalYear: activeTaxSystemData.taxSystem?.fiscalYear || "calendar",
-          progressiveTax: activeTaxSystemData.taxSystem?.progressiveTax ?? true,
-          alternativeMinTax: activeTaxSystemData.taxSystem?.alternativeMinTax ?? false,
-          complianceRate: activeTaxSystemData.taxSystem?.complianceRate ?? 85,
-          collectionEfficiency: activeTaxSystemData.taxSystem?.collectionEfficiency ?? 90,
-        },
-        categories: activeTaxSystemData.categories || [],
-        brackets: activeTaxSystemData.brackets || {},
-        exemptions: activeTaxSystemData.exemptions || [],
-        deductions: activeTaxSystemData.deductions || {},
-        isValid: activeTaxSystemData.isValid ?? false,
-        errors: activeTaxSystemData.errors || {},
-      });
-      hasInitializedTaxDataRef.current = true;
-    }
-  }, [activeTaxSystemData]);
-
-  // Auto-sync hook
-  const {
-    builderState: autoSyncTaxState,
-    setBuilderState: setAutoSyncTaxState,
-    syncState: taxSyncState,
-    triggerSync: triggerTaxSync,
-    clearConflicts: _clearTaxConflicts,
-  } = useTaxBuilderAutoSync(countryId || undefined, taxBuilder.builderState, {
-    enabled: !!countryId,
-    showConflictWarnings: true,
-    onSyncSuccess: () => {
-      console.log("[EconomyBuilder] Tax autosave successful");
-      setLastSaved(new Date());
-    },
-    onSyncError: (error) => {
-      console.error("[EconomyBuilder] Tax autosave failed:", error);
-      notify.error("Failed to autosave tax system");
-    },
-  });
-
-  // Use auto-sync state if enabled, otherwise use local state
-  const activeTaxBuilderState = countryId ? autoSyncTaxState : taxBuilder.builderState;
-  const setActiveTaxBuilderState = useCallback(
-    (update: React.SetStateAction<TaxBuilderState>) => {
-      if (countryId) {
-        setAutoSyncTaxState(update);
-      } else {
-        taxBuilder.setBuilderState(update);
+  // Track and sync tax state changes back to builder context.
+  // When temporarily disabled this becomes a no-op to avoid accidental writes.
+  const lastTaxSystemRef = useRef<TaxBuilderState | null>(null);
+  const handleTaxStateChange = useCallback(
+    (state: TaxBuilderState) => {
+      if (TAX_SYSTEM_TEMP_DISABLED) return; // noop while disabled
+      if (!isEqual(state, lastTaxSystemRef.current)) {
+        lastTaxSystemRef.current = state;
+        builderContext?.updateTaxSystem(state);
       }
     },
-    [countryId, setAutoSyncTaxState, taxBuilder.setBuilderState]
+    [builderContext]
   );
-
-  // Sync tax changes back to parent
-  const lastPersistedTaxSystemRef = useRef<TaxBuilderState | null>(null);
-  useEffect(() => {
-    if (activeTaxBuilderState && onPersistTaxSystem) {
-      if (!isEqual(activeTaxBuilderState, lastPersistedTaxSystemRef.current)) {
-        lastPersistedTaxSystemRef.current = activeTaxBuilderState;
-        onPersistTaxSystem(activeTaxBuilderState);
-      }
-    }
-  }, [activeTaxBuilderState, onPersistTaxSystem]);
-
-  // Register tax autosync with BuilderContext
-  useEffect(() => {
-    if (builderContext && countryId && triggerTaxSync) {
-      builderContext.registerAutoSync("taxSystem", triggerTaxSync);
-    }
-    return () => {
-      if (builderContext) {
-        builderContext.unregisterAutoSync("taxSystem");
-      }
-    };
-  }, [countryId, triggerTaxSync, builderContext]);
-
-  // Preview data transformations
-  const previewTaxSystem = useMemo(
-    () => ({
-      id: "builder-preview",
-      countryId: countryId || "preview",
-      ...activeTaxBuilderState.taxSystem,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }),
-    [activeTaxBuilderState.taxSystem, countryId]
-  );
-
-  const previewCategories = useMemo(
-    () =>
-      activeTaxBuilderState.categories.map((cat, index) => ({
-        id: `category-${index}`,
-        taxSystemId: "builder-preview",
-        ...cat,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })),
-    [activeTaxBuilderState.categories]
-  );
-
-  const previewBrackets = useMemo(() => {
-    const brackets: any[] = [];
-    Object.entries(activeTaxBuilderState.brackets).forEach(([categoryIndex, categoryBrackets]) => {
-      categoryBrackets.forEach((bracket, bracketIndex) => {
-        brackets.push({
-          id: `bracket-${categoryIndex}-${bracketIndex}`,
-          taxSystemId: "builder-preview",
-          categoryId: `category-${categoryIndex}`,
-          ...bracket,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      });
-    });
-    return brackets;
-  }, [activeTaxBuilderState.brackets]);
 
   // Phase 2 optimization: Use consolidated sync hook for refs, integration service, and cross-builder sync
   const {
@@ -881,6 +740,13 @@ export function EconomyBuilderPage({
     }
   }, [countryId, economyBuilder, selectedComponents, saveEconomyMutation]);
 
+  // Register the economy save handler with the global Builder context so the final preview can trigger it
+  useEffect(() => {
+    if (!builderContext) return;
+    builderContext.registerSubmit(handleSave, isSaving);
+    return () => builderContext.unregisterSubmit();
+  }, [builderContext, handleSave, isSaving]);
+
   // Validation helper
   const validateEconomyConfiguration = useCallback(() => {
     const errors: string[] = [];
@@ -1000,11 +866,9 @@ export function EconomyBuilderPage({
   const tabs: TabDefinition[] = [
     { id: "components", label: "Components", icon: Zap },
     { id: "sectors", label: "Sectors", icon: Factory },
-    { id: "labor", label: "Labor", icon: Users },
-    { id: "demographics", label: "Demographics", icon: Globe },
-    { id: "fiscal", label: "Fiscal Policy", icon: Landmark },
+    { id: "labor", label: "Labor & Demographics", icon: Users },
     { id: "tax", label: "Tax System", icon: Receipt },
-    { id: "preview", label: "Preview", icon: Eye },
+    // Per-economy preview removed — core preview lives in BuilderPreviewStep
   ];
 
   return (
@@ -1024,23 +888,6 @@ export function EconomyBuilderPage({
           onHelpClick={() => setWelcomeOpen(true)}
         />
 
-        {/* Validation Errors - Matching GovernmentBuilder pattern */}
-        {!validationStatus.isValid && economyBuilder.validation?.errors && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Please fix the following issues:
-              <ul className="mt-2 list-inside list-disc space-y-1">
-                {economyBuilder.validation.errors.map((error, index) => (
-                  <li key={index} className="text-sm">
-                    {error}
-                  </li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Step Content - Tab navigation handled by BuilderNotchBar */}
         <BuilderTabCard
           tabs={tabs}
@@ -1050,14 +897,8 @@ export function EconomyBuilderPage({
           hideTabList
         >
           {currentTab === "components" && (
-            <motion.div
-              key="components"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
+              <ComponentErrorBoundary context="Components Tab">
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -1088,20 +929,15 @@ export function EconomyBuilderPage({
                     governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
                     hideSelectedList={true}
                   />
-                </GlassCardContent>
+                  </GlassCardContent>
               </GlassCard>
-            </motion.div>
+              </ComponentErrorBoundary>
+            </div>
           )}
 
           {currentTab === "sectors" && (
-            <motion.div
-              key="sectors"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
+          
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -1126,18 +962,12 @@ export function EconomyBuilderPage({
                   </Suspense>
                 </GlassCardContent>
               </GlassCard>
-            </motion.div>
+            </div>
           )}
 
           {currentTab === "labor" && (
-            <motion.div
-              key="labor"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
+          
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -1146,556 +976,73 @@ export function EconomyBuilderPage({
                 textureOpacity={0.04}
               >
                 <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Users className="h-5 w-5 text-emerald-400" />
-                    Labor & Employment
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                      <Globe className="h-5 w-5 text-emerald-400" />
+                      Demographics & Population
+                    </h3>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={activeLaborSubTab === "demographics" ? "default" : "ghost"}
+                        onClick={() => setActiveLaborSubTab("demographics")}
+                      >
+                        Demographics
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={activeLaborSubTab === "labor" ? "default" : "ghost"}
+                        onClick={() => setActiveLaborSubTab("labor")}
+                      >
+                        Labor
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <GlassCardContent className="p-6">
                   <Suspense fallback={<TabLoadingFallback />}>
-                    <LaborEmploymentTab
-                      economyBuilder={economyBuilder}
-                      onEconomyBuilderChange={handleEconomyBuilderChange}
-                      selectedComponents={selectedComponents}
-                    />
+                    {activeLaborSubTab === "demographics" ? (
+                      <DemographicsPopulationTab
+                        economyBuilder={economyBuilder}
+                        onEconomyBuilderChange={handleEconomyBuilderChange}
+                        selectedComponents={selectedComponents}
+                        showAdvanced={showAdvanced}
+                      />
+                    ) : (
+                      <LaborEmploymentTab
+                        economyBuilder={economyBuilder}
+                        onEconomyBuilderChange={handleEconomyBuilderChange}
+                        selectedComponents={selectedComponents}
+                      />
+                    )}
                   </Suspense>
                 </GlassCardContent>
               </GlassCard>
-            </motion.div>
+            </div>
           )}
 
-          {currentTab === "demographics" && (
-            <motion.div
-              key="demographics"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Globe className="h-5 w-5 text-emerald-400" />
-                    Demographics & Population
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <Suspense fallback={<TabLoadingFallback />}>
-                    <DemographicsPopulationTab
-                      economyBuilder={economyBuilder}
-                      onEconomyBuilderChange={handleEconomyBuilderChange}
-                      selectedComponents={selectedComponents}
-                      showAdvanced={showAdvanced}
-                    />
-                  </Suspense>
-                </GlassCardContent>
-              </GlassCard>
-            </motion.div>
-          )}
+          {/* Demographics is now merged into the Labor tab (Labor & Demographics) */}
 
           {currentTab === "fiscal" && (
-            <motion.div
-              key="fiscal"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              {/* Fiscal Policy Configuration */}
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Landmark className="h-5 w-5 text-emerald-400" />
-                    Fiscal Policy Configuration
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  {/* Budget Stance */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Budget Stance</Label>
-                      <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground text-xs">High Deficit</span>
-                        <input
-                          type="range"
-                          min={-10}
-                          max={10}
-                          step={1}
-                          defaultValue={0}
-                          className="h-2 w-full max-w-md cursor-pointer appearance-none rounded-full bg-zinc-800 accent-emerald-500"
-                        />
-                        <span className="text-muted-foreground text-xs">High Surplus</span>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        Balanced budget target: deficit/surplus as % of GDP
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Fiscal Strategy</Label>
-                      <select className="border-border/40 bg-background w-full max-w-xs rounded-lg border px-3 py-2 text-sm">
-                        <option>Neutral</option>
-                        <option>Austerity</option>
-                        <option>Expansionary</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Debt-to-GDP Target</Label>
-                      <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground text-xs">0%</span>
-                        <input
-                          type="range"
-                          min={0}
-                          max={200}
-                          step={5}
-                          defaultValue={60}
-                          className="h-2 w-full max-w-md cursor-pointer appearance-none rounded-full bg-zinc-800 accent-emerald-500"
-                        />
-                        <span className="text-muted-foreground text-xs">200%</span>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        Target debt-to-GDP ratio ceiling
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Reserve Fund (% of Budget)</Label>
-                      <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground text-xs">0%</span>
-                        <input
-                          type="range"
-                          min={0}
-                          max={30}
-                          step={1}
-                          defaultValue={5}
-                          className="h-2 w-full max-w-md cursor-pointer appearance-none rounded-full bg-zinc-800 accent-emerald-500"
-                        />
-                        <span className="text-muted-foreground text-xs">30%</span>
-                      </div>
-                    </div>
-                  </div>
-                </GlassCardContent>
-              </GlassCard>
-
-              {/* Government Revenue Integration Card */}
-              {revenueIntegration.totalRevenue > 0 && (
-                <GlassCard
-                  depth="base"
-                  theme="emerald"
-                  className="border-emerald-500/20"
-                  texture="chevron"
-                  textureOpacity={0.04}
-                >
-                  <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      <DollarSign className="h-5 w-5 text-emerald-400" />
-                      Government Revenue Integration
-                    </h3>
-                  </div>
-                  <GlassCardContent>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">
-                          Total Government Revenue
-                        </Label>
-                        <div className="text-foreground text-2xl font-bold">
-                          {formatCurrency(
-                            revenueIntegration.totalRevenue,
-                            economicInputs.nationalIdentity?.currency || "USD"
-                          )}
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs",
-                              revenueIntegration.governmentSizeIndicator === "Large" &&
-                                "border-blue-500/50 text-blue-500",
-                              revenueIntegration.governmentSizeIndicator === "Medium" &&
-                                "border-amber-500/50 text-amber-500",
-                              revenueIntegration.governmentSizeIndicator === "Small" &&
-                                "border-emerald-500/50 text-emerald-500"
-                            )}
-                          >
-                            {revenueIntegration.governmentSizeIndicator} Government
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">
-                          Tax Revenue Breakdown
-                        </Label>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="mb-1 flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Tax Revenue</span>
-                              <span className="font-semibold">
-                                {formatCurrency(
-                                  revenueIntegration.taxRevenue,
-                                  economicInputs.nationalIdentity?.currency || "USD"
-                                )}
-                              </span>
-                            </div>
-                            <Progress
-                              value={
-                                revenueIntegration.totalRevenue > 0
-                                  ? (revenueIntegration.taxRevenue /
-                                      revenueIntegration.totalRevenue) *
-                                    100
-                                  : 0
-                              }
-                              className="h-2"
-                            />
-                          </div>
-                          <div>
-                            <div className="mb-1 flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Non-Tax Revenue</span>
-                              <span className="font-semibold">
-                                {formatCurrency(
-                                  revenueIntegration.nonTaxRevenue,
-                                  economicInputs.nationalIdentity?.currency || "USD"
-                                )}
-                              </span>
-                            </div>
-                            <Progress
-                              value={
-                                revenueIntegration.totalRevenue > 0
-                                  ? (revenueIntegration.nonTaxRevenue /
-                                      revenueIntegration.totalRevenue) *
-                                    100
-                                  : 0
-                              }
-                              className="bg-muted h-2 [&>div]:bg-emerald-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">
-                          Economic Impact Metrics
-                        </Label>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="text-muted-foreground text-sm">
-                                Revenue as % of GDP
-                              </span>
-                              <Badge variant="outline" className="text-sm font-semibold">
-                                {formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
-                              </Badge>
-                            </div>
-                            <Progress
-                              value={Math.min(revenueIntegration.revenueToGDPRatio, 100)}
-                              className="h-2"
-                            />
-                          </div>
-                          <div>
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="text-muted-foreground text-sm">
-                                Tax Burden Ratio
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "text-sm font-semibold",
-                                  revenueIntegration.taxBurdenRatio > 35 &&
-                                    "border-red-500/50 text-red-500",
-                                  revenueIntegration.taxBurdenRatio >= 20 &&
-                                    revenueIntegration.taxBurdenRatio <= 35 &&
-                                    "border-amber-500/50 text-amber-500",
-                                  revenueIntegration.taxBurdenRatio < 20 &&
-                                    "border-emerald-500/50 text-emerald-500"
-                                )}
-                              >
-                                {formatPercent(revenueIntegration.taxBurdenRatio, 1)}
-                              </Badge>
-                            </div>
-                            <Progress
-                              value={Math.min(revenueIntegration.taxBurdenRatio, 100)}
-                              className={cn(
-                                "h-2",
-                                revenueIntegration.taxBurdenRatio > 35 && "[&>div]:bg-red-500",
-                                revenueIntegration.taxBurdenRatio >= 20 &&
-                                  revenueIntegration.taxBurdenRatio <= 35 &&
-                                  "[&>div]:bg-amber-500",
-                                revenueIntegration.taxBurdenRatio < 20 && "[&>div]:bg-green-500"
-                              )}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {revenueIntegration.taxBurdenRatio > 35 && (
-                      <Alert className="mt-4 border-amber-500/30 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
-                        <Info className="h-4 w-4 text-amber-500" />
-                        <AlertDescription className="text-sm text-amber-700 dark:text-amber-200">
-                          High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)}
-                          ) may reduce private sector GDP growth. Consider balancing with
-                          economic components that promote business development.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </GlassCardContent>
-                </GlassCard>
-              )}
-
-              {/* Fiscal Verification Checkpoint */}
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Shield className="h-5 w-5 text-emerald-400" />
-                    Fiscal Verification
-                  </h3>
-                </div>
-                <GlassCardContent className="space-y-4 p-6">
-                  {revenueIntegration.revenueToGDPRatio > 40 && (
-                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                      <span>
-                        Revenue-to-GDP ratio ({formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
-                        ) exceeds 40%. Consider adjusting fiscal policy.
-                      </span>
-                    </div>
-                  )}
-                  {revenueIntegration.revenueToGDPRatio <= 40 && (
-                    <div className="flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:bg-emerald-500/5 dark:text-emerald-200">
-                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                      <span>Fiscal metrics within safe boundaries.</span>
-                    </div>
-                  )}
-                </GlassCardContent>
-              </GlassCard>
-            </motion.div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <ComponentErrorBoundary context="Fiscal Tab">
+                <FiscalTab
+                  revenueIntegration={revenueIntegration}
+                  economicInputs={economicInputs}
+                />
+              </ComponentErrorBoundary>
+            </Suspense>
           )}
 
           {currentTab === "tax" && (
-            <motion.div
-              key="tax"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              {/* Component Tax Optimization */}
-              {(() => {
-                const taxOpt = getTaxOptimization(selectedComponents);
-                if (!taxOpt || taxOpt.componentCount === 0) return null;
-                return (
-                  <GlassCard
-                    depth="base"
-                    theme="emerald"
-                    className="border-emerald-500/20"
-                    texture="chevron"
-                    textureOpacity={0.04}
-                  >
-                    <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                      <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                        <TrendingUp className="h-5 w-5 text-emerald-400" />
-                        Component Tax Optimization
-                      </h3>
-                    </div>
-                    <GlassCardContent className="p-6">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-                          <div className="text-muted-foreground text-xs">Recommended Corporate</div>
-                          <div className="text-2xl font-bold text-emerald-400">
-                            {taxOpt.optimalCorporateRate}%
-                          </div>
-                          <div className="text-muted-foreground text-xs">rate</div>
-                        </div>
-                        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-                          <div className="text-muted-foreground text-xs">Recommended Income</div>
-                          <div className="text-2xl font-bold text-emerald-400">
-                            {taxOpt.optimalIncomeRate}%
-                          </div>
-                          <div className="text-muted-foreground text-xs">rate</div>
-                        </div>
-                        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-                          <div className="text-muted-foreground text-xs">Revenue Efficiency</div>
-                          <div className="text-2xl font-bold text-emerald-400">
-                            {Math.round(taxOpt.revenueEfficiency * 100)}%
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            across {taxOpt.componentCount} components
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-600 dark:text-blue-400">
-                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                          Optimal tax rates are derived from your selected atomic components. Setting
-                          rates near these recommendations maximizes synergy effectiveness.
-                        </span>
-                      </div>
-                    </GlassCardContent>
-                  </GlassCard>
-                );
-              })()}
-
-              {/* Card 1: Fiscal Blueprint Templates */}
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20 bg-emerald-500/5"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Sparkles className="h-5 w-5 text-emerald-400" />
-                    Tax Blueprint Templates
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <p className="text-muted-foreground mb-4 text-sm">
-                    Select a pre-designed tax blueprint model to instantly configure your
-                    nation's tax system. You can customize it further below.
-                  </p>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                    {taxSystemTemplates.map((template) => (
-                      <Button
-                        key={template.name}
-                        variant="outline"
-                        className="hover:text-foreground flex h-auto flex-col items-start gap-1 border-zinc-800 bg-zinc-950/40 p-4 text-left hover:border-emerald-500/50 hover:bg-emerald-500/5"
-                        onClick={() => {
-                          taxBuilder.applyTemplate(template);
-                          notify.success(`Applied ${template.name}`);
-                        }}
-                      >
-                        <span className="text-sm font-bold">{template.name}</span>
-                        <span className="text-muted-foreground line-clamp-2 text-xs">
-                          {template.description}
-                        </span>
-                      </Button>
-                    ))}
-                  </div>
-                </GlassCardContent>
-              </GlassCard>
-
-              {/* Card 2: Tax Rates & Brackets */}
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <DollarSign className="h-5 w-5 text-emerald-400" />
-                    Tax Rates & Brackets
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <AtomicComponentsStep
-                    taxSystem={activeTaxBuilderState.taxSystem}
-                    onTaxSystemChange={(taxSystem) => {
-                      setActiveTaxBuilderState((prev) => ({ ...prev, taxSystem }));
-                    }}
-                    selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-                    onAtomicComponentsChange={setSelectedAtomicTaxComponents}
-                    activeGovernmentComponents={governmentComponents}
-                    economicData={{
-                      gdp: economicInputs.coreIndicators?.nominalGDP || 0,
-                      sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
-                      population: economicInputs.coreIndicators?.totalPopulation || 1000000,
-                    }}
-                    validationErrors={activeTaxBuilderState.errors}
-                    isReadOnly={false}
-                    showAtomicIntegration={true}
-                    countryId={countryId || undefined}
-                    previewTaxSystem={previewTaxSystem}
-                  />
-                </GlassCardContent>
-              </GlassCard>
-
-              {/* Card 3: Tax Exemptions & Deductions */}
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Coins className="h-5 w-5 text-emerald-400" />
-                    Tax Exemptions & Deductions
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <ExemptionsDeductionsStep isReadOnly={false} />
-                </GlassCardContent>
-              </GlassCard>
-
-              {/* Card 4: Tax Revenue Calculator */}
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Calculator className="h-5 w-5 text-emerald-400" />
-                    Tax Revenue Calculator
-                  </h3>
-                </div>
-                <GlassCardContent className="p-6">
-                  <CalculatorPreviewStep
-                    previewTaxSystem={previewTaxSystem}
-                    previewCategories={previewCategories}
-                    previewBrackets={previewBrackets}
-                    onCalculationChange={() => {}}
-                    economicData={{
-                      gdp: economicInputs.coreIndicators?.nominalGDP || 0,
-                      sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
-                      population: economicInputs.coreIndicators?.totalPopulation || 1000000,
-                    }}
-                    governmentData={governmentBuilderData}
-                  />
-                </GlassCardContent>
-              </GlassCard>
-            </motion.div>
-          )}
-
-          {currentTab === "preview" && (
-            <motion.div
-              key="preview"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-6 lg:grid-cols-12"
-            >
-              {/* Preview content left 7 cols */}
-              <div className="space-y-6 lg:col-span-7">
+            <Suspense fallback={<TabLoadingFallback />}>
+              <ComponentErrorBoundary context="Tax Tab">
+                {/*
+                  TEMPORARY: Tax system UI disabled in the Economy Builder.
+                  To re-enable: set `TAX_SYSTEM_TEMP_DISABLED = false` in
+                  `src/app/builder/constants.ts` and restore the <TaxTab .../> component here.
+                */}
                 <GlassCard
                   depth="base"
                   theme="emerald"
@@ -1703,99 +1050,27 @@ export function EconomyBuilderPage({
                   texture="chevron"
                   textureOpacity={0.04}
                 >
-                  <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                  <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                     <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      <Eye className="h-5 w-5 text-emerald-400" />
-                      Economy Configuration Preview
+                      <Receipt className="h-5 w-5 text-emerald-400" />
+                      Tax System (Temporarily Disabled)
                     </h3>
                   </div>
                   <GlassCardContent className="p-6">
-                    <PreviewStep
-                      economyBuilder={economyBuilder}
-                      economicInputs={economicInputs}
-                      selectedComponents={selectedComponents}
-                      economicHealthMetrics={healthMetrics}
-                    />
-                  </GlassCardContent>
-                </GlassCard>
-              </div>
-
-              {/* Verification checkpoint right 5 cols */}
-              <div className="space-y-6 lg:col-span-5">
-                <GlassCard
-                  depth="base"
-                  theme="emerald"
-                  className="border-emerald-500/20 shadow-xl"
-                  texture="chevron"
-                  textureOpacity={0.04}
-                >
-                  <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      <Shield className="h-5 w-5 text-emerald-400" />
-                      Verification Checkpoint
-                    </h3>
-                  </div>
-                  <GlassCardContent className="space-y-4 p-6">
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Review critical adjustments and resolve any validation issues before authorization
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      The tax system builder is temporarily disabled for maintenance.
+                      Changes to tax configuration are currently suspended. To re-enable the
+                      full tax builder, set <span className="font-mono">TAX_SYSTEM_TEMP_DISABLED</span> to
+                      <span className="font-mono"> false</span> in
+                      <span className="font-mono"> src/app/builder/constants.ts</span>.
                     </p>
-
-                    <div className="space-y-2.5">
-                      {validation.errors.length > 0 ? (
-                        validation.errors.map((err, idx) => (
-                          <div key={idx} className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
-                            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500 dark:text-amber-400" />
-                            <span>{err}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-[11px] text-emerald-800 dark:bg-emerald-500/5 dark:text-emerald-200">
-                          <CheckCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                          <span>
-                            No high-risk adjustments detected. Structural variables are within safe boundaries.
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-start gap-2.5 pt-2 select-none">
-                      <Checkbox
-                        id="verify-checkbox"
-                        checked={isVerified}
-                        onCheckedChange={(checked) => setIsVerified(checked === true)}
-                        className="mt-0.5 border-zinc-300 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500 dark:border-zinc-700"
-                      />
-                      <Label
-                        htmlFor="verify-checkbox"
-                        className="cursor-pointer text-xs leading-normal text-zinc-600 dark:text-zinc-400"
-                      >
-                        I verify these economic adjustments are intentional and authorization should be finalized.
-                      </Label>
-                    </div>
-
-                    <div className="pt-2">
-                      <Button
-                        onClick={async () => {
-                          if (!isVerified || validation.errors.length > 0) return;
-                          await handleSave();
-                        }}
-                        disabled={!isVerified || validation.errors.length > 0 || isSaving}
-                        className="h-9 w-full rounded-lg bg-emerald-500 text-xs font-semibold text-zinc-950 hover:bg-emerald-600 disabled:bg-zinc-200 disabled:text-zinc-400 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
-                      >
-                        {isSaving ? (
-                          <span className="flex items-center gap-1">
-                            <Loader2 className="h-3 w-3 animate-spin" /> Saving...
-                          </span>
-                        ) : (
-                          "Save & Finalize Economy"
-                        )}
-                      </Button>
-                    </div>
                   </GlassCardContent>
                 </GlassCard>
-              </div>
-            </motion.div>
+              </ComponentErrorBoundary>
+            </Suspense>
           )}
+
+          {/* Per-economy preview and verification moved to global BuilderPreviewStep */}
         </BuilderTabCard>
       </div>
 
