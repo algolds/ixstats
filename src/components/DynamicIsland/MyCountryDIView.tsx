@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Crown, Globe, User, ChevronRight, LogOut, X, Shield } from "lucide-react";
-import { SimpleFlag } from "../SimpleFlag";
+import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 import { HealthRing } from "../ui/health-ring";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { getNationUrl } from "~/lib/slug-utils";
@@ -220,7 +220,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
                 className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                  <SimpleFlag
+                  <UnifiedCountryFlag showTooltip={false}
                     countryName={userProfile.country.name}
                     className="h-full w-full object-cover"
                     showPlaceholder={true}

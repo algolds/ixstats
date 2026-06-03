@@ -209,7 +209,11 @@ export function SecureCommunications({
     },
     {
       enabled: !!countryId,
+      // Poll only while the tab is focused; refetchInterval alone keeps firing in
+      // backgrounded tabs, causing refetch storms. (audit F1)
       refetchInterval: 30000, // Refresh every 30 seconds
+      refetchIntervalInBackground: false,
+      refetchOnWindowFocus: false,
     }
   );
 
@@ -269,7 +273,10 @@ export function SecureCommunications({
     },
     {
       enabled: !!activeChannelId && !!countryId,
+      // Poll only while focused — avoid background refetch storms. (audit F1)
       refetchInterval: 15000, // Refresh every 15 seconds
+      refetchIntervalInBackground: false,
+      refetchOnWindowFocus: false,
     }
   );
 

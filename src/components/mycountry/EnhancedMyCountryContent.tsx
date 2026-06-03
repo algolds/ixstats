@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCountryData, HeroSection } from "./primitives";
-import { useFlag } from "~/hooks/useFlag";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useOverviewHealthRings } from "~/hooks/useOverviewHealthRings";
 import { PillarCards } from "./PillarCards";
 

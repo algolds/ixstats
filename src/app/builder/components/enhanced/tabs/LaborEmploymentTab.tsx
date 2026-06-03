@@ -17,8 +17,6 @@ import {
   getProtectionColor,
   getLaborBounds,
 } from "./utils/laborCalculations";
-import { validateEconomy } from "./utils/validation";
-import { ValidationToast } from "./utils/ValidationToast";
 import { FieldIndicator } from "~/app/builder/primitives/FieldIndicator";
 import { WorkforceSection } from "./labor/WorkforceSection";
 import { EmploymentSection } from "./labor/EmploymentSection";
@@ -156,11 +154,6 @@ export function LaborEmploymentTab({
 
   const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
 
-  const validation = useMemo(
-    () => validateEconomy(economyBuilder, selectedComponents),
-    [economyBuilder, selectedComponents]
-  );
-
   const hasComponentImpact =
     employmentImpacts.unemployment !== 0 ||
     employmentImpacts.participation !== 1 ||
@@ -168,8 +161,8 @@ export function LaborEmploymentTab({
 
   return (
     <div className="space-y-6">
-
-      <ValidationToast messages={validation.messages} />
+      <h2 className="sr-only">Labor & Employment Configuration</h2>
+      <p className="sr-only">Configure workforce dynamics, employment sectors, income, and worker rights.</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -207,7 +200,7 @@ export function LaborEmploymentTab({
           { id: "workforce", label: "Workforce", icon: Users },
           { id: "employment", label: "Employment", icon: Briefcase },
           { id: "income", label: "Income & Wages", icon: DollarSign },
-          { id: "protections", label: "Worker Rights", icon: Shield },
+          { id: "protections", label: "Worker Rights & Protections", icon: Shield },
         ].map((section) => {
           const Icon = section.icon;
           return (

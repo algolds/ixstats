@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import type { BuilderStep } from "../components/enhanced/builderConfig";
 import type { BuilderState } from "./useBuilderState";
 import { stepOrder } from "../components/enhanced/builderConfig";
+import { TAX_SYSTEM_TEMP_DISABLED } from "../constants";
 
 /**
  * Return value interface for useBuilderActions hook.
@@ -199,9 +200,18 @@ export function useBuilderActions({
         }
         break;
 
-      case "economics":
-          const econTabs = ["components", "structure", "preview"];
-        const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
+      case "economics": {
+        const econTabs = ["components", "sectors", "labor"];
+        if (!TAX_SYSTEM_TEMP_DISABLED) {
+          econTabs.push("tax");
+        }
+        // Map legacy states
+        let normalizedTab = activeEconomicsTab;
+        if (normalizedTab === "structure") normalizedTab = "sectors";
+        if (normalizedTab === "economy" || !econTabs.includes(normalizedTab)) {
+          normalizedTab = "components";
+        }
+        const currentEconIndex = econTabs.indexOf(normalizedTab);
         if (currentEconIndex < econTabs.length - 1) {
           handleTabChange("economics", econTabs[currentEconIndex + 1]!);
         } else {
@@ -212,6 +222,7 @@ export function useBuilderActions({
           }));
         }
         break;
+      }
     }
   }, [builderState, setBuilderState, handleTabChange, mode]);
 
@@ -235,8 +246,17 @@ export function useBuilderActions({
     }
 
     if (step === "economics") {
-        const econTabs = ["components", "structure", "preview"];
-      const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
+      const econTabs = ["components", "sectors", "labor"];
+      if (!TAX_SYSTEM_TEMP_DISABLED) {
+        econTabs.push("tax");
+      }
+      // Map legacy states
+      let normalizedTab = activeEconomicsTab;
+      if (normalizedTab === "structure") normalizedTab = "sectors";
+      if (normalizedTab === "economy" || !econTabs.includes(normalizedTab)) {
+        normalizedTab = "components";
+      }
+      const currentEconIndex = econTabs.indexOf(normalizedTab);
       if (currentEconIndex > 0) {
         handleTabChange("economics", econTabs[currentEconIndex - 1]!);
         return;
@@ -266,7 +286,8 @@ export function useBuilderActions({
       } else if (prevStep === "government") {
         updatedState.activeGovernmentTab = "preview";
       } else if (prevStep === "economics") {
-        updatedState.activeEconomicsTab = "preview";
+        const lastEconTab = !TAX_SYSTEM_TEMP_DISABLED ? "tax" : "labor";
+        updatedState.activeEconomicsTab = lastEconTab;
       }
 
       return updatedState;

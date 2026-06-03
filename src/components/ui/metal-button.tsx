@@ -127,7 +127,7 @@ MetalButton.displayName = "MetalButton";
 
 export const MetalIconButton = forwardRef<HTMLDivElement, MetalIconButtonProps>(
   function MetalIconButton(
-    { size = "icon-sm", metalVariant = "circle", className, ...props },
+    { size = "icon", metalVariant = "circle", className, ...props },
     ref
   ) {
     return (

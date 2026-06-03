@@ -347,7 +347,6 @@ import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingS
 import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
 import { EconomyBuilderPage } from "../index"; // Eagerly loaded from index
 import { BuilderLoadingFallback } from "../../LoadingFallback";
-import { EnhancedTabsList, EnhancedTabsTrigger } from "../BuilderTabs";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
 import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";
 

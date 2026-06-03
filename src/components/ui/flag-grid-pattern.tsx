@@ -2,7 +2,7 @@
 
 import { cn } from "~/lib/utils";
 import React, { useState, useEffect } from "react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
 interface CountryData {
   id: string;
@@ -140,7 +140,7 @@ export function FlagGridPattern({
           >
             {hasFlag && (
               <div className="absolute inset-0">
-                <SimpleFlag
+                <UnifiedCountryFlag showTooltip={false}
                   countryName={hasFlag.name}
                   className="h-full w-full object-cover"
                   showPlaceholder={true}

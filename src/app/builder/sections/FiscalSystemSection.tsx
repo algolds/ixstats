@@ -74,9 +74,9 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
       collectionEfficiency: 90,
     },
     categories: [
-      { name: "Personal Income", type: "income", rate: 25, isProgressive: true },
-      { name: "Corporate", type: "corporate", rate: 20, isProgressive: false },
-      { name: "Sales", type: "sales", rate: 10, isProgressive: false },
+      { categoryName: "Personal Income", categoryType: "income", isActive: true, baseRate: 25, calculationMethod: "percentage" as const, deductionAllowed: true, priority: 1 },
+      { categoryName: "Corporate", categoryType: "corporate", isActive: true, baseRate: 20, calculationMethod: "percentage" as const, deductionAllowed: true, priority: 2 },
+      { categoryName: "Sales", categoryType: "sales", isActive: true, baseRate: 10, calculationMethod: "percentage" as const, deductionAllowed: false, priority: 3 },
     ],
     brackets: {},
     exemptions: [],
@@ -748,7 +748,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
 
   // Generate fiscal insights
   const generateInsights = () => {
-    const insights = [];
+    const insights: string[] = [];
     const safeTaxRev = Number(fiscalSystem.taxRevenueGDPPercent);
     const safeDebtRatio = Number(fiscalSystem.totalDebtGDPRatio);
     const safeBudgetBalance = Number(fiscalSystem.budgetDeficitSurplus || 0);

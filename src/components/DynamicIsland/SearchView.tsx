@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Search, X, ChevronRight } from "lucide-react";
-import { SimpleFlag } from "../SimpleFlag";
+import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import type { SearchViewProps, SearchFilter } from "./types";
 import { PreText } from "~/components/ui/pretext";
@@ -112,7 +112,7 @@ export function SearchView({
                 {/* Icon */}
                 <div className="bg-accent/10 group-hover:bg-accent/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors">
                   {result.type === "country" && result.metadata?.countryName ? (
-                    <SimpleFlag
+                    <UnifiedCountryFlag showTooltip={false}
                       countryName={result.metadata.countryName}
                       className="h-3.5 w-5 rounded-sm object-cover"
                       showPlaceholder={true}

@@ -20,8 +20,8 @@ interface StepContentProps {
 export const StepContent = memo(function StepContent({ children }: StepContentProps) {
   const { builderState } = useBuilderContext();
 
-  // Link card transitions to both main step navigation and active tab/sub-tab selections
-  const navKey = `${builderState.step}-${builderState.activeCoreTab}-${builderState.activeIdentitySubTab || ""}-${builderState.activeGovernmentTab || ""}-${builderState.activeEconomicsTab || ""}`;
+  // Link card transitions strictly to main step changes to prevent inner tab flashing
+  const navKey = builderState.step;
 
   return (
     <AnimatePresence mode="wait">

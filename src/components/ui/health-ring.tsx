@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, useSpring, useTransform } from "motion/react";
-import { AnimatedNumber } from "./animated-number";
+import { NumberFlowDisplay } from "./number-flow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./tooltip";
 
 function hexToRgb(hexInput?: string) {
@@ -316,7 +316,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
       {/* Center content */}
       <div className="absolute inset-0 z-30 flex flex-col items-center justify-center">
         <span className="text-foreground text-2xl font-bold">
-          <AnimatedNumber value={progress} decimals={0} />
+          <NumberFlowDisplay value={progress} decimalPlaces={0} />
         </span>
         {safeTarget !== 100 && (
           <span className="text-muted-foreground text-xs">of {safeTarget}</span>

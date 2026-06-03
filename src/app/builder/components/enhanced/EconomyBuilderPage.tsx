@@ -41,6 +41,8 @@ import { useEconomyBuilderSync } from "../../hooks/useEconomyBuilderSync";
 // Tab Components (lazy-loaded)
 import { Suspense } from "react";
 import { EconomySectorsTab, LaborEmploymentTab, DemographicsPopulationTab } from "./tabs";
+import { validateEconomy } from "./tabs/utils/validation";
+import { ValidationToast } from "./tabs/utils/ValidationToast";
 import { getRegionColor } from "./tabs/utils/demographicsCalculations";
 import { TabLoadingFallback } from "../../components/LoadingFallback";
 
@@ -94,6 +96,7 @@ interface EconomyBuilderPageProps {
   onEconomicInputsChange: (inputs: EconomicInputs) => void;
   governmentComponents?: any[];
   governmentBuilderData?: any;
+  taxSystemData?: Record<string, any> | null;
   countryId?: string;
   className?: string;
   onSelectedComponentsChange?: (components: EconomicComponentType[]) => void;
@@ -825,6 +828,11 @@ export function EconomyBuilderPage({
     return validateEconomyConfiguration();
   }, [validateEconomyConfiguration]);
 
+  const economyValidation = useMemo(
+    () => validateEconomy(economyBuilder, selectedComponents),
+    [economyBuilder, selectedComponents]
+  );
+
   // Use prop economicHealthMetrics or create fallback
   const healthMetrics: EconomicHealthMetrics = useMemo(() => {
     if (economicHealthMetrics) return economicHealthMetrics;
@@ -926,7 +934,7 @@ export function EconomyBuilderPage({
                     selectedComponents={selectedComponents}
                     onComponentChange={handleComponentChange}
                     maxComponents={12}
-                    governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
+                    governmentComponents={governmentComponents}
                     hideSelectedList={true}
                   />
                   </GlassCardContent>
@@ -1095,6 +1103,7 @@ export function EconomyBuilderPage({
           notify.success("Economic archetype applied successfully!");
         }}
       />
+      <ValidationToast messages={economyValidation.messages} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent } from "./card";
 import { Skeleton } from "./skeleton";
-import { AnimatedNumber } from "./animated-number";
+import { NumberFlowDisplay } from "./number-flow";
 import { HealthRing } from "./health-ring";
 
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion";
@@ -72,7 +72,7 @@ export function ExpandableStatCard({
                   <div className="mb-2">Real-time population estimate:</div>
                   <div className="mb-2 text-3xl font-bold text-blue-600">
                     {typeof value === "number" ? (
-                      <AnimatedNumber value={value} duration={1500} />
+                      <NumberFlowDisplay value={value} duration={1500} />
                     ) : (
                       formattedValue
                     )}
@@ -104,7 +104,7 @@ export function ExpandableStatCard({
                   </div>
                   <div className="mt-2 text-lg font-bold text-green-700">
                     {typeof value === "number" ? (
-                      <AnimatedNumber value={value} duration={1500} prefix="$" decimals={0} />
+                      <NumberFlowDisplay value={value} duration={1500} prefix="$" decimalPlaces={0} />
                     ) : (
                       formattedValue
                     )}

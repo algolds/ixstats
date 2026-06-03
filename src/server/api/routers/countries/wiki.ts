@@ -387,9 +387,12 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       const results: Record<string, any> = {};
-      for (const name of names) {
-        results[name] = await fetchWikiSections(name);
-      }
+      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
+      await Promise.all(
+        names.map(async (name) => {
+          results[name] = await fetchWikiSections(name);
+        })
+      );
       return results;
     }),
 
@@ -406,9 +409,12 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       const results: Record<string, any> = {};
-      for (const name of names) {
-        results[name] = await fetchWikiPageImages(name);
-      }
+      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
+      await Promise.all(
+        names.map(async (name) => {
+          results[name] = await fetchWikiPageImages(name);
+        })
+      );
       return results;
     }),
 
@@ -425,9 +431,12 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       const results: Record<string, any> = {};
-      for (const name of names) {
-        results[name] = await fetchWikiRichIntro(name);
-      }
+      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
+      await Promise.all(
+        names.map(async (name) => {
+          results[name] = await fetchWikiRichIntro(name);
+        })
+      );
       return results;
     }),
 
@@ -444,9 +453,12 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       const results: Record<string, any> = {};
-      for (const name of names) {
-        results[name] = await fetchWikiInfoboxCached(name);
-      }
+      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
+      await Promise.all(
+        names.map(async (name) => {
+          results[name] = await fetchWikiInfoboxCached(name);
+        })
+      );
       return results;
     }),
 
@@ -463,9 +475,12 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       const results: Record<string, any> = {};
-      for (const name of names) {
-        results[name] = await fetchWikiSectionPreviews(name);
-      }
+      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
+      await Promise.all(
+        names.map(async (name) => {
+          results[name] = await fetchWikiSectionPreviews(name);
+        })
+      );
       return results;
     }),
 

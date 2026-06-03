@@ -218,7 +218,11 @@ export function GovernmentStep({
                 />
               </GlassCardContent>
             </GlassCard>
+          </div>
+        )}
 
+        {activeTab === "structure" && (
+          <div className="space-y-6">
             {/* Departments list */}
             <GlassCard
               depth="base"

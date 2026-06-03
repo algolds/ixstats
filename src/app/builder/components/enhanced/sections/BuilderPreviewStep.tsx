@@ -1002,12 +1002,14 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                       <Landmark className="h-4 w-4" />
                       Fiscal Policy
                     </h4>
-                    <div>
-                      <FiscalTab
-                        revenueIntegration={revenueIntegration}
-                        economicInputs={economicInputs}
-                      />
-                    </div>
+                    {economicInputs && (
+                      <div>
+                        <FiscalTab
+                          revenueIntegration={revenueIntegration}
+                          economicInputs={economicInputs}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 

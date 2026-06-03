@@ -24,8 +24,6 @@ import type {
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 import { calculateDerivedDemographics, getRegionColor } from "./utils/demographicsCalculations";
-import { validateEconomy } from "./utils/validation";
-import { ValidationToast } from "./utils/ValidationToast";
 import { PopulationSection } from "./demographics/PopulationSection";
 import { AgeDistributionSection } from "./demographics/AgeDistributionSection";
 import { GeographicSection } from "./demographics/GeographicSection";
@@ -329,17 +327,12 @@ export function DemographicsPopulationTab({
     [economyBuilder.demographics]
   );
 
-  const validation = useMemo(
-    () => validateEconomy(economyBuilder, selectedComponents),
-    [economyBuilder, selectedComponents]
-  );
-
   const hasComponentImpact = Object.values(demographicImpacts).some((v) => v !== 1);
 
   return (
     <div className="space-y-6">
-
-      <ValidationToast messages={validation.messages} />
+      <h2 className="sr-only">Demographics & Population Configuration</h2>
+      <p className="sr-only">Configure population structure, regional population shares, urban-rural distribution, and education/health indicators.</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard

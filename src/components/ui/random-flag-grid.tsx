@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { cn } from "~/lib/utils";
 
 interface CountryData {
@@ -299,7 +299,7 @@ export const RandomFlagGrid: React.FC<RandomFlagGridProps> = ({
                   transition: { duration: 0.2 },
                 }}
               >
-                <SimpleFlag
+                <UnifiedCountryFlag showTooltip={false}
                   countryName={item.country.name}
                   className="h-full w-full object-cover"
                   showPlaceholder={true}

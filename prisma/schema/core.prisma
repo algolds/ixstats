@@ -474,6 +474,9 @@ model AuditLog {
   @@index([action])
   @@index([timestamp])
   @@index([success])
+  // Autosave history/stats filter on target + action(startsWith) ordered by timestamp.
+  // Composite index avoids a full scan of AuditLog for those queries. (audit B1)
+  @@index([target, action, timestamp])
 }
 
 model AdminFavorite {

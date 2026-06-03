@@ -73,8 +73,8 @@ export function ExpandedView({
                 <PluginView
                   onClose={onClose}
                   onSwitchMode={onSwitchMode}
-                  filter={(activePlugin as any).filter}
-                  context={(activePlugin as any).context}
+                  filter={activePlugin?.filter}
+                  context={activePlugin?.context}
                 />
               </DynamicContainer>
             );

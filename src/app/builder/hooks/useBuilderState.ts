@@ -183,7 +183,7 @@ const baseInitialState: BuilderState = {
   activeCoreTab: "identity",
   activeIdentitySubTab: "basic",
   activeGovernmentTab: "components",
-  activeEconomicsTab: "economy",
+  activeEconomicsTab: "components",
   showAdvancedMode: false,
   economyBuilderState: null,
 };
@@ -531,7 +531,7 @@ export function useBuilderState(
         activeCoreTab: "identity",
         activeIdentitySubTab: "basic",
         activeGovernmentTab: "components",
-        activeEconomicsTab: "economy",
+        activeEconomicsTab: "components",
         showAdvancedMode: false,
         economyBuilderState: null,
       });

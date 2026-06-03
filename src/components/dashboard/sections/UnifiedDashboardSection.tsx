@@ -63,7 +63,7 @@ import { sanitizeUserContent } from "~/lib/sanitize-html";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { useNotify } from "~/hooks/useNotify";
 
 // ─── Config ──────────────────────────────────────────────────────
@@ -1474,7 +1474,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
                   </div>
                 )}
                 <div className="relative z-10 flex items-center gap-2">
-                  <SimpleFlag countryName={c.name} size="sm" className="shrink-0" />
+                  <UnifiedCountryFlag showTooltip={false} countryName={c.name} size="sm" className="shrink-0" />
                   <div className="min-w-0">
                     <Link
                       href={createUrl(`/countries/${c.slug}`)}
@@ -2031,7 +2031,7 @@ function WikiAuthorPopover({ username }: { username: string }) {
               {/* Header */}
               <div className="flex items-center gap-2">
                 {author?.country?.flag ? (
-                  <SimpleFlag
+                  <UnifiedCountryFlag showTooltip={false}
                     countryName={author.country.name ?? ""}
                     size="sm"
                     className="shrink-0"

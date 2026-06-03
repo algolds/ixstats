@@ -15,7 +15,7 @@ import {
   Search,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
-import { SimpleFlag } from "../SimpleFlag";
+import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -238,7 +238,7 @@ function MyCountryCompactViewComponent({
         >
           {/* Flag Background Overlay - Subtle depth hint (70% DI / 30% Flag) */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[46px]">
-            <SimpleFlag
+            <UnifiedCountryFlag showTooltip={false}
               countryName={countryData.name}
               className="h-full w-full object-cover opacity-30 blur-sm"
               showPlaceholder={false}
@@ -264,7 +264,7 @@ function MyCountryCompactViewComponent({
                       isSticky ? "h-5 w-5" : "h-7 w-7"
                     }`}
                   >
-                    <SimpleFlag
+                    <UnifiedCountryFlag showTooltip={false}
                       countryName={countryData.name}
                       className="h-full w-full rounded object-cover"
                       showPlaceholder={false}

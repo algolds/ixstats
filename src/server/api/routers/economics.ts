@@ -1206,7 +1206,7 @@ const economicsRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        taxData: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+        taxData: z.record(z.string(), z.any()),
       })
     )
     .mutation(async ({ ctx, input }) => {

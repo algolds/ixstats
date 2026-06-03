@@ -33,7 +33,7 @@ import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import type { SelectedCountry } from "./IxWorldMap";
 import { SwipeableBottomSheet } from "./SwipeableBottomSheet";
 import { useCountryPanelData } from "~/hooks/useCountryPanelData";
-import { useFlag } from "~/hooks/useFlag";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
 
 // Lazy import modals and geo profile to avoid bloating the initial map bundle

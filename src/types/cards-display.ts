@@ -83,7 +83,7 @@ export interface FormattedStatEntry {
 }
 
 export interface FormattedSpecialStatEntry {
-  normalizedValue: number;
+  normalizedValue: number | string;
   rawValue: number;
   formattedRaw: string;
   def: CardStatDef;

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { AnimatedNumber } from "~/components/ui/animated-number";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -235,7 +235,7 @@ export function InteractiveMetric({
             <span className={cn(sizes.value, "font-bold tracking-tight", colors.text)}>
               {prefix}
               {animate ? (
-                <AnimatedNumber value={value} decimals={decimals} />
+                <NumberFlowDisplay value={value} decimalPlaces={decimals} />
               ) : (
                 formatValue(value, format, decimals)
               )}
@@ -319,7 +319,7 @@ export function AnimatedValue({
   return (
     <span className={className}>
       {prefix}
-      <AnimatedNumber value={value} decimals={decimals} />
+      <NumberFlowDisplay value={value} decimalPlaces={decimals} />
       {suffix}
     </span>
   );

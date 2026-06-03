@@ -15,7 +15,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 
@@ -116,7 +116,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
           <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
             {activity.user.countryName && (
               <>
-                <SimpleFlag countryName={activity.user.countryName} size="sm" />
+                <UnifiedCountryFlag showTooltip={false} countryName={activity.user.countryName} size="sm" />
                 <span className="max-w-[120px] truncate sm:max-w-none">
                   {activity.user.countryName}
                 </span>

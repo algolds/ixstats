@@ -16,6 +16,15 @@ import { EconomicComponentType, TaxComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
 import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
+export interface SynergyItem {
+  type: "GOV_ECON" | "GOV_TAX" | "ECON_TAX" | "ALL_THREE";
+  governmentComponent?: { componentType: string };
+  economicComponent?: { componentType: string };
+  taxComponent?: { componentType: string };
+  bonus: number;
+  description: string;
+}
+
 export interface UseUnifiedAtomicComponentsProps {
   countryId?: string;
   initialGovernmentComponents?: ComponentType[];
@@ -74,7 +83,7 @@ export function useUnifiedAtomicComponents({
 
     setIsLoading(true);
     try {
-      const synergyData = synergies.map((synergy) => ({
+      const synergyData = (synergies as SynergyItem[]).map((synergy) => ({
         governmentComponents: synergy.governmentComponent
           ? [synergy.governmentComponent.componentType]
           : [],

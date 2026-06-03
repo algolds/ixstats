@@ -46,6 +46,8 @@ export type TimeDisplayMode = "time" | "date" | "both";
 export interface DIViewProps {
   onClose: () => void;
   onSwitchMode?: (mode: ViewMode) => void;
+  filter?: Record<string, any>;
+  context?: any;
 }
 
 /** An action button a plugin can inject into the pill */
@@ -73,6 +75,8 @@ export interface DIPlugin {
   badge?: DIBadge;
   accentColor?: string;
   stickyLabel?: string;
+  filter?: Record<string, any>;
+  context?: any;
 }
 
 // Current time state interface

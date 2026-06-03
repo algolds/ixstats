@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { motion, useMotionValue, useMotionTemplate } from "motion/react";
 import { cn } from "~/lib/utils";
-import { useTheme } from "~/context/theme-context";
 
 import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 
@@ -110,7 +109,6 @@ export function GlassCard({
   texture = "dots", // Default to dots texture overlay
   textureOpacity = 0.03,
 }: GlassCardProps) {
-  const { effectiveTheme } = useTheme();
   const isInteractive = Boolean(onClick) || hover;
   const finalDepth = isInteractive ? "interactive" : depth;
 

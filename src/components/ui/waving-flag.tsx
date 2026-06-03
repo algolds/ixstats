@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
 interface WavingFlagProps {
   countryName: string;
@@ -114,7 +114,7 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
       >
         {/* Base flag layer */}
         <div className="relative h-full w-full">
-          <SimpleFlag
+          <UnifiedCountryFlag showTooltip={false}
             countryName={countryName}
             className="h-full w-full object-cover"
             showPlaceholder={showPlaceholder}

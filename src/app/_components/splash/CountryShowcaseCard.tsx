@@ -103,7 +103,13 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
     <div className="relative h-full w-full overflow-y-auto p-6 md:p-8">
       {flagUrl && (
         <div className="absolute inset-0 opacity-10">
-          <img src={flagUrl} alt={displayName} className="h-full w-full object-cover" />
+          <img
+            src={flagUrl}
+            alt={displayName}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
 
@@ -124,6 +130,8 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <img
                 src={coatOfArmsUrl}
                 alt={`${displayName} coat of arms`}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-contain"
               />
             </div>

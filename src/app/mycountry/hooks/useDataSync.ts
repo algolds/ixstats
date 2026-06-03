@@ -446,13 +446,8 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
     handleError,
   ]);
 
-  // Auto-polling setup - disabled to prevent infinite loops, using TRPC's built-in refetching instead
-  // const startPolling = useCallback(() => {
-  //   // DISABLED: Custom polling to prevent infinite loops
-  //   // TRPC handles refetching automatically based on query configuration
-  //   console.log('[useDataSync] Auto-polling disabled - using TRPC refetch strategy');
-  // }, [enabled, refetchCountry, handleError, retryAttempts, retryDelay, pollInterval]);
-
+  // Auto-polling is intentionally omitted — tRPC handles refetching based on query
+  // config (refetchOnReconnect, enabled). Manual refresh via forceRefresh/forceUpdateStatus.
   const stopPolling = useCallback(() => {
     if (pollTimeoutRef.current) {
       clearTimeout(pollTimeoutRef.current);

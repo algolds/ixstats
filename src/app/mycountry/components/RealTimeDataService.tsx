@@ -222,15 +222,8 @@ export function RealTimeDataService({
     [createSnapshot, analyzeDataChanges, addNotification, onDataUpdate]
   );
 
-  // Real-time update polling - DISABLED to prevent infinite loops
-  const startPolling = useCallback(() => {
-    console.log(
-      `[RealTimeDataService] Polling disabled to prevent infinite loops for country ${countryId}`
-    );
-    // DISABLED: Real-time polling that was causing infinite loops
-    // The useDataSync hook in MyCountryDataWrapper handles data updates instead
-  }, [countryId]);
-
+  // Real-time polling is intentionally not used here — data updates flow through the
+  // useDataSync hook in MyCountryDataWrapper (tRPC handles refetching). (audit Phase 4)
   const stopPolling = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -245,23 +238,6 @@ export function RealTimeDataService({
       processDataUpdate(countryData);
     }
   }, [countryData, isLoading, processDataUpdate]);
-
-  // Start/stop polling based on active state - DISABLED
-  useEffect(() => {
-    // DISABLED: Polling that was causing infinite loops
-    // Data updates are now handled by useDataSync hook
-    console.log(
-      "[RealTimeDataService] Service active but polling disabled:",
-      isActive && !!countryId
-    );
-  }, [isActive, countryId]);
-
-  // IxTime integration - DISABLED to prevent infinite loops
-  useEffect(() => {
-    // DISABLED: Time checking that was triggering constant refetches
-    // This will be handled by the useDataSync hook instead
-    console.log("[RealTimeDataService] IxTime monitoring disabled to prevent loops");
-  }, [isActive]);
 
   // Component cleanup
   useEffect(() => {

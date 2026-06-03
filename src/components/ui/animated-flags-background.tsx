@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 interface AnimatedFlagsBackgroundProps {
@@ -279,7 +279,7 @@ export function AnimatedFlagsBackground({
             variants={pulseVariants as any}
             animate="animate"
           >
-            <SimpleFlag
+            <UnifiedCountryFlag showTooltip={false}
               countryName={flag.name}
               className="h-full w-full object-cover blur-[0.5px] filter"
               showPlaceholder={true}

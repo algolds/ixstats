@@ -34,7 +34,7 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -600,7 +600,7 @@ function DashboardHero({
                     : undefined
                 }
               >
-                <SimpleFlag countryName={stats.countryName} size="lg" className="shrink-0" />
+                <UnifiedCountryFlag showTooltip={false} countryName={stats.countryName} size="lg" className="shrink-0" />
               </div>
               <div>
                 <Link

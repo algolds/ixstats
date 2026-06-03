@@ -25,6 +25,15 @@ import { AtomicIntelligenceFeed } from "~/components/intelligence/AtomicIntellig
 
 import { api } from "~/trpc/react";
 
+interface SynergyItem {
+  type: "GOV_ECON" | "GOV_TAX" | "ECON_TAX" | "ALL_THREE";
+  governmentComponent?: { componentType: string };
+  economicComponent?: { componentType: string };
+  taxComponent?: { componentType: string };
+  bonus: number;
+  description: string;
+}
+
 // Enhanced types for atomic integration
 interface AtomicExecutiveSummaryProps {
   countryId: string;
@@ -432,7 +441,7 @@ export function AtomicExecutiveSummary({
               maxItems={8}
               synergies={{
                 governmentSynergies:
-                  synergies
+                  (synergies as SynergyItem[] | undefined)
                     ?.filter((s) => s.type === "GOV_ECON" || s.type === "GOV_TAX")
                     .map((s) => ({
                       name:
@@ -442,7 +451,7 @@ export function AtomicExecutiveSummary({
                       description: s.description,
                     })) || [],
                 crossBuilderSynergies:
-                  synergies
+                  (synergies as SynergyItem[] | undefined)
                     ?.filter((s) => s.type === "ECON_TAX" || s.type === "ALL_THREE")
                     .map((s, idx) => ({
                       id: `synergy-${idx}`,

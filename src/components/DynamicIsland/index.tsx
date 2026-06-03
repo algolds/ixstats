@@ -281,7 +281,7 @@ function CommandPaletteContent({
   const lastProcessedTriggerRef = useRef(0);
   useEffect(() => {
     if (activePlugin?.id === "builder") {
-      const pluginTrigger = (activePlugin as any).filter?.diExpansionTrigger;
+      const pluginTrigger = activePlugin?.filter?.diExpansionTrigger;
       if (pluginTrigger !== undefined) {
         if (pluginTrigger > lastProcessedTriggerRef.current) {
           lastProcessedTriggerRef.current = pluginTrigger;

@@ -264,6 +264,12 @@ function transformDatabaseComponent(dbComp: any): AtomicEconomicComponent {
       participationModifier: 1,
       wageGrowthModifier: 1,
     },
+    demographicImpact: dbComp.demographicImpact || {
+      populationGrowthModifier: 0,
+      lifeExpectancyModifier: 0,
+      literacyModifier: 0,
+      urbanizationModifier: 0,
+    },
     implementationCost: dbComp.implementationCost || 100000,
     maintenanceCost: dbComp.maintenanceCost || 50000,
     requiredCapacity: dbComp.requiredCapacity || 75,

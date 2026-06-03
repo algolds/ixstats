@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { cn } from "~/lib/utils";
 
 interface CountryData {
@@ -254,7 +254,7 @@ export const RubiksCubeFlags: React.FC<RubiksCubeFlagsProps> = ({
                   transition: { duration: 0.2 },
                 }}
               >
-                <SimpleFlag
+                <UnifiedCountryFlag showTooltip={false}
                   countryName={country.name}
                   className="h-full w-full object-cover"
                   showPlaceholder={true}

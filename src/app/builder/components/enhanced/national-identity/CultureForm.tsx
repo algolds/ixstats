@@ -302,7 +302,7 @@ export const CultureForm = React.memo(
               <MediaSearchModal
                 isOpen={true}
                 onClose={() => setImagePickerField(null)}
-                onSelect={handleImageSelect}
+                onImageSelect={handleImageSelect}
               />
             )}
           </GlassCardContent>

@@ -18,7 +18,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 
@@ -423,7 +423,7 @@ export function GlassActivityMarquee({
                   {activity.country !== "System" && (
                     <div className="flex items-center gap-1">
                       <div className="h-3 w-4 overflow-hidden rounded-sm border border-white/20">
-                        <SimpleFlag
+                        <UnifiedCountryFlag showTooltip={false}
                           countryName={activity.country}
                           className="h-full w-full object-cover"
                           showPlaceholder={true}

@@ -99,38 +99,54 @@ export const autosaveHistoryRouter = createTRPCRouter({
         });
       }
 
-      // Get all autosave records for this country
-      const allAutosaves = await ctx.db.auditLog.findMany({
-        where: {
-          target: countryId,
-          action: {
-            startsWith: "AUTOSAVE_",
-          },
-        },
-        orderBy: {
-          timestamp: "desc",
-        },
-      });
-
-      // Calculate statistics
-      const totalAutosaves = allAutosaves.length;
-      const successCount = allAutosaves.filter((log) => !log.action.includes("_FAILED")).length;
-      const failureCount = allAutosaves.filter((log) => log.action.includes("_FAILED")).length;
-      const lastAutosave = allAutosaves.length > 0 ? allAutosaves[0]!.timestamp : null;
-
-      // Section breakdown (count by section type)
-      const sectionBreakdown = {
-        identity: allAutosaves.filter((log) => log.action.includes("IDENTITY")).length,
-        government: allAutosaves.filter((log) => log.action.includes("GOVERNMENT")).length,
-        tax: allAutosaves.filter((log) => log.action.includes("TAX")).length,
-        economy: allAutosaves.filter((log) => log.action.includes("ECONOMY")).length,
+      // Aggregate at the DB layer instead of loading every autosave row and scanning
+      // it 4+ times in JS. AUTOSAVE_ actions are a small set of distinct strings
+      // (e.g. AUTOSAVE_IDENTITY_SAVED, AUTOSAVE_GOVERNMENT_FAILED), so grouping by
+      // `action` returns only a handful of rows regardless of history size. (audit B2)
+      const baseWhere = {
+        target: countryId,
+        action: { startsWith: "AUTOSAVE_" },
       };
+
+      const [grouped, last] = await Promise.all([
+        ctx.db.auditLog.groupBy({
+          by: ["action"],
+          where: baseWhere,
+          _count: { _all: true },
+        }),
+        ctx.db.auditLog.findFirst({
+          where: baseWhere,
+          orderBy: { timestamp: "desc" },
+          select: { timestamp: true },
+        }),
+      ]);
+
+      let totalAutosaves = 0;
+      let successCount = 0;
+      let failureCount = 0;
+      const sectionBreakdown = { identity: 0, government: 0, tax: 0, economy: 0 };
+
+      for (const group of grouped) {
+        const count = group._count._all;
+        totalAutosaves += count;
+
+        if (group.action.includes("_FAILED")) {
+          failureCount += count;
+        } else {
+          successCount += count;
+        }
+
+        if (group.action.includes("IDENTITY")) sectionBreakdown.identity += count;
+        else if (group.action.includes("GOVERNMENT")) sectionBreakdown.government += count;
+        else if (group.action.includes("TAX")) sectionBreakdown.tax += count;
+        else if (group.action.includes("ECONOMY")) sectionBreakdown.economy += count;
+      }
 
       return {
         totalAutosaves,
         successCount,
         failureCount,
-        lastAutosave,
+        lastAutosave: last?.timestamp ?? null,
         sectionBreakdown,
       };
     }),

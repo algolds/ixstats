@@ -375,50 +375,47 @@ export const diplomaticCulturalRouter = createTRPCRouter({
             },
           });
 
-          // Create a cultural_outreach mission for each active embassy
-          const missionCreationPromises = embassies.map(async (embassy) => {
-            const ixTimeNow = IxTime.getCurrentIxTime();
-            const duration = Math.ceil(
-              (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) /
-                (1000 * 60 * 60 * 24)
-            ); // Duration in days
-            const completesAt = new Date(
-              new Date(input.startDate).getTime() + duration * 24 * 60 * 60 * 1000
-            );
+          // Shared mission parameters — identical for every embassy, so compute once
+          // and batch-insert with createMany instead of N individual create() calls. (audit B3)
+          const ixTimeNow = IxTime.getCurrentIxTime();
+          const duration = Math.ceil(
+            (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ); // Duration in days
+          const completesAt = new Date(
+            new Date(input.startDate).getTime() + duration * 24 * 60 * 60 * 1000
+          );
 
-            // Calculate mission rewards based on exchange potential
-            const baseInfluence = 30; // Base for cultural exchanges
-            const baseReputation = 20;
-            const baseExperience = 100;
+          // Calculate mission rewards based on exchange potential
+          const baseInfluence = 30; // Base for cultural exchanges
+          const baseReputation = 20;
+          const baseExperience = 100;
 
-            return ctx.db.embassyMission.create({
-              data: {
-                embassyId: embassy.id,
-                name: `Cultural Outreach: ${input.title}`,
-                type: "cultural_outreach",
-                description: `Promote ${input.title} (${input.type}) to strengthen cultural ties with ${embassy.hostCountryId}`,
-                difficulty: "medium",
-                status: "active",
-                requiredStaff: 1,
-                requiredLevel: 1,
-                cost: 5000,
-                duration: duration,
-                startedAt: new Date(input.startDate),
-                completesAt: completesAt,
-                experienceReward: baseExperience,
-                influenceReward: baseInfluence,
-                reputationReward: baseReputation,
-                economicReward: 0,
-                progress: 0,
-                successChance: 65, // Base success chance for cultural missions
-                ixTimeStarted: ixTimeNow,
-                ixTimeCompletes: ixTimeNow + duration * 2, // IxTime runs 2x faster
-                culturalExchangeId: exchange.id,
-              },
-            });
+          await ctx.db.embassyMission.createMany({
+            data: embassies.map((embassy) => ({
+              embassyId: embassy.id,
+              name: `Cultural Outreach: ${input.title}`,
+              type: "cultural_outreach",
+              description: `Promote ${input.title} (${input.type}) to strengthen cultural ties with ${embassy.hostCountryId}`,
+              difficulty: "medium",
+              status: "active",
+              requiredStaff: 1,
+              requiredLevel: 1,
+              cost: 5000,
+              duration: duration,
+              startedAt: new Date(input.startDate),
+              completesAt: completesAt,
+              experienceReward: baseExperience,
+              influenceReward: baseInfluence,
+              reputationReward: baseReputation,
+              economicReward: 0,
+              progress: 0,
+              successChance: 65, // Base success chance for cultural missions
+              ixTimeStarted: ixTimeNow,
+              ixTimeCompletes: ixTimeNow + duration * 2, // IxTime runs 2x faster
+              culturalExchangeId: exchange.id,
+            })),
           });
-
-          await Promise.all(missionCreationPromises);
         } catch (error) {
           console.error(
             "[Diplomatic] Failed to auto-create embassy missions for cultural exchange:",

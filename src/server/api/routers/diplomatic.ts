@@ -637,9 +637,11 @@ export const diplomaticRouter = createTRPCRouter({
 
           if (earnResult.success) {
             creditsEarned = creditReward;
-            console.log(
-              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for embassy establishment`
-            );
+            if (process.env.NODE_ENV !== "production") {
+              console.log(
+                `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for embassy establishment`
+              );
+            }
           }
         } catch (error) {
           console.error("[Diplomatic] Failed to award embassy establishment credits:", error);
@@ -946,50 +948,47 @@ export const diplomaticRouter = createTRPCRouter({
             },
           });
 
-          // Create a cultural_outreach mission for each active embassy
-          const missionCreationPromises = embassies.map(async (embassy) => {
-            const ixTimeNow = IxTime.getCurrentIxTime();
-            const duration = Math.ceil(
-              (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) /
-                (1000 * 60 * 60 * 24)
-            ); // Duration in days
-            const completesAt = new Date(
-              new Date(input.startDate).getTime() + duration * 24 * 60 * 60 * 1000
-            );
+          // Shared mission parameters are identical for every embassy, so compute once
+          // and batch-insert with createMany instead of N individual create() calls. (audit B3)
+          const ixTimeNow = IxTime.getCurrentIxTime();
+          const duration = Math.ceil(
+            (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ); // Duration in days
+          const completesAt = new Date(
+            new Date(input.startDate).getTime() + duration * 24 * 60 * 60 * 1000
+          );
 
-            // Calculate mission rewards based on exchange potential
-            const baseInfluence = 30; // Base for cultural exchanges
-            const baseReputation = 20;
-            const baseExperience = 100;
+          // Calculate mission rewards based on exchange potential
+          const baseInfluence = 30; // Base for cultural exchanges
+          const baseReputation = 20;
+          const baseExperience = 100;
 
-            return ctx.db.embassyMission.create({
-              data: {
-                embassyId: embassy.id,
-                name: `Cultural Outreach: ${input.title}`,
-                type: "cultural_outreach",
-                description: `Promote ${input.title} (${input.type}) to strengthen cultural ties with ${embassy.hostCountryId}`,
-                difficulty: "medium",
-                status: "active",
-                requiredStaff: 1,
-                requiredLevel: 1,
-                cost: 5000,
-                duration: duration,
-                startedAt: new Date(input.startDate),
-                completesAt: completesAt,
-                experienceReward: baseExperience,
-                influenceReward: baseInfluence,
-                reputationReward: baseReputation,
-                economicReward: 0,
-                progress: 0,
-                successChance: 65, // Base success chance for cultural missions
-                ixTimeStarted: ixTimeNow,
-                ixTimeCompletes: ixTimeNow + duration * 2, // IxTime runs 2x faster
-                culturalExchangeId: exchange.id,
-              },
-            });
+          await ctx.db.embassyMission.createMany({
+            data: embassies.map((embassy) => ({
+              embassyId: embassy.id,
+              name: `Cultural Outreach: ${input.title}`,
+              type: "cultural_outreach",
+              description: `Promote ${input.title} (${input.type}) to strengthen cultural ties with ${embassy.hostCountryId}`,
+              difficulty: "medium",
+              status: "active",
+              requiredStaff: 1,
+              requiredLevel: 1,
+              cost: 5000,
+              duration: duration,
+              startedAt: new Date(input.startDate),
+              completesAt: completesAt,
+              experienceReward: baseExperience,
+              influenceReward: baseInfluence,
+              reputationReward: baseReputation,
+              economicReward: 0,
+              progress: 0,
+              successChance: 65, // Base success chance for cultural missions
+              ixTimeStarted: ixTimeNow,
+              ixTimeCompletes: ixTimeNow + duration * 2, // IxTime runs 2x faster
+              culturalExchangeId: exchange.id,
+            })),
           });
-
-          await Promise.all(missionCreationPromises);
         } catch (error) {
           console.error(
             "[Diplomatic] Failed to auto-create embassy missions for cultural exchange:",
@@ -1022,9 +1021,11 @@ export const diplomaticRouter = createTRPCRouter({
 
           if (earnResult.success) {
             creditsEarned = creditReward;
-            console.log(
-              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for cultural exchange creation`
-            );
+            if (process.env.NODE_ENV !== "production") {
+              console.log(
+                `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for cultural exchange creation`
+              );
+            }
           }
         } catch (error) {
           console.error("[Diplomatic] Failed to award cultural exchange credits:", error);
@@ -1668,7 +1669,7 @@ export const diplomaticRouter = createTRPCRouter({
             `[Diplomatic] Failed to award credits for mission ${mission.id}:`,
             creditResult.message
           );
-        } else {
+        } else if (process.env.NODE_ENV !== "production") {
           console.log(
             `[Diplomatic] Awarded ${creditsEarned} IxC to user ${ctx.user.id} for completing mission ${mission.id}`
           );
@@ -3881,7 +3882,9 @@ export const diplomaticRouter = createTRPCRouter({
       for (const participant of exchange.participatingCountries) {
         try {
           // Note: Notification system would go here
-          console.log(`Should notify ${participant.countryId} about cancellation`);
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`Should notify ${participant.countryId} about cancellation`);
+          }
         } catch (error) {
           console.error(`Failed to notify ${participant.countryId}:`, error);
         }

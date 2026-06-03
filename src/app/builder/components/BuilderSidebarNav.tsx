@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { type BuilderSection } from "../lib/builder-theme";
+import { TAX_SYSTEM_TEMP_DISABLED } from "../constants";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import {
   CutoutCard,
@@ -128,6 +129,20 @@ export function BuilderSidebarNav({
         },
       },
       {
+        title: "Gov Policies",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-indigo-400",
+        bgClass: "bg-indigo-500/5 hover:bg-indigo-500/10",
+        tab: "preview",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "preview",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "preview" }));
+          onNav("government");
+        },
+      },
+      {
         title: "Econ Components",
         section: "economics",
         icon: Zap,
@@ -142,20 +157,51 @@ export function BuilderSidebarNav({
         },
       },
       {
-        title: "Econ Structure",
+        title: "Econ Sectors",
         section: "economics",
         icon: Factory,
         colorClass: "text-teal-400",
         bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
-        tab: "structure",
+        tab: "sectors",
         isActive: (sec, st) =>
-          sec === "economics" && st.builderState.activeEconomicsTab === "structure",
+          sec === "economics" && st.builderState.activeEconomicsTab === "sectors",
         onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" }));
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "sectors" }));
           onNav("economics");
         },
       },
-      // Fiscal & per-economy preview items removed — move to global Preview step
+      {
+        title: "Labor & Demographics",
+        section: "economics",
+        icon: Users,
+        colorClass: "text-sky-400",
+        bgClass: "bg-sky-500/5 hover:bg-sky-500/10",
+        tab: "labor",
+        isActive: (sec, st) =>
+          sec === "economics" && st.builderState.activeEconomicsTab === "labor",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "labor" }));
+          onNav("economics");
+        },
+      },
+      ...(!TAX_SYSTEM_TEMP_DISABLED
+        ? [
+            {
+              title: "Tax System",
+              section: "economics" as BuilderSection,
+              icon: Coins,
+              colorClass: "text-amber-400",
+              bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
+              tab: "tax",
+              isActive: (sec: any, st: any) =>
+                sec === "economics" && st.builderState.activeEconomicsTab === "tax",
+              onClick: (st: any, onNav: any) => {
+                st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" }));
+                onNav("economics");
+              },
+            },
+          ]
+        : []),
       {
         title: "Preview & Create",
         section: "preview",
@@ -224,6 +270,20 @@ export function BuilderSidebarNav({
         },
       },
       {
+        title: "Gov Policies",
+        section: "government",
+        icon: Building2,
+        colorClass: "text-indigo-400",
+        bgClass: "bg-indigo-500/5 hover:bg-indigo-500/10",
+        tab: "preview",
+        isActive: (sec, st) =>
+          sec === "government" && st.builderState.activeGovernmentTab === "preview",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "preview" }));
+          onNav("government");
+        },
+      },
+      {
         title: "Econ Components",
         section: "economics",
         icon: Zap,
@@ -238,20 +298,51 @@ export function BuilderSidebarNav({
         },
       },
       {
-        title: "Econ Structure",
+        title: "Econ Sectors",
         section: "economics",
         icon: Factory,
         colorClass: "text-teal-400",
         bgClass: "bg-teal-500/5 hover:bg-teal-500/10",
-        tab: "structure",
+        tab: "sectors",
         isActive: (sec, st) =>
-          sec === "economics" && st.builderState.activeEconomicsTab === "structure",
+          sec === "economics" && st.builderState.activeEconomicsTab === "sectors",
         onClick: (st, onNav) => {
-          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "structure" }));
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "sectors" }));
           onNav("economics");
         },
       },
-      // Per-economy preview removed — use global Preview & Save
+      {
+        title: "Labor & Demographics",
+        section: "economics",
+        icon: Users,
+        colorClass: "text-sky-400",
+        bgClass: "bg-sky-500/5 hover:bg-sky-500/10",
+        tab: "labor",
+        isActive: (sec, st) =>
+          sec === "economics" && st.builderState.activeEconomicsTab === "labor",
+        onClick: (st, onNav) => {
+          st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "labor" }));
+          onNav("economics");
+        },
+      },
+      ...(!TAX_SYSTEM_TEMP_DISABLED
+        ? [
+            {
+              title: "Tax System",
+              section: "economics" as BuilderSection,
+              icon: Coins,
+              colorClass: "text-amber-400",
+              bgClass: "bg-amber-500/5 hover:bg-amber-500/10",
+              tab: "tax",
+              isActive: (sec: any, st: any) =>
+                sec === "economics" && st.builderState.activeEconomicsTab === "tax",
+              onClick: (st: any, onNav: any) => {
+                st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" }));
+                onNav("economics");
+              },
+            },
+          ]
+        : []),
       {
         title: "Preview & Save",
         section: "preview",

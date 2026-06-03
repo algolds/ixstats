@@ -1233,11 +1233,18 @@ export function EnhancedCommandCenter() {
   const isAdmin = roleUser?.role?.level !== undefined && roleUser.role.level <= 10;
 
   // Fetch all necessary data
+  // Country/global stats are slow-changing — cache them and don't refetch on every
+  // window focus or dashboard return. (audit F2)
   const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const { data: globalStatsData, isLoading: globalStatsLoading } =
-    api.countries.getGlobalStats.useQuery();
+    api.countries.getGlobalStats.useQuery(undefined, {
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    });
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
   const { data: socialData } = api.users.getSocialData.useQuery(
     { userId: user?.id || "placeholder-disabled" },

@@ -21,7 +21,6 @@ import {
   type SectorConstraint,
 } from "./utils/sectorCalculations";
 import { validateEconomy } from "./utils/validation";
-import { ValidationToast } from "./utils/ValidationToast";
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
@@ -237,7 +236,7 @@ export function EconomySectorsTab({
         hasZeroContribution={validation.hasZeroContribution}
       />
 
-      <ValidationToast messages={validation.messages} />
+
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sector Configuration */}

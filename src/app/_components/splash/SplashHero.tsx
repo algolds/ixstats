@@ -20,8 +20,28 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
   const [, setClockTick] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setClockTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
+    // Live seconds clock — tick every 1s, but pause while the tab is hidden so we
+    // don't re-render once a second in a backgrounded tab. (audit F6)
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (id == null) id = setInterval(() => setClockTick((n) => n + 1), 1000);
+    };
+    const stop = () => {
+      if (id != null) {
+        clearInterval(id);
+        id = null;
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   const realmCalendarLine = IxTime.formatIxTime(IxTime.getCurrentIxTime(), true);

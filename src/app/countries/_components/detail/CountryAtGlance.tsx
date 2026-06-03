@@ -84,7 +84,7 @@ import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
 import { PopulationTierDetailsModal } from "~/components/modals/PopulationTierDetailsModal";
-import { useFlag } from "~/hooks/useFlag";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 
 interface CountryAtGlanceData {
   id: string;

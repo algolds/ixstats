@@ -29,7 +29,7 @@ import {
   Star,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
 type Period = "alltime" | "daily" | "weekly" | "monthly";
 type Tab = "leaderboard" | "recent" | "faq";
@@ -143,7 +143,7 @@ export default function LorewardsPage() {
                   >
                     <span className="wikios-lw-td-rank">{user.rank}</span>
                     <span className="wikios-lw-td-user">
-                      <SimpleFlag
+                      <UnifiedCountryFlag showTooltip={false}
                         countryName={user.username}
                         size="sm"
                         className="wikios-lw-table-flag"
@@ -195,7 +195,7 @@ export default function LorewardsPage() {
                       href={withBasePath(`/w/special/user/${encodeURIComponent(w.winnerUser)}`)}
                       className="wikios-lw-winner-user"
                     >
-                      <SimpleFlag countryName={w.winnerUser} size="sm" showPlaceholder={false} />
+                      <UnifiedCountryFlag showTooltip={false} countryName={w.winnerUser} size="sm" showPlaceholder={false} />
                       {w.winnerUser}
                     </Link>
                   )}
@@ -482,7 +482,7 @@ function PodiumCard({
           {rank === 1 ? <Trophy size={16} /> : <Award size={14} />}
           <span>#{rank}</span>
         </div>
-        <SimpleFlag
+        <UnifiedCountryFlag showTooltip={false}
           countryName={user.username}
           size="md"
           className="wikios-lw-podium-flag"

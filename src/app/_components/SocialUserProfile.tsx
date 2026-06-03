@@ -186,7 +186,13 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
               {/* Country Flag Badge */}
               {flagUrl && (
                 <div className="border-background absolute -right-1 -bottom-1 h-6 w-8 overflow-hidden rounded-sm border-2 shadow-lg">
-                  <img src={flagUrl} alt="Country flag" className="h-full w-full object-cover" />
+                  <img
+                    src={flagUrl}
+                    alt="Country flag"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               )}
 

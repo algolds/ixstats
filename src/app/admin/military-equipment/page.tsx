@@ -2152,6 +2152,60 @@ function AnalyticsContent({
     [manufacturerStats?.manufacturers]
   );
 
+  // Chart data transforms — memoized and hoisted above the early returns so they are
+  // not recomputed on every filter/tab change (and to keep hook order stable). (audit F4)
+  const topEquipmentChartData = useMemo(
+    () =>
+      (usageStats?.topEquipment ?? []).map((eq: any) => ({
+        name: eq.name.length > 30 ? eq.name.substring(0, 30) + "..." : eq.name,
+        fullName: eq.name,
+        count: eq.usageCount,
+        category: eq.category,
+        manufacturer: eq.manufacturer ?? "Unknown",
+      })),
+    [usageStats?.topEquipment]
+  );
+
+  const categoryChartData = useMemo(
+    () =>
+      (usageStats?.byCategory ?? []).map((cat: any) => ({
+        name: cat.category.charAt(0).toUpperCase() + cat.category.slice(1),
+        value: cat._count.id,
+        usage: cat._sum.usageCount || 0,
+      })),
+    [usageStats?.byCategory]
+  );
+
+  const eraChartData = useMemo(
+    () =>
+      (usageStats?.byEra ?? []).map((era: any) => ({
+        name: era.era.toUpperCase().replace("-", " "),
+        value: era._count.id,
+        usage: era._sum.usageCount || 0,
+      })),
+    [usageStats?.byEra]
+  );
+
+  const manufacturerChartData = useMemo(
+    () =>
+      (usageStats?.byManufacturer ?? []).slice(0, 10).map((mfr: any) => {
+        const details = manufacturerLookup.get(mfr.manufacturerName);
+        const displayName =
+          mfr.manufacturerName.length > 25
+            ? mfr.manufacturerName.substring(0, 25) + "..."
+            : mfr.manufacturerName;
+
+        return {
+          name: displayName,
+          fullName: mfr.manufacturerName,
+          count: mfr.equipmentCount,
+          usage: mfr.totalUsage,
+          country: details?.country ?? "Unknown",
+        };
+      }),
+    [usageStats?.byManufacturer, manufacturerLookup]
+  );
+
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -2190,42 +2244,6 @@ function AnalyticsContent({
         totalEquipment
       : 0;
 
-  // Prepare chart data
-  const topEquipmentChartData = usageStats.topEquipment.map((eq: any) => ({
-    name: eq.name.length > 30 ? eq.name.substring(0, 30) + "..." : eq.name,
-    fullName: eq.name,
-    count: eq.usageCount,
-    category: eq.category,
-    manufacturer: eq.manufacturer ?? "Unknown",
-  }));
-
-  const categoryChartData = usageStats.byCategory.map((cat: any) => ({
-    name: cat.category.charAt(0).toUpperCase() + cat.category.slice(1),
-    value: cat._count.id,
-    usage: cat._sum.usageCount || 0,
-  }));
-
-  const eraChartData = usageStats.byEra.map((era: any) => ({
-    name: era.era.toUpperCase().replace("-", " "),
-    value: era._count.id,
-    usage: era._sum.usageCount || 0,
-  }));
-
-  const manufacturerChartData = usageStats.byManufacturer.slice(0, 10).map((mfr: any) => {
-    const details = manufacturerLookup.get(mfr.manufacturerName);
-    const displayName =
-      mfr.manufacturerName.length > 25
-        ? mfr.manufacturerName.substring(0, 25) + "..."
-        : mfr.manufacturerName;
-
-    return {
-      name: displayName,
-      fullName: mfr.manufacturerName,
-      count: mfr.equipmentCount,
-      usage: mfr.totalUsage,
-      country: details?.country ?? "Unknown",
-    };
-  });
 
   // Technology level progression by era
   const eraOrder = ["wwi", "wwii", "cold-war", "modern", "future"];

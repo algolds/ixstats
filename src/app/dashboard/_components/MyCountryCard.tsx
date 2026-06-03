@@ -37,7 +37,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { AppleRippleEffect } from "~/components/ui/apple-ripple-effect";
-import { SimpleFlag } from "~/components/SimpleFlag";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import dynamic from "next/dynamic";
 
 const CountryMapEmbed = dynamic(
@@ -313,7 +313,7 @@ export function MyCountryCard({
                     times: [0, 0.25, 0.5, 0.75, 1],
                   }}
                 >
-                  <SimpleFlag
+                  <UnifiedCountryFlag showTooltip={false}
                     countryName={countryData.name}
                     className="h-full w-full object-cover"
                     showPlaceholder={true}
@@ -337,7 +337,7 @@ export function MyCountryCard({
               <div className="flex items-center gap-3">
                 <div className="h-8 w-12 overflow-hidden rounded border border-white/30 shadow-lg">
                   {countryData && (
-                    <SimpleFlag
+                    <UnifiedCountryFlag showTooltip={false}
                       countryName={countryData.name}
                       className="h-full w-full object-cover"
                     />

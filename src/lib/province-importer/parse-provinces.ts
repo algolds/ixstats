@@ -972,25 +972,6 @@ function findLayerByName(svgRoot: Element, name: string): Element | null {
 }
 
 // ──────────────────────────────────────────────
-// Text Label Extraction (legacy export for compatibility)
-// ──────────────────────────────────────────────
-
-/**
- * Extract text labels from SVG <text> elements.
- * @deprecated Use extractAllTextLabels from svg-text-matcher.ts instead.
- */
-export function extractTextLabels(
-  svgContent: string
-): Array<{ text: string; x: number; y: number }> {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgContent, "image/svg+xml");
-  const svgRoot = doc.documentElement;
-  if (!svgRoot) return [];
-
-  return extractAllTextLabels(svgRoot, svgRoot);
-}
-
-// ──────────────────────────────────────────────
 // Post-Processing: Color-Based Merging
 // ──────────────────────────────────────────────
 
