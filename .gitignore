@@ -188,4 +188,10 @@ public/images/downloaded/*
 economy-builder-refactor-plan.md
 /public/*
 /tests/*
+/.agents/skills/c15t
+/data/cache
+/tests/
+/traces/
+/WIKIOS.md
+/AGENTS.md
 
