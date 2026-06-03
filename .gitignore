@@ -172,6 +172,11 @@ skills-lock.json
 # --------------------------------------------------------------------------------
 session-*.md
 public/*_feature_ideas.html
+EXECUTION_PLAN.md
+INVESTIGATION_REPORT_*.md
+*refactor-plan.md
+task.md
+
 
 # --------------------------------------------------------------------------------
 # User Uploaded Content
