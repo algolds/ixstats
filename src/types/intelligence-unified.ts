@@ -1,3 +1,21 @@
+/**
+ * Intelligence Adapter Types (ACTIVE)
+ *
+ * This is the canonical, app-facing intelligence type module. It defines the
+ * lightweight, standardized shapes consumed across the UI and lib layers:
+ * `IntelligenceItem`, `IntelligenceMetric`, `CriticalAlert`,
+ * `ActionableRecommendation`, `EconomicAlert`, `DiplomaticIntelligence`, and
+ * re-exports `Country` / `VitalityIntelligence`.
+ *
+ * NOTE ON NAMING: Do not confuse this with `./unified-intelligence.ts` (the
+ * larger server/domain catalogue). That module defines a DIFFERENT-shaped
+ * `IntelligenceMetric` and is not imported by the adapter consumers. The two
+ * are intentionally kept separate — importers of THIS file expect the shapes
+ * defined below. If you ever consolidate the two, the `IntelligenceMetric`
+ * name collision must be resolved explicitly so every adapter consumer keeps
+ * the shape it expects.
+ */
+
 import type {
   BaseIntelligence,
   BaseEntity,

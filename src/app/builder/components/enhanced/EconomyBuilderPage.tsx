@@ -96,7 +96,7 @@ interface EconomyBuilderPageProps {
   onEconomicInputsChange: (inputs: EconomicInputs) => void;
   governmentComponents?: any[];
   governmentBuilderData?: any;
-  taxSystemData?: Record<string, any> | null;
+  taxSystemData?: any;
   countryId?: string;
   className?: string;
   onSelectedComponentsChange?: (components: EconomicComponentType[]) => void;

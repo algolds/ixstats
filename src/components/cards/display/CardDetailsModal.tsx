@@ -841,7 +841,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                                 </span>
                               </div>
                             </div>
-                            {special.normalizedValue > 0 && (
+                            {typeof special.normalizedValue === "number" && special.normalizedValue > 0 && (
                               <div className="bg-muted/20 h-2 w-full overflow-hidden rounded-full">
                                 <motion.div
                                   className="h-full rounded-full"

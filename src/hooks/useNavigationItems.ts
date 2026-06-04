@@ -1,0 +1,206 @@
+"use client";
+
+import { useMemo } from "react";
+import {
+  BarChart3,
+  BookOpen,
+  Compass,
+  Crown,
+  Database,
+  Globe,
+  MessageSquare,
+  Settings,
+} from "lucide-react";
+import { FaLanguage, FaWikipediaW } from "react-icons/fa";
+import { GiCardRandom, GiFamilyTree } from "react-icons/gi";
+import { GiSoapExperiment } from "react-icons/gi";
+import { GiVibratingShield } from "react-icons/gi";
+import { FaTreeCity } from "react-icons/fa6";
+import type { NavigationItem } from "~/lib/navigation-config";
+
+export interface UseNavigationItemsParams {
+  user: unknown;
+  isAdmin: boolean;
+  isPremium: boolean;
+  isStandalone: boolean;
+  setupStatus: string;
+  navigationSettings:
+    | {
+        showWikiTab?: boolean;
+        showCardsTab?: boolean;
+        showLabsTab?: boolean;
+        showMapsTab?: boolean;
+        showForumTab?: boolean;
+        showHelpTab?: boolean;
+      }
+    | null
+    | undefined;
+}
+
+/**
+ * Builds the full navigation item array and filters it down to the items visible
+ * for the current user/role/premium/auth/country state and admin navigation
+ * settings. Extracted from navigation.tsx. Returns the filtered visible items.
+ */
+export function useNavigationItems({
+  user,
+  isAdmin,
+  isPremium,
+  isStandalone,
+  setupStatus,
+  navigationSettings,
+}: UseNavigationItemsParams): NavigationItem[] {
+  const navigationItems: NavigationItem[] = useMemo(() => {
+    const items: NavigationItem[] = [
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        icon: BarChart3,
+        requiresAuth: true,
+      },
+      {
+        name: "Explore",
+        href: "/countries",
+        icon: Globe,
+        requiresAuth: false,
+      },
+      {
+        name: "MyCountry®",
+        href: "/mycountry",
+        icon: Crown,
+        requiresAuth: true,
+        requiresCountry: true,
+        description: "Your national dashboard and executive command center",
+      },
+      {
+        name: "Maps",
+        href: "/maps",
+        icon: Compass,
+        requiresAuth: false,
+        description: "Interactive world map and geographic exploration",
+      },
+      {
+        name: "Forum",
+        href: "/forum",
+        icon: MessageSquare,
+        requiresAuth: false,
+        description: "Community discussion forums",
+      },
+
+      {
+        name: "Admin",
+        href: "/admin",
+        icon: Settings,
+        requiresAuth: true,
+        adminOnly: true,
+      },
+      {
+        name: "Wiki",
+        href: "/w",
+        icon: FaWikipediaW,
+        requiresAuth: false,
+      },
+      {
+        name: "Cards",
+        href: "/vault",
+        icon: GiCardRandom,
+        requiresAuth: true,
+        description: "IxCards trading card system",
+      },
+      {
+        name: "Labs",
+        href: "",
+        icon: GiSoapExperiment,
+        requiresAuth: true,
+        isDropdown: true,
+        dropdownItems: [
+          {
+            name: "Vexel",
+            href: "/labs/vexel",
+            icon: GiVibratingShield,
+            description: "Heraldry generator",
+          },
+          {
+            name: "Onoma",
+            href: "/labs/onoma",
+            icon: Database,
+            description: "Markov name generator",
+          },
+          {
+            name: "Strata",
+            href: "/labs/strata",
+            icon: FaTreeCity,
+            description: "City/roadmap generator",
+          },
+          {
+            name: "Dynas",
+            href: "/labs/dynas",
+            icon: GiFamilyTree,
+            description: "Family/Dynasty Generator",
+          },
+          {
+            name: "Nomora",
+            href: "/labs/nomora",
+            icon: FaLanguage,
+            description: "Conlang Generator",
+          },
+        ],
+      },
+      {
+        name: "Help",
+        href: "/help",
+        icon: BookOpen,
+        requiresAuth: false,
+        description: "Documentation and guides",
+      },
+    ];
+
+    return items;
+  }, [isStandalone]);
+
+  // Filter visible navigation items based on user state and admin settings
+  const visibleNavItems = navigationItems
+    .filter((item) => {
+      if (item.requiresAuth && !user) return false;
+
+      // Special handling for MyCountry - show it even if setup is incomplete
+      // so users can access the setup flow or see their country page
+      if (item.name === "MyCountry®" && item.requiresCountry) {
+        // Show MyCountry if user is authenticated, regardless of setup status
+        if (!user) return false;
+        return true;
+      }
+
+      if (item.requiresCountry && setupStatus !== "complete") return false;
+      if (item.adminOnly && !isAdmin) return false;
+      if (item.premiumOnly && !isPremium) return false;
+
+      // Remove standalone nav restrictions so users can seamlessly jump to main app
+      // Check admin navigation settings
+      if (navigationSettings) {
+        if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
+        if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
+        if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
+        if (item.name === "Maps" && !navigationSettings.showMapsTab) return false;
+        if (item.name === "Forum" && !navigationSettings.showForumTab) return false;
+        if (item.name === "Help" && !navigationSettings.showHelpTab) return false;
+      }
+
+      return true;
+    })
+    .map((item) => {
+      // Also filter dropdown items based on premium access
+      if (item.isDropdown && item.dropdownItems) {
+        return {
+          ...item,
+          dropdownItems: item.dropdownItems.filter((dropdownItem) => {
+            if (dropdownItem.premiumOnly && !isPremium) return false;
+            return true;
+          }),
+        };
+      }
+      return item;
+    });
+
+  return visibleNavItems;
+}

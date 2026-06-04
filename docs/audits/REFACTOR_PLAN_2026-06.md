@@ -72,3 +72,45 @@ Investigation verdicts: **B7** (diplomatic selects — country lookups already u
 - You run `bun run typecheck` (full sequential) and review the log after each PR — I won't run typechecks.
 - Visual QA on B1 (flag visualizers) and the C-tier splits (`/verify` or manual screenshots).
 - Each item is an isolated commit/PR on `v2` so anything can be reverted independently.
+
+---
+
+## COMPLETION LOG (June 2026)
+
+Executed and verified — 59 changed files, **every relative import resolves**, 0 dangling importers for any deleted file; agent splits behaviour-proven (C5 tab bodies byte-identical to HEAD via normalize-diff; scoped ESLint 0 errors).
+
+| Item | Result |
+|------|--------|
+| Tier A | dead deletes, disabled polling, 10 inline SimpleFlag |
+| B1 | full 18-consumer SimpleFlag → UnifiedCountryFlag; `SimpleFlag.tsx` deleted |
+| B2 | flag libs: 2 dead files deleted; service merges **correctly skipped** (not thin wrappers — distinct singletons/types/CoA logic; "duplicated mappings" hypothesis false) |
+| A4/B3 | intel: `IntelligenceMetric` collision found to be a **non-issue** (`unified-intelligence.ts` has 0 real importers); documented adapter; deleted dead `useIntelligenceData.ts` (487L); incompatible hook merges skipped |
+| C1 | PlatformActivityFeed 894→**181** |
+| C2 | EnhancedCommandCenter 1493→**494** |
+| C3 | navigation 1589→**226** |
+| C4 | military-equipment page 2562→**271** |
+| C5 | MyCountryTabSystem 3048→**265** |
+
+**Deferred (NOT executed):**
+- **B4** economy format wrappers — 50+ sites; `format-utils` lacks the null→"N/A" guard. Keep wrappers (recommended) or migrate sites with explicit null handling.
+- **D1/D2** static-data→DB — needs the dev DB (see below).
+
+## D1/D2 — RE-SCOPED after deeper investigation (do NOT execute blind)
+
+Closer reading shows these are **not** clean "static const → DB" migrations — both are tangled with existing DB/fallback machinery, so a blind migration risks breaking the live equipment features:
+- **D2** `military-equipment-extended.ts`: `hooks/useMilitaryEquipmentCatalog.ts` **already** queries `api.militaryEquipment.getCatalogEquipment` (a DB-backed catalog). The static file (`EXPANDED_MILITARY_DATABASE`) + `military-equipment.ts` consts are used **only as a client-side fallback** when the DB returns empty. "Migrating" = seeding into the existing model + removing the fallback — needs the DB to know what's already there.
+- **D1** `small-arms-equipment.ts`: served by a **658-line, ~15-procedure router** (`getAll/getByKey/getStatistics/getAllManufacturers/search/getByPriceRange/incrementUsage` + admin CRUD). `incrementUsage` (a `protectedProcedure` that mutates usage) implies existing hybrid DB state. Rewiring every procedure to DB is large and must be validated against the real DB.
+
+**Recommendation:** do D1/D2 in a focused session **with the dev DB reachable**, so the existing models/state can be inspected, the seed verified row-by-row, and the rewired router/hook tested end-to-end (the small-arms browser + equipment catalog). This is the one place blind execution is not safe. Original (now-superseded) sketch retained below for reference.
+
+## D1/D2 — original sketch (superseded — see above)
+
+**Why deferred:** `small-arms-equipment.ts` (370+ items, 13 category consts, per-category-varied spec shapes; served by `routers/smallArmsEquipment.ts`) and `military-equipment-extended.ts` (250+ items; via `hooks/useMilitaryEquipmentCatalog.ts`) have no existing Prisma model. Migrating requires a faithful model + flattening seed + a router/hook returning the **exact** shape the UI consumes — unverifiable without running migrate+seed against the DB and typechecking the client. A silent field-mapping error would break the small-arms browser / equipment catalog in production.
+
+**Plan (per file):**
+1. **Schema** (`prisma/schema/military.prisma`): `SmallArmsEquipment` (id, category, name, manufacturerKey, era, `specs Json`, + always-present scalars) + `SmallArmsManufacturer` (key, name, country, `specialty Json`); mirror for `MilitaryEquipmentExtended`. `Json` for the irregular per-category spec blobs.
+2. **Seed** (`prisma/seeds/`): import the existing TS consts (keep files as seed source), flatten each category const → rows, `createMany`.
+3. **Rewire**: `routers/smallArmsEquipment.ts` + `useMilitaryEquipmentCatalog.ts` query the DB and re-assemble the exact UI return shape (verify field-by-field before switching).
+4. **Run (user):** `bunx prisma migrate dev --name add_equipment_catalogs` → seed → exercise the browser/catalog → only then drop the TS import.
+
+Implementable in a follow-up where the dev DB is reachable for verification.

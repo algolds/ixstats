@@ -1,470 +1,86 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { api } from "~/trpc/react";
+import React, { useMemo, useState } from "react";
+import { AnimatePresence } from "motion/react";
 import { useUser } from "~/context/auth-context";
-import Link from "next/link";
 
-// UI Components
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-
-// Icons
-import {
-  Activity,
-  Users,
-  Globe,
-  TrendingUp,
-  Trophy,
-  Heart,
-  MessageSquare,
-  Repeat,
-  Zap,
-  Target,
-  Eye,
-  Handshake,
-  Clock,
-  Search,
-} from "lucide-react";
-
-// Utils
-import { formatCurrency } from "~/lib/chart-utils";
+import { Activity, Clock } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
 
-interface TrendingTopic {
-  id: string;
-  title: string;
-  category: string;
-  participants: number;
-  trend: "up" | "down" | "stable";
-}
-
-interface ActivityFeedItem {
-  id: string;
-  type: "achievement" | "milestone" | "social" | "diplomatic" | "economic" | "meta";
-  category: "game" | "platform" | "social";
-  user: {
-    id: string;
-    name: string;
-    avatar?: string;
-    countryName?: string;
-    countryFlag?: string;
-  };
-  content: {
-    title: string;
-    description: string;
-    metadata?: Record<string, any>;
-  };
-  engagement: {
-    likes: number;
-    comments: number;
-    reshares: number;
-    views?: number;
-  };
-  timestamp: Date;
-  priority: "low" | "medium" | "high" | "critical";
-  visibility: "public" | "followers" | "friends";
-  relatedCountries?: string[];
-  attachments?: {
-    type: "image" | "chart" | "document";
-    url: string;
-    caption?: string;
-  }[];
-}
-
-interface UserProfile {
-  id: string;
-  countryId?: string;
-  followingCountries?: string[];
-  friends?: string[];
-  achievements?: number;
-  influence?: number;
-}
+import type { ActivityUserProfile } from "~/lib/activity-formatting";
+import {
+  buildActivityFeed,
+  buildTrendingTopics,
+  filterActivities,
+  type ActivityTab,
+  type ActivityFilterType,
+} from "~/lib/activity-data-transformer";
+import { useActivityFeedData } from "~/hooks/useActivityFeedData";
+import { useActivityFlags } from "~/hooks/useActivityFlags";
+import { useActivityEngagement } from "~/hooks/useActivityEngagement";
+import { ActivityFeedHeader } from "~/components/activity/ActivityFeedHeader";
+import { TrendingTopicsSection } from "~/components/activity/TrendingTopicsSection";
+import { ActivityItem } from "~/components/activity/ActivityItem";
 
 interface PlatformActivityFeedProps {
-  userProfile?: UserProfile;
+  userProfile?: ActivityUserProfile;
   className?: string;
 }
 
+/**
+ * Platform activity feed. Thin orchestrator composing data/engagement/flag hooks
+ * (`~/hooks/useActivity*`), pure transforms (`~/lib/activity-*`), and presentation
+ * components (`~/components/activity/*`). Refactored from a 894-line monolith (audit C1).
+ */
 export function PlatformActivityFeed({ userProfile, className }: PlatformActivityFeedProps) {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState<"all" | "following" | "friends" | "achievements">(
-    "all"
-  );
-  const [filterType, setFilterType] = useState<"all" | "game" | "platform" | "social">("all");
+
+  // Filter / view state
+  const [activeTab, setActiveTab] = useState<ActivityTab>("all");
+  const [filterType] = useState<ActivityFilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [flagUrls, setFlagUrls] = useState<Record<string, string>>({});
   const [showTrending, setShowTrending] = useState(false);
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
-  const [newComment, setNewComment] = useState<Record<string, string>>({});
-  const [comments, setComments] = useState<Record<string, any[]>>({});
 
-  // tRPC mutations for engagement
-  type EngageWithActivityMutation = ReturnType<
-    typeof api.activities.engageWithActivity.useMutation
-  >;
-  const engageWithActivityMutation: EngageWithActivityMutation =
-    api.activities.engageWithActivity.useMutation();
-  const addCommentMutation = api.activities.addComment.useMutation();
-  const testMutation = api.activities.testMutation.useMutation();
-
-  // Fetch live data from tRPC APIs
+  // Data
   const {
-    data: activitiesData,
-    isLoading: activitiesLoading,
-    refetch: refetchActivities,
-  } = api.activities.getGlobalFeed.useQuery({
-    limit: 20,
-    filter: activeTab === "achievements" ? "achievements" : "all",
-    category: filterType,
-  });
+    activitiesData,
+    thinkpagesFeed,
+    trendingData,
+    userEngagement,
+    activitiesLoading,
+    trendingLoading,
+    refetchActivities,
+  } = useActivityFeedData({ activeTab, filterType, userId: user?.id });
 
-  // Fetch ThinkPages posts to integrate into activity feed
-  const { data: thinkpagesFeed, isLoading: thinkpagesLoading } = api.thinkpages.getFeed.useQuery({
-    filter: "recent",
-    limit: 10,
-  });
+  const flagUrls = useActivityFlags(activitiesData);
 
-  const { data: trendingData, isLoading: trendingLoading } =
-    api.activities.getTrendingTopics.useQuery({
-      limit: 6,
-      timeRange: "24h",
-    });
+  const {
+    showComments,
+    newComment,
+    setNewComment,
+    comments,
+    isEngagePending,
+    isCommentPending,
+    handleEngagement,
+    handleComment,
+    toggleComments,
+  } = useActivityEngagement({ userId: user?.id, refetchActivities });
 
-  const utils = api.useUtils();
-
-  const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId || "" },
-    {
-      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
-      retry: false,
-    }
+  // Derived view models
+  const trendingTopics = useMemo(() => buildTrendingTopics(trendingData), [trendingData]);
+  const activityFeed = useMemo(
+    () => buildActivityFeed(activitiesData, thinkpagesFeed, flagUrls),
+    [activitiesData, thinkpagesFeed, flagUrls]
+  );
+  const filteredActivities = useMemo(
+    () => filterActivities(activityFeed, { activeTab, filterType, searchQuery }, userProfile),
+    [activityFeed, activeTab, filterType, searchQuery, userProfile]
   );
 
-  // Get user engagement state for like/share buttons
-  const activityIds = activitiesData?.activities?.map((a: { id: string }) => a.id) || [];
-  const { data: userEngagement } = api.activities.getUserEngagement.useQuery(
-    {
-      activityIds,
-      userId: user?.id || "placeholder-disabled",
-    },
-    {
-      enabled: !!user?.id && activityIds.length > 0,
-      refetchOnWindowFocus: false,
-    }
-  );
-
-  // Transform trending data
-  const trendingTopics: TrendingTopic[] = useMemo(() => {
-    if (!trendingData) return [];
-    return trendingData.map((topic: any) => ({
-      id: topic.id,
-      title: topic.title,
-      category: topic.category,
-      participants: topic.participants,
-      trend: topic.trend,
-    }));
-  }, [trendingData]);
-
-  // Transform activity feed data
-  const activityFeed = useMemo((): ActivityFeedItem[] => {
-    const regularActivities: ActivityFeedItem[] = activitiesData?.activities
-      ? activitiesData.activities.map((activity: any) => ({
-          id: activity.id,
-          type: activity.type as ActivityFeedItem["type"],
-          category: activity.category as ActivityFeedItem["category"],
-          user: {
-            id: activity.user.id,
-            name:
-              activity.category === "platform" || activity.type === "meta"
-                ? "SYSTEM"
-                : activity.user.name,
-            avatar: undefined, // No placeholder avatars - only real user avatars
-            countryName:
-              activity.category === "platform" || activity.type === "meta"
-                ? "System"
-                : activity.user.countryName,
-            countryFlag:
-              activity.category === "platform" || activity.type === "meta"
-                ? undefined
-                : activity.user.countryName
-                  ? flagUrls[activity.user.countryName]
-                  : undefined,
-          },
-          content: {
-            title: activity.content.title,
-            description: activity.content.description,
-            metadata: activity.content.metadata,
-          },
-          engagement: {
-            likes: activity.engagement.likes,
-            comments: activity.engagement.comments,
-            reshares: activity.engagement.shares, // Map shares to reshares for backend compatibility
-            views: activity.engagement.views || 0,
-          },
-          timestamp: new Date(activity.timestamp),
-          priority: activity.priority as ActivityFeedItem["priority"],
-          visibility: activity.visibility as ActivityFeedItem["visibility"],
-          relatedCountries: activity.relatedCountries || [],
-        }))
-      : [];
-
-    // Add ThinkPages posts as social activities
-    const thinkpagesActivities: ActivityFeedItem[] = thinkpagesFeed?.posts
-      ? thinkpagesFeed.posts.map((post: any) => ({
-          id: `thinkpages-${post.id}`,
-          type: "social" as const,
-          category: "social" as const,
-          user: {
-            id: post.account?.id || post.accountId,
-            name: post.account?.displayName || "ThinkPages User",
-            avatar: post.account?.profileImageUrl ? post.account.profileImageUrl : undefined,
-            countryName: post.account?.username, // Use username for @ display
-            countryFlag: undefined,
-          },
-          content: {
-            title: "Posted on ThinkPages",
-            description: post.content,
-            metadata: {
-              postId: post.id,
-              hashtags: post.hashtags,
-            },
-          },
-          engagement: {
-            likes: post.reactions.length,
-            comments: post._count.replies,
-            reshares: post._count.reposts || 0,
-            views: 0, // View tracking not implemented yet
-          },
-          timestamp: new Date(post.createdAt),
-          priority: "low" as const,
-          visibility: "public" as const,
-          relatedCountries: [],
-        }))
-      : [];
-
-    // Merge, deduplicate, and sort by timestamp
-    const allActivities = [...regularActivities, ...thinkpagesActivities];
-    const uniqueActivities = allActivities.filter(
-      (activity, index, self) => index === self.findIndex((a) => a.id === activity.id)
-    );
-    return uniqueActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [activitiesData, thinkpagesFeed, flagUrls]);
-
-  // Load flags for countries mentioned in activities
-  useEffect(() => {
-    if (activitiesData?.activities) {
-      const countryNames = new Set<string>();
-
-      activitiesData.activities.forEach((activity) => {
-        if (activity.user.countryName) {
-          countryNames.add(activity.user.countryName);
-        }
-      });
-
-      if (countryNames.size > 0) {
-        unifiedFlagService.batchGetFlags(Array.from(countryNames)).then((flags) => {
-          const filteredFlags: Record<string, string> = {};
-          Object.entries(flags).forEach(([key, value]) => {
-            if (value !== null) {
-              filteredFlags[key] = value;
-            }
-          });
-          setFlagUrls(filteredFlags);
-        });
-      }
-    }
-  }, [activitiesData]);
-
-  const getActivityIcon = (type: ActivityFeedItem["type"]) => {
-    switch (type) {
-      case "achievement":
-        return Trophy;
-      case "milestone":
-        return Target;
-      case "social":
-        return Users;
-      case "diplomatic":
-        return Handshake;
-      case "economic":
-        return TrendingUp;
-      case "meta":
-        return Zap;
-      default:
-        return Activity;
-    }
-  };
-
-  const getActivityColor = (type: ActivityFeedItem["type"]) => {
-    switch (type) {
-      case "achievement":
-        return "text-yellow-500";
-      case "milestone":
-        return "text-blue-500";
-      case "social":
-        return "text-green-500";
-      case "diplomatic":
-        return "text-purple-500";
-      case "economic":
-        return "text-emerald-500";
-      case "meta":
-        return "text-orange-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getPriorityBorder = (priority: ActivityFeedItem["priority"]) => {
-    switch (priority) {
-      case "critical":
-        return "border-l-4 border-l-red-500";
-      case "high":
-        return "border-l-4 border-l-yellow-500";
-      case "medium":
-        return "border-l-2 border-l-blue-500";
-      default:
-        return "border-l border-l-gray-300";
-    }
-  };
-
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  const handleEngagement = async (
-    activityId: string,
-    action: "like" | "unlike" | "reshare" | "view"
-  ) => {
-    if (!user?.id || !activityId) {
-      console.error("Missing user ID or activity ID", { userId: user?.id, activityId });
-      return;
-    }
-
-    const mutationInput = {
-      activityId,
-      action,
-      userId: user.id,
-    };
-
-    console.log("Engaging with activity:", mutationInput);
-    console.log("Mutation input JSON:", JSON.stringify(mutationInput));
-
-    try {
-      const result = await engageWithActivityMutation.mutateAsync(mutationInput);
-
-      if (result.success) {
-        // Refetch the activities and user engagement to show updated state
-        await Promise.all([
-          refetchActivities(),
-          // The userEngagement query will be invalidated automatically by tRPC
-        ]);
-      }
-    } catch (error) {
-      console.error("Error engaging with activity:", error);
-    }
-  };
-
-  const handleComment = async (activityId: string) => {
-    if (!user?.id || !newComment[activityId]?.trim()) return;
-
-    try {
-      await addCommentMutation.mutateAsync({
-        activityId,
-        userId: user.id,
-        content: newComment[activityId].trim(),
-      });
-
-      // Clear the comment input
-      setNewComment((prev) => ({ ...prev, [activityId]: "" }));
-
-      // Refresh comments and activities
-      await Promise.all([
-        refetchActivities(),
-        // Refresh comments if they're currently shown
-        showComments[activityId]
-          ? (async () => {
-              const commentsData = await utils.activities.getComments.fetch({ activityId });
-              setComments((prev) => ({
-                ...prev,
-                [activityId]: commentsData.comments,
-              }));
-            })()
-          : Promise.resolve(),
-      ]);
-    } catch (error) {
-      console.error("Error adding comment:", error);
-    }
-  };
-
-  const toggleComments = async (activityId: string) => {
-    const isShowing = showComments[activityId];
-
-    setShowComments((prev) => ({
-      ...prev,
-      [activityId]: !prev[activityId],
-    }));
-
-    // If we're showing comments and haven't loaded them yet, fetch them
-    if (!isShowing && !comments[activityId]) {
-      try {
-        const commentsData = await utils.activities.getComments.fetch({ activityId });
-        setComments((prev) => ({
-          ...prev,
-          [activityId]: commentsData.comments,
-        }));
-      } catch (error) {
-        console.error("Error fetching comments:", error);
-      }
-    }
-  };
-
-  const testMutationCall = async () => {
-    console.log("Testing mutation with simple params...");
-    try {
-      const result = await testMutation.mutateAsync({
-        testId: "test-123",
-        testAction: "test-action",
-      });
-      console.log("Test mutation result:", result);
-    } catch (error) {
-      console.error("Test mutation error:", error);
-    }
-  };
-
-  const filteredActivities = activityFeed.filter((activity) => {
-    const matchesTab =
-      activeTab === "all" ||
-      (activeTab === "following" &&
-        userProfile?.followingCountries?.some((id) => activity.relatedCountries?.includes(id))) ||
-      (activeTab === "friends" && userProfile?.friends?.includes(activity.user.id)) ||
-      (activeTab === "achievements" && activity.type === "achievement");
-
-    const matchesFilter = filterType === "all" || activity.category === filterType;
-
-    const matchesSearch =
-      searchQuery === "" ||
-      activity.content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.content.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.user.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesTab && matchesFilter && matchesSearch;
-  });
+  const currentUserInitials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
 
   if (activitiesLoading || trendingLoading) {
     return (
@@ -498,372 +114,44 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   return (
     <Card className={cn("glass-hierarchy-parent w-full", className)}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-blue-500" />
-            Activity Feed
-            <Badge variant="secondary" className="ml-2">
-              Live
-            </Badge>
-          </CardTitle>
-
-          {/* Search & Filter */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-              <input
-                type="text"
-                placeholder="Search activity..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="glass-hierarchy-interactive w-48 rounded-lg py-2 pr-4 pl-9 text-sm"
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowTrending(!showTrending)}
-              className={cn("flex items-center gap-2", showTrending && "bg-accent")}
-            >
-              <TrendingUp className="h-4 w-4" />
-              Trending
-            </Button>
-          </div>
-        </div>
-
-        {/* Activity Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              All Activity
-            </TabsTrigger>
-            <TabsTrigger value="following" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Following
-            </TabsTrigger>
-            <TabsTrigger value="friends" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Friends
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              Achievements
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <ActivityFeedHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          showTrending={showTrending}
+          onToggleTrending={() => setShowTrending((prev) => !prev)}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       </CardHeader>
 
       <CardContent>
-        {/* Trending Topics Section */}
-        <AnimatePresence>
-          {showTrending && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-6"
-            >
-              <div className="glass-hierarchy-child rounded-xl p-4">
-                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
-                  Trending Topics
-                </h3>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  {trendingTopics.map((topic) => (
-                    <div
-                      key={topic.id}
-                      className="glass-hierarchy-interactive flex cursor-pointer items-center justify-between rounded-lg p-3 transition-transform hover:scale-[1.01]"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-foreground truncate text-sm font-medium">
-                          {topic.title}
-                        </h4>
-                        <p className="text-muted-foreground text-xs">
-                          {topic.category} • {topic.participants} participants
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp
-                          className={cn(
-                            "h-4 w-4",
-                            topic.trend === "up"
-                              ? "text-green-500"
-                              : topic.trend === "down"
-                                ? "text-red-500"
-                                : "text-gray-500"
-                          )}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <TrendingTopicsSection show={showTrending} topics={trendingTopics} />
 
         <div className="space-y-4">
           <AnimatePresence>
-            {filteredActivities.map((activity, index) => {
-              const IconComponent = getActivityIcon(activity.type);
-              const iconColor = getActivityColor(activity.type);
-              const priorityBorder = getPriorityBorder(activity.priority);
-
-              return (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={cn(
-                    "glass-hierarchy-child group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.01]",
-                    priorityBorder
-                  )}
-                >
-                  {/* Background Flag Blur */}
-                  {activity.user.countryFlag && (
-                    <div
-                      className="absolute inset-0 bg-cover bg-center opacity-10 blur-md"
-                      style={{ backgroundImage: `url(${activity.user.countryFlag})` }}
-                    />
-                  )}
-
-                  <div className="relative z-10 flex gap-4">
-                    {/* User Avatar */}
-                    <div className="shrink-0">
-                      <Avatar className="h-12 w-12">
-                        {activity.user.countryFlag ? (
-                          <AvatarImage src={activity.user.countryFlag} />
-                        ) : (
-                          <AvatarImage src={activity.user.avatar} />
-                        )}
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                          {activity.user.countryName
-                            ? activity.user.countryName.charAt(0).toUpperCase()
-                            : "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-
-                    {/* Content */}
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <Link href="/thinkpages" className="hover:underline">
-                            <h4 className="text-foreground font-semibold">
-                              @{activity.user.countryName || "Unknown"}
-                            </h4>
-                          </Link>
-                          <IconComponent className={cn("h-4 w-4", iconColor)} />
-                        </div>
-                        <span className="text-muted-foreground text-xs">
-                          {formatTimeAgo(activity.timestamp)}
-                        </span>
-                      </div>
-
-                      <h5 className="text-foreground mb-1 font-medium">{activity.content.title}</h5>
-                      <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
-                        {activity.content.description}
-                      </p>
-
-                      {/* Metadata Display */}
-                      {activity.content.metadata && (
-                        <div className="mb-3 flex flex-wrap gap-2">
-                          {Object.entries(activity.content.metadata).map(([key, value]) => {
-                            if (key === "gdp" && typeof value === "number") {
-                              return (
-                                <Badge key={key} variant="secondary" className="text-xs">
-                                  GDP: {formatCurrency(value)}
-                                </Badge>
-                              );
-                            }
-                            if (key === "tier" && typeof value === "string") {
-                              return (
-                                <Badge key={key} variant="secondary" className="text-xs">
-                                  {value}
-                                </Badge>
-                              );
-                            }
-                            return null;
-                          })}
-                        </div>
-                      )}
-
-                      {/* Engagement Actions - LIVE DATA */}
-                      <div className="text-muted-foreground flex items-center gap-6 text-sm">
-                        {/* Like Button */}
-                        <button
-                          className={cn(
-                            "flex items-center gap-1 transition-colors disabled:opacity-50",
-                            userEngagement?.[activity.id]?.liked
-                              ? "text-red-500 hover:text-red-600"
-                              : "hover:text-red-500",
-                            !user?.id && "cursor-not-allowed opacity-50"
-                          )}
-                          onClick={() => {
-                            if (!user?.id) {
-                              console.warn("User not authenticated - cannot engage with activity");
-                              return;
-                            }
-                            if (!activity?.id) {
-                              console.error("Activity ID missing:", activity);
-                              return;
-                            }
-                            console.log("Button clicked for activity:", activity);
-                            console.log("Activity ID:", activity.id);
-                            console.log("User ID:", user.id);
-                            handleEngagement(
-                              activity.id,
-                              userEngagement?.[activity.id]?.liked ? "unlike" : "like"
-                            );
-                          }}
-                          disabled={engageWithActivityMutation.isPending || !user?.id}
-                          title={!user?.id ? "Please sign in to like posts" : ""}
-                        >
-                          <Heart
-                            className={cn(
-                              "h-4 w-4",
-                              userEngagement?.[activity.id]?.liked && "fill-current"
-                            )}
-                          />
-                          {activity.engagement.likes}
-                        </button>
-
-                        {/* Comment Button */}
-                        <button
-                          className="flex items-center gap-1 transition-colors hover:text-blue-500"
-                          onClick={() => toggleComments(activity.id)}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                          {activity.engagement.comments}
-                        </button>
-
-                        {/* Reshare Button */}
-                        <button
-                          className={cn(
-                            "flex items-center gap-1 transition-colors disabled:opacity-50",
-                            userEngagement?.[activity.id]?.shared
-                              ? "text-green-500 hover:text-green-600"
-                              : "hover:text-green-500",
-                            !user?.id && "cursor-not-allowed opacity-50"
-                          )}
-                          onClick={() => {
-                            if (!user?.id) {
-                              console.warn("User not authenticated - cannot reshare activity");
-                              return;
-                            }
-                            if (!activity?.id) {
-                              console.error("Activity ID missing:", activity);
-                              return;
-                            }
-                            handleEngagement(activity.id, "reshare");
-                          }}
-                          disabled={engageWithActivityMutation.isPending || !user?.id}
-                          title={
-                            !user?.id
-                              ? "Please sign in to reshare posts"
-                              : "Reshare to your profile"
-                          }
-                        >
-                          <Repeat className="h-4 w-4" />
-                          {activity.engagement.reshares}
-                        </button>
-                      </div>
-
-                      {/* Comment Section */}
-                      {showComments[activity.id] && (
-                        <div className="border-border/50 mt-4 border-t pt-4">
-                          {/* Add Comment */}
-                          {user?.id ? (
-                            <div className="mb-4 flex gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={user?.imageUrl} />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-sm text-white">
-                                  {user?.firstName?.[0]}
-                                  {user?.lastName?.[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <textarea
-                                  value={newComment[activity.id] || ""}
-                                  onChange={(e) =>
-                                    setNewComment((prev) => ({
-                                      ...prev,
-                                      [activity.id]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder="Write a comment..."
-                                  className="glass-hierarchy-interactive w-full resize-none rounded-lg p-3 text-sm"
-                                  rows={2}
-                                />
-                                <div className="mt-2 flex justify-end">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleComment(activity.id)}
-                                    disabled={
-                                      addCommentMutation.isPending ||
-                                      !newComment[activity.id]?.trim()
-                                    }
-                                  >
-                                    {addCommentMutation.isPending ? "Posting..." : "Comment"}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="glass-hierarchy-child rounded-lg py-4 text-center">
-                              <p className="text-muted-foreground mb-2 text-sm">
-                                Please sign in to comment
-                              </p>
-                              <Button size="sm" variant="outline">
-                                Sign In
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* Comments List */}
-                          <div className="space-y-3">
-                            {comments[activity.id]?.map((comment) => (
-                              <div key={comment.id} className="flex gap-3">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-xs text-white">
-                                    U
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="glass-hierarchy-interactive rounded-lg p-3">
-                                    <div className="mb-1 flex items-center gap-2">
-                                      <span className="text-foreground text-sm font-medium">
-                                        User
-                                      </span>
-                                      <span className="text-muted-foreground text-xs">
-                                        {formatTimeAgo(new Date(comment.createdAt))}
-                                      </span>
-                                    </div>
-                                    <p className="text-muted-foreground text-sm">
-                                      {comment.content}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-
-                            {(!comments[activity.id] || comments[activity.id].length === 0) && (
-                              <div className="text-muted-foreground py-4 text-center text-sm">
-                                No comments yet. Be the first to comment!
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+            {filteredActivities.map((activity, index) => (
+              <ActivityItem
+                key={activity.id}
+                activity={activity}
+                index={index}
+                liked={!!userEngagement?.[activity.id]?.liked}
+                shared={!!userEngagement?.[activity.id]?.shared}
+                isAuthenticated={!!user?.id}
+                isEngagePending={isEngagePending}
+                isCommentPending={isCommentPending}
+                showComments={!!showComments[activity.id]}
+                commentDraft={newComment[activity.id] || ""}
+                commentsList={comments[activity.id]}
+                currentUserImageUrl={user?.imageUrl}
+                currentUserInitials={currentUserInitials}
+                onEngage={(action) => handleEngagement(activity.id, action)}
+                onToggleComments={() => toggleComments(activity.id)}
+                onCommentDraftChange={(value) =>
+                  setNewComment((prev) => ({ ...prev, [activity.id]: value }))
+                }
+                onSubmitComment={() => handleComment(activity.id)}
+              />
+            ))}
           </AnimatePresence>
 
           {filteredActivities.length === 0 && (
@@ -878,7 +166,6 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
             </div>
           )}
 
-          {/* Load More */}
           {filteredActivities.length > 0 && (
             <div className="pt-6 text-center">
               <Button variant="outline" className="flex items-center gap-2">
