@@ -7,6 +7,8 @@
 
 import { PrismaClient } from "@prisma/client";
 import { runPreviewSeeder } from "../../src/lib/preview-seeder";
+import { seedSmallArmsEquipment } from "../../prisma/seeds/seed-small-arms-equipment";
+import { seedMilitaryEquipmentCatalog } from "../../prisma/seeds/military-equipment-catalog";
 
 const db = new PrismaClient();
 
@@ -46,6 +48,12 @@ async function seedDatabase() {
 
     // Seed preview data
     await runPreviewSeeder();
+
+    // Seed reference catalogs (idempotent — each clears + repopulates its own tables)
+    console.log("🔫 Seeding small arms equipment catalog...");
+    await seedSmallArmsEquipment();
+    console.log("🪖 Seeding military equipment catalog...");
+    await seedMilitaryEquipmentCatalog();
 
     console.log("✅ Database seeding complete!");
   } catch (error) {

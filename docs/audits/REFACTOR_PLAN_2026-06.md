@@ -95,7 +95,19 @@ Executed and verified — 59 changed files, **every relative import resolves**, 
 - **B4** economy format wrappers — 50+ sites; `format-utils` lacks the null→"N/A" guard. Keep wrappers (recommended) or migrate sites with explicit null handling.
 - **D1/D2** static-data→DB — needs the dev DB (see below).
 
-## D1/D2 — RE-SCOPED after deeper investigation (do NOT execute blind)
+## D1/D2 — RESOLVED (the migration was built but never seeded; seeds run + verified)
+
+**What I found (codebase + DB analysis):** D1/D2 were never "static→DB migrations to write" — the entire migration was *already built* by a prior effort: Prisma models exist (`SmallArmsEquipment`/`SmallArmsManufacturer`/`WeaponEra`, `MilitaryEquipmentCatalog`/`DefenseManufacturer`), the routers are fully DB-backed (`ctx.db.*` everywhere), and **seed scripts already exist** (`prisma/seeds/seed-small-arms-equipment.ts`, `prisma/seeds/military-equipment-catalog.ts`). The one missing step: **the seeds were never executed** — all tables were empty (0 rows). Consequence: the small-arms browser was effectively broken (querying an empty table; the const that holds the data was imported only by the seed), and the military catalog only worked via a client-side fallback to `EXPANDED_MILITARY_DATABASE`.
+
+**Action taken:** ran both existing seed scripts against the dev/shared Postgres (`ixstats-postgres` docker, localhost:5433). Verified:
+- `SmallArmsEquipment` 0 → **237** (34 manufacturers, 4 eras; 1 item skipped — `L85A2`/`BAE_SYSTEMS` missing from the manufacturers const, a pre-existing data gap)
+- `MilitaryEquipmentCatalog` 0 → **146** (22 defense manufacturers). The seed header optimistically says "250+"; 146 is what the const data actually yields. Seeds are idempotent (re-run safe).
+
+**Result:** small-arms browser now returns data; military catalog now serves from the DB (the client fallback becomes a true backup). The TS consts (`small-arms-equipment.ts`, `military-equipment-extended.ts`, `military-equipment.ts`) are kept — they're the **seed sources** (+ military client fallback), not dead code.
+
+**Follow-up (optional, not done):** the two equipment seeds are NOT wired into the master `db:seed` (`scripts/setup/seed-db.ts`), so a fresh DB won't auto-populate them. Worth adding a call to both so future DB resets re-seed equipment.
+
+## D1/D2 — earlier "needs DB" note (superseded by the resolution above)
 
 Closer reading shows these are **not** clean "static const → DB" migrations — both are tangled with existing DB/fallback machinery, so a blind migration risks breaking the live equipment features:
 - **D2** `military-equipment-extended.ts`: `hooks/useMilitaryEquipmentCatalog.ts` **already** queries `api.militaryEquipment.getCatalogEquipment` (a DB-backed catalog). The static file (`EXPANDED_MILITARY_DATABASE`) + `military-equipment.ts` consts are used **only as a client-side fallback** when the DB returns empty. "Migrating" = seeding into the existing model + removing the fallback — needs the DB to know what's already there.

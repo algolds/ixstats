@@ -52,7 +52,7 @@ function safeStringify(obj: any): string {
   }
 }
 
-async function main() {
+export async function seedMilitaryEquipmentCatalog() {
   console.log("\n🔧 Starting military equipment catalog seed...\n");
 
   let manufacturersCreated = 0;
@@ -689,12 +689,15 @@ async function main() {
   console.log("\n=================================================================\n");
 }
 
-main()
-  .catch((e) => {
-    console.error("\n❌ Fatal error during seed:");
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Execute only when run directly (not when imported by the master seed)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedMilitaryEquipmentCatalog()
+    .catch((e) => {
+      console.error("\n❌ Fatal error during seed:");
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

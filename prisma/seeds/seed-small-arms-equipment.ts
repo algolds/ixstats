@@ -110,7 +110,7 @@ function determineEquipmentType(item: SmallArmsItem): string {
 /**
  * Seeds the small arms equipment database
  */
-async function seedSmallArmsEquipment() {
+export async function seedSmallArmsEquipment() {
   console.log("🔫 Starting Small Arms Equipment Database Seeding...\n");
 
   try {
@@ -277,8 +277,10 @@ async function seedSmallArmsEquipment() {
   }
 }
 
-// Execute the seeding
-seedSmallArmsEquipment().catch((error) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
+// Execute only when run directly (not when imported by the master seed)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedSmallArmsEquipment().catch((error) => {
+    console.error("Fatal error:", error);
+    process.exit(1);
+  });
+}

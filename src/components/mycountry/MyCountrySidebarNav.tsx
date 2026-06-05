@@ -154,9 +154,13 @@ export function MyCountrySidebarNav({
     staleTime: 5 * 60_000,
   });
 
+  // Intelligence/Defense are premium sections. Premium members always see them
+  // (unlocked). For everyone else they are hidden unless an admin has explicitly
+  // enabled the corresponding nav toggle (in which case they show as a locked teaser).
   const HIDDEN_SECTIONS = new Set<MyCountrySection>();
-  if (navSettings && !navSettings.showIntelligenceTab) HIDDEN_SECTIONS.add("intelligence");
-  if (navSettings && !navSettings.showDefenseTab) HIDDEN_SECTIONS.add("defense");
+  if (navSettings && !navSettings.showIntelligenceTab && !isPremium)
+    HIDDEN_SECTIONS.add("intelligence");
+  if (navSettings && !navSettings.showDefenseTab && !isPremium) HIDDEN_SECTIONS.add("defense");
 
   const visibleItems = NAV_ITEMS.filter((item) => !HIDDEN_SECTIONS.has(item.id));
 

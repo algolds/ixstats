@@ -196,9 +196,14 @@ export function UserManagement({ className }: UserManagementProps) {
     },
   });
 
+  const utils = api.useUtils();
   const updateMembershipTier = api.users.updateMembershipTier.useMutation({
     onSuccess: (data) => {
       refetchUsers();
+      refetchRoleUsers();
+      // Refresh premium status so usePremium (and the MyCountry sidebar's
+      // Defense/Intelligence visibility) reflect the change without a reload.
+      void utils.users.getMembershipStatus.invalidate();
       notify.success(data.message);
     },
     onError: (error) => {
