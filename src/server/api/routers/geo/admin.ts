@@ -1349,5 +1349,3 @@ export const geoAdminRouter = createTRPCRouter({
 
   // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });
-
-

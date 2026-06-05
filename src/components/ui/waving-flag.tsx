@@ -114,7 +114,8 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
       >
         {/* Base flag layer */}
         <div className="relative h-full w-full">
-          <UnifiedCountryFlag showTooltip={false}
+          <UnifiedCountryFlag
+            showTooltip={false}
             countryName={countryName}
             className="h-full w-full object-cover"
             showPlaceholder={showPlaceholder}

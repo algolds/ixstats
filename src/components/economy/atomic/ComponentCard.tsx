@@ -49,7 +49,11 @@ function ComponentCardComponent({
               <h4 className="mb-1 truncate text-sm font-semibold">{component.name}</h4>
               <p className="mb-2 line-clamp-2 text-xs text-gray-600">{component.description}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center justify-center" title={component.category}>
+                <Badge
+                  variant="secondary"
+                  className="flex items-center justify-center px-1.5 py-0.5 text-xs"
+                  title={component.category}
+                >
                   {CategoryIcon ? <CategoryIcon className="h-3.5 w-3.5" /> : component.category}
                 </Badge>
                 <Badge

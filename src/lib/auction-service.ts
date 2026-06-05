@@ -387,7 +387,10 @@ export class AuctionService {
       {
         const ws = getMarketWebSocketServer();
         if (ws) {
-          const bidder = await db.user.findUnique({ where: { id: params.userId }, select: { clerkUserId: true } });
+          const bidder = await db.user.findUnique({
+            where: { id: params.userId },
+            select: { clerkUserId: true },
+          });
           ws.broadcastBid({
             id: `bid_${Date.now()}`,
             auctionId: params.auctionId,
@@ -588,11 +591,13 @@ export class AuctionService {
             });
             const firstHuman = earliestOwnerships.find((o) => {
               const clerkId = o.User.clerkUserId;
-              return clerkId &&
+              return (
+                clerkId &&
                 clerkId.startsWith("user_") &&
                 !SYSTEM_OWNER_IDS.includes(clerkId) &&
                 clerkId !== auction.sellerId &&
-                clerkId !== params.userId;
+                clerkId !== params.userId
+              );
             });
             if (firstHuman) {
               royaltyRecipientClerkId = firstHuman.User.clerkUserId;
@@ -764,11 +769,13 @@ export class AuctionService {
               });
               const firstHuman = earliestOwnerships.find((o) => {
                 const clerkId = o.User.clerkUserId;
-                return clerkId &&
+                return (
+                  clerkId &&
                   clerkId.startsWith("user_") &&
                   !SYSTEM_OWNER_IDS.includes(clerkId) &&
                   clerkId !== auction.sellerId &&
-                  clerkId !== auction.currentBidderId;
+                  clerkId !== auction.currentBidderId
+                );
               });
               if (firstHuman) {
                 royaltyRecipientClerkId = firstHuman.User.clerkUserId;
@@ -824,7 +831,13 @@ export class AuctionService {
           }
 
           // Grant 50 XP to the winner's card instance
-          await grantCardXp(tx as any, auction.cardInstanceId, 50, "AUCTION_COMPLETE", JSON.stringify({ auctionId }));
+          await grantCardXp(
+            tx as any,
+            auction.cardInstanceId,
+            50,
+            "AUCTION_COMPLETE",
+            JSON.stringify({ auctionId })
+          );
 
           // Complete auction
           await tx.cardAuction.update({
@@ -1198,7 +1211,6 @@ export class AuctionService {
       hasMore: offset + limit < total,
     };
   }
-
 }
 
 // Export singleton instance

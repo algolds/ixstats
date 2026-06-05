@@ -382,7 +382,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           }}
                         />
                         {card.isRetired && (
-                          <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
                             <div className="rotate-[-12deg] rounded-lg border-4 border-red-500/80 bg-red-950/90 px-4 py-2 text-center text-xl font-black tracking-widest text-red-500 uppercase shadow-2xl backdrop-blur-xs select-none">
                               Retired
                             </div>
@@ -401,7 +401,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       {/* Neon Frame Overlay */}
                       {neonFrame.enabled && (
                         <motion.div
-                          className="absolute inset-0 z-30 pointer-events-none rounded-2xl"
+                          className="pointer-events-none absolute inset-0 z-30 rounded-2xl"
                           style={{
                             border: `2px solid ${neonFrame.color}`,
                             boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
@@ -429,7 +429,12 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           <TrendingUp className="h-4 w-4" />
                           Market Value
                         </div>
-                        <div className={cn("mt-1 flex items-baseline gap-1 text-xl font-bold", rarityConfig.color)}>
+                        <div
+                          className={cn(
+                            "mt-1 flex items-baseline gap-1 text-xl font-bold",
+                            rarityConfig.color
+                          )}
+                        >
                           <IxCreditsSymbol size="1em" variant="ic" />
                           {card.marketValue.toLocaleString()}
                         </div>
@@ -490,7 +495,6 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         </div>
                       </div>
                     )}
-
                   </motion.div>
 
                   {/* Right: Card details */}
@@ -502,16 +506,18 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   >
                     {card.inscription && (
                       <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 shadow-sm backdrop-blur-xs">
-                        <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-wider mb-2">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wider text-amber-500 uppercase">
                           <ScrollText className="h-4 w-4" />
                           Card Inscription
                         </div>
-                        <p className="italic text-foreground text-sm font-medium border-l-2 border-amber-500/40 pl-3 py-1 bg-amber-500/[0.02]">
+                        <p className="text-foreground border-l-2 border-amber-500/40 bg-amber-500/[0.02] py-1 pl-3 text-sm font-medium italic">
                           "{card.inscription}"
                         </p>
-                        <div className="mt-2 text-muted-foreground text-[10px] text-right font-medium">
-                          Inscribed by user {card.inscribedById ? card.inscribedById.substring(0, 8) : "System"}
-                          {card.inscribedAt && ` on ${new Date(card.inscribedAt).toLocaleDateString()}`}
+                        <div className="text-muted-foreground mt-2 text-right text-[10px] font-medium">
+                          Inscribed by user{" "}
+                          {card.inscribedById ? card.inscribedById.substring(0, 8) : "System"}
+                          {card.inscribedAt &&
+                            ` on ${new Date(card.inscribedAt).toLocaleDateString()}`}
                         </div>
                       </div>
                     )}
@@ -539,10 +545,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           <div key={key}>
                             <div className="text-muted-foreground text-xs">{stat.def.label}</div>
                             <div className="mt-1 flex items-baseline gap-2">
-                              <span
-                                className="text-xl font-bold"
-                                style={{ color: stat.def.color }}
-                              >
+                              <span className="text-xl font-bold" style={{ color: stat.def.color }}>
                                 {stat.value}
                               </span>
                               <span className="text-muted-foreground/50 text-xs">/100</span>
@@ -639,7 +642,12 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     <div className="mb-6 grid grid-cols-3 gap-4">
                       <div className="glass-hierarchy-child rounded-lg p-4">
                         <p className="text-muted-foreground mb-1 text-xs">Current Value</p>
-                        <p className={cn("flex items-baseline gap-1 text-2xl font-bold", rarityConfig.color)}>
+                        <p
+                          className={cn(
+                            "flex items-baseline gap-1 text-2xl font-bold",
+                            rarityConfig.color
+                          )}
+                        >
                           <IxCreditsSymbol size="1em" variant="ic" />
                           {card.marketValue.toLocaleString()}
                         </p>
@@ -682,14 +690,14 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
                       {transferHistoryQuery.isLoading ? (
                         <div className="flex h-32 items-center justify-center">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                          <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
                         </div>
                       ) : !transferHistoryQuery.data || transferHistoryQuery.data.length === 0 ? (
-                        <div className="flex h-32 items-center justify-center text-muted-foreground text-sm">
+                        <div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
                           No ownership transfer events found
                         </div>
                       ) : (
-                        <div className="relative border-l border-slate-200 pl-6 dark:border-white/10 space-y-6 ml-3">
+                        <div className="relative ml-3 space-y-6 border-l border-slate-200 pl-6 dark:border-white/10">
                           {transferHistoryQuery.data.map((event: any) => {
                             let icon = <Package className="h-4 w-4 text-white" />;
                             let actionLabel = "Transferred";
@@ -705,7 +713,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                               colorClass = "bg-yellow-500";
                             } else if (event.action === "GIFT") {
                               icon = <Gift className="h-4 w-4 text-white" />;
-                              actionLabel = event.fromUserName 
+                              actionLabel = event.fromUserName
                                 ? `Gifted from ${event.fromUserName} to ${event.toUserName}`
                                 : `Gifted to ${event.toUserName}`;
                               colorClass = "bg-pink-500";
@@ -715,7 +723,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                                 ? `Traded from ${event.fromUserName} to ${event.toUserName}`
                                 : `Traded to ${event.toUserName}`;
                               colorClass = "bg-teal-500";
-                            } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
+                            } else if (
+                              event.action === "AUCTION_BUYOUT" ||
+                              event.action === "AUCTION_END"
+                            ) {
                               icon = <ShoppingBag className="h-4 w-4 text-white" />;
                               actionLabel = `Purchased at Auction by ${event.toUserName}`;
                               if (event.price) {
@@ -729,12 +740,17 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                             }
 
                             return (
-                              <div key={event.id} className="relative flex flex-col items-start gap-1 text-left">
+                              <div
+                                key={event.id}
+                                className="relative flex flex-col items-start gap-1 text-left"
+                              >
                                 {/* Dot Indicator */}
-                                <div className={cn(
-                                  "absolute -left-[37px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full shadow-md",
-                                  colorClass
-                                )}>
+                                <div
+                                  className={cn(
+                                    "absolute top-0.5 -left-[37px] flex h-6 w-6 items-center justify-center rounded-full shadow-md",
+                                    colorClass
+                                  )}
+                                >
                                   {icon}
                                 </div>
                                 <div className="text-foreground text-sm font-semibold">
@@ -783,10 +799,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         <div className="flex items-center justify-between">
                           <div className="text-muted-foreground text-sm">{stat.def.label}</div>
                           <div className="flex items-baseline gap-2">
-                            <span
-                              className="text-3xl font-bold"
-                              style={{ color: stat.def.color }}
-                            >
+                            <span className="text-3xl font-bold" style={{ color: stat.def.color }}>
                               {stat.value}
                             </span>
                             <span className="text-muted-foreground/50 text-sm">/100</span>
@@ -831,7 +844,9 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         {stats.specials.map((special) => (
                           <div key={special.def.key} className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <div className="text-muted-foreground text-sm">{special.def.label}</div>
+                              <div className="text-muted-foreground text-sm">
+                                {special.def.label}
+                              </div>
                               <div className="flex items-baseline gap-2">
                                 <span
                                   className="text-xl font-bold"
@@ -841,18 +856,21 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                                 </span>
                               </div>
                             </div>
-                            {typeof special.normalizedValue === "number" && special.normalizedValue > 0 && (
-                              <div className="bg-muted/20 h-2 w-full overflow-hidden rounded-full">
-                                <motion.div
-                                  className="h-full rounded-full"
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${special.normalizedValue}%` }}
-                                  transition={{ duration: 0.8, delay: 0.3 }}
-                                  style={{ backgroundColor: special.def.color }}
-                                />
-                              </div>
-                            )}
-                            <p className="text-muted-foreground/75 text-xs">{special.def.description}</p>
+                            {typeof special.normalizedValue === "number" &&
+                              special.normalizedValue > 0 && (
+                                <div className="bg-muted/20 h-2 w-full overflow-hidden rounded-full">
+                                  <motion.div
+                                    className="h-full rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${special.normalizedValue}%` }}
+                                    transition={{ duration: 0.8, delay: 0.3 }}
+                                    style={{ backgroundColor: special.def.color }}
+                                  />
+                                </div>
+                              )}
+                            <p className="text-muted-foreground/75 text-xs">
+                              {special.def.description}
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -960,10 +978,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           {Object.entries(stats.base).map(([key, stat]) => (
                             <div key={key}>
                               <div className="text-muted-foreground text-xs">{stat.def.label}</div>
-                              <div
-                                className="text-2xl font-bold"
-                                style={{ color: stat.def.color }}
-                              >
+                              <div className="text-2xl font-bold" style={{ color: stat.def.color }}>
                                 {stat.value}
                               </div>
                             </div>
@@ -980,10 +995,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           {Object.entries(comparisonStats.base).map(([key, stat]) => (
                             <div key={key}>
                               <div className="text-muted-foreground text-xs">{stat.def.label}</div>
-                              <div
-                                className="text-2xl font-bold"
-                                style={{ color: stat.def.color }}
-                              >
+                              <div className="text-2xl font-bold" style={{ color: stat.def.color }}>
                                 {stat.value}
                               </div>
                             </div>

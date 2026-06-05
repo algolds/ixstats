@@ -40,6 +40,7 @@ interface EnhancedAccountManagerProps {
   onAccountSettings: (account: any) => void;
   onCreateAccount: () => void;
   isOwner: boolean;
+  inModal?: boolean;
 }
 
 export function EnhancedAccountManager({
@@ -50,6 +51,7 @@ export function EnhancedAccountManager({
   onAccountSettings,
   onCreateAccount,
   isOwner,
+  inModal = false,
 }: EnhancedAccountManagerProps) {
   const notify = useNotify();
   const [filterType, setFilterType] = useState<"all" | "government" | "media" | "citizen">("all");
@@ -130,7 +132,7 @@ export function EnhancedAccountManager({
           "rounded-lg border p-3 transition-all hover:scale-102",
           isSelected
             ? "border-blue-500/50 bg-blue-500/20 shadow-lg shadow-blue-500/25"
-            : "border-white/10 bg-white/5 hover:bg-white/10"
+            : "border-border/40 bg-muted/10 hover:bg-muted/20"
         )}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -240,6 +242,106 @@ export function EnhancedAccountManager({
     );
   };
 
+  const innerContent = (
+    <>
+      <ToggleGroup
+        type="single"
+        value={filterType}
+        onValueChange={(value) => value && setFilterType(value as typeof filterType)}
+        className="bg-muted/50 grid w-full grid-cols-2 gap-1.5 rounded-lg p-1"
+      >
+        {(["all", "government", "media", "citizen"] as const).map((type) => {
+          const Icon = getAccountIcon(type);
+          const count = type === "all" ? accounts.length : getAccountTypeCount(type);
+          const limit =
+            type === "government" ? 5 : type === "media" ? 10 : type === "citizen" ? 15 : 25;
+          return (
+            <ToggleGroupItem
+              key={type}
+              value={type}
+              className={cn(
+                "data-[state=on]:border-primary data-[state=on]:bg-primary/10 flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all",
+                type !== "all" ? getAccountTypeColor(type) : "border-accent/40 text-foreground"
+              )}
+            >
+              <span className="flex items-center gap-1">
+                {type === "all" ? <Users className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
+                <span className="font-medium">
+                  {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
+                </span>
+              </span>
+              <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-[9px] font-semibold">
+                {count}/{limit}
+              </span>
+            </ToggleGroupItem>
+          );
+        })}
+      </ToggleGroup>
+
+      {/* Accounts List */}
+      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+        <AnimatePresence>
+          {filteredAccounts.length === 0 ? (
+            <div className="text-muted-foreground py-6 text-center">
+              <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
+              <p className="text-sm">No accounts in this category</p>
+              {isOwner && (
+                <Button variant="outline" size="sm" onClick={onCreateAccount} className="mt-2">
+                  <Plus className="mr-1 h-3 w-3" />
+                  Create Account
+                </Button>
+              )}
+            </div>
+          ) : (
+            filteredAccounts.map((account, index) => (
+              <AccountCard key={account.id} account={account} index={index} />
+            ))
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Create Account Button */}
+      {isOwner && accounts.length < 25 && (
+        <Button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onCreateAccount();
+          }}
+          variant="outline"
+          size="sm"
+          className="flex w-full items-center gap-2"
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+          Create New Account ({25 - accounts.length} remaining)
+        </Button>
+      )}
+
+      {/* Quick Stats */}
+      <div className="border-border/40 border-t pt-2">
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-3 w-3 text-green-400" />
+            <span className="text-muted-foreground">Total Posts:</span>
+            <span className="font-medium">
+              {accounts.reduce((sum, acc) => sum + (acc.postCount || 0), 0)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-3 w-3 text-blue-400" />
+            <span className="text-muted-foreground">Active:</span>
+            <span className="font-medium">{accounts.filter((acc) => acc.isActive).length}</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (inModal) {
+    return <div className="space-y-4 sm:space-y-5">{innerContent}</div>;
+  }
+
   return (
     <Card className="glass-hierarchy-child">
       <CardHeader className="pb-3">
@@ -251,104 +353,10 @@ export function EnhancedAccountManager({
             </Badge>
           </div>
         </div>
-        <PreText className="text-muted-foreground text-sm">
-          Manage your Thinkpages personas
-        </PreText>
+        <PreText className="text-muted-foreground text-sm">Manage your Thinkpages personas</PreText>
       </CardHeader>
 
-      <CardContent className="space-y-4 sm:space-y-5">
-        <ToggleGroup
-          type="single"
-          value={filterType}
-          onValueChange={(value) => value && setFilterType(value as typeof filterType)}
-          className="grid w-full grid-cols-2 gap-1.5 rounded-lg bg-white/5 p-1"
-        >
-          {(["all", "government", "media", "citizen"] as const).map((type) => {
-            const Icon = getAccountIcon(type);
-            const count = type === "all" ? accounts.length : getAccountTypeCount(type);
-            const limit =
-              type === "government" ? 5 : type === "media" ? 10 : type === "citizen" ? 15 : 25;
-            return (
-              <ToggleGroupItem
-                key={type}
-                value={type}
-                className={cn(
-                  "data-[state=on]:border-primary data-[state=on]:bg-primary/10 flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all",
-                  type !== "all" ? getAccountTypeColor(type) : "border-accent/40 text-foreground"
-                )}
-              >
-                <span className="flex items-center gap-1">
-                  {type === "all" ? <Users className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
-                  <span className="font-medium">
-                    {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
-                  </span>
-                </span>
-                <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-[9px] font-semibold">
-                  {count}/{limit}
-                </span>
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
-
-        {/* Accounts List */}
-        <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-          <AnimatePresence>
-            {filteredAccounts.length === 0 ? (
-              <div className="text-muted-foreground py-6 text-center">
-                <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                <p className="text-sm">No accounts in this category</p>
-                {isOwner && (
-                  <Button variant="outline" size="sm" onClick={onCreateAccount} className="mt-2">
-                    <Plus className="mr-1 h-3 w-3" />
-                    Create Account
-                  </Button>
-                )}
-              </div>
-            ) : (
-              filteredAccounts.map((account, index) => (
-                <AccountCard key={account.id} account={account} index={index} />
-              ))
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Create Account Button */}
-        {isOwner && accounts.length < 25 && (
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onCreateAccount();
-            }}
-            variant="outline"
-            size="sm"
-            className="flex w-full items-center gap-2"
-            type="button"
-          >
-            <Plus className="h-4 w-4" />
-            Create New Account ({25 - accounts.length} remaining)
-          </Button>
-        )}
-
-        {/* Quick Stats */}
-        <div className="border-t border-white/10 pt-2">
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-3 w-3 text-green-400" />
-              <span className="text-muted-foreground">Total Posts:</span>
-              <span className="font-medium">
-                {accounts.reduce((sum, acc) => sum + (acc.postCount || 0), 0)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-3 w-3 text-blue-400" />
-              <span className="text-muted-foreground">Active:</span>
-              <span className="font-medium">{accounts.filter((acc) => acc.isActive).length}</span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
+      <CardContent className="space-y-4 sm:space-y-5">{innerContent}</CardContent>
     </Card>
   );
 }

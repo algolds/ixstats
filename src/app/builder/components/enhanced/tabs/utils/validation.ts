@@ -37,12 +37,8 @@ export function validateEconomy(
   const byTab: EconomyValidationResult["byTab"] = { sectors: [], labor: [], demographics: [] };
 
   // Sector checks
-  const sectorSum = economyBuilder.sectors.reduce(
-    (sum, s) => sum + s.gdpContribution, 0
-  );
-  const employmentSum = economyBuilder.sectors.reduce(
-    (sum, s) => sum + s.employmentShare, 0
-  );
+  const sectorSum = economyBuilder.sectors.reduce((sum, s) => sum + s.gdpContribution, 0);
+  const employmentSum = economyBuilder.sectors.reduce((sum, s) => sum + s.employmentShare, 0);
 
   const hasZeroContribution: SectorContribution[] = [];
   for (const sector of economyBuilder.sectors) {
@@ -131,8 +127,7 @@ export function validateEconomy(
 
   // Demographics checks
   const ageDist = economyBuilder.demographics.ageDistribution;
-  const ageSum =
-    (ageDist?.under15 || 0) + (ageDist?.age15to64 || 0) + (ageDist?.over65 || 0);
+  const ageSum = (ageDist?.under15 || 0) + (ageDist?.age15to64 || 0) + (ageDist?.over65 || 0);
 
   if (Math.abs(ageSum - 100) > 1) {
     const msg: ValidationMessage = {
@@ -157,12 +152,11 @@ export function validateEconomy(
     messages.push(msg);
   }
 
-  const status: EconomyValidationResult["status"] =
-    messages.some((m) => m.severity === "error")
-      ? "error"
-      : messages.some((m) => m.severity === "warning")
-        ? "warning"
-        : "valid";
+  const status: EconomyValidationResult["status"] = messages.some((m) => m.severity === "error")
+    ? "error"
+    : messages.some((m) => m.severity === "warning")
+      ? "warning"
+      : "valid";
 
   return {
     messages,

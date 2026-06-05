@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Info, AlertTriangle, Settings as SettingsIcon, List, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Info,
+  AlertTriangle,
+  Settings as SettingsIcon,
+  List,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -10,7 +17,12 @@ import { TaxSystemForm } from "../atoms/TaxSystemForm";
 import { TaxCategoryForm } from "../atoms/TaxCategoryForm";
 import { AtomicTaxComponentSelector } from "../atoms/AtomicTaxComponents";
 import { UnifiedTaxEffectivenessDisplay } from "../UnifiedTaxEffectivenessDisplay";
-import type { TaxSystemInput, TaxCategoryInput, TaxBracketInput, TaxSystem } from "~/types/tax-system";
+import type {
+  TaxSystemInput,
+  TaxCategoryInput,
+  TaxBracketInput,
+  TaxSystem,
+} from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
 
 interface SettingsTabProps {
@@ -107,12 +119,8 @@ export function SettingsTab({
                   : Object.entries(errorValue as Record<string, unknown>).map(
                       ([subKey, subErrors]) => (
                         <li key={`${key}-${subKey}`} className="text-sm">
-                          {key === "categories"
-                            ? `Category ${parseInt(subKey) + 1}: `
-                            : ""}
-                          {Array.isArray(subErrors)
-                            ? subErrors.join(", ")
-                            : (subErrors as string)}
+                          {key === "categories" ? `Category ${parseInt(subKey) + 1}: ` : ""}
+                          {Array.isArray(subErrors) ? subErrors.join(", ") : (subErrors as string)}
                         </li>
                       )
                     )
@@ -156,7 +164,8 @@ export function SettingsTab({
                   ) : (
                     <ChevronRight className="h-4 w-4" />
                   )}
-                  Advanced{showAdvanced ? "" : ` (${selectedAtomicTaxComponents.length} atomic components)`}
+                  Advanced
+                  {showAdvanced ? "" : ` (${selectedAtomicTaxComponents.length} atomic components)`}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4">
@@ -220,20 +229,10 @@ export function SettingsTab({
               Tax Categories
             </h3>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onOpenTemplates}
-                disabled={isReadOnly}
-              >
+              <Button variant="outline" size="sm" onClick={onOpenTemplates} disabled={isReadOnly}>
                 Apply Template
               </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={onAddCategory}
-                disabled={isReadOnly}
-              >
+              <Button variant="default" size="sm" onClick={onAddCategory} disabled={isReadOnly}>
                 Add Category
               </Button>
             </div>

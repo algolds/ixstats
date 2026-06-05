@@ -16,10 +16,7 @@
  * @param value    Raw growth rate (any scale) or null/undefined.
  * @param fallback Value to return when `value` is missing/invalid (default 3.0).
  */
-export function smartNormalizeGrowthRate(
-  value: number | null | undefined,
-  fallback = 3.0
-): number {
+export function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
   if (!value || !isFinite(value)) return fallback;
 
   let normalizedValue = value;

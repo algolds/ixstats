@@ -13,7 +13,12 @@ interface IncomeSectionProps {
   componentBounds?: LaborBounds;
 }
 
-export function IncomeSection({ laborMarket, onChange, showAdvanced, componentBounds }: IncomeSectionProps) {
+export function IncomeSection({
+  laborMarket,
+  onChange,
+  showAdvanced,
+  componentBounds,
+}: IncomeSectionProps) {
   return (
     <div className="space-y-4">
       <EnhancedNumberInput

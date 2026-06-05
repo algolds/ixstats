@@ -13,12 +13,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import {
   DollarSign,
@@ -103,10 +98,13 @@ export function AtomicEconomicComponentSelector({
   });
 
   // Track newly selected components with usage tracking
-  const handleComponentSelect = useCallback((componentType: EconomicComponentType) => {
-    builder.handleToggle(componentType);
-    incrementUsage(componentType);
-  }, [builder, incrementUsage]);
+  const handleComponentSelect = useCallback(
+    (componentType: EconomicComponentType) => {
+      builder.handleToggle(componentType);
+      incrementUsage(componentType);
+    },
+    [builder, incrementUsage]
+  );
 
   // Dialog state for active synergies/conflicts and detailed breakdown views
   const [interactionsOpen, setInteractionsOpen] = useState(false);
@@ -160,7 +158,9 @@ export function AtomicEconomicComponentSelector({
         <CardContent className="py-12 text-center">
           <div className="animate-pulse space-y-2">
             <Database className="mx-auto h-8 w-8 text-emerald-400" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">Loading economic components...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Loading economic components...
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -379,7 +379,7 @@ export function AtomicEconomicComponentSelector({
                         key={comp.id}
                         className="flex items-center justify-between border-b border-zinc-200 pb-2 text-xs dark:border-white/5"
                       >
-                        <span className="font-medium text-zinc-700 dark:text-zinc-300 font-semibold">
+                        <span className="font-medium font-semibold text-zinc-700 dark:text-zinc-300">
                           {comp.name}
                         </span>
                         <span className="font-mono font-bold text-zinc-500 dark:text-zinc-400">
@@ -427,10 +427,10 @@ export function AtomicEconomicComponentSelector({
                         className="flex items-center justify-between border-b border-zinc-200 pb-2 text-xs dark:border-white/5"
                       >
                         <div className="flex flex-col">
-                          <span className="font-medium text-zinc-700 dark:text-zinc-300 font-semibold">
+                          <span className="font-medium font-semibold text-zinc-700 dark:text-zinc-300">
                             {comp.name}
                           </span>
-                          <span className="text-[9px] text-zinc-400 capitalize text-left">
+                          <span className="text-left text-[9px] text-zinc-400 capitalize">
                             {comp.category}
                           </span>
                         </div>
@@ -479,10 +479,10 @@ export function AtomicEconomicComponentSelector({
                         className="flex items-center justify-between border-b border-zinc-200 pb-2 text-xs dark:border-white/5"
                       >
                         <div className="flex flex-col">
-                          <span className="font-medium text-zinc-700 dark:text-zinc-300 font-semibold">
+                          <span className="font-medium font-semibold text-zinc-700 dark:text-zinc-300">
                             {comp.name}
                           </span>
-                          <span className="text-[9px] text-zinc-400 capitalize text-left">
+                          <span className="text-left text-[9px] text-zinc-400 capitalize">
                             {comp.category}
                           </span>
                         </div>

@@ -162,7 +162,9 @@ export function LaborEmploymentTab({
   return (
     <div className="space-y-6">
       <h2 className="sr-only">Labor & Employment Configuration</h2>
-      <p className="sr-only">Configure workforce dynamics, employment sectors, income, and worker rights.</p>
+      <p className="sr-only">
+        Configure workforce dynamics, employment sectors, income, and worker rights.
+      </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -195,7 +197,7 @@ export function LaborEmploymentTab({
         />
       </div>
 
-      <div className="flex space-x-1 rounded-xl border border-border bg-muted/30 p-1 shadow-inner backdrop-blur-md">
+      <div className="border-border bg-muted/30 flex space-x-1 rounded-xl border p-1 shadow-inner backdrop-blur-md">
         {[
           { id: "workforce", label: "Workforce", icon: Users },
           { id: "employment", label: "Employment", icon: Briefcase },

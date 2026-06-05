@@ -95,7 +95,7 @@ export function MetricCard({
               <div
                 className={cn(
                   "rounded-lg p-1.5",
-                  theme ? "bg-white/[0.02] border border-border/30" : "bg-primary/10"
+                  theme ? "border-border/30 border bg-white/[0.02]" : "bg-primary/10"
                 )}
               >
                 <Icon

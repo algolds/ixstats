@@ -17,12 +17,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Plus, Search, Check, X, Filter, Rocket } from "lucide-react";
-import {
-  CATEGORIES,
-  SUBCATEGORIES,
-  ERAS,
-  CATEGORY_ICONS,
-} from "~/lib/equipment-catalog-utils";
+import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/equipment-catalog-utils";
 import { EquipmentCard } from "./EquipmentCard";
 
 interface CatalogTabProps {
@@ -255,7 +250,9 @@ export function CatalogTab({
           <div className="mb-4 flex items-center gap-2">
             <Checkbox
               id="selectAll"
-              checked={selectedIds.size === filteredEquipment.length && filteredEquipment.length > 0}
+              checked={
+                selectedIds.size === filteredEquipment.length && filteredEquipment.length > 0
+              }
               onCheckedChange={toggleSelectAll}
             />
             <label htmlFor="selectAll" className="text-foreground cursor-pointer text-sm">

@@ -2,9 +2,7 @@ const SEASON_CONFIG_KEY = "currentIxCardSeason";
 
 export async function getCurrentIxCardSeason(db: {
   systemConfig: {
-    findUnique: (args: {
-      where: { key: string };
-    }) => Promise<{ value: string } | null>;
+    findUnique: (args: { where: { key: string } }) => Promise<{ value: string } | null>;
   };
 }): Promise<number> {
   const config = await db.systemConfig.findUnique({

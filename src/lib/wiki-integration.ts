@@ -5,15 +5,7 @@
  * Behavior preserved exactly.
  */
 
-import {
-  Clock,
-  Shield,
-  Landmark,
-  Globe2,
-  Scroll,
-  Users,
-  BookOpen,
-} from "lucide-react";
+import { Clock, Shield, Landmark, Globe2, Scroll, Users, BookOpen } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 // ─── Wiki intro parsing ──────────────────────────────────────────────────────
@@ -60,9 +52,8 @@ export function findCoatOfArmsUrl(
   wikiImages: Array<{ title: string; url: string }> | null | undefined
 ): string | null {
   return (
-    wikiImages?.find((img: { title: string; url: string }) =>
-      COAT_OF_ARMS_REGEX.test(img.title)
-    )?.url ?? null
+    wikiImages?.find((img: { title: string; url: string }) => COAT_OF_ARMS_REGEX.test(img.title))
+      ?.url ?? null
   );
 }
 
@@ -73,10 +64,7 @@ export function findCoatOfArmsUrl(
  * `wikiSource` (iiwiki vs. ixwiki). Spaces are converted to underscores and
  * the page title is URL-encoded.
  */
-export function getCountryWikiUrl(
-  countryName: string,
-  wikiSource?: string | null
-): string {
+export function getCountryWikiUrl(countryName: string, wikiSource?: string | null): string {
   const host = wikiSource === "iiwiki" ? "iiwiki.com" : "ixwiki.com";
   return `https://${host}/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
 }
@@ -95,9 +83,7 @@ export function getWikiSectionUrl(wikiUrl: string, sectionTitle: string): string
  * Normalizes the raw section-content payload (string or `{ content }` object)
  * into a plain string, or `null` when absent.
  */
-export function extractWikiSectionRawContent(
-  sectionContent: unknown
-): string | null {
+export function extractWikiSectionRawContent(sectionContent: unknown): string | null {
   return sectionContent
     ? typeof sectionContent === "object" && "content" in (sectionContent as object)
       ? (sectionContent as { content: string }).content

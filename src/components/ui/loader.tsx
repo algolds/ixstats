@@ -323,7 +323,13 @@ const IxLogoSVG = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 // IOSActivityIndicator: Premium theme-compliant iOS-inspired loading spinner
-export function IOSActivityIndicator({ size = "md", className }: { size?: "sm" | "md" | "lg"; className?: string }) {
+export function IOSActivityIndicator({
+  size = "md",
+  className,
+}: {
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
   const sizeMap = {
     sm: { container: "h-6 w-6", spokeWidth: "w-[1.5px]", spokeHeight: "h-[5px]", offset: -6 },
     md: { container: "h-9 w-9", spokeWidth: "w-[2.5px]", spokeHeight: "h-[8px]", offset: -9 },
@@ -337,7 +343,11 @@ export function IOSActivityIndicator({ size = "md", className }: { size?: "sm" |
       {Array.from({ length: 12 }).map((_, i) => (
         <motion.div
           key={i}
-          className={cn("absolute rounded-full bg-neutral-600 dark:bg-neutral-300", spokeWidth, spokeHeight)}
+          className={cn(
+            "absolute rounded-full bg-neutral-600 dark:bg-neutral-300",
+            spokeWidth,
+            spokeHeight
+          )}
           style={{
             transform: `rotate(${i * 30}deg) translateY(${offset}px)`,
             transformOrigin: "center center",
@@ -356,7 +366,13 @@ export function IOSActivityIndicator({ size = "md", className }: { size?: "sm" |
 }
 
 // GlobalLoader: Standardized theme-compliant iOS inspired loading screen
-export const GlobalLoader = ({ message = "Loading...", className }: { message?: string; className?: string }) => {
+export const GlobalLoader = ({
+  message = "Loading...",
+  className,
+}: {
+  message?: string;
+  className?: string;
+}) => {
   const pathname = usePathname();
 
   // Exclude specialized builder and maps routes
@@ -370,12 +386,14 @@ export const GlobalLoader = ({ message = "Loading...", className }: { message?: 
   }
 
   return (
-    <div className={cn("flex min-h-[50vh] w-full flex-col items-center justify-center p-4", className)}>
+    <div
+      className={cn("flex min-h-[50vh] w-full flex-col items-center justify-center p-4", className)}
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/40 dark:bg-neutral-900/40 backdrop-blur-md border border-white/20 dark:border-neutral-800/30 shadow-xl space-y-4"
+        className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-white/20 bg-white/40 p-6 shadow-xl backdrop-blur-md dark:border-neutral-800/30 dark:bg-neutral-900/40"
       >
         <IOSActivityIndicator size="md" />
         <span className="text-sm font-medium tracking-wide text-neutral-600 dark:text-neutral-300">

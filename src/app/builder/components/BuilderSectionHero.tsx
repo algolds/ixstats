@@ -219,14 +219,18 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
           onClick={() => void triggerManualSave()}
           disabled={isAutoSaving}
           className={cn(
-            "flex items-center gap-1 cursor-pointer rounded border px-1.5 py-0.5 text-[9px] font-bold shadow-sm backdrop-blur-sm transition-all duration-200 select-none",
+            "flex cursor-pointer items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold shadow-sm backdrop-blur-sm transition-all duration-200 select-none",
             isAutoSaving
               ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
               : lastSaved
                 ? "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"
-                : "border-white/10 bg-black/25 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground border-white/10 bg-black/25 hover:bg-white/5"
           )}
-          title={lastSaved ? `Autosaved at ${lastSaved.toLocaleTimeString()}. Click to save manually.` : "Click to save manually."}
+          title={
+            lastSaved
+              ? `Autosaved at ${lastSaved.toLocaleTimeString()}. Click to save manually.`
+              : "Click to save manually."
+          }
           type="button"
         >
           {isAutoSaving ? (
@@ -261,10 +265,10 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
           (isFoundation ? foundationPreviewCountry || foundationFilter.selectedTemplate : true) && (
             <div
               className={cn(
-                "absolute inset-0 bg-cover bg-center bg-no-repeat saturate-80 dark:saturate-50 transition-all duration-700",
+                "absolute inset-0 bg-cover bg-center bg-no-repeat saturate-80 transition-all duration-700 dark:saturate-50",
                 isFoundation
                   ? "opacity-50 dark:opacity-40"
-                  : "opacity-[0.14] dark:opacity-[0.06] blur-[4px]"
+                  : "opacity-[0.14] blur-[4px] dark:opacity-[0.06]"
               )}
               style={{ backgroundImage: `url(${countryFlagUrl})` }}
             />

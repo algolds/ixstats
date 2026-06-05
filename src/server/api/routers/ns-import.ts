@@ -174,11 +174,15 @@ async function processRegionNationsInBackground(
         select: { status: true },
       });
       if (currentJob?.status === "PAUSED") {
-        console.log(`[NS Import] Region ${regionName} fetch paused at nation index ${i}/${nations.length}`);
+        console.log(
+          `[NS Import] Region ${regionName} fetch paused at nation index ${i}/${nations.length}`
+        );
         return; // Exit graceful pause
       }
       if (currentJob?.status === "FAILED") {
-        console.log(`[NS Import] Region ${regionName} fetch stopped at nation index ${i}/${nations.length}`);
+        console.log(
+          `[NS Import] Region ${regionName} fetch stopped at nation index ${i}/${nations.length}`
+        );
         return; // Exit stopped job
       }
 
@@ -579,8 +583,10 @@ export const nsImportRouter = createTRPCRouter({
       // Process cards in batches
       for (const nsCard of deckData.cards) {
         // Enforce inventory capacity limit check (only if not exempt)
-        if (!isExempt && (currentCardsCount + importedCardIds.length >= maxCards)) {
-          console.warn(`[NS Import] User ${ctx.user.id} hit capacity limit of ${maxCards} cards during deck import.`);
+        if (!isExempt && currentCardsCount + importedCardIds.length >= maxCards) {
+          console.warn(
+            `[NS Import] User ${ctx.user.id} hit capacity limit of ${maxCards} cards during deck import.`
+          );
           const cardLabel = nsCard.name ? `${nsCard.name}` : `Card ${nsCard.id} S${nsCard.season}`;
           skippedCards.push(`${cardLabel} (Inventory Full)`);
           continue;
@@ -1186,7 +1192,8 @@ export const nsImportRouter = createTRPCRouter({
 
       return {
         success: true,
-        message: "Pause requested. The job will pause after the current nation finishes processing.",
+        message:
+          "Pause requested. The job will pause after the current nation finishes processing.",
       };
     }),
 

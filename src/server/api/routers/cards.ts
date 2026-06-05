@@ -425,7 +425,7 @@ export const cardsRouter = createTRPCRouter({
           where: {
             OR: [{ id: input.toUserId }, { clerkUserId: input.toUserId }],
           },
-          select: { id: true, clerkUserId: true }
+          select: { id: true, clerkUserId: true },
         });
         const recipientDbId = targetUser?.id ?? input.toUserId;
         const recipientClerkId = targetUser?.clerkUserId;
@@ -433,8 +433,12 @@ export const cardsRouter = createTRPCRouter({
         await Promise.all([
           globalCache.delete(`user_vault_stats:${ctx.user.id}`),
           globalCache.delete(`user_vault_stats:${recipientDbId}`),
-          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
-          ...(recipientClerkId ? [globalCache.delete(`user_vault_balance:${recipientClerkId}`)] : []),
+          ...(ctx.auth?.userId
+            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+            : []),
+          ...(recipientClerkId
+            ? [globalCache.delete(`user_vault_balance:${recipientClerkId}`)]
+            : []),
           globalCache.delete(`user_vault_balance:${recipientDbId}`),
         ]);
 
@@ -922,7 +926,9 @@ export const cardsRouter = createTRPCRouter({
 
         await Promise.all([
           globalCache.delete(`user_vault_stats:${userId}`),
-          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          ...(ctx.auth?.userId
+            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+            : []),
           globalCache.delete(`user_vault_balance:${userId}`),
         ]);
 

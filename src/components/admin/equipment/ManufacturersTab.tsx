@@ -132,7 +132,9 @@ export function ManufacturersTab({
           {/* Stats placeholder */}
           <div className="bg-primary/5 border-primary/20 flex items-center justify-center rounded-md border px-4 py-2">
             <Package className="text-primary mr-2 h-4 w-4" />
-            <span className="text-sm font-medium">{filteredManufacturers.length} manufacturers</span>
+            <span className="text-sm font-medium">
+              {filteredManufacturers.length} manufacturers
+            </span>
           </div>
         </div>
       </div>

@@ -1474,7 +1474,12 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
                   </div>
                 )}
                 <div className="relative z-10 flex items-center gap-2">
-                  <UnifiedCountryFlag showTooltip={false} countryName={c.name} size="sm" className="shrink-0" />
+                  <UnifiedCountryFlag
+                    showTooltip={false}
+                    countryName={c.name}
+                    size="sm"
+                    className="shrink-0"
+                  />
                   <div className="min-w-0">
                     <Link
                       href={createUrl(`/countries/${c.slug}`)}
@@ -2031,7 +2036,8 @@ function WikiAuthorPopover({ username }: { username: string }) {
               {/* Header */}
               <div className="flex items-center gap-2">
                 {author?.country?.flag ? (
-                  <UnifiedCountryFlag showTooltip={false}
+                  <UnifiedCountryFlag
+                    showTooltip={false}
                     countryName={author.country.name ?? ""}
                     size="sm"
                     className="shrink-0"

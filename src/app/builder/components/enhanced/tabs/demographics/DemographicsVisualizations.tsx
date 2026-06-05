@@ -26,7 +26,13 @@ export function DemographicsVisualizations({
   return (
     <div className="space-y-6">
       {/* Age Distribution */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
@@ -43,7 +49,13 @@ export function DemographicsVisualizations({
       </GlassCard>
 
       {/* Urban-Rural Split */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
@@ -61,7 +73,13 @@ export function DemographicsVisualizations({
       </GlassCard>
 
       {/* Education Levels */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <GraduationCap className="h-5 w-5" />
@@ -79,7 +97,13 @@ export function DemographicsVisualizations({
       </GlassCard>
 
       {/* Regional Distribution */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <MapPin className="h-5 w-5" />
@@ -96,7 +120,13 @@ export function DemographicsVisualizations({
       </GlassCard>
 
       {/* Demographics Health */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />

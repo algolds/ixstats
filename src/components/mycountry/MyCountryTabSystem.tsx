@@ -7,11 +7,7 @@ import { Bell, AlertTriangle, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import {
-  AnimatedTabContent,
-  staggerItem,
-  CardImageUploadModal,
-} from "./primitives";
+import { AnimatedTabContent, staggerItem, CardImageUploadModal } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
@@ -23,13 +19,7 @@ import {
 } from "~/components/modals/metric-details";
 import { useMyCountryNavigation } from "~/hooks/useMyCountryNavigation";
 import { useMyCountryMetrics } from "~/hooks/useMyCountryMetrics";
-import {
-  MyCountryTabsList,
-  OverviewTab,
-  EconomyTab,
-  LaborTab,
-  GovernmentTab,
-} from "./tabs";
+import { MyCountryTabsList, OverviewTab, EconomyTab, LaborTab, GovernmentTab } from "./tabs";
 import { UpgradeTeaser } from "./premium/UpgradeTeaser";
 
 interface MyCountryTabSystemProps {

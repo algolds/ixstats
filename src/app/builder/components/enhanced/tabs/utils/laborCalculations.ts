@@ -202,9 +202,7 @@ export interface LaborBounds {
  * @param selectedComponents - Array of selected economic component types
  * @returns Bounds overrides for labor sliders (undefined fields use defaults)
  */
-export function getLaborBounds(
-  selectedComponents: EconomicComponentType[]
-): LaborBounds {
+export function getLaborBounds(selectedComponents: EconomicComponentType[]): LaborBounds {
   if (selectedComponents.length === 0) return {};
 
   let totalUnemploymentMod = 0;

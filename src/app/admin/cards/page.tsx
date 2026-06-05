@@ -91,7 +91,8 @@ function SeedDemoAuctionsButton() {
               Seed Demo Auctions?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Create 6 demo auctions with sample lore cards? This will populate the marketplace for active testing.
+              Create 6 demo auctions with sample lore cards? This will populate the marketplace for
+              active testing.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -99,7 +100,7 @@ function SeedDemoAuctionsButton() {
             <Button
               onClick={() => seedMutation.mutate()}
               disabled={seedMutation.isPending}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+              className="bg-amber-500 font-semibold text-white hover:bg-amber-600"
             >
               {seedMutation.isPending ? "Seeding..." : "Confirm Seed"}
             </Button>
@@ -161,10 +162,13 @@ export default function CardAdminDashboardPage() {
   );
 
   // Poll all active/paused background jobs
-  const { data: activeJobs, refetch: refetchActiveJobs } = api.nsImport.getActiveJobs.useQuery(undefined, {
-    enabled: activeTab === "sync",
-    refetchInterval: 3000,
-  });
+  const { data: activeJobs, refetch: refetchActiveJobs } = api.nsImport.getActiveJobs.useQuery(
+    undefined,
+    {
+      enabled: activeTab === "sync",
+      refetchInterval: 3000,
+    }
+  );
 
   // ─── Mutations ────────────────────────────────────────────────
   const fetchRegionMutation = api.nsImport.fetchRegionCards.useMutation({
@@ -242,7 +246,6 @@ export default function CardAdminDashboardPage() {
     }
   };
 
-  
   const formatDuration = (ms: number | null) => {
     if (!ms) return "N/A";
     const seconds = Math.floor(ms / 1000);
@@ -264,9 +267,7 @@ export default function CardAdminDashboardPage() {
                 <Database className="h-6 w-6 text-blue-400" />
               </div>
               <div>
-                <h1 className="text-foreground text-2xl font-bold md:text-3xl">
-                  Card Management
-                </h1>
+                <h1 className="text-foreground text-2xl font-bold md:text-3xl">Card Management</h1>
                 <p className="text-muted-foreground text-sm">
                   NS Card Sync, Card Packs, and Batch Lore Generator
                 </p>
@@ -347,11 +348,11 @@ export default function CardAdminDashboardPage() {
             {activeJobs && activeJobs.length > 0 && (
               <div className="glass-card-child rounded-xl border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 via-transparent to-blue-500/5 p-5">
                 <div className="mb-3 flex items-start gap-3">
-                  <RefreshCw className="mt-0.5 h-5 w-5 shrink-0 text-blue-400 animate-spin" />
+                  <RefreshCw className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-blue-400" />
                   <div>
                     <h3 className="text-foreground font-semibold">Region Import Queue</h3>
                     <p className="text-muted-foreground text-sm">
-                     Monitor and manage region import jobs.
+                      Monitor and manage region import jobs.
                     </p>
                   </div>
                 </div>
@@ -364,7 +365,7 @@ export default function CardAdminDashboardPage() {
                     return (
                       <div
                         key={job.id}
-                        className="border-border/50 bg-muted/30 flex flex-col md:flex-row md:items-center gap-4 rounded-lg border p-4"
+                        className="border-border/50 bg-muted/30 flex flex-col gap-4 rounded-lg border p-4 md:flex-row md:items-center"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="mb-1 flex items-center gap-2">
@@ -374,15 +375,15 @@ export default function CardAdminDashboardPage() {
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 job.status === "PAUSED"
-                                  ? "text-amber-400 bg-amber-500/20"
+                                  ? "bg-amber-500/20 text-amber-400"
                                   : job.status === "IN_PROGRESS"
-                                    ? "text-blue-400 bg-blue-500/20"
+                                    ? "bg-blue-500/20 text-blue-400"
                                     : "text-muted-foreground bg-muted/50"
                               }`}
                             >
                               {job.status}
                             </span>
-                            <span className="text-muted-foreground text-xs font-mono ml-auto md:ml-0">
+                            <span className="text-muted-foreground ml-auto font-mono text-xs md:ml-0">
                               (Started {new Date(job.startedAt).toLocaleTimeString()})
                             </span>
                           </div>
@@ -403,13 +404,13 @@ export default function CardAdminDashboardPage() {
                             <span>Errors: {job.errorCount}</span>
                           </div>
                         </div>
-                        <div className="flex gap-2 shrink-0">
+                        <div className="flex shrink-0 gap-2">
                           {job.status === "IN_PROGRESS" && (
                             <Button
                               onClick={() => pauseJobMutation.mutate({ syncLogId: job.id })}
                               disabled={pauseJobMutation.isPending}
                               size="sm"
-                              className="bg-amber-500 hover:bg-amber-600 text-white"
+                              className="bg-amber-500 text-white hover:bg-amber-600"
                             >
                               <Pause className="h-3.5 w-3.5" />
                               Pause
@@ -420,7 +421,7 @@ export default function CardAdminDashboardPage() {
                               onClick={() => resumeJobMutation.mutate({ syncLogId: job.id })}
                               disabled={resumeJobMutation.isPending}
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              className="bg-green-600 text-white hover:bg-green-700"
                             >
                               <Play className="h-3.5 w-3.5" />
                               Resume
@@ -429,7 +430,7 @@ export default function CardAdminDashboardPage() {
                           <Button
                             onClick={() => setConfirmStopJobId(job.id)}
                             size="sm"
-                            className="bg-red-600 hover:bg-red-700 text-white"
+                            className="bg-red-600 text-white hover:bg-red-700"
                           >
                             <Square className="h-3.5 w-3.5" />
                             Stop
@@ -501,19 +502,24 @@ export default function CardAdminDashboardPage() {
                   Region Card Fetch
                 </h3>
                 <p className="text-muted-foreground mb-4 text-sm text-balance">
-                  Fetch trading cards from all nations in specific NS regions. Enter one or more region names separated by commas (e.g. <code className="text-green-400 font-mono text-xs">greater_ixnay, the_pacific</code>).
+                  Fetch trading cards from all nations in specific NS regions. Enter one or more
+                  region names separated by commas (e.g.{" "}
+                  <code className="font-mono text-xs text-green-400">
+                    greater_ixnay, the_pacific
+                  </code>
+                  ).
                 </p>
                 <div className="mb-4 flex flex-col gap-2">
                   <textarea
                     value={regionNames}
                     onChange={(e) => setRegionNames(e.target.value)}
                     placeholder="Region name(s) (e.g. greater_ixnay, the_pacific)"
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background/50 text-foreground px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="border-input bg-background/50 text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                   />
                   <Button
                     onClick={() => setConfirmFetchRegions(regionNames)}
                     disabled={!regionNames.trim() || fetchRegionMutation.isPending}
-                    className="bg-green-500 hover:bg-green-600 self-end"
+                    className="self-end bg-green-500 hover:bg-green-600"
                   >
                     {fetchRegionMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -532,13 +538,14 @@ export default function CardAdminDashboardPage() {
                   Discover NS Regions
                 </h3>
                 <p className="text-muted-foreground mb-4 text-sm text-balance">
-                  Find and explore different regions matching various activity, size, or political tags. More nations = more cards to fetch.
+                  Find and explore different regions matching various activity, size, or political
+                  tags. More nations = more cards to fetch.
                 </p>
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <select
                     value={discoveryTag}
                     onChange={(e) => setDiscoveryTag(e.target.value)}
-                    className="border-border bg-background/50 text-foreground rounded-lg border px-3 py-2 text-sm flex-1 outline-none focus:ring-1 focus:ring-purple-500/50"
+                    className="border-border bg-background/50 text-foreground flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-purple-500/50"
                   >
                     <option value="gargantuan">Largest Regions</option>
                     <option value="Role Player">Roleplay / Active Communities</option>
@@ -552,16 +559,14 @@ export default function CardAdminDashboardPage() {
                   <Button
                     onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
                     disabled={discoverRegionsMutation.isPending}
-                    className="bg-purple-500 hover:bg-purple-600 font-semibold"
+                    className="bg-purple-500 font-semibold hover:bg-purple-600"
                   >
                     {discoverRegionsMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
                     ) : (
                       <Search className="h-4 w-4" />
                     )}
-                    {discoverRegionsMutation.isPending
-                      ? "Scanning..."
-                      : "Scan Regions"}
+                    {discoverRegionsMutation.isPending ? "Scanning..." : "Scan Regions"}
                   </Button>
                 </div>
 
@@ -626,10 +631,10 @@ export default function CardAdminDashboardPage() {
                     <Database className="h-4 w-4 text-blue-400" />
                     <div className="text-muted-foreground text-xs font-semibold">Total Syncs</div>
                   </div>
-                  <div className="text-foreground text-2xl font-bold font-mono">
+                  <div className="text-foreground font-mono text-2xl font-bold">
                     {healthStats.overall.totalSyncs}
                   </div>
-                  <div className="text-muted-foreground mt-0.5 text-[10px] font-mono truncate">
+                  <div className="text-muted-foreground mt-0.5 truncate font-mono text-[10px]">
                     {healthStats.overall.lastSyncAt
                       ? new Date(healthStats.overall.lastSyncAt).toLocaleString()
                       : "Never"}
@@ -640,7 +645,7 @@ export default function CardAdminDashboardPage() {
                     <TrendingUp className="h-4 w-4 text-green-400" />
                     <div className="text-muted-foreground text-xs font-semibold">Success Rate</div>
                   </div>
-                  <div className="text-2xl font-bold text-green-400 font-mono">
+                  <div className="font-mono text-2xl font-bold text-green-400">
                     {(healthStats.overall.successRate * 100).toFixed(1)}%
                   </div>
                   <div className="text-muted-foreground mt-0.5 text-[10px]">
@@ -653,7 +658,7 @@ export default function CardAdminDashboardPage() {
                     <div className="text-muted-foreground text-xs font-semibold">Error Rate</div>
                   </div>
                   <div
-                    className={`text-2xl font-bold font-mono ${healthStats.overall.errorRate > 0.1 ? "text-red-400" : "text-foreground"}`}
+                    className={`font-mono text-2xl font-bold ${healthStats.overall.errorRate > 0.1 ? "text-red-400" : "text-foreground"}`}
                   >
                     {(healthStats.overall.errorRate * 100).toFixed(1)}%
                   </div>
@@ -664,12 +669,16 @@ export default function CardAdminDashboardPage() {
                 <div className="glass-card-child rounded-xl border border-purple-500/20 p-4">
                   <div className="mb-1 flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-purple-400" />
-                    <div className="text-muted-foreground text-xs font-semibold">Avg Cards/Sync</div>
+                    <div className="text-muted-foreground text-xs font-semibold">
+                      Avg Cards/Sync
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-purple-400 font-mono">
+                  <div className="font-mono text-2xl font-bold text-purple-400">
                     {healthStats.overall.avgCardsProcessed.toFixed(0)}
                   </div>
-                  <div className="text-muted-foreground mt-0.5 text-[10px] font-mono">per sync operation</div>
+                  <div className="text-muted-foreground mt-0.5 font-mono text-[10px]">
+                    per sync operation
+                  </div>
                 </div>
               </div>
             )}
@@ -679,7 +688,7 @@ export default function CardAdminDashboardPage() {
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-foreground flex items-center gap-2 text-xl font-semibold">
                   <Database className="h-6 w-6 text-blue-400" />
-                   Operations Log
+                  Operations Log
                 </h2>
                 <select
                   value={syncTypeFilter}
@@ -701,13 +710,13 @@ export default function CardAdminDashboardPage() {
                         <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium">
                           Status
                         </th>
-                        <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium font-mono">
+                        <th className="text-muted-foreground px-4 py-3 text-left font-mono text-sm font-medium">
                           Processed
                         </th>
-                        <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium font-mono">
+                        <th className="text-muted-foreground px-4 py-3 text-left font-mono text-sm font-medium">
                           Created
                         </th>
-                        <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium font-mono">
+                        <th className="text-muted-foreground px-4 py-3 text-left font-mono text-sm font-medium">
                           Updated
                         </th>
                         <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium">
@@ -724,7 +733,7 @@ export default function CardAdminDashboardPage() {
                           key={log.id}
                           className="border-border/30 hover:bg-muted/30 border-b transition-colors"
                         >
-                          <td className="text-foreground px-4 py-3 text-sm font-semibold truncate max-w-[200px]">
+                          <td className="text-foreground max-w-[200px] truncate px-4 py-3 text-sm font-semibold">
                             {log.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                           </td>
                           <td className="px-4 py-3">
@@ -734,19 +743,19 @@ export default function CardAdminDashboardPage() {
                               {log.status}
                             </span>
                           </td>
-                          <td className="text-foreground px-4 py-3 text-sm font-mono">
+                          <td className="text-foreground px-4 py-3 font-mono text-sm">
                             {log.cardsProcessed.toLocaleString()}
                           </td>
-                          <td className="text-foreground px-4 py-3 text-sm font-mono">
+                          <td className="text-foreground px-4 py-3 font-mono text-sm">
                             {(log.cardsCreated ?? 0).toLocaleString()}
                           </td>
-                          <td className="text-foreground px-4 py-3 text-sm font-mono">
+                          <td className="text-foreground px-4 py-3 font-mono text-sm">
                             {(log.cardsUpdated ?? 0).toLocaleString()}
                           </td>
-                          <td className="text-foreground px-4 py-3 text-sm font-mono">
+                          <td className="text-foreground px-4 py-3 font-mono text-sm">
                             {formatDuration(log.duration)}
                           </td>
-                          <td className="text-muted-foreground px-4 py-3 text-sm font-mono">
+                          <td className="text-muted-foreground px-4 py-3 font-mono text-sm">
                             {new Date(log.startedAt).toLocaleString()}
                           </td>
                         </tr>
@@ -768,15 +777,16 @@ export default function CardAdminDashboardPage() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-green-500 animate-pulse" />
+                    <Globe className="h-5 w-5 animate-pulse text-green-500" />
                     Fetch Region Cards?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     Are you sure you want to fetch trading cards from the region(s):{" "}
-                    <span className="text-foreground font-bold font-mono">
+                    <span className="text-foreground font-mono font-bold">
                       {confirmFetchRegions}
                     </span>
-                    ? This will query all decks in the region in the background using the NationStates API (~800ms per nation).
+                    ? This will query all decks in the region in the background using the
+                    NationStates API (~800ms per nation).
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -790,7 +800,7 @@ export default function CardAdminDashboardPage() {
                       }
                     }}
                     disabled={fetchRegionMutation.isPending}
-                    className="bg-green-500 hover:bg-green-600 text-white font-semibold"
+                    className="bg-green-500 font-semibold text-white hover:bg-green-600"
                   >
                     {fetchRegionMutation.isPending ? "Starting..." : "Start Fetch"}
                   </Button>
@@ -806,11 +816,12 @@ export default function CardAdminDashboardPage() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-500 animate-bounce" />
+                    <AlertTriangle className="h-5 w-5 animate-bounce text-red-500" />
                     Stop Import Job?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently abort the background import job. Any progress made so far will be saved, but the remaining nations will not be fetched.
+                    This will permanently abort the background import job. Any progress made so far
+                    will be saved, but the remaining nations will not be fetched.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -824,7 +835,7 @@ export default function CardAdminDashboardPage() {
                       }
                     }}
                     disabled={stopJobMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                    className="bg-red-600 font-semibold text-white hover:bg-red-700"
                   >
                     {stopJobMutation.isPending ? "Stopping..." : "Stop Job"}
                   </Button>

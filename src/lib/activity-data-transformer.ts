@@ -5,11 +5,7 @@
  * (global activity feed + ThinkPages posts + trending topics) into the view model,
  * then merges/deduplicates/sorts. No React dependencies.
  */
-import type {
-  ActivityFeedItem,
-  TrendingTopic,
-  ActivityUserProfile,
-} from "./activity-formatting";
+import type { ActivityFeedItem, TrendingTopic, ActivityUserProfile } from "./activity-formatting";
 
 export type ActivityTab = "all" | "following" | "friends" | "achievements";
 export type ActivityFilterType = "all" | "game" | "platform" | "social";

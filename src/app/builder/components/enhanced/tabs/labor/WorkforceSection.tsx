@@ -13,7 +13,12 @@ interface WorkforceSectionProps {
   componentBounds?: LaborBounds;
 }
 
-export function WorkforceSection({ laborMarket, onChange, showAdvanced, componentBounds }: WorkforceSectionProps) {
+export function WorkforceSection({
+  laborMarket,
+  onChange,
+  showAdvanced,
+  componentBounds,
+}: WorkforceSectionProps) {
   return (
     <div className="space-y-4">
       <EnhancedSlider

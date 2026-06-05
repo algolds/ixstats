@@ -438,7 +438,13 @@ export const craftingRouter = createTRPCRouter({
 
           // Award XP to the crafted card
           if (resultCard) {
-            await grantCardXp(tx as any, resultCard.id, recipe.collectorXPGain, "CRAFT", JSON.stringify({ recipeId: recipe.id, recipeName: recipe.name }));
+            await grantCardXp(
+              tx as any,
+              resultCard.id,
+              recipe.collectorXPGain,
+              "CRAFT",
+              JSON.stringify({ recipeId: recipe.id, recipeName: recipe.name })
+            );
           }
         }
 

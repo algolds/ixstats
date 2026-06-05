@@ -178,7 +178,9 @@ export const ActivityItem = React.memo(function ActivityItem({
                 onEngage("reshare");
               }}
               disabled={isEngagePending || !isAuthenticated}
-              title={!isAuthenticated ? "Please sign in to reshare posts" : "Reshare to your profile"}
+              title={
+                !isAuthenticated ? "Please sign in to reshare posts" : "Reshare to your profile"
+              }
             >
               <Repeat className="h-4 w-4" />
               {activity.engagement.reshares}

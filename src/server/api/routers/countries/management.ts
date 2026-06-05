@@ -1690,7 +1690,6 @@ export const managementProcedures = {
             }
           }
 
-
           if (input.governmentComponents) {
             await tx.governmentComponent.deleteMany({
               where: { countryId: country.id },

@@ -81,7 +81,9 @@ export const cardMarketRouter = createTRPCRouter({
         await Promise.all([
           globalCache.delete(`user_vault_stats:${ctx.user.id}`),
           globalCache.delete(`user_vault_balance:${ctx.user.id}`),
-          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          ...(ctx.auth?.userId
+            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+            : []),
         ]);
 
         return {
@@ -130,7 +132,7 @@ export const cardMarketRouter = createTRPCRouter({
         if (previousBidderId) {
           const prevUser = await ctx.db.user.findUnique({
             where: { id: previousBidderId },
-            select: { clerkUserId: true }
+            select: { clerkUserId: true },
           });
           previousBidderClerkId = prevUser?.clerkUserId ?? null;
         }
@@ -170,11 +172,17 @@ export const cardMarketRouter = createTRPCRouter({
 
         await Promise.all([
           globalCache.delete(`user_vault_balance:${ctx.user.id}`),
-          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
-          ...(previousBidderId ? [
-            globalCache.delete(`user_vault_balance:${previousBidderId}`),
-            ...(previousBidderClerkId ? [globalCache.delete(`user_vault_balance:${previousBidderClerkId}`)] : []),
-          ] : []),
+          ...(ctx.auth?.userId
+            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+            : []),
+          ...(previousBidderId
+            ? [
+                globalCache.delete(`user_vault_balance:${previousBidderId}`),
+                ...(previousBidderClerkId
+                  ? [globalCache.delete(`user_vault_balance:${previousBidderClerkId}`)]
+                  : []),
+              ]
+            : []),
         ]);
 
         return {
@@ -267,11 +275,15 @@ export const cardMarketRouter = createTRPCRouter({
             // Invalidate buyer
             globalCache.delete(`user_vault_stats:${ctx.user.id}`),
             globalCache.delete(`user_vault_balance:${ctx.user.id}`),
-            ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+            ...(ctx.auth?.userId
+              ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+              : []),
             // Invalidate seller
             globalCache.delete(`user_vault_stats:${auctionInfo.sellerId}`),
             globalCache.delete(`user_vault_balance:${auctionInfo.sellerId}`),
-            ...(auctionInfo.User?.clerkUserId ? [globalCache.delete(`user_vault_balance:${auctionInfo.User.clerkUserId}`)] : []),
+            ...(auctionInfo.User?.clerkUserId
+              ? [globalCache.delete(`user_vault_balance:${auctionInfo.User.clerkUserId}`)]
+              : []),
           ]);
         }
 
@@ -358,10 +370,14 @@ export const cardMarketRouter = createTRPCRouter({
           // Invalidate seller
           globalCache.delete(`user_vault_stats:${ctx.user.id}`),
           globalCache.delete(`user_vault_balance:${ctx.user.id}`),
-          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          ...(ctx.auth?.userId
+            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+            : []),
           // Invalidate current bidder if refunded
           ...(currentBidderId ? [globalCache.delete(`user_vault_balance:${currentBidderId}`)] : []),
-          ...(currentBidderClerkId ? [globalCache.delete(`user_vault_balance:${currentBidderClerkId}`)] : []),
+          ...(currentBidderClerkId
+            ? [globalCache.delete(`user_vault_balance:${currentBidderClerkId}`)]
+            : []),
         ]);
 
         return {
@@ -1052,7 +1068,11 @@ export const cardMarketRouter = createTRPCRouter({
             balanceAfter: updatedVault.credits,
             type: "REFUND",
             source: "CARD_DUST",
-            metadata: { cardId: ownership.cardId, serialNumber: ownership.serialNumber, marketValue },
+            metadata: {
+              cardId: ownership.cardId,
+              serialNumber: ownership.serialNumber,
+              marketValue,
+            },
           },
         });
       });
@@ -1158,7 +1178,10 @@ export const cardMarketRouter = createTRPCRouter({
     .input(
       z.object({
         ownershipId: z.string().min(1, "Ownership ID is required"),
-        inscription: z.string().min(1, "Inscription cannot be empty").max(60, "Inscription must be 60 characters or less"),
+        inscription: z
+          .string()
+          .min(1, "Inscription cannot be empty")
+          .max(60, "Inscription must be 60 characters or less"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1213,11 +1236,7 @@ export const cardMarketRouter = createTRPCRouter({
 
       // Fetch user names for all unique user IDs involved
       const userIds = Array.from(
-        new Set(
-          events
-            .flatMap((e: any) => [e.fromUserId, e.toUserId])
-            .filter(Boolean)
-        )
+        new Set(events.flatMap((e: any) => [e.fromUserId, e.toUserId]).filter(Boolean))
       ) as string[];
 
       const users = await ctx.db.user.findMany({
@@ -1230,16 +1249,11 @@ export const cardMarketRouter = createTRPCRouter({
         },
       });
 
-      const userMap = new Map(
-        users.map((u) => [
-          u.id,
-          u.country?.name || "System/Unknown",
-        ])
-      );
+      const userMap = new Map(users.map((u) => [u.id, u.country?.name || "System/Unknown"]));
 
       return events.map((event: any) => ({
         ...event,
-        fromUserName: event.fromUserId ? (userMap.get(event.fromUserId) || "Unknown") : null,
+        fromUserName: event.fromUserId ? userMap.get(event.fromUserId) || "Unknown" : null,
         toUserName: userMap.get(event.toUserId) || "Unknown",
       }));
     }),
@@ -1262,12 +1276,50 @@ export const cardMarketRouter = createTRPCRouter({
 
     const now = new Date();
     const demoCards = [
-      { title: "History of Ixnay", rarity: "RARE", cardType: "LORE", marketValue: 250, description: "A comprehensive overview of the history of Ixnay, the primary continent." },
-      { title: "Battle of Corumm", rarity: "EPIC", cardType: "LORE", marketValue: 800, description: "The decisive battle that shaped the geopolitical landscape of the modern era." },
-      { title: "Treaty of Kiro", rarity: "UNCOMMON", cardType: "LORE", marketValue: 120, description: "The landmark treaty establishing diplomatic relations between major powers." },
-      { title: "The Great Migration", rarity: "ULTRA_RARE", cardType: "LORE", marketValue: 1500, description: "A rare account of the mass migration that populated the southern territories." },
-      { title: "Cathedral of Stars", rarity: "LEGENDARY", cardType: "LORE", marketValue: 5000, description: "The legendary cathedral, said to hold the secrets of the ancient world." },
-      { title: "Port of Alkharsis", rarity: "COMMON", cardType: "LORE", marketValue: 50, description: "The bustling trade port that connects the eastern and western regions." },
+      {
+        title: "History of Ixnay",
+        rarity: "RARE",
+        cardType: "LORE",
+        marketValue: 250,
+        description: "A comprehensive overview of the history of Ixnay, the primary continent.",
+      },
+      {
+        title: "Battle of Corumm",
+        rarity: "EPIC",
+        cardType: "LORE",
+        marketValue: 800,
+        description:
+          "The decisive battle that shaped the geopolitical landscape of the modern era.",
+      },
+      {
+        title: "Treaty of Kiro",
+        rarity: "UNCOMMON",
+        cardType: "LORE",
+        marketValue: 120,
+        description: "The landmark treaty establishing diplomatic relations between major powers.",
+      },
+      {
+        title: "The Great Migration",
+        rarity: "ULTRA_RARE",
+        cardType: "LORE",
+        marketValue: 1500,
+        description:
+          "A rare account of the mass migration that populated the southern territories.",
+      },
+      {
+        title: "Cathedral of Stars",
+        rarity: "LEGENDARY",
+        cardType: "LORE",
+        marketValue: 5000,
+        description: "The legendary cathedral, said to hold the secrets of the ancient world.",
+      },
+      {
+        title: "Port of Alkharsis",
+        rarity: "COMMON",
+        cardType: "LORE",
+        marketValue: 50,
+        description: "The bustling trade port that connects the eastern and western regions.",
+      },
     ];
 
     const createdAuctions = [];

@@ -128,7 +128,6 @@ export function useAtomicEconomicBuilder({
     setSelectedComponents(initialSelection);
   }, [initialSelection]);
 
-
   // ============================================================================
   // Computed Values (Memoized)
   // ============================================================================

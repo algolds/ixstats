@@ -253,15 +253,15 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
     return (
       <div key={archetype.id} className="group">
-        <Card className="hover:border-primary/30 border bg-card/50 transition-all duration-300 hover:scale-[1.01] hover:bg-accent/50">
+        <Card className="hover:border-primary/30 bg-card/50 hover:bg-accent/50 border transition-all duration-300 hover:scale-[1.01]">
           {/* Compact Header */}
           <CardHeader className="px-4 pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="shrink-0 rounded-lg border bg-muted/50 p-2 transition-colors">
+              <div className="bg-muted/50 shrink-0 rounded-lg border p-2 transition-colors">
                 <IconComponent className={cn("h-4 w-4", colors.text)} />
               </div>
               <div className="min-w-0 flex-1">
-                <CardTitle className="mb-1 text-sm leading-tight font-bold text-foreground">
+                <CardTitle className="text-foreground mb-1 text-sm leading-tight font-bold">
                   {archetype.name}
                 </CardTitle>
                 <div className="text-muted-foreground flex items-center gap-2 text-xs">

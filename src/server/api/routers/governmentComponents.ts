@@ -424,10 +424,14 @@ export const governmentComponentsRouter = createTRPCRouter({
   getSynergies: publicProcedure.input(getSynergiesSchema).query(async ({ ctx, input }) => {
     try {
       await ensureSeeded(ctx.db);
-      
-      const component = await ctx.db.governmentComponentData.findUnique({
-        where: { componentType: input.componentType },
-      }).then(res => res ? transformDatabaseComponent(res) : getFallbackComponentByType(input.componentType));
+
+      const component = await ctx.db.governmentComponentData
+        .findUnique({
+          where: { componentType: input.componentType },
+        })
+        .then((res) =>
+          res ? transformDatabaseComponent(res) : getFallbackComponentByType(input.componentType)
+        );
 
       if (!component) {
         throw new TRPCError({

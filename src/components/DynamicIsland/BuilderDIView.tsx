@@ -74,10 +74,15 @@ function BuilderProgressView({ filter, context, onClose }: BuilderProgressViewPr
   const { builderState, clearDraft, isAutoSaving, lastSaved } = context;
   const currentStep = builderState.step;
 
-  const activeTemplate = filter.selectedTemplate || builderState.selectedCountry || (builderState.economicInputs?.countryName ? {
-    name: builderState.economicInputs.countryName,
-    flag: builderState.economicInputs.flagUrl || "",
-  } : null);
+  const activeTemplate =
+    filter.selectedTemplate ||
+    builderState.selectedCountry ||
+    (builderState.economicInputs?.countryName
+      ? {
+          name: builderState.economicInputs.countryName,
+          flag: builderState.economicInputs.flagUrl || "",
+        }
+      : null);
 
   const countryName =
     builderState.economicInputs?.countryName || activeTemplate?.name || "New Nation";
@@ -220,7 +225,7 @@ function BuilderProgressView({ filter, context, onClose }: BuilderProgressViewPr
               {isAutoSaving
                 ? "Saving..."
                 : lastSaved
-                  ? `Saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                  ? `Saved ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
                   : "Auto-save enabled"}
             </span>
           </div>
@@ -355,10 +360,15 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const activeTemplate = filter.selectedTemplate || context.builderState?.selectedCountry || (context.builderState?.economicInputs?.countryName ? {
-    name: context.builderState.economicInputs.countryName,
-    flag: context.builderState.economicInputs.flagUrl || "",
-  } : null);
+  const activeTemplate =
+    filter.selectedTemplate ||
+    context.builderState?.selectedCountry ||
+    (context.builderState?.economicInputs?.countryName
+      ? {
+          name: context.builderState.economicInputs.countryName,
+          flag: context.builderState.economicInputs.flagUrl || "",
+        }
+      : null);
 
   const rawFlagUrl =
     activeTemplate?.flag ||
@@ -415,9 +425,9 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
     <div className="relative flex w-full flex-col p-4 text-left text-zinc-100 select-none sm:p-5">
       {/* Background Refracted Flag Watermark */}
       {flagUrl && (
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none rounded-[inherit]">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] select-none">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] dark:opacity-[0.06] saturate-[85%] dark:saturate-[50%] blur-[6px] transition-all duration-700"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] blur-[6px] saturate-[85%] transition-all duration-700 dark:opacity-[0.06] dark:saturate-[50%]"
             style={{ backgroundImage: `url(${flagUrl})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 mix-blend-overlay" />
@@ -425,7 +435,7 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
       )}
 
       {/* Top Header */}
-      <div className="mb-2 flex items-center justify-end pb-1 relative z-10">
+      <div className="relative z-10 mb-2 flex items-center justify-end pb-1">
         <div className="flex items-center gap-1.5">
           {onSwitchMode && (
             <>

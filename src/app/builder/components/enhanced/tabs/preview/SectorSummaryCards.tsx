@@ -42,7 +42,13 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Sector Composition */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
@@ -59,7 +65,13 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       </GlassCard>
 
       {/* Employment Types */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
@@ -77,7 +89,13 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       </GlassCard>
 
       {/* Age Distribution */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Users className="h-5 w-5" />

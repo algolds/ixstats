@@ -299,7 +299,8 @@ export const RandomFlagGrid: React.FC<RandomFlagGridProps> = ({
                   transition: { duration: 0.2 },
                 }}
               >
-                <UnifiedCountryFlag showTooltip={false}
+                <UnifiedCountryFlag
+                  showTooltip={false}
                   countryName={item.country.name}
                   className="h-full w-full object-cover"
                   showPlaceholder={true}

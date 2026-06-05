@@ -25,12 +25,14 @@ export function computeSpecialStats(card: {
     const economy = nsData.economy ?? "";
     const govType = attrs.governmentType ?? nsData.governmentType ?? "";
 
-    const isAuthoritarian = /authoritarian|dictatorship|totalitarian|autocracy|tyranny|despotism/i.test(govType);
+    const isAuthoritarian =
+      /authoritarian|dictatorship|totalitarian|autocracy|tyranny|despotism/i.test(govType);
     const isDemocratic = /democracy|republic|federation|commonwealth/i.test(govType);
 
     return {
       force: pop > 5e9 ? "High" : pop > 1e9 ? "Medium" : "Low",
-      wealth: economy.includes("frightening") || economy.includes("all-consuming") ? "High" : "Medium",
+      wealth:
+        economy.includes("frightening") || economy.includes("all-consuming") ? "High" : "Medium",
       influence: isAuthoritarian ? "High" : isDemocratic ? "Medium" : "Low",
       legacy: pop > 5e9 ? "Legendary" : pop > 1e9 ? "Significant" : "Growing",
     };

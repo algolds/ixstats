@@ -423,7 +423,8 @@ export function GlassActivityMarquee({
                   {activity.country !== "System" && (
                     <div className="flex items-center gap-1">
                       <div className="h-3 w-4 overflow-hidden rounded-sm border border-white/20">
-                        <UnifiedCountryFlag showTooltip={false}
+                        <UnifiedCountryFlag
+                          showTooltip={false}
                           countryName={activity.country}
                           className="h-full w-full object-cover"
                           showPlaceholder={true}

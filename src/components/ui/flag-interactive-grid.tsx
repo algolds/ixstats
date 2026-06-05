@@ -105,7 +105,8 @@ export function FlagInteractiveGrid({
               >
                 <foreignObject width={width} height={height} className="opacity-60">
                   <div className="h-full w-full overflow-hidden rounded-sm">
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={country.name}
                       className="h-full w-full object-cover"
                       showPlaceholder={true}

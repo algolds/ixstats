@@ -148,7 +148,7 @@ export function BuilderSidebarLayout({
 
             {/* Mobile Right Sidebar Portal Target */}
             {activeSection === "economics" && (
-              <div id="right-sidebar-portal-mobile" className="block lg:hidden mt-4" />
+              <div id="right-sidebar-portal-mobile" className="mt-4 block lg:hidden" />
             )}
 
             {/* Mobile Actions: Reset / Restart */}
@@ -180,7 +180,7 @@ export function BuilderSidebarLayout({
 
         {/* Desktop Right Sidebar */}
         {activeSection === "economics" && (
-          <div className="relative z-30 hidden shrink-0 lg:block lg:pt-8 lg:pl-2 lg:pr-6 w-72">
+          <div className="relative z-30 hidden w-72 shrink-0 lg:block lg:pt-8 lg:pr-6 lg:pl-2">
             <div id="right-sidebar-portal" className="space-y-4" />
           </div>
         )}

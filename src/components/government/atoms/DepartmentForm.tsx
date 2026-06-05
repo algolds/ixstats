@@ -635,10 +635,14 @@ export function DepartmentForm({
                     {(() => {
                       const IconComponent = resolveNamedDepartmentIcon(data.icon);
                       if (IconComponent) {
-                        return <IconComponent className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />;
+                        return (
+                          <IconComponent className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+                        );
                       }
                       if (isImageIconSource(data.icon)) {
-                        return <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />;
+                        return (
+                          <img src={data.icon} alt="Logo" className="h-full w-full object-cover" />
+                        );
                       }
                       return <Info className="h-4 w-4 text-zinc-500" />;
                     })()}

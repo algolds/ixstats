@@ -547,7 +547,7 @@ function DashboardHero({
       {/* Neon Frame Overlay */}
       {neonFrame.enabled && (
         <motion.div
-          className="absolute inset-0 z-20 pointer-events-none rounded-xl"
+          className="pointer-events-none absolute inset-0 z-20 rounded-xl"
           style={{
             border: `2px solid ${neonFrame.color}`,
             boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
@@ -590,7 +590,7 @@ function DashboardHero({
           <div>
             <div className="mb-2 flex items-center gap-2.5">
               <div
-                className="relative rounded-sm overflow-hidden shrink-0 flex items-center justify-center"
+                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm"
                 style={
                   avatarGlow.enabled
                     ? {
@@ -600,16 +600,24 @@ function DashboardHero({
                     : undefined
                 }
               >
-                <UnifiedCountryFlag showTooltip={false} countryName={stats.countryName} size="lg" className="shrink-0" />
+                <UnifiedCountryFlag
+                  showTooltip={false}
+                  countryName={stats.countryName}
+                  size="lg"
+                  className="shrink-0"
+                />
               </div>
               <div>
                 <Link
                   href={createUrl(`/countries/${stats.slug}`)}
-                  className="text-sm font-bold hover:underline flex items-center gap-1.5"
+                  className="flex items-center gap-1.5 text-sm font-bold hover:underline"
                 >
                   <span>{stats.countryName}</span>
                   {chatBadge.enabled && (
-                    <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
+                    <CrownIcon
+                      className="h-3.5 w-3.5 shrink-0"
+                      style={{ color: chatBadge.color }}
+                    />
                   )}
                 </Link>
                 <p className="text-muted-foreground text-[10px]">{stats.leader}</p>

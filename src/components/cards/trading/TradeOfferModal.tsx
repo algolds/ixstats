@@ -177,7 +177,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
     const fairTrade = Math.abs(valueDifference) < yourValue * 0.2;
 
     const handleSubmit = useCallback(() => {
-      if (!searchRecipient || selectedYourCards.length === 0 || selectedTheirCards.length === 0) return;
+      if (!searchRecipient || selectedYourCards.length === 0 || selectedTheirCards.length === 0)
+        return;
       createTrade.mutate({
         recipientId: searchRecipient,
         initiatorCardIds: selectedYourCards,
@@ -186,7 +187,15 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
         recipientCredits: theirCredits,
         message,
       });
-    }, [createTrade, searchRecipient, selectedYourCards, selectedTheirCards, yourCredits, theirCredits, message]);
+    }, [
+      createTrade,
+      searchRecipient,
+      selectedYourCards,
+      selectedTheirCards,
+      yourCredits,
+      theirCredits,
+      message,
+    ]);
 
     const toggleYourCard = (cardId: string) => {
       setSelectedYourCards((prev) =>
@@ -213,7 +222,11 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
     };
 
     const STEPS = ["partner", "cards", "review"] as const;
-    const STEP_LABELS: Record<string, string> = { partner: "Partner", cards: "Cards", review: "Review" };
+    const STEP_LABELS: Record<string, string> = {
+      partner: "Partner",
+      cards: "Cards",
+      review: "Review",
+    };
 
     return (
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -241,9 +254,18 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   <button
                     type="button"
                     onClick={() => {
-                      if (s === "partner") { setStep("partner"); return; }
+                      if (s === "partner") {
+                        setStep("partner");
+                        return;
+                      }
                       if (s === "cards" && !searchRecipient) return;
-                      if (s === "review" && (!searchRecipient || selectedYourCards.length === 0 || selectedTheirCards.length === 0)) return;
+                      if (
+                        s === "review" &&
+                        (!searchRecipient ||
+                          selectedYourCards.length === 0 ||
+                          selectedTheirCards.length === 0)
+                      )
+                        return;
                       setStep(s);
                     }}
                     className={cn(
@@ -255,7 +277,9 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   >
                     {idx + 1}. {STEP_LABELS[s]}
                   </button>
-                  {idx < STEPS.length - 1 && <div className="h-px w-6 bg-slate-200 dark:bg-white/20" />}
+                  {idx < STEPS.length - 1 && (
+                    <div className="h-px w-6 bg-slate-200 dark:bg-white/20" />
+                  )}
                 </React.Fragment>
               ))}
             </div>
@@ -376,23 +400,46 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                   : "hover:bg-slate-50 dark:hover:bg-white/5"
                               )}
                             >
-                              <div className={cn(
-                                "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                                selected
-                                  ? "border-blue-500 bg-blue-500"
-                                  : "border-slate-300 dark:border-white/30"
-                              )}>
+                              <div
+                                className={cn(
+                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                                  selected
+                                    ? "border-blue-500 bg-blue-500"
+                                    : "border-slate-300 dark:border-white/30"
+                                )}
+                              >
                                 {selected && (
-                                  <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  <svg
+                                    className="h-3 w-3 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M5 13l4 4L19 7"
+                                    />
                                   </svg>
                                 )}
                               </div>
                               <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
-                                <Image src={card.artwork} alt="" width={20} height={28} className="h-full w-full object-cover" unoptimized />
+                                <Image
+                                  src={card.artwork}
+                                  alt=""
+                                  width={20}
+                                  height={28}
+                                  className="h-full w-full object-cover"
+                                  unoptimized
+                                />
                               </div>
-                              <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">{card.title}</span>
-                              <span className="shrink-0 font-mono text-[9px] text-slate-400">{card.marketValue.toLocaleString()}</span>
+                              <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
+                                {card.title}
+                              </span>
+                              <span className="shrink-0 font-mono text-[9px] text-slate-400">
+                                {card.marketValue.toLocaleString()}
+                              </span>
                             </button>
                           );
                         })}
@@ -429,23 +476,46 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                     : "hover:bg-slate-50 dark:hover:bg-white/5"
                                 )}
                               >
-                                <div className={cn(
-                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                                  selected
-                                    ? "border-green-500 bg-green-500"
-                                    : "border-slate-300 dark:border-white/30"
-                                )}>
+                                <div
+                                  className={cn(
+                                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                                    selected
+                                      ? "border-green-500 bg-green-500"
+                                      : "border-slate-300 dark:border-white/30"
+                                  )}
+                                >
                                   {selected && (
-                                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    <svg
+                                      className="h-3 w-3 text-white"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={3}
+                                        d="M5 13l4 4L19 7"
+                                      />
                                     </svg>
                                   )}
                                 </div>
                                 <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
-                                  <Image src={card.artwork} alt="" width={20} height={28} className="h-full w-full object-cover" unoptimized />
+                                  <Image
+                                    src={card.artwork}
+                                    alt=""
+                                    width={20}
+                                    height={28}
+                                    className="h-full w-full object-cover"
+                                    unoptimized
+                                  />
                                 </div>
-                                <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">{card.title}</span>
-                                <span className="shrink-0 font-mono text-[9px] text-slate-400">{card.marketValue.toLocaleString()}</span>
+                                <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
+                                  {card.title}
+                                </span>
+                                <span className="shrink-0 font-mono text-[9px] text-slate-400">
+                                  {card.marketValue.toLocaleString()}
+                                </span>
                               </button>
                             );
                           })}
@@ -502,30 +572,43 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                 <div className="mx-auto max-w-lg space-y-4">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
                     <p className="mb-1 text-xs text-slate-500">
-                      Trading with <span className="font-bold text-slate-800 dark:text-white">{selectedPartnerName}</span>
+                      Trading with{" "}
+                      <span className="font-bold text-slate-800 dark:text-white">
+                        {selectedPartnerName}
+                      </span>
                     </p>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-blue-600 dark:text-blue-400">
-                        You give: {yourValue.toLocaleString()} IxC ({selectedYourCards.length} cards)
+                        You give: {yourValue.toLocaleString()} IxC ({selectedYourCards.length}{" "}
+                        cards)
                       </span>
                       <ArrowRightLeft className="h-3 w-3 text-slate-400" />
                       <span className="text-green-600 dark:text-green-400">
-                        You get: {theirValue.toLocaleString()} IxC ({selectedTheirCards.length} cards)
+                        You get: {theirValue.toLocaleString()} IxC ({selectedTheirCards.length}{" "}
+                        cards)
                       </span>
                     </div>
                   </div>
 
-                  <div className={cn(
-                    "flex items-center gap-2 rounded-lg border p-2 text-xs",
-                    fairTrade ? "border-green-500/30" : "border-amber-500/30"
-                  )}>
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg border p-2 text-xs",
+                      fairTrade ? "border-green-500/30" : "border-amber-500/30"
+                    )}
+                  >
                     {fairTrade ? (
-                      <span className="font-bold text-green-600 dark:text-green-400">Fair Trade</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">
+                        Fair Trade
+                      </span>
                     ) : (
                       <>
                         <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
-                        <span className="font-bold text-amber-600 dark:text-amber-400">Unbalanced</span>
-                        <span className="text-slate-400">Diff: {Math.abs(valueDifference).toLocaleString()} IxC</span>
+                        <span className="font-bold text-amber-600 dark:text-amber-400">
+                          Unbalanced
+                        </span>
+                        <span className="text-slate-400">
+                          Diff: {Math.abs(valueDifference).toLocaleString()} IxC
+                        </span>
                       </>
                     )}
                   </div>

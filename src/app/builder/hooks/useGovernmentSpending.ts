@@ -313,10 +313,8 @@ export function useGovernmentSpending({
   // Initialize selected policies from atomic components and current state
   useEffect(() => {
     // Check if dependencies have actually changed
-    const componentsChanged =
-      !isEqual(selectedAtomicComponents, prevSelectedComponentsRef.current);
-    const spendingChanged =
-      !isEqual(inputs.governmentSpending, prevGovernmentSpendingRef.current);
+    const componentsChanged = !isEqual(selectedAtomicComponents, prevSelectedComponentsRef.current);
+    const spendingChanged = !isEqual(inputs.governmentSpending, prevGovernmentSpendingRef.current);
 
     if (!componentsChanged && !spendingChanged) {
       return; // No changes, skip update

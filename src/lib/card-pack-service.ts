@@ -316,7 +316,9 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
         where: { userId },
       });
       if (currentCardsCount + userPack.pack.cardCount > maxCards) {
-        throw new Error(`Your inventory is full. Maximum capacity is ${maxCards} cards. Purchase a Card Capacity Upgrade in the Store to hold more.`);
+        throw new Error(
+          `Your inventory is full. Maximum capacity is ${maxCards} cards. Purchase a Card Capacity Upgrade in the Store to hold more.`
+        );
       }
     }
 
@@ -370,31 +372,37 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       });
       const nextSerial = (maxSerial?.serialNumber || 0) + 1;
 
-        const ownership = await tx.cardOwnership.create({
-          data: {
-            id: `co_${Date.now()}_${userId}_${card.id}`,
-            userId,
-            cardId: card.id,
-            ownerId: userId,
-            serialNumber: nextSerial,
-            level: 1,
-            experience: 0,
-          },
-        });
+      const ownership = await tx.cardOwnership.create({
+        data: {
+          id: `co_${Date.now()}_${userId}_${card.id}`,
+          userId,
+          cardId: card.id,
+          ownerId: userId,
+          serialNumber: nextSerial,
+          level: 1,
+          experience: 0,
+        },
+      });
 
-        // Log provenance
-        const txAny = tx as any;
-        await txAny.cardTransferEvent.create({
-          data: {
-            ownershipId: ownership.id,
-            toUserId: userId,
-            action: "PACK_OPEN",
-          },
-        });
+      // Log provenance
+      const txAny = tx as any;
+      await txAny.cardTransferEvent.create({
+        data: {
+          ownershipId: ownership.id,
+          toUserId: userId,
+          action: "PACK_OPEN",
+        },
+      });
 
-        await grantCardXp(tx as any, ownership.id, 10, "PACK_OPEN", JSON.stringify({ packId: userPack.pack.id, packName: userPack.pack.name }));
+      await grantCardXp(
+        tx as any,
+        ownership.id,
+        10,
+        "PACK_OPEN",
+        JSON.stringify({ packId: userPack.pack.id, packName: userPack.pack.name })
+      );
 
-        cardsWithOwnership.push({ card, ownershipId: ownership.id });
+      cardsWithOwnership.push({ card, ownershipId: ownership.id });
     }
 
     // 7. Mark pack as opened

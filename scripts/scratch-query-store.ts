@@ -6,4 +6,6 @@ async function main() {
   console.log("Vault Store Items:", JSON.stringify(items, null, 2));
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

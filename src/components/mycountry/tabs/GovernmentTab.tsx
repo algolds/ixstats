@@ -61,12 +61,7 @@ export function GovernmentTab({
         icon={Building}
         accentColor="amber"
       />
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="space-y-4"
-      >
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4">
         {/* Editor Navigation Card */}
         <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50/50 to-yellow-50/50 p-3 dark:border-amber-700/40 dark:from-amber-950/20 dark:to-yellow-950/20">
           <div className="flex items-center gap-2">
@@ -101,17 +96,11 @@ export function GovernmentTab({
             <Tabs defaultValue="structure" className="space-y-4">
               <div className="mb-2 flex justify-center">
                 <TabsList className="subtab-pills subtab-pills-government">
-                  <TabsTrigger
-                    value="structure"
-                    className="subtab-pill subtab-pill-government"
-                  >
+                  <TabsTrigger value="structure" className="subtab-pill subtab-pill-government">
                     <Crown className="subtab-icon h-4 w-4" />
                     <span>Structure</span>
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="spending"
-                    className="subtab-pill subtab-pill-government"
-                  >
+                  <TabsTrigger value="spending" className="subtab-pill subtab-pill-government">
                     <DollarSign className="subtab-icon h-4 w-4" />
                     <span>Budget</span>
                   </TabsTrigger>
@@ -154,8 +143,7 @@ export function GovernmentTab({
                                 title: "Head of State",
                                 value: governmentStructure.headOfState,
                                 icon: Crown,
-                                description:
-                                  governmentStructure.governmentType || "State leader",
+                                description: governmentStructure.governmentType || "State leader",
                                 tooltip:
                                   "The chief public representative and ceremonial leader of the nation.",
                               },
@@ -334,13 +322,14 @@ export function GovernmentTab({
                         {
                           id: "spending-capita",
                           title: "Per Capita",
-                          value: (
-                            economyData?.spending?.spendingPerCapita ?? 0
-                          ).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            maximumFractionDigits: 0,
-                          }),
+                          value: (economyData?.spending?.spendingPerCapita ?? 0).toLocaleString(
+                            "en-US",
+                            {
+                              style: "currency",
+                              currency: "USD",
+                              maximumFractionDigits: 0,
+                            }
+                          ),
                           icon: Users,
                           description: "Spending per person",
                           onClick: () => openMetricModal("government-spending", country.id),
@@ -429,9 +418,7 @@ export function GovernmentTab({
                           )
                           .slice(0, 5)
                           .map((cat: any, idx: number) => ({
-                            id:
-                              cat.category?.toLowerCase().replace(/\s+/g, "-") ??
-                              `cat-${idx}`,
+                            id: cat.category?.toLowerCase().replace(/\s+/g, "-") ?? `cat-${idx}`,
                             name: cat.category ?? "Other",
                             value: cat.amount ?? 0,
                             percentage: cat.gdpPercent ?? 0,
@@ -519,14 +506,15 @@ export function GovernmentTab({
                         {
                           id: "total-revenue",
                           title: "Total Revenue",
-                          value: (
-                            economyData?.fiscal?.governmentRevenueTotal ?? 0
-                          ).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          }),
+                          value: (economyData?.fiscal?.governmentRevenueTotal ?? 0).toLocaleString(
+                            "en-US",
+                            {
+                              style: "currency",
+                              currency: "USD",
+                              notation: "compact",
+                              maximumFractionDigits: 1,
+                            }
+                          ),
                           icon: DollarSign,
                           description: "Annual government revenue",
                           tooltip:
@@ -544,13 +532,14 @@ export function GovernmentTab({
                         {
                           id: "tax-capita",
                           title: "Tax per Capita",
-                          value: (
-                            economyData?.fiscal?.taxRevenuePerCapita ?? 0
-                          ).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            maximumFractionDigits: 0,
-                          }),
+                          value: (economyData?.fiscal?.taxRevenuePerCapita ?? 0).toLocaleString(
+                            "en-US",
+                            {
+                              style: "currency",
+                              currency: "USD",
+                              maximumFractionDigits: 0,
+                            }
+                          ),
                           icon: Users,
                           description: "Average tax per person",
                           tooltip:
@@ -559,23 +548,22 @@ export function GovernmentTab({
                         {
                           id: "budget-balance",
                           title: "Budget Balance",
-                          value: (
-                            economyData?.fiscal?.budgetDeficitSurplus ?? 0
-                          ).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          }),
+                          value: (economyData?.fiscal?.budgetDeficitSurplus ?? 0).toLocaleString(
+                            "en-US",
+                            {
+                              style: "currency",
+                              currency: "USD",
+                              notation: "compact",
+                              maximumFractionDigits: 1,
+                            }
+                          ),
                           icon:
                             (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
                               ? TrendingUp
                               : TrendingDown,
                           trend: {
                             direction:
-                              (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
-                                ? "up"
-                                : "down",
+                              (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "up" : "down",
                           },
                           description:
                             (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
@@ -603,9 +591,7 @@ export function GovernmentTab({
                           icon: TrendingUp,
                           trend: {
                             direction:
-                              (economyData?.fiscal?.totalDebtGDPRatio ?? 0) < 60
-                                ? "up"
-                                : "down",
+                              (economyData?.fiscal?.totalDebtGDPRatio ?? 0) < 60 ? "up" : "down",
                           },
                           description: "Public debt ratio",
                           onClick: () => openMetricModal("debt", country.id),
@@ -635,10 +621,11 @@ export function GovernmentTab({
                         {
                           id: "debt-capita",
                           title: "Debt per Capita",
-                          value: (economyData?.fiscal?.debtPerCapita ?? 0).toLocaleString(
-                            "en-US",
-                            { style: "currency", currency: "USD", maximumFractionDigits: 0 }
-                          ),
+                          value: (economyData?.fiscal?.debtPerCapita ?? 0).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            maximumFractionDigits: 0,
+                          }),
                           icon: Users,
                           description: "Public debt per person",
                           onClick: () => openMetricModal("debt", country.id),

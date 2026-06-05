@@ -24,7 +24,13 @@ export function EffectivenessPanel({
   return (
     <>
       {/* Economic Health Card */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
@@ -102,7 +108,13 @@ export function EffectivenessPanel({
       </GlassCard>
 
       {/* Selected Components Card */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Zap className="h-5 w-5" />

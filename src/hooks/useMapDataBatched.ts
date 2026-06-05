@@ -103,7 +103,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
   );
 
   const { data: decorativeData, isLoading: _decorativeLoading } = api.geoCore.getWorldMap.useQuery(
-    { layers: decorativeLayersToFetch, zoom: zoomParam },
+    { layers: decorativeLayersToFetch }, // Exclude zoom parameter to keep cache key stable and prevent re-fetching on zoom
     {
       ...MAP_QUERY_OPTIONS,
       // Don't block the map from rendering — load in background

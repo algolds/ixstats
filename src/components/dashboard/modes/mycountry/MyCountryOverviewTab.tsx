@@ -67,8 +67,7 @@ export function MyCountryOverviewTab({
                     userCountry.calculatedStats?.populationGrowthRate ||
                     0,
                   populationDensity:
-                    userCountry.populationDensity ||
-                    userCountry.calculatedStats?.populationDensity,
+                    userCountry.populationDensity || userCountry.calculatedStats?.populationDensity,
                   continent: userCountry.continent,
                   region: userCountry.region,
                   governmentType: userCountry.governmentType,

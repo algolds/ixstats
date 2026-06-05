@@ -340,7 +340,6 @@ export function EconomyBuilderPage({
     return legacyMap[raw] || "components";
   }, [activeTab]);
 
-
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
@@ -424,7 +423,7 @@ export function EconomyBuilderPage({
   // temporary disable consistent across builder components.
   const taxSystemData = TAX_SYSTEM_TEMP_DISABLED
     ? null
-    : builderContext?.builderState?.taxSystemData ?? null;
+    : (builderContext?.builderState?.taxSystemData ?? null);
 
   // Track and sync tax state changes back to builder context.
   // When temporarily disabled this becomes a no-op to avoid accidental writes.
@@ -907,45 +906,44 @@ export function EconomyBuilderPage({
           {currentTab === "components" && (
             <div className="space-y-6">
               <ComponentErrorBoundary context="Components Tab">
-              <GlassCard
-                depth="base"
-                theme="emerald"
-                className="border-emerald-500/20"
-                texture="chevron"
-                textureOpacity={0.04}
-              >
-                <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Zap className="h-5 w-5 text-emerald-400" />
-                    Economic Components
-                    <button
-                      onClick={() => setWelcomeOpen(true)}
-                      className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-emerald-400"
-                      title="Open Help Guide"
-                      type="button"
-                    >
-                      <HelpCircle className="h-4 w-4" />
-                    </button>
-                  </h3>
-                  <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
-                </div>
-                <GlassCardContent className="space-y-6 p-6">
-                  <AtomicEconomicComponentSelector
-                    selectedComponents={selectedComponents}
-                    onComponentChange={handleComponentChange}
-                    maxComponents={12}
-                    governmentComponents={governmentComponents}
-                    hideSelectedList={true}
-                  />
+                <GlassCard
+                  depth="base"
+                  theme="emerald"
+                  className="border-emerald-500/20"
+                  texture="chevron"
+                  textureOpacity={0.04}
+                >
+                  <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                      <Zap className="h-5 w-5 text-emerald-400" />
+                      Economic Components
+                      <button
+                        onClick={() => setWelcomeOpen(true)}
+                        className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-emerald-400"
+                        title="Open Help Guide"
+                        type="button"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                      </button>
+                    </h3>
+                    <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
+                  </div>
+                  <GlassCardContent className="space-y-6 p-6">
+                    <AtomicEconomicComponentSelector
+                      selectedComponents={selectedComponents}
+                      onComponentChange={handleComponentChange}
+                      maxComponents={12}
+                      governmentComponents={governmentComponents}
+                      hideSelectedList={true}
+                    />
                   </GlassCardContent>
-              </GlassCard>
+                </GlassCard>
               </ComponentErrorBoundary>
             </div>
           )}
 
           {currentTab === "sectors" && (
             <div className="space-y-6">
-          
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -975,7 +973,6 @@ export function EconomyBuilderPage({
 
           {currentTab === "labor" && (
             <div className="space-y-6">
-          
               <GlassCard
                 depth="base"
                 theme="emerald"
@@ -1066,9 +1063,9 @@ export function EconomyBuilderPage({
                   </div>
                   <GlassCardContent className="p-6">
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      The tax system builder is temporarily disabled for maintenance.
-                      Changes to tax configuration are currently suspended. To re-enable the
-                      full tax builder, set <span className="font-mono">TAX_SYSTEM_TEMP_DISABLED</span> to
+                      The tax system builder is temporarily disabled for maintenance. Changes to tax
+                      configuration are currently suspended. To re-enable the full tax builder, set{" "}
+                      <span className="font-mono">TAX_SYSTEM_TEMP_DISABLED</span> to
                       <span className="font-mono"> false</span> in
                       <span className="font-mono"> src/app/builder/constants.ts</span>.
                     </p>

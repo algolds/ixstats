@@ -536,7 +536,7 @@ const DynamicIslandContent = ({
       <motion.div
         layout
         layoutId="dynamic-island-glow"
-        className="pointer-events-none absolute inset-0 force-gpu"
+        className="force-gpu pointer-events-none absolute inset-0"
         animate={{
           borderRadius: currentSize.borderRadius,
           opacity: isCompactSize(state.size) ? 0.6 : 0.15,
@@ -562,7 +562,7 @@ const DynamicIslandContent = ({
         id={id}
         layout
         layoutId="dynamic-island-main"
-        className="focus-within:bg-accent/80 relative mx-auto items-center justify-center border border-white/20 text-center transition-colors duration-200 force-gpu shadow-2xl shadow-black/40 dark:border-white/10"
+        className="focus-within:bg-accent/80 force-gpu relative mx-auto items-center justify-center border border-white/20 text-center shadow-2xl shadow-black/40 transition-colors duration-200 dark:border-white/10"
         initial={{
           width: dimensions.width,
           height: targetHeight,

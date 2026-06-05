@@ -381,7 +381,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               >
                 <span className="font-medium text-white/80">Est. Value</span>
                 {hideValue ? (
-                  <span className="text-white/30 italic text-[10px]">Hidden</span>
+                  <span className="text-[10px] text-white/30 italic">Hidden</span>
                 ) : (
                   <motion.span
                     className={cn("font-black", rarityConfig.color)}

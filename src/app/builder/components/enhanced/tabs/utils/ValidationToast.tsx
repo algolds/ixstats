@@ -76,7 +76,8 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
   } else {
     cardTheme = "emerald";
     statusTitle = "System Balanced";
-    statusDescription = "All parameters are within normal operating bounds. Contributions and distributions are fully stable.";
+    statusDescription =
+      "All parameters are within normal operating bounds. Contributions and distributions are fully stable.";
     statusColor = "text-emerald-400";
     StatusIcon = CheckCircle2;
   }
@@ -91,34 +92,34 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
         textureOpacity={0.05}
       >
         {/* Header */}
-        <div className="border-border/40 border-b bg-white/[0.02] px-4 py-3 flex items-center gap-2.5">
+        <div className="border-border/40 flex items-center gap-2.5 border-b bg-white/[0.02] px-4 py-3">
           <StatusIcon className={cn("h-4.5 w-4.5 shrink-0", statusColor)} />
           <div className="min-w-0 flex-1">
-            <h4 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">
+            <h4 className="text-xs font-bold tracking-wider text-zinc-100 uppercase">
               {statusTitle}
             </h4>
           </div>
           {totalCount > 0 && (
-            <span className={cn(
-              "flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white",
-              errorCount > 0 ? "bg-red-500" : "bg-amber-500"
-            )}>
+            <span
+              className={cn(
+                "flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white",
+                errorCount > 0 ? "bg-red-500" : "bg-amber-500"
+              )}
+            >
               {totalCount}
             </span>
           )}
         </div>
 
-        <GlassCardContent className="p-4 space-y-3">
-          <p className="text-[11px] leading-relaxed text-zinc-400">
-            {statusDescription}
-          </p>
+        <GlassCardContent className="space-y-3 p-4">
+          <p className="text-[11px] leading-relaxed text-zinc-400">{statusDescription}</p>
 
           {/* List of issues */}
           {totalCount > 0 && (
-            <div className="space-y-3 pt-2 border-t border-zinc-800/50 max-h-[350px] overflow-y-auto pr-1">
+            <div className="max-h-[350px] space-y-3 overflow-y-auto border-t border-zinc-800/50 pt-2 pr-1">
               {errorCount > 0 && (
                 <div className="space-y-1">
-                  <div className="text-[9px] font-bold text-red-500/85 uppercase tracking-wider mb-1">
+                  <div className="mb-1 text-[9px] font-bold tracking-wider text-red-500/85 uppercase">
                     Errors ({errorCount})
                   </div>
                   {errorMessages.map((msg, idx) => (
@@ -127,7 +128,7 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
                       onClick={() => handleMessageClick(msg)}
                       className={cn(
                         "flex w-full items-start gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
-                        "bg-red-500/10 border border-red-500/15 text-red-400 hover:bg-red-500/15 cursor-pointer"
+                        "cursor-pointer border border-red-500/15 bg-red-500/10 text-red-400 hover:bg-red-500/15"
                       )}
                     >
                       <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -139,7 +140,7 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
 
               {warningCount > 0 && (
                 <div className="space-y-1 pt-2">
-                  <div className="text-[9px] font-bold text-amber-500/85 uppercase tracking-wider mb-1">
+                  <div className="mb-1 text-[9px] font-bold tracking-wider text-amber-500/85 uppercase">
                     Warnings ({warningCount})
                   </div>
                   {warningMessages.map((msg, idx) => (
@@ -148,7 +149,7 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
                       onClick={() => handleMessageClick(msg)}
                       className={cn(
                         "flex w-full items-start gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
-                        "bg-amber-500/10 border border-amber-500/15 text-amber-400 hover:bg-amber-500/15 cursor-pointer"
+                        "cursor-pointer border border-amber-500/15 bg-amber-500/10 text-amber-400 hover:bg-amber-500/15"
                       )}
                     >
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -160,7 +161,7 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
 
               {infoCount > 0 && (
                 <div className="space-y-1 pt-2">
-                  <div className="text-[9px] font-bold text-blue-500/85 uppercase tracking-wider mb-1">
+                  <div className="mb-1 text-[9px] font-bold tracking-wider text-blue-500/85 uppercase">
                     Information ({infoCount})
                   </div>
                   {infoMessages.map((msg, idx) => (
@@ -169,7 +170,7 @@ export function ValidationToast({ messages, className }: ValidationToastProps) {
                       onClick={() => handleMessageClick(msg)}
                       className={cn(
                         "flex w-full items-start gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
-                        "bg-blue-500/10 border border-blue-500/15 text-blue-400 hover:bg-blue-500/15 cursor-pointer"
+                        "cursor-pointer border border-blue-500/15 bg-blue-500/10 text-blue-400 hover:bg-blue-500/15"
                       )}
                     >
                       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />

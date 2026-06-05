@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
-const SCHEMA_DIR = '/ixwiki/public/projects/ixstats/prisma/schema';
+const SCHEMA_DIR = "/ixwiki/public/projects/ixstats/prisma/schema";
 
 interface ModelInfo {
   name: string;
@@ -13,17 +13,17 @@ interface ModelInfo {
 }
 
 function parsePrismaFiles(): ModelInfo[] {
-  const files = fs.readdirSync(SCHEMA_DIR).filter(f => f.endsWith('.prisma'));
+  const files = fs.readdirSync(SCHEMA_DIR).filter((f) => f.endsWith(".prisma"));
   const models: ModelInfo[] = [];
 
   for (const file of files) {
-    const content = fs.readFileSync(path.join(SCHEMA_DIR, file), 'utf-8');
-    const lines = content.split('\n');
+    const content = fs.readFileSync(path.join(SCHEMA_DIR, file), "utf-8");
+    const lines = content.split("\n");
     let currentModel: ModelInfo | null = null;
 
     for (let line of lines) {
       line = line.trim();
-      if (line.startsWith('model ')) {
+      if (line.startsWith("model ")) {
         const modelName = line.split(/\s+/)[1];
         currentModel = {
           name: modelName,
@@ -31,55 +31,55 @@ function parsePrismaFiles(): ModelInfo[] {
           relations: [],
           indexes: [],
           uniques: [],
-          ids: []
+          ids: [],
         };
-      } else if (line === '}') {
+      } else if (line === "}") {
         if (currentModel) {
           models.push(currentModel);
           currentModel = null;
         }
       } else if (currentModel) {
         // Parse block level attributes
-        if (line.startsWith('@@index')) {
+        if (line.startsWith("@@index")) {
           const match = line.match(/@@index\(\[([^\]]+)\]/);
           if (match) {
-            const fields = match[1].split(',').map(f => f.trim().replace(/:\s*\w+/, ''));
+            const fields = match[1].split(",").map((f) => f.trim().replace(/:\s*\w+/, ""));
             currentModel.indexes.push(fields);
           }
-        } else if (line.startsWith('@@unique')) {
+        } else if (line.startsWith("@@unique")) {
           const match = line.match(/@@unique\(\[([^\]]+)\]/);
           if (match) {
-            const fields = match[1].split(',').map(f => f.trim());
+            const fields = match[1].split(",").map((f) => f.trim());
             currentModel.uniques.push(fields);
           }
-        } else if (line.startsWith('@@id')) {
+        } else if (line.startsWith("@@id")) {
           const match = line.match(/@@id\(\[([^\]]+)\]/);
           if (match) {
-            const fields = match[1].split(',').map(f => f.trim());
+            const fields = match[1].split(",").map((f) => f.trim());
             currentModel.ids.push(fields);
           }
-        } else if (line && !line.startsWith('//')) {
+        } else if (line && !line.startsWith("//")) {
           // Parse field
           const parts = line.split(/\s+/);
           if (parts.length >= 2) {
             const fieldName = parts[0];
             const fieldType = parts[1];
-            const isId = line.includes('@id');
-            const isUnique = line.includes('@unique');
-            
+            const isId = line.includes("@id");
+            const isUnique = line.includes("@unique");
+
             currentModel.fields.push({
               name: fieldName,
               type: fieldType,
               isId,
-              isUnique
+              isUnique,
             });
 
-            if (line.includes('@relation')) {
+            if (line.includes("@relation")) {
               const relationMatch = line.match(/fields:\s*\[([^\]]+)\]/);
               const refMatch = line.match(/references:\s*\[([^\]]+)\]/);
               if (relationMatch && refMatch) {
-                const fields = relationMatch[1].split(',').map(f => f.trim());
-                const references = refMatch[1].split(',').map(f => f.trim());
+                const fields = relationMatch[1].split(",").map((f) => f.trim());
+                const references = refMatch[1].split(",").map((f) => f.trim());
                 currentModel.relations.push({ fields, references });
               }
             }
@@ -93,12 +93,12 @@ function parsePrismaFiles(): ModelInfo[] {
 }
 
 function auditModels(models: ModelInfo[]) {
-  console.log('=== Prisma Foreign Key Index Audit ===\n');
+  console.log("=== Prisma Foreign Key Index Audit ===\n");
   let missingIndexCount = 0;
 
   for (const model of models) {
     const modelMissing: string[] = [];
-    
+
     for (const relation of model.relations) {
       const relFields = relation.fields;
       if (relFields.length === 0) continue;
@@ -109,7 +109,7 @@ function auditModels(models: ModelInfo[]) {
       // 1. Check if single relation field is marked @id or @unique in field definition
       if (relFields.length === 1) {
         const fieldName = relFields[0];
-        const field = model.fields.find(f => f.name === fieldName);
+        const field = model.fields.find((f) => f.name === fieldName);
         if (field && (field.isId || field.isUnique)) {
           isCovered = true;
         }
@@ -155,7 +155,9 @@ function auditModels(models: ModelInfo[]) {
       }
 
       if (!isCovered) {
-        modelMissing.push(`[${relFields.join(', ')}] referencing [${relation.references.join(', ')}]`);
+        modelMissing.push(
+          `[${relFields.join(", ")}] referencing [${relation.references.join(", ")}]`
+        );
         missingIndexCount++;
       }
     }

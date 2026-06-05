@@ -82,12 +82,7 @@ export function EconomyTab({
           </Button>
         </Link>
       </div>
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="space-y-4"
-      >
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4">
         {/* Economic Summary - Core Metrics */}
         <motion.div variants={staggerItem}>
           <MetricCardGrid
@@ -154,9 +149,7 @@ export function EconomyTab({
                 icon: Users,
                 trend: {
                   direction:
-                    smartNormalizeGrowthRate(country.populationGrowthRate, 0) > 0
-                      ? "up"
-                      : "stable",
+                    smartNormalizeGrowthRate(country.populationGrowthRate, 0) > 0 ? "up" : "stable",
                   value: smartNormalizeGrowthRate(country.populationGrowthRate, 0),
                 },
                 description: "Total population",
@@ -212,27 +205,19 @@ export function EconomyTab({
               {
                 id: "budget-balance",
                 title: "Budget Balance",
-                value: (economyData?.fiscal?.budgetDeficitSurplus ?? 0).toLocaleString(
-                  "en-US",
-                  {
-                    style: "currency",
-                    currency: "USD",
-                    notation: "compact",
-                    maximumFractionDigits: 1,
-                  }
-                ),
+                value: (economyData?.fiscal?.budgetDeficitSurplus ?? 0).toLocaleString("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                  notation: "compact",
+                  maximumFractionDigits: 1,
+                }),
                 icon:
-                  (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
-                    ? TrendingUp
-                    : TrendingDown,
+                  (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? TrendingUp : TrendingDown,
                 trend: {
-                  direction:
-                    (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "up" : "down",
+                  direction: (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "up" : "down",
                 },
                 description:
-                  (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
-                    ? "Surplus"
-                    : "Deficit",
+                  (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit",
                 tooltip:
                   "Difference between government revenue and spending. Positive = surplus, negative = deficit.",
                 onClick: () => openMetricModal("government-spending", country.id),
@@ -282,10 +267,7 @@ export function EconomyTab({
                       <Globe className="subtab-icon h-4 w-4" />
                       <span>Trade</span>
                     </TabsTrigger>
-                    <TabsTrigger
-                      value="productivity"
-                      className="subtab-pill subtab-pill-economy"
-                    >
+                    <TabsTrigger value="productivity" className="subtab-pill subtab-pill-economy">
                       <Activity className="subtab-icon h-4 w-4" />
                       <span>Productivity</span>
                     </TabsTrigger>
@@ -384,32 +366,33 @@ export function EconomyTab({
                           {
                             id: "exports",
                             title: "Total Exports",
-                            value: (
-                              (economyData?.core.nominalGDP ?? 0) * 0.35
-                            ).toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                              notation: "compact",
-                              maximumFractionDigits: 1,
-                            }),
+                            value: ((economyData?.core.nominalGDP ?? 0) * 0.35).toLocaleString(
+                              "en-US",
+                              {
+                                style: "currency",
+                                currency: "USD",
+                                notation: "compact",
+                                maximumFractionDigits: 1,
+                              }
+                            ),
                             description: "35% of GDP",
                             icon: TrendingUp,
                             trend: { direction: "up", value: 2.3, label: "YoY" },
                             status: "success",
-                            tooltip:
-                              "Total value of goods and services sold to foreign countries.",
+                            tooltip: "Total value of goods and services sold to foreign countries.",
                           },
                           {
                             id: "imports",
                             title: "Total Imports",
-                            value: (
-                              (economyData?.core.nominalGDP ?? 0) * 0.32
-                            ).toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                              notation: "compact",
-                              maximumFractionDigits: 1,
-                            }),
+                            value: ((economyData?.core.nominalGDP ?? 0) * 0.32).toLocaleString(
+                              "en-US",
+                              {
+                                style: "currency",
+                                currency: "USD",
+                                notation: "compact",
+                                maximumFractionDigits: 1,
+                              }
+                            ),
                             description: "32% of GDP",
                             icon: TrendingDown,
                             trend: { direction: "up", value: 1.8, label: "YoY" },
@@ -420,14 +403,15 @@ export function EconomyTab({
                           {
                             id: "balance",
                             title: "Trade Balance",
-                            value: (
-                              (economyData?.core.nominalGDP ?? 0) * 0.03
-                            ).toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                              notation: "compact",
-                              maximumFractionDigits: 1,
-                            }),
+                            value: ((economyData?.core.nominalGDP ?? 0) * 0.03).toLocaleString(
+                              "en-US",
+                              {
+                                style: "currency",
+                                currency: "USD",
+                                notation: "compact",
+                                maximumFractionDigits: 1,
+                              }
+                            ),
                             description: "Surplus +3% GDP",
                             icon: Target,
                             trend: { direction: "up", value: 0.5, label: "YoY" },
@@ -689,13 +673,14 @@ export function EconomyTab({
                           {
                             id: "median-income",
                             title: "Median Income",
-                            value: (
-                              (economyData?.core.gdpPerCapita ?? 0) * 0.75
-                            ).toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                              maximumFractionDigits: 0,
-                            }),
+                            value: ((economyData?.core.gdpPerCapita ?? 0) * 0.75).toLocaleString(
+                              "en-US",
+                              {
+                                style: "currency",
+                                currency: "USD",
+                                maximumFractionDigits: 0,
+                              }
+                            ),
                             description: "Per year",
                             icon: DollarSign,
                             trend: { direction: "up", value: 2.8, label: "YoY" },
@@ -827,14 +812,15 @@ export function EconomyTab({
                           {
                             id: "fdi",
                             title: "FDI Inflow",
-                            value: (
-                              (economyData?.core.nominalGDP ?? 0) * 0.025
-                            ).toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                              notation: "compact",
-                              maximumFractionDigits: 1,
-                            }),
+                            value: ((economyData?.core.nominalGDP ?? 0) * 0.025).toLocaleString(
+                              "en-US",
+                              {
+                                style: "currency",
+                                currency: "USD",
+                                notation: "compact",
+                                maximumFractionDigits: 1,
+                              }
+                            ),
                             description: "2.5% of GDP",
                             icon: Globe,
                             trend: { direction: "up", value: 8.5, label: "YoY" },

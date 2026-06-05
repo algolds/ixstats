@@ -318,6 +318,61 @@ export function extractAllPositions(geometry: Geometry): [number, number][] {
 }
 
 /**
+ * Approximate area in square kilometers using the Shoelace formula
+ * with a latitude-dependent scaling factor.
+ */
+function computeApproxAreaForFeature(geometry: Geometry): number {
+  try {
+    const coords: [number, number][][] = [];
+    if (geometry.type === "Polygon") {
+      coords.push(...(geometry.coordinates as [number, number][][]));
+    } else if (geometry.type === "MultiPolygon") {
+      coords.push(...(geometry.coordinates as [number, number][][][]).flat());
+    } else if (geometry.type === "LineString") {
+      coords.push(geometry.coordinates as [number, number][]);
+    } else if (geometry.type === "MultiLineString") {
+      coords.push(...(geometry.coordinates as [number, number][][]));
+    }
+
+    let totalArea = 0;
+    for (const ring of coords) {
+      if (ring.length < 3) continue;
+      // Close the ring if not closed
+      const closed = [...ring];
+      const first = closed[0];
+      const last = closed[closed.length - 1];
+      if (first[0] !== last[0] || first[1] !== last[1]) {
+        closed.push([...first] as [number, number]);
+      }
+
+      // Compute centroid of the ring to find latitude
+      let sumLng = 0,
+        sumLat = 0;
+      for (const [lng, lat] of closed) {
+        sumLng += lng;
+        sumLat += lat;
+      }
+      const cLng = sumLng / closed.length;
+      const cLat = sumLat / closed.length;
+      const latRad = (cLat * Math.PI) / 180;
+      const kmPerDegLng = 111.32 * Math.cos(latRad);
+      const kmPerDegLat = 110.574;
+
+      let area = 0;
+      for (let i = 0; i < closed.length - 1; i++) {
+        const [x1, y1] = closed[i];
+        const [x2, y2] = closed[i + 1];
+        area += x1 * kmPerDegLng * (y2 * kmPerDegLat) - x2 * kmPerDegLng * (y1 * kmPerDegLat);
+      }
+      totalArea += Math.abs(area) / 2;
+    }
+    return Math.round(totalArea * 100) / 100;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Compute the visual center of a polygon ring (approximate center of its bounding box).
  * Handles antimeridian wrapping by normalizing longitudes.
  */
@@ -379,8 +434,27 @@ async function loadGeoJSONFromFile(layerType: string): Promise<FeatureCollection
   if (layerType === "political") {
     return preparePoliticalFeatures(parsed, DEFAULT_COUNTRY_COLORS);
   }
-  // Split features crossing the antimeridian (lng > 180) into two halves
-  return splitCollectionAtAntimeridian(parsed);
+  const split = splitCollectionAtAntimeridian(parsed);
+  // Ensure progressive layers (rivers, lakes) have _areaSqKm populated on their properties
+  if (layerType === "rivers" || layerType === "lakes") {
+    return {
+      ...split,
+      features: split.features.map((feat) => {
+        let area = feat.properties?.areaSqKm ?? feat.properties?._areaSqKm;
+        if (area === undefined) {
+          area = computeApproxAreaForFeature(feat.geometry);
+        }
+        return {
+          ...feat,
+          properties: {
+            ...feat.properties,
+            _areaSqKm: area,
+          },
+        };
+      }),
+    };
+  }
+  return split;
 }
 
 // ──────────────────────────────────────────────
@@ -651,6 +725,7 @@ async function loadLayerFromDB(
         : {
             _id: layer.featureId,
             _fillColor: fillColor,
+            _areaSqKm: layer.areaSqKm ?? computeApproxAreaForFeature(layer.geometry as Geometry),
           };
 
       return {

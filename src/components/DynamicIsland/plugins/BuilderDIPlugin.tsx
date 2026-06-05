@@ -21,7 +21,10 @@ import { AlertCircle } from "lucide-react";
 function BuilderCompactLabel() {
   return (
     <span className="flex items-center select-none">
-      <PreText className="text-foreground/80 text-xs font-semibold tracking-tight" whiteSpace="nowrap">
+      <PreText
+        className="text-foreground/80 text-xs font-semibold tracking-tight"
+        whiteSpace="nowrap"
+      >
         MyCountry Builder
       </PreText>
     </span>
@@ -50,7 +53,8 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
           countryCode: context.builderState.economicInputs.nationalIdentity?.isoCode || "custom",
           gdp: context.builderState.economicInputs.coreIndicators?.nominalGDP || 0,
           gdpPerCapita: context.builderState.economicInputs.coreIndicators?.gdpPerCapita || 0,
-          unemploymentRate: context.builderState.economicInputs.laborEmployment?.unemploymentRate || 0,
+          unemploymentRate:
+            context.builderState.economicInputs.laborEmployment?.unemploymentRate || 0,
           population: context.builderState.economicInputs.coreIndicators?.totalPopulation || 0,
           continent: context.builderState.economicInputs.geography?.continent || "",
           region: context.builderState.economicInputs.geography?.region || "",
@@ -100,9 +104,7 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
       expandedViews: { builder: BuilderDIView as React.ComponentType<any> },
       accentColor: hasError ? "#ef4444" : "#f59e0b",
       stickyLabel: "Builder",
-      badge: hasError
-        ? { color: "#ef4444", pulse: true }
-        : undefined,
+      badge: hasError ? { color: "#ef4444", pulse: true } : undefined,
       actions: hasError
         ? [
             {

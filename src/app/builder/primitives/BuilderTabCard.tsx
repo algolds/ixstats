@@ -95,7 +95,7 @@ export function BuilderTabCard({
       {!hideTabList && (
         <div
           role="tablist"
-          className="glass-surface glass-refraction relative flex gap-1 rounded-xl border bg-card/50 p-1 shadow-md"
+          className="glass-surface glass-refraction bg-card/50 relative flex gap-1 rounded-xl border p-1 shadow-md"
         >
           {/* Sliding indicator behind active tab */}
           {activeIndex !== -1 && (

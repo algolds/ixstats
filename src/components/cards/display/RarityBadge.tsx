@@ -93,7 +93,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
           fill="currentColor"
           stroke="none"
           className={cn(
-            "fill-current shrink-0",
+            "shrink-0 fill-current",
             size === "small" ? "h-2.5 w-2.5" : size === "medium" ? "h-3 w-3" : "h-3.5 w-3.5"
           )}
         >
@@ -102,7 +102,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
         {/* Label or Season */}
         {season !== undefined ? (
-          <span className="relative z-10 text-white font-bold leading-none tracking-wide">
+          <span className="relative z-10 leading-none font-bold tracking-wide text-white">
             S{season}
           </span>
         ) : (
@@ -112,7 +112,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
         {/* Static shimmer gradient for legendary - no animation */}
         {animated && rarity === CARD_RARITIES.LEGENDARY && (
           <div
-            className="absolute inset-0 rounded-full opacity-30 pointer-events-none"
+            className="pointer-events-none absolute inset-0 rounded-full opacity-30"
             style={{
               background: "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
               backgroundSize: "200% 200%",

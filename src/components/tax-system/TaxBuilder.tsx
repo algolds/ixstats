@@ -89,7 +89,9 @@ export function TaxBuilder({
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [_selectedTaxComponents, _setSelectedTaxComponents] = useState<ComponentType[]>([]);
   const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
-  const [templateToConfirm, setTemplateToConfirm] = useState<(typeof taxSystemTemplates)[number] | null>(null);
+  const [templateToConfirm, setTemplateToConfirm] = useState<
+    (typeof taxSystemTemplates)[number] | null
+  >(null);
 
   // State management hook
   const {
@@ -450,11 +452,7 @@ export function TaxBuilder({
           <div className="bg-background mx-2 flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl">
             <div className="flex items-center justify-between border-b px-6 py-4">
               <h2 className="text-foreground text-lg font-semibold">Tax Calculator</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowCalculator(false)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setShowCalculator(false)}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -504,38 +502,35 @@ export function TaxBuilder({
                     <p className="text-muted-foreground text-sm">{template.description}</p>
                   </CardHeader>
                   <CardContent>
-                      <div className="space-y-3">
-                        <div>
-                          <UIBadge variant="secondary">
-                            {template.progressiveTax ? "Progressive" : "Flat"} Tax
-                          </UIBadge>
-                          <UIBadge variant="outline" className="ml-2">
-                            {template.categories.length} Categories
-                          </UIBadge>
-                        </div>
-                        <div className="text-sm">
-                          <strong>Categories:</strong>
-                          <ul className="text-muted-foreground mt-1">
-                            {template.categories.slice(0, 3).map((cat) => (
-                              <li key={cat.categoryName}>
-                                • {cat.categoryName} ({cat.baseRate}%)
-                              </li>
-                            ))}
-                            {template.categories.length > 3 && (
-                              <li>• +{template.categories.length - 3} more...</li>
-                            )}
-                          </ul>
-                        </div>
-                        <Button
-                          onClick={() => setTemplateToConfirm(template)}
-                          className="w-full"
-                        >
-                          Use This Template
-                        </Button>
+                    <div className="space-y-3">
+                      <div>
+                        <UIBadge variant="secondary">
+                          {template.progressiveTax ? "Progressive" : "Flat"} Tax
+                        </UIBadge>
+                        <UIBadge variant="outline" className="ml-2">
+                          {template.categories.length} Categories
+                        </UIBadge>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <div className="text-sm">
+                        <strong>Categories:</strong>
+                        <ul className="text-muted-foreground mt-1">
+                          {template.categories.slice(0, 3).map((cat) => (
+                            <li key={cat.categoryName}>
+                              • {cat.categoryName} ({cat.baseRate}%)
+                            </li>
+                          ))}
+                          {template.categories.length > 3 && (
+                            <li>• +{template.categories.length - 3} more...</li>
+                          )}
+                        </ul>
+                      </div>
+                      <Button onClick={() => setTemplateToConfirm(template)} className="w-full">
+                        Use This Template
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
@@ -580,10 +575,7 @@ export function TaxBuilder({
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setTemplateToConfirm(null)}
-              >
+              <Button variant="outline" onClick={() => setTemplateToConfirm(null)}>
                 Cancel
               </Button>
               <Button

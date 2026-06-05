@@ -34,6 +34,8 @@ import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
+import { EmojiPicker } from "./EmojiPicker";
+import { GifPicker } from "./GifPicker";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
@@ -60,14 +62,14 @@ interface GlassCanvasComposerProps {
 interface DataVisualization {
   id: string;
   type:
-  | "economic_chart"
-  | "diplomatic_map"
-  | "trade_flow"
-  | "gdp_growth"
-  | "demographics"
-  | "budget_debt"
-  | "labor_market"
-  | "national_vitality";
+    | "economic_chart"
+    | "diplomatic_map"
+    | "trade_flow"
+    | "gdp_growth"
+    | "demographics"
+    | "budget_debt"
+    | "labor_market"
+    | "national_vitality";
   title: string;
   data: any;
   config: any;
@@ -86,6 +88,7 @@ export function GlassCanvasComposer({
   repostData,
 }: GlassCanvasComposerProps) {
   const notify = useNotify();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState("");
   const [selectedVisualizations, setSelectedVisualizations] = useState<DataVisualization[]>([]);
   const [showVisualizationPanel, setShowVisualizationPanel] = useState(false);
@@ -96,6 +99,41 @@ export function GlassCanvasComposer({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [postToDiscord, setPostToDiscord] = useState(true);
+
+  const handleInsertEmoji = useCallback((emoji: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setContent((prev) => prev + emoji);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+
+    const newContent = before + emoji + after;
+    setContent(newContent);
+
+    const newCursorPos = start + emoji.length;
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  }, []);
+
+  const handleInsertGif = useCallback(
+    (gifUrl: string) => {
+      if (selectedImages.length >= 4) {
+        notify.error("Maximum 4 images/GIFs per post");
+        return;
+      }
+      setSelectedImages((prev) => [...prev, gifUrl]);
+      notify.success("GIF added to post");
+    },
+    [selectedImages, notify]
+  );
   const composerRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const hasContent =
@@ -201,7 +239,15 @@ export function GlassCanvasComposer({
     };
 
     createPostMutation.mutate(postData);
-  }, [content, selectedVisualizations, selectedImages, account.id, createPostMutation, repostData, postToDiscord]);
+  }, [
+    content,
+    selectedVisualizations,
+    selectedImages,
+    account.id,
+    createPostMutation,
+    repostData,
+    postToDiscord,
+  ]);
 
   const extractHashtags = (text: string): string[] => {
     const hashtags = text.match(/#[\w]+/g);
@@ -274,10 +320,10 @@ export function GlassCanvasComposer({
               gdpHistoryData && gdpHistoryData.length > 0
                 ? gdpHistoryData
                 : (economicData as any)?.historical?.map((h: any) => ({
-                  ixTimeTimestamp: new Date(h.year, 0, 1),
-                  totalGdp: h.gdp,
-                  population: h.population,
-                })) || [],
+                    ixTimeTimestamp: new Date(h.year, 0, 1),
+                    totalGdp: h.gdp,
+                    population: h.population,
+                  })) || [],
             config: {
               chartType: "line",
               colors: ["#3B82F6", "#10B981"],
@@ -562,9 +608,7 @@ export function GlassCanvasComposer({
             <div className="flex items-center gap-2">
               <Activity className="h-6 w-6 text-red-400" />
               <div className="text-sm">
-                <div className="font-medium">
-                  Vitality: {vitalityData?.economicVitality || 75}%
-                </div>
+                <div className="font-medium">Vitality: {vitalityData?.economicVitality || 75}%</div>
                 <div className="text-muted-foreground text-xs">
                   Wellbeing: {vitalityData?.populationWellbeing || 70}%
                 </div>
@@ -587,7 +631,7 @@ export function GlassCanvasComposer({
   return (
     <Card
       ref={composerRef}
-      className="glass-hierarchy-child relative overflow-hidden border-blue-500/30 bg-blue-500/5 py-0 gap-0"
+      className="glass-hierarchy-child relative gap-0 overflow-hidden border-blue-500/30 bg-blue-500/5 py-0"
     >
       <TextureOverlay texture="paperGrain" opacity={0.06} />
       {/* ── Collapsed bar ── */}
@@ -752,6 +796,7 @@ export function GlassCanvasComposer({
                 {/* Text Composer */}
                 <div className="space-y-1.5">
                   <Textarea
+                    ref={textareaRef}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder={placeholder}
@@ -860,11 +905,11 @@ export function GlassCanvasComposer({
                           isLoadingDiplomatic ||
                           isLoadingTrade ||
                           isLoadingVitality) && (
-                            <div className="flex items-center gap-1 text-[0.65rem] text-blue-400">
-                              <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                              <span>Loading...</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1 text-[0.65rem] text-blue-400">
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                            <span>Loading...</span>
+                          </div>
+                        )}
                       </div>
                       <div className="grid grid-cols-4 gap-1.5">
                         <Button
@@ -1043,16 +1088,21 @@ export function GlassCanvasComposer({
                         </Badge>
                       )}
                     </Button>
-                    <div className="flex items-center gap-2 px-2 border-l border-white/10 h-5">
+                    <EmojiPicker onSelectEmoji={handleInsertEmoji} />
+                    <GifPicker
+                      onSelectGif={handleInsertGif}
+                      disabled={selectedImages.length >= 4}
+                    />
+                    <div className="flex h-5 items-center gap-2 border-l border-white/10 px-2">
                       <Switch
                         id="share-to-discord-toggle"
                         checked={postToDiscord}
                         onCheckedChange={setPostToDiscord}
-                        className="data-[state=checked]:bg-[#5865F2] data-[state=unchecked]:bg-white/10 dark:data-[state=unchecked]:bg-white/10 data-[state=checked]:shadow-[0_0_8px_rgba(88,101,242,0.4)] border-white/10"
+                        className="border-white/10 data-[state=checked]:bg-[#5865F2] data-[state=checked]:shadow-[0_0_8px_rgba(88,101,242,0.4)] data-[state=unchecked]:bg-white/10 dark:data-[state=unchecked]:bg-white/10"
                       />
                       <label
                         htmlFor="share-to-discord-toggle"
-                        className="cursor-pointer text-[10px] text-neutral-400 select-none hover:text-neutral-300 transition-colors flex items-center gap-1.5"
+                        className="flex cursor-pointer items-center gap-1.5 text-[10px] text-neutral-400 transition-colors select-none hover:text-neutral-300"
                       >
                         <svg
                           viewBox="0 0 24 24"

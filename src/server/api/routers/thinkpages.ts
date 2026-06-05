@@ -34,20 +34,30 @@ const hydratePostDates = (post: any) => {
     ...post,
     createdAt: post.createdAt ? new Date(post.createdAt) : undefined,
     ixTimeTimestamp: post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : undefined,
-    parentPost: post.parentPost ? {
-      ...post.parentPost,
-      createdAt: post.parentPost.createdAt ? new Date(post.parentPost.createdAt) : undefined,
-      ixTimeTimestamp: post.parentPost.ixTimeTimestamp ? new Date(post.parentPost.ixTimeTimestamp) : undefined,
-    } : undefined,
-    repostOf: post.repostOf ? {
-      ...post.repostOf,
-      createdAt: post.repostOf.createdAt ? new Date(post.repostOf.createdAt) : undefined,
-      ixTimeTimestamp: post.repostOf.ixTimeTimestamp ? new Date(post.repostOf.ixTimeTimestamp) : undefined,
-    } : undefined,
-    reactions: post.reactions ? post.reactions.map((r: any) => ({
-      ...r,
-      createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
-    })) : undefined,
+    parentPost: post.parentPost
+      ? {
+          ...post.parentPost,
+          createdAt: post.parentPost.createdAt ? new Date(post.parentPost.createdAt) : undefined,
+          ixTimeTimestamp: post.parentPost.ixTimeTimestamp
+            ? new Date(post.parentPost.ixTimeTimestamp)
+            : undefined,
+        }
+      : undefined,
+    repostOf: post.repostOf
+      ? {
+          ...post.repostOf,
+          createdAt: post.repostOf.createdAt ? new Date(post.repostOf.createdAt) : undefined,
+          ixTimeTimestamp: post.repostOf.ixTimeTimestamp
+            ? new Date(post.repostOf.ixTimeTimestamp)
+            : undefined,
+        }
+      : undefined,
+    reactions: post.reactions
+      ? post.reactions.map((r: any) => ({
+          ...r,
+          createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
+        }))
+      : undefined,
   };
 };
 
@@ -1086,19 +1096,25 @@ export const thinkpagesRouter = createTRPCRouter({
           const mediaUrls = updatedPost.mediaAttachments?.map((m) => m.url) || [];
           editDiscordMessage(
             match[1],
-            { id: updatedPost.id, content: input.content, ixTimeTimestamp: updatedPost.ixTimeTimestamp || updatedPost.createdAt },
+            {
+              id: updatedPost.id,
+              content: input.content,
+              ixTimeTimestamp: updatedPost.ixTimeTimestamp || updatedPost.createdAt,
+            },
             updatedPost.account,
             mediaUrls
-          ).then(async (success) => {
-            if (success) {
-              await db.thinkpagesPost.update({
-                where: { id: updatedPost.id },
-                data: {
-                  content: `${input.content}\n\n[DiscordMsg:${match[1]}]`
-                }
-              });
-            }
-          }).catch((err) => console.error("[ThinkPages] Edit Discord msg promise error:", err));
+          )
+            .then(async (success) => {
+              if (success) {
+                await db.thinkpagesPost.update({
+                  where: { id: updatedPost.id },
+                  data: {
+                    content: `${input.content}\n\n[DiscordMsg:${match[1]}]`,
+                  },
+                });
+              }
+            })
+            .catch((err) => console.error("[ThinkPages] Edit Discord msg promise error:", err));
         } catch (error) {
           console.error("[ThinkPages] Failed to trigger Discord edit:", error);
         }
@@ -1335,7 +1351,8 @@ export const thinkpagesRouter = createTRPCRouter({
       const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
       if (match && match[1]) {
         try {
-          const { addDiscordReaction, removeDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
+          const { addDiscordReaction, removeDiscordReaction } =
+            await import("~/lib/discord-ixtwitter-sync");
           removeDiscordReaction(match[1], existingReaction.reactionType)
             .then(() => addDiscordReaction(match[1], input.reactionType))
             .catch((err) => console.error("[ThinkPages] Sync update Discord reaction error:", err));
@@ -1514,7 +1531,7 @@ export const thinkpagesRouter = createTRPCRouter({
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     try {
       const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
-      
+
       const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
       if (cached) {
         const hydratedPosts = cached.posts.map((post) => hydratePostDates(post));

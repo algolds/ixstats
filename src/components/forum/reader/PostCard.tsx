@@ -171,7 +171,10 @@ export function PostCard({
             </div>
           )}
         </Link>
-        <Link href={withBasePath(`/forum/members/${authorId}`)} className="forum-post-username flex items-center gap-1">
+        <Link
+          href={withBasePath(`/forum/members/${authorId}`)}
+          className="forum-post-username flex items-center gap-1"
+        >
           <span>{authorName}</span>
           {isOwnPost && chatBadge.enabled && (
             <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />

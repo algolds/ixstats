@@ -165,7 +165,9 @@ export const cardPacksRouter = createTRPCRouter({
         } catch {}
 
         await Promise.all([
-          ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
+          ...(ctx.auth?.userId
+            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
+            : []),
           globalCache.delete(`user_vault_balance:${ctx.user.id}`),
         ]);
 

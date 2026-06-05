@@ -242,7 +242,10 @@ export class WikiLoreCardGenerator {
             !filename.includes("icon") &&
             !filename.includes("flag") &&
             !filename.includes("logo") &&
-            (filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png") || filename.endsWith(".svg"))
+            (filename.endsWith(".jpg") ||
+              filename.endsWith(".jpeg") ||
+              filename.endsWith(".png") ||
+              filename.endsWith(".svg"))
           );
         });
         if (firstImage) {

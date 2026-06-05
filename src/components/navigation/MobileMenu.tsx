@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { Compass, User, X } from "lucide-react";
 import { UserProfileMenu } from "~/components/UserProfileMenu";
-import type {
-  ContextualMenuDefinition,
-  NavigationItem,
-} from "~/lib/navigation-config";
+import type { ContextualMenuDefinition, NavigationItem } from "~/lib/navigation-config";
 import { ContextualMenu } from "~/components/navigation/ContextualMenu";
 
 export interface MobileMenuProps {

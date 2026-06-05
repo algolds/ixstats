@@ -80,8 +80,8 @@ describe("VaultService - Upgrades & Perks", () => {
 
     it("should handle stringified JSON metadata", async () => {
       mockDb.vaultTransaction.findMany.mockResolvedValue([
-        { metadata: "{\"itemId\":\"item_cap_50\"}" },
-        { metadata: "{\"itemId\":\"item_cap_100\"}" },
+        { metadata: '{"itemId":"item_cap_50"}' },
+        { metadata: '{"itemId":"item_cap_100"}' },
       ]);
 
       mockDb.vaultStoreItem.findMany.mockResolvedValue([

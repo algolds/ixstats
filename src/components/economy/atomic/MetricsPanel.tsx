@@ -64,7 +64,8 @@ export const MetricsPanel = React.memo<MetricsPanelProps>(
         label: "Implementation",
         value: `$${(metrics.implementationCost / 1000).toFixed(0)}k`,
         icon: DollarSign,
-        color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-400/30",
+        color:
+          "text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-400/30",
         iconColor: "text-emerald-400",
         onClick: onImplementationClick,
       },

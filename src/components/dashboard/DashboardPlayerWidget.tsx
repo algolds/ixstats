@@ -94,9 +94,12 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     { enabled: !!user?.id }
   );
 
-  const unlockedCollectorAchievements = achievements?.filter(
-    (a) => a.isUnlocked && ["collect-lore-keeper", "collect-archaeologist", "collect-diplomat"].includes(a.key)
-  ) ?? [];
+  const unlockedCollectorAchievements =
+    achievements?.filter(
+      (a) =>
+        a.isUnlocked &&
+        ["collect-lore-keeper", "collect-archaeologist", "collect-diplomat"].includes(a.key)
+    ) ?? [];
 
   if (!isSignedIn) return null;
 
@@ -134,7 +137,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "group w-48 overflow-hidden rounded-xl relative")}
+      className={cn(cutoutCardSurfaceClassName, "group relative w-48 overflow-hidden rounded-xl")}
       trackPointerHover={false}
       texture="dots"
       textureOpacity={0.06}
@@ -142,7 +145,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
       {/* Neon Frame Overlay */}
       {neonFrame.enabled && (
         <motion.div
-          className="absolute inset-0 z-30 pointer-events-none rounded-xl"
+          className="pointer-events-none absolute inset-0 z-30 rounded-xl"
           style={{
             border: `2px solid ${neonFrame.color}`,
             boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
@@ -192,11 +195,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           }
         >
           {user?.imageUrl ? (
-            <img
-              src={user.imageUrl}
-              alt=""
-              className="h-full w-full rounded-full object-cover"
-            />
+            <img src={user.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
           ) : userProfile?.country?.name ? (
             <UnifiedCountryFlag
               countryName={userProfile.country.name}
@@ -213,7 +212,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {/* Country Name Link */}
         <Link
           href={createUrl(`/countries/${userProfile?.country?.slug ?? ""}`)}
-          className="relative z-20 text-center text-sm font-bold tracking-wide text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] hover:text-white/80 hover:underline flex items-center justify-center gap-1"
+          className="relative z-20 flex items-center justify-center gap-1 text-center text-sm font-bold tracking-wide text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] hover:text-white/80 hover:underline"
         >
           <span>{userProfile?.country?.name ?? "My Country"}</span>
           {chatBadge.enabled && (
@@ -228,7 +227,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               <span
                 key={ach.key}
                 title={ach.description}
-                className="inline-flex items-center gap-0.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[8px] font-medium text-white backdrop-blur-md border border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:bg-white/20 transition-colors cursor-help"
+                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/10 bg-white/10 px-1.5 py-0.5 text-[8px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] backdrop-blur-md transition-colors hover:bg-white/20"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
                 <span>{ach.title}</span>

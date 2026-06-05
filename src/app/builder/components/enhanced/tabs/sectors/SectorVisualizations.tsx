@@ -42,7 +42,13 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   return (
     <div className="space-y-6">
       {/* GDP Composition */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
@@ -65,7 +71,13 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       </GlassCard>
 
       {/* Employment Distribution */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
@@ -89,7 +101,13 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       </GlassCard>
 
       {/* Component Impact Summary */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Zap className="h-5 w-5" />

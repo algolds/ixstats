@@ -95,7 +95,7 @@ export class PreviewSeeder {
 
     // Clear in order to respect foreign key constraints
     await this.db.calculationLog.deleteMany();
-    await this.db.dmInputs.deleteMany();
+    await this.db.storytellerEffect.deleteMany();
     await this.db.historicalDataPoint.deleteMany();
     await this.db.user.deleteMany();
 
@@ -625,7 +625,7 @@ export class PreviewSeeder {
       const daysAgo = Math.floor(Math.random() * 90); // Last 90 days
       const timestamp = IxTime.getCurrentIxTime() - daysAgo * 24 * 60 * 60 * 1000;
 
-      await this.db.dmInputs.create({
+      await this.db.storytellerEffect.create({
         data: {
           countryId: Math.random() > 0.7 ? country.id : null, // 30% global, 70% country-specific
           ixTimeTimestamp: new Date(timestamp),

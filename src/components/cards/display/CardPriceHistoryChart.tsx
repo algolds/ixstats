@@ -44,13 +44,15 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
     return (
       <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10">
         <Coins className="h-8 w-8 text-slate-400 opacity-40" />
-        <span className="mt-2 text-xs text-slate-450 dark:text-white/40">No price history available</span>
+        <span className="text-slate-450 mt-2 text-xs dark:text-white/40">
+          No price history available
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="h-48 w-full select-none pr-4">
+    <div className="h-48 w-full pr-4 select-none">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />

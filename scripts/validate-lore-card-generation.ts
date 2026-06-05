@@ -44,9 +44,9 @@ interface ValidationResult {
 
 const args = process.argv.slice(2);
 const wikiArg = args.indexOf("--wiki");
-const wikiSource: "ixwiki" | "iiwiki" = (
-  wikiArg >= 0 ? args[wikiArg + 1] : "ixwiki"
-) as "ixwiki" | "iiwiki";
+const wikiSource: "ixwiki" | "iiwiki" = (wikiArg >= 0 ? args[wikiArg + 1] : "ixwiki") as
+  | "ixwiki"
+  | "iiwiki";
 const countArg = args.indexOf("--count");
 const targetCount = countArg >= 0 ? parseInt(args[countArg + 1], 10) : 5;
 
@@ -84,9 +84,7 @@ function validateCandidate(candidate: Record<string, unknown>): {
       `Description too long (${(candidate.description as string).length} chars, max 200)`
     );
   } else if ((candidate.description as string).length < 10) {
-    warnings.push(
-      `Description very short (${(candidate.description as string).length} chars)`
-    );
+    warnings.push(`Description very short (${(candidate.description as string).length} chars)`);
   }
 
   // 3. Full excerpt
@@ -161,18 +159,12 @@ function validateCandidate(candidate: Record<string, unknown>): {
   }
 
   // 9. Category
-  if (
-    !candidate.category ||
-    !VALID_CATEGORIES.includes(candidate.category as string)
-  ) {
+  if (!candidate.category || !VALID_CATEGORIES.includes(candidate.category as string)) {
     errors.push(`Invalid category: ${String(candidate.category)}`);
   }
 
   // 10. Wiki URL
-  if (
-    !candidate.wikiUrl ||
-    !(candidate.wikiUrl as string).startsWith("http")
-  ) {
+  if (!candidate.wikiUrl || !(candidate.wikiUrl as string).startsWith("http")) {
     errors.push(`Invalid wikiUrl: ${String(candidate.wikiUrl)}`);
   }
 
@@ -186,8 +178,7 @@ async function main() {
   console.log("");
 
   // Override duplicate check so we can test articles that may already exist in DB
-  (wikiLoreCardGenerator as unknown as Record<string, unknown>).checkCardExists =
-    async () => false;
+  (wikiLoreCardGenerator as unknown as Record<string, unknown>).checkCardExists = async () => false;
 
   let attempts = 0;
   const results: ValidationResult[] = [];
@@ -196,10 +187,7 @@ async function main() {
   while (results.length < targetCount && attempts < maxAttempts) {
     attempts++;
     console.log(`\n📡 Fetching random article batch (attempt ${attempts})...`);
-    const articles = await wikiLoreCardGenerator.fetchRandomArticlesWithImages(
-      1,
-      wikiSource
-    );
+    const articles = await wikiLoreCardGenerator.fetchRandomArticlesWithImages(1, wikiSource);
 
     if (articles.length === 0) {
       console.log("   ⚠️ No articles with images found, retrying...");
@@ -209,30 +197,19 @@ async function main() {
     const articleTitle = articles[0];
 
     console.log(`   Testing: "${articleTitle}"`);
-    const candidate = await wikiLoreCardGenerator.generateCard(
-      articleTitle,
-      wikiSource,
-      {
-        requireImage: true,
-      }
-    );
+    const candidate = await wikiLoreCardGenerator.generateCard(articleTitle, wikiSource, {
+      requireImage: true,
+    });
 
     if (!candidate) {
-      console.log(
-        `   ⚠️ No candidate returned (already exists or no suitable data)`
-      );
+      console.log(`   ⚠️ No candidate returned (already exists or no suitable data)`);
       continue;
     }
 
-    const { errors, warnings } = validateCandidate(
-      candidate as unknown as Record<string, unknown>
-    );
+    const { errors, warnings } = validateCandidate(candidate as unknown as Record<string, unknown>);
 
     let imageReachable: boolean | null = null;
-    if (
-      candidate.artwork &&
-      candidate.artwork.startsWith("http")
-    ) {
+    if (candidate.artwork && candidate.artwork.startsWith("http")) {
       process.stdout.write(`   🔗 Checking image reachability... `);
       imageReachable = await isImageReachable(candidate.artwork);
       console.log(imageReachable ? "✅ reachable" : "❌ unreachable");
@@ -277,9 +254,7 @@ async function main() {
   const passed = results.filter((r) => r.success).length;
   const failed = results.filter((r) => !r.success).length;
   const imagesReachable = results.filter((r) => r.imageReachable === true).length;
-  const imagesUnreachable = results.filter(
-    (r) => r.imageReachable === false
-  ).length;
+  const imagesUnreachable = results.filter((r) => r.imageReachable === false).length;
 
   console.log(`Passed: ${passed} ✅`);
   console.log(`Failed: ${failed} ❌`);
@@ -299,9 +274,7 @@ async function main() {
 
     console.log(`\nQuality scores:`);
     results.forEach((r) => {
-      console.log(
-        `  ${r.title}: ${(r.candidate.qualityScore as number).toFixed(1)}`
-      );
+      console.log(`  ${r.title}: ${(r.candidate.qualityScore as number).toFixed(1)}`);
     });
   }
 

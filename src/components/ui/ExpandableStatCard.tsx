@@ -104,7 +104,12 @@ export function ExpandableStatCard({
                   </div>
                   <div className="mt-2 text-lg font-bold text-green-700">
                     {typeof value === "number" ? (
-                      <NumberFlowDisplay value={value} duration={1500} prefix="$" decimalPlaces={0} />
+                      <NumberFlowDisplay
+                        value={value}
+                        duration={1500}
+                        prefix="$"
+                        decimalPlaces={0}
+                      />
                     ) : (
                       formattedValue
                     )}

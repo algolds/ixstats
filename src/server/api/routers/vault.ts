@@ -713,12 +713,21 @@ export const vaultRouter = createTRPCRouter({
           collections: collections.map((c) => ({
             id: c.id,
             name: c.name,
-            slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+            slug: c.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, ""),
             description: c.description,
             isPublic: c.isPublic,
             cardCount: c.items.length,
-            totalValue: c.items.reduce((sum, i) => sum + (i.cardOwnership.cards?.marketValue ?? 0), 0),
-            thumbnailCards: c.items.slice(0, 4).map((i) => i.cardOwnership.cards?.id).filter(Boolean),
+            totalValue: c.items.reduce(
+              (sum, i) => sum + (i.cardOwnership.cards?.marketValue ?? 0),
+              0
+            ),
+            thumbnailCards: c.items
+              .slice(0, 4)
+              .map((i) => i.cardOwnership.cards?.id)
+              .filter(Boolean),
             createdAt: c.createdAt,
           })),
           total,
@@ -756,7 +765,10 @@ export const vaultRouter = createTRPCRouter({
           success: true,
           collection: {
             ...collection,
-            slug: collection.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+            slug: collection.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, ""),
           },
         };
       } catch (error) {
@@ -779,7 +791,9 @@ export const vaultRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const existing = await ctx.db.cardCollection.findUnique({ where: { id: input.collectionId } });
+        const existing = await ctx.db.cardCollection.findUnique({
+          where: { id: input.collectionId },
+        });
         if (!existing || existing.userId !== ctx.user.id) {
           throw new Error("Collection not found or not owned by you");
         }
@@ -807,7 +821,9 @@ export const vaultRouter = createTRPCRouter({
     .input(z.object({ collectionId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const existing = await ctx.db.cardCollection.findUnique({ where: { id: input.collectionId } });
+        const existing = await ctx.db.cardCollection.findUnique({
+          where: { id: input.collectionId },
+        });
         if (!existing || existing.userId !== ctx.user.id) {
           throw new Error("Collection not found or not owned by you");
         }
@@ -865,7 +881,10 @@ export const vaultRouter = createTRPCRouter({
           totalValue: c.items.reduce((s, i) => s + (i.cardOwnership.cards?.marketValue ?? 0), 0),
           likes: c._count.likes,
           comments: c._count.comments,
-          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+          slug: c.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, ""),
         }));
 
         if (sortBy === "mostValuable") enriched.sort((a, b) => b.totalValue - a.totalValue);
@@ -917,13 +936,17 @@ export const vaultRouter = createTRPCRouter({
           value: c.items.reduce((s, i) => s + (i.cardOwnership.cards?.marketValue ?? 0), 0),
           completeness: 0,
           likes: c._count.likes,
-          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+          slug: c.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, ""),
         }));
 
         const sorted = [...enriched];
         if (input.category === "mostValuable") sorted.sort((a, b) => b.value - a.value);
         else if (input.category === "mostCards") sorted.sort((a, b) => b.cardCount - a.cardCount);
-        else if (input.category === "mostComplete") sorted.sort((a, b) => b.cardCount - a.cardCount);
+        else if (input.category === "mostComplete")
+          sorted.sort((a, b) => b.cardCount - a.cardCount);
 
         return {
           category: input.category,
@@ -1077,7 +1100,10 @@ export const vaultRouter = createTRPCRouter({
             ...collection,
             items: undefined,
             _count: undefined,
-            slug: collection.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+            slug: collection.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, ""),
           },
           stats: {
             cardCount,
@@ -1706,5 +1732,3 @@ export const vaultRouter = createTRPCRouter({
     }
   }),
 });
-
-

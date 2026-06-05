@@ -286,5 +286,3 @@ export const geoSovereigntyRouter = createTRPCRouter({
 
   // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });
-
-

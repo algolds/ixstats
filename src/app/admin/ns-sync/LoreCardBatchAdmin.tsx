@@ -141,7 +141,8 @@ export function LoreCardBatchAdmin() {
 
       // Prefer articles with images, then highest quality
       allArticles.sort((a, b) => {
-        if ((b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0)) return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
+        if ((b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0))
+          return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
         return b.qualityScore - a.qualityScore;
       });
 

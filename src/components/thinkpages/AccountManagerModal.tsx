@@ -27,22 +27,23 @@ export function AccountManagerModal({
   onCreateAccount,
   isOwner,
 }: AccountManagerModalProps) {
-  console.log("AccountManagerModal render - isOpen:", isOpen);
-
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        console.log("Dialog onOpenChange called with:", open);
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-hidden">
-        <DialogHeader>
-          <DialogTitle></DialogTitle>
+      <DialogContent
+        className="glass-hierarchy-modal flex max-h-[90vh] max-w-lg flex-col overflow-hidden p-0"
+        data-dialog-nested="true"
+      >
+        <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-6 pb-4">
+          <DialogTitle className="text-lg font-semibold">Account Manager</DialogTitle>
         </DialogHeader>
-        <div className="overflow-x-hidden overflow-y-auto">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <EnhancedAccountManager
+            inModal={true}
             countryId={countryId}
             accounts={accounts}
             selectedAccount={selectedAccount}

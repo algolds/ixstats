@@ -493,7 +493,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
         {flagUrl && (
           <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.09] dark:opacity-[0.08] saturate-[85%] dark:saturate-[60%] blur-[8px] transition-all duration-700"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.09] blur-[8px] saturate-[85%] transition-all duration-700 dark:opacity-[0.08] dark:saturate-[60%]"
               style={{ backgroundImage: `url(${flagUrl})` }}
             />
           </div>

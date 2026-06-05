@@ -17,7 +17,6 @@ import type { ComponentType } from "react";
 import { EconomyBuilderPage } from "./EconomyBuilderPage";
 export { EconomyBuilderPage };
 
-
 export const EconomicArchetypeDisplay = lazy<ComponentType<any>>(() =>
   import("./EconomicArchetypeDisplay").then((module) => ({
     default: module.EconomicArchetypeDisplay,

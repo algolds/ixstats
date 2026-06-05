@@ -62,7 +62,7 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -125,7 +125,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ChevronUp,
   ChevronDown,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
 };
 
 /**
@@ -134,18 +134,18 @@ const ICON_MAP: Record<string, LucideIcon> = {
  */
 export function resolveLucideIcon(iconName: string | undefined): LucideIcon | null {
   if (!iconName) return null;
-  
+
   // Support exact match first
   if (iconName in ICON_MAP) {
     return ICON_MAP[iconName]!;
   }
-  
+
   // Support capitalizing first letter
   const capitalized = iconName.charAt(0).toUpperCase() + iconName.slice(1);
   if (capitalized in ICON_MAP) {
     return ICON_MAP[capitalized]!;
   }
-  
+
   return null;
 }
 

@@ -1,11 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL
-    }
-  }
+      url: process.env.DATABASE_URL,
+    },
+  },
 });
 
 async function main() {
@@ -16,12 +16,12 @@ async function main() {
       WHERE table_schema = 'public'
       ORDER BY table_name;
     `;
-    console.log('=== Database Tables ===');
+    console.log("=== Database Tables ===");
     for (const t of tables) {
       console.log(`- ${t.table_name}`);
     }
   } catch (error) {
-    console.error('Error querying tables:', error);
+    console.error("Error querying tables:", error);
   } finally {
     await prisma.$disconnect();
   }

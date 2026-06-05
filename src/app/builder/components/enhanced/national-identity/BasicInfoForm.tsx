@@ -13,10 +13,7 @@ import {
   Link2,
   Link2Off,
 } from "lucide-react";
-import {
-  GlassSelectBox,
-  SliderWithDirectInput,
-} from "../../../primitives/enhanced";
+import { GlassSelectBox, SliderWithDirectInput } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
@@ -172,9 +169,12 @@ export const BasicInfoForm = React.memo(
       [onIdentityChange] // Empty - parent onIdentityChange is stable via refs
     );
 
-    const handleOfficialNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-      onIdentityChange("officialName", event.target.value);
-    }, [onIdentityChange]);
+    const handleOfficialNameChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        onIdentityChange("officialName", event.target.value);
+      },
+      [onIdentityChange]
+    );
 
     const [isLargestLocked, setIsLargestLocked] = React.useState(() => {
       return identity.capitalCity === identity.largestCity && !!identity.capitalCity;
@@ -220,9 +220,12 @@ export const BasicInfoForm = React.memo(
       [onIdentityChange]
     );
 
-    const handleDemonymChange = useCallback((value: string) => {
-      onIdentityChange("demonym", value);
-    }, [onIdentityChange]);
+    const handleDemonymChange = useCallback(
+      (value: string) => {
+        onIdentityChange("demonym", value);
+      },
+      [onIdentityChange]
+    );
 
     // ─── Core Indicators Logic ───
     const isEditMode = mode === "edit";

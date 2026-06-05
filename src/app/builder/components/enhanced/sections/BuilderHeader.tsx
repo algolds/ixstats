@@ -64,7 +64,6 @@ export function BuilderHeader({
             </Badge>
           </div>
           <div className="flex items-center gap-3">
-
             {/* Manual save button */}
             {onManualSave && (
               <Button

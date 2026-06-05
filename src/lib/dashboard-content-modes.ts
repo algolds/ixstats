@@ -14,10 +14,7 @@ export interface DashboardModeOption {
 }
 
 /** Build the available content modes based on whether the user has a country / is admin. */
-export function buildContentModes(
-  userCountry: unknown,
-  isAdmin: boolean
-): DashboardModeOption[] {
+export function buildContentModes(userCountry: unknown, isAdmin: boolean): DashboardModeOption[] {
   return [
     { id: "discover", label: "Discover", icon: Globe, description: "Explore nations & trends" },
     ...(userCountry

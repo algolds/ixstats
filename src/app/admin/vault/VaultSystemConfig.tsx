@@ -328,9 +328,7 @@ export function VaultSystemConfig() {
                   {/* Exempt Staff from Card Limits */}
                   <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">
-                        Exempt Staff
-                      </span>
+                      <span className="text-foreground text-xs font-semibold">Exempt Staff</span>
                       <span className="text-muted-foreground text-[10px]">
                         Exempt role levels 20 & lower from capacity limit.
                       </span>

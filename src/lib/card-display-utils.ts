@@ -248,7 +248,9 @@ function resolveCardStats(card: CardInstance): Record<string, number> {
  * Format special stats for a card instance
  */
 function formatSpecialStats(card: CardInstance): FormattedSpecialStatEntry[] {
-  const specialDefs = getSpecialStatsForType(card.cardType as unknown as import("~/lib/card-enums").CardType);
+  const specialDefs = getSpecialStatsForType(
+    card.cardType as unknown as import("~/lib/card-enums").CardType
+  );
   if (specialDefs.length === 0) return [];
 
   const rawSpecials: Record<string, number> =

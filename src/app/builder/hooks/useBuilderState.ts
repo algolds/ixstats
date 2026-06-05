@@ -20,7 +20,12 @@ import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import { toast } from "sonner";
-import type { GovernmentDepartment, GovernmentBuilderState, GovernmentType, DepartmentInput } from "~/types/government";
+import type {
+  GovernmentDepartment,
+  GovernmentBuilderState,
+  GovernmentType,
+  DepartmentInput,
+} from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
@@ -452,23 +457,24 @@ export function useBuilderState(
             budgetCurrency: existingGovernment.budgetCurrency,
           },
           departments: (existingGovernment.departments as unknown as GovernmentDepartment[]).map(
-            (dept) => ({
-              name: dept.name,
-              shortName: dept.shortName ?? undefined,
-              category: dept.category as any,
-              description: dept.description ?? undefined,
-              minister: dept.minister ?? undefined,
-              ministerTitle: dept.ministerTitle || "",
-              headquarters: dept.headquarters ?? undefined,
-              established: dept.established ?? undefined,
-              employeeCount: dept.employeeCount ?? undefined,
-              icon: dept.icon ?? undefined,
-              color: dept.color ?? undefined,
-              priority: dept.priority ?? undefined,
-              parentDepartmentId: dept.parentDepartmentId ?? undefined,
-              organizationalLevel: (dept.organizationalLevel || "Department") as any,
-              functions: Array.isArray(dept.functions) ? dept.functions : [],
-            }) as DepartmentInput
+            (dept) =>
+              ({
+                name: dept.name,
+                shortName: dept.shortName ?? undefined,
+                category: dept.category as any,
+                description: dept.description ?? undefined,
+                minister: dept.minister ?? undefined,
+                ministerTitle: dept.ministerTitle || "",
+                headquarters: dept.headquarters ?? undefined,
+                established: dept.established ?? undefined,
+                employeeCount: dept.employeeCount ?? undefined,
+                icon: dept.icon ?? undefined,
+                color: dept.color ?? undefined,
+                priority: dept.priority ?? undefined,
+                parentDepartmentId: dept.parentDepartmentId ?? undefined,
+                organizationalLevel: (dept.organizationalLevel || "Department") as any,
+                functions: Array.isArray(dept.functions) ? dept.functions : [],
+              }) as DepartmentInput
           ),
           budgetAllocations: existingGovernment.budgetAllocations.map((alloc: any) => ({
             departmentId: alloc.departmentId,
@@ -774,9 +780,11 @@ export function useBuilderState(
 
             // Government Structure Pre-population
             if (wikiData.government_type || wikiData.head_of_state) {
-              const govType = (wikiData.government_type
-                ? normalizeGovernmentType(wikiData.government_type)
-                : "Other") as GovernmentType;
+              const govType = (
+                wikiData.government_type
+                  ? normalizeGovernmentType(wikiData.government_type)
+                  : "Other"
+              ) as GovernmentType;
               stateUpdate.governmentStructure = {
                 structure: {
                   governmentName: `Government of ${wikiData.name || "the Nation"}`,
@@ -1276,9 +1284,12 @@ export function useBuilderState(
             builderStateRef.current.economicInputs?.countryName ||
             builderStateRef.current.economicInputs?.nationalIdentity?.countryName ||
             "",
-          economicInputs: sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
+          economicInputs:
+            sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
           governmentComponents:
-            builderStateRef.current.governmentComponents?.map((comp) => ({ componentType: comp })) || [],
+            builderStateRef.current.governmentComponents?.map((comp) => ({
+              componentType: comp,
+            })) || [],
           taxSystemData: builderStateRef.current.taxSystemData || undefined,
           governmentStructure: builderStateRef.current.governmentStructure || undefined,
           economyBuilderState: builderStateRef.current.economyBuilderState || undefined,

@@ -1314,12 +1314,14 @@ export function VaultCardsSection() {
       updatedAt: ownership.cards.updatedAt,
       lastTrade: ownership.cards.lastTrade || null,
       country: ownership.cards.country,
-      owners: [{
-        userId: ownership.ownerId,
-        quantity: ownership.quantity,
-        acquiredDate: ownership.acquiredAt,
-        acquiredMethod: "acquired",
-      }],
+      owners: [
+        {
+          userId: ownership.ownerId,
+          quantity: ownership.quantity,
+          acquiredDate: ownership.acquiredAt,
+          acquiredMethod: "acquired",
+        },
+      ],
     }));
   }, [ownerships]);
 

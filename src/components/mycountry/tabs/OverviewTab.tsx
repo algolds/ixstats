@@ -2,14 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  TrendingUp,
-  Activity,
-  Loader2,
-  BookOpen,
-  ChevronDown,
-  ExternalLink,
-} from "lucide-react";
+import { TrendingUp, Activity, Loader2, BookOpen, ChevronDown, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -106,9 +99,7 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
                           <ArrowTrendingDownIcon size={14} className="inline-flex" />
-                          <span className="text-[10px] font-semibold">
-                            {gdpGrowth.toFixed(1)}%
-                          </span>
+                          <span className="text-[10px] font-semibold">{gdpGrowth.toFixed(1)}%</span>
                         </span>
                       );
                     return <span className="text-muted-foreground text-[10px]">0.0%</span>;
@@ -141,10 +132,7 @@ export function OverviewTab({
                         : "N/A"}
                   </p>
                   {(() => {
-                    const popGrowth = smartNormalizeGrowthRate(
-                      country.populationGrowthRate,
-                      0
-                    );
+                    const popGrowth = smartNormalizeGrowthRate(country.populationGrowthRate, 0);
                     if (popGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
@@ -158,9 +146,7 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
                           <ArrowTrendingDownIcon size={14} className="inline-flex" />
-                          <span className="text-[10px] font-semibold">
-                            {popGrowth.toFixed(1)}%
-                          </span>
+                          <span className="text-[10px] font-semibold">{popGrowth.toFixed(1)}%</span>
                         </span>
                       );
                     return <span className="text-muted-foreground text-[10px]">0.0%</span>;
@@ -175,8 +161,7 @@ export function OverviewTab({
               <button
                 onClick={
                   country.areaSqMi && country.landArea
-                    ? () =>
-                        setMetricView((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
+                    ? () => setMetricView((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
                     : undefined
                 }
                 className={cn(
@@ -329,9 +314,7 @@ export function OverviewTab({
             return (
               <div className="border-border/30 flex items-center gap-2 border-t py-2 pt-3">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500" />
-                <span className="text-muted-foreground text-xs">
-                  Loading wiki sections...
-                </span>
+                <span className="text-muted-foreground text-xs">Loading wiki sections...</span>
               </div>
             );
 

@@ -1,14 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Landmark,
-  DollarSign,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-} from "lucide-react";
+import { Landmark, DollarSign, Shield, AlertTriangle, CheckCircle, Info } from "lucide-react";
 import { GlassCard, GlassCardContent } from "../../../glass/GlassCard";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
@@ -37,7 +30,6 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
 
   return (
     <div className="space-y-6">
-  
       {/* Fiscal Policy Configuration */}
       <GlassCard
         depth="base"
@@ -95,9 +87,7 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
           <GlassCardContent>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">
-                  Total Government Revenue
-                </Label>
+                <Label className="text-muted-foreground text-sm">Total Government Revenue</Label>
                 <div className="text-foreground text-2xl font-bold">
                   {formatCurrency(revenueIntegration.totalRevenue, currency)}
                 </div>
@@ -120,9 +110,7 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
               </div>
 
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">
-                  Tax Revenue Breakdown
-                </Label>
+                <Label className="text-muted-foreground text-sm">Tax Revenue Breakdown</Label>
                 <div className="space-y-3">
                   <div>
                     <div className="mb-1 flex items-center justify-between text-sm">
@@ -134,9 +122,7 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
                     <Progress
                       value={
                         revenueIntegration.totalRevenue > 0
-                          ? (revenueIntegration.taxRevenue /
-                              revenueIntegration.totalRevenue) *
-                            100
+                          ? (revenueIntegration.taxRevenue / revenueIntegration.totalRevenue) * 100
                           : 0
                       }
                       className="h-2"
@@ -152,8 +138,7 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
                     <Progress
                       value={
                         revenueIntegration.totalRevenue > 0
-                          ? (revenueIntegration.nonTaxRevenue /
-                              revenueIntegration.totalRevenue) *
+                          ? (revenueIntegration.nonTaxRevenue / revenueIntegration.totalRevenue) *
                             100
                           : 0
                       }
@@ -164,15 +149,11 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
               </div>
 
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">
-                  Economic Impact Metrics
-                </Label>
+                <Label className="text-muted-foreground text-sm">Economic Impact Metrics</Label>
                 <div className="space-y-3">
                   <div>
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">
-                        Revenue as % of GDP
-                      </span>
+                      <span className="text-muted-foreground text-sm">Revenue as % of GDP</span>
                       <Badge variant="outline" className="text-sm font-semibold">
                         {formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
                       </Badge>
@@ -184,9 +165,7 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
                   </div>
                   <div>
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">
-                        Tax Burden Ratio
-                      </span>
+                      <span className="text-muted-foreground text-sm">Tax Burden Ratio</span>
                       <Badge
                         variant="outline"
                         className={cn(
@@ -223,9 +202,9 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
               <Alert className="mt-4 border-amber-500/30 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
                 <Info className="h-4 w-4 text-amber-500" />
                 <AlertDescription className="text-sm text-amber-700 dark:text-amber-200">
-                  High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)}
-                  ) may reduce private sector GDP growth. Consider balancing with
-                  economic components that promote business development.
+                  High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)}) may reduce
+                  private sector GDP growth. Consider balancing with economic components that
+                  promote business development.
                 </AlertDescription>
               </Alert>
             )}
@@ -245,10 +224,12 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
               Government Revenue Integration
             </h3>
           </div>
-          <GlassCardContent className="p-6 text-center text-sm text-muted-foreground">
+          <GlassCardContent className="text-muted-foreground p-6 text-center text-sm">
             <DollarSign className="mx-auto mb-2 h-8 w-8 text-zinc-500" />
             <p>No government revenue data available.</p>
-            <p className="mt-1 text-xs">Configure government components to see revenue projections.</p>
+            <p className="mt-1 text-xs">
+              Configure government components to see revenue projections.
+            </p>
           </GlassCardContent>
         </GlassCard>
       )}
@@ -272,8 +253,8 @@ export function FiscalTab({ revenueIntegration, economicInputs }: FiscalTabProps
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               <span>
-                Revenue-to-GDP ratio ({formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
-                ) exceeds 40%. Consider adjusting fiscal policy.
+                Revenue-to-GDP ratio ({formatPercent(revenueIntegration.revenueToGDPRatio, 1)})
+                exceeds 40%. Consider adjusting fiscal policy.
               </span>
             </div>
           )}

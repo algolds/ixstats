@@ -912,7 +912,7 @@ export const myCountryRouter = createTRPCRouter({
           `dashboard_${input.countryId}_hist_true`,
           `dashboard_${input.countryId}_hist_false`,
         ];
-        await Promise.all(cacheKeys.map(key => globalCache.delete(key)));
+        await Promise.all(cacheKeys.map((key) => globalCache.delete(key)));
 
         // Return success with action details
         return {

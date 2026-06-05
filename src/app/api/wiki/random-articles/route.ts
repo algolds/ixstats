@@ -33,7 +33,11 @@ export async function GET(request: Request) {
     const titles = await wikiLoreCardGenerator.fetchRandomArticles(poolSize, source);
 
     // Concurrency helper
-    const mapWithConcurrency = async <T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>) => {
+    const mapWithConcurrency = async <T, R>(
+      items: T[],
+      limit: number,
+      fn: (item: T) => Promise<R>
+    ) => {
       const results: R[] = new Array(items.length);
       let i = 0;
       const workers = new Array(Math.max(1, limit)).fill(0).map(async () => {
@@ -79,7 +83,8 @@ export async function GET(request: Request) {
       // prefer images first if requested
       .sort((a, b) => {
         if (preferImages) {
-          if ((b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0)) return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
+          if ((b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0))
+            return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
         }
         return b.qualityScore - a.qualityScore;
       })

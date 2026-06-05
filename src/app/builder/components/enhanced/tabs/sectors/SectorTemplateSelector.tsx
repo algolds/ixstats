@@ -25,7 +25,13 @@ export function SectorTemplateSelector({
   );
 
   return (
-    <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+    <GlassCard
+      depth="base"
+      theme="emerald"
+      className="border-emerald-500/20"
+      texture="chevron"
+      textureOpacity={0.04}
+    >
       <GlassCardContent className="p-6">
         <h3 className="mb-4 flex items-center justify-between text-lg font-bold text-emerald-500 dark:text-emerald-400">
           <span className="flex items-center space-x-2">
@@ -87,12 +93,18 @@ export function SectorTemplateSelector({
                         </div>
                       </div>
                       {isLocked && (
-                        <Badge variant="secondary" className="bg-red-500/10 text-red-600 dark:text-red-400">
+                        <Badge
+                          variant="secondary"
+                          className="bg-red-500/10 text-red-600 dark:text-red-400"
+                        >
                           Locked
                         </Badge>
                       )}
                       {constraint?.recommended && !isAlreadyAdded && !isLocked && (
-                        <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <Badge
+                          variant="default"
+                          className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        >
                           Recommended
                         </Badge>
                       )}
@@ -108,11 +120,13 @@ export function SectorTemplateSelector({
                       </div>
                     )}
 
-                    {constraint?.recommended && !isLocked && constraint.recommendedBy.length > 0 && (
-                      <div className="text-left text-[10px] text-emerald-500">
-                        Recommended by: {constraint.recommendedBy.join(", ")}
-                      </div>
-                    )}
+                    {constraint?.recommended &&
+                      !isLocked &&
+                      constraint.recommendedBy.length > 0 && (
+                        <div className="text-left text-[10px] text-emerald-500">
+                          Recommended by: {constraint.recommendedBy.join(", ")}
+                        </div>
+                      )}
 
                     <div className="flex flex-wrap gap-1">
                       {template.characteristics.map((char, idx) => (

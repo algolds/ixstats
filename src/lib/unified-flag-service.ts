@@ -526,7 +526,7 @@ class UnifiedFlagService {
 
         return flagUrl;
       }
-} catch (_error) {
+    } catch (_error) {
       // Track API errors with graceful handling
       this.apiErrorCount++;
       this.lastApiError = Date.now();

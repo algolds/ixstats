@@ -333,7 +333,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                   </p>
                   {card.country.continent && (
                     <p className={cn("font-medium text-white/70", fonts.stats)}>
-                       {card.country.continent}
+                      {card.country.continent}
                       {card.country.region && ` • ${card.country.region}`}
                     </p>
                   )}

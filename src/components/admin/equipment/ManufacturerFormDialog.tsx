@@ -141,9 +141,7 @@ export function ManufacturerFormDialog({
           </Button>
           <Button
             onClick={onSave}
-            disabled={
-              !manufacturerFormData.name || !manufacturerFormData.country || isPending
-            }
+            disabled={!manufacturerFormData.name || !manufacturerFormData.country || isPending}
           >
             {isPending ? "Saving..." : editingManufacturerId ? "Update" : "Create"}
           </Button>

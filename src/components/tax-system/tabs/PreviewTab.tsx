@@ -80,8 +80,8 @@ export function PreviewTab({
             <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-600 dark:text-blue-400">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>
-                Optimal tax rates are derived from your selected atomic components. Setting
-                rates near these recommendations maximizes synergy effectiveness.
+                Optimal tax rates are derived from your selected atomic components. Setting rates
+                near these recommendations maximizes synergy effectiveness.
               </span>
             </div>
           </GlassCardContent>
@@ -108,46 +108,44 @@ export function PreviewTab({
       )}
 
       {/* Atomic Component Effectiveness */}
-      {showAtomicIntegration &&
-        selectedAtomicTaxComponents.length > 0 &&
-        economicData && (
-          <GlassCard depth="base" theme="emerald" texture="chevron" textureOpacity={0.04}>
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Lightbulb className="h-5 w-5" />
-                Component Synergies & Effectiveness
-              </h3>
-            </div>
-            <GlassCardContent className="p-6">
-              <UnifiedTaxEffectivenessDisplay
-                taxComponents={selectedAtomicTaxComponents.map((id) => ({
-                  id,
-                  type: id,
-                  name: id,
-                  effectiveness: 80,
-                }))}
-                governmentComponents={activeGovernmentComponents.map((type) => ({
-                  id: type,
-                  type,
-                  name: type,
-                  effectiveness: 80,
-                  countryId: countryId || "",
-                  effectivenessScore: 80,
-                  implementationDate: new Date(),
-                  implementationCost: 0,
-                  maintenanceCost: 0,
-                  requiredCapacity: 50,
-                  isActive: true,
-                  notes: null,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                }))}
-                economicData={economicData as any}
-                taxSystem={previewTaxSystem}
-              />
-            </GlassCardContent>
-          </GlassCard>
-        )}
+      {showAtomicIntegration && selectedAtomicTaxComponents.length > 0 && economicData && (
+        <GlassCard depth="base" theme="emerald" texture="chevron" textureOpacity={0.04}>
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <Lightbulb className="h-5 w-5" />
+              Component Synergies & Effectiveness
+            </h3>
+          </div>
+          <GlassCardContent className="p-6">
+            <UnifiedTaxEffectivenessDisplay
+              taxComponents={selectedAtomicTaxComponents.map((id) => ({
+                id,
+                type: id,
+                name: id,
+                effectiveness: 80,
+              }))}
+              governmentComponents={activeGovernmentComponents.map((type) => ({
+                id: type,
+                type,
+                name: type,
+                effectiveness: 80,
+                countryId: countryId || "",
+                effectivenessScore: 80,
+                implementationDate: new Date(),
+                implementationCost: 0,
+                maintenanceCost: 0,
+                requiredCapacity: 50,
+                isActive: true,
+                notes: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }))}
+              economicData={economicData as any}
+              taxSystem={previewTaxSystem}
+            />
+          </GlassCardContent>
+        </GlassCard>
+      )}
     </div>
   );
 }

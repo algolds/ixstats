@@ -35,13 +35,19 @@ const DEFAULT_COSMETICS: ActiveCosmetics = {
 
 export function useActiveCosmetics(): ActiveCosmetics {
   // Query owned items
-  const { data: ownedData, isLoading: ownedLoading } = api.vault.getPurchasedItems.useQuery(undefined, {
-    staleTime: 30000,
-  });
+  const { data: ownedData, isLoading: ownedLoading } = api.vault.getPurchasedItems.useQuery(
+    undefined,
+    {
+      staleTime: 30000,
+    }
+  );
   // Query store items definition (to get their effects metadata)
-  const { data: storeItems, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery(undefined, {
-    staleTime: 60000,
-  });
+  const { data: storeItems, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery(
+    undefined,
+    {
+      staleTime: 60000,
+    }
+  );
 
   const [localActive, setLocalActive] = useState<{
     cosmetics: Record<string, boolean>;
@@ -102,8 +108,8 @@ export function useActiveCosmetics(): ActiveCosmetics {
       // Check if item is enabled
       const isEnabled =
         item.category === "cosmetics"
-          ? localActive.cosmetics[item.id] ?? false
-          : localActive.upgrades[item.id] ?? false;
+          ? (localActive.cosmetics[item.id] ?? false)
+          : (localActive.upgrades[item.id] ?? false);
 
       if (!isEnabled) continue;
 

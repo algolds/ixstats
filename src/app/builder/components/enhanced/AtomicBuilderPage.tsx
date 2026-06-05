@@ -12,7 +12,11 @@ import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
 import type { RealCountryData } from "../../lib/economy-data-service";
 import { parseEconomyData, createDefaultEconomicInputs } from "../../lib/economy-data-service";
-import type { DepartmentInput, BudgetAllocationInput, GovernmentBuilderState } from "~/types/government";
+import type {
+  DepartmentInput,
+  BudgetAllocationInput,
+  GovernmentBuilderState,
+} from "~/types/government";
 import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
@@ -200,26 +204,22 @@ function AtomicBuilderPageInner({
           };
         }
 
-        if (
-          govStructure.departments &&
-          govStructure.budgetAllocations
-        ) {
-          updatedInputs.governmentSpending.spendingCategories =
-            govStructure.departments.map(
-              (dept: DepartmentInput, index: number) => {
-                const allocation = govStructure.budgetAllocations.find(
-                  (a: BudgetAllocationInput) => a.departmentId === index.toString()
-                );
-                return {
-                  category: dept.name,
-                  amount: allocation?.allocatedAmount || 0,
-                  percent: allocation?.allocatedPercent || 0,
-                  icon: dept.icon,
-                  color: dept.color,
-                  description: dept.description,
-                };
-              }
-            );
+        if (govStructure.departments && govStructure.budgetAllocations) {
+          updatedInputs.governmentSpending.spendingCategories = govStructure.departments.map(
+            (dept: DepartmentInput, index: number) => {
+              const allocation = govStructure.budgetAllocations.find(
+                (a: BudgetAllocationInput) => a.departmentId === index.toString()
+              );
+              return {
+                category: dept.name,
+                amount: allocation?.allocatedAmount || 0,
+                percent: allocation?.allocatedPercent || 0,
+                icon: dept.icon,
+                color: dept.color,
+                description: dept.description,
+              };
+            }
+          );
         }
 
         setBuilderState((prev) => ({ ...prev, economicInputs: updatedInputs }));

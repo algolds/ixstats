@@ -18,14 +18,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import {
-  Loader2,
-  Shield,
-  Activity,
-  TrendingUp,
-  AlertTriangle,
-  Factory,
-} from "lucide-react";
+import { Loader2, Shield, Activity, TrendingUp, AlertTriangle, Factory } from "lucide-react";
 
 interface AnalyticsTabProps {
   usageStats: any;
@@ -44,7 +37,8 @@ export function AnalyticsTab({
 }: AnalyticsTabProps) {
   // useMemo must be called unconditionally before any early returns
   const manufacturerLookup = useMemo(
-    () => new Map<string, any>((manufacturerStats?.manufacturers ?? []).map((m: any) => [m.name, m])),
+    () =>
+      new Map<string, any>((manufacturerStats?.manufacturers ?? []).map((m: any) => [m.name, m])),
     [manufacturerStats?.manufacturers]
   );
 

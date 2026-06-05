@@ -244,8 +244,6 @@ export function VaultWidget() {
                   )}
                 </div>
               )}
-
-
             </>
           )}
 

@@ -26,7 +26,10 @@ function truncPosition(p: Position, factor: number): Position {
 }
 
 function truncPositions(coords: Position[], factor: number): Position[] {
-  return coords.map((p) => truncPosition(p, factor));
+  if (!Array.isArray(coords)) return [];
+  return coords
+    .filter((p) => Array.isArray(p) && typeof p[0] === "number" && typeof p[1] === "number")
+    .map((p) => truncPosition(p, factor));
 }
 
 function truncateGeometry(geom: Geometry, decimals: number): Geometry {

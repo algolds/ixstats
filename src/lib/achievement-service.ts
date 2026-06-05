@@ -290,29 +290,32 @@ export class AchievementService {
 
       if (user?.id) {
         const [loreCount, retiredCount, distinctCountries] = await Promise.all([
-          db.cardOwnership.count({
-            where: {
-              ownerId: user.id,
-              cards: { cardType: "LORE" },
-            },
-          }).catch(() => 0),
-          db.cardOwnership.count({
-            where: {
-              ownerId: user.id,
-              cards: { isRetired: true } as any,
-            },
-          }).catch(() => 0),
-          db.cardOwnership.findMany({
-            where: { ownerId: user.id },
-            select: { cards: { select: { countryId: true } } },
-          }).then((ownerships) => {
-            const countryIds = new Set(
-              ownerships
-                .map((o) => o.cards?.countryId)
-                .filter(Boolean)
-            );
-            return countryIds.size;
-          }).catch(() => 0),
+          db.cardOwnership
+            .count({
+              where: {
+                ownerId: user.id,
+                cards: { cardType: "LORE" },
+              },
+            })
+            .catch(() => 0),
+          db.cardOwnership
+            .count({
+              where: {
+                ownerId: user.id,
+                cards: { isRetired: true } as any,
+              },
+            })
+            .catch(() => 0),
+          db.cardOwnership
+            .findMany({
+              where: { ownerId: user.id },
+              select: { cards: { select: { countryId: true } } },
+            })
+            .then((ownerships) => {
+              const countryIds = new Set(ownerships.map((o) => o.cards?.countryId).filter(Boolean));
+              return countryIds.size;
+            })
+            .catch(() => 0),
         ]);
 
         loreCardCount = loreCount;

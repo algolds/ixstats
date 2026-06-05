@@ -50,10 +50,7 @@ export interface DataSyncOptions {
   retryAttempts?: number;
   retryDelay?: number;
   notificationsEnabled?: boolean;
-  onDataChange?: (
-    data: CountryDashboardData,
-    changes: string[]
-  ) => void;
+  onDataChange?: (data: CountryDashboardData, changes: string[]) => void;
   onError?: (error: Error) => void;
   onStatusChange?: (status: DataSyncState["status"]) => void;
 }
@@ -147,59 +144,62 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
     (current: CountryDashboardData, previous: CountryDashboardData | null): string[] => {
       if (!previous || !current) return [];
 
-    const changes: string[] = [];
-    const CHANGE_THRESHOLD = 0.001; // 0.1% threshold for numerical changes
+      const changes: string[] = [];
+      const CHANGE_THRESHOLD = 0.001; // 0.1% threshold for numerical changes
 
-    // Check population changes
-    if (
-      Math.abs(
-        (current.currentPopulation - previous.currentPopulation) / previous.currentPopulation
-      ) > CHANGE_THRESHOLD
-    ) {
-      changes.push("population");
-    }
-
-    // Check GDP per capita changes
-    if (
-      Math.abs(
-        (current.currentGdpPerCapita - previous.currentGdpPerCapita) / previous.currentGdpPerCapita
-      ) > CHANGE_THRESHOLD
-    ) {
-      changes.push("gdpPerCapita");
-    }
-
-    // Check total GDP changes
-    if (
-      Math.abs((current.currentTotalGdp - previous.currentTotalGdp) / previous.currentTotalGdp) >
-      CHANGE_THRESHOLD
-    ) {
-      changes.push("totalGdp");
-    }
-
-    // Check tier changes
-    if (current.economicTier !== previous.economicTier) {
-      changes.push("economicTier");
-    }
-
-    if (current.populationTier !== previous.populationTier) {
-      changes.push("populationTier");
-    }
-
-    // Check vitality scores
-    if (current.economicVitality && previous.economicVitality) {
-      if (Math.abs(current.economicVitality - previous.economicVitality) > 1) {
-        changes.push("economicVitality");
+      // Check population changes
+      if (
+        Math.abs(
+          (current.currentPopulation - previous.currentPopulation) / previous.currentPopulation
+        ) > CHANGE_THRESHOLD
+      ) {
+        changes.push("population");
       }
-    }
 
-    if (current.populationWellbeing && previous.populationWellbeing) {
-      if (Math.abs(current.populationWellbeing - previous.populationWellbeing) > 1) {
-        changes.push("populationWellbeing");
+      // Check GDP per capita changes
+      if (
+        Math.abs(
+          (current.currentGdpPerCapita - previous.currentGdpPerCapita) /
+            previous.currentGdpPerCapita
+        ) > CHANGE_THRESHOLD
+      ) {
+        changes.push("gdpPerCapita");
       }
-    }
 
-    return changes;
-  }, []);
+      // Check total GDP changes
+      if (
+        Math.abs((current.currentTotalGdp - previous.currentTotalGdp) / previous.currentTotalGdp) >
+        CHANGE_THRESHOLD
+      ) {
+        changes.push("totalGdp");
+      }
+
+      // Check tier changes
+      if (current.economicTier !== previous.economicTier) {
+        changes.push("economicTier");
+      }
+
+      if (current.populationTier !== previous.populationTier) {
+        changes.push("populationTier");
+      }
+
+      // Check vitality scores
+      if (current.economicVitality && previous.economicVitality) {
+        if (Math.abs(current.economicVitality - previous.economicVitality) > 1) {
+          changes.push("economicVitality");
+        }
+      }
+
+      if (current.populationWellbeing && previous.populationWellbeing) {
+        if (Math.abs(current.populationWellbeing - previous.populationWellbeing) > 1) {
+          changes.push("populationWellbeing");
+        }
+      }
+
+      return changes;
+    },
+    []
+  );
 
   // Generate notifications for changes
   const generateChangeNotifications = useCallback(

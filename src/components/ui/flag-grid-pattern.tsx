@@ -140,7 +140,8 @@ export function FlagGridPattern({
           >
             {hasFlag && (
               <div className="absolute inset-0">
-                <UnifiedCountryFlag showTooltip={false}
+                <UnifiedCountryFlag
+                  showTooltip={false}
                   countryName={hasFlag.name}
                   className="h-full w-full object-cover"
                   showPlaceholder={true}

@@ -313,7 +313,8 @@ export function MyCountryCard({
                     times: [0, 0.25, 0.5, 0.75, 1],
                   }}
                 >
-                  <UnifiedCountryFlag showTooltip={false}
+                  <UnifiedCountryFlag
+                    showTooltip={false}
                     countryName={countryData.name}
                     className="h-full w-full object-cover"
                     showPlaceholder={true}
@@ -337,7 +338,8 @@ export function MyCountryCard({
               <div className="flex items-center gap-3">
                 <div className="h-8 w-12 overflow-hidden rounded border border-white/30 shadow-lg">
                   {countryData && (
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={countryData.name}
                       className="h-full w-full object-cover"
                     />

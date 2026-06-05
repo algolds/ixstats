@@ -109,7 +109,8 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
               isHovered
                 ? "shadow-2xl shadow-black/25 brightness-105 saturate-110 backdrop-blur-md dark:shadow-black/60"
                 : "shadow-md shadow-black/10 dark:shadow-black/35",
-              (softSelectedCountryId === country.originalId || softSelectedCountryId === country.id) &&
+              (softSelectedCountryId === country.originalId ||
+                softSelectedCountryId === country.id) &&
                 "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"
             )}
           >

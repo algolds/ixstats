@@ -126,10 +126,7 @@ export const MetalButton = forwardRef<HTMLDivElement, MetalButtonProps>(function
 MetalButton.displayName = "MetalButton";
 
 export const MetalIconButton = forwardRef<HTMLDivElement, MetalIconButtonProps>(
-  function MetalIconButton(
-    { size = "icon", metalVariant = "circle", className, ...props },
-    ref
-  ) {
+  function MetalIconButton({ size = "icon", metalVariant = "circle", className, ...props }, ref) {
     return (
       <MetalButton
         className={cn("leading-none! [&_svg]:block [&_svg]:shrink-0", className)}

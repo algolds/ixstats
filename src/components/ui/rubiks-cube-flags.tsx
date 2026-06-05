@@ -254,7 +254,8 @@ export const RubiksCubeFlags: React.FC<RubiksCubeFlagsProps> = ({
                   transition: { duration: 0.2 },
                 }}
               >
-                <UnifiedCountryFlag showTooltip={false}
+                <UnifiedCountryFlag
+                  showTooltip={false}
                   countryName={country.name}
                   className="h-full w-full object-cover"
                   showPlaceholder={true}

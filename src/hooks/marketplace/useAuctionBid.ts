@@ -37,10 +37,7 @@ export function useAuctionBid(options?: { onSuccess?: () => void }): UseAuctionB
     onSuccess: (data) => {
       vaultNotify.success(data.message);
       if (data.leveledUp && data.newLevel != null) {
-        vaultNotify.success(
-          `Card leveled up to Level ${data.newLevel}!`,
-          "Level Up!"
-        );
+        vaultNotify.success(`Card leveled up to Level ${data.newLevel}!`, "Level Up!");
       }
       void utils.cardMarket.getActiveAuctions.invalidate();
       void utils.cardMarket.getMyActiveBids.invalidate();

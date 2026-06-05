@@ -72,7 +72,7 @@ export function TextureOverlay({ texture, opacity, className }: TextureOverlayPr
 
   return (
     <div
-      className={cn("pointer-events-none absolute inset-0 texture-overlay", pattern, className)}
+      className={cn("texture-overlay pointer-events-none absolute inset-0", pattern, className)}
       style={{ opacity: finalOpacity }}
     />
   );

@@ -222,7 +222,8 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                       background: "rgba(255, 255, 255, 0.1)",
                     }}
                   >
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={cube.country.name}
                       className="h-full w-full object-cover opacity-80"
                       showPlaceholder={true}
@@ -237,7 +238,8 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                       background: "rgba(255, 255, 255, 0.05)",
                     }}
                   >
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={cube.country.name}
                       className="h-full w-full object-cover opacity-60"
                       showPlaceholder={true}
@@ -252,7 +254,8 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                       background: "rgba(255, 255, 255, 0.08)",
                     }}
                   >
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={cube.country.name}
                       className="h-full w-full object-cover opacity-70"
                       showPlaceholder={true}
@@ -267,7 +270,8 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                       background: "rgba(255, 255, 255, 0.08)",
                     }}
                   >
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={cube.country.name}
                       className="h-full w-full object-cover opacity-70"
                       showPlaceholder={true}
@@ -282,7 +286,8 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                       background: "rgba(255, 255, 255, 0.06)",
                     }}
                   >
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={cube.country.name}
                       className="h-full w-full object-cover opacity-50"
                       showPlaceholder={true}
@@ -297,7 +302,8 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                       background: "rgba(255, 255, 255, 0.06)",
                     }}
                   >
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={cube.country.name}
                       className="h-full w-full object-cover opacity-50"
                       showPlaceholder={true}

@@ -31,8 +31,13 @@ export async function grantCardXp(
 
   if (!ownership) {
     return {
-      prevLevel: 0, newLevel: 0, prevXP: 0, newXP: 0,
-      leveledUp: false, xpGained: 0, nextLevelThreshold: 0,
+      prevLevel: 0,
+      newLevel: 0,
+      prevXP: 0,
+      newXP: 0,
+      leveledUp: false,
+      xpGained: 0,
+      nextLevelThreshold: 0,
     };
   }
 

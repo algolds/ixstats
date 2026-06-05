@@ -177,7 +177,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                             (() => {
                               const IconComponent = resolveNamedDepartmentIcon(department.icon);
                               if (IconComponent) {
-                                return <IconComponent className="h-5 w-5" style={{ color: cardColor }} />;
+                                return (
+                                  <IconComponent className="h-5 w-5" style={{ color: cardColor }} />
+                                );
                               }
                               if (isImageIconSource(department.icon)) {
                                 return (
@@ -427,7 +429,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                               />
                             );
                           }
-                          return <Icon className="h-4 w-4" style={{ color: currentEditingDept.color }} />;
+                          return (
+                            <Icon className="h-4 w-4" style={{ color: currentEditingDept.color }} />
+                          );
                         })()
                       ) : (
                         <Icon className="h-4 w-4" style={{ color: currentEditingDept.color }} />

@@ -599,11 +599,21 @@ export class VaultService {
         // Multipliers
         const streakMultiplier = 1 + Math.min(newStreak * 0.05, 1.5);
         const levelMultiplier = 1 + Math.min(vault.vaultLevel * 0.02, 1.0);
-        const totalCredits = Math.min(10000, Math.floor(baseCredits * streakMultiplier * levelMultiplier));
+        const totalCredits = Math.min(
+          10000,
+          Math.floor(baseCredits * streakMultiplier * levelMultiplier)
+        );
 
-        const earnResult = await this.earnCredits(userId, totalCredits, "EARN_ACTIVE", "DAILY_LOGIN_CREDITS", db, {
-          streak: newStreak,
-        });
+        const earnResult = await this.earnCredits(
+          userId,
+          totalCredits,
+          "EARN_ACTIVE",
+          "DAILY_LOGIN_CREDITS",
+          db,
+          {
+            streak: newStreak,
+          }
+        );
 
         if (!earnResult.success) {
           return {
@@ -664,7 +674,7 @@ export class VaultService {
           select: { serialNumber: true },
         });
         const nextSerial = (maxSerial?.serialNumber || 0) + 1;
-        
+
         const ownership = await db.cardOwnership.create({
           data: {
             id: `co_${Date.now()}_${vault.userId}_${card.id}`,
@@ -944,7 +954,9 @@ export class VaultService {
 
       return storeItems
         .map((item: any) => item.effects)
-        .filter((effects: any): effects is Record<string, any> => !!effects && typeof effects === "object");
+        .filter(
+          (effects: any): effects is Record<string, any> => !!effects && typeof effects === "object"
+        );
     } catch (error) {
       console.error("[Vault Service] Error getting purchased items effects:", error);
       return [];

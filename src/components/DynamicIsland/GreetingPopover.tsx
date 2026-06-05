@@ -215,7 +215,8 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
                   className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                    <UnifiedCountryFlag showTooltip={false}
+                    <UnifiedCountryFlag
+                      showTooltip={false}
                       countryName={userProfile.country.name}
                       className="h-full w-full object-cover"
                       showPlaceholder={true}

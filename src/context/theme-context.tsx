@@ -158,7 +158,14 @@ export function ThemeProvider({
     // Debounce theme application
     const timeoutId = setTimeout(applyTheme, 0);
     return () => clearTimeout(timeoutId);
-  }, [effectiveTheme, compactMode, reduceAnimations, lowFidelityMode, enableTextures, interactiveHover]);
+  }, [
+    effectiveTheme,
+    compactMode,
+    reduceAnimations,
+    lowFidelityMode,
+    enableTextures,
+    interactiveHover,
+  ]);
 
   // Memoize theme functions to prevent re-renders
   const setTheme = useCallback(

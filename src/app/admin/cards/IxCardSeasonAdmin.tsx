@@ -41,8 +41,8 @@ export function IxCardSeasonAdmin() {
             <h2 className="text-foreground text-lg font-semibold">IxCard Season Configuration</h2>
             <p className="text-muted-foreground text-sm">
               Set the current active IxCard season. This controls which season newly created cards
-              (crafting, lore, special) are assigned to. NS-imported cards keep their original season
-              in the <code className="text-blue-400">nsSeason</code> field.
+              (crafting, lore, special) are assigned to. NS-imported cards keep their original
+              season in the <code className="text-blue-400">nsSeason</code> field.
             </p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export function IxCardSeasonAdmin() {
           </div>
 
           {setSeasonMutation.isSuccess && (
-            <p className="text-green-400 text-sm">
+            <p className="text-sm text-green-400">
               Season updated to {selectedSeason} successfully!
             </p>
           )}
@@ -98,7 +98,8 @@ export function IxCardSeasonAdmin() {
               </li>
               <li>
                 <strong className="text-foreground">Crafted cards</strong> and{" "}
-                <strong className="text-foreground">Lore cards</strong> use the current IxCard season
+                <strong className="text-foreground">Lore cards</strong> use the current IxCard
+                season
               </li>
               <li>
                 <strong className="text-foreground">Seasonal retirement</strong> checks{" "}

@@ -159,7 +159,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
           </div>
           <div className="text-right">
             {tokenBalance > 0 ? (
-              <div className="text-xs text-white/60 font-semibold text-emerald-400">
+              <div className="text-xs font-semibold text-emerald-400 text-white/60">
                 Lore Token Balance: {tokenBalance}
               </div>
             ) : (

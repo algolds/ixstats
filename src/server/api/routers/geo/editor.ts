@@ -275,7 +275,11 @@ export const geoEditorRouter = createTRPCRouter({
     }
 
     clearLayerCache("political");
-    await invalidateCache(["geoCore.listCountries", "geoCore.getWorldMap", "geoEditor.validateLinkage"]);
+    await invalidateCache([
+      "geoCore.listCountries",
+      "geoCore.getWorldMap",
+      "geoEditor.validateLinkage",
+    ]);
 
     return { linked, created, failed, total: unlinked.length };
   }),
@@ -1653,5 +1657,3 @@ export const geoEditorRouter = createTRPCRouter({
 
   // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });
-
-

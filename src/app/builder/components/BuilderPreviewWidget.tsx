@@ -430,7 +430,11 @@ export function BuilderPreviewWidget({
                     updateStep("foundation", previewCountry);
                   }
                 }}
-                disabled={!!(foundationFilter.softSelectedCountry && !foundationFilter.newCountryName.trim())}
+                disabled={
+                  !!(
+                    foundationFilter.softSelectedCountry && !foundationFilter.newCountryName.trim()
+                  )
+                }
                 className="flex-1 cursor-pointer rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 py-1.5 text-center text-[10px] font-bold text-zinc-950 shadow-md transition-all hover:from-amber-400 hover:to-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue
@@ -964,8 +968,8 @@ export function BuilderPreviewWidget({
                 className={cn(
                   "flex-1 cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-55",
                   isLastStep
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white"
-                    : "bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400"
+                    : "bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 hover:from-amber-400 hover:to-yellow-400"
                 )}
               >
                 {isLastStep

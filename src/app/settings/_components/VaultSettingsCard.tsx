@@ -271,8 +271,8 @@ export function VaultSettingsCard() {
                           </button>
                         </>
                       ) : (
-                        <div className="flex items-center justify-between w-full gap-2">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 font-mono">
+                        <div className="flex w-full items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">
                             <Lock className="h-3.5 w-3.5 text-slate-400" /> {item.price} IxC
                           </span>
                           <button
@@ -280,11 +280,12 @@ export function VaultSettingsCard() {
                             disabled={balance < item.price || purchaseMutation.isPending}
                             className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${
                               balance >= item.price
-                                ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-95"
-                                : "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                                ? "bg-amber-500 text-white shadow-md shadow-amber-500/10 hover:bg-amber-600 hover:shadow-amber-500/20 active:scale-95"
+                                : "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
                             }`}
                           >
-                            {purchaseMutation.isPending && purchaseMutation.variables?.itemId === item.id
+                            {purchaseMutation.isPending &&
+                            purchaseMutation.variables?.itemId === item.id
                               ? "Buying..."
                               : "Buy"}
                           </button>
@@ -362,8 +363,8 @@ export function VaultSettingsCard() {
                           </button>
                         </>
                       ) : (
-                        <div className="flex items-center justify-between w-full gap-2">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 font-mono">
+                        <div className="flex w-full items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">
                             <Lock className="h-3.5 w-3.5 text-slate-400" /> {item.price} IxC
                           </span>
                           <button
@@ -371,11 +372,12 @@ export function VaultSettingsCard() {
                             disabled={balance < item.price || purchaseMutation.isPending}
                             className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${
                               balance >= item.price
-                                ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-95"
-                                : "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                                ? "bg-amber-500 text-white shadow-md shadow-amber-500/10 hover:bg-amber-600 hover:shadow-amber-500/20 active:scale-95"
+                                : "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
                             }`}
                           >
-                            {purchaseMutation.isPending && purchaseMutation.variables?.itemId === item.id
+                            {purchaseMutation.isPending &&
+                            purchaseMutation.variables?.itemId === item.id
                               ? "Buying..."
                               : "Buy"}
                           </button>

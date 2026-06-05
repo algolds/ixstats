@@ -18,7 +18,13 @@ export function LaborDemographicsSummary({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Labor Market */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Users className="h-5 w-5" />
@@ -75,7 +81,13 @@ export function LaborDemographicsSummary({
       </GlassCard>
 
       {/* Demographics */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/20" texture="chevron" textureOpacity={0.04}>
+      <GlassCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
         <GlassCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Heart className="h-5 w-5" />

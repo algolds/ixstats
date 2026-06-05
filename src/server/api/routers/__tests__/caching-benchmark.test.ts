@@ -3,7 +3,8 @@
  */
 
 // Configure database and Redis for the integration test before imports run
-const dbUrl = "postgresql://ixstats_readonly:Q9ul7FneYGI4vT%2Fs1%2FjkIokTH97nuZ8Xk9qnmIVMgVs%3D@localhost:5433/ixstats?connection_limit=5&pool_timeout=30&connect_timeout=10";
+const dbUrl =
+  "postgresql://ixstats_readonly:Q9ul7FneYGI4vT%2Fs1%2FjkIokTH97nuZ8Xk9qnmIVMgVs%3D@localhost:5433/ixstats?connection_limit=5&pool_timeout=30&connect_timeout=10";
 process.env.DATABASE_URL = dbUrl;
 process.env.REDIS_ENABLED = "true";
 process.env.REDIS_URL = "redis://localhost:6379";
@@ -26,7 +27,9 @@ describe("Feeds Caching & Performance Benchmark (Integration Test)", () => {
 
   beforeAll(async () => {
     // 1. Ensure Redis is connected and check status
-    console.log(`📡 Redis config: ENABLED=${process.env.REDIS_ENABLED}, URL=${process.env.REDIS_URL}`);
+    console.log(
+      `📡 Redis config: ENABLED=${process.env.REDIS_ENABLED}, URL=${process.env.REDIS_URL}`
+    );
 
     // Clear feed caches to ensure a clean start
     console.log("🧹 Clearing feed caches in Redis/Memory...");
@@ -202,14 +205,19 @@ describe("Feeds Caching & Performance Benchmark (Integration Test)", () => {
       const feedAfterPost = await thinkpagesCaller.getFeed(filterParams);
       const end3 = performance.now();
       const postBustMissTime = end3 - start3;
-      console.log(`⏱️ [ThinkPages Feed] Call After Post (Expected Cache Miss): ${postBustMissTime.toFixed(2)}ms`);
+      console.log(
+        `⏱️ [ThinkPages Feed] Call After Post (Expected Cache Miss): ${postBustMissTime.toFixed(2)}ms`
+      );
 
       // The new post should be found in the feed (might not be first if there are pinned posts)
       const foundNewPost = feedAfterPost.posts.some((p: any) =>
         p.content.includes("Jest caching integration test post!")
       );
       if (!foundNewPost) {
-        console.log("Feed posts content:", feedAfterPost.posts.map((p: any) => p.content));
+        console.log(
+          "Feed posts content:",
+          feedAfterPost.posts.map((p: any) => p.content)
+        );
       }
       expect(foundNewPost).toBe(true);
       expect(postBustMissTime).toBeGreaterThan(hitTime);

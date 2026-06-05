@@ -143,7 +143,8 @@ export default function LorewardsPage() {
                   >
                     <span className="wikios-lw-td-rank">{user.rank}</span>
                     <span className="wikios-lw-td-user">
-                      <UnifiedCountryFlag showTooltip={false}
+                      <UnifiedCountryFlag
+                        showTooltip={false}
                         countryName={user.username}
                         size="sm"
                         className="wikios-lw-table-flag"
@@ -195,7 +196,12 @@ export default function LorewardsPage() {
                       href={withBasePath(`/w/special/user/${encodeURIComponent(w.winnerUser)}`)}
                       className="wikios-lw-winner-user"
                     >
-                      <UnifiedCountryFlag showTooltip={false} countryName={w.winnerUser} size="sm" showPlaceholder={false} />
+                      <UnifiedCountryFlag
+                        showTooltip={false}
+                        countryName={w.winnerUser}
+                        size="sm"
+                        showPlaceholder={false}
+                      />
                       {w.winnerUser}
                     </Link>
                   )}
@@ -482,7 +488,8 @@ function PodiumCard({
           {rank === 1 ? <Trophy size={16} /> : <Award size={14} />}
           <span>#{rank}</span>
         </div>
-        <UnifiedCountryFlag showTooltip={false}
+        <UnifiedCountryFlag
+          showTooltip={false}
           countryName={user.username}
           size="md"
           className="wikios-lw-podium-flag"

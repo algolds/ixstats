@@ -14,7 +14,11 @@ interface SectorMetricsProps {
   hasZeroContribution?: SectorContribution[];
 }
 
-export function SectorMetrics({ sectors, onNormalize, hasZeroContribution = [] }: SectorMetricsProps) {
+export function SectorMetrics({
+  sectors,
+  onNormalize,
+  hasZeroContribution = [],
+}: SectorMetricsProps) {
   const { totalGDP, totalEmployment, averageProductivity } = calculateSectorTotals(sectors);
 
   const gdpValid = Math.abs(totalGDP - 100) < 1;

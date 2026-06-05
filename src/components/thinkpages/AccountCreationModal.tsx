@@ -595,9 +595,7 @@ export function AccountCreationModal({
                           className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-white"
                         >
                           <span>
-                            {showAdvanced
-                              ? "Hide Advanced Settings"
-                              : "Show Advanced Settings"}
+                            {showAdvanced ? "Hide Advanced Settings" : "Show Advanced Settings"}
                           </span>
                         </button>
 

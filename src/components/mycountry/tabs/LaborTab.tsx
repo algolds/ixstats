@@ -2,14 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Briefcase,
-  Activity,
-  DollarSign,
-  Users,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, Briefcase, Activity, DollarSign, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
@@ -121,8 +114,7 @@ export function LaborTab({
                     icon: Users,
                     description: "Active workforce",
                     onClick: () => openMetricModal("labor-force", country.id),
-                    tooltip:
-                      "Total number of people employed or actively seeking employment.",
+                    tooltip: "Total number of people employed or actively seeking employment.",
                   },
                   {
                     id: "participation",
@@ -131,9 +123,7 @@ export function LaborTab({
                     icon: Briefcase,
                     trend: {
                       direction:
-                        (economyData?.labor?.laborForceParticipationRate ?? 0) > 60
-                          ? "up"
-                          : "down",
+                        (economyData?.labor?.laborForceParticipationRate ?? 0) > 60 ? "up" : "down",
                     },
                     description: "Working age population in workforce",
                     onClick: () => openMetricModal("labor-force", country.id),
@@ -243,14 +233,14 @@ export function LaborTab({
                   {
                     id: "avg-income",
                     title: "Average Annual Income",
-                    value: (economyData?.labor?.averageAnnualIncome ?? 0).toLocaleString(
-                      "en-US",
-                      { style: "currency", currency: "USD", maximumFractionDigits: 0 }
-                    ),
+                    value: (economyData?.labor?.averageAnnualIncome ?? 0).toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      maximumFractionDigits: 0,
+                    }),
                     icon: DollarSign,
                     description: "Mean annual earnings",
-                    tooltip:
-                      "Mean annual gross earnings across all employed workers before taxes.",
+                    tooltip: "Mean annual gross earnings across all employed workers before taxes.",
                   },
                   {
                     id: "min-wage",
@@ -270,8 +260,7 @@ export function LaborTab({
                     value: `${economyData?.labor?.averageWorkweekHours ?? 0}h`,
                     icon: Activity,
                     description: "Hours per week",
-                    tooltip:
-                      "Average number of hours worked per week by full-time employees.",
+                    tooltip: "Average number of hours worked per week by full-time employees.",
                   },
                   {
                     id: "productivity",
@@ -280,12 +269,10 @@ export function LaborTab({
                     icon: TrendingUp,
                     trend: {
                       direction:
-                        (economyData?.labor?.skillsAndProductivity?.productivityGrowthRate ??
-                          0) > 0
+                        (economyData?.labor?.skillsAndProductivity?.productivityGrowthRate ?? 0) > 0
                           ? "up"
                           : "stable",
-                      value:
-                        economyData?.labor?.skillsAndProductivity?.productivityGrowthRate ?? 0,
+                      value: economyData?.labor?.skillsAndProductivity?.productivityGrowthRate ?? 0,
                     },
                     description: "Labor output efficiency",
                     tooltip:
@@ -384,8 +371,7 @@ export function LaborTab({
                     value: `${(economyData?.labor?.skillsAndProductivity?.vocationalTrainingRate ?? 0).toFixed(1)}%`,
                     icon: Users,
                     description: "Technical certification",
-                    tooltip:
-                      "Share of the workforce with vocational or technical certifications.",
+                    tooltip: "Share of the workforce with vocational or technical certifications.",
                   },
                 ]}
               />
@@ -440,8 +426,8 @@ export function LaborTab({
                     icon: Activity,
                     trend: {
                       direction:
-                        (economyData?.labor?.demographicsAndConditions?.workplaceSafetyIndex ??
-                          0) > 70
+                        (economyData?.labor?.demographicsAndConditions?.workplaceSafetyIndex ?? 0) >
+                        70
                           ? "up"
                           : "stable",
                     },

@@ -98,6 +98,8 @@ export const env = createEnv({
     NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: z.string().optional().default("false"),
     // Unsplash API (for country card images) - required for client-side fetching
     NEXT_PUBLIC_UNSPLASH_ACCESS_KEY: z.string().optional(),
+    // Giphy API key for ThinkPages composer
+    NEXT_PUBLIC_GIPHY_API_KEY: z.string().optional(),
   },
 
   /**
@@ -155,6 +157,7 @@ export const env = createEnv({
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
     NEXT_PUBLIC_UNSPLASH_ACCESS_KEY:
       process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_ACCESS_KEY,
+    NEXT_PUBLIC_GIPHY_API_KEY: process.env.NEXT_PUBLIC_GIPHY_API_KEY,
     // Server
     PORT: process.env.PORT,
     VERCEL_URL: process.env.VERCEL_URL,

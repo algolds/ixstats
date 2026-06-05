@@ -158,7 +158,7 @@ export function TiltCard({
         {/* Neon Frame Overlay */}
         {neonFrame.enabled && (
           <motion.div
-            className="absolute inset-0 z-20 pointer-events-none rounded-xl"
+            className="pointer-events-none absolute inset-0 z-20 rounded-xl"
             style={{
               border: `2px solid ${neonFrame.color}`,
               boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,

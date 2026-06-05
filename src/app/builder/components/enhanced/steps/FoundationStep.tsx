@@ -65,12 +65,8 @@ export function FoundationStep({
   onBackToIntro,
 }: FoundationStepProps) {
   const { builderState, updateArchetypeId } = useBuilderContext();
-  const {
-    selectedTemplate,
-    setSelectedTemplate,
-    setSoftSelectedCountry,
-    setNewCountryName,
-  } = useBuilderFilter();
+  const { selectedTemplate, setSelectedTemplate, setSoftSelectedCountry, setNewCountryName } =
+    useBuilderFilter();
   const [localSelectedArchetype, setLocalSelectedArchetype] = useState<any | null>(null);
   const [activeEra, setActiveEra] = useState<"modern" | "historical">("modern");
   const [visibleCount, setVisibleCount] = useState(6);
@@ -95,16 +91,25 @@ export function FoundationStep({
       setSelectedTemplate(builderState.selectedCountry);
       setSoftSelectedCountry(builderState.selectedCountry);
       setNewCountryName(builderState.selectedCountry.name);
-      
+
       // Auto-set the active era if a historical archetype was previously chosen
-      if (builderState.selectedArchetypeId && HISTORICAL_ARCHETYPE_IDS.includes(builderState.selectedArchetypeId)) {
+      if (
+        builderState.selectedArchetypeId &&
+        HISTORICAL_ARCHETYPE_IDS.includes(builderState.selectedArchetypeId)
+      ) {
         setActiveEra("historical");
       }
     } else {
       setSelectedTemplate(null);
     }
     setLocalSelectedArchetype(null);
-  }, [setSelectedTemplate, setSoftSelectedCountry, setNewCountryName, builderState.selectedCountry, builderState.selectedArchetypeId]);
+  }, [
+    setSelectedTemplate,
+    setSoftSelectedCountry,
+    setNewCountryName,
+    builderState.selectedCountry,
+    builderState.selectedArchetypeId,
+  ]);
 
   // Restore selected archetype when archetypes data loads
   React.useEffect(() => {
@@ -130,7 +135,10 @@ export function FoundationStep({
     }),
     []
   );
-  const isIntersecting = useIntersectionObserver(loaderRef as React.RefObject<Element>, observerOptions);
+  const isIntersecting = useIntersectionObserver(
+    loaderRef as React.RefObject<Element>,
+    observerOptions
+  );
 
   React.useEffect(() => {
     if (isIntersecting && visibleCount < archetypes.length) {

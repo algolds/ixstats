@@ -303,7 +303,9 @@ export function EconomicWelcomeModal({
                               </span>
                             </div>
                             <p className="text-muted-foreground text-[10px]">
-                              Always keep an eye on validation issues before finalizing. Sector percentages must sum to 100%, and excessive taxation can reduce GDP growth potential.
+                              Always keep an eye on validation issues before finalizing. Sector
+                              percentages must sum to 100%, and excessive taxation can reduce GDP
+                              growth potential.
                             </p>
                           </div>
                         </motion.div>
@@ -482,7 +484,8 @@ export function EconomicWelcomeModal({
                             Tax Blueprint Templates
                           </h4>
                           <p className="mt-1 text-[10px] leading-relaxed text-zinc-800 dark:text-zinc-300">
-                            Preconfigured structures like Laissez-Faire, Social Democracy, or Flat Tax can be applied instantly to form a base.
+                            Preconfigured structures like Laissez-Faire, Social Democracy, or Flat
+                            Tax can be applied instantly to form a base.
                           </p>
                         </div>
 
@@ -492,7 +495,9 @@ export function EconomicWelcomeModal({
                             Revenue Calculation
                           </h4>
                           <p className="mt-1 text-[10px] leading-relaxed text-zinc-800 dark:text-zinc-300">
-                            Revenue is derived from income, sales, corporate, and resource taxes. Tax compliance and collection efficiency values dictate the actual realized revenue.
+                            Revenue is derived from income, sales, corporate, and resource taxes.
+                            Tax compliance and collection efficiency values dictate the actual
+                            realized revenue.
                           </p>
                         </div>
                       </div>
@@ -502,7 +507,9 @@ export function EconomicWelcomeModal({
                           Exemptions & Deductions
                         </h4>
                         <p className="text-muted-foreground mt-1 text-[10px] leading-relaxed">
-                          Offering deductions for research, family sizes, or green investments reduces tax burdens and increases specific sector efficiencies at the cost of immediate fiscal revenue.
+                          Offering deductions for research, family sizes, or green investments
+                          reduces tax burdens and increases specific sector efficiencies at the cost
+                          of immediate fiscal revenue.
                         </p>
                       </div>
                     </motion.div>

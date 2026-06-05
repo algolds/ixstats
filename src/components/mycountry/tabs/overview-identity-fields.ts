@@ -1,12 +1,4 @@
-import {
-  Landmark,
-  MapPin,
-  Globe2,
-  DollarSign,
-  Users,
-  Globe,
-  Clock,
-} from "lucide-react";
+import { Landmark, MapPin, Globe2, DollarSign, Users, Globe, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 /**

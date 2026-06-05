@@ -2,9 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { cn } from "~/lib/utils";
-import {
-  ShoppingCart, Plus, Clock, Store, Gavel, TrendingUp, History, Filter,
-} from "lucide-react";
+import { ShoppingCart, Plus, Clock, Store, Gavel, TrendingUp, History, Filter } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -86,7 +84,11 @@ function AuctionCard({
       {/* Artwork thumbnail — click to view details */}
       <button onClick={() => onShowDetails(auction)} className="shrink-0">
         <div className="bg-muted border-border/50 relative h-14 w-14 overflow-hidden rounded-md border dark:border-white/5">
-          <CardHolographicCover cardType={card?.cardType || "NATION"} rarity={rarity} title={title} />
+          <CardHolographicCover
+            cardType={card?.cardType || "NATION"}
+            rarity={rarity}
+            title={title}
+          />
           {artwork && (
             <img
               src={artwork}
@@ -101,7 +103,10 @@ function AuctionCard({
       </button>
 
       {/* Info — click to view details */}
-      <button onClick={() => onShowDetails(auction)} className="relative z-10 flex min-w-0 flex-1 flex-col justify-between text-left">
+      <button
+        onClick={() => onShowDetails(auction)}
+        className="relative z-10 flex min-w-0 flex-1 flex-col justify-between text-left"
+      >
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-xs font-bold text-slate-900 dark:text-white/95">
             {title}
@@ -150,7 +155,7 @@ function AuctionCard({
               min={minNextBid}
               value={customAmount}
               onChange={(e) => setCustomAmount(parseInt(e.target.value) || minNextBid)}
-              className="h-6 w-16 border px-1 text-[10px] font-mono text-slate-800 dark:border-slate-700/60 dark:bg-slate-800 dark:text-white"
+              className="h-6 w-16 border px-1 font-mono text-[10px] text-slate-800 dark:border-slate-700/60 dark:bg-slate-800 dark:text-white"
             />
             <Button
               size="sm"
@@ -339,7 +344,8 @@ function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                   ))
                 ) : (
                   <div className="py-6 text-center text-[10px] text-slate-400">
-                    No available cards — all your cards are either already listed or locked in trades
+                    No available cards — all your cards are either already listed or locked in
+                    trades
                   </div>
                 )}
               </div>
@@ -611,7 +617,10 @@ export function VaultAuctionsTab() {
         <Filter className="text-muted-foreground h-3.5 w-3.5" />
         <select
           value={filters.rarity}
-          onChange={(e) => { setFilters((f) => ({ ...f, rarity: e.target.value })); setOffset(0); }}
+          onChange={(e) => {
+            setFilters((f) => ({ ...f, rarity: e.target.value }));
+            setOffset(0);
+          }}
           className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-[10px] font-medium"
         >
           <option value="">All Rarities</option>
@@ -624,7 +633,10 @@ export function VaultAuctionsTab() {
         </select>
         <select
           value={filters.cardType}
-          onChange={(e) => { setFilters((f) => ({ ...f, cardType: e.target.value })); setOffset(0); }}
+          onChange={(e) => {
+            setFilters((f) => ({ ...f, cardType: e.target.value }));
+            setOffset(0);
+          }}
           className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-[10px] font-medium"
         >
           <option value="">All Types</option>
@@ -638,8 +650,11 @@ export function VaultAuctionsTab() {
           min="0"
           placeholder="Min price"
           value={filters.minPrice}
-          onChange={(e) => { setFilters((f) => ({ ...f, minPrice: e.target.value })); setOffset(0); }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 text-[10px] font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          onChange={(e) => {
+            setFilters((f) => ({ ...f, minPrice: e.target.value }));
+            setOffset(0);
+          }}
+          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-[10px] placeholder:text-slate-400 dark:placeholder:text-slate-600"
         />
         <span className="text-muted-foreground text-[10px]">—</span>
         <input
@@ -647,12 +662,18 @@ export function VaultAuctionsTab() {
           min="0"
           placeholder="Max price"
           value={filters.maxPrice}
-          onChange={(e) => { setFilters((f) => ({ ...f, maxPrice: e.target.value })); setOffset(0); }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 text-[10px] font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          onChange={(e) => {
+            setFilters((f) => ({ ...f, maxPrice: e.target.value }));
+            setOffset(0);
+          }}
+          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-[10px] placeholder:text-slate-400 dark:placeholder:text-slate-600"
         />
         <select
           value={filters.sortBy}
-          onChange={(e) => { setFilters((f) => ({ ...f, sortBy: e.target.value })); setOffset(0); }}
+          onChange={(e) => {
+            setFilters((f) => ({ ...f, sortBy: e.target.value }));
+            setOffset(0);
+          }}
           className="border-border/50 bg-muted/30 text-foreground ml-auto h-7 rounded-md border px-2 text-[10px] font-medium"
         >
           <option value="ending_soon">Ending Soon</option>
@@ -934,7 +955,13 @@ export function VaultAuctionsTab() {
                   const card = auction.CardOwnership?.cards;
                   const role = auction.participation as string;
                   const badgeLabel =
-                    role === "cancelled" ? "Cancelled" : role === "won" ? "Won" : role === "sold" ? "Sold" : "Ended";
+                    role === "cancelled"
+                      ? "Cancelled"
+                      : role === "won"
+                        ? "Won"
+                        : role === "sold"
+                          ? "Sold"
+                          : "Ended";
                   const badgeColor =
                     role === "cancelled"
                       ? "border-red-500/30 text-red-500"
@@ -960,7 +987,7 @@ export function VaultAuctionsTab() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "rounded-full border px-1.5 py-0 text-[8px] font-bold uppercase leading-none",
+                            "rounded-full border px-1.5 py-0 text-[8px] leading-none font-bold uppercase",
                             badgeColor
                           )}
                         >

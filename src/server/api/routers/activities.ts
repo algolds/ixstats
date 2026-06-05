@@ -72,7 +72,7 @@ export const activitiesRouter = createTRPCRouter({
   getGlobalFeed: publicProcedure.input(activityFilterSchema).query(async ({ ctx, input }) => {
     try {
       const cacheKey = `global_activity_feed:${input.filter}:${input.category}:${input.userId || "all"}:${input.limit}:${input.cursor || "none"}`;
-      
+
       let cachedData = await globalCache.get<{ combinedActivities: any[] }>(cacheKey);
       let combinedActivities: any[] = [];
 
@@ -486,7 +486,8 @@ export const activitiesRouter = createTRPCRouter({
                     item.type === "thread"
                       ? `New forum thread: ${item.title}`
                       : `Forum reply in: ${item.title}`,
-                  description: item.excerpt || `${item.author} posted in the IxWiki community forum`,
+                  description:
+                    item.excerpt || `${item.author} posted in the IxWiki community forum`,
                   metadata: {
                     source: "xenforo",
                     forumName: item.forumName,
@@ -525,7 +526,9 @@ export const activitiesRouter = createTRPCRouter({
         combinedActivities.length > input.limit ? combinedActivities[input.limit]?.id : undefined;
 
       // Populate user-specific votes dynamically on the paginated slice
-      const pollIds = paginatedActivities.filter((a) => a.poll && a.poll.id).map((a) => a.poll.id) as string[];
+      const pollIds = paginatedActivities
+        .filter((a) => a.poll && a.poll.id)
+        .map((a) => a.poll.id) as string[];
       const userVotedPollOptionsMap = new Map<string, string[]>();
       if (ctx.auth?.userId && pollIds.length > 0) {
         const userVotes = await ctx.db.pollVote.findMany({
@@ -588,7 +591,10 @@ export const activitiesRouter = createTRPCRouter({
         }
 
         const cacheKey = `user_following_feed:${ctx.auth.userId}:${input.limit}`;
-        let cachedData = await globalCache.get<{ combinedActivities: any[]; followingCount: number }>(cacheKey);
+        let cachedData = await globalCache.get<{
+          combinedActivities: any[];
+          followingCount: number;
+        }>(cacheKey);
         let combinedActivities: any[] = [];
         let followingCount = 0;
 
@@ -863,14 +869,20 @@ export const activitiesRouter = createTRPCRouter({
           // Sort by timestamp and paginate
           combinedActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-          await globalCache.set(cacheKey, { combinedActivities, followingCount: followedIds.length }, { ttl: 15 });
+          await globalCache.set(
+            cacheKey,
+            { combinedActivities, followingCount: followedIds.length },
+            { ttl: 15 }
+          );
           followingCount = followedIds.length;
         }
 
         const paginatedActivities = combinedActivities.slice(0, input.limit);
 
         // Populate user-specific votes dynamically on the paginated slice
-        const pollIds = paginatedActivities.filter((a) => a.poll && a.poll.id).map((a) => a.poll.id) as string[];
+        const pollIds = paginatedActivities
+          .filter((a) => a.poll && a.poll.id)
+          .map((a) => a.poll.id) as string[];
         const userVotedPollOptionsMap = new Map<string, string[]>();
         if (ctx.auth?.userId && pollIds.length > 0) {
           const userVotes = await ctx.db.pollVote.findMany({

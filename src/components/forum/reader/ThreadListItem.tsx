@@ -55,7 +55,8 @@ export function ThreadListItem({
     staleTime: 5 * 60_000,
   });
   const currentForumUserId = linkStatus?.forumUserId ?? null;
-  const isOwnThread = currentForumUserId != null && authorId != null && currentForumUserId === authorId;
+  const isOwnThread =
+    currentForumUserId != null && authorId != null && currentForumUserId === authorId;
 
   const { chatBadge } = useActiveCosmetics();
   const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
@@ -93,7 +94,7 @@ export function ThreadListItem({
             {title}
           </Link>
         </div>
-        <div className="forum-thread-meta mt-0.5 flex items-center gap-1 flex-wrap">
+        <div className="forum-thread-meta mt-0.5 flex flex-wrap items-center gap-1">
           <span>{authorName}</span>
           {isOwnThread && chatBadge.enabled && (
             <CrownIcon className="h-3 w-3 shrink-0" style={{ color: chatBadge.color }} />

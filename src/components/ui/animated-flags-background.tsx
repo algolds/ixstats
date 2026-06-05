@@ -279,7 +279,8 @@ export function AnimatedFlagsBackground({
             variants={pulseVariants as any}
             animate="animate"
           >
-            <UnifiedCountryFlag showTooltip={false}
+            <UnifiedCountryFlag
+              showTooltip={false}
               countryName={flag.name}
               className="h-full w-full object-cover blur-[0.5px] filter"
               showPlaceholder={true}

@@ -46,27 +46,27 @@ export class MarketWebSocketClient {
     this.wsUrl = `${protocol}//${host}/api/market-ws`;
   }
 
-    /**
-     * Connect to WebSocket server
-     */
-    connect(): void {
-        if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
-            console.log("[MarketWS] Already connected or connecting");
-            return;
-        }
+  /**
+   * Connect to WebSocket server
+   */
+  connect(): void {
+    if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
+      console.log("[MarketWS] Already connected or connecting");
+      return;
+    }
 
-        // WebSocket server only runs in production (server.mjs); skip in dev to avoid console errors
-        if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-            console.log("[MarketWS] Skipping connection in development mode");
-            return;
-        }
+    // WebSocket server only runs in production (server.mjs); skip in dev to avoid console errors
+    if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+      console.log("[MarketWS] Skipping connection in development mode");
+      return;
+    }
 
-        this.isConnecting = true;
-        this.isIntentionallyClosed = false;
+    this.isConnecting = true;
+    this.isIntentionallyClosed = false;
 
-        try {
-            console.log(`[MarketWS] Connecting to ${this.wsUrl}`);
-            this.ws = new WebSocket(this.wsUrl);
+    try {
+      console.log(`[MarketWS] Connecting to ${this.wsUrl}`);
+      this.ws = new WebSocket(this.wsUrl);
 
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);

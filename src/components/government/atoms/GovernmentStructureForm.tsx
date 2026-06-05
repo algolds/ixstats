@@ -526,7 +526,9 @@ export function GovernmentStructureForm({
                 </Label>
                 <Select
                   value={data.governmentType}
-                  onValueChange={(value: string) => handleChange("governmentType", value as GovernmentType)}
+                  onValueChange={(value: string) =>
+                    handleChange("governmentType", value as GovernmentType)
+                  }
                   disabled={isReadOnly}
                 >
                   <SelectTrigger>
