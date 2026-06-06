@@ -6,12 +6,12 @@ import { Bell, Calendar, FileText } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIssueCount, useNationalIssues } from "~/hooks/useNationalIssues";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "~/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
 import { IxTime } from "~/lib/ixtime";
 import { CommandPanel, type PanelStat } from "./CommandPanel";
 import { CommandPanelItem, type PanelItemBadge } from "./CommandPanelItem";
@@ -323,47 +323,47 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
       </div>
 
       {/* ── Drill-Down Sheets ── */}
-      <Sheet open={activeSheet === "issues"} onOpenChange={(open) => !open && setActiveSheet(null)}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>All National Issues</SheetTitle>
-            <SheetDescription>Complete issues inbox with response actions</SheetDescription>
-          </SheetHeader>
+      <Dialog open={activeSheet === "issues"} onOpenChange={(open) => !open && setActiveSheet(null)}>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>All National Issues</DialogTitle>
+            <DialogDescription>Complete issues inbox with response actions</DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <IssuesInbox countryId={countryId} variant="full" />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      <Sheet
+      <Dialog
         open={activeSheet === "decisions"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Meetings & Decisions</SheetTitle>
-            <SheetDescription>All meetings, decisions, and action items</SheetDescription>
-          </SheetHeader>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Meetings & Decisions</DialogTitle>
+            <DialogDescription>All meetings, decisions, and action items</DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <MeetingsAndDecisionsPanel countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      <Sheet
+      <Dialog
         open={activeSheet === "policies"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>All Policies</SheetTitle>
-            <SheetDescription>Active, draft, and archived policies</SheetDescription>
-          </SheetHeader>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>All Policies</DialogTitle>
+            <DialogDescription>Active, draft, and archived policies</DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <PoliciesAndStrategyPanel countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Action Sheets ── */}
       <MeetingScheduler

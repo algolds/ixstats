@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -178,20 +178,20 @@ export function PolicyDetailSheet({
   const effectLog = (policy as any)?.policyEffectLog ?? [];
 
   return (
-    <Sheet
+    <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <SheetContent className="flex flex-col p-0 sm:max-w-lg">
-        <SheetHeader className="px-6 pt-6 pb-0">
-          <SheetTitle className="flex items-start gap-2">
+      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="flex items-start gap-2">
             <FileText className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
             <span className="line-clamp-2">
               {isLoading ? "Loading..." : (policy?.name ?? "Policy Not Found")}
             </span>
-          </SheetTitle>
+          </DialogTitle>
           {policy && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               {getStatusBadge(policy.status)}
@@ -203,7 +203,7 @@ export function PolicyDetailSheet({
               )}
             </div>
           )}
-        </SheetHeader>
+        </DialogHeader>
 
         {isLoading ? (
           <div className="space-y-4 px-6 py-4">
@@ -377,7 +377,7 @@ export function PolicyDetailSheet({
             </div>
 
             {/* Footer with action buttons */}
-            <SheetFooter className="border-border/50 border-t px-6 py-4">
+            <DialogFooter className="border-border/50 border-t px-6 py-4">
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
@@ -404,14 +404,14 @@ export function PolicyDetailSheet({
                   {suspendPolicy.isPending ? "Suspending..." : "Suspend Policy"}
                 </Button>
               )}
-            </SheetFooter>
+            </DialogFooter>
           </>
         ) : (
           <div className="text-muted-foreground flex flex-1 items-center justify-center">
             Policy not found.
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

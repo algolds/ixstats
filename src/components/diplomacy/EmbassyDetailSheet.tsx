@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -151,27 +151,27 @@ export function EmbassyDetailSheet({
   const activeMissions = missions.filter((m: any) => m.status === "active");
 
   return (
-    <Sheet
+    <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <SheetContent className="flex flex-col p-0 sm:max-w-lg">
-        <SheetHeader className="px-6 pt-6 pb-0">
-          <SheetTitle className="flex items-start gap-2">
+      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="flex items-start gap-2">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-cyan-500" />
             <span className="line-clamp-2">
               {isLoading ? "Loading..." : (embassy?.name ?? "Embassy Not Found")}
             </span>
-          </SheetTitle>
+          </DialogTitle>
           {embassy && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               {getStatusBadge(embassy.status)}
               {getLevelBadge(embassy.level)}
             </div>
           )}
-        </SheetHeader>
+        </DialogHeader>
 
         {isLoading ? (
           <div className="space-y-4 px-6 py-4">
@@ -305,7 +305,7 @@ export function EmbassyDetailSheet({
             </div>
 
             {/* Footer */}
-            <SheetFooter className="border-border/50 border-t px-6 py-4">
+            <DialogFooter className="border-border/50 border-t px-6 py-4">
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
@@ -327,14 +327,14 @@ export function EmbassyDetailSheet({
                   </Button>
                 </>
               )}
-            </SheetFooter>
+            </DialogFooter>
           </>
         ) : (
           <div className="text-muted-foreground flex flex-1 items-center justify-center">
             Embassy not found.
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

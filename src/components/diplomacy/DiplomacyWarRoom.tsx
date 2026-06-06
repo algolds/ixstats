@@ -6,12 +6,12 @@ import dynamic from "next/dynamic";
 import { Building2, Handshake, Scale, Globe } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "~/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
 import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 
@@ -240,52 +240,52 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
       </div>
 
       {/* Drill-down Sheets */}
-      <Sheet
+      <Dialog
         open={activeSheet === "embassies"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Embassies & Relations</SheetTitle>
-            <SheetDescription>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Embassies & Relations</DialogTitle>
+            <DialogDescription>
               Full embassy network, alliances, and cultural exchanges
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <EmbassiesAndRelationsPanel countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      <Sheet
+      <Dialog
         open={activeSheet === "relations"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Diplomatic Relations</SheetTitle>
-            <SheetDescription>Overview of all diplomatic relationships</SheetDescription>
-          </SheetHeader>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Diplomatic Relations</DialogTitle>
+            <DialogDescription>Overview of all diplomatic relationships</DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <DiplomacyOverview countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      <Sheet
+      <Dialog
         open={activeSheet === "foreign-policy"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Foreign Policy</SheetTitle>
-            <SheetDescription>Strategic foreign relations framework</SheetDescription>
-          </SheetHeader>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Foreign Policy</DialogTitle>
+            <DialogDescription>Strategic foreign relations framework</DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <ForeignPolicyPanel countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {typeof EmbassyCreatorSheet !== "undefined" && (
         <EmbassyCreatorSheet

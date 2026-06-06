@@ -6,12 +6,12 @@ import dynamic from "next/dynamic";
 import { Landmark, Users, BarChart3 } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "~/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
 import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 
@@ -259,54 +259,54 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
       </div>
 
       {/* Drill-down Sheets */}
-      <Sheet
+      <Dialog
         open={activeSheet === "legislature"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Legislature</SheetTitle>
-            <SheetDescription>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Legislature</DialogTitle>
+            <DialogDescription>
               Configure parliament, political metrics, and governance
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <LegislaturePanel countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      <Sheet
+      <Dialog
         open={activeSheet === "parties"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Political Parties</SheetTitle>
-            <SheetDescription>Manage parties, ideologies, and support bases</SheetDescription>
-          </SheetHeader>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Political Parties</DialogTitle>
+            <DialogDescription>Manage parties, ideologies, and support bases</DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <PartyManager countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      <Sheet
+      <Dialog
         open={activeSheet === "elections"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Elections</SheetTitle>
-            <SheetDescription>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle>Elections</DialogTitle>
+            <DialogDescription>
               Schedule elections, register candidates, and view results
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           <div className="mt-4">
             <ElectionSimulator countryId={countryId} />
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
