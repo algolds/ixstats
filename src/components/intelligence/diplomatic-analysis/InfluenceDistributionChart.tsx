@@ -34,6 +34,7 @@ export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartP
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {data && data.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ResponsiveContainer width="100%" height={250} className="sm:h-[300px] lg:h-[350px]">
               <PieChart>
@@ -93,6 +94,17 @@ export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartP
               ))}
             </div>
           </div>
+          ) : (
+            <div className="text-muted-foreground flex min-h-[250px] items-center justify-center">
+              <div className="space-y-2 text-center">
+                <PieChartIcon className="mx-auto h-12 w-12 opacity-50" />
+                <p>No influence distribution yet.</p>
+                <p className="text-xs">
+                  Build relationships across nations to see how your diplomatic influence spreads.
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );

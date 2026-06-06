@@ -132,7 +132,12 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
           footerLabel="View Details"
           onFooter={() => setActiveSheet("legislature")}
           emptyIcon={Landmark}
-          emptyMessage={totalSeats === 0 ? "Legislature not configured" : "No seats assigned"}
+          emptyTitle={totalSeats === 0 ? "Establish your parliament" : "No seats assigned yet"}
+          emptyDescription={
+            totalSeats === 0
+              ? "Configure your legislature's chambers, seat count, and electoral system to unlock elections."
+              : "Hold an election to fill these seats with elected representatives."
+          }
         >
           {totalSeats > 0 && seatSummary.length > 0 ? (
             <>
@@ -173,7 +178,8 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
           onFooter={() => setActiveSheet("parties")}
           totalCount={sortedParties.length}
           emptyIcon={Users}
-          emptyMessage="No political parties"
+          emptyTitle="Create your first parties"
+          emptyDescription="Create competing parties across the ideological spectrum to bring elections and legislative debate to life."
         >
           {sortedParties.slice(0, 4).map((party: any) => {
             const ideology = IDEOLOGY_BADGES[party.ideology] ?? {
@@ -213,7 +219,8 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
           onFooter={() => setActiveSheet("elections")}
           totalCount={allElections.length}
           emptyIcon={BarChart3}
-          emptyMessage="No elections held"
+          emptyTitle="No elections yet"
+          emptyDescription="Schedule an election to fill your legislature once your parties are registered."
         >
           {pendingElections.slice(0, 2).map((election: any) => (
             <CommandPanelItem

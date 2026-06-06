@@ -17,7 +17,6 @@ import {
 import { api } from "~/trpc/react";
 import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
-import { useLocalActions } from "~/hooks/useLocalActions";
 import { ExecutiveItemCard } from "./ExecutiveItemCard";
 
 interface MeetingsAndDecisionsPanelProps {
@@ -28,29 +27,11 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
   const [meetingSchedulerOpen, setMeetingSchedulerOpen] = useState(false);
   const [expandedMeetings, setExpandedMeetings] = useState<Set<string>>(new Set());
   const [showPast, setShowPast] = useState(false);
-  const { getActions } = useLocalActions(countryId);
 
-  const { data: serverMeetings = [], refetch: refetchMeetings } = api.meetings.getMeetings.useQuery(
+  const { data: meetings = [], refetch: refetchMeetings } = api.meetings.getMeetings.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-
-  const meetings = useMemo(() => {
-    const localMeetings = getActions("meeting_scheduled").map((a) => ({
-      id: a.id,
-      title: a.data.title as string,
-      description: a.data.description as string,
-      scheduledDate: a.data.scheduledDate as string,
-      scheduledIxTime: a.data.scheduledIxTime as number | undefined,
-      duration: a.data.duration as number,
-      status: "scheduled",
-      actionItems: [],
-      decisions: [],
-      attendances: [],
-      _isLocal: true,
-    }));
-    return [...serverMeetings, ...localMeetings];
-  }, [serverMeetings, getActions]);
 
   const { upcoming, past } = useMemo(() => {
     const now = new Date();
@@ -190,7 +171,6 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                     </span>
                   }
                   badges={[getStatusBadge(meeting.status)]}
-                  isLocal={meeting._isLocal}
                   metrics={[
                     ...(meeting.attendances?.length > 0
                       ? [{ icon: Users, label: "Attendees", value: meeting.attendances.length }]
@@ -334,7 +314,6 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                         />
                       }
                       badges={[getStatusBadge(meeting.status)]}
-                      isLocal={meeting._isLocal}
                       onClick={hasDetails ? () => toggleMeeting(meeting.id) : undefined}
                       metrics={[
                         ...(meeting.decisions?.length > 0

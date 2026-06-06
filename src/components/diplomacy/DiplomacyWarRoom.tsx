@@ -120,7 +120,8 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           onFooter={() => setActiveSheet("embassies")}
           totalCount={embassyData.all.length}
           emptyIcon={Building2}
-          emptyMessage="No embassies established"
+          emptyTitle="Build your diplomatic network"
+          emptyDescription="Establish your first embassy to open relations and unlock trade, alliances, and intelligence sharing."
         >
           {embassyData.active.slice(0, 4).map((embassy: any) => (
             <CommandPanelItem
@@ -168,11 +169,14 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
               ? [{ label: `avg ${relationData.avgStrength}%`, value: "" }]
               : []),
           ]}
+          ctaLabel="Establish Embassy"
+          onCta={() => setEmbassyCreatorOpen(true)}
           footerLabel="View All"
           onFooter={() => setActiveSheet("relations")}
           totalCount={relationData.sorted.length}
           emptyIcon={Globe}
-          emptyMessage="No diplomatic relations"
+          emptyTitle="No relations yet"
+          emptyDescription="Establish embassies to open formal relations with other nations and grow your influence."
         >
           {relationData.sorted.slice(0, 4).map((rel: any) => {
             const strength = rel.strength ?? 0;
@@ -203,11 +207,14 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           icon={Scale}
           accentColor="indigo"
           stats={activeFP.length > 0 ? [{ label: "active", value: activeFP.length }] : []}
+          ctaLabel="Propose Policy"
+          onCta={() => setActiveSheet("foreign-policy")}
           footerLabel="View All"
           onFooter={() => setActiveSheet("foreign-policy")}
           totalCount={foreignPolicies?.length ?? 0}
           emptyIcon={Scale}
-          emptyMessage="No active foreign policies"
+          emptyTitle="No foreign policy enacted"
+          emptyDescription="Propose trade deals, sanctions, or alliances once you have relations to act on."
         >
           {activeFP.slice(0, 4).map((fp: any) => {
             const badge = ACTION_TYPE_BADGES[fp.actionType] ?? {

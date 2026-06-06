@@ -96,6 +96,11 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
         e.status === "in_progress"
     ).length ?? 0;
 
+  // New-player guidance: surface an explicit "get started" hint when a pillar has no data yet.
+  const executiveEmpty = issueCount === 0 && activePolicies === 0 && pendingActions === 0;
+  const diplomacyEmpty = activeEmbassies === 0 && totalRelations === 0;
+  const politicsEmpty = partyCount === 0 && totalSeats === 0;
+
   const pillars: {
     section: MyCountrySection;
     title: string;
@@ -257,6 +262,20 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
                 </div>
               ))}
             </div>
+
+            {/* New-player get-started hint */}
+            {((pillar.section === "executive" && executiveEmpty) ||
+              (pillar.section === "diplomacy" && diplomacyEmpty) ||
+              (pillar.section === "politics" && politicsEmpty)) && (
+              <div className="border-border/40 text-foreground/70 group-hover:text-foreground mt-3 flex items-center gap-1 border-t pt-2.5 text-xs font-medium transition-colors">
+                {pillar.section === "executive"
+                  ? "Start governing"
+                  : pillar.section === "diplomacy"
+                    ? "Establish your first embassy"
+                    : "Set up your legislature"}
+                <ChevronRight className="h-3 w-3" />
+              </div>
+            )}
           </button>
         ))}
       </div>

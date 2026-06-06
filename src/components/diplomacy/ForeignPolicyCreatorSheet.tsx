@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { useLocalActions } from "~/hooks/useLocalActions";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -95,7 +94,6 @@ export function ForeignPolicyCreatorSheet({
   const [actionType, setActionType] = useState<ActionType>("embargo");
   const [severity, setSeverity] = useState<Severity>("moderate");
   const [reason, setReason] = useState("");
-  const { saveAction } = useLocalActions(countryId);
 
   const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
@@ -121,27 +119,40 @@ export function ForeignPolicyCreatorSheet({
       ]
     : [];
 
-  const handleEnact = () => {
-    const targetName = targetCountries.find((c) => c.id === targetId)?.name ?? targetId;
-    saveAction("foreign_policy", {
-      targetId,
-      targetName,
-      actionType,
-      severity,
-      reason: reason || undefined,
-      previewEffects: preview ?? null,
-    });
-    notify.success("Policy enacted locally!");
-    onOpenChange(false);
-    resetForm();
-    onCreated?.();
-  };
-
   const resetForm = () => {
     setTargetId("");
     setActionType("embargo");
     setSeverity("moderate");
     setReason("");
+  };
+
+  const proposeAction = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
+    onSuccess: () => {
+      const targetName = targetCountries.find((c) => c.id === targetId)?.name ?? "the target nation";
+      notify.success(
+        "Foreign policy enacted",
+        `${selectedAction?.label ?? "Policy"} toward ${targetName} is now in effect.`
+      );
+      onOpenChange(false);
+      resetForm();
+      onCreated?.();
+    },
+    onError: (error) => {
+      notify.error("Failed to enact policy", error.message);
+    },
+  });
+
+  const handleEnact = () => {
+    if (!targetId) {
+      notify.error("Please select a target nation");
+      return;
+    }
+    proposeAction.mutate({
+      targetId,
+      actionType,
+      severity,
+      reason: reason || undefined,
+    });
   };
 
   return (
@@ -322,8 +333,13 @@ export function ForeignPolicyCreatorSheet({
           >
             Cancel
           </Button>
-          <Button size="sm" className="gap-1.5" onClick={handleEnact} disabled={!targetId}>
-            Enact {selectedAction?.label ?? "Policy"}
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={handleEnact}
+            disabled={!targetId || proposeAction.isPending}
+          >
+            {proposeAction.isPending ? "Enacting..." : `Enact ${selectedAction?.label ?? "Policy"}`}
           </Button>
         </SheetFooter>
       </SheetContent>

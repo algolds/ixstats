@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { useLocalActions } from "~/hooks/useLocalActions";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -70,7 +69,6 @@ export function EmbassyCreatorSheet({
   const [location, setLocation] = useState("");
   const [ambassadorName, setAmbassadorName] = useState("");
   const [showCostBreakdown, setShowCostBreakdown] = useState(false);
-  const { saveAction } = useLocalActions(countryId);
 
   const { data: costData, isLoading: costLoading } =
     api.diplomaticEmbassies.calculateEstablishmentCost.useQuery(
@@ -93,6 +91,21 @@ export function EmbassyCreatorSheet({
     setEmbassyName(`${countryName} Embassy to ${name}`);
   };
 
+  const establishEmbassy = api.diplomaticEmbassies.establishEmbassy.useMutation({
+    onSuccess: () => {
+      notify.success(
+        "Embassy established!",
+        `${embassyName} is now operational in ${hostCountryName}`
+      );
+      onOpenChange(false);
+      resetForm();
+      onCreated?.();
+    },
+    onError: (error) => {
+      notify.error("Failed to establish embassy", error.message);
+    },
+  });
+
   const handleSubmit = () => {
     if (!hostCountryId) {
       notify.error("Please select a host country");
@@ -103,21 +116,13 @@ export function EmbassyCreatorSheet({
       return;
     }
 
-    saveAction("embassy_established", {
+    establishEmbassy.mutate({
       hostCountryId,
-      hostCountryName,
       guestCountryId: countryId,
       name: embassyName,
       location: location || undefined,
       ambassadorName: ambassadorName || undefined,
     });
-    notify.success(
-      "Embassy established!",
-      `${embassyName} is now operational in ${hostCountryName}`
-    );
-    onOpenChange(false);
-    resetForm();
-    onCreated?.();
   };
 
   return (
@@ -284,10 +289,10 @@ export function EmbassyCreatorSheet({
             size="sm"
             className="gap-1.5"
             onClick={handleSubmit}
-            disabled={!hostCountryId || !embassyName.trim()}
+            disabled={!hostCountryId || !embassyName.trim() || establishEmbassy.isPending}
           >
             <Building2 className="h-3 w-3" />
-            Establish Embassy
+            {establishEmbassy.isPending ? "Establishing..." : "Establish Embassy"}
           </Button>
         </SheetFooter>
       </SheetContent>

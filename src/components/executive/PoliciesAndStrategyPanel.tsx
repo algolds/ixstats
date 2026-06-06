@@ -8,7 +8,6 @@ import { api } from "~/trpc/react";
 import { PolicyCreatorSheet } from "./PolicyCreatorSheet";
 import { PolicyDetailSheet } from "./PolicyDetailSheet";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
-import { useLocalActions } from "~/hooks/useLocalActions";
 import { ExecutiveItemCard } from "./ExecutiveItemCard";
 
 interface PoliciesAndStrategyPanelProps {
@@ -26,28 +25,11 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
   const [showCreator, setShowCreator] = useState(false);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
-  const { getActions } = useLocalActions(countryId);
 
-  const { data: serverPolicies = [], refetch: refetchPolicies } = api.policies.getPolicies.useQuery(
+  const { data: policies = [], refetch: refetchPolicies } = api.policies.getPolicies.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-
-  const policies = useMemo(() => {
-    const localPolicies = getActions("policy_created").map((a) => ({
-      id: a.id,
-      title: a.data.title as string,
-      description: a.data.description as string,
-      category: a.data.category as string,
-      priority: a.data.priority as string,
-      policyType: a.data.policyType as string | undefined,
-      status: "draft",
-      effectiveDate: null,
-      createdAt: new Date(a.timestamp).toISOString(),
-      _isLocal: true,
-    }));
-    return [...serverPolicies, ...localPolicies];
-  }, [serverPolicies, getActions]);
 
   const { active, draft, archived } = useMemo(() => {
     return {
@@ -143,8 +125,7 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
         }
         description={policy.description}
         badges={badges}
-        isLocal={policy._isLocal}
-        onClick={!policy._isLocal ? () => setSelectedPolicyId(policy.id) : undefined}
+        onClick={() => setSelectedPolicyId(policy.id)}
         metrics={[
           { icon: Tag, label: "Type", value: policy.policyType ?? policy.category ?? "general" },
           ...(policy.effectiveDate

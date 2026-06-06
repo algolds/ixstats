@@ -39,6 +39,7 @@ export const NetworkGrowthChart = React.memo<NetworkGrowthChartProps>(({ data })
         <CardDescription>Diplomatic influence and network expansion over time</CardDescription>
       </CardHeader>
       <CardContent>
+        {data && data.length > 0 ? (
         <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
           <AreaChart data={data}>
             <defs>
@@ -93,6 +94,17 @@ export const NetworkGrowthChart = React.memo<NetworkGrowthChartProps>(({ data })
             />
           </AreaChart>
         </ResponsiveContainer>
+        ) : (
+          <div className="text-muted-foreground flex min-h-[300px] items-center justify-center">
+            <div className="space-y-2 text-center">
+              <Activity className="mx-auto h-12 w-12 opacity-50" />
+              <p>Your diplomatic network is still forming.</p>
+              <p className="text-xs">
+                Establish embassies and relationships to see growth trends over time.
+              </p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

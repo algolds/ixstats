@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
-import { useLocalActions } from "~/hooks/useLocalActions";
+import { useUser } from "~/context/auth-context";
 import {
   Sheet,
   SheetContent,
@@ -135,7 +135,7 @@ export function MeetingScheduler({
   defaultMeeting,
 }: MeetingSchedulerProps) {
   const notify = useNotify();
-  const { saveAction } = useLocalActions(countryId);
+  const { user } = useUser();
 
   // Form state
   const [title, setTitle] = useState(defaultMeeting?.title ?? "");
@@ -166,6 +166,10 @@ export function MeetingScheduler({
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createMeeting = api.meetings.createMeeting.useMutation();
+  const addAgendaItemMutation = api.meetings.addAgendaItem.useMutation();
+  const recordAttendance = api.meetings.recordAttendance.useMutation();
 
   const resetForm = () => {
     setTitle("");
@@ -231,7 +235,7 @@ export function MeetingScheduler({
     setNewAgendaTags(newAgendaTags.filter((t) => t !== tag));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim()) {
@@ -249,27 +253,55 @@ export function MeetingScheduler({
       return;
     }
 
+    if (!user?.id) {
+      notify.error("You must be signed in to schedule a meeting");
+      return;
+    }
+
     setIsSubmitting(true);
-    saveAction("meeting_scheduled", {
-      title,
-      description: description || undefined,
-      scheduledDate: new Date().toISOString(),
-      scheduledIxTime,
-      duration,
-      attendeeIds: selectedOfficials,
-      agendaItems: agendaItems.map((item) => ({
-        title: item.title,
-        description: item.description || undefined,
-        duration: item.duration,
-        category: item.category,
-        tags: item.tags,
-        presenter: item.presenter || undefined,
-      })),
-    });
-    notify.success("Meeting saved locally!");
-    onOpenChange(false);
-    resetForm();
-    setIsSubmitting(false);
+    try {
+      const meeting = await createMeeting.mutateAsync({
+        countryId,
+        userId: user.id,
+        title,
+        description: description || undefined,
+        scheduledDate: new Date(scheduledIxTime),
+        duration,
+        scheduledIxTime,
+      });
+
+      // Persist agenda items and attendances against the new meeting.
+      await Promise.all([
+        ...agendaItems.map((item, index) =>
+          addAgendaItemMutation.mutateAsync({
+            meetingId: meeting.id,
+            title: item.title,
+            description: item.description || undefined,
+            order: index,
+            estimatedDuration: item.duration,
+            priority: "medium",
+          })
+        ),
+        ...selectedOfficials.map((officialId) => {
+          const official = officials?.find((o) => o.id === officialId);
+          return recordAttendance.mutateAsync({
+            meetingId: meeting.id,
+            officialId,
+            attendeeName: official?.name ?? "Official",
+            attendanceStatus: "invited",
+            attendeeRole: official?.title || undefined,
+          });
+        }),
+      ]);
+
+      notify.success("Meeting scheduled!", `${title} has been added to your calendar.`);
+      onOpenChange(false);
+      resetForm();
+    } catch (error: any) {
+      notify.error("Failed to schedule meeting", error?.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalAgendaDuration = agendaItems.reduce((sum, item) => sum + item.duration, 0);

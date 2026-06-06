@@ -24,7 +24,6 @@ import {
 import { Slider } from "~/components/ui/slider";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { useLocalActions } from "~/hooks/useLocalActions";
 
 interface DeploymentWizardProps {
   countryId: string;
@@ -85,8 +84,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     { enabled: open }
   );
 
-  const { saveAction } = useLocalActions(countryId);
-
   const resetForm = () => {
     setName("");
     setDescription("");
@@ -96,25 +93,38 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     setSelectedAssetIds([]);
   };
 
+  const createOperation = api.security.createOperation.useMutation({
+    onSuccess: () => {
+      notify.success("Operation launched!", `${name} has been deployed.`);
+      setOpen(false);
+      resetForm();
+      onSuccess?.();
+    },
+    onError: (error) => {
+      notify.error("Failed to launch operation", error.message);
+    },
+  });
+
   const handleDeploy = () => {
-    const targetName =
-      targetCountries.find((c) => c.id === targetCountryId)?.name ?? targetCountryId;
-    saveAction("deployment", {
+    if (!name.trim()) {
+      notify.error("Operation name is required");
+      return;
+    }
+    createOperation.mutate({
+      countryId,
+      operationType: operationType as
+        | "peacekeeping"
+        | "defense_pact"
+        | "blockade"
+        | "intervention"
+        | "training",
       name,
-      operationType,
       description: description || undefined,
       targetCountryId: targetCountryId || undefined,
-      targetCountryName: targetName || undefined,
       personnelDeployed: personnel,
       unitIds: selectedUnitIds,
       assetIds: selectedAssetIds,
-      estimatedDailyCost,
-      estimatedAnnualCost,
     });
-    notify.success("Operation launched!", `${name} deployed successfully`);
-    setOpen(false);
-    resetForm();
-    onSuccess?.();
   };
 
   // Flatten units and assets from branches
@@ -305,8 +315,12 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           </div>
 
-          <Button onClick={handleDeploy} disabled={!name} className="w-full">
-            Launch Operation
+          <Button
+            onClick={handleDeploy}
+            disabled={!name.trim() || createOperation.isPending}
+            className="w-full"
+          >
+            {createOperation.isPending ? "Launching..." : "Launch Operation"}
           </Button>
         </div>
       </DialogContent>
