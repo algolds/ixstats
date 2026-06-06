@@ -72,27 +72,6 @@ export function useGovernmentBuilderAutoSync(
     { enabled: !!countryId, staleTime: 30000 }
   );
 
-  // Track changes
-  useEffect(() => {
-    if (builderState && previousStateRef.current) {
-      const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
-      if (hasChanges) {
-        setSyncState((prev) => ({ ...prev, pendingChanges: true }));
-
-        // Trigger debounced save
-        if (enabled && countryId) {
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
-
-          debounceTimerRef.current = setTimeout(() => {
-            handleAutoSync();
-          }, debounceMs);
-        }
-      }
-    }
-  }, [builderState, enabled, countryId, debounceMs]);
-
   // Auto-sync handler
   const handleAutoSync = useCallback(async () => {
     if (!countryId || !builderState || !enabled) return;
@@ -205,6 +184,31 @@ export function useGovernmentBuilderAutoSync(
     onConflictDetected,
   ]);
 
+  // Track changes
+  useEffect(() => {
+    if (builderState && previousStateRef.current) {
+      const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
+      if (hasChanges) {
+        setSyncState((prev) => {
+          if (prev.pendingChanges) return prev;
+          return { ...prev, pendingChanges: true };
+        });
+
+        // Trigger debounced save
+        if (enabled && countryId) {
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+
+          debounceTimerRef.current = setTimeout(() => {
+            handleAutoSync();
+          }, debounceMs);
+        }
+      }
+      previousStateRef.current = builderState;
+    }
+  }, [builderState, enabled, countryId, debounceMs, handleAutoSync]);
+
   // Manual sync trigger
   const triggerSync = useCallback(() => {
     if (debounceTimerRef.current) {
@@ -272,27 +276,6 @@ export function useTaxBuilderAutoSync(
     { countryId: countryId || "" },
     { enabled: !!countryId, staleTime: 30000 }
   );
-
-  // Track changes
-  useEffect(() => {
-    if (builderState && previousStateRef.current) {
-      const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
-      if (hasChanges) {
-        setSyncState((prev) => ({ ...prev, pendingChanges: true }));
-
-        // Trigger debounced save
-        if (enabled && countryId) {
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
-
-          debounceTimerRef.current = setTimeout(() => {
-            handleAutoSync();
-          }, debounceMs);
-        }
-      }
-    }
-  }, [builderState, enabled, countryId, debounceMs]);
 
   // Auto-sync handler
   const handleAutoSync = useCallback(async () => {
@@ -403,6 +386,31 @@ export function useTaxBuilderAutoSync(
     onSyncError,
     onConflictDetected,
   ]);
+
+  // Track changes
+  useEffect(() => {
+    if (builderState && previousStateRef.current) {
+      const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
+      if (hasChanges) {
+        setSyncState((prev) => {
+          if (prev.pendingChanges) return prev;
+          return { ...prev, pendingChanges: true };
+        });
+
+        // Trigger debounced save
+        if (enabled && countryId) {
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+
+          debounceTimerRef.current = setTimeout(() => {
+            handleAutoSync();
+          }, debounceMs);
+        }
+      }
+      previousStateRef.current = builderState;
+    }
+  }, [builderState, enabled, countryId, debounceMs, handleAutoSync]);
 
   // Manual sync trigger
   const triggerSync = useCallback(() => {

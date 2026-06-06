@@ -19,6 +19,9 @@ import { BasicInfoForm, GeographyForm, CultureForm } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 import { useBuilderContext } from "./context/BuilderStateContext";
 import type { GovernmentType } from "~/types/government";
+import { EconomicArchetypeDisplay } from "./EconomicArchetypeDisplay";
+import { useNotify } from "~/hooks/useNotify";
+import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 
 /**
  * Props for the NationalIdentitySection component
@@ -81,8 +84,15 @@ export function NationalIdentitySection({
   countryId,
 }: NationalIdentitySectionProps) {
   // Get builder context for autosync registration and state management
-  const { registerAutoSync, unregisterAutoSync, builderState, setBuilderState, mode } =
-    useBuilderContext();
+  const {
+    registerAutoSync,
+    unregisterAutoSync,
+    builderState,
+    setBuilderState,
+    mode,
+    updateArchetypeId,
+  } = useBuilderContext();
+  const notify = useNotify();
 
   // All hooks must be called unconditionally (Rules of Hooks)
   const {
@@ -217,6 +227,24 @@ export function NationalIdentitySection({
     [setIsEditingCustomName, handleIdentityChange, upsertCustomGovernmentType]
   );
 
+  // Tab configuration from global builder state
+  const activeTab = builderState.activeIdentitySubTab || "archetype";
+  const setActiveTab = React.useCallback(
+    (tab: string) => {
+      setBuilderState((prev) => ({ ...prev, activeIdentitySubTab: tab }));
+    },
+    [setBuilderState]
+  );
+
+  const tabs: TabDefinition[] = React.useMemo(() => {
+    return [
+      { id: "archetype", label: "Archetype/Preset", icon: Globe },
+      { id: "basic", label: "Basic Info", icon: Globe },
+      { id: "culture", label: "Culture", icon: Heart },
+      { id: "technical", label: "Technical", icon: Landmark },
+    ];
+  }, []);
+
   // Guard against null inputs (after all hooks)
   if (!inputs) {
     return (
@@ -228,21 +256,6 @@ export function NationalIdentitySection({
       </div>
     );
   }
-
-  // Tab configuration from global builder state
-  const activeTab = builderState.activeIdentitySubTab || "basic";
-  const setActiveTab = React.useCallback(
-    (tab: string) => {
-      setBuilderState((prev) => ({ ...prev, activeIdentitySubTab: tab }));
-    },
-    [setBuilderState]
-  );
-
-  const tabs: TabDefinition[] = [
-    { id: "basic", label: "Basic Info", icon: Globe },
-    { id: "culture", label: "Culture", icon: Heart },
-    { id: "technical", label: "Technical", icon: Landmark },
-  ];
 
   return (
     <>
@@ -259,6 +272,133 @@ export function NationalIdentitySection({
           sectionTheme="identity"
           hideTabList
         >
+          {activeTab === "archetype" && (
+            <div className="space-y-6">
+              <div className="flex flex-col gap-1.5 px-1 pb-2">
+                <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
+                  <Globe className="h-5 w-5 text-teal-400" />
+                  Archetypes & Presets
+                </h3>
+                <p className="text-muted-foreground text-xs">
+                  Select an archetype to set your nation's overall character and development path.
+                </p>
+              </div>
+              <div className="bg-card/10 rounded-xl border border-white/10 p-5 backdrop-blur-md">
+                <EconomicArchetypeDisplay
+                  era="all"
+                  onArchetypeApplied={(_fallbackState, archetypeId, archetype) => {
+                    if (archetypeId && archetype) {
+                      updateArchetypeId(archetypeId);
+                      setBuilderState((prev) => {
+                        const nextState = { ...prev, selectedArchetypeId: archetypeId };
+
+                        // 1. Update government components
+                        if (archetype.governmentComponents) {
+                          nextState.governmentComponents = mapLegacyGovernmentComponents(
+                            archetype.governmentComponents as string[]
+                          );
+                        }
+
+                        // 2. Update economic components in economyBuilderState
+                        if (archetype.economicComponents) {
+                          if (nextState.economyBuilderState) {
+                            nextState.economyBuilderState = {
+                              ...nextState.economyBuilderState,
+                              selectedAtomicComponents: archetype.economicComponents,
+                              lastUpdated: new Date(),
+                            };
+                          } else {
+                            nextState.economyBuilderState = {
+                              selectedAtomicComponents: archetype.economicComponents,
+                              structure: {} as any,
+                              sectors: [],
+                              laborMarket: {} as any,
+                              demographics: {} as any,
+                              isValid: true,
+                              errors: {},
+                              lastUpdated: new Date(),
+                              version: "1.0.0",
+                            };
+                          }
+                        }
+
+                        // 3. Update government structure type
+                        if (archetype.name && nextState.governmentStructure?.structure) {
+                          nextState.governmentStructure = {
+                            ...nextState.governmentStructure,
+                            structure: {
+                              ...nextState.governmentStructure.structure,
+                              governmentType: archetype.name as any,
+                            },
+                          };
+                        }
+
+                        // 4. Update tax system corporate Rate, income Rate, consumption Rate
+                        if (archetype.taxProfile && nextState.taxSystemData) {
+                          const updatedCategories = nextState.taxSystemData.categories.map(
+                            (cat: any) => {
+                              if (cat.categoryName.toLowerCase().includes("corporate")) {
+                                return { ...cat, baseRate: archetype.taxProfile.corporateRate };
+                              }
+                              if (
+                                cat.categoryName.toLowerCase().includes("personal") ||
+                                cat.categoryName.toLowerCase().includes("income")
+                              ) {
+                                return { ...cat, baseRate: archetype.taxProfile.incomeRate };
+                              }
+                              if (
+                                cat.categoryName.toLowerCase().includes("consumption") ||
+                                cat.categoryName.toLowerCase().includes("sales") ||
+                                cat.categoryName.toLowerCase().includes("value added")
+                              ) {
+                                return { ...cat, baseRate: archetype.taxProfile.consumptionRate };
+                              }
+                              return cat;
+                            }
+                          );
+                          nextState.taxSystemData = {
+                            ...nextState.taxSystemData,
+                            categories: updatedCategories,
+                          };
+                        }
+
+                        // 5. Update economic inputs (unemployment, GDP growth, etc.)
+                        if (nextState.economicInputs) {
+                          const core = nextState.economicInputs.coreIndicators || {};
+                          const labor = nextState.economicInputs.laborEmployment || {};
+
+                          nextState.economicInputs = {
+                            ...nextState.economicInputs,
+                            coreIndicators: {
+                              ...core,
+                              realGDPGrowthRate:
+                                archetype.growthMetrics?.gdpGrowth ?? core.realGDPGrowthRate,
+                            },
+                            laborEmployment: {
+                              ...labor,
+                              unemploymentRate:
+                                archetype.employmentProfile?.unemploymentRate ??
+                                labor.unemploymentRate,
+                              laborForceParticipationRate:
+                                archetype.employmentProfile?.laborParticipation ??
+                                labor.laborForceParticipationRate,
+                            },
+                          };
+                        }
+
+                        return nextState;
+                      });
+
+                      notify.success(
+                        `Applied ${archetype.name} presets (Government & Economy)! Click Save to apply changes.`
+                      );
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {activeTab === "basic" && (
             <div className="space-y-8">
               <BasicInfoForm

@@ -12,6 +12,36 @@ import { api } from "~/trpc/react";
 import { modernArchetypes } from "@/app/builder/data/archetypes/modern";
 import { historicalArchetypes } from "@/app/builder/data/archetypes/historical";
 import type { EconomicArchetype } from "@/app/builder/data/archetype-types";
+import { ComponentType } from "~/lib/enums";
+
+export const GOVERNMENT_COMPONENT_LEGACY_MAP: Record<string, ComponentType[]> = {
+  PRIVATE_SECTOR_LEADERSHIP: [ComponentType.ENTREPRENEURSHIP_SUPPORT],
+  SOCIAL_DEMOCRACY: [ComponentType.WELFARE_STATE, ComponentType.WORKER_PROTECTION],
+  COMPREHENSIVE_WELFARE: [ComponentType.SOCIAL_SAFETY_NET, ComponentType.UNIVERSAL_HEALTHCARE],
+  PUBLIC_SECTOR_LEADERSHIP: [ComponentType.PROFESSIONAL_BUREAUCRACY],
+  ENVIRONMENTAL_FOCUS: [ComponentType.ENVIRONMENTAL_PROTECTION],
+  ECONOMIC_PLANNING: [ComponentType.STRATEGIC_PLANNING],
+  DEVELOPMENTAL_STATE: [ComponentType.PERFORMANCE_LEGITIMACY],
+  REGIONAL_DEVELOPMENT: [ComponentType.ADMINISTRATIVE_DECENTRALIZATION],
+  MERITOCRATIC_SYSTEM: [ComponentType.MERIT_BASED_SYSTEM],
+  PLANNED_ECONOMY: [ComponentType.STRATEGIC_PLANNING],
+  SOCIAL_MARKET_ECONOMY: [ComponentType.WELFARE_STATE],
+  FREE_MARKET_SYSTEM: [ComponentType.ECONOMIC_INCENTIVES],
+  STATE_CAPITALISM: [ComponentType.CENTRALIZED_POWER],
+};
+
+export function mapLegacyGovernmentComponents(components: string[]): ComponentType[] {
+  if (!components) return [];
+  const result = new Set<ComponentType>();
+  for (const comp of components) {
+    if (GOVERNMENT_COMPONENT_LEGACY_MAP[comp]) {
+      GOVERNMENT_COMPONENT_LEGACY_MAP[comp].forEach((c) => result.add(c));
+    } else {
+      result.add(comp as ComponentType);
+    }
+  }
+  return Array.from(result);
+}
 
 /**
  * useArchetypes - Fetch economic archetypes with fallback pattern
@@ -60,8 +90,12 @@ export function useArchetypes(era?: "modern" | "historical" | "all") {
 
     // Use database if available and not empty
     if (list && list.length > 0) {
+      const mappedDbList = (list as EconomicArchetype[]).map((a) => ({
+        ...a,
+        governmentComponents: mapLegacyGovernmentComponents(a.governmentComponents as any[]),
+      }));
       return {
-        archetypes: list as EconomicArchetype[],
+        archetypes: mappedDbList,
         isUsingFallback: false,
       };
     }
@@ -76,7 +110,10 @@ export function useArchetypes(era?: "modern" | "historical" | "all") {
     const fallback: EconomicArchetype[] = [
       ...Array.from(modernArchetypes.values()),
       ...Array.from(historicalArchetypes.values()),
-    ];
+    ].map((a) => ({
+      ...a,
+      governmentComponents: mapLegacyGovernmentComponents(a.governmentComponents as any[]),
+    }));
 
     // Filter by era if specified
     let filtered = fallback;

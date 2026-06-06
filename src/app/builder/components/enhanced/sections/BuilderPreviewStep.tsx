@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, memo } from "react";
 import { motion } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -394,21 +394,30 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         open={sectionStates.nationalIdentity}
         onOpenChange={() => toggleSection("nationalIdentity")}
       >
-        <Card className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
+        <GlassCard
+          depth="base"
+          theme="gold"
+          className="border-amber-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer transition-colors hover:bg-amber-50/50">
+            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-amber-500/10 p-2">
-                    <Flag className="h-5 w-5 text-amber-600" />
+                    <Flag className="h-5 w-5 text-amber-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">National Identity</CardTitle>
+                    <h3 className="text-foreground text-lg font-bold">National Identity</h3>
                     <p className="text-muted-foreground text-sm">Country symbols and identity</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-amber-100 text-amber-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                  >
                     {nationalIdentity ? "Configured" : "Not Set"}
                   </Badge>
                   {sectionStates.nationalIdentity ? (
@@ -418,10 +427,10 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   )}
                 </div>
               </div>
-            </CardHeader>
+            </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent>
+            <GlassCardContent className="p-6">
               {nationalIdentity ? (
                 <div className="space-y-6">
                   {/* Flag and Coat of Arms */}
@@ -458,7 +467,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                           </Dialog>
                         </div>
                       ) : (
-                        <div className="flex h-16 w-24 items-center justify-center rounded border bg-gray-100">
+                        <div className="flex h-16 w-24 items-center justify-center rounded border border-white/10 bg-white/[0.03]">
                           <Flag className="h-8 w-8 text-gray-400" />
                         </div>
                       )}
@@ -503,7 +512,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                           </Dialog>
                         </div>
                       ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded border bg-gray-100">
+                        <div className="flex h-16 w-16 items-center justify-center rounded border border-white/10 bg-white/[0.03]">
                           <Crown className="h-8 w-8 text-gray-400" />
                         </div>
                       )}
@@ -514,7 +523,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   {/* Identity Details */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-3">
-                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
                         <Globe className="h-4 w-4" />
                         Basic Information
                       </h4>
@@ -543,7 +552,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
                         <Crown className="h-4 w-4" />
                         Government & Culture
                       </h4>
@@ -568,7 +577,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
                         <Languages className="h-4 w-4" />
                         Language & Symbols
                       </h4>
@@ -622,9 +631,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   <p className="text-muted-foreground">No national identity configured</p>
                 </div>
               )}
-            </CardContent>
+            </GlassCardContent>
           </CollapsibleContent>
-        </Card>
+        </GlassCard>
       </Collapsible>
 
       {/* 2. Core Economic Indicators Section */}
@@ -632,21 +641,30 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         open={sectionStates.coreIndicators}
         onOpenChange={() => toggleSection("coreIndicators")}
       >
-        <Card className="border-blue-200/50 bg-blue-50/30 backdrop-blur-sm">
+        <GlassCard
+          depth="base"
+          theme="blue"
+          className="border-blue-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer transition-colors hover:bg-blue-50/50">
+            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-blue-500/10 p-2">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Core Economic Indicators</CardTitle>
+                    <h3 className="text-foreground text-lg font-bold">Core Economic Indicators</h3>
                     <p className="text-muted-foreground text-sm">Primary economic metrics</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-500/10 text-blue-600 dark:text-blue-300"
+                  >
                     {coreIndicators ? "Configured" : "Not Set"}
                   </Badge>
                   {sectionStates.coreIndicators ? (
@@ -656,13 +674,13 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   )}
                 </div>
               </div>
-            </CardHeader>
+            </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent>
+            <GlassCardContent className="p-6">
               {coreIndicators ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
                     <Users className="mx-auto mb-2 h-8 w-8 text-blue-600" />
                     <div className="text-2xl font-bold text-blue-600">
                       {coreIndicators.totalPopulation?.toLocaleString() || "N/A"}
@@ -670,7 +688,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     <div className="text-muted-foreground text-sm">Total Population</div>
                   </div>
 
-                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
                     <DollarSign className="mx-auto mb-2 h-8 w-8 text-green-600" />
                     <div className="text-2xl font-bold text-green-600">
                       {coreIndicators.nominalGDP
@@ -680,7 +698,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     <div className="text-muted-foreground text-sm">Nominal GDP</div>
                   </div>
 
-                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
                     <TrendingUp className="mx-auto mb-2 h-8 w-8 text-purple-600" />
                     <div className="text-2xl font-bold text-purple-600">
                       {coreIndicators.gdpPerCapita
@@ -690,7 +708,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     <div className="text-muted-foreground text-sm">GDP per Capita</div>
                   </div>
 
-                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
                     <BarChart3 className="mx-auto mb-2 h-8 w-8 text-orange-600" />
                     <div className="text-2xl font-bold text-orange-600">
                       {coreIndicators.realGDPGrowthRate
@@ -700,7 +718,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     <div className="text-muted-foreground text-sm">GDP Growth Rate</div>
                   </div>
 
-                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
                     <TrendingUp className="mx-auto mb-2 h-8 w-8 text-red-600" />
                     <div className="text-2xl font-bold text-red-600">
                       {coreIndicators.inflationRate ? `${coreIndicators.inflationRate}%` : "N/A"}
@@ -708,7 +726,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                     <div className="text-muted-foreground text-sm">Inflation Rate</div>
                   </div>
 
-                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
                     <Globe className="mx-auto mb-2 h-8 w-8 text-indigo-600" />
                     <div className="text-2xl font-bold text-indigo-600">
                       {coreIndicators.currencyExchangeRate || "N/A"}
@@ -722,9 +740,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   <p className="text-muted-foreground">No economic indicators configured</p>
                 </div>
               )}
-            </CardContent>
+            </GlassCardContent>
           </CollapsibleContent>
-        </Card>
+        </GlassCard>
       </Collapsible>
 
       {/* 3. Government Configuration Section */}
@@ -732,23 +750,32 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         open={sectionStates.governmentConfig}
         onOpenChange={() => toggleSection("governmentConfig")}
       >
-        <Card className="border-indigo-200/50 bg-indigo-50/30 backdrop-blur-sm">
+        <GlassCard
+          depth="base"
+          theme="teal"
+          className="border-cyan-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer transition-colors hover:bg-indigo-50/50">
+            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-indigo-500/10 p-2">
-                    <Building2 className="h-5 w-5 text-indigo-600" />
+                  <div className="rounded-lg bg-cyan-500/10 p-2">
+                    <Building2 className="h-5 w-5 text-cyan-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Government Configuration</CardTitle>
+                    <h3 className="text-foreground text-lg font-bold">Government Configuration</h3>
                     <p className="text-muted-foreground text-sm">
                       Government structure and components
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-indigo-100 text-indigo-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
+                  >
                     {governmentComponents.length} Components
                   </Badge>
                   {sectionStates.governmentConfig ? (
@@ -758,10 +785,10 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   )}
                 </div>
               </div>
-            </CardHeader>
+            </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent>
+            <GlassCardContent className="p-6">
               <div className="space-y-6">
                 {/* Government Structure Overview */}
                 {normalizedGovernmentStructure && (
@@ -834,9 +861,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   </div>
                 )}
               </div>
-            </CardContent>
+            </GlassCardContent>
           </CollapsibleContent>
-        </Card>
+        </GlassCard>
       </Collapsible>
 
       {/* 4. Economy Configuration Section */}
@@ -844,23 +871,32 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         open={sectionStates.economyConfig}
         onOpenChange={() => toggleSection("economyConfig")}
       >
-        <Card className="border-green-200/50 bg-green-50/30 backdrop-blur-sm">
+        <GlassCard
+          depth="base"
+          theme="emerald"
+          className="border-emerald-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer transition-colors hover:bg-green-50/50">
+            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-green-500/10 p-2">
-                    <Factory className="h-5 w-5 text-green-600" />
+                  <div className="rounded-lg bg-emerald-500/10 p-2">
+                    <Factory className="h-5 w-5 text-emerald-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Economy Configuration</CardTitle>
+                    <h3 className="text-foreground text-lg font-bold">Economy Configuration</h3>
                     <p className="text-muted-foreground text-sm">
                       Labor, demographics, and economic sectors
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-green-100 text-green-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+                  >
                     {laborEmployment || demographics ? "Configured" : "Not Set"}
                   </Badge>
                   {sectionStates.economyConfig ? (
@@ -870,20 +906,20 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   )}
                 </div>
               </div>
-            </CardHeader>
+            </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent>
+            <GlassCardContent className="p-6">
               <div className="space-y-6">
                 {/* Labor & Employment */}
                 {laborEmployment && (
                   <div className="space-y-4">
-                    <h4 className="flex items-center gap-2 font-semibold text-green-700">
+                    <h4 className="flex items-center gap-2 font-semibold text-green-700 dark:text-emerald-300">
                       <Briefcase className="h-4 w-4" />
                       Labor & Employment
                     </h4>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-green-600">
                           {laborEmployment.laborForceParticipationRate}%
                         </div>
@@ -891,31 +927,31 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                           Labor Force Participation
                         </div>
                       </div>
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-green-600">
                           {laborEmployment.employmentRate}%
                         </div>
                         <div className="text-muted-foreground text-sm">Employment Rate</div>
                       </div>
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-red-600">
                           {laborEmployment.unemploymentRate}%
                         </div>
                         <div className="text-muted-foreground text-sm">Unemployment Rate</div>
                       </div>
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-blue-600">
                           {laborEmployment.totalWorkforce?.toLocaleString() || "N/A"}
                         </div>
                         <div className="text-muted-foreground text-sm">Total Workforce</div>
                       </div>
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-purple-600">
                           {laborEmployment.averageWorkweekHours}hrs
                         </div>
                         <div className="text-muted-foreground text-sm">Avg Work Week</div>
                       </div>
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-orange-600">
                           {laborEmployment.averageAnnualIncome
                             ? formatCurrencyLocal(laborEmployment.averageAnnualIncome)
@@ -930,26 +966,26 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                 {/* Demographics */}
                 {demographics && (
                   <div className="space-y-4">
-                    <h4 className="flex items-center gap-2 font-semibold text-green-700">
+                    <h4 className="flex items-center gap-2 font-semibold text-green-700 dark:text-emerald-300">
                       <Users className="h-4 w-4" />
                       Demographics
                     </h4>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {demographics.ageDistribution && demographics.ageDistribution.length > 0 && (
                         <>
-                          <div className="rounded-lg border bg-white/50 p-3">
+                          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                             <div className="text-lg font-bold text-blue-600">
                               {demographics.ageDistribution[0]?.percent || 0}%
                             </div>
                             <div className="text-muted-foreground text-sm">Youth Population</div>
                           </div>
-                          <div className="rounded-lg border bg-white/50 p-3">
+                          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                             <div className="text-lg font-bold text-green-600">
                               {demographics.ageDistribution[1]?.percent || 0}%
                             </div>
                             <div className="text-muted-foreground text-sm">Working Age</div>
                           </div>
-                          <div className="rounded-lg border bg-white/50 p-3">
+                          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                             <div className="text-lg font-bold text-purple-600">
                               {demographics.ageDistribution[2]?.percent || 0}%
                             </div>
@@ -958,20 +994,20 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                         </>
                       )}
                       {demographics.urbanRuralSplit && (
-                        <div className="rounded-lg border bg-white/50 p-3">
+                        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                           <div className="text-lg font-bold text-orange-600">
                             {demographics.urbanRuralSplit.urban}%
                           </div>
                           <div className="text-muted-foreground text-sm">Urban Population</div>
                         </div>
                       )}
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-red-600">
                           {demographics.lifeExpectancy || "N/A"}
                         </div>
                         <div className="text-muted-foreground text-sm">Life Expectancy</div>
                       </div>
-                      <div className="rounded-lg border bg-white/50 p-3">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                         <div className="text-lg font-bold text-indigo-600">
                           {demographics.populationGrowthRate || "N/A"}%
                         </div>
@@ -998,7 +1034,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                 {/* Fiscal / Government Revenue Integration Preview */}
                 {(revenueIntegration.totalRevenue > 0 || !!economicInputs?.fiscalSystem) && (
                   <div className="space-y-4">
-                    <h4 className="flex items-center gap-2 font-semibold text-green-700">
+                    <h4 className="flex items-center gap-2 font-semibold text-green-700 dark:text-emerald-300">
                       <Landmark className="h-4 w-4" />
                       Fiscal Policy
                     </h4>
@@ -1020,30 +1056,36 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   </div>
                 )}
               </div>
-            </CardContent>
+            </GlassCardContent>
           </CollapsibleContent>
-        </Card>
+        </GlassCard>
       </Collapsible>
 
       {/* 5. Tax System Section */}
       <Collapsible open={sectionStates.taxSystem} onOpenChange={() => toggleSection("taxSystem")}>
-        <Card className="border-red-200/50 bg-red-50/30 backdrop-blur-sm">
+        <GlassCard
+          depth="base"
+          theme="red"
+          className="border-red-500/20"
+          texture="chevron"
+          textureOpacity={0.04}
+        >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer transition-colors hover:bg-red-50/50">
+            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-red-500/10 p-2">
-                    <Scale className="h-5 w-5 text-red-600" />
+                    <Scale className="h-5 w-5 text-red-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Tax System</CardTitle>
+                    <h3 className="text-foreground text-lg font-bold">Tax System</h3>
                     <p className="text-muted-foreground text-sm">
                       Tax categories, brackets, and revenue
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-red-100 text-red-700">
+                  <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-300">
                     {taxSystemData?.categories?.length || 0} Categories
                   </Badge>
                   {sectionStates.taxSystem ? (
@@ -1053,14 +1095,14 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   )}
                 </div>
               </div>
-            </CardHeader>
+            </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent>
+            <GlassCardContent className="p-6">
               {taxSystemData ? (
                 <div className="space-y-6">
                   {/* Tax System Overview */}
-                  <div className="grid grid-cols-1 gap-4 rounded-lg border bg-white/50 p-4 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 rounded-lg border border-white/10 bg-white/[0.03] p-4 md:grid-cols-3">
                     <div className="text-center">
                       <div className="text-lg font-bold text-red-600">
                         {taxSystemData.taxSystem?.taxSystemName || "Unnamed System"}
@@ -1084,7 +1126,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   {/* Tax Categories */}
                   {taxSystemData.categories && taxSystemData.categories.length > 0 && (
                     <div className="space-y-4">
-                      <h4 className="flex items-center gap-2 font-semibold text-red-700">
+                      <h4 className="flex items-center gap-2 font-semibold text-red-700 dark:text-red-300">
                         <Scale className="h-4 w-4" />
                         Tax Categories
                       </h4>
@@ -1098,9 +1140,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                                 setOpenDepartments((prev) => ({ ...prev, [`tax-${index}`]: open }))
                               }
                             >
-                              <Card className="border">
+                              <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
                                 <CollapsibleTrigger className="w-full">
-                                  <div className="hover:bg-muted/30 flex cursor-pointer items-center justify-between p-3 transition-colors">
+                                  <div className="flex cursor-pointer items-center justify-between p-3 transition-colors hover:bg-white/[0.05]">
                                     <div>
                                       <div className="flex items-center gap-2 font-medium">
                                         {category.categoryName}
@@ -1129,7 +1171,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                                   </div>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                  <div className="bg-muted/20 border-t p-3">
+                                  <div className="border-t border-white/10 bg-white/[0.02] p-3">
                                     <p className="text-muted-foreground mb-3 text-sm">
                                       {category.description}
                                     </p>
@@ -1147,7 +1189,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                                               ) => (
                                                 <div
                                                   key={bracketIndex}
-                                                  className="rounded border bg-white/50 p-2 text-xs"
+                                                  className="rounded border border-white/10 bg-white/[0.03] p-2 text-xs"
                                                 >
                                                   {bracket.minIncome && bracket.maxIncome
                                                     ? `${formatCurrencyLocal(bracket.minIncome)} - ${formatCurrencyLocal(bracket.maxIncome)}: ${bracket.rate}%`
@@ -1162,7 +1204,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                                       )}
                                   </div>
                                 </CollapsibleContent>
-                              </Card>
+                              </div>
                             </Collapsible>
                           )
                         )}
@@ -1180,7 +1222,10 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                           <div className="space-y-1">
                             {taxSystemData.exemptions.map(
                               (exemption: TaxBuilderState["exemptions"][number], index: number) => (
-                                <div key={index} className="rounded border bg-white/50 p-2 text-xs">
+                                <div
+                                  key={index}
+                                  className="rounded border border-white/10 bg-white/[0.03] p-2 text-xs"
+                                >
                                   <div className="font-medium">{exemption.exemptionName}</div>
                                   <div className="text-muted-foreground">
                                     {exemption.description}
@@ -1211,7 +1256,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                                   ) => (
                                     <div
                                       key={`${categoryIndex}-${index}`}
-                                      className="rounded border bg-white/50 p-2 text-xs"
+                                      className="rounded border border-white/10 bg-white/[0.03] p-2 text-xs"
                                     >
                                       <div className="font-medium">{deduction.deductionName}</div>
                                       <div className="text-muted-foreground">
@@ -1236,20 +1281,26 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                   <p className="text-muted-foreground">No tax system configured</p>
                 </div>
               )}
-            </CardContent>
+            </GlassCardContent>
           </CollapsibleContent>
-        </Card>
+        </GlassCard>
       </Collapsible>
 
       {/* Summary Statistics */}
-      <Card className="border-gray-200/50 bg-gray-50/30 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+      <GlassCard
+        depth="base"
+        theme="neutral"
+        className="border-zinc-500/20"
+        texture="chevron"
+        textureOpacity={0.04}
+      >
+        <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+          <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
+            <BarChart3 className="h-5 w-5 text-zinc-400" />
             Configuration Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h3>
+        </div>
+        <GlassCardContent className="p-6">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{nationalIdentity ? "✓" : "✗"}</div>
@@ -1278,8 +1329,8 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
               <div className="text-muted-foreground text-sm">Tax Categories</div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </GlassCardContent>
+      </GlassCard>
     </div>
   );
 });

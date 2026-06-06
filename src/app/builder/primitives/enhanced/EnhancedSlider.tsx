@@ -20,6 +20,7 @@ interface EnhancedSliderProps extends EnhancedInputProps {
   icon?: React.ComponentType<any>;
   helpContent?: React.ReactNode;
   helpTitle?: string;
+  onCommit?: (value: number) => void;
 }
 
 export function EnhancedSlider({
@@ -52,6 +53,7 @@ export function EnhancedSlider({
   icon: Icon,
   helpContent,
   helpTitle,
+  onCommit,
 }: EnhancedSliderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -171,7 +173,10 @@ export function EnhancedSlider({
     debouncedOnChange.cancel();
     // Immediately synchronize final value to parent on mouse release
     onChange(localValue);
-  }, [onChange, localValue, debouncedOnChange]);
+    if (onCommit) {
+      onCommit(localValue);
+    }
+  }, [onChange, localValue, debouncedOnChange, onCommit]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -227,8 +232,11 @@ export function EnhancedSlider({
 
       const newValue = calculateValueFromPosition(e.clientX, e.clientY);
       onChange(newValue);
+      if (onCommit) {
+        onCommit(newValue);
+      }
     },
-    [disabled, isDragging, calculateValueFromPosition, onChange]
+    [disabled, isDragging, calculateValueFromPosition, onChange, onCommit]
   );
 
   // Generate tick marks

@@ -81,7 +81,7 @@ export function SettingsTab({
   return (
     <div className="space-y-6">
       {/* Sub-tab navigation */}
-      <div className="bg-muted/30 border-border inline-flex rounded-lg border p-0.5">
+      <div className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
         {subTabs.map((tab) => {
           const isActive = tab.id === activeSubTab;
           const Icon = tab.icon;
@@ -91,8 +91,8 @@ export function SettingsTab({
               onClick={() => setActiveSubTab(tab.id as "system" | "categories")}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 isActive
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-emerald-500/15 font-semibold text-emerald-400"
+                  : "text-foreground/50 hover:text-foreground/80 hover:bg-white/5"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -133,22 +133,18 @@ export function SettingsTab({
       {/* ── System Sub-tab ── */}
       {activeSubTab === "system" && (
         <div className="space-y-6">
-          <GlassCard depth="base" theme="emerald" texture="chevron" textureOpacity={0.04}>
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                Tax System Settings
-              </h3>
-            </div>
-            <GlassCardContent className="p-6">
-              <TaxSystemForm
-                data={taxSystem}
-                onChange={onTaxSystemChange}
-                isReadOnly={isReadOnly}
-                errors={validation.errors.taxSystem || {}}
-                countryId={countryId}
-              />
-            </GlassCardContent>
-          </GlassCard>
+          <div className="space-y-4">
+            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+              Tax System Settings
+            </h3>
+            <TaxSystemForm
+              data={taxSystem}
+              onChange={onTaxSystemChange}
+              isReadOnly={isReadOnly}
+              errors={validation.errors.taxSystem || {}}
+              countryId={countryId}
+            />
+          </div>
 
           {/* Advanced: Atomic Tax Components */}
           {showAtomicIntegration && (
@@ -169,52 +165,48 @@ export function SettingsTab({
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4">
-                <GlassCard depth="base" theme="emerald" texture="chevron" textureOpacity={0.04}>
-                  <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      Atomic Tax Components
-                    </h3>
-                  </div>
-                  <GlassCardContent className="space-y-6 p-6">
-                    <p className="text-muted-foreground text-sm">
-                      Build your tax system using modular components with synergies and conflicts
-                    </p>
-                    <AtomicTaxComponentSelector
-                      selectedComponents={selectedAtomicTaxComponents}
-                      onComponentChange={onAtomicComponentsChange}
-                      maxComponents={15}
-                      isReadOnly={isReadOnly}
+                <div className="space-y-4 rounded-xl border border-white/5 bg-white/[0.01] p-5">
+                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                    Atomic Tax Components
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Build your tax system using modular components with synergies and conflicts
+                  </p>
+                  <AtomicTaxComponentSelector
+                    selectedComponents={selectedAtomicTaxComponents}
+                    onComponentChange={onAtomicComponentsChange}
+                    maxComponents={15}
+                    isReadOnly={isReadOnly}
+                  />
+                  {selectedAtomicTaxComponents.length > 0 && economicData && (
+                    <UnifiedTaxEffectivenessDisplay
+                      taxComponents={selectedAtomicTaxComponents.map((id) => ({
+                        id,
+                        type: id,
+                        name: id,
+                        effectiveness: 80,
+                      }))}
+                      governmentComponents={activeGovernmentComponents.map((type) => ({
+                        id: type,
+                        type,
+                        name: type,
+                        effectiveness: 80,
+                        countryId: countryId || "",
+                        effectivenessScore: 80,
+                        implementationDate: new Date(),
+                        implementationCost: 0,
+                        maintenanceCost: 0,
+                        requiredCapacity: 50,
+                        isActive: true,
+                        notes: null,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      }))}
+                      economicData={economicData as any}
+                      taxSystem={previewTaxSystem}
                     />
-                    {selectedAtomicTaxComponents.length > 0 && economicData && (
-                      <UnifiedTaxEffectivenessDisplay
-                        taxComponents={selectedAtomicTaxComponents.map((id) => ({
-                          id,
-                          type: id,
-                          name: id,
-                          effectiveness: 80,
-                        }))}
-                        governmentComponents={activeGovernmentComponents.map((type) => ({
-                          id: type,
-                          type,
-                          name: type,
-                          effectiveness: 80,
-                          countryId: countryId || "",
-                          effectivenessScore: 80,
-                          implementationDate: new Date(),
-                          implementationCost: 0,
-                          maintenanceCost: 0,
-                          requiredCapacity: 50,
-                          isActive: true,
-                          notes: null,
-                          createdAt: new Date(),
-                          updatedAt: new Date(),
-                        }))}
-                        economicData={economicData as any}
-                        taxSystem={previewTaxSystem}
-                      />
-                    )}
-                  </GlassCardContent>
-                </GlassCard>
+                  )}
+                </div>
               </CollapsibleContent>
             </Collapsible>
           )}
@@ -223,8 +215,8 @@ export function SettingsTab({
 
       {/* ── Categories Sub-tab ── */}
       {activeSubTab === "categories" && (
-        <GlassCard depth="base" theme="emerald" texture="chevron" textureOpacity={0.04}>
-          <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
               Tax Categories
             </h3>
@@ -237,7 +229,7 @@ export function SettingsTab({
               </Button>
             </div>
           </div>
-          <GlassCardContent className="space-y-4 p-6">
+          <div className="space-y-4">
             {categories.length === 0 ? (
               <div className="text-muted-foreground py-8 text-center text-sm">
                 <Info className="mx-auto mb-2 h-8 w-8 opacity-50" />
@@ -267,8 +259,8 @@ export function SettingsTab({
                 />
               ))
             )}
-          </GlassCardContent>
-        </GlassCard>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -190,7 +190,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       if (state.taxRecommendations.length > 0 && !revenueAutoPopulated) {
         // Convert tax recommendations to suggestions
         const newSuggestions: SuggestionItem[] = state.taxRecommendations.map((rec) => ({
-          id: `tax-rec-${rec.taxType}-${Date.now()}`,
+          id: `tax-rec-${rec.taxType}`,
           type: "tax_recommendation",
           title: `Optimize ${rec.taxType} tax rate`,
           description: rec.rationale,

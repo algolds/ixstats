@@ -37,7 +37,7 @@ interface TaxParsingOptions {
  * Main parsing function - combines core indicators and government data
  */
 export function parseEconomicDataForTaxSystem(
-  coreIndicators: CoreEconomicIndicators,
+  rawCoreIndicators: CoreEconomicIndicators,
   governmentData?: GovernmentBuilderState,
   options: TaxParsingOptions = {}
 ): ParsedTaxData {
@@ -47,6 +47,37 @@ export function parseEconomicDataForTaxSystem(
     autoGenerateBrackets = true,
     targetRevenueMatch = true,
   } = options;
+
+  // Normalize input indicators to prevent NaN values
+  const rawIndicators = rawCoreIndicators || {};
+  const gdp = Number(
+    rawIndicators.nominalGDP ?? (rawIndicators as any).gdp ?? (rawIndicators as any).nominalGdp ?? 0
+  );
+  const population = Number(
+    rawIndicators.totalPopulation ??
+      (rawIndicators as any).population ??
+      (rawIndicators as any).totalPopulation ??
+      1
+  );
+  let gdpPerCapita = Number(rawIndicators.gdpPerCapita);
+
+  if (isNaN(gdpPerCapita) || gdpPerCapita <= 0) {
+    if (!isNaN(gdp) && !isNaN(population) && population > 0) {
+      gdpPerCapita = gdp / population;
+    } else {
+      gdpPerCapita = 15000;
+    }
+  }
+
+  const coreIndicators: CoreEconomicIndicators = {
+    totalPopulation: isNaN(population) || population <= 0 ? 10000000 : population,
+    nominalGDP: isNaN(gdp) || gdp <= 0 ? 150000000000 : gdp,
+    gdpPerCapita: isNaN(gdpPerCapita) || gdpPerCapita <= 0 ? 15000 : gdpPerCapita,
+    realGDPGrowthRate: Number(rawIndicators.realGDPGrowthRate ?? 0.03),
+    inflationRate: Number(rawIndicators.inflationRate ?? 0.02),
+    currencyExchangeRate: Number(rawIndicators.currencyExchangeRate ?? 1.0),
+    giniCoefficient: rawIndicators.giniCoefficient,
+  };
 
   // Parse core tax system structure
   const taxSystem = parseTaxSystemFromCoreIndicators(coreIndicators);

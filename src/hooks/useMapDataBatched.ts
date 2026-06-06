@@ -34,10 +34,18 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 ];
 
 /** Critical layers load first — altitudes are the terrain base, must render with map */
-const CRITICAL_LAYERS: MapLayerType[] = ["background", "altitudes", "political", "country_labels"];
+const CRITICAL_LAYERS: MapLayerType[] = [
+  "background",
+  "altitudes",
+  "political",
+  "country_labels",
+  "rivers",
+  "lakes",
+  "icecaps",
+];
 
 /** Decorative layers load in a deferred second request */
-const DECORATIVE_LAYERS: MapLayerType[] = ["rivers", "lakes", "icecaps"];
+const DECORATIVE_LAYERS: MapLayerType[] = [];
 
 export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
@@ -108,6 +116,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
       ...MAP_QUERY_OPTIONS,
       // Don't block the map from rendering — load in background
       placeholderData: undefined,
+      enabled: decorativeLayersToFetch.length > 0,
     }
   );
 

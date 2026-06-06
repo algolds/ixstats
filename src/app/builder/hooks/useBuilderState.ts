@@ -19,7 +19,7 @@ import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type {
   GovernmentDepartment,
   GovernmentBuilderState,
@@ -31,6 +31,9 @@ import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
+import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
+import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 
 const CURRENT_SCHEMA_VERSION = 1;
 
@@ -186,7 +189,7 @@ const baseInitialState: BuilderState = {
   },
   completedSteps: [],
   activeCoreTab: "identity",
-  activeIdentitySubTab: "basic",
+  activeIdentitySubTab: "archetype",
   activeGovernmentTab: "components",
   activeEconomicsTab: "components",
   showAdvancedMode: false,
@@ -200,7 +203,7 @@ const getInitialState = (mode: "create" | "edit" = "create"): BuilderState => {
       step: "core",
       completedSteps: ["foundation"],
       activeCoreTab: "identity",
-      activeIdentitySubTab: "basic",
+      activeIdentitySubTab: "archetype",
     };
   }
 
@@ -268,6 +271,7 @@ export function useBuilderState(
   mode: "create" | "edit" = "create",
   countryId?: string
 ): UseBuilderStateReturn {
+  const notify = useNotify();
   const [builderState, setBuilderState] = useState<BuilderState>(() => getInitialState(mode));
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
@@ -535,7 +539,7 @@ export function useBuilderState(
         governmentStructure,
         completedSteps: ["foundation"], // Auto-complete foundation step
         activeCoreTab: "identity",
-        activeIdentitySubTab: "basic",
+        activeIdentitySubTab: "archetype",
         activeGovernmentTab: "components",
         activeEconomicsTab: "components",
         showAdvancedMode: false,
@@ -589,14 +593,6 @@ export function useBuilderState(
                   }
                 : sanitizedSaved;
 
-              const savedTab = parsedState.activeIdentitySubTab;
-              if (savedTab && savedTab !== "basic") {
-                toast.info("Session restored", {
-                  description: `Starting at Basic Info tab (was on "${savedTab}").`,
-                  duration: 4000,
-                });
-              }
-
               return {
                 ...prev,
                 economicInputs: mergedInputs,
@@ -605,13 +601,22 @@ export function useBuilderState(
                 governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
                 economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
                 activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
-                activeIdentitySubTab: "basic",
+                activeIdentitySubTab: "archetype",
                 activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
                 activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
               };
             });
             setHasRestoredState(true);
             console.log("[useBuilderState] Restored saved edits from localStorage");
+
+            const savedTab = parsedState.activeIdentitySubTab;
+            if (savedTab && savedTab !== "archetype") {
+              notify.info(
+                "Session restored",
+                `Starting at Archetype/Preset tab (was on "${savedTab}").`,
+                { duration: 4000 }
+              );
+            }
           }
         }
 
@@ -1341,6 +1346,94 @@ export function useBuilderState(
             newState.selectedCountry = data;
             if (data) {
               newState.economicInputs = sanitizeEconomicInputs(createDefaultEconomicInputs(data));
+
+              // Load selected archetype presets if an archetype was chosen
+              const archetype = newState.selectedArchetypeId
+                ? modernArchetypes.get(newState.selectedArchetypeId) ||
+                  historicalArchetypes.get(newState.selectedArchetypeId)
+                : null;
+
+              if (archetype) {
+                // 1. Update government components
+                if (archetype.governmentComponents) {
+                  newState.governmentComponents = mapLegacyGovernmentComponents(
+                    archetype.governmentComponents as string[]
+                  );
+                }
+
+                // 2. Update economic components in economyBuilderState
+                if (archetype.economicComponents) {
+                  newState.economyBuilderState = {
+                    selectedAtomicComponents: archetype.economicComponents,
+                    structure: {
+                      sectors: [],
+                    } as any,
+                    sectors: [],
+                    laborMarket: {
+                      unemploymentRate: archetype.employmentProfile?.unemploymentRate ?? 5.0,
+                      participationRate: archetype.employmentProfile?.laborParticipation ?? 65.0,
+                    } as any,
+                    demographics: {} as any,
+                    isValid: true,
+                    errors: {},
+                    lastUpdated: new Date(),
+                    version: "1.0.0",
+                  };
+                }
+
+                // 3. Initialize tax system with archetype profiles if needed
+                if (archetype.taxProfile) {
+                  newState.taxSystemData = {
+                    taxSystem: {
+                      taxSystemName: `${data.name} Tax System`,
+                      fiscalYear: "Calendar Year",
+                      progressiveTax: true,
+                      alternativeMinTax: false,
+                    },
+                    categories: [
+                      {
+                        categoryName: "Personal Income Tax",
+                        categoryType: "Direct Tax",
+                        description: "Tax on personal earnings",
+                        isActive: true,
+                        calculationMethod: "percentage",
+                        baseRate: archetype.taxProfile.incomeRate,
+                        deductionAllowed: true,
+                        priority: 10,
+                        color: "#3b82f6",
+                      },
+                      {
+                        categoryName: "Corporate Income Tax",
+                        categoryType: "Direct Tax",
+                        description: "Tax on corporate profits",
+                        isActive: true,
+                        calculationMethod: "percentage",
+                        baseRate: archetype.taxProfile.corporateRate,
+                        deductionAllowed: true,
+                        priority: 20,
+                        color: "#10b981",
+                      },
+                      {
+                        categoryName: "Consumption/Sales Tax",
+                        categoryType: "Indirect Tax",
+                        description: "Tax on goods and services",
+                        isActive: true,
+                        calculationMethod: "percentage",
+                        baseRate: archetype.taxProfile.consumptionRate,
+                        deductionAllowed: false,
+                        priority: 30,
+                        color: "#f59e0b",
+                      },
+                    ],
+                    brackets: {},
+                    exemptions: [],
+                    deductions: {},
+                    isValid: true,
+                    errors: {},
+                  };
+                }
+              }
+
               // Also update/initialize government structure with the foundation defaults if it hasn't been edited
               if (
                 !newState.governmentStructure ||
@@ -1350,7 +1443,7 @@ export function useBuilderState(
                 newState.governmentStructure = {
                   structure: {
                     governmentName: `Government of ${data.name}`,
-                    governmentType: (data.governmentType || "Other") as any,
+                    governmentType: (archetype?.name || data.governmentType || "Other") as any,
                     headOfState: "",
                     headOfGovernment: "",
                     legislatureName: "",

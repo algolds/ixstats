@@ -320,7 +320,7 @@ export function DemographicsPopulationTab({
       ),
       regionData: economyBuilder.demographics.regions.map((region, index) => ({
         name: region.name,
-        value: region.population,
+        value: region.populationPercent,
         color: getRegionColor(index),
       })),
     }),
@@ -344,6 +344,8 @@ export function DemographicsPopulationTab({
           icon={Users}
           sectionId="demographics"
           trend="neutral"
+          texture="dots"
+          textureOpacity={0.04}
         />
         <MetricCard
           label="Working Age (15-64)"
@@ -351,6 +353,8 @@ export function DemographicsPopulationTab({
           icon={UserCheck}
           sectionId="demographics"
           trend={derivedMetrics.workingAgeShare > 65 ? "up" : "neutral"}
+          texture="dots"
+          textureOpacity={0.04}
         />
         <MetricCard
           label="Life Expectancy"
@@ -358,6 +362,8 @@ export function DemographicsPopulationTab({
           icon={Heart}
           sectionId="demographics"
           trend={economyBuilder.demographics.lifeExpectancy > 75 ? "up" : "neutral"}
+          texture="dots"
+          textureOpacity={0.04}
         />
         <MetricCard
           label="Urban Population"
@@ -365,6 +371,8 @@ export function DemographicsPopulationTab({
           icon={Building2}
           sectionId="demographics"
           trend={derivedMetrics.urbanShare > 70 ? "up" : "neutral"}
+          texture="dots"
+          textureOpacity={0.04}
         />
       </div>
 

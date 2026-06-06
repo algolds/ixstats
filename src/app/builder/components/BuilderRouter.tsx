@@ -22,6 +22,7 @@ import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
 import { ImportSection } from "./sections/ImportSection";
 import { BuilderNotchBar } from "./BuilderNotchBar";
 import { useBuilderActions } from "../hooks/useBuilderActions";
+import { useBuilderAlerts } from "../hooks/useBuilderAlerts";
 import {
   type BuilderSection,
   BUILD_STEPS,
@@ -229,7 +230,8 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     if (mode === "edit") {
       // In edit mode, all sections except foundation are accessible
       for (const step of BUILD_STEPS) {
-        if (step !== "foundation") set.add(step);
+        if (step === "foundation") continue;
+        set.add(step);
       }
       return set;
     }
@@ -324,8 +326,9 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
 
   const currentSubStepLabel = useMemo(() => {
     if (activeSection === "identity") {
-      const tab = builderState.activeIdentitySubTab || "basic";
+      const tab = builderState.activeIdentitySubTab || "archetype";
       const labels: Record<string, string> = {
+        archetype: "Archetype/Preset",
         basic: "Basic Info",
         culture: "Culture",
         technical: "Technical",
@@ -412,6 +415,21 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     setIsAdvancedMode((prev) => !prev);
     setBuilderState((prev) => ({ ...prev, showAdvancedMode: !prev.showAdvancedMode }));
   }, [setBuilderState]);
+
+  // Unified alert system — pure derivation from builder state
+  const alertResult = useBuilderAlerts({
+    economyBuilderState: builderState.economyBuilderState ?? null,
+    selectedEconomicComponents: builderState.economyBuilderState?.selectedAtomicComponents ?? [],
+    governmentStructure: builderState.governmentStructure ?? null,
+    nominalGDP: builderState.economicInputs?.coreIndicators?.nominalGDP ?? 0,
+    taxSystemData: builderState.taxSystemData ?? null,
+    nationalIdentity: builderState.economicInputs?.nationalIdentity
+      ? {
+          countryName: builderState.economicInputs.nationalIdentity.countryName,
+          capitalCity: builderState.economicInputs.nationalIdentity.capitalCity,
+        }
+      : null,
+  });
 
   // Auth guard - using MyCountry gold theme
   if (!user) {
@@ -525,6 +543,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
                 onContinue={handleContinue}
                 onSubmit={submitFn ?? undefined}
                 isSubmitting={isSubmittingGlobal}
+                alertResult={alertResult}
               />
             )
           }

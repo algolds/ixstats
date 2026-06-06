@@ -5,7 +5,7 @@ import { isEqual } from "lodash";
 import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, Unlock as UnlockIcon } from "lucide-react";
+import { Lock, Unlock as UnlockIcon, Shield, AlertTriangle, Info, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -23,6 +23,10 @@ import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tut
 import { safeGetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import { ComponentType as PrismaComponentType } from "~/lib/enums";
 import { useNotify } from "~/hooks/useNotify";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Label } from "~/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { computeGovernmentWarnings } from "./government-preview/governmentWarnings";
 
 // Import modular architecture
 import { useBuilderContext } from "./context/BuilderStateContext";
@@ -107,6 +111,43 @@ function AtomicBuilderPageInner({
   // Submission lock to prevent double-submits
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionLockRef = useRef(false);
+
+  // Confirm Save/Create Modal states
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
+  // Capture initial budget values on mount to detect changes
+  const initialBudgetRef = useRef<number | null>(null);
+  const initialCurrencyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      builderState.governmentStructure?.structure?.totalBudget &&
+      initialBudgetRef.current === null
+    ) {
+      initialBudgetRef.current = builderState.governmentStructure.structure.totalBudget;
+    }
+    if (
+      builderState.governmentStructure?.structure?.budgetCurrency &&
+      initialCurrencyRef.current === null
+    ) {
+      initialCurrencyRef.current = builderState.governmentStructure.structure.budgetCurrency;
+    }
+  }, [builderState.governmentStructure]);
+
+  // Compute warnings using the shared helper
+  const warnings = useMemo(() => {
+    return computeGovernmentWarnings(
+      builderState.governmentStructure,
+      builderState.economicInputs?.coreIndicators?.nominalGDP || 0,
+      initialBudgetRef.current,
+      initialCurrencyRef.current
+    );
+  }, [builderState.governmentStructure, builderState.economicInputs]);
+
+  const deltaWarning = warnings.deltaWarning;
+  const currencyChangeWarning = warnings.currencyChangeWarning;
+  const gdpCapWarning = warnings.gdpCapWarning;
 
   // Government structure handlers
   const handleGovernmentStructureChange = useCallback(
@@ -342,6 +383,86 @@ function AtomicBuilderPageInner({
     isLoading: false,
   };
 
+  const executeSubmitCountry = useCallback(async () => {
+    // Prevent double-submit with ref-based lock
+    if (submissionLockRef.current || isSubmitting) {
+      return;
+    }
+
+    const { economicInputs } = builderState;
+    if (!economicInputs) {
+      notify.error("Incomplete Data", "Missing required economic inputs.");
+      return;
+    }
+
+    try {
+      // Set submission lock BEFORE any async operations
+      submissionLockRef.current = true;
+      setIsSubmitting(true);
+
+      const formattedGovComps = builderState.governmentComponents.map((comp) => ({
+        componentType: comp,
+      }));
+
+      if (isEditMode) {
+        if (!countryId) {
+          throw new Error("Missing country ID for update");
+        }
+
+        console.log("[Builder] Updating country:", economicInputs.countryName);
+
+        notify.info(
+          "Updating Your Country",
+          "Applying your changes to the country, government, and economic systems..."
+        );
+
+        await updateCountryMutation.mutateAsync({
+          id: countryId,
+          name: economicInputs.countryName || "Updated Nation",
+          economicInputs: sanitizeEconomicInputs(economicInputs),
+          governmentComponents: formattedGovComps,
+          taxSystemData: builderState.taxSystemData,
+          governmentStructure: builderState.governmentStructure,
+          economyBuilderState: builderState.economyBuilderState || undefined,
+        });
+      } else {
+        console.log("[Builder] Creating country:", economicInputs.countryName);
+
+        // Show initial progress toast
+        notify.info(
+          "Creating Your Nation",
+          "Setting up your country, government, and economic systems..."
+        );
+
+        await createCountryMutation.mutateAsync({
+          name: economicInputs.countryName || "New Nation",
+          foundationCountry:
+            builderState.selectedCountry?.name || builderState.selectedCountry?.countryCode || null,
+          economicInputs: sanitizeEconomicInputs(economicInputs),
+          governmentComponents: formattedGovComps,
+          taxSystemData: builderState.taxSystemData,
+          governmentStructure: builderState.governmentStructure,
+          economyBuilderState: builderState.economyBuilderState || undefined,
+          archetypeId: builderState.selectedArchetypeId || undefined,
+        });
+      }
+      setIsConfirmModalOpen(false);
+    } catch (error) {
+      // Error handled by mutation's onError callback
+      // Release lock on error
+      submissionLockRef.current = false;
+      setIsSubmitting(false);
+    }
+  }, [
+    builderState,
+    createCountryMutation,
+    updateCountryMutation,
+    isSubmitting,
+    isEditMode,
+    countryId,
+    notify,
+  ]);
+
   const handleCreateCountry = useCallback(async () => {
     // Prevent double-submit with ref-based lock
     if (submissionLockRef.current || isSubmitting) {
@@ -371,72 +492,9 @@ function AtomicBuilderPageInner({
       return;
     }
 
-    try {
-      // Set submission lock BEFORE any async operations
-      submissionLockRef.current = true;
-      setIsSubmitting(true);
-
-      const formattedGovComps = builderState.governmentComponents.map((comp) => ({
-        componentType: comp,
-      }));
-
-      if (isEditMode) {
-        if (!countryId) {
-          throw new Error("Missing country ID for update");
-        }
-
-        console.log("[Builder] Updating country:", builderState.economicInputs.countryName);
-
-        notify.info(
-          "Updating Your Country",
-          "Applying your changes to the country, government, and economic systems..."
-        );
-
-        await updateCountryMutation.mutateAsync({
-          id: countryId,
-          name: builderState.economicInputs.countryName || "Updated Nation",
-          economicInputs: sanitizeEconomicInputs(builderState.economicInputs),
-          governmentComponents: formattedGovComps,
-          taxSystemData: builderState.taxSystemData,
-          governmentStructure: builderState.governmentStructure,
-          economyBuilderState: builderState.economyBuilderState || undefined,
-        });
-      } else {
-        console.log("[Builder] Creating country:", builderState.economicInputs.countryName);
-
-        // Show initial progress toast
-        notify.info(
-          "Creating Your Nation",
-          "Setting up your country, government, and economic systems..."
-        );
-
-        await createCountryMutation.mutateAsync({
-          name: builderState.economicInputs.countryName || "New Nation",
-          foundationCountry:
-            builderState.selectedCountry?.name || builderState.selectedCountry?.countryCode || null,
-          economicInputs: sanitizeEconomicInputs(builderState.economicInputs),
-          governmentComponents: formattedGovComps,
-          taxSystemData: builderState.taxSystemData,
-          governmentStructure: builderState.governmentStructure,
-          economyBuilderState: builderState.economyBuilderState || undefined,
-          archetypeId: builderState.selectedArchetypeId || undefined,
-        });
-      }
-    } catch (error) {
-      // Error handled by mutation's onError callback
-      // Release lock on error
-      submissionLockRef.current = false;
-      setIsSubmitting(false);
-    }
-  }, [
-    builderState,
-    user,
-    createCountryMutation,
-    updateCountryMutation,
-    isSubmitting,
-    isEditMode,
-    countryId,
-  ]);
+    setIsVerified(false);
+    setIsConfirmModalOpen(true);
+  }, [builderState, user, isSubmitting, isEditMode]);
   // Register the submit function and loading state with context
   useEffect(() => {
     const isMutating =
@@ -656,6 +714,92 @@ function AtomicBuilderPageInner({
         onSkip={handleCompleteQuickStart}
         showProgressBar={true}
       />
+
+      {/* Save/Create Final Confirmation Modal with Verification Checkpoint */}
+      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+        <DialogContent className="border-border/60 bg-background/95 max-w-md border p-0 shadow-2xl backdrop-blur-3xl">
+          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <DialogHeader>
+              <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
+                <Shield className="h-5 w-5 text-cyan-400" />
+                {isEditMode ? "Confirm Governance Changes" : "Final Authorization Checkpoint"}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          <div className="space-y-4 px-6 py-4">
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Review critical adjustments compared to initial setup before authorizing the changes.
+            </p>
+
+            <div className="space-y-2.5">
+              {deltaWarning && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
+                  <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500 dark:text-amber-400" />
+                  <span>{deltaWarning}</span>
+                </div>
+              )}
+
+              {currencyChangeWarning && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
+                  <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500 dark:text-amber-400" />
+                  <span>{currencyChangeWarning}</span>
+                </div>
+              )}
+
+              {gdpCapWarning && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-500/25 bg-red-500/10 p-3 text-[11px] text-red-800 dark:bg-red-500/5 dark:text-red-200">
+                  <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-red-500 dark:text-red-400" />
+                  <span>{gdpCapWarning}</span>
+                </div>
+              )}
+
+              {!deltaWarning && !currencyChangeWarning && !gdpCapWarning && (
+                <div className="flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-[11px] text-emerald-800 dark:bg-emerald-500/5 dark:text-emerald-200">
+                  <CheckCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    No high-risk adjustments detected. Structural variables are within safe
+                    boundaries.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-start gap-2.5 pt-2 select-none">
+              <Checkbox
+                id="confirm-verify-checkbox"
+                checked={isVerified}
+                onCheckedChange={(checked) => setIsVerified(checked === true)}
+                className="mt-0.5 border-zinc-300 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500 dark:border-zinc-700"
+              />
+              <Label
+                htmlFor="confirm-verify-checkbox"
+                className="cursor-pointer text-xs leading-normal text-zinc-600 dark:text-zinc-400"
+              >
+                I verify these governance adjustments are intentional and authorization should be
+                finalized.
+              </Label>
+            </div>
+          </div>
+
+          <div className="border-border/40 flex justify-end gap-2 border-t bg-white/[0.01] px-6 py-4 dark:bg-black/[0.05]">
+            <Button
+              variant="outline"
+              onClick={() => setIsConfirmModalOpen(false)}
+              className="h-9 rounded-lg text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeSubmitCountry}
+              disabled={!isVerified || !!gdpCapWarning || isSubmitting}
+              className="h-9 rounded-lg bg-cyan-500 text-xs font-semibold text-black hover:bg-cyan-600 disabled:bg-zinc-200 disabled:text-zinc-400 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+            >
+              {isSubmitting ? "Processing..." : isEditMode ? "Save Changes" : "Create Nation"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

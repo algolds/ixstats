@@ -24,6 +24,7 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { isEqual } from "lodash";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 // Economy Builder Components
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
@@ -41,8 +42,7 @@ import { useEconomyBuilderSync } from "../../hooks/useEconomyBuilderSync";
 // Tab Components (lazy-loaded)
 import { Suspense } from "react";
 import { EconomySectorsTab, LaborEmploymentTab, DemographicsPopulationTab } from "./tabs";
-import { validateEconomy } from "./tabs/utils/validation";
-import { ValidationToast } from "./tabs/utils/ValidationToast";
+
 import { getRegionColor } from "./tabs/utils/demographicsCalculations";
 import { TabLoadingFallback } from "../../components/LoadingFallback";
 
@@ -70,10 +70,25 @@ import { useEconomyBuilderAutoSync } from "~/hooks/useEconomyBuilderAutoSync";
 
 // Builder context
 import { useBuilderContextOptional } from "./context/BuilderStateContext";
-import { TAX_SYSTEM_TEMP_DISABLED } from "~/app/builder/constants";
+import { useArchetypes, mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 
 // Shared staleTime constants
 import { STALE_TIME } from "~/hooks/useCountryGovernment";
+
+const DEFAULT_TAX_BUILDER_STATE: TaxBuilderState = {
+  taxSystem: {
+    taxSystemName: "",
+    fiscalYear: "Calendar Year",
+    progressiveTax: true,
+    alternativeMinTax: false,
+  },
+  categories: [],
+  brackets: {},
+  exemptions: [],
+  deductions: {},
+  isValid: false,
+  errors: {},
+};
 
 /**
  * Props for the EconomyBuilderPage component
@@ -107,6 +122,7 @@ interface EconomyBuilderPageProps {
   onPersistEconomyBuilder?: (builder: EconomyBuilderState) => void;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  selectedArchetypeId?: string | null;
 }
 
 /**
@@ -162,6 +178,24 @@ interface EconomyBuilderPageProps {
  * />
  * ```
  */
+interface EconomyTabHeaderProps {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  extra?: React.ReactNode;
+}
+
+function EconomyTabHeader({ title, icon: Icon, extra }: EconomyTabHeaderProps) {
+  return (
+    <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+      <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+        <Icon className="h-5 w-5 text-emerald-400" />
+        {title}
+      </h3>
+      {extra && <div className="flex items-center gap-2">{extra}</div>}
+    </div>
+  );
+}
+
 export function EconomyBuilderPage({
   economicInputs,
   onEconomicInputsChange,
@@ -177,8 +211,17 @@ export function EconomyBuilderPage({
   onPersistEconomyBuilder,
   activeTab,
   onTabChange,
+  selectedArchetypeId,
 }: EconomyBuilderPageProps) {
   const notify = useNotify();
+
+  // Load archetypes to map the selected archetype ID to its name
+  const { archetypes } = useArchetypes("all");
+  const selectedArchetype = useMemo(() => {
+    if (!selectedArchetypeId) return null;
+    return archetypes.find((a) => a.id === selectedArchetypeId);
+  }, [selectedArchetypeId, archetypes]);
+
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   // Local sub-tab for merged Labor & Demographics view
@@ -418,19 +461,12 @@ export function EconomyBuilderPage({
     governmentSizeIndicator: "Medium",
   });
 
-  // Tax system state sourced from builder context (null while temporarily disabled)
-  // Controlled by central flag in `src/app/builder/constants.ts` to keep the
-  // temporary disable consistent across builder components.
-  const taxSystemData = TAX_SYSTEM_TEMP_DISABLED
-    ? null
-    : (builderContext?.builderState?.taxSystemData ?? null);
+  const taxSystemData = builderContext?.builderState?.taxSystemData ?? null;
 
   // Track and sync tax state changes back to builder context.
-  // When temporarily disabled this becomes a no-op to avoid accidental writes.
   const lastTaxSystemRef = useRef<TaxBuilderState | null>(null);
   const handleTaxStateChange = useCallback(
     (state: TaxBuilderState) => {
-      if (TAX_SYSTEM_TEMP_DISABLED) return; // noop while disabled
       if (!isEqual(state, lastTaxSystemRef.current)) {
         lastTaxSystemRef.current = state;
         builderContext?.updateTaxSystem(state);
@@ -690,7 +726,7 @@ export function EconomyBuilderPage({
   }, [existingConfiguration]);
 
   // Save Handler - Memoized with tRPC
-  const handleSave = useCallback(async () => {
+  const _handleSave = useCallback(async () => {
     if (!countryId) {
       notify.error("No country selected. Please select a country first.");
       return;
@@ -741,13 +777,6 @@ export function EconomyBuilderPage({
       setIsSaving(false);
     }
   }, [countryId, economyBuilder, selectedComponents, saveEconomyMutation]);
-
-  // Register the economy save handler with the global Builder context so the final preview can trigger it
-  useEffect(() => {
-    if (!builderContext) return;
-    builderContext.registerSubmit(handleSave, isSaving);
-    return () => builderContext.unregisterSubmit();
-  }, [builderContext, handleSave, isSaving]);
 
   // Validation helper
   const validateEconomyConfiguration = useCallback(() => {
@@ -827,11 +856,6 @@ export function EconomyBuilderPage({
     return validateEconomyConfiguration();
   }, [validateEconomyConfiguration]);
 
-  const economyValidation = useMemo(
-    () => validateEconomy(economyBuilder, selectedComponents),
-    [economyBuilder, selectedComponents]
-  );
-
   // Use prop economicHealthMetrics or create fallback
   const healthMetrics: EconomicHealthMetrics = useMemo(() => {
     if (economicHealthMetrics) return economicHealthMetrics;
@@ -891,8 +915,8 @@ export function EconomyBuilderPage({
           lastSaved={lastSaved}
           showSuccessAnimation={showSuccessAnimation}
           validationStatus={validationStatus}
-          onPresetsClick={() => setIsPresetsOpen(true)}
           onHelpClick={() => setWelcomeOpen(true)}
+          selectedArchetypeName={selectedArchetype?.name || null}
         />
 
         {/* Step Content - Tab navigation handled by BuilderNotchBar */}
@@ -913,21 +937,23 @@ export function EconomyBuilderPage({
                   texture="chevron"
                   textureOpacity={0.04}
                 >
-                  <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      <Zap className="h-5 w-5 text-emerald-400" />
-                      Economic Components
-                      <button
-                        onClick={() => setWelcomeOpen(true)}
-                        className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-emerald-400"
-                        title="Open Help Guide"
-                        type="button"
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                      </button>
-                    </h3>
-                    <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
-                  </div>
+                  <EconomyTabHeader
+                    title="Economic Components"
+                    icon={Zap}
+                    extra={
+                      <>
+                        <button
+                          onClick={() => setWelcomeOpen(true)}
+                          className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-emerald-400"
+                          title="Open Help Guide"
+                          type="button"
+                        >
+                          <HelpCircle className="h-4 w-4" />
+                        </button>
+                        <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
+                      </>
+                    }
+                  />
                   <GlassCardContent className="space-y-6 p-6">
                     <AtomicEconomicComponentSelector
                       selectedComponents={selectedComponents}
@@ -951,12 +977,7 @@ export function EconomyBuilderPage({
                 texture="chevron"
                 textureOpacity={0.04}
               >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                    <Factory className="h-5 w-5 text-emerald-400" />
-                    Economic Sectors
-                  </h3>
-                </div>
+                <EconomyTabHeader title="Economic Sectors" icon={Factory} />
                 <GlassCardContent className="p-6">
                   <Suspense fallback={<TabLoadingFallback />}>
                     <EconomySectorsTab
@@ -980,14 +1001,11 @@ export function EconomyBuilderPage({
                 texture="chevron"
                 textureOpacity={0.04}
               >
-                <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      <Globe className="h-5 w-5 text-emerald-400" />
-                      Demographics & Population
-                    </h3>
-
-                    <div className="flex items-center gap-2">
+                <EconomyTabHeader
+                  title="Demographics & Population"
+                  icon={Globe}
+                  extra={
+                    <>
                       <Button
                         size="sm"
                         variant={activeLaborSubTab === "demographics" ? "default" : "ghost"}
@@ -1002,9 +1020,9 @@ export function EconomyBuilderPage({
                       >
                         Labor
                       </Button>
-                    </div>
-                  </div>
-                </div>
+                    </>
+                  }
+                />
                 <GlassCardContent className="p-6">
                   <Suspense fallback={<TabLoadingFallback />}>
                     {activeLaborSubTab === "demographics" ? (
@@ -1041,38 +1059,33 @@ export function EconomyBuilderPage({
           )}
 
           {currentTab === "tax" && (
-            <Suspense fallback={<TabLoadingFallback />}>
-              <ComponentErrorBoundary context="Tax Tab">
-                {/*
-                  TEMPORARY: Tax system UI disabled in the Economy Builder.
-                  To re-enable: set `TAX_SYSTEM_TEMP_DISABLED = false` in
-                  `src/app/builder/constants.ts` and restore the <TaxTab .../> component here.
-                */}
-                <GlassCard
-                  depth="base"
-                  theme="emerald"
-                  className="border-emerald-500/20"
-                  texture="chevron"
-                  textureOpacity={0.04}
-                >
-                  <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                    <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                      <Receipt className="h-5 w-5 text-emerald-400" />
-                      Tax System (Temporarily Disabled)
-                    </h3>
-                  </div>
-                  <GlassCardContent className="p-6">
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      The tax system builder is temporarily disabled for maintenance. Changes to tax
-                      configuration are currently suspended. To re-enable the full tax builder, set{" "}
-                      <span className="font-mono">TAX_SYSTEM_TEMP_DISABLED</span> to
-                      <span className="font-mono"> false</span> in
-                      <span className="font-mono"> src/app/builder/constants.ts</span>.
-                    </p>
-                  </GlassCardContent>
-                </GlassCard>
-              </ComponentErrorBoundary>
-            </Suspense>
+            <div className="space-y-6">
+              <Suspense fallback={<TabLoadingFallback />}>
+                <ComponentErrorBoundary context="Tax Tab">
+                  <GlassCard
+                    depth="base"
+                    theme="emerald"
+                    className="border-emerald-500/20"
+                    texture="chevron"
+                    textureOpacity={0.04}
+                  >
+                    <EconomyTabHeader title="Tax System" icon={Receipt} />
+                    <GlassCardContent className="p-6">
+                      <TaxTab
+                        countryId={countryId}
+                        economicInputs={economicInputs}
+                        economyBuilder={economyBuilder}
+                        governmentBuilderData={builderContext?.builderState?.governmentStructure}
+                        selectedComponents={selectedComponents}
+                        activeTaxBuilderState={taxSystemData ?? DEFAULT_TAX_BUILDER_STATE}
+                        onTaxStateChange={handleTaxStateChange}
+                        flat={true}
+                      />
+                    </GlassCardContent>
+                  </GlassCard>
+                </ComponentErrorBoundary>
+              </Suspense>
+            </div>
           )}
 
           {/* Per-economy preview and verification moved to global BuilderPreviewStep */}
@@ -1084,7 +1097,7 @@ export function EconomyBuilderPage({
         open={isPresetsOpen}
         onOpenChange={setIsPresetsOpen}
         currentState={economyBuilder}
-        onArchetypeApplied={(newState) => {
+        onArchetypeApplied={(newState, archetypeId, archetype) => {
           // Apply the archetype state to the economy builder
           console.log("[EconomyBuilder] Archetype applied:", newState);
           const nextState: EconomyBuilderState = {
@@ -1097,10 +1110,72 @@ export function EconomyBuilderPage({
           };
 
           handleEconomyBuilderChange(nextState);
+
+          // Wire government components, structure name/type, and tax categories to the parent state
+          if (builderContext) {
+            builderContext.setBuilderState((prev) => {
+              const updatedState = { ...prev };
+
+              if (archetypeId) {
+                updatedState.selectedArchetypeId = archetypeId;
+              }
+
+              if (archetype) {
+                // 1. Update government components
+                if (archetype.governmentComponents) {
+                  updatedState.governmentComponents = mapLegacyGovernmentComponents(
+                    archetype.governmentComponents as string[]
+                  );
+                }
+
+                // 2. Update government structure type
+                if (archetype.name && updatedState.governmentStructure?.structure) {
+                  updatedState.governmentStructure = {
+                    ...updatedState.governmentStructure,
+                    structure: {
+                      ...updatedState.governmentStructure.structure,
+                      governmentType: archetype.name as any,
+                    },
+                  };
+                }
+
+                // 3. Update tax system categories rates
+                if (archetype.taxProfile && updatedState.taxSystemData) {
+                  const updatedCategories = updatedState.taxSystemData.categories.map(
+                    (cat: any) => {
+                      if (cat.categoryName.toLowerCase().includes("corporate")) {
+                        return { ...cat, baseRate: archetype.taxProfile.corporateRate };
+                      }
+                      if (
+                        cat.categoryName.toLowerCase().includes("personal") ||
+                        cat.categoryName.toLowerCase().includes("income")
+                      ) {
+                        return { ...cat, baseRate: archetype.taxProfile.incomeRate };
+                      }
+                      if (
+                        cat.categoryName.toLowerCase().includes("consumption") ||
+                        cat.categoryName.toLowerCase().includes("sales") ||
+                        cat.categoryName.toLowerCase().includes("value added")
+                      ) {
+                        return { ...cat, baseRate: archetype.taxProfile.consumptionRate };
+                      }
+                      return cat;
+                    }
+                  );
+                  updatedState.taxSystemData = {
+                    ...updatedState.taxSystemData,
+                    categories: updatedCategories,
+                  };
+                }
+              }
+
+              return updatedState;
+            });
+          }
+
           notify.success("Economic archetype applied successfully!");
         }}
       />
-      <ValidationToast messages={economyValidation.messages} />
     </div>
   );
 }

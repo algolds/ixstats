@@ -9,7 +9,7 @@
  */
 
 import { EconomicComponentType } from "~/lib/atomic-economic-data";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/lib/enums";
 import type { EconomicArchetype } from "../archetype-types";
 
 /**
@@ -61,7 +61,7 @@ export const historicalArchetypes = new Map<string, EconomicArchetype>([
         ComponentType.CENTRALIZED_POWER,
         ComponentType.AUTOCRATIC_PROCESS,
         ComponentType.MILITARY_ADMINISTRATION,
-        ComponentType.FREE_MARKET_SYSTEM,
+        ComponentType.ECONOMIC_INCENTIVES,
         ComponentType.MILITARY_ENFORCEMENT,
       ],
       taxProfile: {
@@ -566,7 +566,7 @@ export const historicalArchetypes = new Map<string, EconomicArchetype>([
         ComponentType.CENTRALIZED_POWER,
         ComponentType.AUTOCRATIC_PROCESS,
         ComponentType.TECHNOCRATIC_AGENCIES,
-        ComponentType.STATE_CAPITALISM,
+        ComponentType.STRATEGIC_PLANNING,
         ComponentType.CONSENSUS_PROCESS,
       ],
       taxProfile: {
@@ -668,7 +668,7 @@ export const historicalArchetypes = new Map<string, EconomicArchetype>([
       ],
       governmentComponents: [
         ComponentType.FEDERAL_SYSTEM,
-        ComponentType.FREE_MARKET_SYSTEM,
+        ComponentType.ENTREPRENEURSHIP_SUPPORT,
         ComponentType.ECONOMIC_INCENTIVES,
         ComponentType.WORKER_PROTECTION,
         ComponentType.STRATEGIC_PLANNING,

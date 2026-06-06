@@ -73,12 +73,12 @@ export function BuilderStateProvider({
 
   const registerSubmit = useCallback((fn: () => Promise<void>, loading: boolean) => {
     submitRef.current = fn;
-    setIsSubmittingGlobal(loading);
+    setIsSubmittingGlobal((prev) => (prev !== loading ? loading : prev));
   }, []);
 
   const unregisterSubmit = useCallback(() => {
     submitRef.current = null;
-    setIsSubmittingGlobal(false);
+    setIsSubmittingGlobal((prev) => (prev !== false ? false : prev));
   }, []);
 
   const executeSubmit = useCallback(async () => {

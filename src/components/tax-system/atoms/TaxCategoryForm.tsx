@@ -234,8 +234,8 @@ export function TaxCategoryForm({
     : null;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-4">
+    <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] shadow-sm backdrop-blur-sm">
+      <div className="px-6 pt-5 pb-4">
         <div className="flex items-center justify-between">
           <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="flex-1">
             <CollapsibleTrigger asChild>
@@ -252,9 +252,9 @@ export function TaxCategoryForm({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg font-semibold">
+                      <h4 className="text-lg font-semibold">
                         {data.categoryName || `Tax Category ${categoryIndex + 1}`}
-                      </CardTitle>
+                      </h4>
                       {isSyncedFromRevenue && (
                         <TooltipProvider>
                           <Tooltip>
@@ -312,12 +312,11 @@ export function TaxCategoryForm({
             </CollapsibleTrigger>
           </Collapsible>
         </div>
-      </CardHeader>
+      </div>
 
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CollapsibleContent>
-          <CardContent className="space-y-6">
-            {/* Basic Information */}
+          <div className="space-y-6 px-6 pt-0 pb-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="categoryName" className="text-sm font-medium">
@@ -711,9 +710,9 @@ export function TaxCategoryForm({
                 )}
               </div>
             )}
-          </CardContent>
+          </div>
         </CollapsibleContent>
       </Collapsible>
-    </Card>
+    </div>
   );
 }

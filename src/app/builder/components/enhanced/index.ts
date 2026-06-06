@@ -10,7 +10,6 @@ import { lazy } from "react";
 // Eager exports for small/critical components
 export { CountrySelector } from "./CountrySelector";
 export { EconomicCustomizationHub } from "./EconomicCustomizationHub";
-export { EconomyBuilderSidebar } from "./EconomyBuilderSidebar";
 
 import type { ComponentType } from "react";
 

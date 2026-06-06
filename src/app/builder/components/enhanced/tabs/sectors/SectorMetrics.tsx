@@ -35,15 +35,29 @@ export function SectorMetrics({
             Configure your economy's sector composition and characteristics
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onNormalize}
-          disabled={gdpValid && employmentValid}
-        >
-          <Target className="mr-2 h-4 w-4" />
-          Normalize
-        </Button>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground mr-1 text-xs">Status:</span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                gdpValid
+                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                  : "border-amber-500/20 bg-amber-500/10 text-amber-400"
+              }`}
+            >
+              GDP: {(100 - totalGDP).toFixed(1)}% remaining
+            </span>
+            <span
+              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                employmentValid
+                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                  : "border-amber-500/20 bg-amber-500/10 text-amber-400"
+              }`}
+            >
+              Emp: {(100 - totalEmployment).toFixed(1)}% remaining
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Overview Metrics */}
@@ -54,6 +68,9 @@ export function SectorMetrics({
           icon={PieChart}
           sectionId="sectors"
           trend={gdpValid ? "up" : "down"}
+          texture="dots"
+          textureOpacity={0.04}
+          tooltip="Total gross domestic product contributed by active sectors. Must sum to 100%."
         />
         <MetricCard
           label="Employment Distribution"
@@ -61,6 +78,9 @@ export function SectorMetrics({
           icon={Users}
           sectionId="sectors"
           trend={employmentValid ? "up" : "down"}
+          texture="dots"
+          textureOpacity={0.04}
+          tooltip="Total share of the active labor force employed across active sectors. Must sum to 100%."
         />
         <MetricCard
           label="Active Sectors"
@@ -68,6 +88,9 @@ export function SectorMetrics({
           icon={Factory}
           sectionId="sectors"
           trend={zeroCount > 0 ? "down" : "neutral"}
+          texture="dots"
+          textureOpacity={0.04}
+          tooltip="Sectors that have non-zero contribution to GDP or Employment. A balanced economy typically has at least 3 active sectors."
         />
         <MetricCard
           label="Avg Productivity"
@@ -75,6 +98,9 @@ export function SectorMetrics({
           icon={TrendingUp}
           sectionId="sectors"
           trend="neutral"
+          texture="dots"
+          textureOpacity={0.04}
+          tooltip="Weighted average productivity index across all active sectors, reflecting automation, technology levels, and workforce efficiency."
         />
       </div>
     </div>

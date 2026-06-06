@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
+import { createPortal } from "react-dom";
+import { isEqual } from "lodash";
 import { Badge as UIBadge } from "~/components/ui/badge";
 import { Calculator, X, AlertTriangle, Settings, BarChart3 } from "lucide-react";
 import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
+import { GlassCard } from "~/components/ui/enhanced-card";
 import {
   ConflictWarningDialog,
   SyncStatusIndicator,
@@ -58,7 +59,10 @@ export interface TaxBuilderProps {
     revenueEfficiency: number;
     componentCount: number;
   } | null;
+  flat?: boolean;
 }
+
+const EMPTY_ARRAY: any[] = [];
 
 export function TaxBuilder({
   initialData,
@@ -73,17 +77,16 @@ export function TaxBuilder({
   economicData,
   governmentData,
   componentOptimization,
+  flat = false,
 }: TaxBuilderProps) {
   const notify = useNotify();
 
   // Tab navigation state
-  const [activeTab, setActiveTab] = useState<"settings" | "preview">("settings");
+  const [activeTab, setActiveTab] = useState<"settings" | "preview" | "calculator">("settings");
 
   // UI state
   const [_isSaving, setIsSaving] = useState(false);
-  const [showCalculator, setShowCalculator] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [_calculationResult, setCalculationResult] = useState<TaxCalculationResult | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -92,6 +95,11 @@ export function TaxBuilder({
   const [templateToConfirm, setTemplateToConfirm] = useState<
     (typeof taxSystemTemplates)[number] | null
   >(null);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // State management hook
   const {
@@ -105,7 +113,7 @@ export function TaxBuilder({
     addCategory,
     removeCategory,
     applyTemplate,
-    updateValidation,
+    updateValidation: _updateValidation,
   } = useTaxBuilderState({ initialData, countryId });
 
   // Auto-sync hook
@@ -138,6 +146,28 @@ export function TaxBuilder({
     [enableAutoSync, countryId, setAutoSyncState, setLocalBuilderState]
   );
 
+  const updateValidation = useCallback(
+    (validationVal: { isValid: boolean; errors: any }) => {
+      setBuilderState((prev) => {
+        if (prev.isValid === validationVal.isValid && isEqual(prev.errors, validationVal.errors)) {
+          return prev;
+        }
+        return { ...prev, ...validationVal };
+      });
+    },
+    [setBuilderState]
+  );
+
+  // Memoized suggestion update handler to prevent useEffect subscription loops
+  const handleSuggestionsUpdate = useCallback((newSuggestions: SuggestionItem[]) => {
+    setSuggestions((prev) => {
+      const existingIds = new Set(prev.map((s) => s.id));
+      const filtered = newSuggestions.filter((s) => !existingIds.has(s.id));
+      if (filtered.length === 0) return prev;
+      return [...prev, ...filtered];
+    });
+  }, []);
+
   // Data sync hook
   const {
     parsedDataApplied: _parsedDataApplied,
@@ -150,9 +180,7 @@ export function TaxBuilder({
     countryId,
     economicData,
     governmentData,
-    onSuggestionsUpdate: (newSuggestions) => {
-      setSuggestions((prev) => [...prev, ...newSuggestions]);
-    },
+    onSuggestionsUpdate: handleSuggestionsUpdate,
   });
 
   // Atomic component integration
@@ -164,8 +192,21 @@ export function TaxBuilder({
     }
   );
 
-  const activeComponents =
-    atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType) || [];
+  const activeComponents = useMemo(() => {
+    return atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType) || EMPTY_ARRAY;
+  }, [atomicComponents]);
+
+  const calculatorEconomicData = useMemo(() => {
+    if (!economicData) return undefined;
+    return {
+      totalPopulation: economicData.population,
+      nominalGDP: economicData.gdp,
+      gdpPerCapita: economicData.gdp / economicData.population,
+      realGDPGrowthRate: 0.03,
+      inflationRate: 0.02,
+      currencyExchangeRate: 1.0,
+    };
+  }, [economicData]);
 
   // Local save mutations (fallback when onSave is not provided)
   const createMutation = api.taxSystem.create.useMutation();
@@ -327,18 +368,37 @@ export function TaxBuilder({
   const tabs = [
     { id: "settings", label: "Tax Settings", icon: Settings },
     { id: "preview", label: "Preview & Impact", icon: BarChart3 },
+    { id: "calculator", label: "Tax Calculator", icon: Calculator },
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-foreground text-2xl font-bold sm:text-3xl">Tax System Builder</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Design and configure your country's taxation system
-          </p>
+    <div className="w-full space-y-6">
+      {/* Toolbar: tab navigation + actions (header provided by parent GlassCard) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Tab Navigation */}
+        <div className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTab;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as "settings" | "preview" | "calculator")}
+                disabled={isReadOnly}
+                className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-emerald-500/15 font-semibold text-emerald-400"
+                    : "text-foreground/50 hover:text-foreground/80 hover:bg-white/5"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Actions */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {enableAutoSync && countryId && (
             <SyncStatusIndicator
@@ -354,40 +414,6 @@ export function TaxBuilder({
               Manual mode
             </UIBadge>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCalculator(true)}
-            disabled={builderState.categories.length === 0}
-          >
-            <Calculator className="mr-2 h-4 w-4" />
-            Tax Calculator
-          </Button>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="bg-muted/50 border-border rounded-lg border p-1">
-        <div className="flex items-center gap-1">
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTab;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as "settings" | "preview")}
-                disabled={isReadOnly}
-                className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -407,129 +433,194 @@ export function TaxBuilder({
       )}
 
       {/* Tab Content */}
-      <div className="space-y-6">
-        {activeTab === "settings" && (
-          <SettingsTab
-            taxSystem={builderState.taxSystem}
-            onTaxSystemChange={handleTaxSystemChange}
-            categories={builderState.categories}
-            brackets={builderState.brackets}
-            onCategoriesChange={handleCategoriesChange}
-            onBracketsChange={handleBracketsChange}
-            onAddCategory={addCategory}
-            onRemoveCategory={removeCategory}
-            selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-            onAtomicComponentsChange={setSelectedAtomicTaxComponents}
-            activeGovernmentComponents={activeComponents}
-            showAtomicIntegration={showAtomicIntegration}
-            economicData={economicData}
-            previewTaxSystem={previewTaxSystem}
-            validation={validation}
-            isReadOnly={isReadOnly}
-            countryId={countryId}
-            onOpenTemplates={() => setShowTemplates(true)}
-            revenueAutoPopulated={revenueAutoPopulated}
-            syncedCategoryIndices={syncedCategoryIndices}
-          />
-        )}
+      {flat ? (
+        <div className="space-y-6 pt-2">
+          {activeTab === "settings" && (
+            <SettingsTab
+              taxSystem={builderState.taxSystem}
+              onTaxSystemChange={handleTaxSystemChange}
+              categories={builderState.categories}
+              brackets={builderState.brackets}
+              onCategoriesChange={handleCategoriesChange}
+              onBracketsChange={handleBracketsChange}
+              onAddCategory={addCategory}
+              onRemoveCategory={removeCategory}
+              selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+              onAtomicComponentsChange={setSelectedAtomicTaxComponents}
+              activeGovernmentComponents={activeComponents}
+              showAtomicIntegration={showAtomicIntegration}
+              economicData={economicData}
+              previewTaxSystem={previewTaxSystem}
+              validation={validation}
+              isReadOnly={isReadOnly}
+              countryId={countryId}
+              onOpenTemplates={() => setShowTemplates(true)}
+              revenueAutoPopulated={revenueAutoPopulated}
+              syncedCategoryIndices={syncedCategoryIndices}
+            />
+          )}
 
-        {activeTab === "preview" && (
-          <PreviewTab
-            previewTaxSystem={previewTaxSystem}
-            economicData={economicData}
-            countryId={countryId}
-            componentOptimization={componentOptimization}
-            selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-            activeGovernmentComponents={activeComponents}
-            showAtomicIntegration={showAtomicIntegration}
-          />
-        )}
-      </div>
+          {activeTab === "preview" && (
+            <PreviewTab
+              previewTaxSystem={previewTaxSystem}
+              economicData={economicData}
+              countryId={countryId}
+              componentOptimization={componentOptimization}
+              selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+              activeGovernmentComponents={activeComponents}
+              showAtomicIntegration={showAtomicIntegration}
+            />
+          )}
 
-      {/* Tax Calculator Modal */}
-      {showCalculator && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80">
-          <div className="bg-background mx-2 flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl">
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <h2 className="text-foreground text-lg font-semibold">Tax Calculator</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowCalculator(false)}>
-                <X className="h-5 w-5" />
-              </Button>
+          {activeTab === "calculator" && (
+            <div className="w-full space-y-6 pt-2">
+              {builderState.categories.length === 0 ? (
+                <div className="text-muted-foreground border-white/10 bg-white/[0.02] flex flex-col items-center justify-center rounded-xl border p-8 text-center text-sm backdrop-blur-sm">
+                  <Calculator className="mx-auto mb-3 h-12 w-12 text-zinc-500 opacity-50 animate-pulse" />
+                  <p className="font-medium text-foreground">Tax Calculator Locked</p>
+                  <p className="mt-1 max-w-sm text-xs">
+                    Please define at least one tax category in <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
+                  </p>
+                </div>
+              ) : (
+                <TaxCalculator
+                  taxSystem={previewTaxSystem}
+                  categories={previewCategories}
+                  brackets={previewBrackets}
+                  exemptions={EMPTY_ARRAY}
+                  deductions={EMPTY_ARRAY}
+                  economicData={calculatorEconomicData}
+                  governmentData={governmentData}
+                />
+              )}
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <TaxCalculator
-                taxSystem={previewTaxSystem}
-                categories={previewCategories}
-                brackets={previewBrackets}
-                exemptions={[]}
-                deductions={[]}
-                onCalculationChange={setCalculationResult}
-                economicData={
-                  economicData
-                    ? {
-                        totalPopulation: economicData.population,
-                        nominalGDP: economicData.gdp,
-                        gdpPerCapita: economicData.gdp / economicData.population,
-                        realGDPGrowthRate: 0.03,
-                        inflationRate: 0.02,
-                        currencyExchangeRate: 1.0,
-                      }
-                    : undefined
-                }
-                governmentData={governmentData}
-              />
-            </div>
-          </div>
+          )}
         </div>
+      ) : (
+        <GlassCard
+          variant="glass"
+          glow={false}
+          className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20"
+        >
+          <div className="space-y-6 p-6">
+            {activeTab === "settings" && (
+              <SettingsTab
+                taxSystem={builderState.taxSystem}
+                onTaxSystemChange={handleTaxSystemChange}
+                categories={builderState.categories}
+                brackets={builderState.brackets}
+                onCategoriesChange={handleCategoriesChange}
+                onBracketsChange={handleBracketsChange}
+                onAddCategory={addCategory}
+                onRemoveCategory={removeCategory}
+                selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+                onAtomicComponentsChange={setSelectedAtomicTaxComponents}
+                activeGovernmentComponents={activeComponents}
+                showAtomicIntegration={showAtomicIntegration}
+                economicData={economicData}
+                previewTaxSystem={previewTaxSystem}
+                validation={validation}
+                isReadOnly={isReadOnly}
+                countryId={countryId}
+                onOpenTemplates={() => setShowTemplates(true)}
+                revenueAutoPopulated={revenueAutoPopulated}
+                syncedCategoryIndices={syncedCategoryIndices}
+              />
+            )}
+
+            {activeTab === "preview" && (
+              <PreviewTab
+                previewTaxSystem={previewTaxSystem}
+                economicData={economicData}
+                countryId={countryId}
+                componentOptimization={componentOptimization}
+                selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+                activeGovernmentComponents={activeComponents}
+                showAtomicIntegration={showAtomicIntegration}
+              />
+            )}
+
+            {activeTab === "calculator" && (
+              <div className="space-y-6">
+                {builderState.categories.length === 0 ? (
+                  <div className="text-muted-foreground border-white/10 bg-white/[0.02] flex flex-col items-center justify-center rounded-xl border p-8 text-center text-sm backdrop-blur-sm">
+                    <Calculator className="mx-auto mb-3 h-12 w-12 text-zinc-500 opacity-50 animate-pulse" />
+                    <p className="font-medium text-foreground">Tax Calculator Locked</p>
+                    <p className="mt-1 max-w-sm text-xs">
+                      Please define at least one tax category in <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
+                    </p>
+                  </div>
+                ) : (
+                  <TaxCalculator
+                    taxSystem={previewTaxSystem}
+                    categories={previewCategories}
+                    brackets={previewBrackets}
+                    exemptions={EMPTY_ARRAY}
+                    deductions={EMPTY_ARRAY}
+                    economicData={calculatorEconomicData}
+                    governmentData={governmentData}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </GlassCard>
       )}
 
       {/* Template Modal */}
       {showTemplates && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70">
-          <div className="bg-background border-border mx-4 max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg border p-6 shadow-xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-foreground text-2xl font-semibold">Tax System Templates</h2>
-              <Button variant="outline" onClick={() => setShowTemplates(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="mx-4 max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-emerald-500/25 bg-zinc-900/90 shadow-2xl backdrop-blur-xl">
+            <div className="border-border/40 sticky top-0 z-10 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 backdrop-blur-xl dark:bg-black/[0.1]">
+              <h2 className="text-foreground text-xl font-bold">Tax System Templates</h2>
+              <button
+                type="button"
+                onClick={() => setShowTemplates(false)}
+                className="text-foreground/50 hover:text-foreground rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-white/5"
+              >
                 Close
-              </Button>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
               {taxSystemTemplates.map((template, index) => (
-                <Card key={index} className="cursor-pointer transition-shadow hover:shadow-lg">
-                  <CardHeader>
-                    <CardTitle>{template.name}</CardTitle>
-                    <p className="text-muted-foreground text-sm">{template.description}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <UIBadge variant="secondary">
-                          {template.progressiveTax ? "Progressive" : "Flat"} Tax
-                        </UIBadge>
-                        <UIBadge variant="outline" className="ml-2">
-                          {template.categories.length} Categories
-                        </UIBadge>
-                      </div>
-                      <div className="text-sm">
-                        <strong>Categories:</strong>
-                        <ul className="text-muted-foreground mt-1">
-                          {template.categories.slice(0, 3).map((cat) => (
-                            <li key={cat.categoryName}>
-                              • {cat.categoryName} ({cat.baseRate}%)
-                            </li>
-                          ))}
-                          {template.categories.length > 3 && (
-                            <li>• +{template.categories.length - 3} more...</li>
-                          )}
-                        </ul>
-                      </div>
-                      <Button onClick={() => setTemplateToConfirm(template)} className="w-full">
-                        Use This Template
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div
+                  key={index}
+                  className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
+                >
+                  <div>
+                    <h3 className="text-foreground text-base font-bold">{template.name}</h3>
+                    <p className="text-muted-foreground mt-1 text-sm">{template.description}</p>
+                  </div>
+                  <div>
+                    <UIBadge variant="secondary">
+                      {template.progressiveTax ? "Progressive" : "Flat"} Tax
+                    </UIBadge>
+                    <UIBadge variant="outline" className="ml-2">
+                      {template.categories.length} Categories
+                    </UIBadge>
+                  </div>
+                  <div className="text-sm">
+                    <strong className="text-foreground">Categories:</strong>
+                    <ul className="text-muted-foreground mt-1">
+                      {template.categories.slice(0, 3).map((cat) => (
+                        <li key={cat.categoryName}>
+                          • {cat.categoryName} ({cat.baseRate}%)
+                        </li>
+                      ))}
+                      {template.categories.length > 3 && (
+                        <li>• +{template.categories.length - 3} more...</li>
+                      )}
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTemplateToConfirm(template)}
+                    className="mt-auto w-full rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                  >
+                    Use This Template
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -559,35 +650,40 @@ export function TaxBuilder({
 
       {/* Template Confirmation Dialog */}
       {templateToConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70">
-          <div className="bg-background border-border mx-4 w-full max-w-md rounded-lg border p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-emerald-500/25 bg-zinc-900/90 p-6 shadow-2xl backdrop-blur-xl">
             <div className="flex items-start gap-4">
-              <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10">
+                <AlertTriangle className="h-5 w-5 text-amber-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold">Apply Template?</h3>
+                <h3 className="text-foreground text-lg font-bold">Apply Template?</h3>
                 <p className="text-muted-foreground mt-2 text-sm">
                   This will replace your current tax configuration with{" "}
-                  <strong>{templateToConfirm.name}</strong>. All existing categories, brackets,
-                  exemptions, and deductions will be overwritten.
+                  <strong className="text-foreground">{templateToConfirm.name}</strong>. All
+                  existing categories, brackets, exemptions, and deductions will be overwritten.
                 </p>
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setTemplateToConfirm(null)}>
+              <button
+                type="button"
+                onClick={() => setTemplateToConfirm(null)}
+                className="text-foreground/70 hover:text-foreground rounded-lg border border-white/10 px-4 py-2 text-sm font-medium transition-colors hover:bg-white/5"
+              >
                 Cancel
-              </Button>
-              <Button
-                variant="default"
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   applyTemplate(templateToConfirm);
                   setTemplateToConfirm(null);
                   setShowTemplates(false);
                 }}
+                className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20"
               >
                 Apply Template
-              </Button>
+              </button>
             </div>
           </div>
         </div>

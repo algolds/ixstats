@@ -41,8 +41,8 @@ interface EconomyBuilderHeaderProps {
     errorCount: number;
     warningCount: number;
   } | null;
-  onPresetsClick: () => void;
   onHelpClick?: () => void;
+  selectedArchetypeName?: string | null;
 }
 
 export function EconomyBuilderHeader({
@@ -52,13 +52,23 @@ export function EconomyBuilderHeader({
   lastSaved,
   showSuccessAnimation,
   validationStatus,
-  onPresetsClick,
   onHelpClick,
+  selectedArchetypeName,
 }: EconomyBuilderHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-foreground text-3xl font-bold">Economy Builder</h1>
+        <h1 className="text-foreground flex items-center gap-2 text-3xl font-bold">
+          Economy Builder
+          {selectedArchetypeName && (
+            <Badge
+              variant="secondary"
+              className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-500"
+            >
+              {selectedArchetypeName}
+            </Badge>
+          )}
+        </h1>
         <p className="text-muted-foreground mt-1">
           Configure your nation's economy and tax system, and fiscal policies
         </p>
@@ -122,11 +132,6 @@ export function EconomyBuilderHeader({
         <Button variant="outline" size="sm" className="gap-2" onClick={onHelpClick}>
           <HelpCircle className="h-4 w-4" />
           Help
-        </Button>
-
-        <Button variant="outline" size="sm" onClick={onPresetsClick}>
-          <Sparkles className="mr-2 h-4 w-4" />
-          Presets
         </Button>
       </div>
     </div>

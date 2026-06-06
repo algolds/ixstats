@@ -7,7 +7,7 @@
 
 import type { EconomicArchetype } from "../archetype-types";
 import { EconomicComponentType } from "~/lib/atomic-economic-data";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/lib/enums";
 
 export const modernArchetypes = new Map<string, EconomicArchetype>([
   [
@@ -39,7 +39,7 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
         EconomicComponentType.VENTURE_CAPITAL,
       ],
       governmentComponents: [
-        ComponentType.PRIVATE_SECTOR_LEADERSHIP,
+        ComponentType.ENTREPRENEURSHIP_SUPPORT,
         ComponentType.DEMOCRATIC_PROCESS,
         ComponentType.FEDERAL_SYSTEM,
       ],
@@ -138,11 +138,11 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
         EconomicComponentType.HEALTHCARE_FOCUSED,
       ],
       governmentComponents: [
-        ComponentType.SOCIAL_DEMOCRACY,
-        ComponentType.COMPREHENSIVE_WELFARE,
-        ComponentType.PUBLIC_SECTOR_LEADERSHIP,
+        ComponentType.WELFARE_STATE,
+        ComponentType.SOCIAL_SAFETY_NET,
+        ComponentType.PROFESSIONAL_BUREAUCRACY,
         ComponentType.DEMOCRATIC_PROCESS,
-        ComponentType.ENVIRONMENTAL_FOCUS,
+        ComponentType.ENVIRONMENTAL_PROTECTION,
       ],
       taxProfile: {
         corporateRate: 22,
@@ -242,9 +242,9 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
       ],
       governmentComponents: [
         ComponentType.CENTRALIZED_POWER,
-        ComponentType.ECONOMIC_PLANNING,
-        ComponentType.PUBLIC_SECTOR_LEADERSHIP,
-        ComponentType.DEVELOPMENTAL_STATE,
+        ComponentType.STRATEGIC_PLANNING,
+        ComponentType.PROFESSIONAL_BUREAUCRACY,
+        ComponentType.PERFORMANCE_LEGITIMACY,
         ComponentType.TECHNOCRATIC_PROCESS,
       ],
       taxProfile: {
@@ -340,10 +340,10 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
       ],
       governmentComponents: [
         ComponentType.FEDERAL_SYSTEM,
-        ComponentType.SOCIAL_DEMOCRACY,
+        ComponentType.WELFARE_STATE,
         ComponentType.WORKER_PROTECTION,
-        ComponentType.ENVIRONMENTAL_FOCUS,
-        ComponentType.REGIONAL_DEVELOPMENT,
+        ComponentType.ENVIRONMENTAL_PROTECTION,
+        ComponentType.ADMINISTRATIVE_DECENTRALIZATION,
       ],
       taxProfile: {
         corporateRate: 30,
@@ -445,8 +445,8 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
         ComponentType.CENTRALIZED_POWER,
         ComponentType.RULE_OF_LAW,
         ComponentType.TECHNOCRATIC_PROCESS,
-        ComponentType.ECONOMIC_PLANNING,
-        ComponentType.MERITOCRATIC_SYSTEM,
+        ComponentType.STRATEGIC_PLANNING,
+        ComponentType.MERIT_BASED_SYSTEM,
       ],
       taxProfile: {
         corporateRate: 17,
@@ -644,7 +644,7 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
       ],
       governmentComponents: [
         ComponentType.CENTRALIZED_POWER,
-        ComponentType.PLANNED_ECONOMY,
+        ComponentType.STRATEGIC_PLANNING,
         ComponentType.TECHNOCRATIC_PROCESS,
         ComponentType.TECHNOCRATIC_AGENCIES,
         ComponentType.PROFESSIONAL_BUREAUCRACY,
@@ -846,7 +846,7 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
       governmentComponents: [
         ComponentType.FEDERAL_SYSTEM,
         ComponentType.DEMOCRATIC_PROCESS,
-        ComponentType.SOCIAL_MARKET_ECONOMY,
+        ComponentType.WELFARE_STATE,
         ComponentType.TECHNOCRATIC_AGENCIES,
         ComponentType.ENVIRONMENTAL_PROTECTION,
       ],
@@ -948,7 +948,7 @@ export const modernArchetypes = new Map<string, EconomicArchetype>([
       ],
       governmentComponents: [
         ComponentType.FEDERAL_SYSTEM,
-        ComponentType.SOCIAL_DEMOCRACY,
+        ComponentType.WELFARE_STATE,
         ComponentType.SOCIAL_SAFETY_NET,
         ComponentType.ENVIRONMENTAL_PROTECTION,
         ComponentType.WORKER_PROTECTION,

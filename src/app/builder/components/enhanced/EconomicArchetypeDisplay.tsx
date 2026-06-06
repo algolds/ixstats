@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, memo } from "react";
+import React, { useState, memo, useMemo } from "react";
 import { cn } from "~/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -37,15 +36,31 @@ import {
   Pickaxe,
   Building,
   Landmark,
+  Coins,
+  Search,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Input } from "~/components/ui/input";
 import type { EconomicArchetype } from "~/app/builder/data/archetype-types";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { useArchetypes } from "~/hooks/useArchetypes";
+import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
 
 interface EconomicArchetypeDisplayProps {
   className?: string;
   currentState?: EconomyBuilderState;
-  onArchetypeApplied?: (newState: EconomyBuilderState, archetypeId?: string) => void;
+  onArchetypeApplied?: (
+    newState: EconomyBuilderState,
+    archetypeId?: string,
+    archetype?: EconomicArchetype
+  ) => void;
+  era?: "modern" | "historical" | "all";
 }
 
 // Phase 2 optimization: Wrap with React.memo to prevent unnecessary re-renders
@@ -53,23 +68,54 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
   className,
   currentState,
   onArchetypeApplied,
+  era = "all",
 }: EconomicArchetypeDisplayProps) {
   const [selectedArchetype, setSelectedArchetype] = useState<EconomicArchetype | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("browse");
 
   // Fetch archetypes from database with fallback
-  const { archetypes } = useArchetypes("all");
+  const { archetypes } = useArchetypes(era);
 
-  const handleArchetypeSelect = (archetypeId: string) => {
-    const archetype = archetypes.find(
-      (a: any) => a.id === archetypeId || (a as any).key === archetypeId
-    );
-    setSelectedArchetype((archetype as EconomicArchetype) ?? null);
-  };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [eraFilter, setEraFilter] = useState<string>("all");
+  const [complexityFilter, setComplexityFilter] = useState<string>("all");
+
+  const filteredArchetypes = useMemo(() => {
+    return (archetypes || []).filter((archetype) => {
+      // 1. Search Query
+      if (searchQuery.trim() !== "") {
+        const query = searchQuery.toLowerCase();
+        const matchesName = archetype.name?.toLowerCase().includes(query);
+        const matchesDesc = archetype.description?.toLowerCase().includes(query);
+        const matchesRegion = archetype.region?.toLowerCase().includes(query);
+        if (!matchesName && !matchesDesc && !matchesRegion) {
+          return false;
+        }
+      }
+
+      // 2. Era Filter
+      if (era === "all" && eraFilter !== "all") {
+        const archetypeEra =
+          (archetype as any).era || (modernArchetypes.has(archetype.id) ? "modern" : "historical");
+        if (archetypeEra !== eraFilter) {
+          return false;
+        }
+      }
+
+      // 3. Complexity Filter
+      if (complexityFilter !== "all") {
+        if (archetype.implementationComplexity !== complexityFilter) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [archetypes, searchQuery, eraFilter, complexityFilter, era]);
 
   const handleApplyArchetype = () => {
-    if (!selectedArchetype || !currentState) return;
+    if (!selectedArchetype) return;
 
     setIsLoading(true);
     try {
@@ -77,7 +123,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       const archetypeId = (selectedArchetype as any).id || selectedArchetype.id;
 
       // Apply archetype to current state
-      onArchetypeApplied?.(currentState, archetypeId);
+      onArchetypeApplied?.(currentState as any, archetypeId, selectedArchetype);
 
       // Show success message
       setActiveTab("browse");
@@ -92,21 +138,14 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
   const getComplexityColor = (complexity: "low" | "medium" | "high") => {
     switch (complexity) {
       case "low":
-        return "bg-green-100 text-green-800";
+        return "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20";
       case "medium":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
       case "high":
-        return "bg-red-100 text-red-800";
+        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground border border-border";
     }
-  };
-
-  const getMetricColor = (value: number, maxValue: number = 100) => {
-    const percentage = (value / maxValue) * 100;
-    if (percentage >= 80) return "text-green-600";
-    if (percentage >= 60) return "text-yellow-600";
-    return "text-red-600";
   };
 
   const getArchetypeIcon = (archetypeId: string) => {
@@ -145,7 +184,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       nordic: {
         bg: "from-green-500 to-emerald-600",
         border: "border-green-200/50 dark:border-green-800/50",
-        text: "text-green-600 dark:text-green-400",
+        text: "text-emerald-600 dark:text-emerald-400",
       },
       "asian-tiger": {
         bg: "from-orange-500 to-red-600",
@@ -155,7 +194,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       "german-social-market": {
         bg: "from-gray-500 to-slate-600",
         border: "border-gray-200/50 dark:border-gray-800/50",
-        text: "text-gray-600 dark:text-gray-400",
+        text: "text-zinc-600 dark:text-zinc-400",
       },
       singapore: {
         bg: "from-cyan-500 to-blue-600",
@@ -170,22 +209,22 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       japanese: {
         bg: "from-red-500 to-pink-600",
         border: "border-red-200/50 dark:border-red-800/50",
-        text: "text-red-600 dark:text-red-400",
+        text: "text-rose-600 dark:text-rose-400",
       },
       australian: {
         bg: "from-yellow-500 to-orange-600",
         border: "border-yellow-200/50 dark:border-yellow-800/50",
-        text: "text-yellow-600 dark:text-yellow-400",
+        text: "text-amber-600 dark:text-amber-400",
       },
       brazilian: {
         bg: "from-green-500 to-yellow-600",
         border: "border-green-200/50 dark:border-green-800/50",
-        text: "text-green-600 dark:text-green-400",
+        text: "text-emerald-600 dark:text-emerald-400",
       },
       canadian: {
         bg: "from-red-500 to-white",
         border: "border-red-200/50 dark:border-red-800/50",
-        text: "text-red-600 dark:text-red-400",
+        text: "text-rose-600 dark:text-rose-400",
       },
       "british-empire": {
         bg: "from-blue-500 to-red-600",
@@ -195,12 +234,12 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       "venetian-republic": {
         bg: "from-blue-500 to-cyan-600",
         border: "border-blue-200/50 dark:border-blue-800/50",
-        text: "text-blue-600 dark:text-blue-400",
+        text: "text-cyan-600 dark:text-cyan-400",
       },
       "hanseatic-league": {
         bg: "from-gray-500 to-blue-600",
         border: "border-gray-200/50 dark:border-gray-800/50",
-        text: "text-gray-600 dark:text-gray-400",
+        text: "text-zinc-600 dark:text-zinc-400",
       },
       "dutch-golden-age": {
         bg: "from-orange-500 to-white",
@@ -210,7 +249,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       "industrial-revolution": {
         bg: "from-gray-500 to-black",
         border: "border-gray-200/50 dark:border-gray-800/50",
-        text: "text-gray-600 dark:text-gray-400",
+        text: "text-zinc-500",
       },
       "soviet-command": {
         bg: "from-red-500 to-yellow-600",
@@ -220,7 +259,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       "american-gilded-age": {
         bg: "from-yellow-500 to-gray-600",
         border: "border-yellow-200/50 dark:border-yellow-800/50",
-        text: "text-yellow-600 dark:text-yellow-400",
+        text: "text-amber-600 dark:text-amber-400",
       },
       "french-mercantilism": {
         bg: "from-blue-500 to-white",
@@ -235,7 +274,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       "chinese-ming-dynasty": {
         bg: "from-red-500 to-yellow-600",
         border: "border-red-200/50 dark:border-red-800/50",
-        text: "text-red-600 dark:text-red-400",
+        text: "text-amber-600 dark:text-amber-400",
       },
     };
     return (
@@ -253,71 +292,68 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
     return (
       <div key={archetype.id} className="group">
-        <Card className="hover:border-primary/30 bg-card/50 hover:bg-accent/50 border transition-all duration-300 hover:scale-[1.01]">
-          {/* Compact Header */}
-          <CardHeader className="px-4 pt-4 pb-3">
+        <div className="border-border bg-card/40 flex h-full flex-col justify-between gap-4 rounded-xl border p-5 transition-all duration-300 hover:border-emerald-500/30 hover:bg-emerald-500/[0.01] hover:shadow-lg hover:shadow-emerald-500/5 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/[0.03]">
+          {/* Header */}
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="bg-muted/50 shrink-0 rounded-lg border p-2 transition-colors">
-                <IconComponent className={cn("h-4 w-4", colors.text)} />
+              <div className="bg-muted/50 border-border shrink-0 rounded-lg border p-2.5">
+                <IconComponent className={cn("h-5 w-5", colors.text)} />
               </div>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-foreground mb-1 text-sm leading-tight font-bold">
+                <h4 className="text-foreground truncate text-sm leading-tight font-bold">
                   {archetype.name}
-                </CardTitle>
-                <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                  <Globe className="h-3 w-3 shrink-0" />
-                  <span className="font-medium">{archetype.region}</span>
+                </h4>
+                <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
+                  <Globe className="text-muted-foreground/75 h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate font-medium">{archetype.region}</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Badge
-                  className={`${getComplexityColor(archetype.implementationComplexity)} shrink-0 px-2 py-0.5 text-xs font-medium capitalize`}
-                >
-                  {archetype.implementationComplexity}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                  Innovation: {archetype.growthMetrics.innovationIndex}
-                </div>
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <Badge
+                className={cn(
+                  getComplexityColor(archetype.implementationComplexity),
+                  "shrink-0 px-2 py-0.5 text-[10px] font-medium capitalize"
+                )}
+              >
+                {archetype.implementationComplexity}
+              </Badge>
+              <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                Innovation: {archetype.growthMetrics.innovationIndex}
               </div>
             </div>
-          </CardHeader>
+          </div>
 
           {/* Action Buttons */}
-          <CardContent className="px-4 pt-0 pb-4">
-            <div className="flex justify-center gap-2">
-              {showSelectButton && (
-                <Button
-                  onClick={() => {
-                    setSelectedArchetype(archetype);
-                    handleApplyArchetype();
-                  }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-7 rounded px-3 py-1 text-xs font-medium"
-                  size="sm"
-                >
-                  <CheckCircle className="mr-1 h-3 w-3" />
-                  Select
-                </Button>
-              )}
+          <div className="border-border/50 flex items-center gap-2 border-t pt-2.5">
+            {showSelectButton && (
               <Button
                 onClick={() => {
                   setSelectedArchetype(archetype);
-                  setActiveTab("details");
+                  handleApplyArchetype();
                 }}
-                variant="outline"
-                className="h-7 rounded border px-3 py-1 text-xs font-medium"
+                className="h-8 flex-1 cursor-pointer bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                 size="sm"
               >
-                <Info className="mr-1 h-3 w-3" />
-                Details
+                <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                Select
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            )}
+            <Button
+              onClick={() => {
+                setSelectedArchetype(archetype);
+                setActiveTab("details");
+              }}
+              variant="outline"
+              className="border-border hover:bg-accent hover:text-accent-foreground h-8 flex-1 cursor-pointer text-xs"
+              size="sm"
+            >
+              <Info className="mr-1.5 h-3.5 w-3.5" />
+              Details
+            </Button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -326,32 +362,34 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
     if (!selectedArchetype) return null;
 
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
+      <div className="text-foreground space-y-6">
+        <div className="border-border flex flex-col items-start justify-between gap-4 border-b pb-6 lg:flex-row">
           <div className="flex-1 space-y-2">
-            <h2 className="text-2xl font-bold">{selectedArchetype.name}</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <h2 className="text-foreground text-3xl font-bold tracking-tight">
+              {selectedArchetype.name}
+            </h2>
+            <p className="text-muted-foreground max-w-4xl text-sm leading-relaxed">
               {selectedArchetype.description}
             </p>
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Globe className="h-4 w-4 shrink-0" />
+            <div className="text-muted-foreground flex items-center gap-2 pt-1 text-sm">
+              <Globe className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span className="font-medium">{selectedArchetype.region}</span>
             </div>
           </div>
           <Button
             onClick={handleApplyArchetype}
             disabled={isLoading}
-            className="flex h-11 w-full shrink-0 items-center gap-2 px-6 lg:w-auto"
+            className="flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 self-center bg-emerald-600 px-6 font-semibold text-white shadow-lg shadow-emerald-500/10 hover:bg-emerald-700 lg:w-auto dark:bg-emerald-500 dark:hover:bg-emerald-600"
           >
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Applying...</span>
+                <span>Applying Preset...</span>
               </>
             ) : (
               <>
                 <ArrowRight className="h-4 w-4" />
-                <span>Apply Archetype</span>
+                <span>Apply Archetype Preset</span>
               </>
             )}
           </Button>
@@ -359,332 +397,461 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
           {/* Growth Metrics */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2">
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-                Growth Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3.5">
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              Growth Metrics
+            </h3>
+            <div className="space-y-3.5 pt-2">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">GDP Growth</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">GDP Growth</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.growthMetrics.gdpGrowth}%
                   </span>
                 </div>
-                <Progress value={selectedArchetype.growthMetrics.gdpGrowth * 10} className="h-2" />
+                <Progress
+                  value={selectedArchetype.growthMetrics.gdpGrowth * 10}
+                  className="bg-secondary h-2"
+                />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Innovation Index</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    Innovation Index
+                  </span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.growthMetrics.innovationIndex}
                   </span>
                 </div>
-                <Progress value={selectedArchetype.growthMetrics.innovationIndex} className="h-2" />
+                <Progress
+                  value={selectedArchetype.growthMetrics.innovationIndex}
+                  className="bg-secondary h-2"
+                />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Competitiveness</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">Competitiveness</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.growthMetrics.competitiveness}
                   </span>
                 </div>
-                <Progress value={selectedArchetype.growthMetrics.competitiveness} className="h-2" />
+                <Progress
+                  value={selectedArchetype.growthMetrics.competitiveness}
+                  className="bg-secondary h-2"
+                />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Stability</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">Stability</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.growthMetrics.stability}
                   </span>
                 </div>
-                <Progress value={selectedArchetype.growthMetrics.stability} className="h-2" />
+                <Progress
+                  value={selectedArchetype.growthMetrics.stability}
+                  className="bg-secondary h-2"
+                />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Employment Profile */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
-                  <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                Employment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3.5">
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-2">
+                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              Employment Profile
+            </h3>
+            <div className="space-y-3.5 pt-2">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Unemployment Rate</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    Unemployment Rate
+                  </span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.employmentProfile.unemploymentRate}%
                   </span>
                 </div>
                 <Progress
                   value={100 - selectedArchetype.employmentProfile.unemploymentRate * 10}
-                  className="h-2"
+                  className="bg-secondary h-2"
                 />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Labor Participation</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    Labor Participation
+                  </span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.employmentProfile.laborParticipation}%
                   </span>
                 </div>
                 <Progress
                   value={selectedArchetype.employmentProfile.laborParticipation}
-                  className="h-2"
+                  className="bg-secondary h-2"
                 />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Wage Growth</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">Wage Growth</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.employmentProfile.wageGrowth}%
                   </span>
                 </div>
                 <Progress
                   value={selectedArchetype.employmentProfile.wageGrowth * 20}
-                  className="h-2"
+                  className="bg-secondary h-2"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Tax Profile */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-2">
-                  <Building2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-                Tax Profile
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3.5">
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-2">
+                <Building2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
+              Tax Profile
+            </h3>
+            <div className="space-y-3.5 pt-2">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Corporate Tax</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">Corporate Tax</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.taxProfile.corporateRate}%
                   </span>
                 </div>
-                <Progress value={selectedArchetype.taxProfile.corporateRate * 2} className="h-2" />
+                <Progress
+                  value={selectedArchetype.taxProfile.corporateRate * 2}
+                  className="bg-secondary h-2"
+                />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Income Tax</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">Income Tax</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.taxProfile.incomeRate}%
                   </span>
                 </div>
-                <Progress value={selectedArchetype.taxProfile.incomeRate * 1.5} className="h-2" />
+                <Progress
+                  value={selectedArchetype.taxProfile.incomeRate * 1.5}
+                  className="bg-secondary h-2"
+                />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Consumption Tax</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">Consumption Tax</span>
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedArchetype.taxProfile.consumptionRate}%
                   </span>
                 </div>
                 <Progress
                   value={selectedArchetype.taxProfile.consumptionRate * 3}
-                  className="h-2"
+                  className="bg-secondary h-2"
                 />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Revenue Efficiency</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    Revenue Efficiency
+                  </span>
+                  <span className="text-foreground text-sm font-semibold">
                     {Math.round(selectedArchetype.taxProfile.revenueEfficiency * 100)}%
                   </span>
                 </div>
                 <Progress
                   value={selectedArchetype.taxProfile.revenueEfficiency * 100}
-                  className="h-2"
+                  className="bg-secondary h-2"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Components (Government & Economy) */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* Government Components */}
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-2">
+                <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              Government Components
+            </h3>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {selectedArchetype.governmentComponents &&
+              selectedArchetype.governmentComponents.length > 0 ? (
+                selectedArchetype.governmentComponents.map((comp, idx) => (
+                  <Badge
+                    key={`gov-comp-${idx}`}
+                    variant="outline"
+                    className="border-blue-500/20 bg-blue-500/5 px-2.5 py-1 text-xs text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
+                  >
+                    {comp && typeof comp === "string"
+                      ? comp.replace(/_/g, " ")
+                      : (comp as any)?.name || (comp as any)?.componentType || ""}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground text-xs italic">
+                  No default government components
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Economic Components */}
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
+                <Coins className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              Economic Components
+            </h3>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {selectedArchetype.economicComponents &&
+              selectedArchetype.economicComponents.length > 0 ? (
+                selectedArchetype.economicComponents.map((comp, idx) => (
+                  <Badge
+                    key={`econ-comp-${idx}`}
+                    variant="outline"
+                    className="border-emerald-500/20 bg-emerald-500/5 px-2.5 py-1 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                  >
+                    {comp && typeof comp === "string"
+                      ? comp.replace(/_/g, " ")
+                      : (comp as any)?.name || (comp as any)?.componentType || ""}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground text-xs italic">
+                  No default economic components
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/* Strengths */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-                Strengths
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              Key Strengths
+            </h3>
+            <div className="pt-2">
               <ul className="space-y-2.5">
                 {selectedArchetype.strengths.map((strength, index) => (
                   <li key={index} className="flex items-start gap-2.5">
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                    <span className="text-sm leading-relaxed">{strength}</span>
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-foreground text-sm leading-relaxed">{strength}</span>
                   </li>
                 ))}
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Challenges */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                </div>
-                Challenges
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+            <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+              <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2">
+                <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+              </div>
+              Key Challenges
+            </h3>
+            <div className="pt-2">
               <ul className="space-y-2.5">
                 {selectedArchetype.challenges.map((challenge, index) => (
                   <li key={index} className="flex items-start gap-2.5">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
-                    <span className="text-sm leading-relaxed">{challenge}</span>
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                    <span className="text-foreground text-sm leading-relaxed">{challenge}</span>
                   </li>
                 ))}
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Recommendations */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                <Lightbulb className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              Implementation Recommendations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {selectedArchetype.recommendations.map((rec, index) => (
-                <div key={index} className="flex items-start gap-2.5">
-                  <span className="mt-0.5 shrink-0 text-blue-600">•</span>
-                  <span className="text-sm leading-relaxed">{rec}</span>
-                </div>
-              ))}
+        <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+          <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
+              <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </div>
-          </CardContent>
-        </Card>
+            Implementation Recommendations
+          </h3>
+          <div className="grid grid-cols-1 gap-3 pt-2 lg:grid-cols-2">
+            {selectedArchetype.recommendations.map((rec, index) => (
+              <div key={index} className="flex items-start gap-2.5">
+                <span className="mt-0.5 shrink-0 font-bold text-emerald-600 dark:text-emerald-400">
+                  •
+                </span>
+                <span className="text-muted-foreground text-sm leading-relaxed">{rec}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Historical Context */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-              <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
-                <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              Historical Context & Examples
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
+        <div className="border-border bg-card/30 space-y-4 rounded-xl border p-5">
+          <h3 className="text-foreground flex items-center gap-2.5 text-base font-bold">
+            <div className="rounded-lg border border-teal-500/20 bg-teal-500/10 p-2">
+              <Info className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+            </div>
+            Historical Context & Real-world Examples
+          </h3>
+          <div className="space-y-5 pt-2">
             <div>
-              <h4 className="mb-2.5 text-sm font-semibold">Historical Context</h4>
+              <h4 className="text-foreground mb-2 text-sm font-semibold">Historical Context</h4>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {selectedArchetype.historicalContext}
               </p>
             </div>
-            <div>
-              <h4 className="mb-2.5 text-sm font-semibold">Modern Examples</h4>
+            <div className="border-border border-t pt-4">
+              <h4 className="text-foreground mb-2.5 text-sm font-semibold">
+                Modern Country Examples
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {selectedArchetype.modernExamples.map((example, index) => (
-                  <Badge key={index} variant="outline" className="px-2.5 py-1 text-xs">
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="border-border bg-muted/50 px-2.5 py-1 text-xs text-emerald-600 dark:text-emerald-400"
+                  >
                     {example}
                   </Badge>
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
-            <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <h2 className="text-2xl font-bold">Economic Archetypes</h2>
-        </div>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Pre-configured economic models based on successful real-world examples. Choose an
-          archetype to apply its proven economic structure to your economy.
-        </p>
-      </div>
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid h-11 w-full grid-cols-2">
-          <TabsTrigger value="browse" className="text-sm font-medium">
-            Browse
+        <TabsList className="bg-muted/50 border-border grid h-11 w-full grid-cols-2 rounded-xl border p-1">
+          <TabsTrigger
+            value="browse"
+            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
+          >
+            Browse Archetypes
           </TabsTrigger>
-          <TabsTrigger value="details" className="text-sm font-medium">
-            Details
+          <TabsTrigger
+            value="details"
+            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
+          >
+            Detailed View
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="mt-6 space-y-6">
-          {archetypes.length === 0 ? (
-            <Card className="border-muted-foreground/25 border-2 border-dashed">
-              <CardContent className="flex items-center justify-center py-16">
-                <div className="space-y-4 text-center">
-                  <div className="bg-muted/50 mx-auto w-fit rounded-full p-4">
-                    <Target className="text-muted-foreground/50 h-8 w-8" />
-                  </div>
-                  <h3 className="text-lg font-semibold">No Archetypes Available</h3>
-                  <p className="text-muted-foreground max-w-md text-sm">
-                    Economic archetypes are being loaded. If this persists, contact the
-                    administrator.
-                  </p>
+          {archetypes.length > 0 && (
+            <div className="border-border/40 bg-card/10 flex flex-col gap-4 rounded-xl border p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                {/* Search Input */}
+                <div className="relative max-w-md flex-1">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    placeholder="Search archetypes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-background/30 border-border/50 pr-4 pl-9 text-sm"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Era Filter */}
+                {era === "all" && (
+                  <Select value={eraFilter} onValueChange={setEraFilter}>
+                    <SelectTrigger className="bg-background/30 border-border/50 w-full sm:w-44">
+                      <SelectValue placeholder="Select Era" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Eras</SelectItem>
+                      <SelectItem value="modern">Modern Era</SelectItem>
+                      <SelectItem value="historical">Historical Era</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Complexity Filter */}
+                <Select value={complexityFilter} onValueChange={setComplexityFilter}>
+                  <SelectTrigger className="bg-background/30 border-border/50 w-full sm:w-44">
+                    <SelectValue placeholder="Select Complexity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Complexities</SelectItem>
+                    <SelectItem value="low">Low Complexity</SelectItem>
+                    <SelectItem value="medium">Medium Complexity</SelectItem>
+                    <SelectItem value="high">High Complexity</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Counter */}
+              <div className="text-muted-foreground shrink-0 text-xs font-semibold">
+                Showing {filteredArchetypes.length} of {archetypes.length}
+              </div>
+            </div>
+          )}
+
+          {archetypes.length === 0 ? (
+            <div className="border-border bg-card/25 rounded-xl border-2 border-dashed p-16 text-center">
+              <div className="space-y-4">
+                <div className="bg-muted border-border mx-auto w-fit rounded-full border p-4">
+                  <Target className="text-muted-foreground h-8 w-8" />
+                </div>
+                <h3 className="text-foreground text-lg font-semibold">No Archetypes Available</h3>
+                <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                  Economic archetypes are being loaded. If this persists, contact the administrator.
+                </p>
+              </div>
+            </div>
+          ) : filteredArchetypes.length === 0 ? (
+            <div className="border-border bg-card/25 rounded-xl border-2 border-dashed p-16 text-center">
+              <div className="space-y-4">
+                <div className="bg-muted border-border mx-auto w-fit rounded-full border p-4">
+                  <Target className="text-muted-foreground h-8 w-8" />
+                </div>
+                <h3 className="text-foreground text-lg font-semibold">No Matching Archetypes</h3>
+                <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                  No archetypes match your current search and filter settings. Try clearing them.
+                </p>
+              </div>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              {archetypes.map((archetype: any) =>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {filteredArchetypes.map((archetype: any) =>
                 renderArchetypeCard(archetype as EconomicArchetype, true)
               )}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="details" className="mt-5">
+        <TabsContent value="details" className="mt-6">
           {selectedArchetype ? (
             renderArchetypeDetails()
           ) : (
-            <Card className="border-muted-foreground/25 border-2 border-dashed">
-              <CardContent className="flex items-center justify-center py-16">
-                <div className="space-y-4 text-center">
-                  <div className="bg-muted/50 mx-auto w-fit rounded-full p-4">
-                    <Target className="text-muted-foreground/50 h-8 w-8" />
-                  </div>
-                  <h3 className="text-lg font-semibold">Select an Archetype</h3>
-                  <p className="text-muted-foreground max-w-md text-sm">
-                    Choose an archetype from the Browse tab to view detailed information.
-                  </p>
+            <div className="border-border bg-card/25 rounded-xl border-2 border-dashed p-16 text-center">
+              <div className="space-y-4">
+                <div className="bg-muted border-border mx-auto w-fit rounded-full border p-4">
+                  <Target className="text-muted-foreground h-8 w-8" />
                 </div>
-              </CardContent>
-            </Card>
+                <h3 className="text-foreground text-lg font-semibold">Select an Archetype</h3>
+                <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                  Choose an archetype from the Browse tab to view detailed information.
+                </p>
+              </div>
+            </div>
           )}
         </TabsContent>
       </Tabs>

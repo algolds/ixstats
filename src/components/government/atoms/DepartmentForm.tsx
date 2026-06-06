@@ -1098,7 +1098,6 @@ export function DepartmentForm({
           handleChange("icon", imageUrl);
           setIsMediaModalOpen(false);
         }}
-        usePortal={false}
       />
     </div>
   );

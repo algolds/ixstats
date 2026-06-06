@@ -25,10 +25,15 @@ import {
   Zap,
   Factory,
   Receipt,
+  AlertCircle,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import type { BuilderSection } from "../lib/builder-theme";
+import type { BuilderAlertResult } from "../lib/builder-alerts";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import { TAX_SYSTEM_TEMP_DISABLED } from "~/app/builder/constants";
+import { scrollToField } from "../components/enhanced/tabs/utils/validation";
 
 // Sub-navigation theme styles mapping
 const SUBNAV_THEME_STYLES: Record<
@@ -97,6 +102,8 @@ interface BuilderNotchBarProps {
   isSubmitting?: boolean;
   /** Whether the notch is visible (can be hidden during transitions) */
   visible?: boolean;
+  /** Unified alert results from useBuilderAlerts */
+  alertResult?: BuilderAlertResult;
 }
 
 export function BuilderNotchBar({
@@ -110,19 +117,35 @@ export function BuilderNotchBar({
   onSubmit,
   isSubmitting,
   visible = true,
+  alertResult,
 }: BuilderNotchBarProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [alertPanelOpen, setAlertPanelOpen] = useState(false);
 
   const state = useBuilderContext();
 
   const subTabs = useMemo(() => {
     if (activeSection === "identity") {
-      return [
+      const tabs = [];
+      tabs.push({
+        id: "archetype",
+        label: "Archetype/Preset",
+        icon: Globe,
+        isActive: (st: any) =>
+          (st.builderState.activeIdentitySubTab || "archetype") === "archetype",
+        onClick: (st: any) =>
+          st.setBuilderState((prev: any) => ({
+            ...prev,
+            activeIdentitySubTab: "archetype",
+          })),
+        isGreyed: true,
+      });
+      tabs.push(
         {
           id: "basic",
           label: "Basic Info",
           icon: Globe,
-          isActive: (st: any) => (st.builderState.activeIdentitySubTab || "basic") === "basic",
+          isActive: (st: any) => st.builderState.activeIdentitySubTab === "basic",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({
               ...prev,
@@ -150,8 +173,9 @@ export function BuilderNotchBar({
               ...prev,
               activeIdentitySubTab: "technical",
             })),
-        },
-      ];
+        }
+      );
+      return tabs;
     }
     if (activeSection === "government") {
       return [
@@ -231,17 +255,20 @@ export function BuilderNotchBar({
       ];
     }
     return [];
-  }, [activeSection]);
+  }, [activeSection, mode]);
 
-  const steps =
-    activeSection === "import"
-      ? (["import", "identity", "government", "economics", "preview"] as BuilderSection[])
-      : mode === "edit"
-        ? (["identity", "government", "economics", "preview"] as BuilderSection[])
-        : (["foundation", "identity", "government", "economics", "preview"] as BuilderSection[]);
+  const steps = useMemo(() => {
+    if (activeSection === "import") {
+      return ["import", "identity", "government", "economics", "preview"] as BuilderSection[];
+    }
+    if (mode === "edit") {
+      return ["identity", "government", "economics", "preview"] as BuilderSection[];
+    }
+    return ["foundation", "identity", "government", "economics", "preview"] as BuilderSection[];
+  }, [activeSection, mode]);
 
   const isBackDisabled =
-    activeSection === "foundation" || (mode === "edit" && activeSection === "identity");
+    mode === "edit" ? activeSection === "identity" : activeSection === "foundation";
 
   const isOnPreview = activeSection === "preview";
   const containerRef = useRef<HTMLDivElement>(null);
@@ -272,12 +299,8 @@ export function BuilderNotchBar({
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    // Polling backup to react immediately if layout changes
-    const interval = setInterval(onScroll, 150);
-
     return () => {
       window.removeEventListener("scroll", onScroll);
-      clearInterval(interval);
     };
   }, []);
 
@@ -371,17 +394,21 @@ export function BuilderNotchBar({
                               onClick={() => isAccessible && onNavigate(stepKey)}
                               className={cn(
                                 "relative flex min-w-0 shrink-0 items-center gap-1 rounded-xl px-1.5 py-1 text-[11px] font-semibold transition-all duration-200 sm:gap-1.5 sm:px-2.5",
-                                isActive
-                                  ? "bg-amber-500/15 text-amber-400"
-                                  : isCompleted
-                                    ? "cursor-pointer text-emerald-400/80 hover:bg-emerald-500/10 hover:text-emerald-300"
-                                    : isAccessible
-                                      ? "text-foreground/50 hover:text-foreground/80 cursor-pointer hover:bg-white/8"
-                                      : "text-muted-foreground/25 cursor-not-allowed opacity-40"
+                                stepKey === "foundation" && mode === "edit"
+                                  ? isActive
+                                    ? "text-foreground/40 bg-white/5"
+                                    : "text-foreground/25 hover:text-foreground/50 cursor-pointer hover:bg-white/5"
+                                  : isActive
+                                    ? "bg-amber-500/15 text-amber-400"
+                                    : isCompleted
+                                      ? "cursor-pointer text-emerald-400/80 hover:bg-emerald-500/10 hover:text-emerald-300"
+                                      : isAccessible
+                                        ? "text-foreground/50 hover:text-foreground/80 cursor-pointer hover:bg-white/8"
+                                        : "text-muted-foreground/25 cursor-not-allowed opacity-40"
                               )}
                             >
                               {/* Active indicator */}
-                              {isActive && (
+                              {isActive && (stepKey !== "foundation" || mode !== "edit") && (
                                 <motion.div
                                   layoutId="builder-notch-active"
                                   className="absolute inset-0 rounded-xl bg-amber-500/12"
@@ -399,11 +426,13 @@ export function BuilderNotchBar({
                                   <Icon
                                     className={cn(
                                       "h-3 w-3 shrink-0",
-                                      isActive
-                                        ? "text-amber-400"
-                                        : isAccessible
-                                          ? "text-foreground/40"
-                                          : "text-muted-foreground/25"
+                                      stepKey === "foundation" && mode === "edit"
+                                        ? "text-foreground/20"
+                                        : isActive
+                                          ? "text-amber-400"
+                                          : isAccessible
+                                            ? "text-foreground/40"
+                                            : "text-muted-foreground/25"
                                     )}
                                   />
                                 )}
@@ -419,6 +448,46 @@ export function BuilderNotchBar({
                         );
                       })}
                     </div>
+
+                    {/* Divider */}
+                    <div className="h-4 w-px shrink-0 bg-white/10" />
+
+                    {/* Alert Status Chip */}
+                    {alertResult && alertResult.counts.total > 0 && (
+                      <button
+                        onClick={() => setAlertPanelOpen((v) => !v)}
+                        className={cn(
+                          "flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded-full px-2 text-[10px] font-bold transition-all",
+                          alertResult.counts.error > 0
+                            ? "bg-red-500/15 text-red-400 hover:bg-red-500/25"
+                            : alertResult.counts.warning > 0
+                              ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
+                              : "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
+                        )}
+                      >
+                        {alertResult.counts.error > 0 ? (
+                          <AlertCircle className="h-2.5 w-2.5" />
+                        ) : alertResult.counts.warning > 0 ? (
+                          <AlertTriangle className="h-2.5 w-2.5" />
+                        ) : (
+                          <Info className="h-2.5 w-2.5" />
+                        )}
+                        <span>
+                          {alertResult.counts.error > 0 && `${alertResult.counts.error}`}
+                          {alertResult.counts.error > 0 && alertResult.counts.warning > 0 && "/"}
+                          {alertResult.counts.warning > 0 && `${alertResult.counts.warning}`}
+                          {alertResult.counts.error === 0 &&
+                            alertResult.counts.warning === 0 &&
+                            `${alertResult.counts.info}`}
+                        </span>
+                      </button>
+                    )}
+                    {alertResult && alertResult.counts.total === 0 && (
+                      <div className="flex h-6 shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2 text-[10px] font-bold text-emerald-400">
+                        <CheckCircle className="h-2.5 w-2.5" />
+                        <span>OK</span>
+                      </div>
+                    )}
 
                     {/* Divider */}
                     <div className="h-4 w-px shrink-0 bg-white/10" />
@@ -484,6 +553,7 @@ export function BuilderNotchBar({
                             const activeStyle =
                               SUBNAV_THEME_STYLES[activeSection] || SUBNAV_THEME_STYLES.default;
                             const isDisabled = !!(subTab as any).disabled;
+                            const isGreyed = !!(subTab as any).isGreyed;
 
                             return (
                               <button
@@ -493,10 +563,14 @@ export function BuilderNotchBar({
                                 className={cn(
                                   "relative flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1 text-[10px] font-semibold transition-all duration-200",
                                   isActive
-                                    ? activeStyle.active
+                                    ? isGreyed
+                                      ? "text-foreground/45 bg-white/5 font-bold"
+                                      : activeStyle.active
                                     : isDisabled
                                       ? "text-muted-foreground/30 cursor-not-allowed opacity-50"
-                                      : activeStyle.inactive
+                                      : isGreyed
+                                        ? "text-foreground/25 hover:text-foreground/50 hover:bg-white/5"
+                                        : activeStyle.inactive
                                 )}
                               >
                                 {Icon && (
@@ -504,10 +578,14 @@ export function BuilderNotchBar({
                                     className={cn(
                                       "h-3 w-3",
                                       isActive
-                                        ? activeStyle.iconActive
+                                        ? isGreyed
+                                          ? "text-foreground/35"
+                                          : activeStyle.iconActive
                                         : isDisabled
                                           ? "text-muted-foreground/25"
-                                          : activeStyle.iconInactive
+                                          : isGreyed
+                                            ? "text-foreground/20"
+                                            : activeStyle.iconInactive
                                     )}
                                   />
                                 )}
@@ -515,6 +593,140 @@ export function BuilderNotchBar({
                               </button>
                             );
                           })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Alert Panel (expandable) */}
+                  <AnimatePresence initial={false}>
+                    {alertPanelOpen && alertResult && alertResult.counts.total > 0 && (
+                      <motion.div
+                        key="alert-panel"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 350, damping: 26 }}
+                        className="w-full overflow-hidden border-t border-white/10 px-2 pt-2 pb-1"
+                      >
+                        <div
+                          className="max-h-[200px] space-y-1.5 overflow-y-auto pr-1"
+                          style={{ scrollbarWidth: "thin" }}
+                        >
+                          {/* Errors */}
+                          {alertResult.alerts.filter((a) => a.severity === "error").length > 0 && (
+                            <div className="space-y-0.5">
+                              <div className="text-[8px] font-bold tracking-wider text-red-500/80 uppercase">
+                                Errors
+                              </div>
+                              {alertResult.alerts
+                                .filter((a) => a.severity === "error")
+                                .map((alert, idx) => (
+                                  <button
+                                    key={`err-${idx}`}
+                                    onClick={() => {
+                                      if (alert.section !== activeSection) {
+                                        onNavigate(alert.section);
+                                      }
+                                      if (alert.tab) {
+                                        // Switch to the right sub-tab
+                                        const tabKey =
+                                          alert.section === "economics"
+                                            ? "activeEconomicsTab"
+                                            : alert.section === "government"
+                                              ? "activeGovernmentTab"
+                                              : null;
+                                        if (tabKey) {
+                                          state.setBuilderState((prev: any) => ({
+                                            ...prev,
+                                            [tabKey]: alert.tab,
+                                          }));
+                                        }
+                                      }
+                                      if (alert.field) {
+                                        requestAnimationFrame(() => scrollToField(alert.field!));
+                                      }
+                                      setAlertPanelOpen(false);
+                                    }}
+                                    className="flex w-full items-start gap-1.5 rounded-lg px-2 py-1 text-left text-[10px] leading-tight text-red-400 transition-colors hover:bg-red-500/10"
+                                  >
+                                    <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                    <span className="flex-1">{alert.message}</span>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                          {/* Warnings */}
+                          {alertResult.alerts.filter((a) => a.severity === "warning").length >
+                            0 && (
+                            <div className="space-y-0.5">
+                              <div className="text-[8px] font-bold tracking-wider text-amber-500/80 uppercase">
+                                Warnings
+                              </div>
+                              {alertResult.alerts
+                                .filter((a) => a.severity === "warning")
+                                .map((alert, idx) => (
+                                  <button
+                                    key={`warn-${idx}`}
+                                    onClick={() => {
+                                      if (alert.section !== activeSection) {
+                                        onNavigate(alert.section);
+                                      }
+                                      if (alert.tab) {
+                                        const tabKey =
+                                          alert.section === "economics"
+                                            ? "activeEconomicsTab"
+                                            : alert.section === "government"
+                                              ? "activeGovernmentTab"
+                                              : null;
+                                        if (tabKey) {
+                                          state.setBuilderState((prev: any) => ({
+                                            ...prev,
+                                            [tabKey]: alert.tab,
+                                          }));
+                                        }
+                                      }
+                                      if (alert.field) {
+                                        requestAnimationFrame(() => scrollToField(alert.field!));
+                                      }
+                                      setAlertPanelOpen(false);
+                                    }}
+                                    className="flex w-full items-start gap-1.5 rounded-lg px-2 py-1 text-left text-[10px] leading-tight text-amber-400 transition-colors hover:bg-amber-500/10"
+                                  >
+                                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                                    <span className="flex-1">{alert.message}</span>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                          {/* Info */}
+                          {alertResult.alerts.filter((a) => a.severity === "info").length > 0 && (
+                            <div className="space-y-0.5">
+                              <div className="text-[8px] font-bold tracking-wider text-blue-500/80 uppercase">
+                                Info
+                              </div>
+                              {alertResult.alerts
+                                .filter((a) => a.severity === "info")
+                                .map((alert, idx) => (
+                                  <button
+                                    key={`info-${idx}`}
+                                    onClick={() => {
+                                      if (alert.section !== activeSection) {
+                                        onNavigate(alert.section);
+                                      }
+                                      if (alert.field) {
+                                        requestAnimationFrame(() => scrollToField(alert.field!));
+                                      }
+                                      setAlertPanelOpen(false);
+                                    }}
+                                    className="flex w-full items-start gap-1.5 rounded-lg px-2 py-1 text-left text-[10px] leading-tight text-blue-400 transition-colors hover:bg-blue-500/10"
+                                  >
+                                    <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                                    <span className="flex-1">{alert.message}</span>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}

@@ -96,6 +96,9 @@ export interface MetricCardProps {
   changeUnit?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
+  texture?: string;
+  textureOpacity?: number;
+  tooltip?: string;
 }
 
 export interface AnimationConfig {

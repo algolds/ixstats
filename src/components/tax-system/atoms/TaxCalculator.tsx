@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -45,6 +45,8 @@ import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomic
 import { calculateUnifiedAtomicModifiers } from "~/lib/atomic-client-calculations";
 import { api } from "~/trpc/react";
 
+const EMPTY_ARRAY: any[] = [];
+
 interface TaxCalculatorProps {
   taxSystem: TaxSystem;
   categories: TaxCategory[];
@@ -80,9 +82,9 @@ export function TaxCalculator({
   economicData,
   governmentData,
   calculationMode: initialCalculationMode = "individual",
-  governmentComponents = [],
-  economicComponents = [],
-  sectorData = [],
+  governmentComponents = EMPTY_ARRAY,
+  economicComponents = EMPTY_ARRAY,
+  sectorData = EMPTY_ARRAY,
   countryId,
   enableLiveCalculation = false,
 }: TaxCalculatorProps) {
@@ -372,12 +374,27 @@ export function TaxCalculator({
     atomicModifiers,
   ]);
 
+  const lastCalculationResultRef = useRef<any>(null);
   useEffect(() => {
-    if (onCalculationChange) {
-      onCalculationChange(calculationResult);
+    if (onCalculationChange && calculationResult) {
+      const simplifiedResult = {
+        taxOwed: calculationResult.taxOwed,
+        effectiveRate: calculationResult.effectiveRate,
+        taxableIncome: calculationResult.taxableIncome,
+      };
+      if (JSON.stringify(simplifiedResult) !== JSON.stringify(lastCalculationResultRef.current)) {
+        lastCalculationResultRef.current = simplifiedResult;
+        onCalculationChange(calculationResult);
+      }
+    } else if (
+      onCalculationChange &&
+      !calculationResult &&
+      lastCalculationResultRef.current !== null
+    ) {
+      lastCalculationResultRef.current = null;
+      onCalculationChange(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calculationResult]);
+  }, [calculationResult, onCalculationChange]);
 
   // Validation
   const validation = useMemo(() => {

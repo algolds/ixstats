@@ -173,6 +173,8 @@ export function LaborEmploymentTab({
           icon={Users}
           sectionId="labor"
           trend="neutral"
+          texture="dots"
+          textureOpacity={0.04}
         />
         <MetricCard
           label="Unemployment Rate"
@@ -180,6 +182,8 @@ export function LaborEmploymentTab({
           icon={economyBuilder.laborMarket.unemploymentRate < 5 ? TrendingUp : TrendingDown}
           sectionId="labor"
           trend={economyBuilder.laborMarket.unemploymentRate < 5 ? "up" : "down"}
+          texture="dots"
+          textureOpacity={0.04}
         />
         <MetricCard
           label="Participation Rate"
@@ -187,6 +191,8 @@ export function LaborEmploymentTab({
           icon={Users}
           sectionId="labor"
           trend={economyBuilder.laborMarket.laborForceParticipationRate > 65 ? "up" : "neutral"}
+          texture="dots"
+          textureOpacity={0.04}
         />
         <MetricCard
           label="Avg Workweek"
@@ -194,6 +200,8 @@ export function LaborEmploymentTab({
           icon={TrendingDown}
           sectionId="labor"
           trend="neutral"
+          texture="dots"
+          textureOpacity={0.04}
         />
       </div>
 

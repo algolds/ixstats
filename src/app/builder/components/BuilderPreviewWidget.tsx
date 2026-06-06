@@ -165,7 +165,7 @@ export function BuilderPreviewWidget({
 
     const governmentComponents =
       builderState.governmentComponents?.map((c: any) =>
-        typeof c === "string" ? c : c.id || c.name || ""
+        c && typeof c === "string" ? c : c?.id || c?.name || ""
       ) || [];
 
     components.forEach((comp) => {
@@ -223,7 +223,7 @@ export function BuilderPreviewWidget({
   const govMetrics = useMemo(() => {
     const governmentComponents =
       builderState.governmentComponents?.map((c: any) =>
-        typeof c === "string" ? c : c.id || c.name || ""
+        c && typeof c === "string" ? c : c?.id || c?.name || ""
       ) || [];
 
     const govComps = governmentComponents as GovComponentType[];

@@ -128,10 +128,13 @@ export function MapContainer({
   const [currentZoom, setCurrentZoom] = useState<number | undefined>(undefined);
 
   // Get user's country for the editor shortcut
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
-    staleTime: 5 * 60_000,
-    retry: false,
-  });
+  const { data: userProfile, isLoading: isProfileLoading } = api.users.getProfile.useQuery(
+    undefined,
+    {
+      staleTime: 5 * 60_000,
+      retry: false,
+    }
+  );
   const userCountryId = userProfile?.countryId ?? null;
 
   const {
@@ -144,9 +147,43 @@ export function MapContainer({
     capitalsGeoJson: batchedCapitalsGeoJson,
   } = useMapDataBatched(initialLayers, currentZoom);
 
-  // Moved after isLoading is declared to avoid TS2448 (used before declaration)
+  // Overlay features come from batched query + story pins/labels
+  const { data: storyPinsGeoJson, isLoading: isStoryPinsLoading } =
+    api.geoFeatures.getAllStoryPins.useQuery(undefined, {
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+    });
+  const { data: mapLabelsGeoJson, isLoading: isMapLabelsLoading } =
+    api.geoFeatures.getAllMapLabels.useQuery(undefined, {
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+    });
+
+  // Top-25 countries by composite importance (population + GDP + GDP/capita)
+  const { data: topCountryNames, isLoading: isTopCountriesLoading } =
+    api.countries.getTopCountriesByImportance.useQuery(
+      { limit: 25 },
+      { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+    );
+
+  // Deep-link: auto-select and fly to a country on mount
+  const { data: initialGeo, isLoading: isInitialGeoLoading } =
+    api.geoCore.getCountryGeometry.useQuery(
+      { countryId: initialCountryId! },
+      { enabled: !!initialCountryId, staleTime: 30 * 60_000 }
+    );
+
+  const isPreloading =
+    isLoading ||
+    isProfileLoading ||
+    isStoryPinsLoading ||
+    isMapLabelsLoading ||
+    isTopCountriesLoading ||
+    (!!initialCountryId && isInitialGeoLoading);
+
+  // Moved after isPreloading is declared to avoid TS2448 (used before declaration)
   useEffect(() => {
-    if (isLoading || mapEngineReady) return;
+    if (isPreloading || mapEngineReady) return;
 
     const timer = setTimeout(() => {
       if (!mapEngineReady) {
@@ -155,7 +192,7 @@ export function MapContainer({
     }, 8000);
 
     return () => clearTimeout(timer);
-  }, [isLoading, mapEngineReady]);
+  }, [isPreloading, mapEngineReady]);
 
   const {
     isPinToolActive,
@@ -167,16 +204,6 @@ export function MapContainer({
     dropPin,
     clearPin,
   } = useMapPinInfo();
-
-  // Overlay features come from batched query + story pins/labels
-  const { data: storyPinsGeoJson } = api.geoFeatures.getAllStoryPins.useQuery(undefined, {
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
-  const { data: mapLabelsGeoJson } = api.geoFeatures.getAllMapLabels.useQuery(undefined, {
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
   const overlayFeatures = useMemo(() => {
     if (!batchedOverlayFeatures) return undefined;
     return {
@@ -268,18 +295,7 @@ export function MapContainer({
   // Capitals come from batched query
   const capitalsGeoJson = batchedCapitalsGeoJson;
 
-  // Top-25 countries by composite importance (population + GDP + GDP/capita)
-  const { data: topCountryNames } = api.countries.getTopCountriesByImportance.useQuery(
-    { limit: 25 },
-    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
   const topCountrySet = useMemo(() => new Set(topCountryNames ?? []), [topCountryNames]);
-
-  // Deep-link: auto-select and fly to a country on mount
-  const { data: initialGeo } = api.geoCore.getCountryGeometry.useQuery(
-    { countryId: initialCountryId! },
-    { enabled: !!initialCountryId, staleTime: 30 * 60_000 }
-  );
   const deepLinkFiredRef = useRef(false);
 
   useEffect(() => {
@@ -656,10 +672,10 @@ export function MapContainer({
       )}
 
       {/* Full-screen loading overlay — shows until map data + engine are ready */}
-      <MapLoadingScreen isReady={!isLoading && mapEngineReady} />
+      <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />
 
       {/* First-visit welcome modal — shows after loading screen dismisses */}
-      {showControls && <MapWelcomeModal isMapReady={!isLoading && mapEngineReady} />}
+      {showControls && <MapWelcomeModal isMapReady={!isPreloading && mapEngineReady} />}
 
       {/* Map editor overlay */}
       {isEditing && editingCountryId && (

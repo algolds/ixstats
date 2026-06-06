@@ -409,7 +409,7 @@ export const StepRenderer = memo(function StepRenderer({
     updateStep("foundation", scratchCountry);
   }, [updateStep]);
 
-  // Foundation Step (only in create mode)
+  // Foundation Step
   if (builderState.step === "foundation" && mode !== "edit") {
     if (isLoadingCountries) {
       return (
@@ -521,6 +521,7 @@ export const StepRenderer = memo(function StepRenderer({
         onPersistEconomyBuilder={handlePersistEconomyBuilder}
         activeTab={builderState.activeEconomicsTab}
         onTabChange={(tab: string) => handleTabChange("economics", tab)}
+        selectedArchetypeId={builderState.selectedArchetypeId}
       />
     );
   }
