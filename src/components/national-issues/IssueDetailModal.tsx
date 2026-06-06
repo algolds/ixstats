@@ -23,7 +23,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { IxTime } from "~/lib/ixtime";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
-import { useLocalActions } from "~/hooks/useLocalActions";
+import { useNotify } from "~/hooks/useNotify";
 
 interface ResponseOption {
   id: string;
@@ -91,18 +91,11 @@ function IssueDetailModalInner({
   onClose,
   onRespond,
   isResponding,
-  countryId,
 }: IssueDetailModalProps) {
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
   const [localOutcome, setLocalOutcome] = useState<string | null>(null);
-  const [localCredits, setLocalCredits] = useState(0);
-  const { saveAction, getActions } = useLocalActions(countryId ?? "");
-
-  // Check if this issue was already responded to locally
-  const isLocallyResolved = issue
-    ? getActions("issue_response").some((a) => a.data.issueId === issue.id)
-    : false;
+  const notify = useNotify();
 
   const handleRespond = useCallback(
     async (optionId: string) => {
@@ -117,32 +110,23 @@ function IssueDetailModalInner({
       }
       const selected = options.find((o) => o.id === optionId);
 
-      // Save locally
-      if (countryId) {
-        saveAction("issue_response", {
-          issueId: issue.id,
-          optionId,
-          optionLabel: selected?.label ?? optionId,
-          outcomeText: selected?.outcomeText ?? "Decision recorded.",
-          effects: selected?.previewEffects ?? {},
-        });
+      if (!onRespond) {
+        notify.error("Unable to submit a response right now. Please try again.");
+        return;
       }
 
-      setLocalOutcome(selected?.outcomeText ?? "Decision recorded.");
-      setLocalCredits(5); // Default IxCredits for responding
-      setShowOutcome(true);
-      setConfirmingOptionId(null);
-
-      // Also try server if handler provided
-      if (onRespond) {
-        try {
-          await onRespond(issue.id, optionId);
-        } catch {
-          /* local save is primary */
-        }
+      // Server is the source of truth — only show the outcome once it persists.
+      try {
+        await onRespond(issue.id, optionId);
+        setLocalOutcome(selected?.outcomeText ?? "Decision recorded.");
+        setShowOutcome(true);
+        setConfirmingOptionId(null);
+      } catch (err: any) {
+        notify.error("Failed to submit response", err?.message);
+        setConfirmingOptionId(null);
       }
     },
-    [issue, onRespond, countryId, saveAction]
+    [issue, onRespond, notify]
   );
 
   const handleClose = useCallback(() => {
@@ -162,8 +146,7 @@ function IssueDetailModalInner({
 
   const domain = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domain.icon;
-  const isResolved =
-    issue.status === "responded" || issue.status === "auto_resolved" || isLocallyResolved;
+  const isResolved = issue.status === "responded" || issue.status === "auto_resolved";
   const hasDeadline = issue.deadlineIxTime != null;
   const currentIxTime = IxTime.getCurrentIxTime();
 
@@ -241,12 +224,12 @@ function IssueDetailModalInner({
               <span className="text-sm font-medium text-green-400">
                 {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
               </span>
-              {(issue.ixCreditsAwarded > 0 || localCredits > 0) && (
+              {issue.ixCreditsAwarded > 0 && (
                 <Badge
                   variant="outline"
                   className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-400"
                 >
-                  +{issue.ixCreditsAwarded || localCredits} IxC
+                  +{issue.ixCreditsAwarded} IxC
                 </Badge>
               )}
             </div>

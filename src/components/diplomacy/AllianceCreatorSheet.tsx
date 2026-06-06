@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { useLocalActions } from "~/hooks/useLocalActions";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Shield, DollarSign, Landmark, MapPin, Users, Loader2 } from "lucide-react";
+import { Shield, DollarSign, Landmark, MapPin, Users } from "lucide-react";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 
 interface AllianceCreatorSheetProps {
@@ -49,7 +49,6 @@ const ALLIANCE_TYPES = [
 ] as const;
 
 export function AllianceCreatorSheet({
-  countryId,
   open,
   onOpenChange,
   onCreated,
@@ -62,7 +61,6 @@ export function AllianceCreatorSheet({
   const [color, setColor] = useState("#6366f1");
   const [visibility, setVisibility] = useState<"public" | "private" | "secret">("public");
   const [joinPolicy, setJoinPolicy] = useState<"open" | "invite" | "application">("invite");
-  const { saveAction } = useLocalActions(countryId);
 
   const resetForm = () => {
     setName("");
@@ -72,6 +70,34 @@ export function AllianceCreatorSheet({
     setColor("#6366f1");
     setVisibility("public");
     setJoinPolicy("invite");
+  };
+
+  const createAlliance = api.diplomaticPolicies.createAlliance.useMutation({
+    onSuccess: () => {
+      notify.success("Alliance founded!", `${name} is now active. Invite nations to join.`);
+      onOpenChange(false);
+      resetForm();
+      onCreated?.();
+    },
+    onError: (error) => {
+      notify.error("Failed to create alliance", error.message);
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      notify.error("Alliance name is required");
+      return;
+    }
+    createAlliance.mutate({
+      name,
+      shortName: shortName || undefined,
+      type,
+      description: description || undefined,
+      color,
+      visibility,
+      joinPolicy,
+    });
   };
 
   return (
@@ -200,25 +226,11 @@ export function AllianceCreatorSheet({
           <Button
             size="sm"
             className="gap-1.5"
-            onClick={() => {
-              saveAction("alliance_created", {
-                name,
-                shortName: shortName || undefined,
-                type,
-                description: description || undefined,
-                color,
-                visibility,
-                joinPolicy,
-              });
-              notify.success("Alliance created locally!");
-              onOpenChange(false);
-              resetForm();
-              onCreated?.();
-            }}
-            disabled={!name.trim()}
+            onClick={handleSubmit}
+            disabled={!name.trim() || createAlliance.isPending}
           >
             <Users className="h-3 w-3" />
-            Found Alliance
+            {createAlliance.isPending ? "Founding..." : "Found Alliance"}
           </Button>
         </DialogFooter>
       </DialogContent>

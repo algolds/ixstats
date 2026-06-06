@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { useLocalActions } from "~/hooks/useLocalActions";
+import { api } from "~/trpc/react";
+import { useUser } from "~/context/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -110,7 +111,7 @@ export function PolicyCreatorSheet({
   onCreated,
 }: PolicyCreatorSheetProps) {
   const notify = useNotify();
-  const { saveAction } = useLocalActions(countryId);
+  const { user } = useUser();
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -124,7 +125,6 @@ export function PolicyCreatorSheet({
   const [formImplCost, setFormImplCost] = useState("");
   const [formMaintCost, setFormMaintCost] = useState("");
   const [formTargetMetrics, setFormTargetMetrics] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setFormTitle("");
@@ -138,6 +138,18 @@ export function PolicyCreatorSheet({
     setFormTargetMetrics("");
   };
 
+  const createPolicy = api.policies.createPolicy.useMutation({
+    onSuccess: () => {
+      notify.success("Policy created as draft");
+      resetForm();
+      onOpenChange(false);
+      onCreated?.();
+    },
+    onError: (error) => {
+      notify.error(error.message || "Failed to create policy");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -149,24 +161,28 @@ export function PolicyCreatorSheet({
       notify.error("Policy description is required");
       return;
     }
+    if (!user?.id) {
+      notify.error("You must be signed in to create a policy");
+      return;
+    }
 
-    setIsSubmitting(true);
-    saveAction("policy_created", {
-      title: formTitle,
+    createPolicy.mutate({
+      countryId,
+      userId: user.id,
+      name: formTitle,
       description: formDescription,
-      policyType: formType,
+      policyType: formType as
+        | "economic"
+        | "social"
+        | "diplomatic"
+        | "infrastructure"
+        | "governance",
       category: formCategory,
       priority: formPriority,
-      objectives: formObjectives || undefined,
+      targetMetrics: formTargetMetrics || undefined,
       implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
       maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
-      targetMetrics: formTargetMetrics || undefined,
     });
-    notify.success("Policy saved as draft locally!");
-    resetForm();
-    onOpenChange(false);
-    onCreated?.();
-    setIsSubmitting(false);
   };
 
   return (
@@ -327,8 +343,8 @@ export function PolicyCreatorSheet({
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create as Draft"}
+            <Button type="submit" size="sm" disabled={createPolicy.isPending}>
+              {createPolicy.isPending ? "Creating..." : "Create as Draft"}
             </Button>
           </DialogFooter>
         </form>
