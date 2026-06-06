@@ -61,9 +61,12 @@ interface CommandPanelProps {
   onFooter?: () => void;
   /** Number of total items (shown in footer) */
   totalCount?: number;
-  /** Empty state message */
+  /** Empty state message (used as the title when emptyTitle is not provided) */
   emptyIcon?: LucideIcon;
   emptyMessage?: string;
+  /** Richer empty state: bold title + supporting description. Falls back to emptyMessage. */
+  emptyTitle?: string;
+  emptyDescription?: string;
   children: React.ReactNode;
   className?: string;
 }
@@ -84,6 +87,8 @@ export const CommandPanel = React.memo(function CommandPanel({
   totalCount,
   emptyIcon: EmptyIcon,
   emptyMessage,
+  emptyTitle,
+  emptyDescription,
   children,
   className,
 }: CommandPanelProps) {
@@ -130,9 +135,22 @@ export const CommandPanel = React.memo(function CommandPanel({
         {hasChildren ? (
           <div className="divide-border/30 divide-y">{children}</div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            {EmptyIcon && <EmptyIcon className="text-muted-foreground/40 mb-2 h-6 w-6" />}
-            <p className="text-muted-foreground text-xs">{emptyMessage ?? "No items"}</p>
+          <div className="flex flex-col items-center justify-center gap-1.5 px-3 py-7 text-center">
+            {EmptyIcon && <EmptyIcon className="text-muted-foreground/40 mb-0.5 h-7 w-7" />}
+            <p className="text-foreground/90 text-sm font-medium">
+              {emptyTitle ?? emptyMessage ?? "Nothing here yet"}
+            </p>
+            {emptyDescription && (
+              <p className="text-muted-foreground max-w-[32ch] text-xs leading-relaxed">
+                {emptyDescription}
+              </p>
+            )}
+            {ctaLabel && onCta && (
+              <Button size="sm" onClick={onCta} className="mt-2 h-7 gap-1 px-3 text-xs">
+                <Plus className="h-3 w-3" />
+                {ctaLabel}
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -155,7 +173,7 @@ export const CommandPanel = React.memo(function CommandPanel({
         ) : (
           <div />
         )}
-        {ctaLabel && onCta && (
+        {ctaLabel && onCta && hasChildren && (
           <Button size="sm" variant="outline" onClick={onCta} className="h-7 gap-1 px-2.5 text-xs">
             <Plus className="h-3 w-3" />
             {ctaLabel}

@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { Bell, Calendar, FileText } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIssueCount, useNationalIssues } from "~/hooks/useNationalIssues";
-import { useLocalActions } from "~/hooks/useLocalActions";
 import {
   Sheet,
   SheetContent,
@@ -101,21 +100,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
     { countryId },
     { enabled: !!countryId }
   );
-  const { getActions } = useLocalActions(countryId);
-
-  const meetings = useMemo(() => {
-    const localMeetings = getActions("meeting_scheduled").map((a) => ({
-      id: a.id,
-      title: a.data.title as string,
-      scheduledDate: a.data.scheduledDate as string,
-      status: "scheduled",
-      actionItems: [] as any[],
-      decisions: [] as any[],
-      attendances: [] as any[],
-      _isLocal: true,
-    }));
-    return [...serverMeetings, ...localMeetings];
-  }, [serverMeetings, getActions]);
+  const meetings = serverMeetings;
 
   const { upcomingMeetings, actionItems } = useMemo(() => {
     const now = new Date();
@@ -146,18 +131,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
     { enabled: !!countryId }
   );
 
-  const policies = useMemo(() => {
-    const localPolicies = getActions("policy_created").map((a) => ({
-      id: a.id,
-      name: a.data.title as string,
-      title: a.data.title as string,
-      category: a.data.category as string,
-      priority: a.data.priority as string,
-      status: "draft",
-      _isLocal: true,
-    }));
-    return [...serverPolicies, ...localPolicies];
-  }, [serverPolicies, getActions]);
+  const policies = serverPolicies;
 
   const { activePolicies, draftPolicies } = useMemo(
     () => ({
@@ -222,7 +196,8 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           onFooter={() => setActiveSheet("issues")}
           totalCount={issueCount}
           emptyIcon={Bell}
-          emptyMessage="No pending issues — all clear"
+          emptyTitle="All clear"
+          emptyDescription="No pending national issues right now. A good moment to enact a new policy or schedule a cabinet meeting."
         >
           {activeIssues.slice(0, 4).map((issue) => {
             const deadline = formatDeadline(issue.deadlineIxTime);
@@ -254,7 +229,8 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           onFooter={() => setActiveSheet("decisions")}
           totalCount={meetings.length}
           emptyIcon={Calendar}
-          emptyMessage="No meetings or actions"
+          emptyTitle="Your schedule is clear"
+          emptyDescription="Schedule your first cabinet meeting to align your cabinet and start a record of decisions."
         >
           {/* Show upcoming meetings first, then action items */}
           {upcomingMeetings.slice(0, 2).map((meeting: any) => (
@@ -268,16 +244,6 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
                 formatMeetingDate(meeting.scheduledDate) === "Today"
                   ? "text-blue-600 font-semibold"
                   : undefined
-              }
-              badges={
-                meeting._isLocal
-                  ? [
-                      {
-                        label: "LOCAL",
-                        colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30",
-                      },
-                    ]
-                  : []
               }
             />
           ))}
@@ -319,7 +285,8 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           onFooter={() => setActiveSheet("policies")}
           totalCount={policies.length}
           emptyIcon={FileText}
-          emptyMessage="No policies yet"
+          emptyTitle="No policies yet"
+          emptyDescription="Create your nation's first policy to shape the economy, society, and governance."
         >
           {/* Show active policies first, then drafts */}
           {activePolicies.slice(0, 3).map((policy: any) => (
