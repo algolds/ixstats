@@ -4,13 +4,13 @@
 import { useState } from "react";
 import { useLocalActions } from "~/hooks/useLocalActions";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -170,23 +170,23 @@ export function PolicyCreatorSheet({
   };
 
   return (
-    <Sheet
+    <Dialog
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) resetForm();
         onOpenChange(isOpen);
       }}
     >
-      <SheetContent className="flex flex-col p-0 sm:max-w-lg">
-        <SheetHeader className="px-6 pt-6 pb-0">
-          <SheetTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-indigo-500" />
             Create Policy
-          </SheetTitle>
-          <SheetDescription>
+          </DialogTitle>
+          <DialogDescription>
             Draft a new policy for your country. It will be saved as a draft until activated.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
@@ -323,16 +323,16 @@ export function PolicyCreatorSheet({
           </div>
 
           {/* Sticky footer */}
-          <SheetFooter className="border-border/50 border-t px-6 py-4">
+          <DialogFooter className="border-border/50 border-t px-6 py-4">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting ? "Creating..." : "Create as Draft"}
             </Button>
-          </SheetFooter>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -8,13 +8,13 @@ import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useLocalActions } from "~/hooks/useLocalActions";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -275,15 +275,15 @@ export function MeetingScheduler({
   const totalAgendaDuration = agendaItems.reduce((sum, item) => sum + item.duration, 0);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col p-0 sm:max-w-lg">
-        <SheetHeader className="px-6 pt-6 pb-0">
-          <SheetTitle className="flex items-center gap-2">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-amber-500" />
             Schedule Meeting
-          </SheetTitle>
-          <SheetDescription>Create a meeting with agenda items and attendees.</SheetDescription>
-        </SheetHeader>
+          </DialogTitle>
+          <DialogDescription>Create a meeting with agenda items and attendees.</DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
@@ -614,7 +614,7 @@ export function MeetingScheduler({
           </div>
 
           {/* Sticky footer */}
-          <SheetFooter className="border-border/50 border-t px-6 py-4">
+          <DialogFooter className="border-border/50 border-t px-6 py-4">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -625,9 +625,9 @@ export function MeetingScheduler({
             >
               {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
             </Button>
-          </SheetFooter>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

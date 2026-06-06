@@ -72,6 +72,17 @@ export { TabHeroBanner } from "./TabHeroBanner";
 // Unified section hero for gameplay pillars
 export { SectionHero, type StatusBadgeConfig } from "./SectionHero";
 
+// ── v2 refactor primitives (shared section template) ──
+export { SectionShell } from "./SectionShell";
+export { CompactSectionHero } from "./CompactSectionHero";
+export {
+  SectionContextWidget,
+  type ContextStat,
+  type ContextActivityEntry,
+} from "./SectionContextWidget";
+export { InlineWiki } from "./InlineWiki";
+export { PremiumPreviewFrame } from "./PremiumPreviewFrame";
+
 // Card background image components
 export { CardBackgroundImage, useCardImage, useAllCardImages } from "./CardBackgroundImage";
 

@@ -1,25 +1,22 @@
 "use client";
 
 import { useMemo } from "react";
-import { ScrollText, Building2, Handshake, Scale, Sparkles } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { Building2, Handshake, Scale, Sparkles } from "lucide-react";
 import { api } from "~/trpc/react";
+import {
+  SectionContextWidget,
+  type ContextStat,
+  type ContextActivityEntry,
+} from "~/components/mycountry/primitives";
 
 interface DiplomacySidebarWidgetProps {
   countryId: string;
 }
 
-interface LogEntry {
-  id: string;
-  icon: typeof Building2;
-  iconColor: string;
-  text: string;
-  time: Date;
-}
-
 /**
- * Diplomatic Log — shows a timeline of recent diplomatic actions:
- * embassies established, relations formed, foreign policies enacted.
+ * Diplomacy context widget — a thin adapter that feeds the unified
+ * SectionContextWidget with quick stats (embassies / relations / avg strength)
+ * and a recent-activity log (embassies, relations, foreign policies).
  */
 export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProps) {
   const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
@@ -35,8 +32,25 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const log = useMemo((): LogEntry[] => {
-    const entries: LogEntry[] = [];
+  const stats = useMemo<ContextStat[]>(() => {
+    const activeEmbassies =
+      embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+    const totalRelations = relations?.length ?? 0;
+    const avgStrength =
+      totalRelations > 0
+        ? Math.round(
+            relations!.reduce((sum: number, r: any) => sum + (r.strength ?? 0), 0) / totalRelations
+          )
+        : 0;
+    return [
+      { label: "Embassies", value: activeEmbassies, accentText: true },
+      { label: "Relations", value: totalRelations, accentText: true },
+      { label: "Avg", value: `${avgStrength}%`, accentText: true },
+    ];
+  }, [embassies, relations]);
+
+  const activity = useMemo<ContextActivityEntry[]>(() => {
+    const entries: ContextActivityEntry[] = [];
 
     embassies?.forEach((e: any) => {
       entries.push({
@@ -78,48 +92,12 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
   }, [embassies, relations, foreignPolicies]);
 
   return (
-    <div className="glass-hierarchy-child rounded-xl border border-cyan-500/15 p-3">
-      <div className="mb-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ScrollText className="h-3.5 w-3.5 text-cyan-500" />
-          <span className="text-xs font-semibold">Diplomatic Log</span>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-cyan-500/30 px-1.5 py-0 text-[0.65rem] text-cyan-600 dark:text-cyan-400"
-        >
-          {log.length}
-        </Badge>
-      </div>
-      <div className="space-y-1.5">
-        {log.length === 0 && (
-          <p className="text-muted-foreground py-3 text-center text-[11px]">
-            No diplomatic activity yet
-          </p>
-        )}
-        {log.map((entry) => (
-          <div key={entry.id} className="flex items-start gap-2 py-1">
-            <entry.icon className={`mt-0.5 h-3 w-3 shrink-0 ${entry.iconColor}`} />
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-[11px] leading-snug">{entry.text}</p>
-              <span className="text-muted-foreground text-[10px]">{getTimeAgo(entry.time)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <SectionContextWidget
+      accent="cyan"
+      title="Diplomatic Log"
+      stats={stats}
+      activity={activity}
+      emptyMessage="No diplomatic activity yet"
+    />
   );
-}
-
-function getTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

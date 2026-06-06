@@ -3,14 +3,19 @@
 import dynamic from "next/dynamic";
 import { Building2 } from "lucide-react";
 import { GlobeAltIcon } from "~/components/ui/icons";
-import { useCountryData, SectionHero } from "./primitives";
-import type { StatusBadgeConfig } from "./primitives";
 import { api } from "~/trpc/react";
-import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
-import { DiplomacySidebarWidget } from "./sidebar-widgets/DiplomacySidebarWidget";
-import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
+import {
+  useCountryData,
+  SectionShell,
+  CompactSectionHero,
+  InlineWiki,
+  type StatusBadgeConfig,
+} from "./primitives";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
+import { DiplomacySidebarWidget } from "./sidebar-widgets/DiplomacySidebarWidget";
 import { DiplomacyWarRoom } from "~/components/diplomacy/DiplomacyWarRoom";
+import { useSectionDensity } from "~/hooks/useSectionDensity";
+import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 const DiplomacyMapWidget = dynamic(
   () =>
@@ -19,8 +24,6 @@ const DiplomacyMapWidget = dynamic(
     })),
   { ssr: false, loading: () => <div className="bg-muted h-64 animate-pulse rounded-xl" /> }
 );
-
-import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedDiplomacyContentProps {
   activeSection?: MyCountrySection;
@@ -44,6 +47,13 @@ export function EnhancedDiplomacyContent({
     { enabled: !!country?.id }
   );
 
+  // Progressive disclosure: a brand-new country (no embassies/relations) gets a
+  // focused, guided view — the War Room's own empty-state CTAs lead the way, and
+  // we skip the (empty) map and cross-pillar banner until there's something to show.
+  const { isGuided } = useSectionDensity({
+    items: (embassies?.length ?? 0) + (relations?.length ?? 0),
+  });
+
   if (isLoading || !country) {
     return null;
   }
@@ -63,33 +73,35 @@ export function EnhancedDiplomacyContent({
       : [];
 
   return (
-    <MyCountrySidebarLayout
-      heroSection={
-        <SectionHero
-          context="diplomacy"
-          sectionTitle="Diplomatic Operations"
-          sectionSubtitle="Diplomatic Operations & International Relations"
-          sectionIcon={GlobeAltIcon}
-          accentColor="cyan"
+    <SectionShell
+      section="diplomacy"
+      hero={
+        <CompactSectionHero
+          section="diplomacy"
+          title="Diplomacy"
+          subtitle="Embassies, relations & foreign policy"
+          icon={GlobeAltIcon}
           countryName={country.name}
           statusBadges={statusBadges}
         />
       }
-      sidebarExtra={<DiplomacySidebarWidget countryId={country.id} />}
+      contextWidget={<DiplomacySidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}
     >
-      {/* Cross-Pillar Effects */}
-      <CrossPillarBanner section="diplomacy" countryId={country.id} onNavigate={onNavigate} />
+      {!isGuided && (
+        <CrossPillarBanner section="diplomacy" countryId={country.id} onNavigate={onNavigate} />
+      )}
 
-      {/* Embassy Network Map */}
-      <DiplomacyMapWidget countryId={country.id} countryName={country.name} />
+      {/* Embassy network map — meaningful once relations exist */}
+      {!isGuided && <DiplomacyMapWidget countryId={country.id} countryName={country.name} />}
 
-      {/* War Room — 3-panel command center */}
+      {/* War Room — 3-panel command center (carries the guided empty-state CTAs) */}
       <DiplomacyWarRoom countryId={country.id} />
 
-      <WikiLoreBlock context="diplomacy" themeColor="cyan" title="Diplomatic Lore" />
-    </MyCountrySidebarLayout>
+      {/* Wiki woven inline */}
+      <InlineWiki context="diplomacy" accent="cyan" maxSections={1} />
+    </SectionShell>
   );
 }

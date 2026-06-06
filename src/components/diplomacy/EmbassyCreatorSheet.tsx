@@ -4,7 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useLocalActions } from "~/hooks/useLocalActions";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -121,17 +121,17 @@ export function EmbassyCreatorSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col p-0 sm:max-w-lg">
-        <SheetHeader className="px-6 pt-6 pb-0">
-          <SheetTitle className="flex items-center gap-2">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 shrink-0 text-cyan-500" />
             Establish New Embassy
-          </SheetTitle>
+          </DialogTitle>
           <p className="text-muted-foreground text-sm">
             Establish diplomatic presence in another nation.
           </p>
-        </SheetHeader>
+        </DialogHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
           {/* Host Country */}
@@ -269,7 +269,7 @@ export function EmbassyCreatorSheet({
           </div>
         </div>
 
-        <SheetFooter className="border-border/50 border-t px-6 py-4">
+        <DialogFooter className="border-border/50 border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"
@@ -289,8 +289,8 @@ export function EmbassyCreatorSheet({
             <Building2 className="h-3 w-3" />
             Establish Embassy
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
