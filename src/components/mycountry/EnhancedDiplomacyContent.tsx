@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Building2 } from "lucide-react";
 import { GlobeAltIcon } from "~/components/ui/icons";
 import { api } from "~/trpc/react";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import {
   useCountryData,
   SectionShell,
@@ -46,6 +47,7 @@ export function EnhancedDiplomacyContent({
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
+  const { flagUrl } = useFlag(country?.name ?? "");
 
   // Progressive disclosure: a brand-new country (no embassies/relations) gets a
   // focused, guided view — the War Room's own empty-state CTAs lead the way, and
@@ -72,6 +74,19 @@ export function EnhancedDiplomacyContent({
         ]
       : [];
 
+  const activeEmbassies =
+    embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+  const totalRelations = relations?.length ?? 0;
+  const avgStrength =
+    totalRelations > 0
+      ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
+      : 0;
+  const heroStats = [
+    { label: "Embassies", value: activeEmbassies, accentText: true },
+    { label: "Relations", value: totalRelations, accentText: true },
+    { label: "Avg", value: `${avgStrength}%`, accentText: true },
+  ];
+
   return (
     <SectionShell
       section="diplomacy"
@@ -82,6 +97,8 @@ export function EnhancedDiplomacyContent({
           subtitle="Embassies, relations & foreign policy"
           icon={GlobeAltIcon}
           countryName={country.name}
+          flagUrl={flagUrl}
+          stats={heroStats}
           statusBadges={statusBadges}
         />
       }
@@ -94,11 +111,11 @@ export function EnhancedDiplomacyContent({
         <CrossPillarBanner section="diplomacy" countryId={country.id} onNavigate={onNavigate} />
       )}
 
-      {/* Embassy network map — meaningful once relations exist */}
-      {!isGuided && <DiplomacyMapWidget countryId={country.id} countryName={country.name} />}
-
-      {/* War Room — 3-panel command center (carries the guided empty-state CTAs) */}
+      {/* War Room — 3-panel command center (leads; carries the guided empty-state CTAs) */}
       <DiplomacyWarRoom countryId={country.id} />
+
+      {/* Embassy network map — secondary, shown once there's a network to plot */}
+      {!isGuided && <DiplomacyMapWidget countryId={country.id} countryName={country.name} />}
 
       {/* Wiki woven inline */}
       <InlineWiki context="diplomacy" accent="cyan" maxSections={1} />

@@ -212,6 +212,11 @@ export function DiplomacyMapWidget({
         }
 
         setMapReady(true);
+        // Ensure the canvas paints at the correct size — a container that settles
+        // its layout after map init otherwise renders blank.
+        map.resize();
+        requestAnimationFrame(() => map.resize());
+        setTimeout(() => map.resize(), 200);
       });
     })();
 
