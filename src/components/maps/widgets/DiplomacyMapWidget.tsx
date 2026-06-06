@@ -27,7 +27,6 @@ export function DiplomacyMapWidget({
 }: DiplomacyMapWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const initializedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
 
   // Fetch home country geometry
@@ -79,19 +78,17 @@ export function DiplomacyMapWidget({
   // Initialize map once all data is ready
   useEffect(() => {
     if (!containerRef.current || !homeGeo?.geometry || !homeGeo?.centroid) return;
-    if (initializedRef.current) return;
     // Don't wait for partners if there are none
     if (partnerIds.length > 0 && partnersLoading) return;
 
-    initializedRef.current = true;
-
     let map: any = null;
+    let cancelled = false;
 
     (async () => {
       const maplibregl = (await import("maplibre-gl")).default;
       await import("maplibre-gl/dist/maplibre-gl.css");
 
-      if (!containerRef.current) return;
+      if (cancelled || !containerRef.current) return;
 
       const baseStyle = buildBaseStyle() as any;
       delete baseStyle.projection; // Force flat mercator
@@ -108,6 +105,7 @@ export function DiplomacyMapWidget({
       mapRef.current = map;
 
       map.on("load", () => {
+        if (cancelled) return;
         const homeColor = homeGeo.featureId ? getCountryColor(homeGeo.featureId) : "#c5cae9";
 
         // ── Home country ──
@@ -221,12 +219,12 @@ export function DiplomacyMapWidget({
     })();
 
     return () => {
+      cancelled = true;
       if (map) {
         map.remove();
-        mapRef.current = null;
-        initializedRef.current = false;
-        setMapReady(false);
       }
+      mapRef.current = null;
+      setMapReady(false);
     };
   }, [homeGeo, partnerGeos, partnerIds.length, partnersLoading]);
 
