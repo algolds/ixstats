@@ -12,7 +12,7 @@ import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
 import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
 import { usePremium } from "~/hooks/usePremium";
-import { PremiumGate } from "~/components/ui/premium-gate";
+import { PremiumPreviewFrame } from "~/components/mycountry/primitives";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
@@ -263,26 +263,30 @@ function MyCountryRouterInner() {
           />
         );
       case "intelligence":
-        if (!premiumLoading && !premiumFeatures.intelligence) {
-          return <PremiumGate feature="intelligence" className="mx-auto mt-8 max-w-2xl" />;
-        }
         return (
-          <EnhancedIntelligenceContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-          />
+          <PremiumPreviewFrame
+            feature="intelligence"
+            locked={!premiumLoading && !premiumFeatures.intelligence}
+          >
+            <EnhancedIntelligenceContent
+              activeSection={activeSection}
+              onNavigate={handleNavigate}
+              notifications={notifications}
+            />
+          </PremiumPreviewFrame>
         );
       case "defense":
-        if (!premiumLoading && !premiumFeatures.defense) {
-          return <PremiumGate feature="defense" className="mx-auto mt-8 max-w-2xl" />;
-        }
         return (
-          <EnhancedDefenseContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-          />
+          <PremiumPreviewFrame
+            feature="defense"
+            locked={!premiumLoading && !premiumFeatures.defense}
+          >
+            <EnhancedDefenseContent
+              activeSection={activeSection}
+              onNavigate={handleNavigate}
+              notifications={notifications}
+            />
+          </PremiumPreviewFrame>
         );
       case "politics":
         return (

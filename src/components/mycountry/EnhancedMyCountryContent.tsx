@@ -6,6 +6,7 @@ import { useCountryData, SectionShell, InlineWiki } from "./primitives";
 import { AgendaBar } from "./PillarCards";
 import { OverviewHero } from "./OverviewHero";
 import { OverviewSidebarWidget } from "./sidebar-widgets/OverviewSidebarWidget";
+import { SetupChecklist } from "./SetupChecklist";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 // Dynamic import — MyCountryTabSystem is heavy with recharts/modal imports.
@@ -50,6 +51,9 @@ export function EnhancedMyCountryContent({
       onNavigate={onNavigate}
       notifications={notifications}
     >
+      {/* New-player onboarding — self-hides once established */}
+      {country?.id && <SetupChecklist countryId={country.id} onNavigate={onNavigate} />}
+
       {/* Daily Agenda Bar — actionable national issues & tasks */}
       {onNavigate && <AgendaBar countryId={country.id} onNavigate={onNavigate} activeSection={activeSection} />}
 

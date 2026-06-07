@@ -1,103 +1,98 @@
 "use client";
 
-import { Brain, Shield, AlertTriangle, Globe, FileText } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { useMemo } from "react";
+import { AlertTriangle, Brain, FileText, ScrollText } from "lucide-react";
 import { api } from "~/trpc/react";
+import {
+  SectionContextWidget,
+  type ContextStat,
+  type ContextActivityEntry,
+} from "~/components/mycountry/primitives";
 
 interface IntelligenceSidebarWidgetProps {
   countryId: string;
 }
 
+/**
+ * Intelligence context widget — a thin adapter that feeds the unified
+ * SectionContextWidget with quick stats (security score / active alerts /
+ * key findings) and a recent-activity log (alerts, briefings, findings).
+ */
 export function IntelligenceSidebarWidget({ countryId }: IntelligenceSidebarWidgetProps) {
   const { data: defenseOverview } = api.security.getDefenseOverview.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: intelligenceOverview } = api.intelCore.getOverview.useQuery(
     { countryId },
-    { enabled: !!countryId }
-  );
-  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: keyFindings } = api.intelCore.getKeyFindings.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const securityScore = defenseOverview?.overallScore ?? 0;
-  const securityLevel = defenseOverview?.securityLevel?.replace("_", " ") ?? "Unknown";
-  const criticalAlerts = intelligenceOverview?.alerts?.critical ?? 0;
-  const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
-  const activeEmbassies =
-    embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
-  const findingsCount = keyFindings?.findings.length ?? 0;
+  const stats = useMemo<ContextStat[]>(() => {
+    const securityScore = Math.round(defenseOverview?.overallScore ?? 0);
+    const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
+    const findingsCount = keyFindings?.findings.length ?? 0;
+    return [
+      { label: "Security", value: `${securityScore}`, accentText: true },
+      { label: "Alerts", value: totalAlerts, accentText: true },
+      { label: "Findings", value: findingsCount, accentText: true },
+    ];
+  }, [defenseOverview, intelligenceOverview, keyFindings]);
 
-  const stats = [
-    {
-      icon: Shield,
-      label: "Security",
-      value: `${securityScore}/100`,
-      sub: securityLevel,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50 dark:bg-blue-950/50",
-    },
-    {
-      icon: AlertTriangle,
-      label: "Alerts",
-      value: `${criticalAlerts} critical`,
-      sub: `${totalAlerts} total`,
-      color:
-        criticalAlerts > 0
-          ? "text-red-600 dark:text-red-400"
-          : "text-green-600 dark:text-green-400",
-      bg: criticalAlerts > 0 ? "bg-red-50 dark:bg-red-950/50" : "bg-green-50 dark:bg-green-950/50",
-    },
-    {
-      icon: Globe,
-      label: "Network",
-      value: `${activeEmbassies} active`,
-      sub: "embassies",
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50 dark:bg-blue-950/50",
-    },
-    {
-      icon: FileText,
-      label: "Findings",
-      value: `${findingsCount}`,
-      sub: "auto-generated",
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-50 dark:bg-purple-950/50",
-    },
-  ];
+  const activity = useMemo<ContextActivityEntry[]>(() => {
+    const entries: ContextActivityEntry[] = [];
+
+    intelligenceOverview?.alerts?.items?.forEach((alert: any) => {
+      const critical = alert.severity === "CRITICAL" || alert.severity === "critical";
+      entries.push({
+        id: `alert-${alert.id}`,
+        icon: AlertTriangle,
+        iconColor: critical ? "text-red-500" : "text-yellow-500",
+        text: `${alert.title ?? "Alert"} — ${String(alert.severity ?? "").toLowerCase() || "monitoring"}`,
+        time: new Date(alert.detectedAt),
+      });
+    });
+
+    intelligenceOverview?.briefings?.items?.forEach((b: any) => {
+      entries.push({
+        id: `briefing-${b.id}`,
+        icon: ScrollText,
+        iconColor: "text-blue-500",
+        text: `Briefing: ${b.title ?? "Untitled"}`,
+        time: new Date(b.generatedAt),
+      });
+    });
+
+    keyFindings?.findings.forEach((f: any) => {
+      const critical = f.severity === "critical";
+      entries.push({
+        id: `finding-${f.id}`,
+        icon: FileText,
+        iconColor: critical
+          ? "text-red-500"
+          : f.severity === "warning"
+            ? "text-orange-500"
+            : "text-purple-500",
+        text: f.title ?? "Finding",
+        time: new Date(f.timestamp),
+      });
+    });
+
+    return entries.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 5);
+  }, [intelligenceOverview, keyFindings]);
 
   return (
-    <div className="glass-hierarchy-child rounded-xl border border-blue-500/15 p-3">
-      <div className="mb-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Brain className="h-3.5 w-3.5 text-blue-500" />
-          <span className="text-xs font-semibold">Intelligence Status</span>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-blue-500/30 px-1.5 py-0 text-[0.65rem] text-blue-600 dark:text-blue-400"
-        >
-          LIVE
-        </Badge>
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className={`rounded-lg ${stat.bg} px-3 py-2`}>
-            <div className="flex items-center gap-1.5">
-              <stat.icon className={`h-3.5 w-3.5 shrink-0 ${stat.color}`} />
-              <span className="text-xs font-medium">{stat.label}</span>
-            </div>
-            <div className={`mt-0.5 text-sm font-bold ${stat.color}`}>{stat.value}</div>
-            <div className="text-muted-foreground text-xs">{stat.sub}</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <SectionContextWidget
+      accent="blue"
+      title="Intel Log"
+      icon={Brain}
+      stats={stats}
+      activity={activity}
+      emptyMessage="No intelligence activity yet"
+    />
   );
 }

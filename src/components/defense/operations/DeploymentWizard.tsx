@@ -24,6 +24,7 @@ import {
 import { Slider } from "~/components/ui/slider";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
 
 interface DeploymentWizardProps {
   countryId: string;
@@ -65,6 +66,7 @@ const OP_TYPES = [
 
 export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps) {
   const notify = useNotify();
+  const { canEdit } = useCanEdit();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [operationType, setOperationType] = useState<string>("peacekeeping");
@@ -317,10 +319,14 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
 
           <Button
             onClick={handleDeploy}
-            disabled={!name.trim() || createOperation.isPending}
+            disabled={!canEdit || !name.trim() || createOperation.isPending}
             className="w-full"
           >
-            {createOperation.isPending ? "Launching..." : "Launch Operation"}
+            {!canEdit
+              ? "Premium required"
+              : createOperation.isPending
+                ? "Launching..."
+                : "Launch Operation"}
           </Button>
         </div>
       </DialogContent>

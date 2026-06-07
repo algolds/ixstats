@@ -1,113 +1,86 @@
 "use client";
 
-import { Shield, Sword, Target, Activity } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { useMemo } from "react";
+import { AlertTriangle, ShieldAlert, Sword, Target } from "lucide-react";
 import { api } from "~/trpc/react";
+import {
+  SectionContextWidget,
+  type ContextStat,
+  type ContextActivityEntry,
+} from "~/components/mycountry/primitives";
 
 interface DefenseSidebarWidgetProps {
   countryId: string;
 }
 
+/**
+ * Defense context widget — a thin adapter that feeds the unified
+ * SectionContextWidget with quick stats (branches / avg readiness / active
+ * threats) and a recent-activity log (military branches + security threats).
+ */
 export function DefenseSidebarWidget({ countryId }: DefenseSidebarWidgetProps) {
   const { data: assessment } = api.security.getSecurityAssessment.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 }
   );
   const { data: branches } = api.security.getMilitaryBranches.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const securityScore = assessment?.overallSecurityScore ?? 0;
-  const securityLevel = assessment?.securityLevel?.replace("_", " ") ?? "Unknown";
-  const branchCount = branches?.length ?? 0;
-  const avgReadiness =
-    branchCount > 0
-      ? Math.round(branches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount)
-      : 0;
-  const activeThreats = assessment?.activeThreatCount ?? 0;
+  const stats = useMemo<ContextStat[]>(() => {
+    const branchCount = branches?.length ?? 0;
+    const avgReadiness =
+      branchCount > 0
+        ? Math.round(
+            branches!.reduce((sum: number, b: any) => sum + (b.readinessLevel ?? 0), 0) /
+              branchCount
+          )
+        : 0;
+    const activeThreats = assessment?.activeThreats?.length ?? assessment?.activeThreatCount ?? 0;
+    return [
+      { label: "Branches", value: branchCount, accentText: true },
+      { label: "Readiness", value: `${avgReadiness}%`, accentText: true },
+      { label: "Threats", value: activeThreats, accentText: true },
+    ];
+  }, [assessment, branches]);
 
-  const scoreColor =
-    securityScore >= 75
-      ? "text-green-600 dark:text-green-400"
-      : securityScore >= 50
-        ? "text-blue-600 dark:text-blue-400"
-        : "text-orange-600 dark:text-orange-400";
-  const scoreBg =
-    securityScore >= 75
-      ? "bg-green-50 dark:bg-green-950/50"
-      : securityScore >= 50
-        ? "bg-blue-50 dark:bg-blue-950/50"
-        : "bg-orange-50 dark:bg-orange-950/50";
+  const activity = useMemo<ContextActivityEntry[]>(() => {
+    const entries: ContextActivityEntry[] = [];
 
-  const stats = [
-    {
-      icon: Shield,
-      label: "Security",
-      value: `${securityScore}/100`,
-      sub: securityLevel,
-      color: scoreColor,
-      bg: scoreBg,
-    },
-    {
-      icon: Sword,
-      label: "Branches",
-      value: `${branchCount} active`,
-      sub: "military forces",
-      color: "text-red-600 dark:text-red-400",
-      bg: "bg-red-50 dark:bg-red-950/50",
-    },
-    {
-      icon: Target,
-      label: "Readiness",
-      value: `${avgReadiness}%`,
-      sub: "avg. combat ready",
-      color:
-        avgReadiness >= 70
-          ? "text-green-600 dark:text-green-400"
-          : "text-yellow-600 dark:text-yellow-400",
-      bg:
-        avgReadiness >= 70
-          ? "bg-green-50 dark:bg-green-950/50"
-          : "bg-yellow-50 dark:bg-yellow-950/50",
-    },
-    {
-      icon: Activity,
-      label: "Threats",
-      value: `${activeThreats}`,
-      sub: activeThreats > 0 ? "active threats" : "all clear",
-      color:
-        activeThreats > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400",
-      bg: activeThreats > 0 ? "bg-red-50 dark:bg-red-950/50" : "bg-green-50 dark:bg-green-950/50",
-    },
-  ];
+    branches?.forEach((b: any) => {
+      const readiness = b.readinessLevel ?? 0;
+      entries.push({
+        id: `branch-${b.id}`,
+        icon: Sword,
+        iconColor: readiness >= 70 ? "text-green-500" : "text-red-500",
+        text: `${b.name ?? "Military branch"} — ${Math.round(readiness)}% ready`,
+        time: new Date(b.updatedAt ?? b.createdAt),
+      });
+    });
+
+    assessment?.activeThreats?.forEach((t: any) => {
+      const critical = t.severity === "critical" || t.severity === "existential";
+      entries.push({
+        id: `threat-${t.id}`,
+        icon: critical ? AlertTriangle : ShieldAlert,
+        iconColor: critical ? "text-red-500" : "text-orange-500",
+        text: `${t.threatName ?? "Threat"} — ${t.severity ?? "monitoring"}`,
+        time: new Date(t.lastUpdated ?? t.detectedAt ?? t.createdAt),
+      });
+    });
+
+    return entries.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 5);
+  }, [assessment, branches]);
 
   return (
-    <div className="glass-hierarchy-child rounded-xl border border-red-500/15 p-3">
-      <div className="mb-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Shield className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-xs font-semibold">Defense Status</span>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-red-500/30 px-1.5 py-0 text-[0.65rem] text-red-600 dark:text-red-400"
-        >
-          LIVE
-        </Badge>
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className={`rounded-lg ${stat.bg} px-3 py-2`}>
-            <div className="flex items-center gap-1.5">
-              <stat.icon className={`h-3.5 w-3.5 shrink-0 ${stat.color}`} />
-              <span className="text-xs font-medium">{stat.label}</span>
-            </div>
-            <div className={`mt-0.5 text-sm font-bold ${stat.color}`}>{stat.value}</div>
-            <div className="text-muted-foreground text-xs">{stat.sub}</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <SectionContextWidget
+      accent="red"
+      title="Defense Log"
+      icon={Target}
+      stats={stats}
+      activity={activity}
+      emptyMessage="No defense activity yet"
+    />
   );
 }
