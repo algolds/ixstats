@@ -71,9 +71,9 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
             wikiSections={wikiSections}
             sectionsLoading={sectionsLoading}
             metricView={metricView}
-            setMetricView={setMetricView}
+            setMetricViewAction={setMetricView}
             wikiSectionsOpen={wikiSectionsOpen}
-            setWikiSectionsOpen={setWikiSectionsOpen}
+            setWikiSectionsOpenAction={setWikiSectionsOpen}
           />
         </TabsContent>
 

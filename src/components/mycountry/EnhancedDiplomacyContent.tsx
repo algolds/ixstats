@@ -18,10 +18,10 @@ import { DiplomacyWarRoom } from "~/components/diplomacy/DiplomacyWarRoom";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
-const DiplomacyMapWidget = dynamic(
+const DashboardMapWidget = dynamic(
   () =>
-    import("~/components/maps/widgets/DiplomacyMapWidget").then((m) => ({
-      default: m.DiplomacyMapWidget,
+    import("~/components/maps/widgets/DashboardMapWidget").then((m) => ({
+      default: m.DashboardMapWidget,
     })),
   { ssr: false, loading: () => <div className="bg-muted h-64 animate-pulse rounded-xl" /> }
 );
@@ -123,7 +123,7 @@ export function EnhancedDiplomacyContent({
       <DiplomacyWarRoom countryId={country.id} />
 
       {/* Embassy network map — secondary, shown once there's a network to plot */}
-      {!isGuided && <DiplomacyMapWidget countryId={country.id} countryName={country.name} />}
+      {!isGuided && <DashboardMapWidget countryId={country.id} viewMode="diplomacy" />}
 
       {/* Wiki woven inline */}
       <InlineWiki context="diplomacy" accent="cyan" maxSections={1} />

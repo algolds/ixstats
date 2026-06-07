@@ -16,6 +16,7 @@ import {
 } from "~/lib/wiki-integration";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
 import { WikiSectionRow } from "./WikiSectionRow";
+import { GeographicReconciliationCard } from "./GeographicReconciliationCard";
 
 type MetricView = {
   gdp: "perCapita" | "total";
@@ -40,9 +41,9 @@ export function OverviewTab({
   wikiSections,
   sectionsLoading,
   metricView,
-  setMetricView,
+  setMetricViewAction,
   wikiSectionsOpen,
-  setWikiSectionsOpen,
+  setWikiSectionsOpenAction,
 }: {
   country: any;
   wikiIntro: unknown;
@@ -51,9 +52,9 @@ export function OverviewTab({
   wikiSections: any[] | null | undefined;
   sectionsLoading: boolean;
   metricView: MetricView;
-  setMetricView: React.Dispatch<React.SetStateAction<MetricView>>;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<MetricView>>;
   wikiSectionsOpen: boolean;
-  setWikiSectionsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setWikiSectionsOpenAction: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <Card className="glass-surface glass-refraction border-border overflow-hidden">
@@ -64,7 +65,7 @@ export function OverviewTab({
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() =>
-                  setMetricView((v) => ({
+                  setMetricViewAction((v) => ({
                     ...v,
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
@@ -113,7 +114,7 @@ export function OverviewTab({
               </button>
               <button
                 onClick={() =>
-                  setMetricView((v) => ({
+                  setMetricViewAction((v) => ({
                     ...v,
                     population: v.population === "total" ? "density" : "total",
                   }))
@@ -161,7 +162,7 @@ export function OverviewTab({
               <button
                 onClick={
                   country.areaSqMi && country.landArea
-                    ? () => setMetricView((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
+                    ? () => setMetricViewAction((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
                     : undefined
                 }
                 className={cn(
@@ -227,6 +228,9 @@ export function OverviewTab({
             </span>
           </span>
         </div>
+
+        {/* Geographic Reconciliation Dashboard */}
+        <GeographicReconciliationCard countryId={country.id} />
 
         {/* ── Identity & Lore (inline, no collapsible wrapper) ── */}
         <div className="border-border/30 space-y-3 border-t pt-3">
@@ -323,7 +327,7 @@ export function OverviewTab({
           return (
             <div className="border-border/30 border-t pt-3">
               <button
-                onClick={() => setWikiSectionsOpen(!wikiSectionsOpen)}
+                onClick={() => setWikiSectionsOpenAction(!wikiSectionsOpen)}
                 className="flex w-full items-center gap-2 text-left"
               >
                 <BookOpen className="h-3.5 w-3.5 shrink-0 text-purple-600 dark:text-purple-400" />

@@ -1,4 +1,5 @@
 import type { LayerInfoItemDto } from "~/shared/types/geo.dto";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
 /**
  * Geographic Map Router
  *
@@ -1785,6 +1786,9 @@ export const geoCoreRouter = createTRPCRouter({
             where: { id: mapLayer.id },
             data: { areaSqKm: result[0].area_sqkm },
           });
+          if (mapLayer.countryId) {
+            await syncCountryGeometryFromMapLayer(ctx.db, mapLayer.countryId);
+          }
           return {
             featureId: input.featureId,
             areaSqKm: result[0].area_sqkm,

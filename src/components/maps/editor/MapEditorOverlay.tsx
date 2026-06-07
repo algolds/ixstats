@@ -98,7 +98,20 @@ export default function MapEditorOverlay({
   // Real-time sync: invalidate map caches when any geo mutation succeeds
   useMapLiveSync();
 
-  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const editor = useMapEditor(countryId);
+  const importer = useProvinceImporter(countryId);
+
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const showRightPanel = editor.mode !== "view" && editor.mode !== "import-provinces";
+
+  // Auto-expand/collapse right panel based on mode
+  useEffect(() => {
+    if (editor.mode !== "view" && editor.mode !== "import-provinces") {
+      setRightPanelCollapsed(false);
+    }
+  }, [editor.mode]);
+
   const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
   const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
   const [forgeMode, setForgeMode] = useState(false);
@@ -157,9 +170,6 @@ export default function MapEditorOverlay({
       editor.refetchFeatures();
     },
   });
-
-  const editor = useMapEditor(countryId);
-  const importer = useProvinceImporter(countryId);
 
   // Wiki scanner — link features to wiki pages
   const updateCityWiki = api.geoFeatures.updateCity.useMutation({
@@ -338,6 +348,7 @@ export default function MapEditorOverlay({
       if (editor.mode !== "paint") {
         editor.startEditing(feature);
       }
+      setRightPanelCollapsed(false);
       if (mapRef.current) {
         if (feature.coordinates) {
           // Point feature (city/POI) — fly to coordinates
@@ -368,6 +379,7 @@ export default function MapEditorOverlay({
   const handleEditFeature = useCallback(
     (feature: (typeof editor.allFeatures)[number]) => {
       editor.startEditing(feature);
+      setRightPanelCollapsed(false);
     },
     [editor]
   );
@@ -1030,187 +1042,205 @@ export default function MapEditorOverlay({
           </EditorErrorBoundary>
         </div>
 
-        {/* Right panel — desktop only */}
-        <div className="hidden sm:flex">
-          <EditorErrorBoundary name="Panel">
-            <EditorPanel
-              mode={editor.mode}
-              collapsed={panelCollapsed}
-              onToggleCollapse={() => setPanelCollapsed((v) => !v)}
-              featureCount={editor.allFeatures.length}
-              featuresLoading={editor.featuresLoading}
-              propertiesContent={
-                <FeaturePropertyPanel
-                  mode={editor.mode}
-                  cityForm={editor.cityForm}
-                  subdivisionForm={editor.subdivisionForm}
-                  poiForm={editor.poiForm}
-                  onCityFormChange={editor.setCityForm}
-                  onSubdivisionFormChange={editor.setSubdivisionForm}
-                  onPOIFormChange={editor.setPOIForm}
-                  storyPinForm={editor.storyPinForm}
-                  onStoryPinFormChange={editor.setStoryPinForm}
-                  mapLabelForm={editor.mapLabelForm}
-                  onMapLabelFormChange={editor.setMapLabelForm}
-                  pendingCoordinates={editor.pendingCoordinates}
-                  pendingGeometry={editor.pendingGeometry}
-                  isMutating={editor.isMutating}
-                  mutationError={editor.mutationError}
-                  lastSavedAt={editor.lastSavedAt}
-                  onSubmit={handleSubmit}
-                  onCancel={editor.resetForm}
-                  pointInfo={editor.pointInfo}
-                  isPointInfoLoading={editor.isPendingPointInfoLoading}
-                  countryId={countryId}
-                  routeWaypoints={editor.routeWaypoints}
-                  finishRoute={editor.finishRoute}
-                  undoLastWaypoint={editor.undoLastWaypoint}
-                  clearRouteWaypoints={editor.clearRouteWaypoints}
-                  selectedRouteId={selectedRouteId}
-                  onSelectRouteId={setSelectedRouteId}
-                />
-              }
-              featureListContent={
-                <FeatureList
-                  features={editor.allFeatures}
-                  selectedFeature={editor.selectedFeature}
-                  onSelectFeature={handleSelectFeature}
-                  onEditFeature={handleEditFeature}
-                  onDeleteFeature={handleDeleteFeature}
-                  isLoading={editor.featuresLoading}
-                  selectedIds={editor.selectedIds}
-                  onToggleSelect={editor.toggleSelectId}
-                  collapseAll={
-                    editor.mode.startsWith("add-") ||
-                    editor.mode.startsWith("edit-") ||
-                    editor.mode === "paint"
-                  }
-                />
-              }
-              layersContent={
-                <LayerPanel
-                  layers={[
-                    {
-                      id: "border",
-                      name: "Country Border",
-                      icon: Globe,
-                      visible: layerStates.border?.visible ?? true,
-                      locked: false,
-                    },
-                    {
-                      id: "regions",
-                      name: "Regions",
-                      icon: Hexagon,
-                      visible: layerStates.regions?.visible ?? true,
-                      locked: layerStates.regions?.locked ?? false,
-                      opacity: layerStates.regions?.opacity ?? 0.6,
-                    },
-                    {
-                      id: "cities",
-                      name: "Cities",
-                      icon: MapPin,
-                      visible: layerStates.cities?.visible ?? true,
-                      locked: layerStates.cities?.locked ?? false,
-                    },
-                    {
-                      id: "pois",
-                      name: "POIs",
-                      icon: Landmark,
-                      visible: layerStates.pois?.visible ?? true,
-                      locked: layerStates.pois?.locked ?? false,
-                    },
-                    {
-                      id: "stories",
-                      name: "Story Pins",
-                      icon: BookMarked,
-                      visible: layerStates.stories?.visible ?? true,
-                      locked: layerStates.stories?.locked ?? false,
-                    },
-                    {
-                      id: "labels",
-                      name: "Labels",
-                      icon: TypeIcon,
-                      visible: layerStates.labels?.visible ?? true,
-                      locked: layerStates.labels?.locked ?? false,
-                    },
-                    {
-                      id: "routes",
-                      name: "Routes",
-                      icon: Route,
-                      visible: layerStates.routes?.visible ?? true,
-                      locked: layerStates.routes?.locked ?? false,
-                    },
-                    {
-                      id: "rivers",
-                      name: "Rivers",
-                      icon: Droplets,
-                      visible: editorVisibleLayers.has("rivers"),
-                      locked: false,
-                      isBaseLayer: true,
-                    },
-                    {
-                      id: "altitude",
-                      name: "Altitude",
-                      icon: MountainIcon,
-                      visible: editorVisibleLayers.has("altitudes"),
-                      locked: false,
-                      isBaseLayer: true,
-                    },
-                    {
-                      id: "grid",
-                      name: "Grid",
-                      icon: Grid3X3,
-                      visible: showGrid,
-                      locked: false,
-                      isBaseLayer: true,
-                    },
-                  ]}
-                  onToggleVisibility={(id) => {
-                    if (id === "rivers") {
-                      toggleEditorLayer("rivers");
-                      return;
+        {/* Left collapsible panel — desktop only */}
+        {!toolsDisabled && (
+          <div className="hidden sm:flex h-full">
+            <EditorErrorBoundary name="LeftPanel">
+              <EditorPanel
+                side="left"
+                mode={editor.mode}
+                collapsed={leftPanelCollapsed}
+                onToggleCollapse={() => setLeftPanelCollapsed((v) => !v)}
+                featureCount={editor.allFeatures.length}
+                featuresLoading={editor.featuresLoading}
+                featureListContent={
+                  <FeatureList
+                    features={editor.allFeatures}
+                    selectedFeature={editor.selectedFeature}
+                    onSelectFeature={handleSelectFeature}
+                    onEditFeature={handleEditFeature}
+                    onDeleteFeature={handleDeleteFeature}
+                    isLoading={editor.featuresLoading}
+                    selectedIds={editor.selectedIds}
+                    onToggleSelect={editor.toggleSelectId}
+                    collapseAll={
+                      editor.mode.startsWith("add-") ||
+                      editor.mode.startsWith("edit-") ||
+                      editor.mode === "paint"
                     }
-                    if (id === "altitude") {
-                      toggleEditorLayer("altitudes");
-                      return;
-                    }
-                    if (id === "grid") {
-                      setShowGrid((v) => !v);
-                      return;
-                    }
-                    setLayerStates((s) => ({
-                      ...s,
-                      [id]: { ...s[id]!, visible: !s[id]?.visible },
-                    }));
-                  }}
-                  onToggleLock={(id) => {
-                    setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, locked: !s[id]?.locked } }));
-                  }}
-                  onOpacityChange={(id, opacity) => {
-                    setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, opacity } }));
-                  }}
-                  featureCounts={featureCounts}
-                />
-              }
-              wikiContent={<WikiScannerPanel scanner={wikiScanner} />}
-              importWizardContent={
-                editor.mode === "import-provinces" ? (
-                  <ProvinceImportWizard
-                    importer={importer}
-                    onComplete={() => {
-                      editor.setMode("view");
-                      editor.refetchFeatures();
-                    }}
-                    onCancel={() => {
-                      importer.reset();
-                      editor.setMode("view");
-                    }}
                   />
-                ) : undefined
-              }
-            />
-          </EditorErrorBoundary>
-        </div>
+                }
+                layersContent={
+                  <LayerPanel
+                    layers={[
+                      {
+                        id: "border",
+                        name: "Country Border",
+                        icon: Globe,
+                        visible: layerStates.border?.visible ?? true,
+                        locked: false,
+                      },
+                      {
+                        id: "regions",
+                        name: "Regions",
+                        icon: Hexagon,
+                        visible: layerStates.regions?.visible ?? true,
+                        locked: layerStates.regions?.locked ?? false,
+                        opacity: layerStates.regions?.opacity ?? 0.6,
+                      },
+                      {
+                        id: "cities",
+                        name: "Cities",
+                        icon: MapPin,
+                        visible: layerStates.cities?.visible ?? true,
+                        locked: layerStates.cities?.locked ?? false,
+                      },
+                      {
+                        id: "pois",
+                        name: "POIs",
+                        icon: Landmark,
+                        visible: layerStates.pois?.visible ?? true,
+                        locked: layerStates.pois?.locked ?? false,
+                      },
+                      {
+                        id: "stories",
+                        name: "Story Pins",
+                        icon: BookMarked,
+                        visible: layerStates.stories?.visible ?? true,
+                        locked: layerStates.stories?.locked ?? false,
+                      },
+                      {
+                        id: "labels",
+                        name: "Labels",
+                        icon: TypeIcon,
+                        visible: layerStates.labels?.visible ?? true,
+                        locked: layerStates.labels?.locked ?? false,
+                      },
+                      {
+                        id: "routes",
+                        name: "Routes",
+                        icon: Route,
+                        visible: layerStates.routes?.visible ?? true,
+                        locked: layerStates.routes?.locked ?? false,
+                      },
+                      {
+                        id: "rivers",
+                        name: "Rivers",
+                        icon: Droplets,
+                        visible: editorVisibleLayers.has("rivers"),
+                        locked: false,
+                        isBaseLayer: true,
+                      },
+                      {
+                        id: "altitude",
+                        name: "Altitude",
+                        icon: MountainIcon,
+                        visible: editorVisibleLayers.has("altitudes"),
+                        locked: false,
+                        isBaseLayer: true,
+                      },
+                      {
+                        id: "grid",
+                        name: "Grid",
+                        icon: Grid3X3,
+                        visible: showGrid,
+                        locked: false,
+                        isBaseLayer: true,
+                      },
+                    ]}
+                    onToggleVisibility={(id) => {
+                      if (id === "rivers") {
+                        toggleEditorLayer("rivers");
+                        return;
+                      }
+                      if (id === "altitude") {
+                        toggleEditorLayer("altitudes");
+                        return;
+                      }
+                      if (id === "grid") {
+                        setShowGrid((v) => !v);
+                        return;
+                      }
+                      setLayerStates((s) => ({
+                        ...s,
+                        [id]: { ...s[id]!, visible: !s[id]?.visible },
+                      }));
+                    }}
+                    onToggleLock={(id) => {
+                      setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, locked: !s[id]?.locked } }));
+                    }}
+                    onOpacityChange={(id, opacity) => {
+                      setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, opacity } }));
+                    }}
+                    featureCounts={featureCounts}
+                  />
+                }
+                wikiContent={<WikiScannerPanel scanner={wikiScanner} />}
+                importWizardContent={
+                  editor.mode === "import-provinces" ? (
+                    <ProvinceImportWizard
+                      importer={importer}
+                      onComplete={() => {
+                        editor.setMode("view");
+                        editor.refetchFeatures();
+                      }}
+                      onCancel={() => {
+                        importer.reset();
+                        editor.setMode("view");
+                      }}
+                    />
+                  ) : undefined
+                }
+              />
+            </EditorErrorBoundary>
+          </div>
+        )}
+
+        {/* Right collapsible panel (Properties & Form Context) — desktop only */}
+        {showRightPanel && (
+          <div className="hidden sm:flex h-full">
+            <EditorErrorBoundary name="RightPanel">
+              <EditorPanel
+                side="right"
+                mode={editor.mode}
+                collapsed={rightPanelCollapsed}
+                onToggleCollapse={() => setRightPanelCollapsed((v) => !v)}
+                propertiesContent={
+                  <FeaturePropertyPanel
+                    mode={editor.mode}
+                    cityForm={editor.cityForm}
+                    subdivisionForm={editor.subdivisionForm}
+                    poiForm={editor.poiForm}
+                    onCityFormChange={editor.setCityForm}
+                    onSubdivisionFormChange={editor.setSubdivisionForm}
+                    onPOIFormChange={editor.setPOIForm}
+                    storyPinForm={editor.storyPinForm}
+                    onStoryPinFormChange={editor.setStoryPinForm}
+                    mapLabelForm={editor.mapLabelForm}
+                    onMapLabelFormChange={editor.setMapLabelForm}
+                    pendingCoordinates={editor.pendingCoordinates}
+                    pendingGeometry={editor.pendingGeometry}
+                    isMutating={editor.isMutating}
+                    mutationError={editor.mutationError}
+                    lastSavedAt={editor.lastSavedAt}
+                    onSubmit={handleSubmit}
+                    onCancel={editor.resetForm}
+                    pointInfo={editor.pointInfo}
+                    isPointInfoLoading={editor.isPendingPointInfoLoading}
+                    countryId={countryId}
+                    routeWaypoints={editor.routeWaypoints}
+                    finishRoute={editor.finishRoute}
+                    undoLastWaypoint={editor.undoLastWaypoint}
+                    clearRouteWaypoints={editor.clearRouteWaypoints}
+                    selectedRouteId={selectedRouteId}
+                    onSelectRouteId={setSelectedRouteId}
+                    allFeatures={editor.allFeatures}
+                  />
+                }
+              />
+            </EditorErrorBoundary>
+          </div>
+        )}
       </div>
 
       {/* ── Mobile: bottom tool rail ── */}
@@ -1295,6 +1325,7 @@ export default function MapEditorOverlay({
               clearRouteWaypoints={editor.clearRouteWaypoints}
               selectedRouteId={selectedRouteId}
               onSelectRouteId={setSelectedRouteId}
+              allFeatures={editor.allFeatures}
             />
           </MobileEditorSheet>
         </div>

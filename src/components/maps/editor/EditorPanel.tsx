@@ -1,16 +1,7 @@
 "use client";
 
 /**
- * EditorPanel — Right-side panel with tabbed navigation.
- *
- * Tabs:
- * 1. Properties (Settings2) — form fields for the active feature
- * 2. Layers (Layers) — placeholder for future layer management
- * 3. Features (List) — searchable feature list
- * 4. Wiki (BookOpen) — placeholder for wiki scanner
- *
- * Auto-switches to Properties on add/edit modes, Features on view mode.
- * User can manually override by clicking tabs.
+ * EditorPanel — Sidebar panel supporting left or right orientation with tabbed navigation.
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -23,13 +14,16 @@ const PANEL_MAX_W = 480;
 const PANEL_DEFAULT_W = 320;
 const PANEL_STORAGE_KEY = "ixworld-editor-panel-width";
 
-type TabId = "properties" | "layers" | "features" | "wiki";
+export type TabId = "properties" | "layers" | "features" | "wiki";
 
-const TABS: { id: TabId; label: string; Icon: typeof Settings2 }[] = [
-  { id: "properties", label: "Props", Icon: Settings2 },
-  { id: "layers", label: "Layers", Icon: Layers },
-  { id: "features", label: "List", Icon: List },
-  { id: "wiki", label: "Wiki", Icon: BookOpen },
+const LEFT_TABS = [
+  { id: "layers" as const, label: "Layers", Icon: Layers },
+  { id: "features" as const, label: "Features", Icon: List },
+  { id: "wiki" as const, label: "Wiki Scan", Icon: BookOpen },
+];
+
+const RIGHT_TABS = [
+  { id: "properties" as const, label: "Props", Icon: Settings2 },
 ];
 
 interface EditorPanelProps {
@@ -38,9 +32,9 @@ interface EditorPanelProps {
   /** Whether the panel is collapsed (0-width) */
   collapsed: boolean;
   onToggleCollapse: () => void;
-  /** Content for each section (rendered by parent to avoid prop drilling) */
-  propertiesContent: React.ReactNode;
-  featureListContent: React.ReactNode;
+  /** Content for each section */
+  propertiesContent?: React.ReactNode;
+  featureListContent?: React.ReactNode;
   layersContent?: React.ReactNode;
   wikiContent?: React.ReactNode;
   /** Feature count for badge */
@@ -49,6 +43,11 @@ interface EditorPanelProps {
   importWizardContent?: React.ReactNode;
   /** Whether features are still loading */
   featuresLoading?: boolean;
+  /** Which side the panel resides on: "left" | "right" */
+  side?: "left" | "right";
+  /** Override active tab */
+  activeTabOverride?: TabId;
+  onTabChange?: (tab: TabId) => void;
 }
 
 export function EditorPanel({
@@ -62,14 +61,25 @@ export function EditorPanel({
   featureCount,
   importWizardContent,
   featuresLoading,
+  side = "right",
+  activeTabOverride,
+  onTabChange,
 }: EditorPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("features");
+  const defaultTab = side === "left" ? "features" : "properties";
+  const [activeTab, setActiveTab] = useState<TabId>(activeTabOverride || defaultTab);
   const userOverrideRef = useRef(false);
+
+  // Sync tab if overridden
+  useEffect(() => {
+    if (activeTabOverride) {
+      setActiveTab(activeTabOverride);
+    }
+  }, [activeTabOverride]);
 
   // Panel resize
   const [panelWidth, setPanelWidth] = useState(() => {
     if (typeof window === "undefined") return PANEL_DEFAULT_W;
-    const stored = localStorage.getItem(PANEL_STORAGE_KEY);
+    const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-${side}`);
     return stored
       ? Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, parseInt(stored)))
       : PANEL_DEFAULT_W;
@@ -84,7 +94,8 @@ export function EditorPanel({
       const startW = panelWidth;
       const onMove = (me: MouseEvent) => {
         if (!isDragging.current) return;
-        const delta = startX - me.clientX; // dragging left = wider
+        // Dragging right makes left panel wider; dragging left makes right panel wider
+        const delta = side === "left" ? me.clientX - startX : startX - me.clientX;
         const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
         setPanelWidth(newW);
       };
@@ -92,70 +103,81 @@ export function EditorPanel({
         isDragging.current = false;
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
-        localStorage.setItem(PANEL_STORAGE_KEY, String(panelWidth));
+        localStorage.setItem(`${PANEL_STORAGE_KEY}-${side}`, String(panelWidth));
       };
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     },
-    [panelWidth]
+    [panelWidth, side]
   );
 
-  // Auto-switch tabs based on mode (unless user manually overrode)
+  // Auto-switch tabs based on mode (for right properties panel, unless user manually overrode)
   useEffect(() => {
-    // Reset override flag when mode changes
+    if (side === "left") {
+      // Keep left panel on features/layers as set by user, don't auto-switch to properties
+      return;
+    }
     userOverrideRef.current = false;
-
     if (mode.startsWith("add-") || mode.startsWith("edit-") || mode === "paint") {
       setActiveTab("properties");
     } else {
-      setActiveTab("features");
+      setActiveTab("properties");
     }
-  }, [mode]);
+  }, [mode, side]);
 
   const handleTabClick = (tab: TabId) => {
     userOverrideRef.current = true;
     setActiveTab(tab);
+    onTabChange?.(tab);
   };
 
-  // Import mode takes over the entire panel
-  if (mode === "import-provinces" && importWizardContent) {
+  const tabs = side === "left" ? LEFT_TABS : RIGHT_TABS;
+
+  // Import mode takes over the entire panel (only applicable to left feature panel in unified layout)
+  if (side === "left" && mode === "import-provinces" && importWizardContent) {
     return (
-      <div className="relative flex">
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
+      <div className="relative flex h-full">
         {!collapsed && (
           <div
-            className="border-border bg-card flex h-full flex-col border-l"
+            className="border-border bg-card/75 backdrop-blur-md flex h-full flex-col border-r shadow-lg relative"
             style={{ width: panelWidth }}
           >
             {/* Resize handle */}
             <div
-              className="hover:bg-primary/30 active:bg-primary/50 absolute top-0 left-0 z-20 h-full w-1 cursor-col-resize transition-colors"
+              className="hover:bg-primary/30 active:bg-primary/50 absolute top-0 right-0 z-20 h-full w-1 cursor-col-resize transition-colors"
               onMouseDown={handleResizeStart}
             />
             {importWizardContent}
           </div>
         )}
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} side={side} />
       </div>
     );
   }
 
   return (
-    <div className="relative flex">
-      <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
+    <div className="relative flex h-full">
+      {side === "right" && (
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} side={side} />
+      )}
 
       {!collapsed && (
         <div
-          className="border-border bg-card flex h-full flex-col border-l"
+          className={`border-border bg-card/75 backdrop-blur-md flex h-full flex-col shadow-lg relative ${
+            side === "left" ? "border-r" : "border-l"
+          }`}
           style={{ width: panelWidth }}
         >
           {/* Resize handle */}
           <div
-            className="hover:bg-primary/30 active:bg-primary/50 absolute top-0 left-0 z-20 h-full w-1 cursor-col-resize transition-colors"
+            className={`hover:bg-primary/30 active:bg-primary/50 absolute top-0 z-20 h-full w-1 cursor-col-resize transition-colors ${
+              side === "left" ? "right-0" : "left-0"
+            }`}
             onMouseDown={handleResizeStart}
           />
           {/* Tab bar — compact 32px height */}
-          <div className="border-border bg-muted/30 flex h-8 shrink-0 border-b">
-            {TABS.map((tab) => {
+          <div className="border-border bg-muted/20 flex h-8 shrink-0 border-b">
+            {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
@@ -163,14 +185,14 @@ export function EditorPanel({
                   onClick={() => handleTabClick(tab.id)}
                   className={`flex flex-1 items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
                     isActive
-                      ? "border-primary bg-card text-foreground border-b-2"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      ? "border-primary bg-card/40 text-foreground border-b-2"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
                   }`}
                 >
                   <tab.Icon className="h-3 w-3" />
                   <span className="hidden sm:inline">{tab.label}</span>
                   {tab.id === "features" && featureCount !== undefined && featureCount > 0 && (
-                    <span className="bg-muted rounded-full px-1 text-[9px] tabular-nums">
+                    <span className="bg-muted text-muted-foreground rounded-full px-1 text-[9px] tabular-nums">
                       {featureCount}
                     </span>
                   )}
@@ -181,10 +203,12 @@ export function EditorPanel({
 
           {/* Tab content — fills remaining space with crossfade */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <div key={activeTab} style={{ animation: "editorTabFadeIn 150ms ease" }}>
-              {activeTab === "properties" && <div className="px-3 py-3">{propertiesContent}</div>}
+            <div key={activeTab} className="h-full" style={{ animation: "editorTabFadeIn 150ms ease" }}>
+              {activeTab === "properties" && propertiesContent && (
+                <div className="px-3 py-3 h-full">{propertiesContent}</div>
+              )}
               {activeTab === "layers" && (
-                <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex min-h-0 flex-1 flex-col h-full">
                   {layersContent ?? (
                     <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Layers panel coming soon
@@ -192,13 +216,13 @@ export function EditorPanel({
                   )}
                 </div>
               )}
-              {activeTab === "features" && (
-                <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
+              {activeTab === "features" && featureListContent && (
+                <div className="flex min-h-0 flex-1 flex-col px-3 py-3 h-full">
                   {featuresLoading ? <FeatureListSkeleton /> : featureListContent}
                 </div>
               )}
               {activeTab === "wiki" && (
-                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto h-full">
                   {wikiContent ?? (
                     <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Wiki scanner coming soon
@@ -221,20 +245,38 @@ export function EditorPanel({
           `}</style>
         </div>
       )}
+
+      {side === "left" && (
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} side={side} />
+      )}
     </div>
   );
 }
 
 // ── Sub-components ──────────────────────────────────────────────────
 
-function CollapseToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function CollapseToggle({
+  collapsed,
+  onToggle,
+  side = "right",
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  side?: "left" | "right";
+}) {
+  const positionClass =
+    side === "left" ? "-right-3 rounded-r-md border-l-0" : "-left-3 rounded-l-md border-r-0";
   return (
     <button
       onClick={onToggle}
-      className="bg-card border-border text-muted-foreground hover:text-foreground absolute top-1/2 -left-3 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 transition-colors"
+      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center border transition-colors ${positionClass} backdrop-blur-sm shadow-md`}
       title={collapsed ? "Show panel" : "Hide panel"}
     >
-      {collapsed ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      {side === "left" ? (
+        collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />
+      ) : (
+        collapsed ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+      )}
     </button>
   );
 }
@@ -245,10 +287,10 @@ function CollapseToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle:
  */
 export function FeatureSearchFilter({
   value,
-  onChange,
+  onChangeAction,
 }: {
   value: string;
-  onChange: (value: string) => void;
+  onChangeAction: (value: string) => void;
 }) {
   return (
     <div className="relative mb-2">
@@ -256,7 +298,7 @@ export function FeatureSearchFilter({
       <input
         type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChangeAction(e.target.value)}
         placeholder="Filter features..."
         className="border-border bg-background focus:ring-primary w-full rounded-md border py-1 pr-2 pl-7 text-xs outline-none focus:ring-1"
       />

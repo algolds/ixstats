@@ -18,6 +18,8 @@ import { Input } from "~/components/ui/input";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
+import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
 import type {
   NationalIdentityData,
   EconomicInputs,
@@ -70,6 +72,7 @@ interface BasicInfoFormProps {
   showAdvanced?: boolean;
   mode?: "create" | "edit";
   fieldLocks?: Record<string, any>;
+  countryId?: string;
 }
 
 const GOVERNMENT_TYPES = [
@@ -139,7 +142,36 @@ export const BasicInfoForm = React.memo(
     onInputsChange,
     referenceCountry,
     mode = "create",
+    countryId,
   }: BasicInfoFormProps) {
+    const [isMapPickerOpen, setIsMapPickerOpen] = React.useState(false);
+
+    const upsertCityMutation = api.countryGeo.upsertCity.useMutation({
+      onSuccess: (city) => {
+        onIdentityChange("capitalCity", city.name);
+        if (onFieldSave) {
+          onFieldSave("capitalCity", city.name);
+        }
+      },
+    });
+
+    const handleConfirmMapPicker = useCallback(async (coords: [number, number]) => {
+      if (!countryId) return;
+      try {
+        await upsertCityMutation.mutateAsync({
+          countryId,
+          id: identity.capitalCityId || undefined,
+          name: identity.capitalCity || "Capital City",
+          type: "capital",
+          coordinates: coords,
+          isNationalCapital: true,
+        });
+      } catch (err) {
+        console.error("Failed to upsert capital city from map picker:", err);
+        alert(err instanceof Error ? err.message : "Failed to place capital on map");
+      }
+    }, [countryId, identity.capitalCityId, identity.capitalCity, upsertCityMutation]);
+
     // Fetch custom government types on mount
     React.useEffect(() => {
       setShouldFetchCustomTypes(true);
@@ -451,33 +483,46 @@ export const BasicInfoForm = React.memo(
                   icon={Building}
                   onSave={handleCapitalCitySave}
                   extraLabelElement={
-                    <button
-                      type="button"
-                      onClick={toggleLargestLock}
-                      className={cn(
-                        "flex items-center gap-1 text-[10px] font-semibold transition-all duration-150 focus:outline-none",
-                        isLargestLocked
-                          ? "text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
-                          : "text-muted-foreground hover:text-foreground"
+                    <div className="flex items-center gap-2">
+                      {countryId && (
+                        <button
+                          type="button"
+                          onClick={() => setIsMapPickerOpen(true)}
+                          className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 focus:outline-none"
+                          title="Select Capital location on map"
+                        >
+                          <MapPin className="h-3 w-3" />
+                          <span>Pick on Map</span>
+                        </button>
                       )}
-                      title={
-                        isLargestLocked
-                          ? "Unlock Largest City to set a different value"
-                          : "Set Largest City to match Capital City"
-                      }
-                    >
-                      {isLargestLocked ? (
-                        <>
-                          <Link2 className="h-3 w-3" />
-                          <span>Linked as Largest</span>
-                        </>
-                      ) : (
-                        <>
-                          <Link2Off className="text-muted-foreground/60 h-3 w-3" />
-                          <span>Link Largest</span>
-                        </>
-                      )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={toggleLargestLock}
+                        className={cn(
+                          "flex items-center gap-1 text-[10px] font-semibold transition-all duration-150 focus:outline-none",
+                          isLargestLocked
+                            ? "text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                        title={
+                          isLargestLocked
+                            ? "Unlock Largest City to set a different value"
+                            : "Set Largest City to match Capital City"
+                        }
+                      >
+                        {isLargestLocked ? (
+                          <>
+                            <Link2 className="h-3 w-3" />
+                            <span>Linked as Largest</span>
+                          </>
+                        ) : (
+                          <>
+                            <Link2Off className="text-muted-foreground/60 h-3 w-3" />
+                            <span>Link Largest</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   }
                 />
 
@@ -816,6 +861,15 @@ export const BasicInfoForm = React.memo(
             </GlassCard>
           )}
         </div>
+        {countryId && (
+          <MapPickerModal
+            isOpen={isMapPickerOpen}
+            onClose={() => setIsMapPickerOpen(false)}
+            onConfirm={handleConfirmMapPicker}
+            countryId={countryId}
+            title="Place Capital on Map"
+          />
+        )}
       </div>
     );
   },

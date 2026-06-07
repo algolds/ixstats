@@ -65,6 +65,9 @@ model Subdivision {
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   geom_postgis    Unsupported("geometry")?
+  climateProfile   Json?
+  elevationProfile Json?
+  waterAccess      Json?
   cities          City[]                   @relation("SubdivisionCities")
   pois            PointOfInterest[]        @relation("SubdivisionPOIs")
   storyPins       StoryPin[]               @relation("SubdivisionStoryPins")
@@ -106,6 +109,8 @@ model City {
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
   geom_postgis         Unsupported("geometry")?
+  climate              String?
+  waterAccess          Json?
   country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
   subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
   transportHubs        TransportHub[]           @relation("CityTransportHubs")

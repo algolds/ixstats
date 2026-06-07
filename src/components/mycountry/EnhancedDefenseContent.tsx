@@ -22,10 +22,10 @@ import { useFlag } from "~/hooks/useUnifiedFlags";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { DefenseSidebarWidget } from "./sidebar-widgets/DefenseSidebarWidget";
 
-const DefenseMapWidget = dynamic(
+const DashboardMapWidget = dynamic(
   () =>
-    import("~/components/maps/widgets/DefenseMapWidget").then((m) => ({
-      default: m.DefenseMapWidget,
+    import("~/components/maps/widgets/DashboardMapWidget").then((m) => ({
+      default: m.DashboardMapWidget,
     })),
   { ssr: false, loading: () => <div className="bg-muted h-64 animate-pulse rounded-xl" /> }
 );
@@ -137,7 +137,7 @@ export function EnhancedDefenseContent({
       notifications={notifications}
     >
       {/* Defense Territory Map */}
-      <DefenseMapWidget countryId={country.id} countryName={country.name} />
+      <DashboardMapWidget countryId={country.id} viewMode="defense" />
 
       {/* Main Content Tabs */}
       <motion.div

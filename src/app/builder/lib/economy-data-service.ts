@@ -206,6 +206,8 @@ export interface NationalIdentityData {
   mottoNative: string;
   capitalCity: string;
   largestCity: string;
+  capitalCityId?: string;
+  largestCityId?: string;
   demonym: string;
   currency: string;
   officialLanguages: string;

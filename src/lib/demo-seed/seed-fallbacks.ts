@@ -3667,6 +3667,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
   ];
 
   const subIds: string[] = [];
+  const { updateSubdivisionSpatialProfile } = await import("../country-geo-service");
   for (const sub of subdivisionData) {
     const created = await prisma.subdivision.create({
       data: {
@@ -3683,6 +3684,9 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
       },
     });
     subIds.push(created.id);
+    
+    // Compute subdivision spatial profiles (will be empty since geometry is empty)
+    await updateSubdivisionSpatialProfile(prisma, created.id).catch(() => {});
     count++;
   }
 
@@ -3721,8 +3725,9 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
       isSubdivisionCapital: true,
     },
   ];
+  const { updateCitySpatialProfile } = await import("../country-geo-service");
   for (const city of cities) {
-    await prisma.city.create({
+    const created = await prisma.city.create({
       data: {
         countryId,
         name: city.name,
@@ -3736,6 +3741,25 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
         submittedBy: "system",
       },
     });
+
+    // Force PostGIS geom and update spatial profile
+    if (created.coordinates) {
+      try {
+        const coords = created.coordinates as any;
+        const lng = Array.isArray(coords) ? coords[0] : coords.lng;
+        const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+        await prisma.$executeRawUnsafe(
+          `UPDATE cities SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
+          Number(lng),
+          Number(lat),
+          created.id
+        );
+        await updateCitySpatialProfile(prisma, created.id);
+      } catch (err) {
+        console.warn(`[seedGeography] Failed to update city spatial profile:`, err);
+      }
+    }
+    
     count++;
   }
 
@@ -3767,7 +3791,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
     },
   ];
   for (const poi of pois) {
-    await prisma.pointOfInterest.create({
+    const createdPoi = await prisma.pointOfInterest.create({
       data: {
         countryId,
         subdivisionId: subIds[0], // Capital Region
@@ -3779,6 +3803,24 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
         submittedBy: "system",
       },
     });
+
+    // Force PostGIS geom
+    if (createdPoi.coordinates) {
+      try {
+        const coords = createdPoi.coordinates as any;
+        const lng = Array.isArray(coords) ? coords[0] : coords.lng;
+        const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+        await prisma.$executeRawUnsafe(
+          `UPDATE points_of_interest SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
+          Number(lng),
+          Number(lat),
+          createdPoi.id
+        );
+      } catch (err) {
+        console.warn(`[seedGeography] Failed to update POI geom:`, err);
+      }
+    }
+    
     count++;
   }
 

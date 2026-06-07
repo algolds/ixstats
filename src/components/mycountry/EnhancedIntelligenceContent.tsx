@@ -16,10 +16,10 @@ import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { IntelligenceSidebarWidget } from "./sidebar-widgets/IntelligenceSidebarWidget";
 import { IntelligenceWarRoom } from "~/components/intelligence/IntelligenceWarRoom";
 
-const IntelligenceMapWidget = dynamic(
+const DashboardMapWidget = dynamic(
   () =>
-    import("~/components/maps/widgets/IntelligenceMapWidget").then((m) => ({
-      default: m.IntelligenceMapWidget,
+    import("~/components/maps/widgets/DashboardMapWidget").then((m) => ({
+      default: m.DashboardMapWidget,
     })),
   { ssr: false, loading: () => <div className="bg-muted h-64 animate-pulse rounded-xl" /> }
 );
@@ -118,7 +118,7 @@ export function EnhancedIntelligenceContent({
 
       {/* Geopolitical Map — hidden in guided onboarding state */}
       {!isGuided && (
-        <IntelligenceMapWidget countryId={country.id} countryName={country.name} />
+        <DashboardMapWidget countryId={country.id} viewMode="intelligence" />
       )}
 
       {/* Wiki woven inline */}

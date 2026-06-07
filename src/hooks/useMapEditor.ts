@@ -64,6 +64,7 @@ export interface CityFormData {
   wikiPageTitle?: string;
   elevation?: number;
   foundedYear?: number;
+  coordinates?: [number, number];
 }
 
 export interface SubdivisionFormData {
@@ -84,6 +85,7 @@ export interface POIFormData {
   icon?: string;
   wikiPageTitle?: string;
   subdivisionId?: string;
+  coordinates?: [number, number];
 }
 
 export interface StoryPinFormData {
@@ -99,6 +101,7 @@ export interface StoryPinFormData {
   thumbnailUrl?: string;
   storylineId?: string;
   storylineOrder?: number;
+  coordinates?: [number, number];
 }
 
 export interface MapLabelFormData {
@@ -113,6 +116,7 @@ export interface MapLabelFormData {
   minZoom: number;
   maxZoom: number;
   wikiPageTitle?: string;
+  coordinates?: [number, number];
 }
 
 const DEFAULT_STORY_PIN: StoryPinFormData = {
@@ -267,7 +271,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                 await m.createCity?.mutateAsync({
                   countryId,
                   name: d.name,
-                  cityType: p?.cityType ?? "city",
+                  type: p?.cityType ?? (p?.type as string) ?? "city",
                   coordinates: d.coordinates,
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
@@ -309,12 +313,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   coordinates: d.coordinates,
                   fontSize: p?.fontSize ?? 14,
                   color: p?.color ?? "#374151",
-                  rotation: p?.rotation ?? 0,
-                  letterSpacing: p?.letterSpacing ?? 0,
-                  fontWeight: p?.fontWeight ?? "normal",
-                  opacity: p?.opacity ?? 1,
-                  minZoom: p?.minZoom ?? 4,
-                  maxZoom: p?.maxZoom ?? 18,
                 });
                 break;
             }
@@ -328,9 +326,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "city":
                 await m.updateCity?.mutateAsync({
                   countryId,
-                  cityId: action.featureId,
+                  id: action.featureId,
                   name: d.name,
-                  cityType: p?.cityType,
+                  type: p?.cityType ?? (p?.type as string),
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
                   isSubdivisionCapital: !!p?.isSubdivisionCapital,
@@ -339,7 +337,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "subdivision":
                 await m.updateSubdivision?.mutateAsync({
                   countryId,
-                  subdivisionId: action.featureId,
+                  id: action.featureId,
                   name: d.name,
                   type: p?.type,
                   level: p?.level,
@@ -348,7 +346,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "poi":
                 await m.updatePOI?.mutateAsync({
                   countryId,
-                  poiId: action.featureId,
+                  id: action.featureId,
                   name: d.name,
                   category: p?.category,
                   description: p?.description,
@@ -357,7 +355,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "storyPin":
                 await m.updateStoryPin?.mutateAsync({
                   countryId,
-                  pinId: action.featureId,
+                  id: action.featureId,
                   title: d.name,
                   content: p?.content,
                   category: p?.category,
@@ -366,17 +364,11 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "mapLabel":
                 await m.updateMapLabel?.mutateAsync({
                   countryId,
-                  labelId: action.featureId,
+                  id: action.featureId,
                   text: d.name,
                   labelType: p?.labelType,
                   fontSize: p?.fontSize,
                   color: p?.color,
-                  rotation: p?.rotation,
-                  letterSpacing: p?.letterSpacing,
-                  fontWeight: p?.fontWeight,
-                  opacity: p?.opacity,
-                  minZoom: p?.minZoom,
-                  maxZoom: p?.maxZoom,
                 });
                 break;
             }
@@ -399,7 +391,11 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             const d = action.newData;
             switch (action.featureType) {
               case "city":
-                await m.createCity?.mutateAsync({ countryId, ...d });
+                await m.createCity?.mutateAsync({
+                  countryId,
+                  ...d,
+                  type: d.cityType ?? d.type ?? "city",
+                } as any);
                 break;
               case "subdivision":
                 await m.createSubdivision?.mutateAsync({ countryId, ...d });
@@ -446,9 +442,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "city":
                 await m.updateCity?.mutateAsync({
                   countryId,
-                  cityId: action.featureId,
+                  id: action.featureId,
                   name: d.name,
-                  cityType: p?.cityType,
+                  type: p?.cityType ?? (p?.type as string),
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
                   isSubdivisionCapital: !!p?.isSubdivisionCapital,
@@ -457,7 +453,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "subdivision":
                 await m.updateSubdivision?.mutateAsync({
                   countryId,
-                  subdivisionId: action.featureId,
+                  id: action.featureId,
                   name: d.name,
                   type: p?.type,
                   level: p?.level,
@@ -466,7 +462,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "poi":
                 await m.updatePOI?.mutateAsync({
                   countryId,
-                  poiId: action.featureId,
+                  id: action.featureId,
                   name: d.name,
                   category: p?.category,
                   description: p?.description,
@@ -475,7 +471,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "storyPin":
                 await m.updateStoryPin?.mutateAsync({
                   countryId,
-                  pinId: action.featureId,
+                  id: action.featureId,
                   title: d.name,
                   content: p?.content,
                   category: p?.category,
@@ -484,17 +480,11 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "mapLabel":
                 await m.updateMapLabel?.mutateAsync({
                   countryId,
-                  labelId: action.featureId,
+                  id: action.featureId,
                   text: d.name,
                   labelType: p?.labelType,
                   fontSize: p?.fontSize,
                   color: p?.color,
-                  rotation: p?.rotation,
-                  letterSpacing: p?.letterSpacing,
-                  fontWeight: p?.fontWeight,
-                  opacity: p?.opacity,
-                  minZoom: p?.minZoom,
-                  maxZoom: p?.maxZoom,
                 });
                 break;
             }
@@ -565,7 +555,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   }, [refetchFeatures]);
 
   // Mutations
-  const createCity = api.geoFeatures.createCity.useMutation({
+  const createCity = api.countryGeo.upsertCity.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -573,7 +563,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
-  const updateCity = api.geoFeatures.updateCity.useMutation({
+  const updateCity = api.countryGeo.upsertCity.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -589,7 +579,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
-  const createSubdivision = api.geoFeatures.createSubdivision.useMutation({
+  const createSubdivision = api.countryGeo.upsertSubdivision.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -597,7 +587,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
-  const updateSubdivision = api.geoFeatures.updateSubdivision.useMutation({
+  const updateSubdivision = api.countryGeo.upsertSubdivision.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -613,7 +603,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
-  const createPOI = api.geoFeatures.createPOI.useMutation({
+  const createPOI = api.countryGeo.upsertPoi.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -621,7 +611,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
-  const updatePOI = api.geoFeatures.updatePOI.useMutation({
+  const updatePOI = api.countryGeo.upsertPoi.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -638,14 +628,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   });
 
   // Story Pin mutations
-  const createStoryPin = api.geoFeatures.createStoryPin.useMutation({
+  const createStoryPin = api.countryGeo.upsertStoryPin.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
       continuePlacing("add-story-pin");
     },
   });
-  const updateStoryPin = api.geoFeatures.updateStoryPin.useMutation({
+  const updateStoryPin = api.countryGeo.upsertStoryPin.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -661,14 +651,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   });
 
   // Map Label mutations
-  const createMapLabel = api.geoFeatures.createMapLabel.useMutation({
+  const createMapLabel = api.countryGeo.upsertMapLabel.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
       continuePlacing("add-label");
     },
   });
-  const updateMapLabel = api.geoFeatures.updateMapLabel.useMutation({
+  const updateMapLabel = api.countryGeo.upsertMapLabel.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
       debouncedRefetch();
@@ -884,12 +874,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       return;
     }
     setValidationErrors({});
-    if (!countryId || !pendingCoordinates) return;
+    const coords = pendingCoordinates || cityForm.coordinates;
+    if (!countryId || !coords) return;
     await createCity.mutateAsync({
       countryId,
       name: cityForm.name.trim(),
-      cityType: cityForm.cityType,
-      coordinates: pendingCoordinates,
+      type: cityForm.cityType,
+      coordinates: coords,
       population: cityForm.population,
       isNationalCapital: cityForm.isNationalCapital,
       isSubdivisionCapital: cityForm.isSubdivisionCapital,
@@ -912,7 +903,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       type: subdivisionForm.type,
       level: subdivisionForm.level,
       geometry: pendingGeometry,
-      capital: subdivisionForm.capital,
       population: subdivisionForm.population,
     });
   }, [countryId, pendingGeometry, subdivisionForm, createSubdivision, validateFeature]);
@@ -924,12 +914,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       return;
     }
     setValidationErrors({});
-    if (!countryId || !pendingCoordinates) return;
+    const coords = pendingCoordinates || poiForm.coordinates;
+    if (!countryId || !coords) return;
     await createPOI.mutateAsync({
       countryId,
       name: poiForm.name.trim(),
       category: poiForm.category,
-      coordinates: pendingCoordinates,
+      coordinates: coords,
       description: poiForm.description,
       icon: poiForm.icon,
       wikiPageTitle: poiForm.wikiPageTitle,
@@ -943,22 +934,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       return;
     }
     setValidationErrors({});
-    if (!countryId || !pendingCoordinates) return;
+    const coords = pendingCoordinates || storyPinForm.coordinates;
+    if (!countryId || !coords) return;
     await createStoryPin.mutateAsync({
       countryId,
       title: storyPinForm.title.trim(),
       content: storyPinForm.content,
-      contentFormat: storyPinForm.contentFormat,
       category: storyPinForm.category as any,
-      importance: storyPinForm.importance,
-      coordinates: pendingCoordinates,
+      coordinates: coords,
       ixTimeYear: storyPinForm.ixTimeYear,
-      eraLabel: storyPinForm.eraLabel,
-      wikiPageTitle: storyPinForm.wikiPageTitle,
-      photos: storyPinForm.photos,
-      thumbnailUrl: storyPinForm.thumbnailUrl,
-      storylineId: storyPinForm.storylineId,
-      storylineOrder: storyPinForm.storylineOrder,
     });
   }, [countryId, pendingCoordinates, storyPinForm, createStoryPin, validateFeature]);
 
@@ -969,21 +953,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       return;
     }
     setValidationErrors({});
-    if (!countryId || !pendingCoordinates) return;
+    const coords = pendingCoordinates || mapLabelForm.coordinates;
+    if (!countryId || !coords) return;
     await createMapLabel.mutateAsync({
       countryId,
       text: mapLabelForm.text.trim(),
       labelType: mapLabelForm.labelType as any,
-      coordinates: pendingCoordinates,
+      coordinates: coords,
       fontSize: mapLabelForm.fontSize,
       color: mapLabelForm.color,
-      rotation: mapLabelForm.rotation,
-      letterSpacing: mapLabelForm.letterSpacing,
-      fontWeight: mapLabelForm.fontWeight as any,
-      opacity: mapLabelForm.opacity,
-      minZoom: mapLabelForm.minZoom,
-      maxZoom: mapLabelForm.maxZoom,
-      wikiPageTitle: mapLabelForm.wikiPageTitle,
     });
   }, [countryId, pendingCoordinates, mapLabelForm, createMapLabel, validateFeature]);
 
@@ -1003,6 +981,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           isSubdivisionCapital: !!feature.properties.isSubdivisionCapital,
           subdivisionId: (feature.properties.subdivisionId as string | undefined) ?? undefined,
           wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          coordinates: feature.coordinates,
         });
         break;
       case "subdivision":
@@ -1023,6 +1002,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           description: (feature.properties.description as string | undefined) ?? undefined,
           icon: (feature.properties.icon as string | undefined) ?? undefined,
           wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          coordinates: feature.coordinates,
         });
         break;
       case "storyPin":
@@ -1042,6 +1022,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           thumbnailUrl: (feature.properties.thumbnailUrl as string | undefined) ?? undefined,
           storylineId: (feature.properties.storylineId as string | undefined) ?? undefined,
           storylineOrder: (feature.properties.storylineOrder as number | undefined) ?? undefined,
+          coordinates: feature.coordinates,
         });
         break;
       case "mapLabel":
@@ -1058,6 +1039,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           minZoom: (feature.properties.minZoom as number) ?? 4,
           maxZoom: (feature.properties.maxZoom as number) ?? 18,
           wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          coordinates: feature.coordinates,
         });
         break;
     }
@@ -1073,13 +1055,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (!countryId || !selectedFeature) return;
     await updateCity.mutateAsync({
       countryId,
-      cityId: selectedFeature.id,
+      id: selectedFeature.id,
       name: cityForm.name.trim(),
-      cityType: cityForm.cityType,
+      type: cityForm.cityType,
+      coordinates: cityForm.coordinates,
       population: cityForm.population,
       isNationalCapital: cityForm.isNationalCapital,
       isSubdivisionCapital: cityForm.isSubdivisionCapital,
-      wikiPageTitle: cityForm.wikiPageTitle ?? null,
+      wikiPageTitle: cityForm.wikiPageTitle,
     });
   }, [countryId, selectedFeature, cityForm, updateCity, validateFeature]);
 
@@ -1093,11 +1076,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (!countryId || !selectedFeature) return;
     await updateSubdivision.mutateAsync({
       countryId,
-      subdivisionId: selectedFeature.id,
+      id: selectedFeature.id,
       name: subdivisionForm.name.trim(),
       type: subdivisionForm.type,
       level: subdivisionForm.level,
-      capital: subdivisionForm.capital,
       population: subdivisionForm.population,
     });
   }, [countryId, selectedFeature, subdivisionForm, updateSubdivision, validateFeature]);
@@ -1112,12 +1094,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (!countryId || !selectedFeature) return;
     await updatePOI.mutateAsync({
       countryId,
-      poiId: selectedFeature.id,
+      id: selectedFeature.id,
       name: poiForm.name.trim(),
       category: poiForm.category,
+      coordinates: poiForm.coordinates,
       description: poiForm.description,
       icon: poiForm.icon,
-      wikiPageTitle: poiForm.wikiPageTitle ?? null,
+      wikiPageTitle: poiForm.wikiPageTitle,
     });
   }, [countryId, selectedFeature, poiForm, updatePOI, validateFeature]);
 
@@ -1131,19 +1114,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (!countryId || !selectedFeature) return;
     await updateStoryPin.mutateAsync({
       countryId,
-      pinId: selectedFeature.id,
+      id: selectedFeature.id,
       title: storyPinForm.title.trim(),
       content: storyPinForm.content,
-      contentFormat: storyPinForm.contentFormat,
-      category: storyPinForm.category as any,
-      importance: storyPinForm.importance,
-      ixTimeYear: storyPinForm.ixTimeYear ?? null,
-      eraLabel: storyPinForm.eraLabel ?? null,
-      wikiPageTitle: storyPinForm.wikiPageTitle ?? null,
-      photos: storyPinForm.photos,
-      thumbnailUrl: storyPinForm.thumbnailUrl ?? null,
-      storylineId: storyPinForm.storylineId ?? null,
-      storylineOrder: storyPinForm.storylineOrder ?? null,
+      category: storyPinForm.category,
+      coordinates: storyPinForm.coordinates,
+      ixTimeYear: storyPinForm.ixTimeYear,
     });
   }, [countryId, selectedFeature, storyPinForm, updateStoryPin, validateFeature]);
 
@@ -1157,18 +1133,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (!countryId || !selectedFeature) return;
     await updateMapLabel.mutateAsync({
       countryId,
-      labelId: selectedFeature.id,
+      id: selectedFeature.id,
       text: mapLabelForm.text.trim(),
-      labelType: mapLabelForm.labelType as any,
+      labelType: mapLabelForm.labelType,
+      coordinates: mapLabelForm.coordinates,
       fontSize: mapLabelForm.fontSize,
       color: mapLabelForm.color,
-      rotation: mapLabelForm.rotation,
-      letterSpacing: mapLabelForm.letterSpacing,
-      fontWeight: mapLabelForm.fontWeight as any,
-      opacity: mapLabelForm.opacity,
-      minZoom: mapLabelForm.minZoom,
-      maxZoom: mapLabelForm.maxZoom,
-      wikiPageTitle: mapLabelForm.wikiPageTitle ?? null,
     });
   }, [countryId, selectedFeature, mapLabelForm, updateMapLabel, validateFeature]);
 

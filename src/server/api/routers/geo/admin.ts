@@ -28,6 +28,7 @@ import { featureIdToDisplayName } from "~/lib/map-utils";
 import { getZoneByColor } from "~/lib/elevation-config";
 import { checkNameUniqueness } from "~/lib/geo-validation";
 import { clearLayerCache, extractAllPositions } from "./core";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
 
 // ──────────────────────────────────────────────
 // Router
@@ -495,14 +496,7 @@ export const geoAdminRouter = createTRPCRouter({
         const countryUpdates = dedupedRecords.filter((r) => r.countryId);
         for (const r of countryUpdates) {
           try {
-            await ctx.db.country.update({
-              where: { id: r.countryId! },
-              data: {
-                geometry: r.geometry as any,
-                centroid: r.centroid as any,
-                boundingBox: r.bbox as any,
-              },
-            });
+            await syncCountryGeometryFromMapLayer(ctx.db, r.countryId!);
           } catch (e) {
             console.warn(
               `[commitSvgUpload] Failed to update country ${r.countryId}:`,

@@ -4,6 +4,9 @@ import React from "react";
 import type { POIFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
+import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
+import { MapPin } from "lucide-react";
+
 const POI_CATEGORIES = [
   "landmark",
   "historical",
@@ -51,6 +54,7 @@ interface POIPropertyFormProps {
   onChange: (form: POIFormData) => void;
   pendingCoordinates?: [number, number] | null;
   allFeatures?: EditorFeature[];
+  countryId?: string;
 }
 
 export const POIPropertyForm = React.memo(function POIPropertyForm({
@@ -58,8 +62,12 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
   onChange,
   pendingCoordinates,
   allFeatures,
+  countryId,
 }: POIPropertyFormProps) {
+  const [isMapPickerOpen, setIsMapPickerOpen] = React.useState(false);
+  const activeCoords = form.coordinates ?? pendingCoordinates;
   const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
+
   return (
     <div className="space-y-2">
       <input
@@ -93,6 +101,43 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           </option>
         ))}
       </select>
+
+      {/* Coordinate Picker Block */}
+      {countryId && (
+        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs">
+          <div className="text-muted-foreground font-medium text-left">
+            Coordinates:{" "}
+            {activeCoords ? (
+              <span className="text-foreground font-semibold tabular-nums">
+                {activeCoords[1].toFixed(4)}&deg; N, {activeCoords[0].toFixed(4)}&deg; E
+              </span>
+            ) : (
+              <span className="italic">Not placed yet</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMapPickerOpen(true)}
+            className="flex items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 focus:outline-none shrink-0"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            <span>Pick on Map</span>
+          </button>
+        </div>
+      )}
+
+      {isMapPickerOpen && countryId && (
+        <MapPickerModal
+          isOpen={isMapPickerOpen}
+          onClose={() => setIsMapPickerOpen(false)}
+          onConfirm={(coords) => {
+            onChange({ ...form, coordinates: coords });
+            setIsMapPickerOpen(false);
+          }}
+          countryId={countryId}
+          title="Pick POI Location"
+        />
+      )}
       <textarea
         placeholder="Description (optional)"
         value={form.description ?? ""}
@@ -109,25 +154,24 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
         currentCoords={pendingCoordinates ?? undefined}
         placeholder="Search wiki to link..."
       />
-      {subdivisions.length > 0 && (
-        <select
-          value={form.subdivisionId ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...form,
-              subdivisionId: e.target.value || undefined,
-            })
-          }
-          className={selectClasses}
-        >
-          <option value="">&mdash; No region &mdash;</option>
-          {subdivisions.map((sub) => (
-            <option key={sub.id} value={sub.id}>
-              {sub.name}
-            </option>
-          ))}
-        </select>
-      )}
+      <select
+        value={form.subdivisionId ?? "auto"}
+        onChange={(e) =>
+          onChange({
+            ...form,
+            subdivisionId: e.target.value === "auto" ? "auto" : e.target.value === "none" ? "none" : e.target.value || undefined,
+          })
+        }
+        className={selectClasses}
+      >
+        <option value="auto">&mdash; Auto-detect Region (Recommended) &mdash;</option>
+        <option value="none">&mdash; None &mdash;</option>
+        {subdivisions.map((sub) => (
+          <option key={sub.id} value={sub.id}>
+            {sub.name}
+          </option>
+        ))}
+      </select>
     </div>
   );
 });

@@ -67,6 +67,7 @@ interface FeaturePropertyPanelProps {
   clearRouteWaypoints?: () => void;
   selectedRouteId?: string | null;
   onSelectRouteId?: (id: string | null) => void;
+  allFeatures?: any[];
 }
 
 export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
@@ -82,6 +83,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     clearRouteWaypoints,
     selectedRouteId,
     onSelectRouteId,
+    allFeatures,
   } = props;
 
   if (mode === "view") return null;
@@ -232,6 +234,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           form={props.cityForm}
           onChange={props.onCityFormChange}
           pendingCoordinates={pendingCoordinates}
+          countryId={countryId}
+          allFeatures={allFeatures}
         />
       )}
       {(mode === "add-subdivision" || mode === "edit-subdivision") && (
@@ -245,6 +249,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           form={props.poiForm}
           onChange={props.onPOIFormChange}
           pendingCoordinates={pendingCoordinates}
+          countryId={countryId}
+          allFeatures={allFeatures}
         />
       )}
       {(mode === "add-story-pin" || mode === "edit-story-pin") &&
@@ -254,12 +260,18 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             form={props.storyPinForm}
             onChange={props.onStoryPinFormChange}
             countryId={countryId}
+            pendingCoordinates={pendingCoordinates}
           />
         )}
       {(mode === "add-label" || mode === "edit-label") &&
         props.mapLabelForm &&
         props.onMapLabelFormChange && (
-          <MapLabelPropertyForm form={props.mapLabelForm} onChange={props.onMapLabelFormChange} />
+          <MapLabelPropertyForm
+            form={props.mapLabelForm}
+            onChange={props.onMapLabelFormChange}
+            countryId={countryId}
+            pendingCoordinates={pendingCoordinates}
+          />
         )}
 
       {/* Success flash with fade-in animation */}

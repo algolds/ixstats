@@ -50,6 +50,51 @@ function getFeatureCoords(geometry: Geometry): Position | undefined {
   if (geometry.type === "MultiPoint") return geometry.coordinates[0];
   return undefined;
 }
+
+function calculateOverlapGeoJson(drawnGeom: any, allFeatures: any[], currentFeatureId?: string) {
+  if (!drawnGeom || !drawnGeom.coordinates || drawnGeom.coordinates.length === 0) {
+    return EMPTY_FC;
+  }
+
+  const overlapFeatures: any[] = [];
+  try {
+    const turfDrawn = drawnGeom.type === "Feature" ? drawnGeom : {
+      type: "Feature",
+      geometry: drawnGeom,
+      properties: {}
+    };
+
+    const otherSubdivisions = allFeatures.filter(
+      (f) =>
+        f.type === "subdivision" &&
+        f.id !== currentFeatureId &&
+        f.geometry &&
+        (f.geometry as any).coordinates &&
+        (f.geometry as any).coordinates.length > 0
+    );
+
+    for (const sub of otherSubdivisions) {
+      const subGeom = sub.geometry;
+      const turfSub = {
+        type: "Feature",
+        geometry: subGeom,
+        properties: {}
+      };
+
+      const intersection = intersect(featureCollection([turfDrawn, turfSub]));
+      if (intersection && intersection.geometry) {
+        overlapFeatures.push(intersection);
+      }
+    }
+  } catch (err) {
+    console.warn("[calculateOverlapGeoJson] Error calculating turf overlap:", err);
+  }
+
+  return {
+    type: "FeatureCollection" as const,
+    features: overlapFeatures,
+  };
+}
 import {
   getVertices,
   getAllRings,
@@ -67,6 +112,8 @@ import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/province-impo
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
 import { MAP_DEFAULTS, OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS } from "~/lib/map-config";
 import { getMapGlyphsUrl } from "~/lib/base-path";
+
+import { intersect, featureCollection, polygon } from "@turf/turf";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -201,6 +248,7 @@ const EditorMap = memo(
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const drawVerticesRef = useRef<[number, number][]>([]);
+    const [drawVertices, setDrawVertices] = useState<[number, number][]>([]);
     const modeRef = useRef(mode);
     modeRef.current = mode;
     const featuresRef = useRef(features);
@@ -286,6 +334,10 @@ const EditorMap = memo(
         type: "FeatureCollection",
         features: midFeatures,
       });
+
+      // Update overlap highlights
+      const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
+      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
     }, []);
 
     const clearVertexEditVis = useCallback(() => {
@@ -294,6 +346,7 @@ const EditorMap = memo(
       getGeoJSONSource(map, "editor-vedit-polygon")?.setData(EMPTY_FC);
       getGeoJSONSource(map, "editor-vedit-vertices")?.setData(EMPTY_FC);
       getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(EMPTY_FC);
+      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
     }, []);
 
     const finishVertexEdit = useCallback(() => {
@@ -1151,6 +1204,23 @@ const EditorMap = memo(
             "circle-stroke-width": 2,
           },
         });
+
+        map.addSource("editor-overlap-highlight", {
+          type: "geojson",
+          data: EMPTY_FC,
+        });
+        map.addLayer({
+          id: "editor-overlap-highlight-fill",
+          type: "fill",
+          source: "editor-overlap-highlight",
+          paint: { "fill-color": "#ef4444", "fill-opacity": 0.4 },
+        });
+        map.addLayer({
+          id: "editor-overlap-highlight-stroke",
+          type: "line",
+          source: "editor-overlap-highlight",
+          paint: { "line-color": "#ef4444", "line-width": 2.5 },
+        });
       }
 
       // ── Vertex editing sources/layers ──
@@ -1232,6 +1302,12 @@ const EditorMap = memo(
           ],
         };
         getGeoJSONSource(map, "editor-draw-polygon")?.setData(polyGeoJson);
+        const drawnGeom = {
+          type: "Polygon" as const,
+          coordinates: [[...vertices, vertices[0]]],
+        };
+        const overlapGeoJson = calculateOverlapGeoJson(drawnGeom, featuresRef.current);
+        getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
       } else if (vertices.length >= 2) {
         const lineGeoJson = {
           type: "FeatureCollection" as const,
@@ -1247,8 +1323,10 @@ const EditorMap = memo(
           ],
         };
         getGeoJSONSource(map, "editor-draw-polygon")?.setData(lineGeoJson);
+        getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
       } else {
         getGeoJSONSource(map, "editor-draw-polygon")?.setData(EMPTY_FC);
+        getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
       }
     }, []);
 
@@ -1275,8 +1353,31 @@ const EditorMap = memo(
         ) {
           onMapClick(e.lngLat.lng, e.lngLat.lat);
         } else if (currentMode === "add-subdivision") {
-          drawVerticesRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+          let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+          const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
+          if (border) {
+            clickPoint = snapToBorderEdge(clickPoint, border, 0.015);
+          }
+          for (const feat of featuresRef.current) {
+            if (
+              feat.type === "subdivision" &&
+              feat.geometry &&
+              (feat.geometry as any).coordinates &&
+              (feat.geometry as any).coordinates.length > 0
+            ) {
+              const snapped = snapToBorderEdge(
+                clickPoint,
+                feat.geometry as Polygon | MultiPolygon,
+                0.01
+              );
+              if (snapped !== clickPoint) {
+                clickPoint = snapped;
+              }
+            }
+          }
+          drawVerticesRef.current.push(clickPoint);
           updateDrawVisualization();
+          setDrawVertices([...drawVerticesRef.current]);
         }
       };
 
@@ -1301,6 +1402,7 @@ const EditorMap = memo(
           onDrawComplete(geometry);
           drawVerticesRef.current = [];
           updateDrawVisualization();
+          setDrawVertices([]);
         }
       };
 
@@ -1330,6 +1432,7 @@ const EditorMap = memo(
           e.preventDefault();
           drawVerticesRef.current.pop();
           updateDrawVisualization();
+          setDrawVertices([...drawVerticesRef.current]);
         }
       };
       window.addEventListener("keydown", handler);
@@ -1882,6 +1985,7 @@ const EditorMap = memo(
       if (mode !== "add-subdivision") {
         drawVerticesRef.current = [];
         updateDrawVisualization();
+        setDrawVertices([]);
       }
     }, [mode, updateDrawVisualization]);
 
@@ -1897,6 +2001,70 @@ const EditorMap = memo(
               <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
               <p className="text-muted-foreground text-sm">Loading map editor...</p>
             </div>
+          </div>
+        )}
+
+        {/* Floating polygon drawing toolbar */}
+        {mode === "add-subdivision" && drawVertices.length > 0 && (
+          <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-border bg-card/90 px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-200">
+            <span className="text-foreground text-xs font-semibold select-none mr-2">
+              Drawing Subdivision:{" "}
+              <span className="text-primary tabular-nums font-bold">
+                {drawVertices.length}
+              </span>{" "}
+              {drawVertices.length === 1 ? "vertex" : "vertices"}
+            </span>
+            <div className="bg-border h-4 w-px" />
+            <button
+              onClick={() => {
+                if (drawVerticesRef.current.length > 0) {
+                  drawVerticesRef.current.pop();
+                  updateDrawVisualization();
+                  setDrawVertices([...drawVerticesRef.current]);
+                }
+              }}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-2 py-1 text-xs font-medium transition-colors"
+            >
+              Delete Last
+            </button>
+            <button
+              onClick={() => {
+                drawVerticesRef.current = [];
+                updateDrawVisualization();
+                setDrawVertices([]);
+              }}
+              className="text-destructive hover:bg-destructive/10 rounded-md px-2 py-1 text-xs font-medium transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => {
+                if (drawVerticesRef.current.length >= 3) {
+                  const vertices = drawVerticesRef.current;
+                  let geometry: Polygon | MultiPolygon = {
+                    type: "Polygon" as const,
+                    coordinates: [[...vertices, vertices[0]]],
+                  };
+                  const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
+                  if (border) {
+                    const { geometry: clipped } = clipGeometryToBorder(geometry, border);
+                    geometry = clipped as Polygon | MultiPolygon;
+                  }
+                  onDrawComplete(geometry);
+                  drawVerticesRef.current = [];
+                  updateDrawVisualization();
+                  setDrawVertices([]);
+                }
+              }}
+              disabled={drawVertices.length < 3}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                drawVertices.length >= 3
+                  ? "bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              Save Shape
+            </button>
           </div>
         )}
 

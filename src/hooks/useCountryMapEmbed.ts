@@ -5,8 +5,8 @@
  * useCountryMapEmbed - Data hook for country-focused map embeds.
  *
  * Fetches a single country's geometry, neighbors, cities, and POIs
- * via existing tRPC endpoints. All queries share cache settings with
- * the full world map (30min stale, 2hr gc).
+ * via a single unified countryGeo.getCountryGeoBundle tRPC endpoint.
+ * All queries share cache settings with the full world map (30min stale, 2hr gc).
  */
 
 import { useMemo } from "react";
@@ -17,17 +17,8 @@ const MAP_CACHE = { staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 } as const;
 export function useCountryMapEmbed(countryId: string | null | undefined) {
   const enabled = !!countryId;
 
-  const { data: geoData, isLoading: geoLoading } = api.geoCore.getCountryGeometry.useQuery(
-    { countryId: countryId! },
-    { enabled, ...MAP_CACHE }
-  );
-
-  const { data: neighbors, isLoading: neighborsLoading } = api.geoCore.getNeighbors.useQuery(
-    { countryId: countryId! },
-    { enabled, ...MAP_CACHE }
-  );
-
-  const { data: features, isLoading: featuresLoading } = api.geoCore.getCountryFeatures.useQuery(
+  // Fetch the unified geographic bundle (contains geometry, neighbors, cities, POIs, subdivisions)
+  const { data: bundle, isLoading: bundleLoading } = api.countryGeo.getCountryGeoBundle.useQuery(
     { countryId: countryId! },
     { enabled, ...MAP_CACHE }
   );
@@ -39,27 +30,31 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
   );
 
   return useMemo(() => {
-    const cities = features?.cities ?? [];
+    const cities = bundle?.cities ?? [];
     const capital = cities.find((c) => c.isNationalCapital) ?? null;
+    const rawBBox = bundle?.boundingBox as number[] | null;
+    const bbox = rawBBox && rawBBox.length === 4
+      ? { minLng: rawBBox[0], minLat: rawBBox[1], maxLng: rawBBox[2], maxLat: rawBBox[3] }
+      : null;
 
     return {
       // Geometry
-      geometry: (geoData?.geometry as GeoJSON.Geometry) ?? null,
-      centroid: geoData?.centroid ?? null,
-      bbox: geoData?.bbox ?? null,
-      displayName: geoData?.displayName ?? null,
-      areaSqKm: geoData?.areaSqKm ?? null,
-      fillColor: (geoData as { fillColor?: string } | undefined)?.fillColor ?? null,
-      featureId: geoData?.featureId ?? null,
+      geometry: (bundle?.geometry as GeoJSON.Geometry) ?? null,
+      centroid: bundle?.centroid ?? null,
+      bbox,
+      displayName: bundle?.displayName ?? null,
+      areaSqKm: bundle?.areaSqKm ?? null,
+      fillColor: bundle?.fillColor ?? null,
+      featureId: bundle?.featureId ?? null,
 
       // Country features
       cities,
       capital,
-      pois: features?.pois ?? [],
-      subdivisions: features?.subdivisions ?? [],
+      pois: bundle?.pois ?? [],
+      subdivisions: bundle?.subdivisions ?? [],
 
       // Neighbors
-      neighbors: neighbors ?? [],
+      neighbors: bundle?.neighbors ?? [],
 
       // World political layer for greyed-out neighbor rendering
       worldPolitical: (worldMap as Record<string, unknown>)?.political as
@@ -67,8 +62,8 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
         | undefined,
 
       // State
-      isLoading: geoLoading || neighborsLoading || featuresLoading,
-      hasGeometry: !!geoData?.geometry,
+      isLoading: bundleLoading,
+      hasGeometry: !!bundle?.geometry,
     };
-  }, [geoData, neighbors, features, worldMap, geoLoading, neighborsLoading, featuresLoading]);
+  }, [bundle, worldMap, bundleLoading]);
 }

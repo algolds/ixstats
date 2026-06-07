@@ -4,14 +4,13 @@
 /**
  * EnhancedMapEditorContent - Full-page map editor for MyCountry.
  *
- * Layout: compact top breadcrumb bar with integrated tools,
- * full-width map, collapsible right panel for property forms
- * and feature list. Province importer floats as a draggable panel.
+ * Layout: unified collapsible left/right panels, full-width map,
+ * Glassmorphic styling.
  */
 
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, AlertCircle, Map, ChevronRight, List, Loader2, X } from "lucide-react";
+import { ArrowLeft, AlertCircle, Map, ChevronRight, Loader2, Globe } from "lucide-react";
 import { useCountryData } from "./primitives";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 import { useMapEditor } from "~/hooks/useMapEditor";
@@ -20,6 +19,11 @@ import { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { FeatureList } from "~/components/maps/editor/FeatureList";
+import { EditorPanel } from "~/components/maps/editor/EditorPanel";
+import { LayerPanel } from "~/components/maps/editor/LayerPanel";
+import { WikiScannerPanel } from "~/components/maps/editor/WikiScannerPanel";
+import { useWikiScanner } from "~/hooks/useWikiScanner";
+import { api } from "~/trpc/react";
 import {
   ProvinceImportWizard,
   ProvincePreviewLayer,
@@ -49,10 +53,62 @@ interface EnhancedMapEditorContentProps {
 export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorContentProps) {
   const { country, isLoading: countryLoading } = useCountryData();
   const mapRef = useRef<EditorMapRef>(null);
-  const [sidePanel, setSidePanel] = useState<"none" | "features" | "properties">("none");
+
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+
+  const [layerStates, setLayerStates] = useState<
+    Record<string, { visible: boolean; locked: boolean; opacity?: number }>
+  >({
+    border: { visible: true, locked: false },
+    regions: { visible: true, locked: false, opacity: 0.6 },
+    cities: { visible: true, locked: false },
+    pois: { visible: true, locked: false },
+    stories: { visible: true, locked: false },
+    labels: { visible: true, locked: false },
+    routes: { visible: true, locked: false },
+    rivers: { visible: true, locked: false },
+    altitude: { visible: true, locked: false },
+    grid: { visible: false, locked: false },
+  });
 
   const editor = useMapEditor(country?.id);
   const importer = useProvinceImporter(country?.id ?? "");
+
+  // Wiki scanner mutations
+  const updateCityWiki = api.geoFeatures.updateCity.useMutation({
+    onSuccess: () => editor.refetchFeatures(),
+  });
+  const updatePOIWiki = api.geoFeatures.updatePOI.useMutation({
+    onSuccess: () => editor.refetchFeatures(),
+  });
+  const updateStoryPinWiki = api.geoFeatures.updateStoryPin.useMutation({
+    onSuccess: () => editor.refetchFeatures(),
+  });
+  const updateMapLabelWiki = api.geoFeatures.updateMapLabel.useMutation({
+    onSuccess: () => editor.refetchFeatures(),
+  });
+
+  const handleLinkFeature = useCallback(
+    async (featureId: string, featureType: string, wikiTitle: string) => {
+      if (!country?.id) return;
+      if (featureType === "city") {
+        await updateCityWiki.mutateAsync({ id: featureId, wikiPageTitle: wikiTitle });
+      } else if (featureType === "poi") {
+        await updatePOIWiki.mutateAsync({ id: featureId, wikiPageTitle: wikiTitle });
+      } else if (featureType === "storyPin") {
+        await updateStoryPinWiki.mutateAsync({ id: featureId, wikiPageTitle: wikiTitle });
+      } else if (featureType === "mapLabel") {
+        await updateMapLabelWiki.mutateAsync({ id: featureId, wikiPageTitle: wikiTitle });
+      }
+    },
+    [country?.id, updateCityWiki, updatePOIWiki, updateStoryPinWiki, updateMapLabelWiki]
+  );
+
+  const wikiScanner = useWikiScanner({
+    features: editor.allFeatures,
+    onLinkFeature: handleLinkFeature,
+  });
 
   // Track the live map instance for province preview layer
   const [mapInstance, setMapInstance] = useState<import("maplibre-gl").Map | null>(null);
@@ -68,19 +124,12 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
   }, []);
 
   // Fetch base world map layers for editor context
-  const { mapLayers: worldMapLayers } = useMapData(["background", "altitudes", "rivers", "lakes"]);
-
-  // Auto-open properties panel when entering an add/edit mode
-  const prevModeRef = useRef(editor.mode);
-  useEffect(() => {
-    const prev = prevModeRef.current;
-    prevModeRef.current = editor.mode;
-    if (editor.mode !== "view" && editor.mode !== "import-provinces" && prev === "view") {
-      setSidePanel("properties");
-    } else if (editor.mode === "view" && prev !== "view") {
-      setSidePanel("none");
-    }
-  }, [editor.mode]);
+  const { mapLayers: worldMapLayers, toggleLayer } = useMapData([
+    "background",
+    "altitudes",
+    "rivers",
+    "lakes",
+  ]);
 
   const handleSelectFeature = useCallback(
     (feature: (typeof editor.allFeatures)[number]) => {
@@ -88,9 +137,8 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
       if (feature.coordinates && mapRef.current) {
         mapRef.current.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
       }
-      if (feature.type === "subdivision" && feature.geometry) {
-        editor.startEditing(feature);
-      }
+      editor.startEditing(feature);
+      setRightPanelCollapsed(false);
     },
     [editor]
   );
@@ -98,6 +146,7 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
   const handleEditFeature = useCallback(
     (feature: (typeof editor.allFeatures)[number]) => {
       editor.startEditing(feature);
+      setRightPanelCollapsed(false);
     },
     [editor]
   );
@@ -189,10 +238,6 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
           e.preventDefault();
           editor.setMode(editor.mode === "import-provinces" ? "view" : "import-provinces");
           break;
-        case "f":
-          e.preventDefault();
-          setSidePanel((v) => (v === "features" ? "none" : "features"));
-          break;
       }
     };
     window.addEventListener("keydown", handler);
@@ -203,15 +248,12 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
     return null;
   }
 
-  const showPropertyPanel =
-    sidePanel === "properties" && editor.mode !== "view" && editor.mode !== "import-provinces";
-  const showFeatureList = sidePanel === "features";
-  const hasSidePanel = showPropertyPanel || showFeatureList;
+  const showRightPanel = editor.mode !== "view" && editor.mode !== "import-provinces";
 
   return (
     <div className="bg-background fixed inset-0 z-40 flex flex-col">
       {/* ── Top bar ── */}
-      <div className="border-border bg-card flex h-11 shrink-0 items-center gap-2 border-b px-3">
+      <div className="border-border bg-card/75 backdrop-blur-md flex h-11 shrink-0 items-center gap-2 border-b px-3">
         {/* Left: back + country name */}
         <button
           onClick={() => onNavigate?.("overview")}
@@ -234,32 +276,121 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
           mode={editor.mode}
           onModeChange={editor.setMode}
           disabled={toolsDisabled}
+          horizontal={true}
         />
-
-        {/* Right: side panel toggles */}
-        <div className="ml-auto flex items-center gap-0.5">
-          <button
-            onClick={() => setSidePanel((v) => (v === "features" ? "none" : "features"))}
-            className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-              showFeatureList
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            }`}
-            title="Feature list"
-          >
-            <List className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Features</span>
-            {editor.allFeatures.length > 0 && (
-              <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[10px] font-medium tabular-nums">
-                {editor.allFeatures.length}
-              </span>
-            )}
-          </button>
-        </div>
       </div>
 
-      {/* ── Content: map + optional side panel ── */}
+      {/* ── Content: left panel + map + right panel ── */}
       <div className="relative flex min-h-0 flex-1">
+        {/* Left collapsible panel */}
+        {!toolsDisabled && (
+          <EditorPanel
+            side="left"
+            mode={editor.mode}
+            collapsed={leftPanelCollapsed}
+            onToggleCollapse={() => setLeftPanelCollapsed((v) => !v)}
+            featureCount={editor.allFeatures.length}
+            featuresLoading={editor.featuresLoading}
+            featureListContent={
+              <FeatureList
+                features={editor.allFeatures}
+                selectedFeature={editor.selectedFeature}
+                onSelectFeature={handleSelectFeature}
+                onEditFeature={handleEditFeature}
+                onDeleteFeature={handleDeleteFeature}
+                isLoading={editor.featuresLoading}
+              />
+            }
+            layersContent={
+              <LayerPanel
+                layers={[
+                  {
+                    id: "border",
+                    name: "Country Border",
+                    icon: Globe,
+                    visible: layerStates.border?.visible ?? true,
+                    locked: false,
+                  },
+                  {
+                    id: "regions",
+                    name: "Subdivisions",
+                    icon: Globe,
+                    visible: layerStates.regions?.visible ?? true,
+                    locked: false,
+                    opacity: layerStates.regions?.opacity,
+                  },
+                  {
+                    id: "cities",
+                    name: "Cities",
+                    icon: Globe,
+                    visible: layerStates.cities?.visible ?? true,
+                    locked: false,
+                  },
+                  {
+                    id: "pois",
+                    name: "Points of Interest",
+                    icon: Globe,
+                    visible: layerStates.pois?.visible ?? true,
+                    locked: false,
+                  },
+                  {
+                    id: "stories",
+                    name: "Story Pins",
+                    icon: Globe,
+                    visible: layerStates.stories?.visible ?? true,
+                    locked: false,
+                  },
+                  {
+                    id: "labels",
+                    name: "Map Labels",
+                    icon: Globe,
+                    visible: layerStates.labels?.visible ?? true,
+                    locked: false,
+                  },
+                ]}
+                onToggleVisibility={(id) => {
+                  if (id === "altitude" || id === "rivers" || id === "lakes") {
+                    toggleLayer(id === "altitude" ? "altitudes" : id);
+                  }
+                  setLayerStates((s) => ({
+                    ...s,
+                    [id]: { ...s[id]!, visible: !s[id]?.visible },
+                  }));
+                }}
+                onToggleLock={() => {}}
+                onOpacityChange={(id, opacity) => {
+                  setLayerStates((s) => ({
+                    ...s,
+                    [id]: { ...s[id]!, opacity },
+                  }));
+                }}
+                featureCounts={{
+                  regions: editor.allFeatures.filter((f) => f.type === "subdivision").length,
+                  cities: editor.allFeatures.filter((f) => f.type === "city").length,
+                  pois: editor.allFeatures.filter((f) => f.type === "poi").length,
+                  stories: editor.allFeatures.filter((f) => f.type === "storyPin").length,
+                  labels: editor.allFeatures.filter((f) => f.type === "mapLabel").length,
+                }}
+              />
+            }
+            wikiContent={<WikiScannerPanel scanner={wikiScanner} />}
+            importWizardContent={
+              <ProvinceImportWizard
+                importer={importer}
+                onClose={() => {
+                  importer.reset();
+                  editor.setMode("view");
+                }}
+                onComplete={() => {
+                  importer.reset();
+                  editor.setMode("view");
+                  editor.refetchFeatures();
+                }}
+              />
+            }
+          />
+        )}
+
         {/* Map area */}
         <div className="relative min-w-0 flex-1" data-map-container>
           {linkageLoading ? (
@@ -304,6 +435,14 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 onFeatureSelect={handleSelectFeature}
                 onGeometryUpdate={editor.updateSubdivisionGeometry}
                 worldMapLayers={worldMapLayers}
+                layerVisibility={{
+                  regions: layerStates.regions?.visible ?? true,
+                  cities: layerStates.cities?.visible ?? true,
+                  pois: layerStates.pois?.visible ?? true,
+                  stories: layerStates.stories?.visible ?? true,
+                  labels: layerStates.labels?.visible ?? true,
+                  routes: layerStates.routes?.visible ?? true,
+                }}
               />
 
               {/* Province preview layer */}
@@ -340,56 +479,35 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
           )}
         </div>
 
-        {/* ── Right side panel ── */}
-        {hasSidePanel && (
-          <div className="border-border bg-card w-64 shrink-0 overflow-y-auto border-l lg:w-72">
-            {showFeatureList && (
-              <div className="p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
-                    Features
-                  </span>
-                  <button
-                    onClick={() => setSidePanel("none")}
-                    className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-                <FeatureList
-                  features={editor.allFeatures}
-                  selectedFeature={editor.selectedFeature}
-                  onSelectFeature={handleSelectFeature}
-                  onEditFeature={handleEditFeature}
-                  onDeleteFeature={handleDeleteFeature}
-                  isLoading={editor.featuresLoading}
-                />
-              </div>
-            )}
-
-            {showPropertyPanel && (
-              <div className="p-3">
-                <FeaturePropertyPanel
-                  mode={editor.mode}
-                  pendingCoordinates={editor.pendingCoordinates}
-                  pendingGeometry={editor.pendingGeometry}
-                  cityForm={editor.cityForm}
-                  onCityFormChange={editor.setCityForm}
-                  subdivisionForm={editor.subdivisionForm}
-                  onSubdivisionFormChange={editor.setSubdivisionForm}
-                  poiForm={editor.poiForm}
-                  onPOIFormChange={editor.setPOIForm}
-                  onSubmit={handleSubmit}
-                  onCancel={editor.resetForm}
-                  isMutating={editor.isMutating}
-                  error={editor.mutationError}
-                  lastSavedAt={editor.lastSavedAt}
-                  pendingPointInfo={editor.pendingPointInfo}
-                  isPendingPointInfoLoading={editor.isPendingPointInfoLoading}
-                />
-              </div>
-            )}
-          </div>
+        {/* Right collapsible panel (Properties & Form Context) */}
+        {showRightPanel && (
+          <EditorPanel
+            side="right"
+            mode={editor.mode}
+            collapsed={rightPanelCollapsed}
+            onToggleCollapse={() => setRightPanelCollapsed((v) => !v)}
+            propertiesContent={
+              <FeaturePropertyPanel
+                mode={editor.mode}
+                pendingCoordinates={editor.pendingCoordinates}
+                pendingGeometry={editor.pendingGeometry}
+                cityForm={editor.cityForm}
+                onCityFormChange={editor.setCityForm}
+                subdivisionForm={editor.subdivisionForm}
+                onSubdivisionFormChange={editor.setSubdivisionForm}
+                poiForm={editor.poiForm}
+                onPOIFormChange={editor.setPOIForm}
+                onSubmit={handleSubmit}
+                onCancel={editor.resetForm}
+                isMutating={editor.isMutating}
+                error={editor.mutationError}
+                lastSavedAt={editor.lastSavedAt}
+                pendingPointInfo={editor.pendingPointInfo}
+                isPendingPointInfoLoading={editor.isPendingPointInfoLoading}
+                allFeatures={editor.allFeatures}
+              />
+            }
+          />
         )}
       </div>
     </div>

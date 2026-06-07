@@ -439,6 +439,7 @@ export function NationalIdentitySection({
                 referenceCountry={referenceCountry}
                 showAdvanced={builderState.showAdvancedMode}
                 mode={mode}
+                countryId={countryId}
               />
             </div>
           )}

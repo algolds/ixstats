@@ -26,6 +26,7 @@ import { clearLayerCache } from "./core";
 import { ActivityGenerator } from "~/lib/activity-generator";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { featureIdToDisplayName } from "~/lib/map-utils";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
 
 // ──────────────────────────────────────────────
 // Router
@@ -72,16 +73,7 @@ export const geoEditorRouter = createTRPCRouter({
       });
 
       // Update country with geometry + area
-      await ctx.db.country.update({
-        where: { id: input.countryId },
-        data: {
-          geometry: mapLayer.geometry as object,
-          centroid: mapLayer.centroid as object | undefined,
-          boundingBox: mapLayer.boundingBox as object | undefined,
-          landArea: mapLayer.areaSqKm ?? undefined,
-          areaSqMi: mapLayer.areaSqKm ? mapLayer.areaSqKm * 0.386102 : undefined,
-        },
-      });
+      await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
 
       // Invalidate caches
       clearLayerCache("political");
@@ -126,16 +118,7 @@ export const geoEditorRouter = createTRPCRouter({
 
       // Clear geometry + area from country
       if (previousCountryId) {
-        await ctx.db.country.update({
-          where: { id: previousCountryId },
-          data: {
-            geometry: null as any,
-            centroid: null as any,
-            boundingBox: null as any,
-            landArea: null,
-            areaSqMi: null,
-          },
-        });
+        await syncCountryGeometryFromMapLayer(ctx.db, previousCountryId);
       }
 
       clearLayerCache("political");
@@ -219,16 +202,7 @@ export const geoEditorRouter = createTRPCRouter({
             where: { id: feature.id },
             data: { countryId: existing.id },
           });
-          await ctx.db.country.update({
-            where: { id: existing.id },
-            data: {
-              geometry: feature.geometry as object,
-              centroid: feature.centroid as object | undefined,
-              boundingBox: feature.boundingBox as object | undefined,
-              landArea: feature.areaSqKm ?? undefined,
-              areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
-            },
-          });
+          await syncCountryGeometryFromMapLayer(ctx.db, existing.id);
           alreadyLinked.add(existing.id);
           linked++;
         } else {
@@ -382,65 +356,63 @@ export const geoEditorRouter = createTRPCRouter({
             where: { id: mapLayer.id },
             data: { geometry: proposed.geometry as object },
           });
-          await ctx.db.country.update({
-            where: { id: edit.countryId },
-            data: { geometry: proposed.geometry as object },
-          });
 
           // Recalculate area via PostGIS and update records
+          let newAreaSqKm: number | null = null;
           try {
             const areaResult = await ctx.db.$queryRawUnsafe<Array<{ area_sq_km: number }>>(
               `SELECT ST_Area(geom_postgis::geography) / 1000000 as area_sq_km
                FROM map_layers WHERE id = $1 AND geom_postgis IS NOT NULL`,
               mapLayer.id
             );
-            const newAreaSqKm = areaResult[0]?.area_sq_km;
-            if (newAreaSqKm != null) {
-              const areaSqMi = newAreaSqKm * 0.386102;
+            const calculatedArea = areaResult[0]?.area_sq_km;
+            if (calculatedArea != null) {
+              newAreaSqKm = calculatedArea;
               await ctx.db.mapLayer.update({
                 where: { id: mapLayer.id },
                 data: { areaSqKm: newAreaSqKm },
               });
-              await ctx.db.country.update({
-                where: { id: edit.countryId },
-                data: { landArea: newAreaSqKm, areaSqMi },
-              });
-
-              // Create BorderHistory record
-              const oldSqMi = oldAreaSqKm ? oldAreaSqKm * 0.386102 : null;
-              const newSqMi = newAreaSqKm * 0.386102;
-              await ctx.db.borderHistory.create({
-                data: {
-                  countryId: edit.countryId,
-                  geometry: proposed.geometry as object,
-                  changedBy: ctx.auth!.userId ?? "system",
-                  reason: input.reviewNote ?? "Border adjustment approved",
-                  oldAreaSqMi: oldSqMi,
-                  newAreaSqMi: newSqMi,
-                  areaDeltaSqMi: newSqMi - (oldSqMi ?? 0),
-                },
-              });
-
-              // Create activity feed entry
-              const country = await ctx.db.country.findUnique({
-                where: { id: edit.countryId },
-                select: { name: true },
-              });
-              const deltaKm = newAreaSqKm - (oldAreaSqKm ?? 0);
-              const direction = deltaKm >= 0 ? "expanded" : "contracted";
-              await ActivityGenerator.createActivity({
-                type: "economic",
-                category: "game",
-                countryId: edit.countryId,
-                title: `Border ${direction === "expanded" ? "Expansion" : "Contraction"}: ${country?.name ?? "Unknown"}`,
-                description: `${country?.name ?? "A country"} ${direction} by ${Math.abs(deltaKm).toFixed(0)} km². New area: ${newAreaSqKm.toFixed(0)} km².`,
-                priority: "medium",
-                visibility: "public",
-                metadata: { oldArea: oldAreaSqKm, newArea: newAreaSqKm, delta: deltaKm },
-              });
             }
           } catch (areaErr) {
             console.error("[geo.approveEdit] Area recalculation failed:", areaErr);
+          }
+
+          // Sync MapLayer to Country cached columns
+          await syncCountryGeometryFromMapLayer(ctx.db, edit.countryId);
+
+          if (newAreaSqKm != null) {
+            // Create BorderHistory record
+            const oldSqMi = oldAreaSqKm ? oldAreaSqKm * 0.386102 : null;
+            const newSqMi = newAreaSqKm * 0.386102;
+            await ctx.db.borderHistory.create({
+              data: {
+                countryId: edit.countryId,
+                geometry: proposed.geometry as object,
+                changedBy: ctx.auth!.userId ?? "system",
+                reason: input.reviewNote ?? "Border adjustment approved",
+                oldAreaSqMi: oldSqMi,
+                newAreaSqMi: newSqMi,
+                areaDeltaSqMi: newSqMi - (oldSqMi ?? 0),
+              },
+            });
+
+            // Create activity feed entry
+            const country = await ctx.db.country.findUnique({
+              where: { id: edit.countryId },
+              select: { name: true },
+            });
+            const deltaKm = newAreaSqKm - (oldAreaSqKm ?? 0);
+            const direction = deltaKm >= 0 ? "expanded" : "contracted";
+            await ActivityGenerator.createActivity({
+              type: "economic",
+              category: "game",
+              countryId: edit.countryId,
+              title: `Border ${direction === "expanded" ? "Expansion" : "Contraction"}: ${country?.name ?? "Unknown"}`,
+              description: `${country?.name ?? "A country"} ${direction} by ${Math.abs(deltaKm).toFixed(0)} km². New area: ${newAreaSqKm.toFixed(0)} km².`,
+              priority: "medium",
+              visibility: "public",
+              metadata: { oldArea: oldAreaSqKm, newArea: newAreaSqKm, delta: deltaKm },
+            });
           }
 
           clearLayerCache("political");
@@ -755,6 +727,10 @@ export const geoEditorRouter = createTRPCRouter({
             areaSqKm: area,
           },
         });
+
+        if (feature.countryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+        }
 
         // Clear cache
         clearLayerCache("political");
@@ -1183,16 +1159,7 @@ export const geoEditorRouter = createTRPCRouter({
 
         for (const ml of linkedLayers) {
           if (!ml.countryId) continue;
-          await ctx.db.country.update({
-            where: { id: ml.countryId },
-            data: {
-              geometry: ml.geometry as object,
-              centroid: ml.centroid as object | undefined,
-              boundingBox: ml.boundingBox as object | undefined,
-              landArea: ml.areaSqKm ?? undefined,
-              areaSqMi: ml.areaSqKm ? ml.areaSqKm * 0.386102 : undefined,
-            },
-          });
+          await syncCountryGeometryFromMapLayer(ctx.db, ml.countryId);
           repaired++;
         }
       }
@@ -1238,16 +1205,7 @@ export const geoEditorRouter = createTRPCRouter({
               where: { id: layer.id },
               data: { countryId: match.id },
             });
-            await ctx.db.country.update({
-              where: { id: match.id },
-              data: {
-                geometry: layer.geometry as object,
-                centroid: layer.centroid as object | undefined,
-                boundingBox: layer.boundingBox as object | undefined,
-                landArea: layer.areaSqKm ?? undefined,
-                areaSqMi: layer.areaSqKm ? layer.areaSqKm * 0.386102 : undefined,
-              },
-            });
+            await syncCountryGeometryFromMapLayer(ctx.db, match.id);
             repaired++;
             countryNameMap.delete(name);
           }
@@ -1264,16 +1222,7 @@ export const geoEditorRouter = createTRPCRouter({
           where: { id: ml.id },
           data: { countryId: input.countryId },
         });
-        await ctx.db.country.update({
-          where: { id: input.countryId },
-          data: {
-            geometry: ml.geometry as object,
-            centroid: ml.centroid as object | undefined,
-            boundingBox: ml.boundingBox as object | undefined,
-            landArea: ml.areaSqKm ?? undefined,
-            areaSqMi: ml.areaSqKm ? ml.areaSqKm * 0.386102 : undefined,
-          },
-        });
+        await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
         repaired = 1;
       }
 

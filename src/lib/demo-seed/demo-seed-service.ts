@@ -57,6 +57,29 @@ export class DemoSeedService {
       } as any,
     });
 
+    // Clone political MapLayers to preserve borders
+    const sourceMapLayers = await prisma.mapLayer.findMany({
+      where: {
+        countryId: sourceCountryId,
+        layerType: "political",
+        isActive: true,
+      },
+    });
+    for (const layer of sourceMapLayers) {
+      const { id: _lId, createdAt: _lCa, updatedAt: _lUa, ...layerFields } = layer as any;
+      delete layerFields.geom_postgis;
+      await prisma.mapLayer.create({
+        data: {
+          ...layerFields,
+          countryId: demoCountry.id,
+        } as any,
+      });
+    }
+
+    // Sync cached country geometries from MapLayer
+    const { syncCountryGeometryFromMapLayer } = await import("~/lib/country-geo-service");
+    await syncCountryGeometryFromMapLayer(prisma, demoCountry.id);
+
     // Clone GovernmentStructure (or create synthetic fallback)
     if (source.governmentStructure) {
       const {

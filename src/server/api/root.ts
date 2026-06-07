@@ -133,6 +133,7 @@ import { ixnayidRouter } from "./routers/ixnayid";
 // ─── MyCountry ───────────────────────────────────────────────────────────────
 import { myCountryRouter } from "./routers/mycountry";
 import { historicalRouter } from "./routers/historical";
+import { countryGeoRouter } from "./routers/countryGeo";
 
 /**
  * Primary tRPC router for IxStates.
@@ -254,6 +255,7 @@ export const appRouter = createTRPCRouter({
   // ─── MyCountry ─────────────────────────────────────────────────────────────
   mycountry: safeRouter("mycountry", () => myCountryRouter),
   historical: safeRouter("historical", () => historicalRouter),
+  countryGeo: safeRouter("countryGeo", () => countryGeoRouter),
 });
 
 // export type definition of API
