@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Building2 } from "lucide-react";
 import { GlobeAltIcon } from "~/components/ui/icons";
 import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
+import { CountryFeatureSheet } from "./CountryFeatureSheet";
+import type { CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbed";
 import {
   useCountryData,
   SectionShell,
@@ -38,6 +41,7 @@ export function EnhancedDiplomacyContent({
   notifications,
 }: EnhancedDiplomacyContentProps) {
   const { country, isLoading } = useCountryData();
+  const [selectedFeature, setSelectedFeature] = useState<CountryMapFeature | null>(null);
 
   const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: country?.id ?? "" },
@@ -126,11 +130,25 @@ export function EnhancedDiplomacyContent({
       {/* War Room — 3-panel command center (leads; carries the guided empty-state CTAs) */}
       <DiplomacyWarRoom countryId={country.id} />
 
-      {/* Embassy network map — secondary, shown once there's a network to plot */}
-      {!isGuided && <DashboardMapWidget countryId={country.id} viewMode="diplomacy" />}
+      {/* Embassy network map — secondary, shown once there's a network to plot.
+          Click a city/subdivision to manage it (tier-0 interaction canvas). */}
+      {!isGuided && (
+        <DashboardMapWidget
+          countryId={country.id}
+          viewMode="diplomacy"
+          onFeatureClick={setSelectedFeature}
+        />
+      )}
 
       {/* Wiki woven inline */}
       <InlineWiki context="diplomacy" accent="cyan" maxSections={1} />
+
+      {/* Click-to-manage feature sheet (city / subdivision attributes) */}
+      <CountryFeatureSheet
+        countryId={country.id}
+        feature={selectedFeature}
+        onClose={() => setSelectedFeature(null)}
+      />
     </SectionShell>
   );
 }

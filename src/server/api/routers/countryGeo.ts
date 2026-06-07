@@ -52,6 +52,8 @@ export const countryGeoRouter = createTRPCRouter({
         wikiPageTitle: z.string().max(200).optional(),
         gdpContribution: z.number().min(0).optional(),
         economyOutput: z.number().min(0).optional(),
+        specialization: z.string().max(100).optional(),
+        infrastructureLevel: z.number().int().min(0).max(10).optional(),
         mayorName: z.string().max(100).optional(),
         isPort: z.boolean().optional(),
       })

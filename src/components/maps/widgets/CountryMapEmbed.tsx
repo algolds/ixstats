@@ -14,6 +14,12 @@ import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/map-config";
 import { MapPin, Loader2 } from "lucide-react";
 
+/** A clicked map feature, identified by kind + record id. */
+export interface CountryMapFeature {
+  kind: "city" | "subdivision";
+  id: string;
+}
+
 export interface CountryMapEmbedProps {
   countryId: string;
   height?: string;
@@ -24,6 +30,8 @@ export interface CountryMapEmbedProps {
   interactive?: boolean;
   onCountryClick?: () => void;
   onNeighborClick?: (countryId: string) => void;
+  /** Fired when a city/subdivision feature is clicked. Enables click-to-manage. */
+  onFeatureClick?: (feature: CountryMapFeature) => void;
   boundsPadding?: number;
 }
 
@@ -68,6 +76,7 @@ export function CountryMapEmbed({
   interactive = true,
   onCountryClick,
   onNeighborClick,
+  onFeatureClick,
   boundsPadding = 40,
 }: CountryMapEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -190,12 +199,25 @@ export function CountryMapEmbed({
             .filter((s) => s.geometry)
             .map((s) => ({
               type: "Feature" as const,
-              properties: { name: s.name },
+              properties: { name: s.name, _subId: s.id },
               geometry: s.geometry as GeoJSON.Geometry,
             })),
         };
 
         map.addSource("source-subdivisions", { type: "geojson", data: subGeo });
+
+        // Invisible fill for click targeting (only when click-to-manage is active)
+        if (onFeatureClick) {
+          map.addLayer({
+            id: "subdivision-fill",
+            type: "fill",
+            source: "source-subdivisions",
+            paint: {
+              "fill-color": "#666",
+              "fill-opacity": 0.01,
+            },
+          });
+        }
 
         map.addLayer({
           id: "subdivision-stroke",
@@ -256,6 +278,7 @@ export function CountryMapEmbed({
           cityFeatures.push({
             type: "Feature",
             properties: {
+              _cityId: city.id,
               name: city.name,
               isCapital: city.isNationalCapital,
               population: city.population,
@@ -360,6 +383,36 @@ export function CountryMapEmbed({
         });
       }
 
+      // ── Click-to-manage: city + subdivision feature selection ──
+      if (onFeatureClick) {
+        const cityLayers = ["city-circles", "capital-star"];
+        for (const layerId of cityLayers) {
+          map.on("click", layerId, (e) => {
+            const id = e.features?.[0]?.properties?._cityId;
+            if (id) onFeatureClick({ kind: "city", id: String(id) });
+          });
+          map.on("mouseenter", layerId, () => {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", layerId, () => {
+            map.getCanvas().style.cursor = "";
+          });
+        }
+
+        if (showSubdivisions) {
+          map.on("click", "subdivision-fill", (e) => {
+            const id = e.features?.[0]?.properties?._subId;
+            if (id) onFeatureClick({ kind: "subdivision", id: String(id) });
+          });
+          map.on("mouseenter", "subdivision-fill", () => {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", "subdivision-fill", () => {
+            map.getCanvas().style.cursor = "";
+          });
+        }
+      }
+
       setMapReady(true);
     });
   }, [
@@ -378,6 +431,7 @@ export function CountryMapEmbed({
     interactive,
     onCountryClick,
     onNeighborClick,
+    onFeatureClick,
     boundsPadding,
     worldPolitical,
     countryId,

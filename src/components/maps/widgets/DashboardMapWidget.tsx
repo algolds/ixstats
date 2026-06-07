@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Globe, Shield, Building2, Brain, MapPin, Loader2 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { CountryMapEmbed } from "~/components/maps/widgets/CountryMapEmbed";
+import { CountryMapEmbed, type CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbed";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
@@ -14,6 +14,8 @@ interface DashboardMapWidgetProps {
   userCountryId?: string; // Backwards compatibility with legacy dashboard prop
   viewMode?: "overview" | "diplomacy" | "defense" | "intelligence";
   className?: string;
+  /** Enables click-to-manage: fired when a city/subdivision is clicked on the map. */
+  onFeatureClick?: (feature: CountryMapFeature) => void;
 }
 
 export function DashboardMapWidget({
@@ -21,6 +23,7 @@ export function DashboardMapWidget({
   userCountryId,
   viewMode = "overview",
   className = "",
+  onFeatureClick,
 }: DashboardMapWidgetProps) {
   // Resolve the active country ID from either prop
   const activeCountryId = countryId || userCountryId;
@@ -269,10 +272,11 @@ export function DashboardMapWidget({
         <CountryMapEmbed
           countryId={activeCountryId}
           height="h-52"
-          interactive={false}
+          interactive={!!onFeatureClick}
           showNeighbors={true}
           showCities={true}
-          showSubdivisions={viewMode === "defense"}
+          showSubdivisions={viewMode === "defense" || !!onFeatureClick}
+          onFeatureClick={onFeatureClick}
           boundsPadding={50}
         />
       </div>
