@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   CheckCircle2,
   Circle,
@@ -10,6 +11,7 @@ import {
   Vote,
   Shield,
   BookOpen,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
@@ -50,6 +52,7 @@ interface ChecklistRow {
  * it only appears for new players.
  */
 export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const embassies = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { staleTime: 5 * 60_000 }
@@ -145,91 +148,115 @@ export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <PanelCard accent="amber" tinted texture="dots" className="p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex-1 text-left select-none focus:outline-none"
+          >
             <h2 className="text-card-foreground text-base font-semibold tracking-tight">
               Get started
             </h2>
             <p className="text-muted-foreground text-xs">
               First steps to bring your nation to life.
             </p>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground bg-muted/60 shrink-0 rounded-full px-2.5 py-1 text-xs font-medium">
+              {completedAuto} of {autoRows.length} complete
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md p-1 transition-colors focus:outline-none"
+              aria-label={isCollapsed ? "Expand checklist" : "Collapse checklist"}
+            >
+              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", !isCollapsed && "rotate-180")} />
+            </button>
           </div>
-          <span className="text-muted-foreground bg-muted/60 shrink-0 rounded-full px-2.5 py-1 text-xs font-medium">
-            {completedAuto} of {autoRows.length} complete
-          </span>
         </div>
 
-        <ul className="flex flex-col gap-2">
-          {rows.map((row) => {
-            const a = ACCENT_CLASSES[row.accent];
-            const Icon = row.icon;
-            return (
-              <li
-                key={row.key}
-                className={cn(
-                  "border-border/60 bg-card/40 flex items-center gap-3 rounded-lg border p-3 transition-colors",
-                  !row.done && "hover:bg-card/70"
-                )}
-              >
-                <span className="shrink-0">
-                  {row.done ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                  ) : (
-                    <Circle className={cn("h-5 w-5", a.text, "opacity-50")} />
-                  )}
-                </span>
-
-                <span
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
-                    a.text
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
-
-                <div className="min-w-0 flex-1">
-                  <p
+        <AnimatePresence initial={false}>
+          {!isCollapsed && (
+            <motion.ul
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-2 overflow-hidden"
+            >
+              {rows.map((row) => {
+                const a = ACCENT_CLASSES[row.accent];
+                const Icon = row.icon;
+                return (
+                  <li
+                    key={row.key}
                     className={cn(
-                      "text-card-foreground truncate text-sm font-medium",
-                      row.done && "text-muted-foreground line-through"
+                      "border-border/60 bg-card/40 flex items-center gap-3 rounded-lg border p-3 transition-colors",
+                      !row.done && "hover:bg-card/70"
                     )}
                   >
-                    {row.label}
-                  </p>
-                  <p className="text-muted-foreground truncate text-xs">{row.hint}</p>
-                </div>
+                    <span className="shrink-0">
+                      {row.done ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      ) : (
+                        <Circle className={cn("h-5 w-5", a.text, "opacity-50")} />
+                      )}
+                    </span>
 
-                {row.done ? (
-                  <span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
-                    Done
-                  </span>
-                ) : row.href ? (
-                  <Link
-                    href={row.href}
-                    className={cn(
-                      "border-border/70 bg-card/60 hover:bg-muted shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                      a.text
+                    <span
+                      className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+                        a.text
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          "text-card-foreground truncate text-sm font-medium",
+                          row.done && "text-muted-foreground line-through"
+                        )}
+                      >
+                        {row.label}
+                      </p>
+                      <p className="text-muted-foreground truncate text-xs">{row.hint}</p>
+                    </div>
+
+                    {row.done ? (
+                      <span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
+                        Done
+                      </span>
+                    ) : row.href ? (
+                      <Link
+                        href={row.href}
+                        className={cn(
+                          "border-border/70 bg-card/60 hover:bg-muted shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                          a.text
+                        )}
+                      >
+                        {row.cta}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={row.onAction}
+                        className={cn(
+                          "border-border/70 bg-card/60 hover:bg-muted shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                          a.text
+                        )}
+                      >
+                        {row.cta}
+                      </button>
                     )}
-                  >
-                    {row.cta}
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={row.onAction}
-                    className={cn(
-                      "border-border/70 bg-card/60 hover:bg-muted shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                      a.text
-                    )}
-                  >
-                    {row.cta}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  </li>
+                );
+              })}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </PanelCard>
     </motion.div>
   );
