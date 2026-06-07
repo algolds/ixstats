@@ -4,4 +4,3 @@ export { DefenseSidebarWidget } from "./DefenseSidebarWidget";
 export { IntelligenceSidebarWidget } from "./IntelligenceSidebarWidget";
 export { PoliticsSidebarWidget } from "./PoliticsSidebarWidget";
 export { OverviewSidebarWidget } from "./OverviewSidebarWidget";
-

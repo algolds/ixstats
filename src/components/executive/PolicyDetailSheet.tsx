@@ -1,7 +1,13 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -184,7 +190,17 @@ export function PolicyDetailSheet({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+      <DialogContent
+        className="sm:max-w-lg"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          padding: 0,
+          maxHeight: "85vh",
+          overflow: "hidden",
+        }}
+      >
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-start gap-2">
             <FileText className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />

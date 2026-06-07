@@ -92,7 +92,10 @@ export const countryGeoRouter = createTRPCRouter({
         governorName: z.string().max(100).optional(),
         budgetShare: z.number().min(0).max(100).optional(),
         governmentType: z.string().optional(),
-        color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9A-Fa-f]{6}$/)
+          .optional(),
         population: z.number().min(0).optional(),
         gdpContribution: z.number().min(0).optional(),
       })
@@ -216,7 +219,10 @@ export const countryGeoRouter = createTRPCRouter({
         labelType: z.string(),
         coordinates: z.tuple([z.number(), z.number()]).optional(),
         fontSize: z.number().min(8).max(48).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        color: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

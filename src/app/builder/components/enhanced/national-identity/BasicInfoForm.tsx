@@ -155,22 +155,25 @@ export const BasicInfoForm = React.memo(
       },
     });
 
-    const handleConfirmMapPicker = useCallback(async (coords: [number, number]) => {
-      if (!countryId) return;
-      try {
-        await upsertCityMutation.mutateAsync({
-          countryId,
-          id: identity.capitalCityId || undefined,
-          name: identity.capitalCity || "Capital City",
-          type: "capital",
-          coordinates: coords,
-          isNationalCapital: true,
-        });
-      } catch (err) {
-        console.error("Failed to upsert capital city from map picker:", err);
-        alert(err instanceof Error ? err.message : "Failed to place capital on map");
-      }
-    }, [countryId, identity.capitalCityId, identity.capitalCity, upsertCityMutation]);
+    const handleConfirmMapPicker = useCallback(
+      async (coords: [number, number]) => {
+        if (!countryId) return;
+        try {
+          await upsertCityMutation.mutateAsync({
+            countryId,
+            id: identity.capitalCityId || undefined,
+            name: identity.capitalCity || "Capital City",
+            type: "capital",
+            coordinates: coords,
+            isNationalCapital: true,
+          });
+        } catch (err) {
+          console.error("Failed to upsert capital city from map picker:", err);
+          alert(err instanceof Error ? err.message : "Failed to place capital on map");
+        }
+      },
+      [countryId, identity.capitalCityId, identity.capitalCity, upsertCityMutation]
+    );
 
     // Fetch custom government types on mount
     React.useEffect(() => {
@@ -488,7 +491,7 @@ export const BasicInfoForm = React.memo(
                         <button
                           type="button"
                           onClick={() => setIsMapPickerOpen(true)}
-                          className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 focus:outline-none"
+                          className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300"
                           title="Select Capital location on map"
                         >
                           <MapPin className="h-3 w-3" />

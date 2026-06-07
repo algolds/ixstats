@@ -17,7 +17,8 @@ import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 
 // Lazy-load sub-panels for dialog sheets
 const IntelligenceAnalysisPanel = dynamic(
-  () => import("./IntelligenceAnalysisPanel").then((m) => ({ default: m.IntelligenceAnalysisPanel })),
+  () =>
+    import("./IntelligenceAnalysisPanel").then((m) => ({ default: m.IntelligenceAnalysisPanel })),
   { ssr: false }
 );
 const KeyFindingsPanel = dynamic(
@@ -25,7 +26,10 @@ const KeyFindingsPanel = dynamic(
   { ssr: false }
 );
 const WikiArchivesPanel = dynamic(
-  () => import("~/components/mycountry/intelligence/WikiArchivesPanel").then((m) => ({ default: m.WikiArchivesPanel })),
+  () =>
+    import("~/components/mycountry/intelligence/WikiArchivesPanel").then((m) => ({
+      default: m.WikiArchivesPanel,
+    })),
   {
     ssr: false,
     loading: () => (
@@ -38,7 +42,10 @@ const WikiArchivesPanel = dynamic(
   }
 );
 const AlertThresholdSettings = dynamic(
-  () => import("~/app/mycountry/intelligence/_components/AlertThresholdSettings").then((m) => ({ default: m.AlertThresholdSettings })),
+  () =>
+    import("~/app/mycountry/intelligence/_components/AlertThresholdSettings").then((m) => ({
+      default: m.AlertThresholdSettings,
+    })),
   { ssr: false }
 );
 
@@ -61,14 +68,38 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const SEVERITY_BADGES = {
-  critical: { label: "CRITICAL", colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400" },
-  high: { label: "HIGH", colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" },
-  medium: { label: "MEDIUM", colorClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400" },
-  low: { label: "LOW", colorClass: "bg-slate-100 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400" },
-  CRITICAL: { label: "CRITICAL", colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400" },
-  HIGH: { label: "HIGH", colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" },
-  MEDIUM: { label: "MEDIUM", colorClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400" },
-  LOW: { label: "LOW", colorClass: "bg-slate-100 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400" },
+  critical: {
+    label: "CRITICAL",
+    colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
+  },
+  high: {
+    label: "HIGH",
+    colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+  },
+  medium: {
+    label: "MEDIUM",
+    colorClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
+  },
+  low: {
+    label: "LOW",
+    colorClass: "bg-slate-100 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400",
+  },
+  CRITICAL: {
+    label: "CRITICAL",
+    colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
+  },
+  HIGH: {
+    label: "HIGH",
+    colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+  },
+  MEDIUM: {
+    label: "MEDIUM",
+    colorClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
+  },
+  LOW: {
+    label: "LOW",
+    colorClass: "bg-slate-100 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400",
+  },
 };
 
 export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarRoomProps) {
@@ -110,9 +141,7 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
     { label: "embassies", value: activeEmbassies },
   ];
 
-  const archiveStats: PanelStat[] = [
-    { label: "archives", value: "active" },
-  ];
+  const archiveStats: PanelStat[] = [{ label: "archives", value: "active" }];
 
   return (
     <>
@@ -139,8 +168,14 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
               title={alert.title}
               subtitle={alert.category || "security"}
               badges={SEVERITY_BADGES[alert.severity] ? [SEVERITY_BADGES[alert.severity]] : []}
-              trailingText={alert.deviation ? `${alert.deviation > 0 ? "+" : ""}${alert.deviation}%` : undefined}
-              trailingColor={alert.severity === "CRITICAL" || alert.severity === "critical" ? "text-red-600" : undefined}
+              trailingText={
+                alert.deviation ? `${alert.deviation > 0 ? "+" : ""}${alert.deviation}%` : undefined
+              }
+              trailingColor={
+                alert.severity === "CRITICAL" || alert.severity === "critical"
+                  ? "text-red-600"
+                  : undefined
+              }
               pulse={alert.severity === "CRITICAL" || alert.severity === "critical"}
             />
           ))}
@@ -195,8 +230,9 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
           emptyTitle="No archives"
           emptyDescription="Geopolitical historical database."
         >
-          <div className="p-3 text-xs text-muted-foreground leading-relaxed">
-            Access compiled media wiki articles, historical database registers, and counter-intelligence scanning archives for {countryName}.
+          <div className="text-muted-foreground p-3 text-xs leading-relaxed">
+            Access compiled media wiki articles, historical database registers, and
+            counter-intelligence scanning archives for {countryName}.
           </div>
         </CommandPanel>
       </div>
@@ -229,9 +265,7 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
         <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
           <DialogHeader>
             <DialogTitle>Key Findings & Alerts</DialogTitle>
-            <DialogDescription>
-              Detailed threat monitoring alerts and logs
-            </DialogDescription>
+            <DialogDescription>Detailed threat monitoring alerts and logs</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
             <KeyFindingsPanel countryId={countryId} />
@@ -246,16 +280,10 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
         <DialogContent className="max-w-3xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
           <DialogHeader>
             <DialogTitle>Security Analysis</DialogTitle>
-            <DialogDescription>
-              Detailed geopolitical reports and analytics
-            </DialogDescription>
+            <DialogDescription>Detailed geopolitical reports and analytics</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <IntelligenceAnalysisPanel
-              countryId={countryId}
-              countryName={countryName}
-              userId=""
-            />
+            <IntelligenceAnalysisPanel countryId={countryId} countryName={countryName} userId="" />
           </div>
         </DialogContent>
       </Dialog>
@@ -267,9 +295,7 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
         <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
           <DialogHeader>
             <DialogTitle>Lore & Wiki Archives</DialogTitle>
-            <DialogDescription>
-              Geopolitical and historical registers
-            </DialogDescription>
+            <DialogDescription>Geopolitical and historical registers</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
             <WikiArchivesPanel countryId={countryId} countryName={countryName} />

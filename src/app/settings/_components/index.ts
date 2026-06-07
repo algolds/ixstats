@@ -9,4 +9,3 @@ export { IxnayIDCard } from "./IxnayIDCard";
 export { VaultSettingsCard } from "./VaultSettingsCard";
 export { PrivacySecurityCard } from "./PrivacySecurityCard";
 export { GeographicReconciliationCard } from "./GeographicReconciliationCard";
-

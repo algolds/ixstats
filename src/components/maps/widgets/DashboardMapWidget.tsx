@@ -26,26 +26,36 @@ export function DashboardMapWidget({
   const activeCountryId = countryId || userCountryId;
 
   // 1. Core geo bundle hook
-  const { areaSqKm, cities, hasGeometry, isLoading: geoLoading } = useCountryMapEmbed(activeCountryId ?? "");
+  const {
+    areaSqKm,
+    cities,
+    hasGeometry,
+    isLoading: geoLoading,
+  } = useCountryMapEmbed(activeCountryId ?? "");
 
   // 2. Fetch Diplomacy Stats (Embassies) if in diplomacy mode
-  const { data: embassies, isLoading: embassyLoading } = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId: activeCountryId ?? "" },
-    { enabled: activeCountryId !== undefined && viewMode === "diplomacy", staleTime: 5 * 60_000 }
-  );
+  const { data: embassies, isLoading: embassyLoading } =
+    api.diplomaticEmbassies.getEmbassies.useQuery(
+      { countryId: activeCountryId ?? "" },
+      { enabled: activeCountryId !== undefined && viewMode === "diplomacy", staleTime: 5 * 60_000 }
+    );
 
   const activePartnerCount = useMemo(() => {
     if (!embassies) return 0;
     return embassies.filter(
-      (e) => e.countryId && e.countryId !== activeCountryId && (e.status === "ACTIVE" || e.status === "active")
+      (e) =>
+        e.countryId &&
+        e.countryId !== activeCountryId &&
+        (e.status === "ACTIVE" || e.status === "active")
     ).length;
   }, [embassies, activeCountryId]);
 
   // 3. Fetch Defense Stats (Branches + Readiness) if in defense mode
-  const { data: securityData, isLoading: securityLoading } = api.security.getSecurityAssessment.useQuery(
-    { countryId: activeCountryId ?? "" },
-    { enabled: activeCountryId !== undefined && viewMode === "defense", staleTime: 5 * 60_000 }
-  );
+  const { data: securityData, isLoading: securityLoading } =
+    api.security.getSecurityAssessment.useQuery(
+      { countryId: activeCountryId ?? "" },
+      { enabled: activeCountryId !== undefined && viewMode === "defense", staleTime: 5 * 60_000 }
+    );
 
   const { data: branches, isLoading: branchesLoading } = api.security.getMilitaryBranches.useQuery(
     { countryId: activeCountryId ?? "" },
@@ -57,17 +67,27 @@ export function DashboardMapWidget({
   const branchCount = branches?.length ?? 0;
   const avgReadiness = useMemo(() => {
     if (!branches || branches.length === 0) return 0;
-    return Math.round(branches.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branches.length);
+    return Math.round(
+      branches.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branches.length
+    );
   }, [branches]);
 
   const readinessColor =
-    avgReadiness >= 75 ? "text-emerald-500 font-semibold" : avgReadiness >= 50 ? "text-yellow-500 font-semibold" : "text-red-500 font-semibold";
+    avgReadiness >= 75
+      ? "text-emerald-500 font-semibold"
+      : avgReadiness >= 50
+        ? "text-yellow-500 font-semibold"
+        : "text-red-500 font-semibold";
 
   // 4. Fetch Intelligence Stats (Relationship Counts) if in intelligence mode
-  const { data: relations, isLoading: relationsLoading } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId: activeCountryId ?? "" },
-    { enabled: activeCountryId !== undefined && viewMode === "intelligence", staleTime: 5 * 60_000 }
-  );
+  const { data: relations, isLoading: relationsLoading } =
+    api.diplomaticCore.getRelationships.useQuery(
+      { countryId: activeCountryId ?? "" },
+      {
+        enabled: activeCountryId !== undefined && viewMode === "intelligence",
+        staleTime: 5 * 60_000,
+      }
+    );
 
   const allyCount = useMemo(() => {
     if (!relations) return 0;
@@ -98,7 +118,12 @@ export function DashboardMapWidget({
           Icon: Shield,
           borderColor: "border-red-500/15",
           accentColor: "text-red-500",
-          badgeBorder: securityScore >= 75 ? "border-green-500/30 text-green-500" : securityScore >= 50 ? "border-yellow-500/30 text-yellow-500" : "border-red-500/30 text-red-500",
+          badgeBorder:
+            securityScore >= 75
+              ? "border-green-500/30 text-green-500"
+              : securityScore >= 50
+                ? "border-yellow-500/30 text-yellow-500"
+                : "border-red-500/30 text-red-500",
           badgeColor: "",
           isLoading: geoLoading || securityLoading || branchesLoading,
         };
@@ -124,7 +149,16 @@ export function DashboardMapWidget({
           isLoading: geoLoading,
         };
     }
-  }, [viewMode, geoLoading, embassyLoading, securityLoading, branchesLoading, relationsLoading, securityScore, activeCountryId]);
+  }, [
+    viewMode,
+    geoLoading,
+    embassyLoading,
+    securityLoading,
+    branchesLoading,
+    relationsLoading,
+    securityScore,
+    activeCountryId,
+  ]);
 
   const { title, Icon, borderColor, accentColor, badgeBorder, badgeColor, isLoading } = config;
   const mapUrl = createUrl(`/maps?country=${activeCountryId}`);
@@ -132,7 +166,13 @@ export function DashboardMapWidget({
   // ── Loading state ──
   if (isLoading) {
     return (
-      <div className={cn("glass-surface overflow-hidden rounded-xl border bg-card/10 shadow-xs", borderColor, className)}>
+      <div
+        className={cn(
+          "glass-surface bg-card/10 overflow-hidden rounded-xl border shadow-xs",
+          borderColor,
+          className
+        )}
+      >
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <Icon className="text-muted-foreground h-3.5 w-3.5" />
@@ -149,8 +189,14 @@ export function DashboardMapWidget({
   // ── No country selected or missing geometry ──
   if (!activeCountryId || !hasGeometry) {
     return (
-      <div className={cn("glass-surface overflow-hidden rounded-xl border bg-card/10 shadow-xs", borderColor, className)}>
-        <div className="flex items-center justify-between px-3 py-2 border-b border-border/10">
+      <div
+        className={cn(
+          "glass-surface bg-card/10 overflow-hidden rounded-xl border shadow-xs",
+          borderColor,
+          className
+        )}
+      >
+        <div className="border-border/10 flex items-center justify-between border-b px-3 py-2">
           <div className="flex items-center gap-2">
             <Icon className="text-muted-foreground h-3.5 w-3.5" />
             <span className="text-xs font-medium">{title}</span>
@@ -167,7 +213,13 @@ export function DashboardMapWidget({
   }
 
   return (
-    <div className={cn("glass-surface overflow-hidden rounded-xl border bg-card/10 shadow-xs", borderColor, className)}>
+    <div
+      className={cn(
+        "glass-surface bg-card/10 overflow-hidden rounded-xl border shadow-xs",
+        borderColor,
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
@@ -175,24 +227,36 @@ export function DashboardMapWidget({
           <span className="text-foreground text-xs font-medium">{title}</span>
         </div>
         {viewMode === "diplomacy" && (
-          <Badge variant="outline" className={cn("h-4 px-1.5 text-[9px] uppercase", badgeBorder, badgeColor)}>
+          <Badge
+            variant="outline"
+            className={cn("h-4 px-1.5 text-[9px] uppercase", badgeBorder, badgeColor)}
+          >
             {activePartnerCount} Partner{activePartnerCount !== 1 ? "s" : ""}
           </Badge>
         )}
         {viewMode === "defense" && (
-          <Badge variant="outline" className={cn("h-4 px-1.5 text-[9px] uppercase", badgeBorder, badgeColor)}>
+          <Badge
+            variant="outline"
+            className={cn("h-4 px-1.5 text-[9px] uppercase", badgeBorder, badgeColor)}
+          >
             {securityLevel}
           </Badge>
         )}
         {viewMode === "intelligence" && (
           <div className="flex items-center gap-1">
             {allyCount > 0 && (
-              <Badge variant="outline" className="h-4 border-green-500/30 px-1.5 text-[9px] text-green-500 uppercase">
+              <Badge
+                variant="outline"
+                className="h-4 border-green-500/30 px-1.5 text-[9px] text-green-500 uppercase"
+              >
                 {allyCount} Ally
               </Badge>
             )}
             {hostileCount > 0 && (
-              <Badge variant="outline" className="h-4 border-red-500/30 px-1.5 text-[9px] text-red-500 uppercase">
+              <Badge
+                variant="outline"
+                className="h-4 border-red-500/30 px-1.5 text-[9px] text-red-500 uppercase"
+              >
                 {hostileCount} Hostile
               </Badge>
             )}
@@ -201,7 +265,7 @@ export function DashboardMapWidget({
       </div>
 
       {/* Map Content */}
-      <div className="h-52 w-full overflow-hidden relative">
+      <div className="relative h-52 w-full overflow-hidden">
         <CountryMapEmbed
           countryId={activeCountryId}
           height="h-52"
@@ -214,7 +278,7 @@ export function DashboardMapWidget({
       </div>
 
       {/* Footer statistics depending on mode */}
-      <div className="border-border/40 flex items-center justify-between border-t px-3 py-1.5 bg-muted/10">
+      <div className="border-border/40 bg-muted/10 flex items-center justify-between border-t px-3 py-1.5">
         {viewMode === "overview" && (
           <div className="text-muted-foreground flex items-center gap-2.5 text-[10px]">
             {areaSqKm ? <span>{Math.round(areaSqKm).toLocaleString()} km²</span> : null}
@@ -237,7 +301,9 @@ export function DashboardMapWidget({
             <span>{branchCount} branches</span>
             <span className={readinessColor}>{avgReadiness}% ready</span>
             {(securityData?.activeThreatCount ?? 0) > 0 && (
-              <span className="text-red-500 font-semibold">{securityData?.activeThreatCount} threats</span>
+              <span className="font-semibold text-red-500">
+                {securityData?.activeThreatCount} threats
+              </span>
             )}
           </div>
         )}

@@ -364,10 +364,7 @@ export function SectorBreakdownCard({
 
   if (cardWrapper === "glass") {
     return (
-      <GlassPanel
-        accent={accent}
-        className={cn("relative overflow-hidden", className)}
-      >
+      <GlassPanel accent={accent} className={cn("relative overflow-hidden", className)}>
         {cardInner}
       </GlassPanel>
     );
@@ -386,11 +383,7 @@ export function SectorBreakdownCard({
     );
   }
 
-  return (
-    <Card className={cn("glass-hierarchy-child", className)}>
-      {cardInner}
-    </Card>
-  );
+  return <Card className={cn("glass-hierarchy-child", className)}>{cardInner}</Card>;
 }
 
 /**

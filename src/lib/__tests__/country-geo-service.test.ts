@@ -189,8 +189,20 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
       // City s1 has population 20000 (which is 40% of geo population sum)
       // City s2 has explicit populationShare of 10%
       mockDb.city.findMany.mockResolvedValue([
-        { id: "c1", name: "City 1", population: 40000, gdpContribution: 120000, populationShare: null },
-        { id: "c2", name: "City 2", population: 10000, gdpContribution: 30000, populationShare: 10 },
+        {
+          id: "c1",
+          name: "City 1",
+          population: 40000,
+          gdpContribution: 120000,
+          populationShare: null,
+        },
+        {
+          id: "c2",
+          name: "City 2",
+          population: 10000,
+          gdpContribution: 30000,
+          populationShare: 10,
+        },
       ]);
       mockDb.pointOfInterest.findMany.mockResolvedValue([]);
       mockDb.storyPin.findMany.mockResolvedValue([]);
@@ -206,7 +218,7 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
 
       // City 1 is scaled proportionally: 40000 * 2 = 80000
       expect(bundle.cities[0].population).toBe(80000);
-      
+
       // City 2 has explicit populationShare of 10%: 100000 * 0.10 = 10000
       expect(bundle.cities[1].population).toBe(10000);
 

@@ -23,7 +23,7 @@ async function main() {
   const res = await fetch(
     `https://discord.com/api/v10/channels/${IXTWITTER_CHANNEL_ID}/messages?limit=25`,
     {
-      headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` }
+      headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
     }
   );
   if (!res.ok) {
@@ -33,7 +33,7 @@ async function main() {
 
   const messages: any[] = await res.json();
   console.log(`Fetched ${messages.length} messages.`);
-  
+
   for (const msg of messages) {
     if (msg.author.bot) continue;
     console.log("\n-------------------------------------------");

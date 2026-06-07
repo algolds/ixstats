@@ -60,12 +60,18 @@ function normalizeGrowth(value: number | null | undefined): number {
 
 const indicatorColor = (label: string) => {
   switch (label.toLowerCase()) {
-    case "exec": return "#f59e0b"; // Amber
-    case "diplo": return "#06b6d4"; // Cyan
-    case "pol": return "#8b5cf6"; // Purple/Violet
-    case "intel": return "#3b82f6"; // Blue
-    case "def": return "#ef4444"; // Red
-    default: return "#10b981"; // Green
+    case "exec":
+      return "#f59e0b"; // Amber
+    case "diplo":
+      return "#06b6d4"; // Cyan
+    case "pol":
+      return "#8b5cf6"; // Purple/Violet
+    case "intel":
+      return "#3b82f6"; // Blue
+    case "def":
+      return "#ef4444"; // Red
+    default:
+      return "#10b981"; // Green
   }
 };
 
@@ -86,17 +92,17 @@ function StatusIndicator({
         ? "text-amber-500 bg-amber-500/10 border-amber-500/20"
         : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
   return (
-    <div className={cn("flex flex-col items-center flex-1 py-1 px-1 rounded-lg border text-center transition-colors text-[9px] font-semibold", colorClass)}>
-      <div className="relative w-8 h-8 flex items-center justify-center mb-0.5 shrink-0">
+    <div
+      className={cn(
+        "flex flex-1 flex-col items-center rounded-lg border px-1 py-1 text-center text-[9px] font-semibold transition-colors",
+        colorClass
+      )}
+    >
+      <div className="relative mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center">
         <div className="absolute inset-0 flex items-center justify-center">
-          <HealthRing
-            value={health}
-            size={32}
-            color={indicatorColor(label)}
-            hideValue={true}
-          />
+          <HealthRing value={health} size={32} color={indicatorColor(label)} hideValue={true} />
         </div>
-        <Icon className="h-3 w-3 relative z-10 shrink-0" style={{ color: indicatorColor(label) }} />
+        <Icon className="relative z-10 h-3 w-3 shrink-0" style={{ color: indicatorColor(label) }} />
       </div>
       <span>{Math.round(health)}%</span>
     </div>
@@ -188,80 +194,121 @@ export function OverviewHero({
     gdpPerCapita: country.currentGdpPerCapita ?? 0,
     population: country.currentPopulation ?? 0,
     populationTier: country.populationTier ?? "1",
-    currentTotalGdp: country.currentTotalGdp ?? (country.currentPopulation && country.currentGdpPerCapita ? country.currentPopulation * country.currentGdpPerCapita : 0),
+    currentTotalGdp:
+      country.currentTotalGdp ??
+      (country.currentPopulation && country.currentGdpPerCapita
+        ? country.currentPopulation * country.currentGdpPerCapita
+        : 0),
     economicTier: country.economicTier ?? "Developing",
-    populationDensity: country.populationDensity ?? (country as any).newStats?.populationDensity ?? null,
+    populationDensity:
+      country.populationDensity ?? (country as any).newStats?.populationDensity ?? null,
     landArea: country.landArea ?? null,
     areaSqMi: country.areaSqMi ?? (country as any).newStats?.areaSqMi ?? null,
-    gdpGrowth: normalizeGrowth(country.realGDPGrowthRate ?? (country as any).newStats?.realGDPGrowthRate ?? country.adjustedGdpGrowth),
-    popGrowth: normalizeGrowth(country.populationGrowthRate ?? (country as any).newStats?.populationGrowthRate),
+    gdpGrowth: normalizeGrowth(
+      country.realGDPGrowthRate ??
+        (country as any).newStats?.realGDPGrowthRate ??
+        country.adjustedGdpGrowth
+    ),
+    popGrowth: normalizeGrowth(
+      country.populationGrowthRate ?? (country as any).newStats?.populationGrowthRate
+    ),
     maxGdpGrowthRate: country.maxGdpGrowthRate ?? (country as any).newStats?.maxGdpGrowthRate ?? 0,
   };
 
   // ── Executive Derived Stats ──
   const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
-  const activeMeetings = meetings?.filter((m) => m.status === "in_progress" || m.status === "IN_PROGRESS").length ?? 0;
-  const pActions = meetings?.flatMap((m) => m.actionItems ?? []).filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
-  const executiveHealth = Math.max(0, Math.min(100, Math.round(
-    50 +
-    Math.min(activePolicies * 4, 20) +
-    Math.min(activeMeetings * 5, 10) -
-    Math.min(issueCount * 3, 15) -
-    Math.min(urgentIssueCount * 5, 15) -
-    Math.min(pActions * 2, 10)
-  )));
+  const activeMeetings =
+    meetings?.filter((m) => m.status === "in_progress" || m.status === "IN_PROGRESS").length ?? 0;
+  const pActions =
+    meetings
+      ?.flatMap((m) => m.actionItems ?? [])
+      .filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
+  const executiveHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        50 +
+          Math.min(activePolicies * 4, 20) +
+          Math.min(activeMeetings * 5, 10) -
+          Math.min(issueCount * 3, 15) -
+          Math.min(urgentIssueCount * 5, 15) -
+          Math.min(pActions * 2, 10)
+      )
+    )
+  );
 
   // ── Diplomacy Derived Stats ──
-  const activeEmbassies = embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+  const activeEmbassies =
+    embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
   const totalRelations = relations?.length ?? 0;
-  const avgStrength = totalRelations > 0
-    ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
-    : 0;
+  const avgStrength =
+    totalRelations > 0
+      ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
+      : 0;
   const totalEmbassies = embassies?.length ?? 0;
   const embassyRatio = totalEmbassies > 0 ? activeEmbassies / totalEmbassies : 0;
-  const diplomaticHealth = Math.max(0, Math.min(100, Math.round(
-    avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20)
-  )));
+  const diplomaticHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20))
+    )
+  );
 
   // ── Politics Derived Stats ──
   const partyCount = parties?.length ?? 0;
   const totalSeats = legislature?.totalSeats ?? 0;
-  const filledSeats = parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
-  const pendingElections = elections?.filter(
-    (e: any) =>
-      e.status === "SCHEDULED" ||
-      e.status === "scheduled" ||
-      e.status === "IN_PROGRESS" ||
-      e.status === "in_progress"
-  ).length ?? 0;
-  const politicsHealth = Math.max(0, Math.min(100, Math.round(
-    50 +
-    Math.min(partyCount * 10, 30) +
-    (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
-    (pendingElections > 0 ? 10 : 0)
-  )));
+  const filledSeats =
+    parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+  const pendingElections =
+    elections?.filter(
+      (e: any) =>
+        e.status === "SCHEDULED" ||
+        e.status === "scheduled" ||
+        e.status === "IN_PROGRESS" ||
+        e.status === "in_progress"
+    ).length ?? 0;
+  const politicsHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        50 +
+          Math.min(partyCount * 10, 30) +
+          (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
+          (pendingElections > 0 ? 10 : 0)
+      )
+    )
+  );
 
   // ── Intelligence Derived Stats ──
   const critAlerts = intelligenceOverview?.alerts?.critical ?? 0;
   const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
   const otherAlerts = Math.max(totalAlerts - critAlerts, 0);
   const defOverviewScore = defenseOverview?.overallScore ?? 50;
-  const intelligenceHealth = Math.max(0, Math.min(100, Math.round(
-    defOverviewScore - Math.min(critAlerts * 10, 20) - Math.min(otherAlerts * 2, 10)
-  )));
+  const intelligenceHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(defOverviewScore - Math.min(critAlerts * 10, 20) - Math.min(otherAlerts * 2, 10))
+    )
+  );
 
   // ── Defense Derived Stats ──
   const threats = securityData?.activeThreatCount ?? 0;
   const branchCount = militaryBranches?.length ?? 0;
-  const avgReadiness = branchCount > 0
-    ? Math.round(militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount)
-    : 0;
+  const avgReadiness =
+    branchCount > 0
+      ? Math.round(
+          militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount
+        )
+      : 0;
   const securityScore = securityData?.securityScore ?? 50;
-  const defenseHealth = Math.max(0, Math.min(100, Math.round(
-    securityScore * 0.6 + avgReadiness * 0.4
-  )));
-
-
+  const defenseHealth = Math.max(
+    0,
+    Math.min(100, Math.round(securityScore * 0.6 + avgReadiness * 0.4))
+  );
 
   // ── Dynamic Alerts List ──
   const alertsList = useMemo(() => {
@@ -384,7 +431,7 @@ export function OverviewHero({
 
   if (collapsed) {
     return (
-      <div className="glass-surface glass-refraction relative overflow-hidden rounded-xl shadow-sm p-3 flex flex-wrap items-center justify-between gap-3 border border-white/5 bg-card/65 backdrop-blur-md">
+      <div className="glass-surface glass-refraction bg-card/65 relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-xl border border-white/5 p-3 shadow-sm backdrop-blur-md">
         {/* Neon Frame Overlay */}
         {neonFrame.enabled && (
           <motion.div
@@ -409,7 +456,7 @@ export function OverviewHero({
         )}
         <TextureOverlay texture="paperGrain" opacity={0.09} />
 
-        <div className="flex items-center gap-3 relative z-10">
+        <div className="relative z-10 flex items-center gap-3">
           <div
             className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm"
             style={
@@ -429,31 +476,45 @@ export function OverviewHero({
             />
           </div>
           <div>
-            <span className="text-sm font-bold text-foreground">
+            <span className="text-foreground text-sm font-bold">
               {stats.countryName.replace(/_/g, " ")}
             </span>
-            <span className="text-muted-foreground/60 text-xs ml-2 hidden sm:inline">— {stats.leader}</span>
+            <span className="text-muted-foreground/60 ml-2 hidden text-xs sm:inline">
+              — {stats.leader}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs relative z-10">
-          <div className="hidden md:flex items-center gap-4">
+        <div className="relative z-10 flex items-center gap-4 text-xs">
+          <div className="hidden items-center gap-4 md:flex">
             <div>
-              <span className="text-muted-foreground/60 text-[9px] uppercase block tracking-wider font-semibold">GDP/Cap</span>
-              <span className="font-bold text-foreground">${Math.round(stats.gdpPerCapita).toLocaleString("en-US")}</span>
+              <span className="text-muted-foreground/60 block text-[9px] font-semibold tracking-wider uppercase">
+                GDP/Cap
+              </span>
+              <span className="text-foreground font-bold">
+                ${Math.round(stats.gdpPerCapita).toLocaleString("en-US")}
+              </span>
             </div>
             <div>
-              <span className="text-muted-foreground/60 text-[9px] uppercase block tracking-wider font-semibold">Population</span>
-              <span className="font-bold text-foreground">{Math.round(stats.population).toLocaleString("en-US")}</span>
+              <span className="text-muted-foreground/60 block text-[9px] font-semibold tracking-wider uppercase">
+                Population
+              </span>
+              <span className="text-foreground font-bold">
+                {Math.round(stats.population).toLocaleString("en-US")}
+              </span>
             </div>
             <div>
-              <span className="text-muted-foreground/60 text-[9px] uppercase block tracking-wider font-semibold">Land Area</span>
-              <span className="font-bold text-foreground">{stats.landArea ? `${stats.landArea.toLocaleString()} km²` : "N/A"}</span>
+              <span className="text-muted-foreground/60 block text-[9px] font-semibold tracking-wider uppercase">
+                Land Area
+              </span>
+              <span className="text-foreground font-bold">
+                {stats.landArea ? `${stats.landArea.toLocaleString()} km²` : "N/A"}
+              </span>
             </div>
           </div>
           <button
             onClick={() => onCollapsedChange(false)}
-            className="text-muted-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors cursor-pointer border border-border/40"
+            className="text-muted-foreground hover:bg-muted/30 border-border/40 flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
           >
             <span>Expand Overview</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
@@ -464,7 +525,7 @@ export function OverviewHero({
   }
 
   return (
-    <div className="glass-surface glass-refraction relative overflow-hidden rounded-xl shadow-sm border border-white/5 bg-card/65 backdrop-blur-md">
+    <div className="glass-surface glass-refraction bg-card/65 relative overflow-hidden rounded-xl border border-white/5 shadow-sm backdrop-blur-md">
       {/* Neon Frame Overlay */}
       {neonFrame.enabled && (
         <motion.div
@@ -489,12 +550,12 @@ export function OverviewHero({
       )}
       <button
         onClick={() => onCollapsedChange(true)}
-        className="text-muted-foreground hover:bg-muted/30 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors relative z-10 border-b border-border/20"
+        className="text-muted-foreground hover:bg-muted/30 border-border/20 relative z-10 flex w-full cursor-pointer items-center justify-end border-b px-4 py-1.5 text-[10px] transition-colors"
       >
         <ChevronUp className="h-3 w-3 shrink-0" />
       </button>
 
-      <div className="grid gap-4 p-4 pt-3 md:grid-cols-5 relative z-10">
+      <div className="relative z-10 grid gap-4 p-4 pt-3 md:grid-cols-5">
         <div className="border-border/30 overflow-hidden rounded-xl border md:col-span-3">
           <CountryMapEmbed
             countryId={countryId}
@@ -506,27 +567,35 @@ export function OverviewHero({
           />
         </div>
 
-        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/10 dark:border-amber-500/25 bg-amber-500/[0.01] dark:bg-amber-950/[0.05] shadow-[0_0_15px_rgba(245,158,11,0.03)] dark:shadow-[0_0_20px_rgba(245,158,11,0.05)] p-3 md:col-span-2">
+        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/10 bg-amber-500/[0.01] p-3 shadow-[0_0_15px_rgba(245,158,11,0.03)] md:col-span-2 dark:border-amber-500/25 dark:bg-amber-950/[0.05] dark:shadow-[0_0_20px_rgba(245,158,11,0.05)]">
           <TextureOverlay texture="paperGrain" opacity={0.09} />
-          
-          <div className="flex flex-col h-full justify-between">
+
+          <div className="flex h-full flex-col justify-between">
             {/* Header */}
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Badge variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-950/30 dark:to-orange-950/30 text-[9px] uppercase tracking-wider font-black text-amber-600 dark:text-amber-400 border-amber-500/20 py-0.5 px-2 h-4.5 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.1)]">
+                  <Badge
+                    variant="outline"
+                    className="h-4.5 rounded-full border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-2 py-0.5 text-[9px] font-black tracking-wider text-amber-600 uppercase shadow-[0_0_8px_rgba(245,158,11,0.1)] dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400"
+                  >
                     MyCountry®
                   </Badge>
                   {isPremium && (
-                    <Badge variant="outline" className="bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 text-[8px] uppercase tracking-widest font-bold py-0.5 px-1.5 h-4.5 rounded">
+                    <Badge
+                      variant="outline"
+                      className="h-4.5 rounded border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-amber-600 uppercase dark:text-amber-400"
+                    >
                       Premium
                     </Badge>
                   )}
                   <span className="text-muted-foreground/30 text-[9px]">/</span>
-                  <span className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-bold">Overview</span>
+                  <span className="text-muted-foreground/60 text-[9px] font-bold tracking-wider uppercase">
+                    Overview
+                  </span>
                 </div>
-                <div className="flex items-center gap-1 text-[8px] font-semibold text-emerald-500 dark:text-emerald-400/90 bg-emerald-500/5 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <div className="flex items-center gap-1 rounded border border-emerald-500/10 bg-emerald-500/5 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400/90">
+                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
                   <span>ONLINE</span>
                 </div>
               </div>
@@ -568,7 +637,7 @@ export function OverviewHero({
               </div>
 
               {/* Status Row */}
-              <div className="flex gap-1.5 mb-3 mt-1.5 justify-between">
+              <div className="mt-1.5 mb-3 flex justify-between gap-1.5">
                 <StatusIndicator icon={Crown} label="Exec" health={executiveHealth} />
                 <StatusIndicator icon={Users} label="Diplo" health={diplomaticHealth} />
                 <StatusIndicator icon={Vote} label="Pol" health={politicsHealth} />
@@ -587,13 +656,16 @@ export function OverviewHero({
                     <button
                       onClick={() => setAlertsOpen(!alertsOpen)}
                       className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all cursor-pointer",
+                        "flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all",
                         triggerColorClass
                       )}
                     >
                       <div className="flex items-center gap-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0 animate-pulse text-amber-500 dark:text-amber-400" />
-                        <span>{systemAlerts.length} System Alert{systemAlerts.length !== 1 ? "s" : ""} Active</span>
+                        <span>
+                          {systemAlerts.length} System Alert{systemAlerts.length !== 1 ? "s" : ""}{" "}
+                          Active
+                        </span>
                       </div>
                       {alertsOpen ? (
                         <ChevronUp className="h-3 w-3 shrink-0 opacity-70" />
@@ -603,7 +675,7 @@ export function OverviewHero({
                     </button>
 
                     {alertsOpen && (
-                      <div className="mt-1 flex flex-col gap-1 rounded-lg border border-border/20 bg-black/5 dark:bg-white/[0.02] p-1.5 max-h-[90px] overflow-y-auto scrollbar-thin animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="border-border/20 animate-in fade-in slide-in-from-top-1 mt-1 flex max-h-[90px] scrollbar-thin flex-col gap-1 overflow-y-auto rounded-lg border bg-black/5 p-1.5 duration-150 dark:bg-white/[0.02]">
                         {systemAlerts.map((alert) => {
                           const Icon = alert.icon;
                           const severityColor =
@@ -622,12 +694,12 @@ export function OverviewHero({
                                 }
                               }}
                               className={cn(
-                                "flex w-full items-center gap-2 rounded-md border p-1.5 text-left text-[10px] transition-all cursor-pointer",
+                                "flex w-full cursor-pointer items-center gap-2 rounded-md border p-1.5 text-left text-[10px] transition-all",
                                 severityColor
                               )}
                             >
                               <Icon className="h-3 w-3 shrink-0" />
-                              <span className="font-medium truncate flex-1">{alert.text}</span>
+                              <span className="flex-1 truncate font-medium">{alert.text}</span>
                               <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
                             </button>
                           );
@@ -636,7 +708,7 @@ export function OverviewHero({
                     )}
                   </div>
                 ) : (
-                  <div className="flex w-full items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <div className="flex w-full items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     <Check className="h-3.5 w-3.5 shrink-0" />
                     <span>All systems operational</span>
                   </div>
@@ -645,14 +717,13 @@ export function OverviewHero({
             </div>
 
             {/* Badges */}
-            <div className="mt-3 pt-2 border-t border-border/10 flex gap-1.5">
+            <div className="border-border/10 mt-3 flex gap-1.5 border-t pt-2">
               {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
               {stats.governmentType && (
                 <LocationBadge type="government" value={stats.governmentType} />
               )}
             </div>
           </div>
-
         </div>
       </div>
     </div>

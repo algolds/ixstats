@@ -120,7 +120,9 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
 
     // Dynamic Country Status Milestones
     if (country) {
-      const baseTime = country.createdAt ? new Date(country.createdAt) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const baseTime = country.createdAt
+        ? new Date(country.createdAt)
+        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       // 1. Government Constitution Milestone
       entries.push({

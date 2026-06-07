@@ -253,7 +253,7 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
   return (
     <div className="bg-background fixed inset-0 z-40 flex flex-col">
       {/* ── Top bar ── */}
-      <div className="border-border bg-card/75 backdrop-blur-md flex h-11 shrink-0 items-center gap-2 border-b px-3">
+      <div className="border-border bg-card/75 flex h-11 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md">
         {/* Left: back + country name */}
         <button
           onClick={() => onNavigate?.("overview")}

@@ -323,7 +323,10 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
       </div>
 
       {/* ── Drill-Down Sheets ── */}
-      <Dialog open={activeSheet === "issues"} onOpenChange={(open) => !open && setActiveSheet(null)}>
+      <Dialog
+        open={activeSheet === "issues"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+      >
         <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
           <DialogHeader>
             <DialogTitle>All National Issues</DialogTitle>

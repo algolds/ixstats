@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -48,11 +54,7 @@ const ALLIANCE_TYPES = [
   },
 ] as const;
 
-export function AllianceCreatorSheet({
-  open,
-  onOpenChange,
-  onCreated,
-}: AllianceCreatorSheetProps) {
+export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: AllianceCreatorSheetProps) {
   const notify = useNotify();
   const [name, setName] = useState("");
   const [shortName, setShortName] = useState("");
@@ -102,7 +104,17 @@ export function AllianceCreatorSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+      <DialogContent
+        className="sm:max-w-lg"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          padding: 0,
+          maxHeight: "85vh",
+          overflow: "hidden",
+        }}
+      >
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 shrink-0 text-cyan-500" />

@@ -3684,7 +3684,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
       },
     });
     subIds.push(created.id);
-    
+
     // Compute subdivision spatial profiles (will be empty since geometry is empty)
     await updateSubdivisionSpatialProfile(prisma, created.id).catch(() => {});
     count++;
@@ -3759,7 +3759,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
         console.warn(`[seedGeography] Failed to update city spatial profile:`, err);
       }
     }
-    
+
     count++;
   }
 
@@ -3820,7 +3820,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
         console.warn(`[seedGeography] Failed to update POI geom:`, err);
       }
     }
-    
+
     count++;
   }
 

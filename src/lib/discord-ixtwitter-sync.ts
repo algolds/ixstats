@@ -661,10 +661,12 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
           );
           accountId =
             handleAccountId ||
-            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName)).accountId;
+            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
+              .accountId;
         } else {
-          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
-            .accountId;
+          accountId = (
+            await getOrCreateDiscordAccount(db, message.author.username, message, displayName)
+          ).accountId;
         }
 
         const ok = await createPostFromMessage(db, accountId, message);
@@ -745,10 +747,12 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
           );
           accountId =
             handleAccountId ||
-            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName)).accountId;
+            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
+              .accountId;
         } else {
-          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
-            .accountId;
+          accountId = (
+            await getOrCreateDiscordAccount(db, message.author.username, message, displayName)
+          ).accountId;
         }
 
         const ok = await createPostFromMessage(db, accountId, message);

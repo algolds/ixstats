@@ -17,10 +17,7 @@ import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 import { PanelCard } from "~/components/mycountry/cards";
-import {
-  ACCENT_CLASSES,
-  type MyCountryAccent,
-} from "~/components/mycountry/cards/accents";
+import { ACCENT_CLASSES, type MyCountryAccent } from "~/components/mycountry/cards/accents";
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
 
 interface SetupChecklistProps {
@@ -57,14 +54,8 @@ export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
     { countryId },
     { staleTime: 5 * 60_000 }
   );
-  const policies = api.policies.getPolicies.useQuery(
-    { countryId },
-    { staleTime: 5 * 60_000 }
-  );
-  const parties = api.elections.getParties.useQuery(
-    { countryId },
-    { staleTime: 5 * 60_000 }
-  );
+  const policies = api.policies.getPolicies.useQuery({ countryId }, { staleTime: 5 * 60_000 });
+  const parties = api.elections.getParties.useQuery({ countryId }, { staleTime: 5 * 60_000 });
   const branches = api.security.getMilitaryBranches.useQuery(
     { countryId },
     { staleTime: 5 * 60_000 }
@@ -171,7 +162,12 @@ export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
               className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md p-1 transition-colors focus:outline-none"
               aria-label={isCollapsed ? "Expand checklist" : "Collapse checklist"}
             >
-              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", !isCollapsed && "rotate-180")} />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  !isCollapsed && "rotate-180"
+                )}
+              />
             </button>
           </div>
         </div>

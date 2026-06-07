@@ -9,14 +9,7 @@
 
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
 
-export type MyCountryAccent =
-  | "amber"
-  | "cyan"
-  | "blue"
-  | "red"
-  | "indigo"
-  | "emerald"
-  | "neutral";
+export type MyCountryAccent = "amber" | "cyan" | "blue" | "red" | "indigo" | "emerald" | "neutral";
 
 export interface AccentTokens {
   /** Subtle accent-tinted border (works light + dark). */

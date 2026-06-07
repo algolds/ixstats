@@ -58,10 +58,10 @@ export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderPro
         </h1>
 
         {/* Subtitle */}
-        <p className="mb-4 text-sm font-medium text-amber-100 md:text-base flex items-center justify-center gap-1.5">
+        <p className="mb-4 flex items-center justify-center gap-1.5 text-sm font-medium text-amber-100 md:text-base">
           <span>Strategic Overview</span>
           {isPremium && (
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/40 border border-amber-500/30 px-1.5 py-0.5 rounded backdrop-blur-sm shadow-[0_0_8px_rgba(245,158,11,0.15)]">
+            <span className="rounded border border-amber-500/30 bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-black tracking-wider text-amber-400 uppercase shadow-[0_0_8px_rgba(245,158,11,0.15)] backdrop-blur-sm">
               Premium
             </span>
           )}

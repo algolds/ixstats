@@ -1044,7 +1044,7 @@ export default function MapEditorOverlay({
 
         {/* Left collapsible panel — desktop only */}
         {!toolsDisabled && (
-          <div className="hidden sm:flex h-full">
+          <div className="hidden h-full sm:flex">
             <EditorErrorBoundary name="LeftPanel">
               <EditorPanel
                 side="left"
@@ -1167,7 +1167,10 @@ export default function MapEditorOverlay({
                       }));
                     }}
                     onToggleLock={(id) => {
-                      setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, locked: !s[id]?.locked } }));
+                      setLayerStates((s) => ({
+                        ...s,
+                        [id]: { ...s[id]!, locked: !s[id]?.locked },
+                      }));
                     }}
                     onOpacityChange={(id, opacity) => {
                       setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, opacity } }));
@@ -1198,7 +1201,7 @@ export default function MapEditorOverlay({
 
         {/* Right collapsible panel (Properties & Form Context) — desktop only */}
         {showRightPanel && (
-          <div className="hidden sm:flex h-full">
+          <div className="hidden h-full sm:flex">
             <EditorErrorBoundary name="RightPanel">
               <EditorPanel
                 side="right"

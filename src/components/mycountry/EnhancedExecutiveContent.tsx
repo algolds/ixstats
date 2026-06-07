@@ -63,16 +63,27 @@ export function EnhancedExecutiveContent({
         ]
       : [];
 
-  const activeMeetings = meetings?.filter((m: any) => m.status === "in_progress" || m.status === "IN_PROGRESS").length ?? 0;
-  const pendingActions = meetings?.flatMap((m: any) => m.actionItems ?? []).filter((a: any) => a.status === "pending" || a.status === "PENDING").length ?? 0;
-  const executiveHealth = Math.max(0, Math.min(100, Math.round(
-    50 +
-    Math.min(activePolicies * 4, 20) +
-    Math.min(activeMeetings * 5, 10) -
-    Math.min(issueCount * 3, 15) -
-    Math.min(urgentIssueCount * 5, 15) -
-    Math.min(pendingActions * 2, 10)
-  )));
+  const activeMeetings =
+    meetings?.filter((m: any) => m.status === "in_progress" || m.status === "IN_PROGRESS").length ??
+    0;
+  const pendingActions =
+    meetings
+      ?.flatMap((m: any) => m.actionItems ?? [])
+      .filter((a: any) => a.status === "pending" || a.status === "PENDING").length ?? 0;
+  const executiveHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        50 +
+          Math.min(activePolicies * 4, 20) +
+          Math.min(activeMeetings * 5, 10) -
+          Math.min(issueCount * 3, 15) -
+          Math.min(urgentIssueCount * 5, 15) -
+          Math.min(pendingActions * 2, 10)
+      )
+    )
+  );
 
   const heroStats = [
     { label: "Issues", value: issueCount, accentText: true },

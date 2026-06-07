@@ -58,7 +58,7 @@ export function MyCountryCompactHeader({
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-amber-600/70 dark:text-amber-400/70">Overview</span>
                 {isPremium && (
-                  <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-1 rounded uppercase tracking-wider shrink-0">
+                  <span className="shrink-0 rounded bg-amber-500/10 px-1 text-[9px] font-bold tracking-wider text-amber-500 uppercase">
                     Premium
                   </span>
                 )}

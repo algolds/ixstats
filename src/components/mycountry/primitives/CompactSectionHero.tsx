@@ -11,12 +11,18 @@ import { HealthRing } from "~/components/ui/health-ring";
 
 const sectionColor = (section: string) => {
   switch (section) {
-    case "executive": return "#f59e0b"; // Amber
-    case "diplomacy": return "#06b6d4"; // Cyan
-    case "politics": return "#8b5cf6"; // Purple/Violet
-    case "intelligence": return "#3b82f6"; // Blue
-    case "defense": return "#ef4444"; // Red
-    default: return "#10b981"; // Green
+    case "executive":
+      return "#f59e0b"; // Amber
+    case "diplomacy":
+      return "#06b6d4"; // Cyan
+    case "politics":
+      return "#8b5cf6"; // Purple/Violet
+    case "intelligence":
+      return "#3b82f6"; // Blue
+    case "defense":
+      return "#ef4444"; // Red
+    default:
+      return "#10b981"; // Green
   }
 };
 
@@ -96,11 +102,7 @@ export const CompactSectionHero = React.memo(function CompactSectionHero({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className={cn(
-        "relative overflow-hidden rounded-xl border",
-        a.border,
-        className
-      )}
+      className={cn("relative overflow-hidden rounded-xl border", a.border, className)}
     >
       {/* Backdrop — blurred flag, or a themed accent wash as fallback */}
       {flagUrl ? (
@@ -114,10 +116,7 @@ export const CompactSectionHero = React.memo(function CompactSectionHero({
           <div className="from-card/90 via-card/75 to-card/55 absolute inset-0 bg-gradient-to-r" />
         </div>
       ) : (
-        <div
-          aria-hidden="true"
-          className={cn("bg-card absolute inset-0")}
-        >
+        <div aria-hidden="true" className={cn("bg-card absolute inset-0")}>
           <div className={cn("absolute inset-0 bg-gradient-to-br", a.tint)} />
         </div>
       )}
@@ -125,16 +124,16 @@ export const CompactSectionHero = React.memo(function CompactSectionHero({
       {/* Content */}
       <div className="relative flex items-center gap-3 px-4 py-3.5">
         {health !== undefined ? (
-          <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
             <div className="absolute inset-0 flex items-center justify-center transition-all duration-200">
-              <HealthRing
-                value={health}
-                size={48}
-                color={sectionColor(section)}
-                hideValue={true}
-              />
+              <HealthRing value={health} size={48} color={sectionColor(section)} hideValue={true} />
             </div>
-            <div className={cn("rounded-lg bg-gradient-to-br p-1.5 shadow-sm relative z-20 w-8 h-8 flex items-center justify-center", gradient)}>
+            <div
+              className={cn(
+                "relative z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br p-1.5 shadow-sm",
+                gradient
+              )}
+            >
               <Icon size={16} className="text-white" />
             </div>
           </div>
@@ -161,7 +160,7 @@ export const CompactSectionHero = React.memo(function CompactSectionHero({
           <div className="hidden items-center gap-4 md:flex">
             {stats.map((s) => (
               <div key={s.label} className="text-right">
-                <div className={cn("text-base font-bold leading-none", s.accentText && a.text)}>
+                <div className={cn("text-base leading-none font-bold", s.accentText && a.text)}>
                   {s.value}
                 </div>
                 <div className="text-muted-foreground mt-1 text-[10px] tracking-wide uppercase">

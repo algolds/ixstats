@@ -84,9 +84,13 @@ export function EnhancedDiplomacyContent({
       : 0;
 
   const embassyRatio = totalEmbassies > 0 ? activeEmbassies / totalEmbassies : 0;
-  const diplomaticHealth = Math.max(0, Math.min(100, Math.round(
-    avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20)
-  )));
+  const diplomaticHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20))
+    )
+  );
 
   const heroStats = [
     { label: "Embassies", value: activeEmbassies, accentText: true },

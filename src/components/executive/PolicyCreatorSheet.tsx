@@ -193,7 +193,17 @@ export function PolicyCreatorSheet({
         onOpenChange(isOpen);
       }}
     >
-      <DialogContent className="sm:max-w-lg" style={{ display: "flex", flexDirection: "column", gap: 0, padding: 0, maxHeight: "85vh", overflow: "hidden" }}>
+      <DialogContent
+        className="sm:max-w-lg"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          padding: 0,
+          maxHeight: "85vh",
+          overflow: "hidden",
+        }}
+      >
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-indigo-500" />

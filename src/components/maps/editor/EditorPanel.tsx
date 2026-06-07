@@ -22,9 +22,7 @@ const LEFT_TABS = [
   { id: "wiki" as const, label: "Wiki Scan", Icon: BookOpen },
 ];
 
-const RIGHT_TABS = [
-  { id: "properties" as const, label: "Props", Icon: Settings2 },
-];
+const RIGHT_TABS = [{ id: "properties" as const, label: "Props", Icon: Settings2 }];
 
 interface EditorPanelProps {
   /** Current editor mode — controls which tab auto-activates */
@@ -139,7 +137,7 @@ export function EditorPanel({
       <div className="relative flex h-full">
         {!collapsed && (
           <div
-            className="border-border bg-card/75 backdrop-blur-md flex h-full flex-col border-r shadow-lg relative"
+            className="border-border bg-card/75 relative flex h-full flex-col border-r shadow-lg backdrop-blur-md"
             style={{ width: panelWidth }}
           >
             {/* Resize handle */}
@@ -163,7 +161,7 @@ export function EditorPanel({
 
       {!collapsed && (
         <div
-          className={`border-border bg-card/75 backdrop-blur-md flex h-full flex-col shadow-lg relative ${
+          className={`border-border bg-card/75 relative flex h-full flex-col shadow-lg backdrop-blur-md ${
             side === "left" ? "border-r" : "border-l"
           }`}
           style={{ width: panelWidth }}
@@ -203,12 +201,16 @@ export function EditorPanel({
 
           {/* Tab content — fills remaining space with crossfade */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <div key={activeTab} className="h-full" style={{ animation: "editorTabFadeIn 150ms ease" }}>
+            <div
+              key={activeTab}
+              className="h-full"
+              style={{ animation: "editorTabFadeIn 150ms ease" }}
+            >
               {activeTab === "properties" && propertiesContent && (
-                <div className="px-3 py-3 h-full">{propertiesContent}</div>
+                <div className="h-full px-3 py-3">{propertiesContent}</div>
               )}
               {activeTab === "layers" && (
-                <div className="flex min-h-0 flex-1 flex-col h-full">
+                <div className="flex h-full min-h-0 flex-1 flex-col">
                   {layersContent ?? (
                     <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Layers panel coming soon
@@ -217,12 +219,12 @@ export function EditorPanel({
                 </div>
               )}
               {activeTab === "features" && featureListContent && (
-                <div className="flex min-h-0 flex-1 flex-col px-3 py-3 h-full">
+                <div className="flex h-full min-h-0 flex-1 flex-col px-3 py-3">
                   {featuresLoading ? <FeatureListSkeleton /> : featureListContent}
                 </div>
               )}
               {activeTab === "wiki" && (
-                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto h-full">
+                <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
                   {wikiContent ?? (
                     <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Wiki scanner coming soon
@@ -269,13 +271,19 @@ function CollapseToggle({
   return (
     <button
       onClick={onToggle}
-      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center border transition-colors ${positionClass} backdrop-blur-sm shadow-md`}
+      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center border transition-colors ${positionClass} shadow-md backdrop-blur-sm`}
       title={collapsed ? "Show panel" : "Hide panel"}
     >
       {side === "left" ? (
-        collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />
+        collapsed ? (
+          <ChevronRight className="h-3 w-3" />
+        ) : (
+          <ChevronLeft className="h-3 w-3" />
+        )
+      ) : collapsed ? (
+        <ChevronLeft className="h-3 w-3" />
       ) : (
-        collapsed ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+        <ChevronRight className="h-3 w-3" />
       )}
     </button>
   );

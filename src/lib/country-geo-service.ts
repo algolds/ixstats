@@ -95,7 +95,12 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
   let parsedCentroid: { lng: number; lat: number } | null = null;
   if (Array.isArray(centroid) && centroid.length >= 2) {
     parsedCentroid = { lng: Number(centroid[0]), lat: Number(centroid[1]) };
-  } else if (centroid && typeof centroid === "object" && "coordinates" in centroid && Array.isArray((centroid as any).coordinates)) {
+  } else if (
+    centroid &&
+    typeof centroid === "object" &&
+    "coordinates" in centroid &&
+    Array.isArray((centroid as any).coordinates)
+  ) {
     parsedCentroid = {
       lng: Number((centroid as any).coordinates[0]),
       lat: Number((centroid as any).coordinates[1]),
@@ -177,20 +182,27 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
 
   // 6. Compute rollups & coverage ratios (Phase P-D preparation)
   const cityPopulationSum = cities.reduce((sum: number, c: any) => sum + (c.population ?? 0), 0);
-  const subdivisionPopulationSum = subdivisions.reduce((sum: number, s: any) => sum + (s.population ?? 0), 0);
+  const subdivisionPopulationSum = subdivisions.reduce(
+    (sum: number, s: any) => sum + (s.population ?? 0),
+    0
+  );
 
-  const cityGdpContributionSum = cities.reduce((sum: number, c: any) => sum + (c.gdpContribution ?? 0), 0);
-  const subdivisionGdpContributionSum = subdivisions.reduce((sum: number, s: any) => sum + (s.gdpContribution ?? 0), 0);
+  const cityGdpContributionSum = cities.reduce(
+    (sum: number, c: any) => sum + (c.gdpContribution ?? 0),
+    0
+  );
+  const subdivisionGdpContributionSum = subdivisions.reduce(
+    (sum: number, s: any) => sum + (s.gdpContribution ?? 0),
+    0
+  );
 
   let reconciledSubdivisions = subdivisions;
   let reconciledCities = cities;
-  let populationCoverage = country.currentPopulation > 0
-    ? subdivisionPopulationSum / country.currentPopulation
-    : 0;
+  let populationCoverage =
+    country.currentPopulation > 0 ? subdivisionPopulationSum / country.currentPopulation : 0;
 
-  let gdpCoverage = country.currentTotalGdp > 0
-    ? subdivisionGdpContributionSum / country.currentTotalGdp
-    : 0;
+  let gdpCoverage =
+    country.currentTotalGdp > 0 ? subdivisionGdpContributionSum / country.currentTotalGdp : 0;
 
   // Apply top-down scaling on display values if in top-down mode
   if (country.geoRollupMode === "top-down") {
@@ -198,9 +210,13 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
     gdpCoverage = 1.0;
 
     if (subdivisionPopulationSum > 0 || subdivisionGdpContributionSum > 0) {
-      const popScale = subdivisionPopulationSum > 0 ? country.currentPopulation / subdivisionPopulationSum : 1;
-      const gdpScale = subdivisionGdpContributionSum > 0 ? country.currentTotalGdp / subdivisionGdpContributionSum : 1;
-      
+      const popScale =
+        subdivisionPopulationSum > 0 ? country.currentPopulation / subdivisionPopulationSum : 1;
+      const gdpScale =
+        subdivisionGdpContributionSum > 0
+          ? country.currentTotalGdp / subdivisionGdpContributionSum
+          : 1;
+
       reconciledSubdivisions = subdivisions.map((s: any) => ({
         ...s,
         population: s.population ? Math.round(s.population * popScale) : 0,
@@ -210,14 +226,18 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
 
     if (cityPopulationSum > 0 || cityGdpContributionSum > 0) {
       const popScale = cityPopulationSum > 0 ? country.currentPopulation / cityPopulationSum : 1;
-      const gdpScale = cityGdpContributionSum > 0 ? country.currentTotalGdp / cityGdpContributionSum : 1;
+      const gdpScale =
+        cityGdpContributionSum > 0 ? country.currentTotalGdp / cityGdpContributionSum : 1;
 
       reconciledCities = cities.map((c: any) => {
-        const hasPopShare = c.populationShare !== null && c.populationShare !== undefined && c.populationShare > 0;
-        const pop = hasPopShare 
+        const hasPopShare =
+          c.populationShare !== null && c.populationShare !== undefined && c.populationShare > 0;
+        const pop = hasPopShare
           ? Math.round(country.currentPopulation * (c.populationShare / 100))
-          : (c.population ? Math.round(c.population * popScale) : 0);
-        
+          : c.population
+            ? Math.round(c.population * popScale)
+            : 0;
+
         const gdp = c.gdpContribution ? c.gdpContribution * gdpScale : 0;
         return {
           ...c,
@@ -342,7 +362,7 @@ export async function syncGeographicDemographics(
     const subGdp = citiesSum._sum.gdpContribution ?? 0;
     await db.subdivision.update({
       where: { id: subdivisionId },
-      data: { 
+      data: {
         population: subPop,
         gdpContribution: subGdp,
       },
@@ -380,7 +400,7 @@ export async function syncGeographicDemographics(
     const gdpPerCapita = totalSubGdp / totalSubPop;
     await db.country.update({
       where: { id: countryId },
-      data: { 
+      data: {
         currentPopulation: totalSubPop,
         currentTotalGdp: totalSubGdp,
         currentGdpPerCapita: gdpPerCapita,
@@ -395,7 +415,7 @@ export async function syncGeographicDemographics(
 export async function upsertCity(db: any, countryId: string, data: any): Promise<any> {
   const isNew = !data.id;
   const { validatePointContainment } = await import("~/lib/geo-validation");
-  
+
   if (data.coordinates) {
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
@@ -404,7 +424,12 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
   }
 
   // Auto-detect subdivision containment if requested
-  if (data.coordinates && (data.subdivisionId === "auto" || data.subdivisionId === undefined || data.subdivisionId === null)) {
+  if (
+    data.coordinates &&
+    (data.subdivisionId === "auto" ||
+      data.subdivisionId === undefined ||
+      data.subdivisionId === null)
+  ) {
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
     const lat = Array.isArray(coords) ? coords[1] : coords.lat;
@@ -542,8 +567,14 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
   const isNew = !data.id;
   const { clipAndValidatePolygon } = await import("~/lib/geo-validation");
   let geometry = data.geometry;
-  
-  if (geometry && Object.keys(geometry).length > 0 && geometry.type !== "Point" && geometry.coordinates && geometry.coordinates.length > 0) {
+
+  if (
+    geometry &&
+    Object.keys(geometry).length > 0 &&
+    geometry.type !== "Point" &&
+    geometry.coordinates &&
+    geometry.coordinates.length > 0
+  ) {
     geometry = await clipAndValidatePolygon(db, countryId, geometry, "Subdivision");
   }
 
@@ -599,7 +630,12 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
   }
 
   // Force PostGIS triggers to run by updating geom_postgis from geometry
-  if (subdivision && subdivision.geometry && (subdivision.geometry as any).coordinates && (subdivision.geometry as any).coordinates.length > 0) {
+  if (
+    subdivision &&
+    subdivision.geometry &&
+    (subdivision.geometry as any).coordinates &&
+    (subdivision.geometry as any).coordinates.length > 0
+  ) {
     try {
       await db.$executeRawUnsafe(
         `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
@@ -615,11 +651,17 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
   await updateSubdivisionSpatialProfile(db, subdivision.id);
 
   if (isNew) {
-    await triggerGeographyPolicy(db, countryId, "subdivision", subdivision.name, data.submittedBy || "owner");
+    await triggerGeographyPolicy(
+      db,
+      countryId,
+      "subdivision",
+      subdivision.name,
+      data.submittedBy || "owner"
+    );
   }
 
   await syncGeographicDemographics(db, countryId);
-  
+
   // Refresh returned subdivision object with database state
   return await db.subdivision.findUnique({ where: { id: subdivision.id } });
 }
@@ -664,7 +706,7 @@ export async function setCapital(db: any, countryId: string, cityId: string): Pr
  */
 export async function upsertPoi(db: any, countryId: string, data: any): Promise<any> {
   const { validatePointContainment } = await import("~/lib/geo-validation");
-  
+
   if (data.coordinates) {
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
@@ -673,7 +715,12 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
   }
 
   // Auto-detect subdivision containment if requested
-  if (data.coordinates && (data.subdivisionId === "auto" || data.subdivisionId === undefined || data.subdivisionId === null)) {
+  if (
+    data.coordinates &&
+    (data.subdivisionId === "auto" ||
+      data.subdivisionId === undefined ||
+      data.subdivisionId === null)
+  ) {
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
     const lat = Array.isArray(coords) ? coords[1] : coords.lat;
@@ -747,7 +794,7 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
  */
 export async function upsertStoryPin(db: any, countryId: string, data: any): Promise<any> {
   const { validatePointContainment } = await import("~/lib/geo-validation");
-  
+
   if (data.coordinates) {
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
@@ -815,7 +862,7 @@ export async function upsertStoryPin(db: any, countryId: string, data: any): Pro
  */
 export async function upsertMapLabel(db: any, countryId: string, data: any): Promise<any> {
   const { validatePointContainment } = await import("~/lib/geo-validation");
-  
+
   if (data.coordinates) {
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
@@ -949,14 +996,19 @@ export async function findSubdivisionAtPoint(
   lat: number
 ): Promise<any> {
   try {
-    const results = await db.$queryRawUnsafe(`
+    const results = (await db.$queryRawUnsafe(
+      `
       SELECT id, name FROM subdivisions
       WHERE "countryId" = $1 AND status = 'approved'
         AND geom_postgis IS NOT NULL
         AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
       LIMIT 1
-    `, countryId, lng, lat) as Array<{ id: string; name: string }>;
-    
+    `,
+      countryId,
+      lng,
+      lat
+    )) as Array<{ id: string; name: string }>;
+
     if (results.length > 0) {
       return results[0];
     }
@@ -969,7 +1021,10 @@ export async function findSubdivisionAtPoint(
 /**
  * Compute and update spatial profiles (climate, elevation, water) for a Subdivision
  */
-export async function updateSubdivisionSpatialProfile(db: any, subdivisionId: string): Promise<any> {
+export async function updateSubdivisionSpatialProfile(
+  db: any,
+  subdivisionId: string
+): Promise<any> {
   const subdivision = await db.subdivision.findUnique({
     where: { id: subdivisionId },
     select: { id: true, geometry: true, areaSqKm: true },
@@ -979,11 +1034,13 @@ export async function updateSubdivisionSpatialProfile(db: any, subdivisionId: st
     return null;
   }
 
-  const { resolveClimateFromColor, getAgricultureFactor, ELEVATION_ZONES } = await import("~/lib/geo-analytics");
+  const { resolveClimateFromColor, getAgricultureFactor, ELEVATION_ZONES } =
+    await import("~/lib/geo-analytics");
 
   try {
     // 1. Climate distribution
-    const climateResults = await db.$queryRawUnsafe(`
+    const climateResults = (await db.$queryRawUnsafe(
+      `
       SELECT 
         ml.properties->>'fill' as fill,
         ST_Area(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000000.0 as "intersectAreaSqKm"
@@ -991,14 +1048,19 @@ export async function updateSubdivisionSpatialProfile(db: any, subdivisionId: st
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
         AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
-    `, subdivisionId) as Array<{ fill: string; intersectAreaSqKm: number }>;
+    `,
+      subdivisionId
+    )) as Array<{ fill: string; intersectAreaSqKm: number }>;
 
     const climateMap = new Map<string, number>();
     for (const r of climateResults) {
       if (!r.fill || r.intersectAreaSqKm <= 0) continue;
       const climateName = resolveClimateFromColor(r.fill);
       if (climateName) {
-        climateMap.set(climateName, (climateMap.get(climateName) ?? 0) + Number(r.intersectAreaSqKm));
+        climateMap.set(
+          climateName,
+          (climateMap.get(climateName) ?? 0) + Number(r.intersectAreaSqKm)
+        );
       }
     }
 
@@ -1006,13 +1068,15 @@ export async function updateSubdivisionSpatialProfile(db: any, subdivisionId: st
     const climateProfile = Array.from(climateMap.entries()).map(([climateName, areaSqKm]) => ({
       type: climateName,
       name: climateName,
-      percentArea: totalClimateArea > 0 ? Math.round((areaSqKm / totalClimateArea) * 100 * 10) / 10 : 0,
+      percentArea:
+        totalClimateArea > 0 ? Math.round((areaSqKm / totalClimateArea) * 100 * 10) / 10 : 0,
       areaSqKm: Math.round(areaSqKm * 100) / 100,
       agricultureFactor: getAgricultureFactor(climateName),
     }));
 
     // 2. Elevation profile
-    const elevationResults = await db.$queryRawUnsafe(`
+    const elevationResults = (await db.$queryRawUnsafe(
+      `
       SELECT 
         ml.properties->>'fill' as fill,
         ST_Area(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000000.0 as "intersectAreaSqKm"
@@ -1020,12 +1084,19 @@ export async function updateSubdivisionSpatialProfile(db: any, subdivisionId: st
       JOIN map_layers ml ON ml."layerType" = 'altitudes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
         AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
-    `, subdivisionId) as Array<{ fill: string; intersectAreaSqKm: number }>;
+    `,
+      subdivisionId
+    )) as Array<{ fill: string; intersectAreaSqKm: number }>;
 
-    const elevationMap = new Map<string, { name: string; areaSqKm: number; minElev: number; maxElev: number }>();
+    const elevationMap = new Map<
+      string,
+      { name: string; areaSqKm: number; minElev: number; maxElev: number }
+    >();
     for (const r of elevationResults) {
       if (!r.fill || r.intersectAreaSqKm <= 0) continue;
-      const zoneMatch = ELEVATION_ZONES.find((ez) => ez.color.toLowerCase() === r.fill.toLowerCase());
+      const zoneMatch = ELEVATION_ZONES.find(
+        (ez) => ez.color.toLowerCase() === r.fill.toLowerCase()
+      );
       if (zoneMatch) {
         const existing = elevationMap.get(zoneMatch.zoneId);
         if (existing) {
@@ -1052,23 +1123,29 @@ export async function updateSubdivisionSpatialProfile(db: any, subdivisionId: st
     }));
 
     // 3. Water access (rivers and lakes)
-    const riverResult = await db.$queryRawUnsafe(`
+    const riverResult = (await db.$queryRawUnsafe(
+      `
       SELECT 
         COALESCE(SUM(ST_Length(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000.0), 0.0) as "riverLengthKm"
       FROM subdivisions s
       JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
         AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
-    `, subdivisionId) as Array<{ riverLengthKm: number }>;
+    `,
+      subdivisionId
+    )) as Array<{ riverLengthKm: number }>;
 
-    const lakeResult = await db.$queryRawUnsafe(`
+    const lakeResult = (await db.$queryRawUnsafe(
+      `
       SELECT 
         COALESCE(SUM(ST_Area(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000000.0), 0.0) as "lakeAreaSqKm"
       FROM subdivisions s
       JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
         AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
-    `, subdivisionId) as Array<{ lakeAreaSqKm: number }>;
+    `,
+      subdivisionId
+    )) as Array<{ lakeAreaSqKm: number }>;
 
     const riverLengthKm = Number(riverResult[0]?.riverLengthKm) || 0;
     const lakeAreaSqKm = Number(lakeResult[0]?.lakeAreaSqKm) || 0;
@@ -1112,14 +1189,17 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
 
   try {
     // 1. Dominant climate
-    const climateResult = await db.$queryRawUnsafe(`
+    const climateResult = (await db.$queryRawUnsafe(
+      `
       SELECT ml.properties->>'fill' as fill
       FROM cities c
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE c.id = $1
         AND ST_Contains(ml.geom_postgis, c.geom_postgis)
       LIMIT 1
-    `, cityId) as Array<{ fill: string }>;
+    `,
+      cityId
+    )) as Array<{ fill: string }>;
 
     let climateName = null;
     if (climateResult.length > 0 && climateResult[0]?.fill) {
@@ -1127,7 +1207,8 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
     }
 
     // 2. Distance to nearest water body (rivers, lakes)
-    const waterDistances = await db.$queryRawUnsafe(`
+    const waterDistances = (await db.$queryRawUnsafe(
+      `
       SELECT 
         ml."layerType" as "type",
         COALESCE(MIN(ST_Distance(c.geom_postgis::geography, ml.geom_postgis::geography) / 1000.0), 9999.0) as "distance"
@@ -1135,7 +1216,9 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
       JOIN map_layers ml ON ml."isActive" = true AND ml.geom_postgis IS NOT NULL AND ml."layerType" IN ('rivers', 'lakes')
       WHERE c.id = $1
       GROUP BY ml."layerType"
-    `, cityId) as Array<{ type: string; distance: number }>;
+    `,
+      cityId
+    )) as Array<{ type: string; distance: number }>;
 
     const riverDist = Number(waterDistances.find((w) => w.type === "rivers")?.distance) ?? 9999.0;
     const lakeDist = Number(waterDistances.find((w) => w.type === "lakes")?.distance) ?? 9999.0;
@@ -1173,10 +1256,12 @@ export async function triggerGeographyPolicy(
 ): Promise<void> {
   try {
     const creatorId = submittedBy || "system";
-    const title = type === "subdivision" ? `Establish Subdivision: ${name}` : `Charter City: ${name}`;
-    const desc = type === "subdivision"
-      ? `Establish administrative, tax, and infrastructure structures for the new subdivision ${name}. This increases regional cohesion but incurs an administrative startup cost.`
-      : `Grant municipal charter to the city of ${name}, starting local development programs to spur commerce and population attraction.`;
+    const title =
+      type === "subdivision" ? `Establish Subdivision: ${name}` : `Charter City: ${name}`;
+    const desc =
+      type === "subdivision"
+        ? `Establish administrative, tax, and infrastructure structures for the new subdivision ${name}. This increases regional cohesion but incurs an administrative startup cost.`
+        : `Grant municipal charter to the city of ${name}, starting local development programs to spur commerce and population attraction.`;
 
     await db.policy.create({
       data: {
@@ -1191,11 +1276,13 @@ export async function triggerGeographyPolicy(
         implementationCost: type === "subdivision" ? 500000 : 250000,
         maintenanceCost: type === "subdivision" ? 25000 : 10000,
         objectives: `Enact official administrative control over ${name} to scale regional tax collection and security.`,
-        targetMetrics: type === "subdivision" ? "taxCapacity, politicalStability" : "localCommerce, populationFlow",
+        targetMetrics:
+          type === "subdivision"
+            ? "taxCapacity, politicalStability"
+            : "localCommerce, populationFlow",
       },
     });
   } catch (err) {
     console.warn(`[triggerGeographyPolicy] Failed to auto-generate policy for ${name}:`, err);
   }
 }
-

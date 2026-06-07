@@ -214,14 +214,12 @@ export function MetricCardGrid({
     return metricsGrid;
   }
 
-
-
   // Return wrapped in a card with optional background image
   const cardContent = (
     <>
       {/* Blueprint background: desaturated flag wash + radial dot mesh */}
       {backgroundImage && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+        <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
           {hasImage ? (
             <img
               src={imageUrl!}
@@ -239,13 +237,13 @@ export function MetricCardGrid({
           ) : null}
 
           {/* Blueprint dot-matrix grid */}
-          <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground)/0.15)_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_60%,transparent_100%)] opacity-60" />
+          <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground)/0.15)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_60%,transparent_100%)] [background-size:16px_16px] opacity-60" />
 
           {/* Subtle diagonal technical line */}
           <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/[0.015] to-transparent dark:via-white/[0.005]" />
 
           {/* Gradient overlay to ensure text is fully readable */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/98 via-background/90 to-background/70" />
+          <div className="from-background/98 via-background/90 to-background/70 absolute inset-0 bg-gradient-to-t" />
         </div>
       )}
 
@@ -298,10 +296,7 @@ export function MetricCardGrid({
 
   if (cardWrapper === "glass") {
     return (
-      <GlassPanel
-        accent={accent}
-        className={cn("relative overflow-hidden", className)}
-      >
+      <GlassPanel accent={accent} className={cn("relative overflow-hidden", className)}>
         {cardContent}
       </GlassPanel>
     );

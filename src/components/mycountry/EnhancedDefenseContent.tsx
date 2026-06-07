@@ -76,9 +76,10 @@ export function EnhancedDefenseContent({
   }
 
   const activeThreatCount = securityData?.activeThreatCount ?? 0;
-  const defenseHealth = Math.max(0, Math.min(100, Math.round(
-    securityScore * 0.6 + avgReadiness * 0.4
-  )));
+  const defenseHealth = Math.max(
+    0,
+    Math.min(100, Math.round(securityScore * 0.6 + avgReadiness * 0.4))
+  );
 
   const tabs = [
     {

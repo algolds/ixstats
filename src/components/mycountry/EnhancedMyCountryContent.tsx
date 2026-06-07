@@ -55,7 +55,9 @@ export function EnhancedMyCountryContent({
       {country?.id && <SetupChecklist countryId={country.id} onNavigate={onNavigate} />}
 
       {/* Daily Agenda Bar — actionable national issues & tasks */}
-      {onNavigate && <AgendaBar countryId={country.id} onNavigate={onNavigate} activeSection={activeSection} />}
+      {onNavigate && (
+        <AgendaBar countryId={country.id} onNavigate={onNavigate} activeSection={activeSection} />
+      )}
 
       {/* Economy & Government tabs */}
       <div id="tabs">

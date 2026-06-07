@@ -33,9 +33,10 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
     const cities = bundle?.cities ?? [];
     const capital = cities.find((c) => c.isNationalCapital) ?? null;
     const rawBBox = bundle?.boundingBox as number[] | null;
-    const bbox = rawBBox && rawBBox.length === 4
-      ? { minLng: rawBBox[0], minLat: rawBBox[1], maxLng: rawBBox[2], maxLat: rawBBox[3] }
-      : null;
+    const bbox =
+      rawBBox && rawBBox.length === 4
+        ? { minLng: rawBBox[0], minLat: rawBBox[1], maxLng: rawBBox[2], maxLat: rawBBox[3] }
+        : null;
 
     return {
       // Geometry

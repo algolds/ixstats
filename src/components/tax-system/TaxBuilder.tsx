@@ -475,11 +475,12 @@ export function TaxBuilder({
           {activeTab === "calculator" && (
             <div className="w-full space-y-6 pt-2">
               {builderState.categories.length === 0 ? (
-                <div className="text-muted-foreground border-white/10 bg-white/[0.02] flex flex-col items-center justify-center rounded-xl border p-8 text-center text-sm backdrop-blur-sm">
-                  <Calculator className="mx-auto mb-3 h-12 w-12 text-zinc-500 opacity-50 animate-pulse" />
-                  <p className="font-medium text-foreground">Tax Calculator Locked</p>
+                <div className="text-muted-foreground flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm backdrop-blur-sm">
+                  <Calculator className="mx-auto mb-3 h-12 w-12 animate-pulse text-zinc-500 opacity-50" />
+                  <p className="text-foreground font-medium">Tax Calculator Locked</p>
                   <p className="mt-1 max-w-sm text-xs">
-                    Please define at least one tax category in <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
+                    Please define at least one tax category in{" "}
+                    <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
                   </p>
                 </div>
               ) : (
@@ -543,11 +544,12 @@ export function TaxBuilder({
             {activeTab === "calculator" && (
               <div className="space-y-6">
                 {builderState.categories.length === 0 ? (
-                  <div className="text-muted-foreground border-white/10 bg-white/[0.02] flex flex-col items-center justify-center rounded-xl border p-8 text-center text-sm backdrop-blur-sm">
-                    <Calculator className="mx-auto mb-3 h-12 w-12 text-zinc-500 opacity-50 animate-pulse" />
-                    <p className="font-medium text-foreground">Tax Calculator Locked</p>
+                  <div className="text-muted-foreground flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm backdrop-blur-sm">
+                    <Calculator className="mx-auto mb-3 h-12 w-12 animate-pulse text-zinc-500 opacity-50" />
+                    <p className="text-foreground font-medium">Tax Calculator Locked</p>
                     <p className="mt-1 max-w-sm text-xs">
-                      Please define at least one tax category in <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
+                      Please define at least one tax category in{" "}
+                      <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
                     </p>
                   </div>
                 ) : (

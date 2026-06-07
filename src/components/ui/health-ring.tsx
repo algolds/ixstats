@@ -262,7 +262,12 @@ export const HealthRing: React.FC<HealthRingProps> = ({
               dur="3s"
               repeatCount="indefinite"
             />
-            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />
+            <animate
+              attributeName="opacity"
+              values="0.4;0.1;0.4"
+              dur="3s"
+              repeatCount="indefinite"
+            />
           </circle>
         )}
 

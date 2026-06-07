@@ -17,7 +17,6 @@ import {
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
 import { WikiSectionRow } from "./WikiSectionRow";
 
-
 type MetricView = {
   gdp: "perCapita" | "total";
   population: "total" | "density";
@@ -162,7 +161,8 @@ export function OverviewTab({
               <button
                 onClick={
                   country.areaSqMi && country.landArea
-                    ? () => setMetricViewAction((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
+                    ? () =>
+                        setMetricViewAction((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
                     : undefined
                 }
                 className={cn(
@@ -228,7 +228,6 @@ export function OverviewTab({
             </span>
           </span>
         </div>
-
 
         {/* ── Identity & Lore (inline, no collapsible wrapper) ── */}
         <div className="border-border/30 space-y-3 border-t pt-3">

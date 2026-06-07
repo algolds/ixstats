@@ -554,8 +554,8 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs">
-          <div className="text-muted-foreground font-medium text-left">
+        <div className="border-border/60 bg-muted/20 flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
+          <div className="text-muted-foreground text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
               <span className="text-foreground font-semibold tabular-nums">
@@ -568,7 +568,7 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
           <button
             type="button"
             onClick={() => setIsMapPickerOpen(true)}
-            className="flex items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 focus:outline-none shrink-0"
+            className="flex shrink-0 items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300"
           >
             <MapPin className="h-3.5 w-3.5" />
             <span>Pick on Map</span>

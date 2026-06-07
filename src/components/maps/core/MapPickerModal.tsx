@@ -238,7 +238,19 @@ export function MapPickerModal({
 
       setMapReady(true);
     });
-  }, [geometry, centroid, bbox, fillColor, subdivisions, worldPolitical, countryId, isOpen, selectedCoords, validateCoords, featureId]);
+  }, [
+    geometry,
+    centroid,
+    bbox,
+    fillColor,
+    subdivisions,
+    worldPolitical,
+    countryId,
+    isOpen,
+    selectedCoords,
+    validateCoords,
+    featureId,
+  ]);
 
   // Initialize/remove map
   useEffect(() => {
@@ -271,13 +283,13 @@ export function MapPickerModal({
       <div className="glass-surface glass-refraction flex h-[550px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-lg font-bold text-white">
             <MapPin className="h-5 w-5 text-emerald-400" />
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="text-white/60 hover:bg-white/10 hover:text-white rounded-lg p-1 transition-colors"
+            className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
@@ -293,9 +305,10 @@ export function MapPickerModal({
           ) : !geometry ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0a1628] p-6 text-center text-white">
               <AlertTriangle className="h-10 w-10 text-amber-500" />
-              <p className="font-semibold text-sm">No map boundary linked</p>
+              <p className="text-sm font-semibold">No map boundary linked</p>
               <p className="max-w-xs text-xs text-white/50">
-                Your country has no boundary coordinates assigned. Contact an administrator to link it.
+                Your country has no boundary coordinates assigned. Contact an administrator to link
+                it.
               </p>
             </div>
           ) : (
@@ -304,23 +317,24 @@ export function MapPickerModal({
               <div ref={containerRef} className="absolute inset-0 h-full w-full" />
 
               {/* Status Bar Overlay */}
-              <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
+              <div className="pointer-events-none absolute top-4 right-4 left-4 z-10">
                 {selectedCoords ? (
                   isValid ? (
-                    <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/80 px-3 py-2 text-xs font-semibold text-emerald-400 backdrop-blur-md shadow-lg">
+                    <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/80 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg backdrop-blur-md">
                       <CheckCircle className="h-4 w-4 shrink-0" />
                       <span>
-                        Valid Location: {selectedCoords[1].toFixed(5)}&deg;, {selectedCoords[0].toFixed(5)}&deg;
+                        Valid Location: {selectedCoords[1].toFixed(5)}&deg;,{" "}
+                        {selectedCoords[0].toFixed(5)}&deg;
                       </span>
                     </div>
                   ) : (
-                    <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/80 px-3 py-2 text-xs font-semibold text-red-400 backdrop-blur-md shadow-lg">
+                    <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/80 px-3 py-2 text-xs font-semibold text-red-400 shadow-lg backdrop-blur-md">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       <span>Warning: Coordinates lie outside your country borders!</span>
                     </div>
                   )
                 ) : (
-                  <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs font-semibold text-white/80 backdrop-blur-md shadow-lg">
+                  <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs font-semibold text-white/80 shadow-lg backdrop-blur-md">
                     <MapPin className="h-4 w-4 shrink-0 animate-bounce" />
                     <span>Click on the map inside your borders to select a point</span>
                   </div>
@@ -332,11 +346,7 @@ export function MapPickerModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            className="text-white hover:bg-white/10"
-          >
+          <Button variant="ghost" onClick={onClose} className="text-white hover:bg-white/10">
             Cancel
           </Button>
           <Button

@@ -132,13 +132,20 @@ export function EnhancedPoliticsContent({
       : [];
 
   const partyCount = parties?.length ?? 0;
-  const filledSeats = parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
-  const politicsHealth = Math.max(0, Math.min(100, Math.round(
-    50 +
-    Math.min(partyCount * 10, 30) +
-    (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
-    (pendingElections > 0 ? 10 : 0)
-  )));
+  const filledSeats =
+    parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+  const politicsHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        50 +
+          Math.min(partyCount * 10, 30) +
+          (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
+          (pendingElections > 0 ? 10 : 0)
+      )
+    )
+  );
 
   const heroStats = [
     { label: "Parties", value: partyCount, accentText: true },

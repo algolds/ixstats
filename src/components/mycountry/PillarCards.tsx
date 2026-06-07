@@ -330,19 +330,22 @@ export function AgendaBar({
 
   const [agendaOpen, setAgendaOpen] = useState(false);
 
-  const pendingElections = elections?.filter(
-    (e: any) =>
-      e.status === "SCHEDULED" ||
-      e.status === "scheduled" ||
-      e.status === "IN_PROGRESS" ||
-      e.status === "in_progress"
-  ).length ?? 0;
+  const pendingElections =
+    elections?.filter(
+      (e: any) =>
+        e.status === "SCHEDULED" ||
+        e.status === "scheduled" ||
+        e.status === "IN_PROGRESS" ||
+        e.status === "in_progress"
+    ).length ?? 0;
 
   const activeEmbassies =
     embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
 
   const pendingActions =
-    meetings?.flatMap((m) => m.actionItems ?? []).filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
+    meetings
+      ?.flatMap((m) => m.actionItems ?? [])
+      .filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
 
   const activePolicies = policies?.filter((p: any) => p.status === "active").length ?? 0;
   const totalPolicies = policies?.length ?? 0;
@@ -538,27 +541,29 @@ export function AgendaBar({
       <button
         onClick={() => agendaItems.length > 0 && setAgendaOpen(!agendaOpen)}
         className={cn(
-          "glass-surface glass-refraction relative overflow-hidden rounded-xl border border-white/5 bg-card/45 backdrop-blur-md p-3.5 flex items-center justify-between w-full z-10 text-left",
+          "glass-surface glass-refraction bg-card/45 relative z-10 flex w-full items-center justify-between overflow-hidden rounded-xl border border-white/5 p-3.5 text-left backdrop-blur-md",
           agendaItems.length > 0 ? "cursor-pointer" : "cursor-default"
         )}
       >
         <TextureOverlay texture="paperGrain" opacity={0.05} />
-        <div className="flex items-center gap-2.5 relative z-10">
-          <div className={cn(
-            "rounded-lg p-1.5 border",
-            agendaItems.length === 0 
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" 
-              : activeSection && activeSectionTaskCount > 0
-                ? "bg-amber-500/10 border-amber-500/20 text-amber-500"
-                : "bg-white/[0.03] border-white/5 text-muted-foreground"
-          )}>
+        <div className="relative z-10 flex items-center gap-2.5">
+          <div
+            className={cn(
+              "rounded-lg border p-1.5",
+              agendaItems.length === 0
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                : activeSection && activeSectionTaskCount > 0
+                  ? "border-amber-500/20 bg-amber-500/10 text-amber-500"
+                  : "text-muted-foreground border-white/5 bg-white/[0.03]"
+            )}
+          >
             <FileText className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-foreground uppercase tracking-wider block sm:inline-block">
+            <span className="text-foreground block text-xs font-semibold tracking-wider uppercase sm:inline-block">
               Your Daily Agenda
             </span>
-            <span className="text-muted-foreground/60 text-xs hidden sm:inline mx-1.5">•</span>
+            <span className="text-muted-foreground/60 mx-1.5 hidden text-xs sm:inline">•</span>
             {agendaItems.length === 0 ? (
               <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">
                 {summaryText}
@@ -575,19 +580,18 @@ export function AgendaBar({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 relative z-10">
-          {agendaItems.length > 0 && (
-            agendaOpen ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground/60 transition-transform" />
+        <div className="relative z-10 flex items-center gap-2">
+          {agendaItems.length > 0 &&
+            (agendaOpen ? (
+              <ChevronUp className="text-muted-foreground/60 h-4 w-4 transition-transform" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground/60 transition-transform" />
-            )
-          )}
+              <ChevronDown className="text-muted-foreground/60 h-4 w-4 transition-transform" />
+            ))}
         </div>
       </button>
 
       {agendaOpen && agendaItems.length > 0 && (
-        <div className="mt-1.5 flex flex-col gap-1.5 rounded-xl border border-white/5 bg-card/45 backdrop-blur-md p-2 relative z-10 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="bg-card/45 animate-in fade-in slide-in-from-top-1 relative z-10 mt-1.5 flex flex-col gap-1.5 rounded-xl border border-white/5 p-2 backdrop-blur-md duration-150">
           <TextureOverlay texture="paperGrain" opacity={0.05} />
           {sortedAgendaItems.map((item) => {
             const Icon = item.icon;
@@ -600,44 +604,55 @@ export function AgendaBar({
                   onNavigate(item.section);
                 }}
                 className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border text-left transition-all duration-200 cursor-pointer relative z-10 group",
-                  isHighlighted 
-                    ? "border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/[0.02] shadow-[0_0_12px_rgba(245,158,11,0.05)]" 
+                  "group relative z-10 flex cursor-pointer items-center justify-between rounded-lg border p-3 text-left transition-all duration-200",
+                  isHighlighted
+                    ? "border-amber-500/30 bg-amber-500/[0.04] shadow-[0_0_12px_rgba(245,158,11,0.05)] dark:bg-amber-500/[0.02]"
                     : "border-white/5 bg-white/[0.01] hover:bg-white/[0.03]",
                   item.bgClass
                 )}
               >
                 <div className="flex items-center gap-2.5">
                   {/* Checklist Circle / pulsing dot */}
-                  <div className="relative flex items-center justify-center shrink-0 mr-1">
+                  <div className="relative mr-1 flex shrink-0 items-center justify-center">
                     {isHighlighted && (
                       <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-amber-500/40 opacity-75" />
                     )}
-                    <div className={cn(
-                      "w-4 h-4 rounded-full border flex items-center justify-center z-10 transition-colors",
-                      isHighlighted ? "border-amber-500/50" : "border-muted-foreground/30"
-                    )}>
-                      <div className={cn(
-                        "w-1.5 h-1.5 rounded-full transition-colors",
-                        isHighlighted ? "bg-amber-500" : "bg-transparent group-hover:bg-muted-foreground/50"
-                      )} />
+                    <div
+                      className={cn(
+                        "z-10 flex h-4 w-4 items-center justify-center rounded-full border transition-colors",
+                        isHighlighted ? "border-amber-500/50" : "border-muted-foreground/30"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-colors",
+                          isHighlighted
+                            ? "bg-amber-500"
+                            : "group-hover:bg-muted-foreground/50 bg-transparent"
+                        )}
+                      />
                     </div>
                   </div>
 
-                  <div className={cn("rounded-lg p-1.5 bg-white/[0.03] border border-white/5", item.colorClass)}>
+                  <div
+                    className={cn(
+                      "rounded-lg border border-white/5 bg-white/[0.03] p-1.5",
+                      item.colorClass
+                    )}
+                  >
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider block sm:inline-block">
+                    <span className="text-foreground block text-xs font-semibold tracking-wider uppercase sm:inline-block">
                       {item.label}
                     </span>
-                    <span className="text-muted-foreground/60 text-xs hidden sm:inline mx-1.5">•</span>
-                    <span className={cn("text-xs font-medium", item.colorClass)}>
-                      {item.text}
+                    <span className="text-muted-foreground/60 mx-1.5 hidden text-xs sm:inline">
+                      •
                     </span>
+                    <span className={cn("text-xs font-medium", item.colorClass)}>{item.text}</span>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/45" />
+                <ChevronRight className="text-muted-foreground/45 h-4 w-4" />
               </button>
             );
           })}

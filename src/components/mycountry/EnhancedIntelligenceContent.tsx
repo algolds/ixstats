@@ -71,9 +71,15 @@ export function EnhancedIntelligenceContent({
   const otherAlerts = Math.max(totalAlerts - criticalAlerts, 0);
   const defOverviewScore = defenseOverview?.overallScore ?? 50;
 
-  const intelligenceHealth = Math.max(0, Math.min(100, Math.round(
-    defOverviewScore - Math.min(criticalAlerts * 10, 20) - Math.min(otherAlerts * 2, 10)
-  )));
+  const intelligenceHealth = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        defOverviewScore - Math.min(criticalAlerts * 10, 20) - Math.min(otherAlerts * 2, 10)
+      )
+    )
+  );
 
   const statusBadges: StatusBadgeConfig[] =
     criticalAlerts > 0
@@ -117,9 +123,7 @@ export function EnhancedIntelligenceContent({
       <IntelligenceWarRoom countryId={country.id} countryName={country.name} />
 
       {/* Geopolitical Map — hidden in guided onboarding state */}
-      {!isGuided && (
-        <DashboardMapWidget countryId={country.id} viewMode="intelligence" />
-      )}
+      {!isGuided && <DashboardMapWidget countryId={country.id} viewMode="intelligence" />}
 
       {/* Wiki woven inline */}
       <InlineWiki context="intelligence" accent="blue" maxSections={1} />

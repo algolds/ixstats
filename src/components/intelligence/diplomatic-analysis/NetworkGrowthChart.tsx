@@ -40,60 +40,60 @@ export const NetworkGrowthChart = React.memo<NetworkGrowthChartProps>(({ data })
       </CardHeader>
       <CardContent>
         {data && data.length > 0 ? (
-        <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id="colorEmbassies" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="colorRelationships" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="colorInfluence" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 10 }} />
-            <YAxis className="text-xs" tick={{ fontSize: 10 }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                fontSize: "12px",
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: "12px" }} />
-            <Area
-              type="monotone"
-              dataKey="embassies"
-              stroke="#3b82f6"
-              fillOpacity={1}
-              fill="url(#colorEmbassies)"
-              name="Embassies"
-            />
-            <Area
-              type="monotone"
-              dataKey="relationships"
-              stroke="#10b981"
-              fillOpacity={1}
-              fill="url(#colorRelationships)"
-              name="Relationships"
-            />
-            <Area
-              type="monotone"
-              dataKey="influence"
-              stroke="#8b5cf6"
-              fillOpacity={1}
-              fill="url(#colorInfluence)"
-              name="Total Influence"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="colorEmbassies" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorRelationships" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorInfluence" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 10 }} />
+              <YAxis className="text-xs" tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: "12px" }} />
+              <Area
+                type="monotone"
+                dataKey="embassies"
+                stroke="#3b82f6"
+                fillOpacity={1}
+                fill="url(#colorEmbassies)"
+                name="Embassies"
+              />
+              <Area
+                type="monotone"
+                dataKey="relationships"
+                stroke="#10b981"
+                fillOpacity={1}
+                fill="url(#colorRelationships)"
+                name="Relationships"
+              />
+              <Area
+                type="monotone"
+                dataKey="influence"
+                stroke="#8b5cf6"
+                fillOpacity={1}
+                fill="url(#colorInfluence)"
+                name="Total Influence"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         ) : (
           <div className="text-muted-foreground flex min-h-[300px] items-center justify-center">
             <div className="space-y-2 text-center">

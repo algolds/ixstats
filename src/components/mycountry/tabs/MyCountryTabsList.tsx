@@ -32,12 +32,12 @@ export function MyCountryTabsList({ govComponentCount }: { govComponentCount: nu
 
   return (
     <div className="overflow-x-auto p-0.5">
-      <TabsList className="glass-surface glass-refraction grid w-full min-w-fit grid-cols-2 gap-1.5 p-1 rounded-xl sm:grid-cols-4 border border-white/5">
+      <TabsList className="glass-surface glass-refraction grid w-full min-w-fit grid-cols-2 gap-1.5 rounded-xl border border-white/5 p-1 sm:grid-cols-4">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
             value={tab.value}
-            className={`data-[state=active]:bg-white/10 dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+            className={`data-[state=active]:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all data-[state=active]:bg-white/10 data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 ${
               ["economy", "labor", "government"].includes(tab.value)
                 ? `tab-trigger-${tab.value}`
                 : ""

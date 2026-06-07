@@ -58,11 +58,14 @@ function calculateOverlapGeoJson(drawnGeom: any, allFeatures: any[], currentFeat
 
   const overlapFeatures: any[] = [];
   try {
-    const turfDrawn = drawnGeom.type === "Feature" ? drawnGeom : {
-      type: "Feature",
-      geometry: drawnGeom,
-      properties: {}
-    };
+    const turfDrawn =
+      drawnGeom.type === "Feature"
+        ? drawnGeom
+        : {
+            type: "Feature",
+            geometry: drawnGeom,
+            properties: {},
+          };
 
     const otherSubdivisions = allFeatures.filter(
       (f) =>
@@ -78,7 +81,7 @@ function calculateOverlapGeoJson(drawnGeom: any, allFeatures: any[], currentFeat
       const turfSub = {
         type: "Feature",
         geometry: subGeom,
-        properties: {}
+        properties: {},
       };
 
       const intersection = intersect(featureCollection([turfDrawn, turfSub]));
@@ -2006,12 +2009,10 @@ const EditorMap = memo(
 
         {/* Floating polygon drawing toolbar */}
         {mode === "add-subdivision" && drawVertices.length > 0 && (
-          <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-border bg-card/90 px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-200">
-            <span className="text-foreground text-xs font-semibold select-none mr-2">
+          <div className="border-border bg-card/90 absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-200">
+            <span className="text-foreground mr-2 text-xs font-semibold select-none">
               Drawing Subdivision:{" "}
-              <span className="text-primary tabular-nums font-bold">
-                {drawVertices.length}
-              </span>{" "}
+              <span className="text-primary font-bold tabular-nums">{drawVertices.length}</span>{" "}
               {drawVertices.length === 1 ? "vertex" : "vertices"}
             </span>
             <div className="bg-border h-4 w-px" />

@@ -374,9 +374,10 @@ export class VaultService {
       await this.catchUpPassiveIncome(userId, db);
 
       // Re-fetch vault to get updated credits and stats
-      const updatedVault = (await db.myVault.findUnique({
-        where: { id: vault.id },
-      })) || vault;
+      const updatedVault =
+        (await db.myVault.findUnique({
+          where: { id: vault.id },
+        })) || vault;
 
       // Calculate vault level
       const vaultCfg = await getVaultConfig(db);
@@ -391,7 +392,9 @@ export class VaultService {
       }
 
       // Check if daily bonus can be claimed
-      const lastLoginDate = updatedVault.lastLoginDate ? new Date(updatedVault.lastLoginDate) : null;
+      const lastLoginDate = updatedVault.lastLoginDate
+        ? new Date(updatedVault.lastLoginDate)
+        : null;
       const now = new Date();
       const canClaimDailyBonus =
         !lastLoginDate ||
@@ -897,7 +900,9 @@ export class VaultService {
 
       // Check if a catch-up is already in progress for this user to prevent race conditions
       if (this.activeCatchUps.has(user.id)) {
-        console.log(`[Vault Service] Passive income catchup already in progress for user ${user.id}`);
+        console.log(
+          `[Vault Service] Passive income catchup already in progress for user ${user.id}`
+        );
         return { success: true, count: 0, totalCreditsAwarded: 0 };
       }
 
@@ -934,7 +939,9 @@ export class VaultService {
           startDate = vaultCreated > yesterday ? vaultCreated : yesterday;
         }
 
-        const lastRunDay = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+        const lastRunDay = new Date(
+          Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())
+        );
 
         // Calculate days to award
         const daysToAward: Date[] = [];

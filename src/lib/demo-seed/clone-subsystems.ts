@@ -689,9 +689,13 @@ export async function cloneGeography(
     const data = stripRecord(sub, demoCountryId, { extraStrip: geoStrip });
     const newSub = await prisma.subdivision.create({ data: data as any });
     subdivIdMap.set(sub.id, newSub.id);
-    
+
     // Force geom_postgis and update spatial profile
-    if (newSub.geometry && (newSub.geometry as any).coordinates && (newSub.geometry as any).coordinates.length > 0) {
+    if (
+      newSub.geometry &&
+      (newSub.geometry as any).coordinates &&
+      (newSub.geometry as any).coordinates.length > 0
+    ) {
       try {
         await prisma.$executeRawUnsafe(
           `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
@@ -703,7 +707,7 @@ export async function cloneGeography(
         console.warn(`[cloneGeography] Failed to update subdivision spatial profile:`, err);
       }
     }
-    
+
     count++;
   }
 
@@ -719,7 +723,7 @@ export async function cloneGeography(
       transforms: { subdivisionId: () => newSubId },
     });
     const newCity = await prisma.city.create({ data: data as any });
-    
+
     // Force geom_postgis and update spatial profile
     if (newCity.coordinates) {
       try {
@@ -737,7 +741,7 @@ export async function cloneGeography(
         console.warn(`[cloneGeography] Failed to update city spatial profile:`, err);
       }
     }
-    
+
     count++;
   }
 
