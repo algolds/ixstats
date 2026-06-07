@@ -4,8 +4,6 @@ import Link from "next/link";
 import {
   Mail,
   AlertTriangle,
-  MessageSquare,
-  ChevronRight,
   ChevronUp,
   ClipboardList,
   FileText,
@@ -24,7 +22,6 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/url-utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
-import { PreText } from "~/components/ui/pretext";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -34,15 +31,6 @@ import {
 import { formatCompactNumber, formatCompactCurrency } from "~/lib/format-utils";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
-
-const FOLDER_LABELS: Record<FolderKey, { label: string; icon: typeof MessageSquare }> = {
-  inbox: { label: "Inbox", icon: Mail },
-  personal: { label: "Personal", icon: MessageSquare },
-  diplomatic: { label: "Diplomatic", icon: MessageSquare },
-  discussions: { label: "Discussions", icon: MessageSquare },
-  groups: { label: "Groups", icon: MessageSquare },
-  system: { label: "System", icon: MessageSquare },
-};
 
 interface DashboardPlayerWidgetProps {
   heroCollapsed?: boolean;
@@ -65,7 +53,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     { userId: user?.id ?? "" },
     { enabled: !!user?.id }
   );
-  const { data: activeCrises } = api.crisisEvents.getActive.useQuery(
+  const { data: _activeCrises } = api.crisisEvents.getActive.useQuery(
     { limit: 5 },
     { enabled: hasCountry }
   );
@@ -124,8 +112,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
   }
 
   const msgFolders = folderCounts as Record<FolderKey, number> | undefined;
-  const hasMessages = msgFolders && Object.values(msgFolders).some((c) => c > 0);
-  const activeCrisesList = activeCrises ?? [];
+  const totalUnreadMessages = msgFolders ? Object.values(msgFolders).reduce((a, b) => a + b, 0) : 0;
   const crisesCount = crisisStats?.activeEvents ?? 0;
 
   const issueCount = pendingIssues?.total ?? 0;
@@ -284,124 +271,105 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <div className="border-border/40 border-t" />
           </>
         )}
-        {/* Messages */}
-        <div className="space-y-1.5">
-          <Link href={"/messages"} className="group flex items-center justify-between">
-            <span className="text-foreground flex items-center gap-1.5 text-[10px] font-semibold">
-              <Mail className="h-3.5 w-3.5" />
-              Messages
-            </span>
-            {hasMessages && (
-              <ChevronRight className="text-muted-foreground h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+
+        {/* Compact horizontal row of quick-action icons */}
+        <div className="grid grid-cols-4 gap-1.5 pt-1">
+          {/* Messages */}
+          <Link
+            href="/messages"
+            className="relative flex flex-col items-center justify-center rounded-lg bg-indigo-500/5 hover:bg-indigo-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+            title={totalUnreadMessages > 0 ? `${totalUnreadMessages} unread messages` : "No unread messages"}
+          >
+            <Mail className="h-4 w-4 text-muted-foreground group-hover/icon:text-indigo-400 transition-colors" />
+            {totalUnreadMessages > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[8px] font-bold text-white shadow-sm">
+                {totalUnreadMessages}
+              </span>
             )}
+            <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-indigo-300">Mail</span>
           </Link>
-          {hasMessages ? (
-            <div className="space-y-1">
-              {(Object.entries(FOLDER_LABELS) as [FolderKey, { label: string; icon: any }][]).map(
-                ([key, config]) => {
-                  const count = msgFolders![key] ?? 0;
-                  if (count === 0) return null;
-                  const Icon = config.icon;
-                  return (
-                    <div
-                      key={key}
-                      className="bg-muted/40 flex items-center justify-between rounded-md px-2 py-1"
-                    >
-                      <span className="text-muted-foreground flex items-center gap-1.5 text-[10px]">
-                        <Icon className="h-3 w-3" />
-                        {config.label}
-                      </span>
-                      <span className="rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-blue-600 dark:text-blue-400">
-                        {count}
-                      </span>
-                    </div>
-                  );
-                }
+
+          {/* Issues */}
+          {hasCountry ? (
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="relative flex flex-col items-center justify-center rounded-lg bg-amber-500/5 hover:bg-amber-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+              title={`${issueCount} pending issues (${urgentCount} urgent)`}
+            >
+              <ClipboardList className="h-4 w-4 text-muted-foreground group-hover/icon:text-amber-400 transition-colors" />
+              {(issueCount > 0 || urgentCount > 0) && (
+                <span className={cn(
+                  "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm",
+                  urgentCount > 0 ? "bg-red-500 animate-pulse" : "bg-amber-500"
+                )}>
+                  {urgentCount > 0 ? urgentCount : issueCount}
+                </span>
               )}
-            </div>
+              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-amber-300">Issues</span>
+            </Link>
           ) : (
-            <p className="text-muted-foreground px-1 text-[9px]">No unread messages</p>
+            <div className="flex flex-col items-center justify-center rounded-lg bg-white/5 border border-white/5 p-1.5 opacity-35 cursor-not-allowed">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">Issues</span>
+            </div>
+          )}
+
+          {/* Policies */}
+          {hasCountry ? (
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="relative flex flex-col items-center justify-center rounded-lg bg-blue-500/5 hover:bg-blue-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+              title={`${activePolicies}/${totalPolicies} active policies`}
+            >
+              <FileText className="h-4 w-4 text-muted-foreground group-hover/icon:text-blue-400 transition-colors" />
+              {totalPolicies > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500/20 border border-blue-500/35 px-1 text-[8px] font-semibold text-blue-400 shadow-sm backdrop-blur-md">
+                  {activePolicies}
+                </span>
+              )}
+              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-blue-300">Policy</span>
+            </Link>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg bg-white/5 border border-white/5 p-1.5 opacity-35 cursor-not-allowed">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">Policy</span>
+            </div>
+          )}
+
+          {/* Actions */}
+          {hasCountry ? (
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="relative flex flex-col items-center justify-center rounded-lg bg-emerald-500/5 hover:bg-emerald-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+              title={pendingActions > 0 ? `${pendingActions} pending actions` : "All actions clear"}
+            >
+              <Layers className="h-4 w-4 text-muted-foreground group-hover/icon:text-emerald-400 transition-colors" />
+              <span className={cn(
+                "absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full shadow-sm",
+                pendingActions > 0 ? "bg-orange-500" : "bg-emerald-500"
+              )} />
+              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-emerald-300">Actions</span>
+            </Link>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg bg-white/5 border border-white/5 p-1.5 opacity-35 cursor-not-allowed">
+              <Layers className="h-4 w-4 text-muted-foreground" />
+              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">Actions</span>
+            </div>
           )}
         </div>
 
-        {/* Issues / Policies / Actions */}
-        {hasCountry && (
-          <>
-            <div className="border-border/40 border-t" />
-            <div className="space-y-1">
-              {/* Issues */}
-              <Link
-                href={createUrl("/mycountry/executive")}
-                className="group flex items-center justify-between rounded-md bg-amber-500/5 px-2 py-1.5 transition-colors hover:bg-amber-500/10"
-              >
-                <span className="flex items-center gap-1.5 text-[10px] font-medium text-amber-600 dark:text-amber-500">
-                  <ClipboardList className="h-3 w-3" />
-                  Issues
-                </span>
-                <span className="flex items-center gap-1">
-                  {urgentCount > 0 && (
-                    <span className="rounded-md bg-red-500 px-1 py-0.5 text-[7px] font-bold text-white">
-                      {urgentCount}
-                    </span>
-                  )}
-                  <span className="text-muted-foreground text-[9px] font-medium">{issueCount}</span>
-                </span>
-              </Link>
-
-              {/* Policies */}
-              <Link
-                href={createUrl("/mycountry/executive")}
-                className="group flex items-center justify-between rounded-md bg-blue-500/5 px-2 py-1.5 transition-colors hover:bg-blue-500/10"
-              >
-                <span className="flex items-center gap-1.5 text-[10px] font-medium text-blue-600 dark:text-blue-500">
-                  <FileText className="h-3 w-3" />
-                  Policies
-                </span>
-                <span className="text-muted-foreground text-[9px] font-medium">
-                  {activePolicies}/{totalPolicies}
-                </span>
-              </Link>
-
-              {/* Actions */}
-              <Link
-                href={createUrl("/mycountry/executive")}
-                className="group flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1.5 transition-colors hover:bg-emerald-500/10"
-              >
-                <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-500">
-                  <Layers className="h-3 w-3" />
-                  Actions
-                </span>
-                <span
-                  className={`text-[9px] font-medium ${pendingActions > 0 ? "text-orange-600 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"}`}
-                >
-                  {pendingActions > 0 ? `${pendingActions} pending` : "All clear"}
-                </span>
-              </Link>
-            </div>
-          </>
-        )}
-
-        {/* Active Crises */}
+        {/* Active Crises Warning Banner */}
         {crisesCount > 0 && (
-          <>
-            <div className="border-border/40 border-t" />
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium">
-                  <AlertTriangle className="h-3 w-3 text-red-500 dark:text-red-400" />
-                  Crises
-                </span>
-                <span className="text-[10px] font-semibold text-red-600 dark:text-red-500">
-                  {crisesCount}
-                </span>
-              </div>
-              {activeCrisesList.length > 0 && (
-                <p className="text-muted-foreground truncate text-[10px]">
-                  • {activeCrisesList[0]?.title ?? activeCrisesList[0]?.type ?? "Ongoing"}
-                </p>
-              )}
-            </div>
-          </>
+          <div className="mt-1 border-t border-red-500/15 pt-2">
+            <Link
+              href={createUrl("/mycountry/executive")}
+              className="flex items-center gap-1.5 justify-center rounded bg-red-500/5 border border-red-500/10 py-1 text-red-500 hover:bg-red-500/10 transition-colors animate-pulse"
+              title={`${crisesCount} active crises! Click to view.`}
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">{crisesCount} Crises Active</span>
+            </Link>
+          </div>
         )}
       </CutoutCardContent>
     </CutoutCard>

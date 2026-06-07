@@ -68,7 +68,7 @@ export function StickyToc({ entries }: StickyTocProps) {
           <a
             key={item.id}
             href={`#${item.id}`}
-            className={`wikios-sticky-toc-item${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
+            className={`wikios-sticky-toc-item ${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
             style={{ paddingLeft: `${(item.level - 2) * 12 + 12}px` }}
           >
             <span className="wikios-sticky-toc-text">{item.text}</span>

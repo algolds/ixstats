@@ -4,9 +4,9 @@
 
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { History, Link2, ExternalLink, X, Trophy } from "lucide-react";
+import { History, Link2, ExternalLink, X, Trophy, Search, Calendar, Hash } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wikios/html-transformer";
 import { StickyToc } from "~/components/wikios/reader/StickyToc";
@@ -19,6 +19,8 @@ import { useAnnotationOverlay } from "~/components/wikios/reader/AnnotationOverl
 import { useCiteTooltips } from "~/components/wikios/reader/useCiteTooltips";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
+import { getFlagColors } from "~/lib/flag-color-extractor";
+import { Badge } from "~/components/ui/badge";
 
 interface ArticleRendererProps {
   title: string;
@@ -35,6 +37,142 @@ const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
   iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
   althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
 };
+
+function WikiOSHeader({
+  title,
+  categories,
+  lastModified,
+  wikiSource,
+  countryData,
+  featuredImageUrl,
+  themeColors,
+  onOpenHistory,
+  onOpenBacklinks,
+  markupToggle,
+  isAuthenticated,
+}: {
+  title: string;
+  categories: string[];
+  lastModified: string | null;
+  wikiSource?: string;
+  countryData?: any;
+  featuredImageUrl?: string | null;
+  themeColors: any;
+  onOpenHistory: () => void;
+  onOpenBacklinks: () => void;
+  markupToggle: React.ReactNode;
+  isAuthenticated: boolean;
+}) {
+  const backdropUrl = countryData?.flagUrl || featuredImageUrl;
+
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-white/5 bg-card/45 backdrop-blur-sm p-4 sm:p-5 mb-6 shadow-lg">
+      {/* Backdrop — blurred flag/featured image, or a themed accent wash as fallback */}
+      {backdropUrl ? (
+        <div aria-hidden="true" className="absolute inset-0 z-0">
+          <img
+            src={backdropUrl}
+            alt=""
+            className="h-full w-full scale-110 object-cover opacity-20 blur-[24px] saturate-150"
+            loading="eager"
+          />
+          <div className="from-card/95 via-card/85 to-card/65 absolute inset-0 bg-gradient-to-r" />
+        </div>
+      ) : (
+        <div aria-hidden="true" className="absolute inset-0 z-0 bg-card">
+          <div
+            className="absolute inset-0 bg-gradient-to-br"
+            style={{
+              background: `linear-gradient(135deg, ${themeColors.primary}08 0%, transparent 100%)`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="relative z-10 space-y-3">
+        {/* Breadcrumb Path & Search */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>WikiOS</span>
+            <span>&rarr;</span>
+            <CategoryBreadcrumb title={title} />
+          </div>
+
+          {/* Inline Search Button triggers global Search Modal */}
+          <button
+            onClick={() => {
+              window.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                  key: "k",
+                  metaKey: true,
+                  bubbles: true,
+                })
+              );
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-lg border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all outline-none"
+          >
+            <Search size={12} />
+            <span>Search...</span>
+          </button>
+        </div>
+
+        {/* Title and Badge */}
+        <div className="flex flex-wrap items-baseline gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight tracking-tight">
+            {title.replace(/_/g, " ")}
+          </h1>
+          {wikiSource && wikiSource !== "ixwiki" && (
+            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20 py-0 px-1.5">
+              {wikiSource}
+            </Badge>
+          )}
+        </div>
+
+        {/* Metadata & Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-white/5">
+          {/* Metadata */}
+          <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+            {lastModified && (
+              <span className="flex items-center gap-1">
+                <Calendar size={12} className="text-muted-foreground/60" />
+                Updated: {new Date(lastModified).toLocaleDateString()}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Hash size={12} className="text-muted-foreground/60" />
+              {categories.length} Categories
+            </span>
+          </div>
+
+          {/* Action Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={onOpenHistory}
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md border border-white/5 bg-white/[0.03] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+              title="View revision history"
+            >
+              <History size={11} className="text-muted-foreground/60" />
+              <span>History</span>
+            </button>
+
+            <button
+              onClick={onOpenBacklinks}
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md border border-white/5 bg-white/[0.03] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+              title="Pages that link here"
+            >
+              <Link2 size={11} className="text-muted-foreground/60" />
+              <span>Links Here</span>
+            </button>
+
+            {markupToggle}
+            <StashButton title={title} isAuthenticated={isAuthenticated} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ArticleRenderer({
   title,
@@ -111,21 +249,112 @@ export function ArticleRenderer({
 
   const slug = encodeURIComponent(title.replace(/ /g, "_"));
 
+  const featuredImageUrl = useMemo(() => {
+    if (infoboxHtml) {
+      const match = infoboxHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match && match[1]) return match[1];
+    }
+    if (contentHtml) {
+      const match = contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match && match[1]) return match[1];
+    }
+    return null;
+  }, [infoboxHtml, contentHtml]);
+
+  const { data: countryData } = api.countries.getByIdBasic.useQuery(
+    { id: title },
+    {
+      enabled:
+        !!title &&
+        title.trim() !== "" &&
+        title !== "Main Page" &&
+        title !== "Main_Page" &&
+        !title.includes(":"),
+      retry: false,
+    }
+  );
+
+  const themeColors = useMemo(() => {
+    if (countryData?.name) {
+      return getFlagColors(countryData.name);
+    }
+
+    // Fallback: category/namespace matching
+    let hue = 217; // Default blue
+
+    const catStr = categories.join(" ").toLowerCase();
+    if (
+      catStr.includes("history") ||
+      catStr.includes("politics") ||
+      catStr.includes("executive") ||
+      catStr.includes("government")
+    ) {
+      hue = 38; // Gold/Amber
+    } else if (
+      catStr.includes("military") ||
+      catStr.includes("war") ||
+      catStr.includes("conflict") ||
+      catStr.includes("defense")
+    ) {
+      hue = 0; // Red
+    } else if (
+      catStr.includes("diplomacy") ||
+      catStr.includes("geography") ||
+      catStr.includes("relation")
+    ) {
+      hue = 188; // Cyan
+    } else if (catStr.includes("file") || catStr.includes("media") || catStr.includes("image")) {
+      hue = 142; // Green
+    } else if (catStr.includes("talk") || catStr.includes("discussion")) {
+      hue = 262; // Purple
+    } else if (title.startsWith("File:")) {
+      hue = 142; // Green
+    } else if (title.startsWith("Talk:")) {
+      hue = 262; // Purple
+    }
+
+    return {
+      primary: `hsl(${hue}, 80%, 45%)`,
+      secondary: `hsl(${hue}, 60%, 60%)`,
+      accent: `hsl(${hue}, 80%, 45%)`,
+      rgbPrimary: { r: 59, g: 130, b: 246 },
+    };
+  }, [countryData, categories, title]);
+
+  const containerStyle = {
+    "--wikios-accent": themeColors.primary,
+    "--wikios-accent-hover": themeColors.secondary,
+    "--wikios-link": themeColors.primary,
+    "--wikios-link-hover": themeColors.secondary,
+  } as React.CSSProperties;
+
   return (
-    <div className="wikios-article">
+    <div className="wikios-article" style={containerStyle}>
       <div ref={titleRef} className="wikios-title-sentinel" />
 
-      {/* Category breadcrumbs */}
-      <CategoryBreadcrumb title={title} />
+      {/* Redesigned Custom WikiOSHeader */}
+      <WikiOSHeader
+        title={title}
+        categories={categories}
+        lastModified={lastModified}
+        wikiSource={wikiSource}
+        countryData={countryData}
+        featuredImageUrl={featuredImageUrl}
+        themeColors={themeColors}
+        onOpenHistory={() => setActiveModal("history")}
+        onOpenBacklinks={() => setActiveModal("backlinks")}
+        markupToggle={markupToggle}
+        isAuthenticated={isAuthenticated}
+      />
 
       {/* External wiki source badge */}
       {wikiSource && wikiSource !== "ixwiki" && WIKI_SOURCE_LABELS[wikiSource] && (
-        <div className="mb-2 flex items-center gap-1.5">
+        <div className="mb-4 flex items-center gap-1.5">
           <a
             href={`${WIKI_SOURCE_LABELS[wikiSource]!.url}${encodeURIComponent(title.replace(/ /g, "_"))}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-600 hover:underline dark:bg-amber-950/40 dark:text-amber-400"
+            className="inline-flex items-center gap-1 rounded bg-amber-50/5 border border-amber-500/10 px-2 py-0.5 text-xs text-amber-500 hover:bg-amber-500/10 transition-colors"
           >
             <ExternalLink size={11} />
             From {WIKI_SOURCE_LABELS[wikiSource]!.label}
@@ -138,7 +367,7 @@ export function ArticleRenderer({
         (() => {
           const count = awardData.entries.length;
           return (
-            <Link href={withBasePath("/w/special/lorewards")} className="wikios-award-banner">
+            <Link href={withBasePath("/w/special/lorewards")} className="wikios-award-banner mb-6">
               <Trophy size={15} />
               <span className="wikios-award-banner-text">
                 {count > 1 ? `${count}x Award-winning article` : "Award-winning article"}
@@ -149,30 +378,6 @@ export function ArticleRenderer({
             </Link>
           );
         })()}
-
-      {/* Article toolbar — quick actions */}
-      <div className="wikios-article-toolbar">
-        <div className="wikios-toolbar-actions">
-          <button
-            onClick={() => setActiveModal("history")}
-            className="wikios-toolbar-action"
-            title="Quick view history"
-          >
-            <History size={13} />
-            <span>History</span>
-          </button>
-          <button
-            onClick={() => setActiveModal("backlinks")}
-            className="wikios-toolbar-action"
-            title="Quick view backlinks"
-          >
-            <Link2 size={13} />
-            <span>Links Here</span>
-          </button>
-          {markupToggle}
-          <StashButton title={title} isAuthenticated={isAuthenticated} />
-        </div>
-      </div>
 
       {/* Page-top notices (WIP, stub, hatnotes) */}
       {noticesHtml && (

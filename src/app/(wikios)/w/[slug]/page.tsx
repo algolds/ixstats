@@ -66,7 +66,7 @@ export default function WikiOSArticlePage() {
 
   // Standard article
   return (
-    <WikiOSLayout title={data?.title ?? title}>
+    <WikiOSLayout>
       <div ref={articleRef}>
         {isLoading && (
           <div className="wikios-loading">

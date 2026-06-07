@@ -237,10 +237,10 @@ export default function WikiOSEditPage() {
     );
   }
 
-  // Source editor uses WikiOSLayout
+  // Source editor uses fullscreen layout instead of WikiOSLayout
   return (
-    <WikiOSLayout>
-      <div className="wikios-editor-page">
+    <div className="wikios-root min-h-screen bg-[#0f1114] text-[#e4e4e7] p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto wikios-editor-page">
         {saving && (
           <div className="wikios-editor-saving">
             <div className="wikios-loading-spinner" />
@@ -259,6 +259,6 @@ export default function WikiOSEditPage() {
           />
         )}
       </div>
-    </WikiOSLayout>
+    </div>
   );
 }
