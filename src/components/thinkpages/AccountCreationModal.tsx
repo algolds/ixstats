@@ -76,6 +76,12 @@ const ACCOUNT_TYPES = {
   },
 } as const;
 
+const COLOR_CLASSES = {
+  amber: "bg-amber-500/20 text-amber-400",
+  blue: "bg-blue-500/20 text-blue-400",
+  green: "bg-green-500/20 text-green-400",
+} as const;
+
 export function AccountCreationModal({
   isOpen,
   onClose,
@@ -269,7 +275,7 @@ export function AccountCreationModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="hs-overlay-backdrop-open:bg-black/50 fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="hs-overlay-backdrop-open:bg-black/50 fixed inset-0 z-[100000] flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -368,7 +374,7 @@ export function AccountCreationModal({
                               <div
                                 className={cn(
                                   "rounded-lg p-1.5 sm:p-2",
-                                  `bg-${config.color}-500/20 text-${config.color}-400`
+                                  COLOR_CLASSES[config.color]
                                 )}
                               >
                                 <Icon className="h-4 w-4 sm:h-5 sm:w-5" />

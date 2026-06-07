@@ -208,8 +208,16 @@ function getDiscordAvatarUrl(author: DiscordMessage["author"]): string | null {
 
 function formatPostContent(message: DiscordMessage): string {
   let content = message.content.trim();
-  // Strip redundant verified profile headers copy-pasted in Discord posts
-  content = content.replace(/^\*\*(?=.*?(?:@|:verified:)).*?\*\*\s*?\n/, "");
+  // Match a bold block at the start of the message: **header**
+  const headerMatch = content.match(/^\*\*([^\*]+?)\*\*/);
+  if (headerMatch) {
+    const headerText = headerMatch[1] || "";
+    // If it looks like a profile header (contains @ or :verified:)
+    if (headerText.includes("@") || headerText.includes(":verified:")) {
+      // Strip the header and any trailing whitespace/newlines
+      content = content.slice(headerMatch[0].length).trim();
+    }
+  }
   return content;
 }
 
@@ -227,7 +235,8 @@ async function loadCountryIdCache(db: PrismaClient) {
 async function getOrCreateDiscordAccount(
   db: PrismaClient,
   discordUsername: string,
-  message: DiscordMessage
+  message: DiscordMessage,
+  displayName: string
 ): Promise<{ accountId: string; isFormerNation: boolean }> {
   const mappedCountry = DISCORD_COUNTRY_MAP[discordUsername];
   const isFormerNation = !mappedCountry;
@@ -251,9 +260,9 @@ async function getOrCreateDiscordAccount(
   const account = await db.thinkpagesAccount.create({
     data: {
       username: discordUsername,
-      displayName: message.author.username,
-      firstName: message.author.username,
-      lastName: "",
+      displayName: displayName,
+      firstName: displayName.split(" ")[0] || message.author.username,
+      lastName: displayName.split(" ").slice(1).join(" ") || "",
       accountType: "citizen",
       clerkUserId: `system_ixtwitter_${discordUsername}`,
       countryId: countryId || defaultCountryId,
@@ -274,15 +283,36 @@ async function getOrCreateDiscordAccount(
 }
 
 function extractPrimaryHandle(content: string): string | null {
-  // Look for @handle patterns in content: @handle, • @handle •, @handle•, etc.
-  const match = content.match(/[@•]\s*@?([A-Za-z0-9_]+)/);
-  return match?.[1] || null;
+  // 1. Try to find an explicit @handle first
+  const atMatch = content.match(/@([^\s•*<>:|]+)/);
+  if (atMatch) return atMatch[1] || null;
+
+  // 2. Fall back to • handle pattern if no @ is present
+  const bulletMatch = content.match(/•\s*([^\s•*<>:|]+)/);
+  if (bulletMatch) return bulletMatch[1] || null;
+
+  return null;
+}
+
+function extractDisplayName(content: string, defaultName: string): string {
+  // First try the standard bullet format: **• Display Name • @handle
+  const bulletMatch = content.match(/\*\*•\s*([^\n•@<*]+?)\s*(?:•|@|<|\*\*)/);
+  if (bulletMatch && bulletMatch[1]) {
+    return bulletMatch[1].trim();
+  }
+  // Fallback to simple bold format: **Display Name**
+  const boldMatch = content.match(/\*\*([^\n@<*]+?)\*\*/);
+  if (boldMatch && boldMatch[1]) {
+    return boldMatch[1].trim();
+  }
+  return defaultName;
 }
 
 async function getOrCreateHandleAccount(
   db: PrismaClient,
   handle: string,
-  discordUsername: string
+  discordUsername: string,
+  displayName: string
 ): Promise<string | null> {
   // Try to find existing handle account
   const existingAccount = await db.thinkpagesAccount.findUnique({
@@ -308,9 +338,9 @@ async function getOrCreateHandleAccount(
     const account = await db.thinkpagesAccount.create({
       data: {
         username: handle,
-        displayName: handle,
-        firstName: handle,
-        lastName: "",
+        displayName: displayName,
+        firstName: displayName.split(" ")[0] || handle,
+        lastName: displayName.split(" ").slice(1).join(" ") || "",
         accountType: "media",
         clerkUserId: `system_ixtwitter_handle_${handle}`,
         countryId: mainAccount.countryId,
@@ -319,7 +349,7 @@ async function getOrCreateHandleAccount(
         bio: `discord:${discordUsername}`,
       },
     });
-    console.log(`[DiscordPoster] Created handle account: @${handle}`);
+    console.log(`[DiscordPoster] Created handle account: @${handle} (${displayName})`);
     return account.id;
   } catch {
     return null;
@@ -615,23 +645,25 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
 
     for (const message of validMessages.reverse()) {
       try {
-        // Ensure the main Discord user account exists
-        await getOrCreateDiscordAccount(db, message.author.username, message);
-
-        // Extract the @handle from content and get/create handle account
         const handle = extractPrimaryHandle(message.content);
+        const displayName = extractDisplayName(message.content, message.author.username);
+
+        // Ensure the main Discord user account exists
+        await getOrCreateDiscordAccount(db, message.author.username, message, displayName);
+
         let accountId: string;
         if (handle) {
           const handleAccountId = await getOrCreateHandleAccount(
             db,
             handle,
-            message.author.username
+            message.author.username,
+            displayName
           );
           accountId =
             handleAccountId ||
-            (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
+            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName)).accountId;
         } else {
-          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message))
+          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
             .accountId;
         }
 
@@ -697,23 +729,25 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
       }
 
       try {
-        // Ensure the main Discord user account exists
-        await getOrCreateDiscordAccount(db, message.author.username, message);
-
-        // Extract the @handle from content and get/create handle account
         const handle = extractPrimaryHandle(message.content);
+        const displayName = extractDisplayName(message.content, message.author.username);
+
+        // Ensure the main Discord user account exists
+        await getOrCreateDiscordAccount(db, message.author.username, message, displayName);
+
         let accountId: string;
         if (handle) {
           const handleAccountId = await getOrCreateHandleAccount(
             db,
             handle,
-            message.author.username
+            message.author.username,
+            displayName
           );
           accountId =
             handleAccountId ||
-            (await getOrCreateDiscordAccount(db, message.author.username, message)).accountId;
+            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName)).accountId;
         } else {
-          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message))
+          accountId = (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
             .accountId;
         }
 
