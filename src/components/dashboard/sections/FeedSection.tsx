@@ -2,16 +2,27 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
+import { withBasePath } from "~/lib/base-path";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
 function proxyDiscordUrl(url: string): string {
+  if (!url) return "";
   try {
     const parsed = new URL(url);
     if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
-      return `/api/proxy-discord-image?url=${encodeURIComponent(url)}`;
+      return withBasePath(`/api/proxy-discord-image?url=${encodeURIComponent(url)}`);
     }
   } catch {}
+  if (url.startsWith("/")) {
+    let cleanPath = url;
+    if (cleanPath.startsWith("/projects/ixstates/")) {
+      cleanPath = cleanPath.slice("/projects/ixstates".length);
+    } else if (cleanPath.startsWith("/projects/ixstates")) {
+      cleanPath = cleanPath.slice("/projects/ixstates".length);
+    }
+    return withBasePath(cleanPath);
+  }
   return url;
 }
 import {

@@ -78,7 +78,13 @@ function proxyDiscordUrl(url: string): string {
     }
   } catch {}
   if (url.startsWith("/")) {
-    return withBasePath(url);
+    let cleanPath = url;
+    if (cleanPath.startsWith("/projects/ixstates/")) {
+      cleanPath = cleanPath.slice("/projects/ixstates".length);
+    } else if (cleanPath.startsWith("/projects/ixstates")) {
+      cleanPath = cleanPath.slice("/projects/ixstates".length);
+    }
+    return withBasePath(cleanPath);
   }
   return url;
 }

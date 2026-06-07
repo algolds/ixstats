@@ -25,13 +25,17 @@ function proxyDiscordUrl(url: string | null | undefined): string | undefined {
     }
   } catch {}
   if (url.startsWith("/")) {
-    if (process.env.NODE_ENV === "production") {
-      const pathWithoutBp = url.startsWith("/projects/ixstates")
-        ? url.slice("/projects/ixstates".length)
-        : url;
-      return `https://ixwiki.com/projects/ixstates${pathWithoutBp}`;
+    let cleanPath = url;
+    if (cleanPath.startsWith("/projects/ixstates/")) {
+      cleanPath = cleanPath.slice("/projects/ixstates".length);
+    } else if (cleanPath.startsWith("/projects/ixstates")) {
+      cleanPath = cleanPath.slice("/projects/ixstates".length);
     }
-    return createUrl(url);
+
+    if (process.env.NODE_ENV === "production") {
+      return `https://ixwiki.com/projects/ixstates${cleanPath}`;
+    }
+    return createUrl(cleanPath);
   }
   return url;
 }
