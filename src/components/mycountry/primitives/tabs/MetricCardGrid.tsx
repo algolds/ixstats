@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import type { LucideIcon } from "lucide-react";
-import { MetricCard, type MetricCardProps } from "~/components/shared/data-display/MetricCard";
+import { MetricCard } from "~/components/shared/data-display/MetricCard";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
+import type { MyCountryAccent } from "~/components/mycountry/cards/accents";
 import { Button } from "~/components/ui/button";
 import { Edit2, ImageIcon, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
@@ -13,11 +15,10 @@ import { api } from "~/trpc/react";
 import {
   getCardImagePreset,
   getFallbackGradient,
-  allowsCustomUpload,
   type CardImageType,
 } from "~/lib/card-image-presets";
-import { useCountryImage } from "~/hooks/useCountryImage";
-import type { CountryImageData, ImageContext } from "~/lib/country-image-engine";
+import { useSimpleFlag } from "~/hooks/useSimpleFlag";
+import type { CountryImageData } from "~/lib/country-image-engine";
 import { cn } from "~/lib/utils";
 
 // Theme color configurations
@@ -104,7 +105,9 @@ export interface MetricCardGridProps {
     autoFallback?: boolean;
     /** Country data for keyword generation (required if autoFallback=true) */
     countryImageData?: CountryImageData;
+    countryName?: string;
   };
+  cardWrapper?: "glass" | "panel" | "card";
 }
 
 /**
@@ -126,9 +129,19 @@ export function MetricCardGrid({
   subtitle,
   cardFooter,
   backgroundImage,
+  cardWrapper = "card",
 }: MetricCardGridProps) {
   const themeConfig = themeColors[theme];
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const accent = useMemo((): MyCountryAccent => {
+    if (theme === "economy") return "emerald";
+    if (theme === "labor") return "red";
+    if (theme === "government") return "amber";
+    if (theme === "overview") return "amber";
+    if (theme === "demographics") return "cyan";
+    if (theme === "analytics") return "indigo";
+    return "neutral";
+  }, [theme]);
+  const [_imageLoaded, _setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   // Fetch the card image from database if backgroundImage is provided
@@ -141,23 +154,7 @@ export function MetricCardGrid({
       { enabled: !!backgroundImage?.countryId }
     );
 
-  // Auto-fallback: fetch contextual Unsplash image when no DB image exists
-  const cardTypeToContext = useMemo((): ImageContext => {
-    const ct = backgroundImage?.cardType;
-    if (ct === "defense") return "defense_card";
-    if (ct === "diplomacy") return "diplomacy_card";
-    return (ct as ImageContext) || "economic_indicators";
-  }, [backgroundImage?.cardType]);
-
-  const { imageUrl: autoImageUrl } = useCountryImage({
-    countryData: backgroundImage?.countryImageData ?? null,
-    context: cardTypeToContext,
-    enabled:
-      !!backgroundImage?.autoFallback &&
-      !!backgroundImage?.countryImageData &&
-      !cardImage?.imageUrl,
-    size: "small",
-  });
+  const { flagUrl: countryFlagUrl } = useSimpleFlag(backgroundImage?.countryName);
 
   const gridCols = {
     2: "grid-cols-1 sm:grid-cols-2",
@@ -179,7 +176,7 @@ export function MetricCardGrid({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   // Get image URL: DB custom image takes priority, then auto-fallback
-  const imageUrl = cardImage?.imageUrl || autoImageUrl || null;
+  const imageUrl = cardImage?.imageUrl || null;
   const hasImage = !!imageUrl && !imageError;
   const fallbackGradient = backgroundImage?.cardType
     ? getFallbackGradient(backgroundImage.cardType)
@@ -217,39 +214,40 @@ export function MetricCardGrid({
     return metricsGrid;
   }
 
+
+
   // Return wrapped in a card with optional background image
-  return (
-    <Card
-      className={cn(
-        "border-border relative overflow-hidden",
-        !hasImage && fallbackGradient,
-        className
-      )}
-    >
-      {/* Background Image */}
-      <AnimatePresence>
-        {hasImage && (
-          <motion.div
-            key={imageUrl}
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: imageLoaded ? 1 : 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+  const cardContent = (
+    <>
+      {/* Blueprint background: desaturated flag wash + radial dot mesh */}
+      {backgroundImage && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+          {hasImage ? (
             <img
               src={imageUrl!}
-              alt={preset?.label || "Background"}
-              className="h-full w-full object-cover"
-              onLoad={() => setImageLoaded(true)}
+              alt={preset?.label || "Custom Background"}
+              className="h-full w-full object-cover opacity-25 blur-[12px] saturate-50"
+              onLoad={() => _setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
-            {/* Gradient overlay for readability */}
-            <div className="from-background/95 via-background/80 to-background/50 absolute inset-0 bg-gradient-to-t" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ) : countryFlagUrl ? (
+            <img
+              src={countryFlagUrl}
+              alt="Flag Wash Background"
+              className="h-full w-full object-cover opacity-15 blur-[24px] saturate-[0.35]"
+            />
+          ) : null}
+
+          {/* Blueprint dot-matrix grid */}
+          <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground)/0.15)_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_60%,transparent_100%)] opacity-60" />
+
+          {/* Subtle diagonal technical line */}
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/[0.015] to-transparent dark:via-white/[0.005]" />
+
+          {/* Gradient overlay to ensure text is fully readable */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/98 via-background/90 to-background/70" />
+        </div>
+      )}
 
       {/* Loading indicator */}
       {isLoadingImage && (
@@ -295,6 +293,42 @@ export function MetricCardGrid({
           {cardFooter}
         </CardContent>
       </div>
+    </>
+  );
+
+  if (cardWrapper === "glass") {
+    return (
+      <GlassPanel
+        accent={accent}
+        className={cn("relative overflow-hidden", className)}
+      >
+        {cardContent}
+      </GlassPanel>
+    );
+  }
+
+  if (cardWrapper === "panel") {
+    return (
+      <PanelCard
+        accent={accent}
+        tinted
+        texture="dots"
+        className={cn("relative overflow-hidden", className)}
+      >
+        {cardContent}
+      </PanelCard>
+    );
+  }
+
+  return (
+    <Card
+      className={cn(
+        "border-border relative overflow-hidden",
+        !hasImage && fallbackGradient,
+        className
+      )}
+    >
+      {cardContent}
     </Card>
   );
 }

@@ -35,6 +35,7 @@ interface HealthRingProps {
   className?: string;
   onClick?: () => void;
   isClickable?: boolean;
+  hideValue?: boolean;
 }
 
 export const HealthRing: React.FC<HealthRingProps> = ({
@@ -47,6 +48,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   className = "",
   onClick,
   isClickable = false,
+  hideValue = false,
 }) => {
   // Ensure size is a valid number
   const validSize = typeof size === "number" && !isNaN(size) && size > 0 ? size : 110;
@@ -69,10 +71,10 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   const springGlow = useSpring(hovered ? 1 : 0.8, { stiffness: 300, damping: 20 });
 
   // Transform values for dynamic effects with safe calculations
-  const animatedOffset = useTransform(springProgress, [0, safeTarget], [circumference, 0]);
+  const _animatedOffset = useTransform(springProgress, [0, safeTarget], [circumference, 0]);
 
   // Glassy border color
-  const borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
+  const _borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
 
   const ringContent = (
     <motion.div
@@ -100,37 +102,48 @@ export const HealthRing: React.FC<HealthRingProps> = ({
       <motion.div
         className="pointer-events-none absolute inset-0 z-10 rounded-full"
         style={{
-          background: `linear-gradient(135deg, rgba(${rgb.r},${rgb.g},${rgb.b},0.15), rgba(${rgb.r},${rgb.g},${rgb.b},0.05))`,
-          boxShadow: `
-            0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
-            0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
-            0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15),
-            inset 0 1px 0 hsl(var(--accent) / 0.6)
-          `,
-          backdropFilter: "blur(12px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(12px) saturate(1.8)",
+          background: hideValue
+            ? "transparent"
+            : `linear-gradient(135deg, rgba(${rgb.r},${rgb.g},${rgb.b},0.15), rgba(${rgb.r},${rgb.g},${rgb.b},0.05))`,
+          boxShadow: hideValue
+            ? `0 0 0 1.5px rgba(${rgb.r},${rgb.g},${rgb.b},0.5),
+               0 0 10px 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+            : `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
+               0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
+               0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15),
+               inset 0 1px 0 hsl(var(--accent) / 0.6)`,
+          backdropFilter: hideValue ? "none" : "blur(12px) saturate(1.8)",
+          WebkitBackdropFilter: hideValue ? "none" : "blur(12px) saturate(1.8)",
           opacity: springGlow,
         }}
         animate={{
           boxShadow: hovered
-            ? `0 0 0 3px rgba(${rgb.r},${rgb.g},${rgb.b},0.8),
-               0 0 30px 6px rgba(${rgb.r},${rgb.g},${rgb.b},0.4),
-               0 0 60px 12px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
-            : `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
-               0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
-               0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`,
+            ? hideValue
+              ? `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.7),
+                 0 0 15px 3px rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`
+              : `0 0 0 3px rgba(${rgb.r},${rgb.g},${rgb.b},0.8),
+                 0 0 30px 6px rgba(${rgb.r},${rgb.g},${rgb.b},0.4),
+                 0 0 60px 12px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+            : hideValue
+              ? `0 0 0 1.5px rgba(${rgb.r},${rgb.g},${rgb.b},0.5),
+                 0 0 10px 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+              : `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
+                 0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
+                 0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       />
       {/* Inner glow layer */}
-      <div
-        className="pointer-events-none absolute inset-1 z-5 rounded-full"
-        style={{
-          background: `radial-gradient(circle at 30% 30%, rgba(${rgb.r},${rgb.g},${rgb.b},0.2), transparent 70%)`,
-          opacity: hovered ? 0.8 : 0.4,
-          transition: "opacity 0.3s",
-        }}
-      />
+      {!hideValue && (
+        <div
+          className="pointer-events-none absolute inset-1 z-5 rounded-full"
+          style={{
+            background: `radial-gradient(circle at 30% 30%, rgba(${rgb.r},${rgb.g},${rgb.b},0.2), transparent 70%)`,
+            opacity: hovered ? 0.8 : 0.4,
+            transition: "opacity 0.3s",
+          }}
+        />
+      )}
       <svg width={validSize} height={validSize} className="z-20 -rotate-90 transform">
         {/* Background circle */}
         <circle
@@ -235,21 +248,23 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           </radialGradient>
         </defs>
         {/* Pulsing background circle for liquid effect */}
-        <circle
-          cx={validSize / 2}
-          cy={validSize / 2}
-          r={radius - 2}
-          fill={`url(#wave-${label})`}
-          opacity="0.4"
-        >
-          <animate
-            attributeName="r"
-            values={`${radius - 2};${radius + 1};${radius - 2}`}
-            dur="3s"
-            repeatCount="indefinite"
-          />
-          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />
-        </circle>
+        {!hideValue && (
+          <circle
+            cx={validSize / 2}
+            cy={validSize / 2}
+            r={radius - 2}
+            fill={`url(#wave-${label})`}
+            opacity="0.4"
+          >
+            <animate
+              attributeName="r"
+              values={`${radius - 2};${radius + 1};${radius - 2}`}
+              dur="3s"
+              repeatCount="indefinite"
+            />
+            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />
+          </circle>
+        )}
 
         {/* Main animated progress circle with liquid movement */}
         <circle
@@ -314,14 +329,16 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         </circle>
       </svg>
       {/* Center content */}
-      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center">
-        <span className="text-foreground text-2xl font-bold">
-          <NumberFlowDisplay value={progress} decimalPlaces={0} />
-        </span>
-        {safeTarget !== 100 && (
-          <span className="text-muted-foreground text-xs">of {safeTarget}</span>
-        )}
-      </div>
+      {!hideValue && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center">
+          <span className="text-foreground text-2xl font-bold">
+            <NumberFlowDisplay value={progress} decimalPlaces={0} />
+          </span>
+          {safeTarget !== 100 && (
+            <span className="text-muted-foreground text-xs">of {safeTarget}</span>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 

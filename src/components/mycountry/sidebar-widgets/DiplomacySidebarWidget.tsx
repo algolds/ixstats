@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Building2, Handshake, Scale, Sparkles } from "lucide-react";
+import { Building2, Handshake, Scale, TrendingUp } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
   SectionContextWidget,
@@ -66,7 +66,7 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
       const strength = r.strength ?? 0;
       entries.push({
         id: `relation-${r.id}`,
-        icon: strength >= 70 ? Sparkles : Handshake,
+        icon: strength >= 70 ? TrendingUp : Handshake,
         iconColor: strength >= 70 ? "text-purple-500" : "text-blue-500",
         text: `${r.targetCountry?.name ?? r.countryB?.name ?? "Unknown"} — ${strength}%`,
         time: new Date(r.updatedAt ?? r.createdAt),

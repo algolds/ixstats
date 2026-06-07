@@ -30,11 +30,27 @@ export function useMyCountryMetrics(activeTab: string) {
     { enabled: !!country?.id }
   );
 
-  // Toggle state for At a Glance metrics (overview tab)
+  // Toggle state for all MyCountry tabs (persisted at parent level)
   const [metricView, setMetricView] = useState({
+    // At a Glance
     gdp: "perCapita" as "perCapita" | "total",
     population: "total" as "total" | "density",
     area: "km" as "km" | "mi",
+
+    // Economy
+    economyGdp: "total" as "total" | "perCapita",
+    fiscal: "revenue" as "revenue" | "balance",
+    trade: "exports" as "exports" | "imports",
+
+    // Labor
+    workforce: "count" as "count" | "participation",
+    employment: "unemployed" as "unemployed" | "employed",
+    compensation: "average" as "average" | "minimum",
+
+    // Government
+    structure: "state" as "state" | "government",
+    budget: "spending" as "spending" | "percentage",
+    debt: "total" as "total" | "ratio",
   });
 
   // Wiki sections collapse state (overview tab)

@@ -11,11 +11,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { OperationsPanel } from "~/components/defense/OperationsPanel";
 import { DefenseCommandPanel } from "~/components/defense/DefenseCommandPanel";
-import { useCountryData, SectionHeaderBackground, TabHeroBanner } from "./primitives";
-
+import {
+  useCountryData,
+  SectionShell,
+  CompactSectionHero,
+  InlineWiki,
+  TabHeroBanner,
+  type StatusBadgeConfig,
+} from "./primitives";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
-import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
-import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
+import { DefenseSidebarWidget } from "./sidebar-widgets/DefenseSidebarWidget";
 
 const DefenseMapWidget = dynamic(
   () =>
@@ -55,6 +61,8 @@ export function EnhancedDefenseContent({
     { enabled: !!country?.id }
   );
 
+  const { flagUrl } = useFlag(country?.name ?? "");
+
   const branchCount = militaryBranches?.length ?? 0;
   const avgReadiness =
     branchCount > 0
@@ -69,6 +77,9 @@ export function EnhancedDefenseContent({
   }
 
   const activeThreatCount = securityData?.activeThreatCount ?? 0;
+  const defenseHealth = Math.max(0, Math.min(100, Math.round(
+    securityScore * 0.6 + avgReadiness * 0.4
+  )));
 
   const tabs = [
     {
@@ -88,80 +99,46 @@ export function EnhancedDefenseContent({
     },
   ];
 
-  const header = (
-    <SectionHeaderBackground context="defense">
-      <div
-        id="overview"
-        className="glass-hierarchy-parent rounded-xl border border-red-500/30 p-3 sm:p-4 dark:border-red-500/20"
-      >
-        <div className="mb-2 flex items-center gap-2">
-          <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/50">
-            MyCountry®
-          </Badge>
-          <span className="text-muted-foreground text-sm">→</span>
-          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
-            <ShieldCheckIcon size={12} className="mr-1" />
-            Defense & Security
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="shrink-0 rounded-full bg-gradient-to-r from-red-500 to-orange-500 p-2">
-            <ShieldCheckIcon size={24} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold sm:text-2xl">{country.name}</h1>
-            <p className="text-muted-foreground text-xs sm:text-sm">
-              Defense & National Security Operations
-            </p>
-          </div>
-        </div>
-      </div>
-    </SectionHeaderBackground>
-  );
+  const statusBadges: StatusBadgeConfig[] =
+    activeThreatCount > 0
+      ? [
+          {
+            icon: Sword,
+            count: activeThreatCount,
+            colorClass: "border-red-500/40 text-red-600 dark:text-red-400",
+          },
+        ]
+      : [];
+
+  const heroStats = [
+    { label: "Security", value: `${securityScore}/100`, accentText: true },
+    { label: "Branches", value: branchCount, accentText: true },
+    { label: "Readiness", value: `${avgReadiness}%`, accentText: true },
+  ];
 
   return (
-    <MyCountrySidebarLayout
-      heroSection={header}
+    <SectionShell
+      section="defense"
+      hero={
+        <CompactSectionHero
+          section="defense"
+          title="Defense"
+          subtitle="Defense & national security operations"
+          icon={ShieldCheckIcon}
+          countryName={country.name}
+          flagUrl={flagUrl}
+          stats={heroStats}
+          statusBadges={statusBadges}
+          health={defenseHealth}
+        />
+      }
+      contextWidget={<DefenseSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}
     >
       {/* Defense Territory Map */}
       <DefenseMapWidget countryId={country.id} countryName={country.name} />
-
-      {/* Compact stats strip (replaces 175-line security card) */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <StatCell
-          icon={Shield}
-          label="Security"
-          value={`${securityScore}/100`}
-          color={
-            securityScore >= 75
-              ? "text-green-600"
-              : securityScore >= 50
-                ? "text-blue-600"
-                : "text-orange-600"
-          }
-        />
-        <StatCell
-          icon={Sword}
-          label="Branches"
-          value={`${branchCount} active`}
-          color="text-red-600"
-        />
-        <StatCell
-          icon={Target}
-          label="Readiness"
-          value={`${avgReadiness}%`}
-          color={avgReadiness >= 70 ? "text-green-600" : "text-yellow-600"}
-        />
-        <StatCell
-          icon={Activity}
-          label="Threats"
-          value={`${securityData?.activeThreatCount ?? 0}`}
-          color={(securityData?.activeThreatCount ?? 0) > 0 ? "text-red-600" : "text-green-600"}
-        />
-      </div>
 
       {/* Main Content Tabs */}
       <motion.div
@@ -236,8 +213,9 @@ export function EnhancedDefenseContent({
         </Tabs>
       </motion.div>
 
-      <WikiLoreBlock context="defense" themeColor="red" title="Military Heritage" />
-    </MyCountrySidebarLayout>
+      {/* Wiki woven inline */}
+      <InlineWiki context="defense" accent="red" maxSections={1} />
+    </SectionShell>
   );
 }
 

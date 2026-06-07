@@ -31,23 +31,23 @@ export function MyCountryTabsList({ govComponentCount }: { govComponentCount: nu
   ];
 
   return (
-    <div className="overflow-x-auto">
-      <TabsList className="grid w-full min-w-fit grid-cols-2 gap-1 sm:grid-cols-4">
+    <div className="overflow-x-auto p-0.5">
+      <TabsList className="glass-surface glass-refraction grid w-full min-w-fit grid-cols-2 gap-1.5 p-1 rounded-xl sm:grid-cols-4 border border-white/5">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
             value={tab.value}
-            className={`data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 px-2 text-xs sm:px-3 sm:text-sm ${
+            className={`data-[state=active]:bg-white/10 dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               ["economy", "labor", "government"].includes(tab.value)
                 ? `tab-trigger-${tab.value}`
                 : ""
             }`}
           >
-            <tab.icon className="tab-icon h-3 w-3 sm:h-4 sm:w-4" />
+            <tab.icon className="tab-icon h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">{tab.label}</span>
             <span className="sm:hidden">{tab.shortLabel}</span>
             {tab.badge > 0 && (
-              <span className="inline-flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] leading-none font-bold text-white">
+              <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] leading-none font-bold text-white shadow-sm">
                 {tab.badge}
               </span>
             )}

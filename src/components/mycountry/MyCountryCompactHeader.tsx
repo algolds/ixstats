@@ -8,6 +8,7 @@ import { Crown, Edit } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { DevCountryViewSelect } from "~/components/dev";
 import { createUrl } from "~/lib/url-utils";
+import { usePremium } from "~/hooks/usePremium";
 
 interface MyCountryCompactHeaderProps {
   country: {
@@ -23,6 +24,7 @@ export function MyCountryCompactHeader({
   flagUrl,
   currentPage = "overview",
 }: MyCountryCompactHeaderProps) {
+  const { isPremium } = usePremium();
   return (
     <div className="from-background to-background relative w-full border-b border-amber-500/20 bg-gradient-to-r via-amber-950/5 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-3">
@@ -53,7 +55,14 @@ export function MyCountryCompactHeader({
               <h1 className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-lg font-bold text-transparent dark:from-amber-400 dark:to-yellow-400">
                 {country.name.replace(/_/g, " ")}
               </h1>
-              <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Command Center</p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-amber-600/70 dark:text-amber-400/70">Overview</span>
+                {isPremium && (
+                  <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-1 rounded uppercase tracking-wider shrink-0">
+                    Premium
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Editor Button */}

@@ -85,36 +85,17 @@ export async function distributePassiveIncome() {
               return;
             }
 
-            // Calculate daily dividend using the vault service
-            const dailyIncome = await vaultService.calculatePassiveIncome(country.id, db as any);
+            // Run self-healing catch-up
+            const result = await vaultService.catchUpPassiveIncome(userId, db as any);
 
-            if (dailyIncome > 0) {
-              // Award passive income
-              const result = await vaultService.earnCredits(
-                userId,
-                dailyIncome,
-                "EARN_PASSIVE",
-                "DAILY_DIVIDEND",
-                db as any,
-                {
-                  countryId: country.id,
-                  countryName: country.name,
-                  gdpPerCapita: country.currentGdpPerCapita,
-                  population: country.currentPopulation,
-                  economicTier: country.economicTier,
-                  gdpGrowth: country.adjustedGdpGrowth,
-                }
+            if (result.success) {
+              successCount++;
+              totalCreditsDistributed += result.totalCreditsAwarded;
+            } else {
+              console.error(
+                `[CRON] Failed to catch up passive income for ${country.name}: ${result.error}`
               );
-
-              if (result.success) {
-                successCount++;
-                totalCreditsDistributed += dailyIncome;
-              } else {
-                console.error(
-                  `[CRON] Failed to award passive income to ${country.name}: ${result.message}`
-                );
-                errorCount++;
-              }
+              errorCount++;
             }
           } catch (error) {
             console.error(`[CRON] Error processing country ${country.name}:`, error);

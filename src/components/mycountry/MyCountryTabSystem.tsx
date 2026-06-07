@@ -83,8 +83,10 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
             country={country}
             economyData={economyData}
             countryImageData={countryImageData}
-            setImageUploadModal={setImageUploadModal}
-            openMetricModal={openMetricModal}
+            setImageUploadModalAction={setImageUploadModal}
+            openMetricModalAction={openMetricModal}
+            metricView={metricView}
+            setMetricViewAction={setMetricView}
           />
         </TabsContent>
 
@@ -94,8 +96,10 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
             country={country}
             economyData={economyData}
             countryImageData={countryImageData}
-            setImageUploadModal={setImageUploadModal}
-            openMetricModal={openMetricModal}
+            setImageUploadModalAction={setImageUploadModal}
+            openMetricModalAction={openMetricModal}
+            metricView={metricView}
+            setMetricViewAction={setMetricView}
           />
         </TabsContent>
 
@@ -106,8 +110,10 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
             economyData={economyData}
             countryImageData={countryImageData}
             governmentStructure={governmentStructure}
-            setImageUploadModal={setImageUploadModal}
-            openMetricModal={openMetricModal}
+            setImageUploadModalAction={setImageUploadModal}
+            openMetricModalAction={openMetricModal}
+            metricView={metricView}
+            setMetricViewAction={setMetricView}
           />
         </TabsContent>
 

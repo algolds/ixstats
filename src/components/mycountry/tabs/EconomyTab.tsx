@@ -1,943 +1,551 @@
 "use client";
-
+ 
 import React from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
-  BarChart3,
   TrendingUp,
   TrendingDown,
   Briefcase,
   Building,
-  PieChart,
-  Target,
-  Sparkles,
-  Activity,
-  DollarSign,
-  Users,
   Globe,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { ChevronRight } from "lucide-react";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { ThemedTabContent } from "~/components/ui/themed-tab-content";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
-  staggerContainer,
-  staggerItem,
   SectorBreakdownCard,
   MetricCardGrid,
-  TabHeroBanner,
-  SectionHeaderBackground,
   type CardImageType,
+  InlineWiki,
 } from "../primitives";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
-import { WikiLoreBlock } from "../primitives/WikiLoreBlock";
 import { smartNormalizeGrowthRate } from "~/lib/growth-calculations";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
 
-/**
- * Inner content of the "Economy" tab. Extracted from MyCountryTabSystem during
- * modular decomposition. Behavior preserved exactly. The keyed
- * `<TabsContent value="economy">` wrapper remains in the orchestrator.
- */
 export function EconomyTab({
   country,
   economyData,
   countryImageData,
-  setImageUploadModal,
-  openMetricModal,
+  setImageUploadModalAction,
+  openMetricModalAction,
+  metricView,
+  setMetricViewAction,
 }: {
   country: any;
   economyData: any;
   countryImageData: any;
-  setImageUploadModal: (state: { isOpen: boolean; cardType: CardImageType }) => void;
-  openMetricModal: (metricType: MetricType, countryId: string) => void;
+  setImageUploadModalAction: (state: { isOpen: boolean; cardType: CardImageType }) => void;
+  openMetricModalAction: (metricType: MetricType, countryId: string) => void;
+  metricView: any;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
+  const [expandedSection, setExpandedSection] = React.useState<string | null>("sectors");
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSection(expandedSection === sectionId ? null : sectionId);
+  };
+
   return (
-    <ThemedTabContent theme="economy" className="space-y-4">
-      <TabHeroBanner
-        context="overview_economy"
-        title="Economic Overview"
-        subtitle="GDP, trade, and sector analysis"
-        icon={TrendingUp}
-        accentColor="emerald"
+    <Card className="glass-surface glass-refraction border-border overflow-hidden relative">
+      {/* Background wash system (desaturated flag wash + radial dot mesh) */}
+      <MetricCardGrid
+        metrics={[]} // empty metrics to just render background
+        theme="economy"
+        backgroundImage={{
+          countryId: country.id,
+          cardType: "economic_indicators",
+          showEditButton: true,
+          onEditClick: () =>
+            setImageUploadModalAction({ isOpen: true, cardType: "economic_indicators" }),
+          autoFallback: true,
+          countryImageData: countryImageData ?? undefined,
+          countryName: country.name,
+        }}
+        cardWrapper="card"
+        className="absolute inset-0 z-0 pointer-events-none"
       />
-      {/* Editor Navigation Card */}
-      <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 p-3 dark:border-emerald-700/40 dark:from-emerald-950/20 dark:to-teal-950/20">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <p className="text-muted-foreground text-sm">
-            Manage policies, tax rates, and economic infrastructure in the{" "}
-            <strong>MyCountry Editor</strong>
-          </p>
+
+      <CardContent className="space-y-4 pt-4 pb-4 relative z-10">
+        {/* ── Compact Header ── */}
+        <div className="flex items-center justify-between border-b border-border/10 pb-3">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-foreground text-sm font-bold tracking-wide uppercase">Economic Overview</h3>
+              <InlineHelpIcon
+                title="Economic Overview"
+                content="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
+              />
+            </div>
+            <p className="text-muted-foreground/80 text-[11px]">GDP, trade, and sector analysis for {country.name}</p>
+          </div>
+          <Link href={createUrl("/mycountry/editor")}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer h-7"
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>Open Editor</span>
+            </Button>
+          </Link>
         </div>
-        <Link href={createUrl("/mycountry/editor")}>
-          <Button
-            size="sm"
-            className="gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600"
-          >
-            <TrendingUp className="h-3 w-3" />
-            Open Editor
-          </Button>
-        </Link>
-      </div>
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4">
-        {/* Economic Summary - Core Metrics */}
-        <motion.div variants={staggerItem}>
-          <MetricCardGrid
-            theme="economy"
-            columns={4}
-            title="Economic Summary"
-            subtitle={`Key economic indicators for ${country.name}`}
-            backgroundImage={{
-              countryId: country.id,
-              cardType: "economic_indicators",
-              showEditButton: true,
-              onEditClick: () =>
-                setImageUploadModal({ isOpen: true, cardType: "economic_indicators" }),
-              autoFallback: true,
-              countryImageData: countryImageData ?? undefined,
-            }}
-            metrics={[
-              {
-                id: "gdp",
-                title: "Total GDP",
-                value: (economyData?.core.nominalGDP ?? 0).toLocaleString("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                  notation: "compact",
-                  maximumFractionDigits: 1,
-                }),
-                icon: DollarSign,
-                description: `${country.economicTier || "Developing"} economy`,
-                tooltip:
-                  "Gross Domestic Product — the total monetary value of all goods and services produced within the country.",
-                onClick: () => openMetricModal("total-gdp", country.id),
-              },
-              {
-                id: "gdp-capita",
-                title: "GDP per Capita",
-                value: (economyData?.core.gdpPerCapita ?? 0).toLocaleString("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                  maximumFractionDigits: 0,
-                }),
-                icon: TrendingUp,
-                trend: {
-                  direction:
-                    smartNormalizeGrowthRate(
+
+        {/* ── 3-Column Metric Toggle Grid ── */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="grid grid-cols-3 gap-2">
+              {/* Metric 1: GDP */}
+              <button
+                onClick={() =>
+                  setMetricViewAction((v: any) => ({
+                    ...v,
+                    economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
+                  }))
+                }
+                className="rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07] cursor-pointer"
+              >
+                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                  {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5" onClick={(e) => {
+                  e.stopPropagation();
+                  openMetricModalAction(metricView.economyGdp === "perCapita" ? "gdp-per-capita" : "total-gdp", country.id);
+                }}>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={metricView.economyGdp}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-foreground text-lg font-bold tracking-tight hover:underline flex items-center"
+                    >
+                      $
+                      {metricView.economyGdp === "perCapita"
+                        ? Math.round(economyData?.core.gdpPerCapita ?? 0).toLocaleString("en-US")
+                        : Math.round(economyData?.core.nominalGDP ?? 0).toLocaleString("en-US", {
+                            notation: "compact",
+                            maximumFractionDigits: 1,
+                          })}
+                    </motion.p>
+                  </AnimatePresence>
+                  {(() => {
+                    const gdpGrowth = smartNormalizeGrowthRate(
                       country.realGDPGrowthRate || country.adjustedGdpGrowth,
                       0
-                    ) > 0
-                      ? "up"
-                      : "stable",
-                  value: smartNormalizeGrowthRate(
-                    country.realGDPGrowthRate || country.adjustedGdpGrowth,
-                    0
-                  ),
-                },
-                description: "Economic output per person",
-                tooltip:
-                  "GDP divided by total population. Indicates average economic productivity per citizen.",
-                onClick: () => openMetricModal("gdp-per-capita", country.id),
-              },
-              {
-                id: "population",
-                title: "Population",
-                value: (economyData?.core.totalPopulation ?? 0).toLocaleString("en-US"),
-                icon: Users,
-                trend: {
-                  direction:
-                    smartNormalizeGrowthRate(country.populationGrowthRate, 0) > 0 ? "up" : "stable",
-                  value: smartNormalizeGrowthRate(country.populationGrowthRate, 0),
-                },
-                description: "Total population",
-                tooltip:
-                  "Total number of citizens residing in the country. Growth rate reflects annual change.",
-                onClick: () => openMetricModal("population", country.id),
-              },
-              {
-                id: "unemployment",
-                title: "Unemployment",
-                value: `${(economyData?.labor?.unemploymentRate ?? 0).toFixed(1)}%`,
-                icon: Briefcase,
-                trend: {
-                  direction: (economyData?.labor?.unemploymentRate ?? 0) < 5 ? "up" : "down",
-                },
-                description: "Labor force unemployed",
-                tooltip:
-                  "Percentage of the labor force actively seeking but unable to find employment.",
-                onClick: () => openMetricModal("unemployment", country.id),
-              },
-            ]}
-          />
-        </motion.div>
+                    );
+                    if (gdpGrowth > 0)
+                      return (
+                        <span className="flex items-center gap-0.5 text-emerald-500 text-[10px] font-semibold">
+                          <TrendingUp className="h-3 w-3 inline" /> +{gdpGrowth.toFixed(1)}%
+                        </span>
+                      );
+                    if (gdpGrowth < 0)
+                      return (
+                        <span className="flex items-center gap-0.5 text-red-500 text-[10px] font-semibold">
+                          <TrendingDown className="h-3 w-3 inline" /> {gdpGrowth.toFixed(1)}%
+                        </span>
+                      );
+                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                  })()}
+                </div>
+                <p className="text-muted-foreground mt-0.5 text-[11px] truncate">
+                  {metricView.economyGdp === "perCapita"
+                    ? `${country.economicTier || "Developing"} · $${(economyData?.core.nominalGDP ?? 0).toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 })} total`
+                    : `Per capita: $${Math.round(economyData?.core.gdpPerCapita ?? 0).toLocaleString("en-US")}`}
+                </p>
+              </button>
 
-        {/* Economic Ratios */}
-        <motion.div variants={staggerItem}>
-          <MetricCardGrid
-            theme="economy"
-            columns={4}
-            title="Economic Ratios & Fiscal Health"
-            subtitle="Key financial indicators and government metrics"
-            metrics={[
-              {
-                id: "labor-participation",
-                title: "Labor Participation",
-                value: `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`,
-                icon: Users,
-                description: "Working-age population in workforce",
-                tooltip:
-                  "Share of the working-age population (15-64) that is either employed or actively seeking work.",
-                onClick: () => openMetricModal("labor-force", country.id),
-              },
-              {
-                id: "tax-revenue",
-                title: "Tax Revenue",
-                value: `${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`,
-                icon: Building,
-                description: "Percent of GDP",
-                tooltip:
-                  "Total government tax revenue expressed as a percentage of GDP. Indicates the tax burden on the economy.",
-                onClick: () => openMetricModal("government-spending", country.id),
-              },
-              {
-                id: "budget-balance",
-                title: "Budget Balance",
-                value: (economyData?.fiscal?.budgetDeficitSurplus ?? 0).toLocaleString("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                  notation: "compact",
-                  maximumFractionDigits: 1,
-                }),
-                icon:
-                  (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? TrendingUp : TrendingDown,
-                trend: {
-                  direction: (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "up" : "down",
-                },
-                description:
-                  (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit",
-                tooltip:
-                  "Difference between government revenue and spending. Positive = surplus, negative = deficit.",
-                onClick: () => openMetricModal("government-spending", country.id),
-              },
-              {
-                id: "debt-gdp",
-                title: "Debt to GDP",
-                value: `${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`,
-                icon: BarChart3,
-                trend: {
-                  direction: (economyData?.fiscal?.totalDebtGDPRatio ?? 0) < 60 ? "up" : "down",
-                },
-                description: "Public debt ratio",
-                tooltip:
-                  "Total public debt as a percentage of GDP. Below 60% is generally considered healthy.",
-                onClick: () => openMetricModal("debt", country.id),
-              },
-            ]}
-          />
-        </motion.div>
+              {/* Metric 2: Fiscal */}
+              <button
+                onClick={() =>
+                  setMetricViewAction((v: any) => ({
+                    ...v,
+                    fiscal: v.fiscal === "balance" ? "revenue" : "balance",
+                  }))
+                }
+                className="rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07] cursor-pointer"
+              >
+                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                  {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5" onClick={(e) => {
+                  e.stopPropagation();
+                  openMetricModalAction("government-spending", country.id);
+                }}>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={metricView.fiscal}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                    >
+                      {metricView.fiscal === "balance"
+                        ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            notation: "compact",
+                            maximumFractionDigits: 1,
+                          })
+                        : `${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+                <p className="text-muted-foreground mt-0.5 text-[11px] truncate">
+                  {metricView.fiscal === "balance"
+                    ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0 ? "Fiscal Surplus" : "Fiscal Deficit"
+                    : `Tax revenue % of GDP`}
+                </p>
+              </button>
 
-        {/* Comprehensive Economic Analysis */}
-        <motion.div variants={staggerItem}>
-          <Card className="glass-surface glass-refraction border-border overflow-hidden">
-            <SectionHeaderBackground context="overview_economy" overlayOpacity={0.88}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  Comprehensive Economic Analysis
-                  <InlineHelpIcon
-                    title="Economic Analysis"
-                    content="View detailed breakdowns of economic sectors, trade relationships, productivity metrics, income distribution, and business climate indicators for comprehensive economic planning."
-                  />
-                </CardTitle>
-              </CardHeader>
-            </SectionHeaderBackground>
-            <CardContent>
-              {/* Economic Sub-Tabs with Pill Styling */}
-              <Tabs defaultValue="sectors" className="space-y-4">
-                <div className="mb-2 flex justify-center">
-                  <TabsList className="subtab-pills subtab-pills-economy">
-                    <TabsTrigger value="sectors" className="subtab-pill subtab-pill-economy">
-                      <Building className="subtab-icon h-4 w-4" />
-                      <span>Sectors</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="trade" className="subtab-pill subtab-pill-economy">
-                      <Globe className="subtab-icon h-4 w-4" />
-                      <span>Trade</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="productivity" className="subtab-pill subtab-pill-economy">
-                      <Activity className="subtab-icon h-4 w-4" />
-                      <span>Productivity</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="income" className="subtab-pill subtab-pill-economy">
-                      <DollarSign className="subtab-icon h-4 w-4" />
-                      <span>Income</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="business" className="subtab-pill subtab-pill-economy">
-                      <Briefcase className="subtab-icon h-4 w-4" />
-                      <span>Business</span>
-                    </TabsTrigger>
-                  </TabsList>
+              {/* Metric 3: Trade */}
+              <button
+                onClick={() =>
+                  setMetricViewAction((v: any) => ({
+                    ...v,
+                    trade: v.trade === "imports" ? "exports" : "imports",
+                  }))
+                }
+                className="rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07] cursor-pointer"
+              >
+                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                  {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5" onClick={(e) => {
+                  e.stopPropagation();
+                  openMetricModalAction("total-gdp", country.id);
+                }}>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={metricView.trade}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                    >
+                      {metricView.trade === "imports"
+                        ? ((economyData?.core.nominalGDP ?? 0) * 0.32).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            notation: "compact",
+                            maximumFractionDigits: 1,
+                          })
+                        : ((economyData?.core.nominalGDP ?? 0) * 0.35).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            notation: "compact",
+                            maximumFractionDigits: 1,
+                          })}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+                <p className="text-muted-foreground mt-0.5 text-[11px] truncate">
+                  Net Balance: +3.0% (Surplus)
+                </p>
+              </button>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Click metric value to view history, click headers to toggle views
+          </TooltipContent>
+        </Tooltip>
+
+        {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
+        <div className="border-t border-border/10 pt-3 space-y-3">
+          {/* Dossier Section 1: Sectors */}
+          <div className="flex flex-col">
+            <div className="flex">
+              <button
+                onClick={() => toggleSection("sectors")}
+                className={`relative z-10 px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-t-xl border-t border-x transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                  expandedSection === "sectors"
+                    ? "bg-white/10 dark:bg-white/[0.04] border-white/10 text-foreground"
+                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Building className={`h-3.5 w-3.5 ${expandedSection === "sectors" ? "text-emerald-500" : "text-muted-foreground/60"}`} />
+                <span>Sectors & Distribution</span>
+                <motion.div
+                  animate={{ rotate: expandedSection === "sectors" ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-1"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </motion.div>
+              </button>
+            </div>
+            <motion.div
+              initial={false}
+              animate={{ height: expandedSection === "sectors" ? "auto" : 0 }}
+              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              className={`overflow-hidden relative rounded-b-xl rounded-tr-xl bg-white/10 dark:bg-white/[0.03] backdrop-blur-xs transition-colors duration-200 ${
+                expandedSection === "sectors" ? "border border-white/10" : "border border-transparent"
+              }`}
+            >
+              <TextureOverlay texture="paperGrain" opacity={0.06} className="absolute inset-0 z-0 pointer-events-none" />
+              <div className="p-4 space-y-4 relative z-10">
+                <SectorBreakdownCard
+                  title="Economic Structure"
+                  subtitle="GDP distribution across major economic sectors"
+                  layout="grid"
+                  showTrends={true}
+                  showSectorImages={true}
+                  cardWrapper="panel"
+                  accent="emerald"
+                  sectors={[
+                    {
+                      id: "primary",
+                      name: "Primary Sector",
+                      value: (economyData?.core.nominalGDP ?? 0) * 0.05,
+                      percentage: 5.0,
+                      color: "green",
+                      trend: "stable",
+                      description: "Agriculture, Mining",
+                      imageKeyword: "economy_primary",
+                    },
+                    {
+                      id: "secondary",
+                      name: "Secondary Sector",
+                      value: (economyData?.core.nominalGDP ?? 0) * 0.25,
+                      percentage: 25.0,
+                      color: "blue",
+                      trend: "up",
+                      trendValue: 1.2,
+                      description: "Manufacturing",
+                      imageKeyword: "economy_secondary",
+                    },
+                    {
+                      id: "tertiary",
+                      name: "Tertiary Sector",
+                      value: (economyData?.core.nominalGDP ?? 0) * 0.55,
+                      percentage: 55.0,
+                      color: "purple",
+                      trend: "up",
+                      trendValue: 2.1,
+                      description: "Services",
+                      imageKeyword: "economy_tertiary",
+                    },
+                    {
+                      id: "quaternary",
+                      name: "Quaternary Sector",
+                      value: (economyData?.core.nominalGDP ?? 0) * 0.15,
+                      percentage: 15.0,
+                      color: "cyan",
+                      trend: "up",
+                      trendValue: 3.5,
+                      description: "Knowledge, Tech",
+                      imageKeyword: "economy_quaternary",
+                    },
+                  ]}
+                  totalValue={economyData?.core.nominalGDP ?? 0}
+                />
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Dossier Section 2: Trade */}
+          <div className="flex flex-col">
+            <div className="flex">
+              <button
+                onClick={() => toggleSection("trade")}
+                className={`relative z-10 px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-t-xl border-t border-x transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                  expandedSection === "trade"
+                    ? "bg-white/10 dark:bg-white/[0.04] border-white/10 text-foreground"
+                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Globe className={`h-3.5 w-3.5 ${expandedSection === "trade" ? "text-emerald-500" : "text-muted-foreground/60"}`} />
+                <span>Trade Flows & Balance</span>
+                <motion.div
+                  animate={{ rotate: expandedSection === "trade" ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-1"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </motion.div>
+              </button>
+            </div>
+            <motion.div
+              initial={false}
+              animate={{ height: expandedSection === "trade" ? "auto" : 0 }}
+              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              className={`overflow-hidden relative rounded-b-xl rounded-tr-xl bg-white/10 dark:bg-white/[0.03] backdrop-blur-xs transition-colors duration-200 ${
+                expandedSection === "trade" ? "border border-white/10" : "border border-transparent"
+              }`}
+            >
+              <TextureOverlay texture="paperGrain" opacity={0.06} className="absolute inset-0 z-0 pointer-events-none" />
+              <div className="p-4 space-y-4 relative z-10">
+                <div className="grid grid-cols-3 gap-4 rounded-xl bg-white/10 dark:bg-white/[0.02] border border-border/10 p-3">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">Total Exports</p>
+                    <p className="text-foreground text-sm font-bold mt-0.5">
+                      {((economyData?.core.nominalGDP ?? 0) * 0.35).toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                        notation: "compact",
+                      })}
+                    </p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">35.0% of GDP</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">Total Imports</p>
+                    <p className="text-foreground text-sm font-bold mt-0.5">
+                      {((economyData?.core.nominalGDP ?? 0) * 0.32).toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                        notation: "compact",
+                      })}
+                    </p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">32.0% of GDP</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">Trade Balance</p>
+                    <p className="text-emerald-500 text-sm font-bold mt-0.5">
+                      {((economyData?.core.nominalGDP ?? 0) * 0.03).toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                        notation: "compact",
+                      })}
+                    </p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">Surplus (+3.0%)</p>
+                  </div>
                 </div>
 
-                {/* Economic Sectors Tab */}
-                <TabsContent value="sectors" className="space-y-4">
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-4"
-                  >
-                    {/* Economic Structure - Grid Layout */}
-                    <motion.div variants={staggerItem}>
-                      <SectorBreakdownCard
-                        title="Economic Structure"
-                        subtitle="GDP distribution across major economic sectors"
-                        layout="grid"
-                        showTrends={true}
-                        showSectorImages={true}
-                        sectors={[
-                          {
-                            id: "primary",
-                            name: "Primary Sector",
-                            value: (economyData?.core.nominalGDP ?? 0) * 0.05,
-                            percentage: 5.0,
-                            color: "green",
-                            trend: "stable",
-                            description: "Agriculture, Mining",
-                            imageKeyword: "sector_agriculture",
-                          },
-                          {
-                            id: "secondary",
-                            name: "Secondary Sector",
-                            value: (economyData?.core.nominalGDP ?? 0) * 0.25,
-                            percentage: 25.0,
-                            color: "blue",
-                            trend: "up",
-                            trendValue: 1.2,
-                            description: "Manufacturing",
-                            imageKeyword: "sector_industry",
-                          },
-                          {
-                            id: "tertiary",
-                            name: "Tertiary Sector",
-                            value: (economyData?.core.nominalGDP ?? 0) * 0.55,
-                            percentage: 55.0,
-                            color: "purple",
-                            trend: "up",
-                            trendValue: 2.1,
-                            description: "Services",
-                            imageKeyword: "sector_services",
-                          },
-                          {
-                            id: "quaternary",
-                            name: "Quaternary Sector",
-                            value: (economyData?.core.nominalGDP ?? 0) * 0.15,
-                            percentage: 15.0,
-                            color: "cyan",
-                            trend: "up",
-                            trendValue: 3.5,
-                            description: "Knowledge, Tech",
-                            imageKeyword: "sector_technology",
-                          },
-                        ]}
-                        totalValue={economyData?.core.nominalGDP ?? 0}
-                      />
-                    </motion.div>
-                  </motion.div>
-                </TabsContent>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <SectorBreakdownCard
+                    title="Export Composition"
+                    subtitle="Distribution of goods and services exported"
+                    layout="list"
+                    showProgressBars={true}
+                    cardWrapper="panel"
+                    accent="emerald"
+                    sectors={[
+                      { id: "manufactured", name: "Manufactured Goods", value: 0, percentage: 45, color: "blue", trend: "up", trendValue: 1.5 },
+                      { id: "tech", name: "Technology Products", value: 0, percentage: 25, color: "cyan", trend: "up", trendValue: 3.2 },
+                      { id: "services", name: "Services", value: 0, percentage: 15, color: "purple", trend: "stable" },
+                      { id: "agri", name: "Agricultural Products", value: 0, percentage: 10, color: "green", trend: "down", trendValue: -0.8 },
+                      { id: "raw", name: "Raw Materials", value: 0, percentage: 5, color: "amber", trend: "stable" },
+                    ]}
+                  />
+                  <SectorBreakdownCard
+                    title="Import Composition"
+                    subtitle="Distribution of goods and services imported"
+                    layout="list"
+                    showProgressBars={true}
+                    cardWrapper="panel"
+                    accent="emerald"
+                    sectors={[
+                      { id: "energy", name: "Energy & Fuels", value: 0, percentage: 30, color: "red", trend: "down", trendValue: -2.1 },
+                      { id: "manufactured", name: "Manufactured Goods", value: 0, percentage: 25, color: "blue", trend: "stable" },
+                      { id: "tech", name: "Technology Products", value: 0, percentage: 20, color: "cyan", trend: "up", trendValue: 1.8 },
+                      { id: "raw", name: "Raw Materials", value: 0, percentage: 15, color: "amber", trend: "stable" },
+                      { id: "food", name: "Food & Agricultural", value: 0, percentage: 10, color: "green", trend: "up", trendValue: 0.5 },
+                    ]}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
 
-                {/* Trade & International Tab */}
-                <TabsContent value="trade" className="space-y-4">
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-4"
-                  >
-                    {/* Trade Summary Metrics */}
-                    <motion.div variants={staggerItem}>
-                      <MetricCardGrid
-                        theme="economy"
-                        columns={3}
-                        metrics={[
-                          {
-                            id: "exports",
-                            title: "Total Exports",
-                            value: ((economyData?.core.nominalGDP ?? 0) * 0.35).toLocaleString(
-                              "en-US",
-                              {
-                                style: "currency",
-                                currency: "USD",
-                                notation: "compact",
-                                maximumFractionDigits: 1,
-                              }
-                            ),
-                            description: "35% of GDP",
-                            icon: TrendingUp,
-                            trend: { direction: "up", value: 2.3, label: "YoY" },
-                            status: "success",
-                            tooltip: "Total value of goods and services sold to foreign countries.",
-                          },
-                          {
-                            id: "imports",
-                            title: "Total Imports",
-                            value: ((economyData?.core.nominalGDP ?? 0) * 0.32).toLocaleString(
-                              "en-US",
-                              {
-                                style: "currency",
-                                currency: "USD",
-                                notation: "compact",
-                                maximumFractionDigits: 1,
-                              }
-                            ),
-                            description: "32% of GDP",
-                            icon: TrendingDown,
-                            trend: { direction: "up", value: 1.8, label: "YoY" },
-                            status: "info",
-                            tooltip:
-                              "Total value of goods and services purchased from foreign countries.",
-                          },
-                          {
-                            id: "balance",
-                            title: "Trade Balance",
-                            value: ((economyData?.core.nominalGDP ?? 0) * 0.03).toLocaleString(
-                              "en-US",
-                              {
-                                style: "currency",
-                                currency: "USD",
-                                notation: "compact",
-                                maximumFractionDigits: 1,
-                              }
-                            ),
-                            description: "Surplus +3% GDP",
-                            icon: Target,
-                            trend: { direction: "up", value: 0.5, label: "YoY" },
-                            status: "success",
-                            badge: { label: "Surplus", variant: "default" },
-                            tooltip:
-                              "Exports minus imports. Positive = trade surplus, negative = trade deficit.",
-                          },
-                        ]}
-                      />
-                    </motion.div>
+          {/* Dossier Section 3: Business & Innovation */}
+          <div className="flex flex-col">
+            <div className="flex">
+              <button
+                onClick={() => toggleSection("business")}
+                className={`relative z-10 px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-t-xl border-t border-x transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                  expandedSection === "business"
+                    ? "bg-white/10 dark:bg-white/[0.04] border-white/10 text-foreground"
+                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Briefcase className={`h-3.5 w-3.5 ${expandedSection === "business" ? "text-emerald-500" : "text-muted-foreground/60"}`} />
+                <span>Business & Innovation Climate</span>
+                <motion.div
+                  animate={{ rotate: expandedSection === "business" ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-1"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </motion.div>
+              </button>
+            </div>
+            <motion.div
+              initial={false}
+              animate={{ height: expandedSection === "business" ? "auto" : 0 }}
+              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              className={`overflow-hidden relative rounded-b-xl rounded-tr-xl bg-white/10 dark:bg-white/[0.03] backdrop-blur-xs transition-colors duration-200 ${
+                expandedSection === "business" ? "border border-white/10" : "border border-transparent"
+              }`}
+            >
+              <TextureOverlay texture="paperGrain" opacity={0.06} className="absolute inset-0 z-0 pointer-events-none" />
+              <div className="p-4 space-y-4 relative z-10">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 rounded-xl bg-white/10 dark:bg-white/[0.02] border border-border/10 p-3">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">Doing Business</p>
+                    <p className="text-foreground text-sm font-bold mt-0.5">Rank #45</p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">Out of 190 countries</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">Startup Formation</p>
+                    <p className="text-foreground text-sm font-bold mt-0.5">12.5</p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">Per 1,000 citizens</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">R&D Investment</p>
+                    <p className="text-foreground text-sm font-bold mt-0.5">2.8%</p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">Share of GDP</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground/60 text-[9px] uppercase tracking-wider font-semibold">FDI Inflow</p>
+                    <p className="text-foreground text-sm font-bold mt-0.5">2.5%</p>
+                    <p className="text-muted-foreground/80 text-[10px] mt-0.5">Of nominal GDP</p>
+                  </div>
+                </div>
 
-                    {/* Trade Composition Cards */}
-                    <motion.div
-                      variants={staggerItem}
-                      className="grid grid-cols-1 gap-4 lg:grid-cols-2"
-                    >
-                      <SectorBreakdownCard
-                        title="Export Composition"
-                        subtitle="Distribution of goods and services exported"
-                        layout="list"
-                        showProgressBars={true}
-                        sectors={[
-                          {
-                            id: "manufactured",
-                            name: "Manufactured Goods",
-                            value: 0,
-                            percentage: 45,
-                            color: "blue",
-                            trend: "up",
-                            trendValue: 1.5,
-                          },
-                          {
-                            id: "tech",
-                            name: "Technology Products",
-                            value: 0,
-                            percentage: 25,
-                            color: "cyan",
-                            trend: "up",
-                            trendValue: 3.2,
-                          },
-                          {
-                            id: "services",
-                            name: "Services",
-                            value: 0,
-                            percentage: 15,
-                            color: "purple",
-                            trend: "stable",
-                          },
-                          {
-                            id: "agri",
-                            name: "Agricultural Products",
-                            value: 0,
-                            percentage: 10,
-                            color: "green",
-                            trend: "down",
-                            trendValue: -0.8,
-                          },
-                          {
-                            id: "raw",
-                            name: "Raw Materials",
-                            value: 0,
-                            percentage: 5,
-                            color: "amber",
-                            trend: "stable",
-                          },
-                        ]}
-                      />
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <SectorBreakdownCard
+                    title="Regulatory Environment"
+                    subtitle="Key regulatory and startup ease metrics"
+                    layout="list"
+                    showProgressBars={true}
+                    cardWrapper="panel"
+                    accent="emerald"
+                    sectors={[
+                      { id: "time", name: "Time to Start (days)", value: 0, percentage: 92, color: "green", description: "8 days" },
+                      { id: "cost", name: "Cost to Start (% income)", value: 0, percentage: 97.5, color: "blue", description: "2.5%" },
+                      { id: "regulatory", name: "Regulatory Quality", value: 0, percentage: 72, color: "purple", trend: "up", trendValue: 2.3 },
+                      { id: "finance", name: "Access to Finance", value: 0, percentage: 68, color: "amber", trend: "up", trendValue: 1.5 },
+                    ]}
+                  />
+                  <SectorBreakdownCard
+                    title="Business Size Composition"
+                    subtitle="Distribution of business by personnel size"
+                    layout="list"
+                    showProgressBars={true}
+                    cardWrapper="panel"
+                    accent="emerald"
+                    sectors={[
+                      { id: "small", name: "Small Businesses (0-50)", value: 0, percentage: 85, color: "green" },
+                      { id: "medium", name: "Medium Businesses (50-250)", value: 0, percentage: 12, color: "blue" },
+                      { id: "large", name: "Large Businesses (250+)", value: 0, percentage: 3, color: "purple" },
+                      { id: "entrepreneurship", name: "Entrepreneurship Rate", value: 0, percentage: 15.2, color: "amber", trend: "up", trendValue: 0.8 },
+                    ]}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
 
-                      <SectorBreakdownCard
-                        title="Import Composition"
-                        subtitle="Distribution of goods and services imported"
-                        layout="list"
-                        showProgressBars={true}
-                        sectors={[
-                          {
-                            id: "energy",
-                            name: "Energy & Fuels",
-                            value: 0,
-                            percentage: 30,
-                            color: "red",
-                            trend: "down",
-                            trendValue: -2.1,
-                          },
-                          {
-                            id: "manufactured",
-                            name: "Manufactured Goods",
-                            value: 0,
-                            percentage: 25,
-                            color: "blue",
-                            trend: "stable",
-                          },
-                          {
-                            id: "tech",
-                            name: "Technology Products",
-                            value: 0,
-                            percentage: 20,
-                            color: "cyan",
-                            trend: "up",
-                            trendValue: 1.8,
-                          },
-                          {
-                            id: "raw",
-                            name: "Raw Materials",
-                            value: 0,
-                            percentage: 15,
-                            color: "amber",
-                            trend: "stable",
-                          },
-                          {
-                            id: "food",
-                            name: "Food & Agricultural",
-                            value: 0,
-                            percentage: 10,
-                            color: "green",
-                            trend: "up",
-                            trendValue: 0.5,
-                          },
-                        ]}
-                      />
-                    </motion.div>
-                  </motion.div>
-                </TabsContent>
-
-                {/* Productivity Tab */}
-                <TabsContent value="productivity" className="space-y-4">
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-4"
-                  >
-                    <motion.div variants={staggerItem}>
-                      <MetricCardGrid
-                        theme="economy"
-                        columns={4}
-                        metrics={[
-                          {
-                            id: "labor-prod",
-                            title: "Labor Productivity",
-                            value: "125.0",
-                            description: "Index (100 = baseline)",
-                            icon: TrendingUp,
-                            trend: { direction: "up", value: 2.5, label: "annually" },
-                            status: "success",
-                            tooltip:
-                              "Output per worker relative to a baseline of 100. Higher values indicate greater efficiency.",
-                          },
-                          {
-                            id: "innovation",
-                            title: "Innovation Index",
-                            value: "72/100",
-                            description: "Global ranking",
-                            icon: Target,
-                            trend: { direction: "up", value: 3, label: "positions" },
-                            status: "success",
-                            tooltip:
-                              "Composite score measuring R&D output, patents, and technological adoption.",
-                          },
-                          {
-                            id: "rnd",
-                            title: "R&D Investment",
-                            value: "2.8%",
-                            description: "Of GDP",
-                            icon: Sparkles,
-                            trend: { direction: "up", value: 0.2, label: "YoY" },
-                            status: "info",
-                            tooltip:
-                              "Research and development spending as a share of GDP. OECD average is ~2.5%.",
-                          },
-                          {
-                            id: "competitiveness",
-                            title: "Competitiveness",
-                            value: "68/100",
-                            description: "Global index",
-                            icon: Activity,
-                            trend: { direction: "stable" },
-                            status: "info",
-                            tooltip:
-                              "Global competitiveness score based on institutions, infrastructure, and market efficiency.",
-                          },
-                        ]}
-                      />
-                    </motion.div>
-
-                    {/* Productivity Breakdown with animated progress bars */}
-                    <motion.div variants={staggerItem}>
-                      <SectorBreakdownCard
-                        title="Productivity Metrics"
-                        subtitle="Key performance indicators for economic efficiency"
-                        layout="list"
-                        showProgressBars={true}
-                        showTrends={true}
-                        sectors={[
-                          {
-                            id: "infrastructure",
-                            name: "Infrastructure Quality",
-                            value: 0,
-                            percentage: 75,
-                            color: "blue",
-                            trend: "up",
-                            trendValue: 1.5,
-                          },
-                          {
-                            id: "human-capital",
-                            name: "Human Capital Index",
-                            value: 0,
-                            percentage: 82,
-                            color: "purple",
-                            trend: "up",
-                            trendValue: 2.1,
-                          },
-                          {
-                            id: "tech-adoption",
-                            name: "Technology Adoption",
-                            value: 0,
-                            percentage: 70,
-                            color: "emerald",
-                            trend: "up",
-                            trendValue: 3.8,
-                          },
-                          {
-                            id: "business-env",
-                            name: "Business Environment",
-                            value: 0,
-                            percentage: 78,
-                            color: "amber",
-                            trend: "stable",
-                          },
-                          {
-                            id: "digital-infra",
-                            name: "Digital Infrastructure",
-                            value: 0,
-                            percentage: 85,
-                            color: "cyan",
-                            trend: "up",
-                            trendValue: 4.2,
-                          },
-                        ]}
-                      />
-                    </motion.div>
-                  </motion.div>
-                </TabsContent>
-
-                {/* Income & Wealth Tab */}
-                <TabsContent value="income" className="space-y-4">
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-4"
-                  >
-                    {/* Income Summary Metrics */}
-                    <motion.div variants={staggerItem}>
-                      <MetricCardGrid
-                        theme="economy"
-                        columns={3}
-                        metrics={[
-                          {
-                            id: "median-income",
-                            title: "Median Income",
-                            value: ((economyData?.core.gdpPerCapita ?? 0) * 0.75).toLocaleString(
-                              "en-US",
-                              {
-                                style: "currency",
-                                currency: "USD",
-                                maximumFractionDigits: 0,
-                              }
-                            ),
-                            description: "Per year",
-                            icon: DollarSign,
-                            trend: { direction: "up", value: 2.8, label: "YoY" },
-                            status: "success",
-                            tooltip:
-                              "The middle-point annual income — half the population earns more, half earns less.",
-                          },
-                          {
-                            id: "gini",
-                            title: "Gini Coefficient",
-                            value: "0.38",
-                            description: "Moderate inequality",
-                            icon: PieChart,
-                            trend: { direction: "down", value: 0.02, label: "Improving" },
-                            status: "success",
-                            badge: { label: "Moderate", variant: "outline" },
-                            tooltip:
-                              "Measures income inequality on a 0-1 scale. 0 = perfect equality, 1 = maximum inequality.",
-                          },
-                          {
-                            id: "poverty",
-                            title: "Poverty Rate",
-                            value: "8.5%",
-                            description: "Below poverty line",
-                            icon: Users,
-                            trend: { direction: "down", value: 0.3, label: "YoY" },
-                            status: "warning",
-                            tooltip:
-                              "Percentage of the population living below the national poverty line.",
-                          },
-                        ]}
-                      />
-                    </motion.div>
-
-                    {/* Income Distribution with animated bars */}
-                    <motion.div variants={staggerItem}>
-                      <SectorBreakdownCard
-                        title="Income Distribution"
-                        subtitle="Population breakdown by income class"
-                        layout="list"
-                        showProgressBars={true}
-                        showTrends={true}
-                        sectors={[
-                          {
-                            id: "lower",
-                            name: "Lower Class",
-                            value: (economyData?.core.gdpPerCapita ?? 0) * 0.3,
-                            percentage: 15,
-                            color: "red",
-                            trend: "down",
-                            trendValue: -0.5,
-                          },
-                          {
-                            id: "lower-middle",
-                            name: "Lower Middle Class",
-                            value: (economyData?.core.gdpPerCapita ?? 0) * 0.6,
-                            percentage: 25,
-                            color: "amber",
-                            trend: "stable",
-                          },
-                          {
-                            id: "middle",
-                            name: "Middle Class",
-                            value: (economyData?.core.gdpPerCapita ?? 0) * 0.9,
-                            percentage: 35,
-                            color: "green",
-                            trend: "up",
-                            trendValue: 1.2,
-                          },
-                          {
-                            id: "upper-middle",
-                            name: "Upper Middle Class",
-                            value: (economyData?.core.gdpPerCapita ?? 0) * 1.5,
-                            percentage: 20,
-                            color: "blue",
-                            trend: "up",
-                            trendValue: 0.8,
-                          },
-                          {
-                            id: "upper",
-                            name: "Upper Class",
-                            value: (economyData?.core.gdpPerCapita ?? 0) * 4.0,
-                            percentage: 5,
-                            color: "purple",
-                            trend: "stable",
-                          },
-                        ]}
-                      />
-                    </motion.div>
-                  </motion.div>
-                </TabsContent>
-
-                {/* Business Climate Tab */}
-                <TabsContent value="business" className="space-y-4">
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-4"
-                  >
-                    {/* Business Climate Metrics */}
-                    <motion.div variants={staggerItem}>
-                      <MetricCardGrid
-                        theme="economy"
-                        columns={4}
-                        metrics={[
-                          {
-                            id: "ease-business",
-                            title: "Ease of Doing Business",
-                            value: "Rank #45",
-                            description: "Out of 190 countries",
-                            icon: Building,
-                            trend: { direction: "up", value: 3, label: "positions" },
-                            status: "success",
-                            tooltip:
-                              "World Bank ranking of regulatory environment for starting and operating a business.",
-                          },
-                          {
-                            id: "startups",
-                            title: "Startup Formation",
-                            value: "12.5",
-                            description: "Per 1000 people",
-                            icon: Sparkles,
-                            trend: { direction: "up", value: 1.2, label: "YoY" },
-                            status: "success",
-                            tooltip:
-                              "New business registrations per 1,000 working-age population annually.",
-                          },
-                          {
-                            id: "fdi",
-                            title: "FDI Inflow",
-                            value: ((economyData?.core.nominalGDP ?? 0) * 0.025).toLocaleString(
-                              "en-US",
-                              {
-                                style: "currency",
-                                currency: "USD",
-                                notation: "compact",
-                                maximumFractionDigits: 1,
-                              }
-                            ),
-                            description: "2.5% of GDP",
-                            icon: Globe,
-                            trend: { direction: "up", value: 8.5, label: "YoY" },
-                            status: "success",
-                            tooltip:
-                              "Foreign Direct Investment — capital invested by foreign entities into domestic businesses.",
-                          },
-                          {
-                            id: "credit",
-                            title: "Credit to Private Sector",
-                            value: "85%",
-                            description: "Of GDP",
-                            icon: DollarSign,
-                            trend: { direction: "up", value: 2.1, label: "YoY" },
-                            status: "info",
-                            tooltip:
-                              "Total domestic credit provided to the private sector as a share of GDP. Indicates financial depth.",
-                          },
-                        ]}
-                      />
-                    </motion.div>
-
-                    {/* Business Environment & Demographics */}
-                    <motion.div
-                      variants={staggerItem}
-                      className="grid grid-cols-1 gap-4 lg:grid-cols-2"
-                    >
-                      <SectorBreakdownCard
-                        title="Business Environment"
-                        subtitle="Key regulatory and operational metrics"
-                        layout="list"
-                        showProgressBars={true}
-                        sectors={[
-                          {
-                            id: "time",
-                            name: "Time to Start a Business",
-                            value: 0,
-                            percentage: 92,
-                            color: "green",
-                            description: "8 days",
-                          },
-                          {
-                            id: "cost",
-                            name: "Cost to Start (% of income)",
-                            value: 0,
-                            percentage: 97.5,
-                            color: "blue",
-                            description: "2.5%",
-                          },
-                          {
-                            id: "regulatory",
-                            name: "Regulatory Quality",
-                            value: 0,
-                            percentage: 72,
-                            color: "purple",
-                            trend: "up",
-                            trendValue: 2.3,
-                          },
-                          {
-                            id: "finance",
-                            name: "Access to Finance",
-                            value: 0,
-                            percentage: 68,
-                            color: "amber",
-                            trend: "up",
-                            trendValue: 1.5,
-                          },
-                        ]}
-                      />
-
-                      <SectorBreakdownCard
-                        title="Business Demographics"
-                        subtitle="Distribution of business by size"
-                        layout="list"
-                        showProgressBars={true}
-                        sectors={[
-                          {
-                            id: "small",
-                            name: "Small Businesses (0-50)",
-                            value: 0,
-                            percentage: 85,
-                            color: "green",
-                          },
-                          {
-                            id: "medium",
-                            name: "Medium Businesses (50-250)",
-                            value: 0,
-                            percentage: 12,
-                            color: "blue",
-                          },
-                          {
-                            id: "large",
-                            name: "Large Businesses (250+)",
-                            value: 0,
-                            percentage: 3,
-                            color: "purple",
-                          },
-                          {
-                            id: "entrepreneurship",
-                            name: "Entrepreneurship Rate",
-                            value: 0,
-                            percentage: 15.2,
-                            color: "amber",
-                            trend: "up",
-                            trendValue: 0.8,
-                          },
-                        ]}
-                      />
-                    </motion.div>
-                  </motion.div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
-      <WikiLoreBlock context="economy" themeColor="emerald" title="Economic Lore" />
-    </ThemedTabContent>
+        <InlineWiki context="economy" accent="emerald" maxSections={1} />
+      </CardContent>
+    </Card>
   );
 }

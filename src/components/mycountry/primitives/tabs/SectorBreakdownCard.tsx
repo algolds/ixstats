@@ -3,7 +3,8 @@
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Progress } from "~/components/ui/progress";
+import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
+import type { MyCountryAccent } from "~/components/mycountry/cards/accents";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -42,6 +43,8 @@ export interface SectorBreakdownCardProps {
   showSectorImages?: boolean;
   /** Format values as people counts (no decimals, no currency symbol) instead of currency */
   valueAsPeople?: boolean;
+  accent?: MyCountryAccent;
+  cardWrapper?: "glass" | "panel" | "card";
 }
 
 // Format currency value with null safety
@@ -149,7 +152,6 @@ const SectorGridItemImage = React.memo(function SectorGridItemImage({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/40" />
       </motion.div>
@@ -165,7 +167,7 @@ export function SectorBreakdownCard({
   subtitle,
   sectors,
   totalValue,
-  currency = "USD",
+  currency: _currency = "USD",
   showProgressBars = true,
   showTrends = true,
   layout = "list",
@@ -173,6 +175,8 @@ export function SectorBreakdownCard({
   className = "",
   showSectorImages = false,
   valueAsPeople = false,
+  accent = "neutral",
+  cardWrapper = "card",
 }: SectorBreakdownCardProps) {
   const Wrapper = animate ? motion.div : "div";
   const ItemWrapper = animate ? motion.div : "div";
@@ -216,8 +220,8 @@ export function SectorBreakdownCard({
     );
   };
 
-  return (
-    <Card className={cn("glass-hierarchy-child", className)}>
+  const cardInner = (
+    <>
       <CardHeader className="pb-1">
         <CardTitle className="text-sm">{title}</CardTitle>
         {subtitle && <CardDescription>{subtitle}</CardDescription>}
@@ -355,6 +359,36 @@ export function SectorBreakdownCard({
           </div>
         )}
       </CardContent>
+    </>
+  );
+
+  if (cardWrapper === "glass") {
+    return (
+      <GlassPanel
+        accent={accent}
+        className={cn("relative overflow-hidden", className)}
+      >
+        {cardInner}
+      </GlassPanel>
+    );
+  }
+
+  if (cardWrapper === "panel") {
+    return (
+      <PanelCard
+        accent={accent}
+        tinted
+        texture="dots"
+        className={cn("relative overflow-hidden", className)}
+      >
+        {cardInner}
+      </PanelCard>
+    );
+  }
+
+  return (
+    <Card className={cn("glass-hierarchy-child", className)}>
+      {cardInner}
     </Card>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, ArrowUp, Lock, Activity, Crown, BarChart3 } from "lucide-react";
+import { ArrowUp, Lock, Activity, Crown, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -28,7 +28,7 @@ export function UpgradeTeaser({
       {variant === "standard" && (
         <div className="mb-3 flex items-center justify-between rounded-lg border border-purple-200/30 bg-gradient-to-r from-purple-50/80 to-blue-50/80 p-3 dark:from-purple-950/30 dark:to-blue-950/30">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-500" />
+            <Crown className="h-4 w-4 text-purple-500" />
             <span className="text-sm font-semibold">Unlock Premium Features</span>
             <span className="text-muted-foreground hidden text-xs sm:inline">
               — Command Center, Intelligence, Analytics

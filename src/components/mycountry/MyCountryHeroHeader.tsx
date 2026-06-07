@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { TrendingUp, Users, Activity, Crown } from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
+import { usePremium } from "~/hooks/usePremium";
 
 interface MyCountryHeroHeaderProps {
   country: {
@@ -21,6 +22,7 @@ interface MyCountryHeroHeaderProps {
 }
 
 export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderProps) {
+  const { isPremium } = usePremium();
   return (
     <div className="relative h-[180px] w-full overflow-hidden md:h-[240px]">
       {/* Background Image with Flag */}
@@ -56,8 +58,13 @@ export function MyCountryHeroHeader({ country, flagUrl }: MyCountryHeroHeaderPro
         </h1>
 
         {/* Subtitle */}
-        <p className="mb-4 text-sm font-medium text-amber-100 md:text-base">
-          Strategic Command Center
+        <p className="mb-4 text-sm font-medium text-amber-100 md:text-base flex items-center justify-center gap-1.5">
+          <span>Strategic Overview</span>
+          {isPremium && (
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/40 border border-amber-500/30 px-1.5 py-0.5 rounded backdrop-blur-sm shadow-[0_0_8px_rgba(245,158,11,0.15)]">
+              Premium
+            </span>
+          )}
         </p>
 
         {/* Metric Badges */}

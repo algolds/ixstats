@@ -65,7 +65,16 @@ export type ImageContext =
   | "sector_agriculture"
   | "sector_industry"
   | "sector_services"
-  | "sector_technology";
+  | "sector_technology"
+  // Economic structure contexts
+  | "economy_primary"
+  | "economy_secondary"
+  | "economy_tertiary"
+  | "economy_quaternary"
+  // Employment by sector contexts
+  | "labor_primary"
+  | "labor_secondary"
+  | "labor_tertiary";
 
 export interface CountryImageData {
   continent?: string | null;
@@ -211,6 +220,15 @@ const CONTEXT_KEYWORDS: Record<ImageContext, string[]> = {
   sector_industry: ["factory manufacturing", "industrial complex", "steel production"],
   sector_services: ["modern office tower", "service industry", "business center"],
   sector_technology: ["tech campus", "silicon valley", "digital innovation"],
+  // Economic structure contexts
+  economy_primary: ["agriculture drone farming", "coal mining quarry", "raw materials extraction"],
+  economy_secondary: ["robotic manufacturing assembly", "heavy industry plant", "steel factory forge"],
+  economy_tertiary: ["skyscraper commercial finance", "modern retail shopping mall", "banking glass atrium"],
+  economy_quaternary: ["data center clean room", "bio research lab tech", "supercomputer grid server"],
+  // Employment by sector contexts
+  labor_primary: ["harvesting crops hands", "farmers working in fields", "fruit picking worker"],
+  labor_secondary: ["welder sparks steel fabricator", "machinist at lathe workshop", "construction worker helmet"],
+  labor_tertiary: ["barista pouring coffee customer", "doctor nurse consulting hospital", "office teamwork collaboration group"],
 };
 
 // ── Layer Functions ──────────────────────────────────────────────────────

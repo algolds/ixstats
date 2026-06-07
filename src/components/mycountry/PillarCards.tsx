@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
   Bell,
   FileText,
@@ -11,12 +11,21 @@ import {
   BarChart3,
   Layers,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Mail,
+  Shield,
+  Brain,
+  Gavel,
 } from "lucide-react";
 import { CrownIcon, GlobeAltIcon, VoteIcon } from "~/components/ui/icons";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useIssueCount } from "~/hooks/useNationalIssues";
+import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
+import { cn } from "~/lib/utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface PillarCardsProps {
   countryId: string;
@@ -282,3 +291,360 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
     </div>
   );
 }
+
+export function AgendaBar({
+  countryId,
+  onNavigate,
+  activeSection,
+}: {
+  countryId: string;
+  onNavigate: (section: MyCountrySection) => void;
+  activeSection?: MyCountrySection;
+}) {
+  const { total: issueCount, urgent: urgentIssueCount } = useIssueCount(countryId);
+  const { data: elections } = api.elections.getElections.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { data: meetings } = api.meetings.getMeetings.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { data: policies } = api.policies.getPolicies.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { data: securityAssessment } = api.security.getSecurityAssessment.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { data: intelligenceOverview } = api.intelCore.getOverview.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { totalUnread } = useMessageUnreadCount();
+
+  const [agendaOpen, setAgendaOpen] = useState(false);
+
+  const pendingElections = elections?.filter(
+    (e: any) =>
+      e.status === "SCHEDULED" ||
+      e.status === "scheduled" ||
+      e.status === "IN_PROGRESS" ||
+      e.status === "in_progress"
+  ).length ?? 0;
+
+  const activeEmbassies =
+    embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+
+  const pendingActions =
+    meetings?.flatMap((m) => m.actionItems ?? []).filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
+
+  const activePolicies = policies?.filter((p: any) => p.status === "active").length ?? 0;
+  const totalPolicies = policies?.length ?? 0;
+
+  const activeThreatCount = securityAssessment?.activeThreatCount ?? 0;
+  const securityScore = securityAssessment?.overallSecurityScore ?? 100;
+
+  const criticalIntelAlerts = intelligenceOverview?.alerts?.critical ?? 0;
+
+  const agendaItems = useMemo(() => {
+    const list: {
+      id: string;
+      label: string;
+      text: string;
+      section: MyCountrySection;
+      colorClass: string;
+      bgClass: string;
+      icon: any;
+    }[] = [];
+
+    // 1. Cabinet Issues (Urgent or Pending)
+    if (urgentIssueCount > 0) {
+      list.push({
+        id: "exec-urgent",
+        label: "Urgent Issues",
+        text: `${urgentIssueCount} urgent issue${urgentIssueCount !== 1 ? "s" : ""} require response`,
+        section: "executive",
+        colorClass: "text-red-500",
+        bgClass: "hover:bg-red-500/5",
+        icon: CrownIcon,
+      });
+    } else if (issueCount > 0) {
+      list.push({
+        id: "exec-pending",
+        label: "Cabinet Issues",
+        text: `${issueCount} pending issue${issueCount !== 1 ? "s" : ""} in cabinet`,
+        section: "executive",
+        colorClass: "text-amber-500",
+        bgClass: "hover:bg-amber-500/5",
+        icon: CrownIcon,
+      });
+    }
+
+    // 2. Active Policies
+    if (totalPolicies > 0) {
+      list.push({
+        id: "exec-policies",
+        label: "Active Policies",
+        text: `${activePolicies} of ${totalPolicies} policies active`,
+        section: "executive",
+        colorClass: "text-emerald-500",
+        bgClass: "hover:bg-emerald-500/5",
+        icon: Gavel,
+      });
+    }
+
+    // 3. Meeting Action Items
+    if (pendingActions > 0) {
+      list.push({
+        id: "exec-actions",
+        label: "Meeting Actions",
+        text: `${pendingActions} action item${pendingActions !== 1 ? "s" : ""} pending`,
+        section: "executive",
+        colorClass: "text-orange-500",
+        bgClass: "hover:bg-orange-500/5",
+        icon: Layers,
+      });
+    }
+
+    // 4. Unread Messages
+    if (totalUnread > 0) {
+      list.push({
+        id: "diplo-unread-messages",
+        label: "Unread Messages",
+        text: `${totalUnread} unread message${totalUnread !== 1 ? "s" : ""} in inbox`,
+        section: "diplomacy",
+        colorClass: "text-blue-500",
+        bgClass: "hover:bg-blue-500/5",
+        icon: Mail,
+      });
+    }
+
+    // 5. Defense Threats / Assessment
+    if (activeThreatCount > 0) {
+      list.push({
+        id: "def-threats",
+        label: "Security Threats",
+        text: `${activeThreatCount} active threat${activeThreatCount !== 1 ? "s" : ""} detected`,
+        section: "defense",
+        colorClass: "text-red-500",
+        bgClass: "hover:bg-red-500/5",
+        icon: Shield,
+      });
+    } else if (securityScore < 60) {
+      list.push({
+        id: "def-low-score",
+        label: "Defense Readiness",
+        text: `Defense Readiness Score is low: ${securityScore}/100`,
+        section: "defense",
+        colorClass: "text-amber-500",
+        bgClass: "hover:bg-amber-500/5",
+        icon: Shield,
+      });
+    }
+
+    // 6. Intelligence Alerts
+    if (criticalIntelAlerts > 0) {
+      list.push({
+        id: "intel-critical",
+        label: "Intel Security",
+        text: `${criticalIntelAlerts} critical intelligence alert${criticalIntelAlerts !== 1 ? "s" : ""}`,
+        section: "intelligence",
+        colorClass: "text-red-500",
+        bgClass: "hover:bg-red-500/5",
+        icon: Brain,
+      });
+    }
+
+    // 7. Elections
+    if (pendingElections > 0) {
+      list.push({
+        id: "pol-elections",
+        label: "Elections",
+        text: `${pendingElections} active/scheduled election${pendingElections !== 1 ? "s" : ""}`,
+        section: "politics",
+        colorClass: "text-indigo-500",
+        bgClass: "hover:bg-indigo-500/5",
+        icon: VoteIcon,
+      });
+    }
+
+    // 8. Embassies
+    if (activeEmbassies === 0) {
+      list.push({
+        id: "diplo-no-emb",
+        label: "Diplomatic Embassies",
+        text: "Establish your first embassy",
+        section: "diplomacy",
+        colorClass: "text-cyan-500",
+        bgClass: "hover:bg-cyan-500/5",
+        icon: GlobeAltIcon,
+      });
+    }
+
+    return list;
+  }, [
+    issueCount,
+    urgentIssueCount,
+    pendingActions,
+    totalPolicies,
+    activePolicies,
+    totalUnread,
+    activeThreatCount,
+    securityScore,
+    criticalIntelAlerts,
+    pendingElections,
+    activeEmbassies,
+  ]);
+
+  // Dynamic sorting: match active section tasks first
+  const sortedAgendaItems = useMemo(() => {
+    if (!activeSection) return agendaItems;
+    return [...agendaItems].sort((a, b) => {
+      const aMatch = a.section === activeSection ? 1 : 0;
+      const bMatch = b.section === activeSection ? 1 : 0;
+      return bMatch - aMatch;
+    });
+  }, [agendaItems, activeSection]);
+
+  const activeSectionTasks = useMemo(() => {
+    return agendaItems.filter((item) => item.section === activeSection);
+  }, [agendaItems, activeSection]);
+
+  const activeSectionTaskCount = activeSectionTasks.length;
+
+  const summaryText = useMemo(() => {
+    if (agendaItems.length === 0) {
+      return "All clear! No tasks for today.";
+    }
+    if (activeSection && activeSectionTaskCount > 0) {
+      const sectionName =
+        activeSection === "overview"
+          ? "Overview"
+          : activeSection.charAt(0).toUpperCase() + activeSection.slice(1);
+      const firstTaskText = activeSectionTasks[0]?.text ?? "";
+      return `${sectionName} Priority: ${firstTaskText}`;
+    }
+    return `${agendaItems.length} active task${agendaItems.length !== 1 ? "s" : ""} requiring attention`;
+  }, [agendaItems, activeSection, activeSectionTasks, activeSectionTaskCount]);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => agendaItems.length > 0 && setAgendaOpen(!agendaOpen)}
+        className={cn(
+          "glass-surface glass-refraction relative overflow-hidden rounded-xl border border-white/5 bg-card/45 backdrop-blur-md p-3.5 flex items-center justify-between w-full z-10 text-left",
+          agendaItems.length > 0 ? "cursor-pointer" : "cursor-default"
+        )}
+      >
+        <TextureOverlay texture="paperGrain" opacity={0.05} />
+        <div className="flex items-center gap-2.5 relative z-10">
+          <div className={cn(
+            "rounded-lg p-1.5 border",
+            agendaItems.length === 0 
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" 
+              : activeSection && activeSectionTaskCount > 0
+                ? "bg-amber-500/10 border-amber-500/20 text-amber-500"
+                : "bg-white/[0.03] border-white/5 text-muted-foreground"
+          )}>
+            <FileText className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-foreground uppercase tracking-wider block sm:inline-block">
+              Your Daily Agenda
+            </span>
+            <span className="text-muted-foreground/60 text-xs hidden sm:inline mx-1.5">•</span>
+            {agendaItems.length === 0 ? (
+              <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">
+                {summaryText}
+              </span>
+            ) : activeSection && activeSectionTaskCount > 0 ? (
+              <span className="text-xs font-medium text-amber-500 dark:text-amber-400">
+                {summaryText}
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-amber-500/80 dark:text-amber-400/80">
+                {summaryText}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 relative z-10">
+          {agendaItems.length > 0 && (
+            agendaOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground/60 transition-transform" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground/60 transition-transform" />
+            )
+          )}
+        </div>
+      </button>
+
+      {agendaOpen && agendaItems.length > 0 && (
+        <div className="mt-1.5 flex flex-col gap-1.5 rounded-xl border border-white/5 bg-card/45 backdrop-blur-md p-2 relative z-10 animate-in fade-in slide-in-from-top-1 duration-150">
+          <TextureOverlay texture="paperGrain" opacity={0.05} />
+          {sortedAgendaItems.map((item) => {
+            const Icon = item.icon;
+            const isHighlighted = item.section === activeSection;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setAgendaOpen(false);
+                  onNavigate(item.section);
+                }}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border text-left transition-all duration-200 cursor-pointer relative z-10 group",
+                  isHighlighted 
+                    ? "border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/[0.02] shadow-[0_0_12px_rgba(245,158,11,0.05)]" 
+                    : "border-white/5 bg-white/[0.01] hover:bg-white/[0.03]",
+                  item.bgClass
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  {/* Checklist Circle / pulsing dot */}
+                  <div className="relative flex items-center justify-center shrink-0 mr-1">
+                    {isHighlighted && (
+                      <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-amber-500/40 opacity-75" />
+                    )}
+                    <div className={cn(
+                      "w-4 h-4 rounded-full border flex items-center justify-center z-10 transition-colors",
+                      isHighlighted ? "border-amber-500/50" : "border-muted-foreground/30"
+                    )}>
+                      <div className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-colors",
+                        isHighlighted ? "bg-amber-500" : "bg-transparent group-hover:bg-muted-foreground/50"
+                      )} />
+                    </div>
+                  </div>
+
+                  <div className={cn("rounded-lg p-1.5 bg-white/[0.03] border border-white/5", item.colorClass)}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider block sm:inline-block">
+                      {item.label}
+                    </span>
+                    <span className="text-muted-foreground/60 text-xs hidden sm:inline mx-1.5">•</span>
+                    <span className={cn("text-xs font-medium", item.colorClass)}>
+                      {item.text}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/45" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export const PillarBar = AgendaBar;

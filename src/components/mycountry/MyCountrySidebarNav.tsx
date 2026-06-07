@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Brain, Shield, Crown, Users, Map, LayoutDashboard, Vote, Lock } from "lucide-react";
+import { Brain, Shield, Crown, Users, Vote, Lock } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   LayoutDashboardIcon,
@@ -14,7 +14,6 @@ import {
   VoteIcon,
   MapIcon,
 } from "~/components/ui/icons";
-import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -70,52 +69,44 @@ export const NAV_ITEMS: {
   activeGlow: string;
 }[] = [
   {
-    id: "overview",
-    href: "/mycountry",
-    icon: LayoutDashboard,
-    title: "Overview",
-    gradient: SECTION_THEME_CLASSES.overview.gradient,
-    activeGlow: SECTION_THEME_CLASSES.overview.activeGlow,
-  },
-  {
     id: "executive",
     href: "/mycountry/executive",
     icon: Crown,
     title: "Executive",
-    gradient: SECTION_THEME_CLASSES.executive.gradient,
-    activeGlow: SECTION_THEME_CLASSES.executive.activeGlow,
+    gradient: "from-amber-500 to-amber-600",
+    activeGlow: "shadow-amber-500/20",
   },
   {
     id: "diplomacy",
     href: "/mycountry/diplomacy",
     icon: Users,
     title: "Diplomacy",
-    gradient: SECTION_THEME_CLASSES.diplomacy.gradient,
-    activeGlow: SECTION_THEME_CLASSES.diplomacy.activeGlow,
+    gradient: "from-cyan-500 to-cyan-600",
+    activeGlow: "shadow-cyan-500/20",
   },
   {
     id: "intelligence",
     href: "/mycountry/intelligence",
     icon: Brain,
     title: "Intelligence",
-    gradient: SECTION_THEME_CLASSES.intelligence.gradient,
-    activeGlow: SECTION_THEME_CLASSES.intelligence.activeGlow,
+    gradient: "from-blue-500 to-blue-600",
+    activeGlow: "shadow-blue-500/20",
   },
   {
     id: "defense",
     href: "/mycountry/defense",
     icon: Shield,
     title: "Defense",
-    gradient: SECTION_THEME_CLASSES.defense.gradient,
-    activeGlow: SECTION_THEME_CLASSES.defense.activeGlow,
+    gradient: "from-red-500 to-red-600",
+    activeGlow: "shadow-red-500/20",
   },
   {
     id: "politics",
     href: "/mycountry/politics",
     icon: Vote,
     title: "Politics",
-    gradient: SECTION_THEME_CLASSES.politics.gradient,
-    activeGlow: SECTION_THEME_CLASSES.politics.activeGlow,
+    gradient: "from-indigo-500 to-indigo-600",
+    activeGlow: "shadow-indigo-500/20",
   },
 ];
 
@@ -166,9 +157,43 @@ export function MyCountrySidebarNav({
 
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
+    const mobileLogoClass = "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer text-muted-foreground hover:bg-muted hover:text-foreground";
+
+    const mobileLogoContent = (
+      <>
+        <CrownIcon size={14} className="shrink-0 text-amber-500" />
+        <span className="whitespace-nowrap">Overview</span>
+        {isPremium && (
+          <span className="text-[9px] font-bold text-amber-500/90 bg-amber-500/10 px-1 rounded uppercase tracking-wider shrink-0 ml-1">
+            Premium
+          </span>
+        )}
+      </>
+    );
+
+    const mobileLogo = isControlled ? (
+      <button
+        type="button"
+        onClick={() => {
+          console.log("MyCountry mobile logo clicked");
+          onNavigate("overview");
+        }}
+        className={mobileLogoClass}
+        aria-label="Overview"
+      >
+        {mobileLogoContent}
+      </button>
+    ) : (
+      <Link href="/mycountry" className={mobileLogoClass} aria-label="Overview">
+        {mobileLogoContent}
+      </Link>
+    );
+
     return (
       <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
-        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
+        <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
+          {mobileLogo}
+          <div className="h-4 w-px bg-white/10 shrink-0" />
           {visibleItems.map((item) => {
             const isActive = item.id === activeId;
 
@@ -217,8 +242,40 @@ export function MyCountrySidebarNav({
 
   /* ── Expanded desktop: icon + label sidebar ── */
   if (variant === "expanded") {
+    const logoClass = "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer mb-1.5 border-b border-white/5 text-muted-foreground hover:bg-muted hover:text-foreground";
+
+    const logoContent = (
+      <>
+        <CrownIcon size={16} className="shrink-0 text-amber-500" />
+        <span className="truncate font-semibold">MyCountry</span>
+        {isPremium && (
+          <span className="text-[10px] font-bold text-amber-500/95 bg-amber-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ml-1">
+            Premium
+          </span>
+        )}
+      </>
+    );
+
+    const logoHeader = isControlled ? (
+      <button
+        type="button"
+        onClick={() => {
+          console.log("MyCountry expanded logo clicked");
+          onNavigate("overview");
+        }}
+        className={logoClass}
+      >
+        {logoContent}
+      </button>
+    ) : (
+      <Link href="/mycountry" className={logoClass}>
+        {logoContent}
+      </Link>
+    );
+
     return (
       <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
+        {logoHeader}
         {visibleItems.map((item) => {
           const isActive = item.id === activeId;
           const noteCount = notifications?.[item.id] ?? 0;
@@ -271,8 +328,46 @@ export function MyCountrySidebarNav({
   }
 
   /* ── Desktop: icon rail with tooltip labels ── */
+  const logoRailClass = "group/logo relative flex h-9 w-9 items-center justify-center rounded-lg border-b border-white/5 pb-1.5 mb-1.5 transition-all duration-200 outline-none cursor-pointer text-muted-foreground/85 hover:text-foreground hover:bg-muted";
+
+  const logoRailContent = (
+    <>
+      <CrownIcon size={16} className="text-amber-500 transition-transform duration-150 group-hover/logo:scale-110" />
+      {/* Tooltip ── appears to the right */}
+      <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100 flex items-center gap-1.5">
+        <span>Overview</span>
+        {isPremium && (
+          <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider bg-amber-500/15 px-1 rounded">
+            Premium
+          </span>
+        )}
+        {/* Arrow */}
+        <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
+      </span>
+    </>
+  );
+
+  const logoRailHeader = isControlled ? (
+    <button
+      type="button"
+      onClick={() => {
+        console.log("MyCountry rail logo clicked");
+        onNavigate("overview");
+      }}
+      className={logoRailClass}
+      aria-label="Overview"
+    >
+      {logoRailContent}
+    </button>
+  ) : (
+    <Link href="/mycountry" className={logoRailClass} aria-label="Overview">
+      {logoRailContent}
+    </Link>
+  );
+
   return (
-    <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
+    <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg items-center">
+      {logoRailHeader}
       {visibleItems.map((item) => {
         const isActive = item.id === activeId;
         const noteCount = notifications?.[item.id] ?? 0;

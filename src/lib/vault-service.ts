@@ -25,6 +25,7 @@ import { grantCardXp } from "./card-xp-utils";
  * Handles all IxCredits economy operations
  */
 export class VaultService {
+  private activeCatchUps = new Set<string>();
   /**
    * Get or create a vault for a user
    * @param userIdOrClerkId Database User.id or Clerk user ID
@@ -167,7 +168,8 @@ export class VaultService {
     type: VaultTransactionType,
     source: string,
     db: PrismaClient,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
+    createdAt?: Date
   ): Promise<{ success: boolean; newBalance: number; message?: string }> {
     try {
       const config = await getVaultConfig(db);
@@ -238,6 +240,7 @@ export class VaultService {
             type,
             source,
             metadata: metadata ? (JSON.stringify(metadata) as any) : null,
+            createdAt: createdAt ?? new Date(),
           },
         });
 
@@ -367,20 +370,28 @@ export class VaultService {
       const vault = await this.getOrCreateVault(userId, db);
       await this.checkAndResetDailyEarnings(vault, db);
 
+      // Lazily catch up passive income if there are any missed days
+      await this.catchUpPassiveIncome(userId, db);
+
+      // Re-fetch vault to get updated credits and stats
+      const updatedVault = (await db.myVault.findUnique({
+        where: { id: vault.id },
+      })) || vault;
+
       // Calculate vault level
       const vaultCfg = await getVaultConfig(db);
-      const calculatedLevel = Math.floor(vault.vaultXp / vaultCfg.xpPerLevel) + 1;
+      const calculatedLevel = Math.floor(updatedVault.vaultXp / vaultCfg.xpPerLevel) + 1;
 
       // Update level if it changed
-      if (calculatedLevel !== vault.vaultLevel) {
+      if (calculatedLevel !== updatedVault.vaultLevel) {
         await db.myVault.update({
-          where: { id: vault.id },
+          where: { id: updatedVault.id },
           data: { vaultLevel: calculatedLevel },
         });
       }
 
       // Check if daily bonus can be claimed
-      const lastLoginDate = vault.lastLoginDate ? new Date(vault.lastLoginDate) : null;
+      const lastLoginDate = updatedVault.lastLoginDate ? new Date(updatedVault.lastLoginDate) : null;
       const now = new Date();
       const canClaimDailyBonus =
         !lastLoginDate ||
@@ -389,13 +400,13 @@ export class VaultService {
         lastLoginDate.getUTCDate() !== now.getUTCDate();
 
       return {
-        credits: vault.credits,
-        lifetimeEarned: vault.lifetimeEarned,
-        lifetimeSpent: vault.lifetimeSpent,
-        todayEarned: vault.todayEarned,
+        credits: updatedVault.credits,
+        lifetimeEarned: updatedVault.lifetimeEarned,
+        lifetimeSpent: updatedVault.lifetimeSpent,
+        todayEarned: updatedVault.todayEarned,
         vaultLevel: calculatedLevel,
-        vaultXp: vault.vaultXp,
-        loginStreak: vault.loginStreak,
+        vaultXp: updatedVault.vaultXp,
+        loginStreak: updatedVault.loginStreak,
         canClaimDailyBonus,
         premiumMultiplier: vaultCfg.premiumMultiplier,
         isPremium: false,
@@ -853,6 +864,133 @@ export class VaultService {
     } catch (error) {
       console.error(`[Vault Service] Failed to calculate passive income for ${countryId}:`, error);
       return 0;
+    }
+  }
+
+  /**
+   * Catch up passive income for a user's country if they missed days.
+   * This is self-healing and works regardless of server runtime state (e.g. offline).
+   * @param userId Database User.id or Clerk user ID
+   * @param db Prisma database client
+   * @returns Object with success, count of days awarded, and totalCreditsAwarded
+   */
+  async catchUpPassiveIncome(
+    userId: string,
+    db: PrismaClient
+  ): Promise<{ success: boolean; count: number; totalCreditsAwarded: number; error?: string }> {
+    try {
+      // Find the user with their countryId and id
+      const user = await db.user.findFirst({
+        where: {
+          OR: [{ id: userId }, { clerkUserId: userId }],
+        },
+        select: {
+          id: true,
+          countryId: true,
+          createdAt: true,
+        },
+      });
+
+      if (!user || !user.countryId) {
+        return { success: true, count: 0, totalCreditsAwarded: 0 };
+      }
+
+      // Check if a catch-up is already in progress for this user to prevent race conditions
+      if (this.activeCatchUps.has(user.id)) {
+        console.log(`[Vault Service] Passive income catchup already in progress for user ${user.id}`);
+        return { success: true, count: 0, totalCreditsAwarded: 0 };
+      }
+
+      this.activeCatchUps.add(user.id);
+
+      try {
+        const vault = await this.getOrCreateVault(user.id, db);
+
+        // Find the last passive income transaction for this vault
+        const lastTx = await db.vaultTransaction.findFirst({
+          where: {
+            vaultId: vault.id,
+            type: "EARN_PASSIVE",
+            source: "DAILY_DIVIDEND",
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          select: {
+            createdAt: true,
+          },
+        });
+
+        const now = new Date();
+        const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+        let startDate: Date;
+        if (lastTx) {
+          startDate = new Date(lastTx.createdAt);
+        } else {
+          // If no previous transaction, default to yesterday or vault creation, whichever is later
+          const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+          const vaultCreated = new Date(vault.createdAt);
+          startDate = vaultCreated > yesterday ? vaultCreated : yesterday;
+        }
+
+        const lastRunDay = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+
+        // Calculate days to award
+        const daysToAward: Date[] = [];
+        let currentDay = new Date(lastRunDay.getTime() + 24 * 60 * 60 * 1000);
+
+        while (currentDay <= today) {
+          daysToAward.push(new Date(currentDay));
+          currentDay = new Date(currentDay.getTime() + 24 * 60 * 60 * 1000);
+        }
+
+        if (daysToAward.length === 0) {
+          return { success: true, count: 0, totalCreditsAwarded: 0 };
+        }
+
+        console.log(
+          `[Vault Service] Catching up ${daysToAward.length} days of passive income for user ${user.id} / country ${user.countryId}`
+        );
+
+        let awardedCount = 0;
+        let totalCreditsAwarded = 0;
+
+        for (const day of daysToAward) {
+          const dailyIncome = await this.calculatePassiveIncome(user.countryId, db);
+          if (dailyIncome > 0) {
+            const earnResult = await this.earnCredits(
+              user.id,
+              dailyIncome,
+              "EARN_PASSIVE",
+              "DAILY_DIVIDEND",
+              db,
+              {
+                countryId: user.countryId,
+                isCatchUp: true,
+                targetDate: day.toISOString(),
+              },
+              day
+            );
+            if (earnResult.success) {
+              awardedCount++;
+              totalCreditsAwarded += dailyIncome;
+            }
+          }
+        }
+
+        return { success: true, count: awardedCount, totalCreditsAwarded };
+      } finally {
+        this.activeCatchUps.delete(user.id);
+      }
+    } catch (error) {
+      console.error(`[Vault Service] Failed to catch up passive income for ${userId}:`, error);
+      return {
+        success: false,
+        count: 0,
+        totalCreditsAwarded: 0,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   }
 

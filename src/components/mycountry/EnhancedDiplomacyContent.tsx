@@ -76,11 +76,18 @@ export function EnhancedDiplomacyContent({
 
   const activeEmbassies =
     embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+  const totalEmbassies = embassies?.length ?? 0;
   const totalRelations = relations?.length ?? 0;
   const avgStrength =
     totalRelations > 0
       ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
       : 0;
+
+  const embassyRatio = totalEmbassies > 0 ? activeEmbassies / totalEmbassies : 0;
+  const diplomaticHealth = Math.max(0, Math.min(100, Math.round(
+    avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20)
+  )));
+
   const heroStats = [
     { label: "Embassies", value: activeEmbassies, accentText: true },
     { label: "Relations", value: totalRelations, accentText: true },
@@ -100,6 +107,7 @@ export function EnhancedDiplomacyContent({
           flagUrl={flagUrl}
           stats={heroStats}
           statusBadges={statusBadges}
+          health={diplomaticHealth}
         />
       }
       contextWidget={<DiplomacySidebarWidget countryId={country.id} />}

@@ -1,26 +1,23 @@
 "use client";
 
 import { useMemo } from "react";
-import { ScrollText, CheckCircle, FileText, Calendar, Gavel } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { CheckCircle, FileText, Calendar, Gavel } from "lucide-react";
 import { api } from "~/trpc/react";
+import { useIssueCount } from "~/hooks/useNationalIssues";
+import {
+  SectionContextWidget,
+  type ContextStat,
+  type ContextActivityEntry,
+} from "~/components/mycountry/primitives";
 
 interface ExecutiveSidebarWidgetProps {
   countryId: string;
 }
 
-interface LogEntry {
-  id: string;
-  icon: typeof CheckCircle;
-  iconColor: string;
-  text: string;
-  time: Date;
-}
-
 /**
- * Executive Command Log — shows a timeline of your own recent executive
- * actions: policies enacted, meetings completed, issues resolved.
- * A personal record of governance decisions.
+ * Executive context widget — a thin adapter that feeds the unified
+ * SectionContextWidget with quick stats (issues / policies / meetings)
+ * and a recent-activity log (meetings, policies, action items).
  */
 export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProps) {
   const { data: meetings } = api.meetings.getMeetings.useQuery(
@@ -31,11 +28,22 @@ export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProp
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
+  const { total: issueCount } = useIssueCount(countryId);
 
-  const log = useMemo((): LogEntry[] => {
-    const entries: LogEntry[] = [];
+  const stats = useMemo<ContextStat[]>(() => {
+    const activePolicies = policies?.filter((p: any) => p.status === "active").length ?? 0;
+    const meetingCount = meetings?.length ?? 0;
+    return [
+      { label: "Issues", value: issueCount, accentText: true },
+      { label: "Policies", value: activePolicies, accentText: true },
+      { label: "Meetings", value: meetingCount, accentText: true },
+    ];
+  }, [policies, meetings, issueCount]);
 
-    // Completed meetings → "Held cabinet session: {title}"
+  const activity = useMemo<ContextActivityEntry[]>(() => {
+    const entries: ContextActivityEntry[] = [];
+
+    // Completed meetings → "Held session: {title}"
     meetings?.forEach((m: any) => {
       if (m.status === "completed") {
         entries.push({
@@ -89,53 +97,16 @@ export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProp
       });
     });
 
-    // Sort by most recent first, take top 5
     return entries.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 5);
   }, [meetings, policies]);
 
   return (
-    <div className="glass-hierarchy-child rounded-xl border border-amber-500/15 p-3">
-      <div className="mb-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ScrollText className="h-3.5 w-3.5 text-amber-500" />
-          <span className="text-xs font-semibold">Command Log</span>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-amber-500/30 px-1.5 py-0 text-[0.65rem] text-amber-600 dark:text-amber-400"
-        >
-          {log.length}
-        </Badge>
-      </div>
-      <div className="space-y-1.5">
-        {log.length === 0 && (
-          <p className="text-muted-foreground py-3 text-center text-[11px]">
-            No executive actions yet
-          </p>
-        )}
-        {log.map((entry) => (
-          <div key={entry.id} className="flex items-start gap-2 py-1">
-            <entry.icon className={`mt-0.5 h-3 w-3 shrink-0 ${entry.iconColor}`} />
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-[11px] leading-snug">{entry.text}</p>
-              <span className="text-muted-foreground text-[10px]">{getTimeAgo(entry.time)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <SectionContextWidget
+      accent="amber"
+      title="Command Log"
+      stats={stats}
+      activity={activity}
+      emptyMessage="No executive actions yet"
+    />
   );
-}
-
-function getTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

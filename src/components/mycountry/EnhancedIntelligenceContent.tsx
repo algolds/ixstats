@@ -25,15 +25,21 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
-import { useCountryData, SectionHeaderBackground } from "./primitives";
+import {
+  useCountryData,
+  SectionShell,
+  CompactSectionHero,
+  InlineWiki,
+  type StatusBadgeConfig,
+} from "./primitives";
 import { useUser } from "~/context/auth-context";
 import { AlertThresholdSettings } from "~/app/mycountry/intelligence/_components/AlertThresholdSettings";
-import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
 import { api } from "~/trpc/react";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import { IntelligenceDashboard } from "~/components/intelligence/IntelligenceDashboard";
 import { IntelligenceAnalysisPanel } from "~/components/intelligence/IntelligenceAnalysisPanel";
 import { KeyFindingsPanel } from "~/components/intelligence/KeyFindingsPanel";
-import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
+import { IntelligenceSidebarWidget } from "./sidebar-widgets/IntelligenceSidebarWidget";
 
 const IntelligenceMapWidget = dynamic(
   () =>
@@ -90,12 +96,23 @@ export function EnhancedIntelligenceContent({
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
+  const { flagUrl } = useFlag(country?.name ?? "");
 
   if (isLoading || !country) {
     return null;
   }
 
   const criticalAlerts = intelligenceOverview?.alerts?.critical ?? 0;
+  const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
+  const otherAlerts = Math.max(totalAlerts - criticalAlerts, 0);
+  const defOverviewScore = defenseOverview?.overallScore ?? 50;
+
+  const intelligenceHealth = Math.max(0, Math.min(100, Math.round(
+    defOverviewScore - Math.min(criticalAlerts * 10, 20) - Math.min(otherAlerts * 2, 10)
+  )));
+
+  const activeEmbassiesCount =
+    embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
 
   const tabs = [
     { value: "dashboard" as const, icon: Eye, label: "Dashboard", shortLabel: "Dash", badge: 0 },
@@ -116,88 +133,59 @@ export function EnhancedIntelligenceContent({
     { value: "archives" as const, icon: BookOpen, label: "Archives", shortLabel: "Lore", badge: 0 },
   ];
 
-  const header = (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+  const statusBadges: StatusBadgeConfig[] =
+    criticalAlerts > 0
+      ? [
+          {
+            icon: AlertTriangle,
+            count: criticalAlerts,
+            colorClass: "border-red-500/40 text-red-600 dark:text-red-400",
+          },
+        ]
+      : [];
+
+  const heroStats = [
+    { label: "Security", value: `${defOverviewScore}/100`, accentText: true },
+    { label: "Alerts", value: criticalAlerts, accentText: true },
+    { label: "Network", value: `${activeEmbassiesCount} active`, accentText: true },
+  ];
+
+  const heroActions = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      onClick={() => setSettingsOpen(true)}
     >
-      <SectionHeaderBackground context="intelligence">
-        <div
-          id="overview"
-          className="glass-hierarchy-parent rounded-xl border border-blue-500/30 p-3 sm:p-4 dark:border-blue-500/20"
-        >
-          <div className="mb-2 flex items-center gap-2">
-            <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/50">
-              MyCountry®
-            </Badge>
-            <span className="text-muted-foreground text-sm">→</span>
-            <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-              <BrainIcon size={12} className="mr-1" />
-              Intelligence Center
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="shrink-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 p-2">
-                <BrainIcon size={24} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold sm:text-2xl">{country.name}</h1>
-                <p className="text-muted-foreground text-xs sm:text-sm">
-                  Intelligence Dashboard & Analytics
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </SectionHeaderBackground>
-    </motion.div>
+      <Settings className="h-4 w-4" />
+    </Button>
   );
 
   return (
     <>
-      <MyCountrySidebarLayout
-        heroSection={header}
+      <SectionShell
+        section="intelligence"
+        hero={
+          <CompactSectionHero
+            section="intelligence"
+            title="Intelligence"
+            subtitle="Threat monitoring & security analytics"
+            icon={BrainIcon}
+            countryName={country.name}
+            flagUrl={flagUrl}
+            stats={heroStats}
+            statusBadges={statusBadges}
+            actions={heroActions}
+            health={intelligenceHealth}
+          />
+        }
+        contextWidget={<IntelligenceSidebarWidget countryId={country.id} />}
         activeSection={activeSection}
         onNavigate={onNavigate}
         notifications={notifications}
       >
         {/* Geopolitical Map */}
         <IntelligenceMapWidget countryId={country.id} countryName={country.name} />
-
-        {/* Stats strip */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <StatCell
-            icon={Shield}
-            label="Security"
-            value={`${defenseOverview?.overallScore ?? 0}/100`}
-            color="text-blue-600"
-          />
-          <StatCell
-            icon={AlertTriangle}
-            label="Alerts"
-            value={`${intelligenceOverview?.alerts?.critical ?? 0} critical`}
-            color={
-              (intelligenceOverview?.alerts?.critical ?? 0) > 0 ? "text-red-600" : "text-green-600"
-            }
-          />
-          <StatCell
-            icon={Globe}
-            label="Embassies"
-            value={`${embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0} active`}
-            color="text-blue-600"
-          />
-          <StatCell icon={FileText} label="Findings" value="Live" color="text-purple-600" />
-        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -269,8 +257,9 @@ export function EnhancedIntelligenceContent({
           </Tabs>
         </motion.div>
 
-        <WikiLoreBlock context="intelligence" themeColor="blue" title="Intelligence Lore" />
-      </MyCountrySidebarLayout>
+        {/* Wiki woven inline */}
+        <InlineWiki context="intelligence" accent="blue" maxSections={1} />
+      </SectionShell>
 
       {/* Settings Dialog */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -288,28 +277,5 @@ export function EnhancedIntelligenceContent({
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-/* ─── Stats Cell ─── */
-function StatCell({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: typeof Shield;
-  label: string;
-  value: string | number;
-  color: string;
-}) {
-  return (
-    <div className="glass-hierarchy-child rounded-lg p-2.5">
-      <div className="flex items-center gap-1.5">
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${color}`} />
-        <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      </div>
-      <div className="mt-0.5 text-sm font-bold">{value}</div>
-    </div>
   );
 }

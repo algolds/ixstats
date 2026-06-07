@@ -1,15 +1,21 @@
-// @ts-nocheck
 "use client";
 
 import { useMemo } from "react";
 import { Landmark, Users, BarChart3 } from "lucide-react";
 import { VoteIcon } from "~/components/ui/icons";
-import { useCountryData, VitalityRings, SectionHero } from "./primitives";
-import type { RingConfig, StatusBadgeConfig } from "./primitives";
+import {
+  useCountryData,
+  VitalityRings,
+  SectionShell,
+  CompactSectionHero,
+  InlineWiki,
+  type RingConfig,
+  type StatusBadgeConfig,
+} from "./primitives";
 import { api } from "~/trpc/react";
-import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
+import { useFlag } from "~/hooks/useUnifiedFlags";
+import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { PoliticsSidebarWidget } from "./sidebar-widgets/PoliticsSidebarWidget";
-import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
 import { PoliticsWarRoom } from "~/components/executive/politics/PoliticsWarRoom";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
@@ -44,9 +50,15 @@ export function EnhancedPoliticsContent({
     { enabled: !!country?.id }
   );
 
+  const totalSeats = legislature?.totalSeats ?? 0;
+  const { flagUrl } = useFlag(country?.name ?? "");
+
+  const { isGuided } = useSectionDensity({
+    items: (parties?.length ?? 0) + (totalSeats > 0 ? 1 : 0) + (elections?.length ?? 0),
+  });
+
   const politicsRings = useMemo((): RingConfig[] => {
     const partyCount = parties?.length ?? 0;
-    const totalSeats = legislature?.totalSeats ?? 0;
     const filledSeats =
       parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
     const completedElections =
@@ -93,7 +105,7 @@ export function EnhancedPoliticsContent({
         displayValue: `${completedElections} completed`,
       },
     ];
-  }, [parties, legislature, parliament, elections]);
+  }, [parties, parliament, elections, totalSeats]);
 
   if (isLoading || !country) {
     return null;
@@ -119,20 +131,38 @@ export function EnhancedPoliticsContent({
         ]
       : [];
 
+  const partyCount = parties?.length ?? 0;
+  const filledSeats = parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+  const politicsHealth = Math.max(0, Math.min(100, Math.round(
+    50 +
+    Math.min(partyCount * 10, 30) +
+    (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
+    (pendingElections > 0 ? 10 : 0)
+  )));
+
+  const heroStats = [
+    { label: "Parties", value: partyCount, accentText: true },
+    { label: "Seats", value: totalSeats, accentText: true },
+    { label: "Elections", value: elections?.length ?? 0, accentText: true },
+  ];
+
   return (
-    <MyCountrySidebarLayout
-      heroSection={
-        <SectionHero
-          context="politics"
-          sectionTitle="Political Landscape"
-          sectionSubtitle="Legislature, Parties & Elections"
-          sectionIcon={VoteIcon}
-          accentColor="indigo"
+    <SectionShell
+      section="politics"
+      hero={
+        <CompactSectionHero
+          section="politics"
+          title="Politics"
+          subtitle="Legislature, parties & elections"
+          icon={VoteIcon}
           countryName={country.name}
+          flagUrl={flagUrl}
+          stats={heroStats}
           statusBadges={statusBadges}
+          health={politicsHealth}
         />
       }
-      sidebarExtra={<PoliticsSidebarWidget countryId={country.id} />}
+      contextWidget={<PoliticsSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}
@@ -140,13 +170,15 @@ export function EnhancedPoliticsContent({
       {/* Political Status Rings */}
       <VitalityRings rings={politicsRings} title="Political Status" variant="grid" />
 
-      {/* Cross-Pillar Effects */}
-      <CrossPillarBanner section="politics" countryId={country.id} onNavigate={onNavigate} />
+      {!isGuided && (
+        <CrossPillarBanner section="politics" countryId={country.id} onNavigate={onNavigate} />
+      )}
 
       {/* War Room — 3-panel command center */}
       <PoliticsWarRoom countryId={country.id} />
 
-      <WikiLoreBlock context="politics" themeColor="indigo" title="Government Lore" />
-    </MyCountrySidebarLayout>
+      {/* Wiki woven inline */}
+      <InlineWiki context="politics" accent="indigo" maxSections={1} />
+    </SectionShell>
   );
 }

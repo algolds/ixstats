@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Sparkles, ArrowRight } from "lucide-react";
+import { Crown, ArrowRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { GlassButton } from "~/components/ui/glass-button";
 import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
@@ -71,7 +71,7 @@ export function PremiumPreviewFrame({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                <Crown className="h-3.5 w-3.5 text-amber-500" />
                 <span className="text-sm font-semibold">{meta.label} preview</span>
               </div>
               <p className="text-muted-foreground truncate text-xs">{meta.blurb}</p>

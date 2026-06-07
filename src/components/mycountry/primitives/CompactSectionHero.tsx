@@ -7,6 +7,18 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { accentForSection, ACCENT_CLASSES } from "~/components/mycountry/cards/accents";
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
+import { HealthRing } from "~/components/ui/health-ring";
+
+const sectionColor = (section: string) => {
+  switch (section) {
+    case "executive": return "#f59e0b"; // Amber
+    case "diplomacy": return "#06b6d4"; // Cyan
+    case "politics": return "#8b5cf6"; // Purple/Violet
+    case "intelligence": return "#3b82f6"; // Blue
+    case "defense": return "#ef4444"; // Red
+    default: return "#10b981"; // Green
+  }
+};
 
 /** Icon component type — supports both LucideIcon and custom SVG icons. */
 type IconComponent = LucideIcon | React.ComponentType<{ size?: number; className?: string }>;
@@ -52,6 +64,8 @@ interface CompactSectionHeroProps {
   /** Optional trailing actions (e.g. a settings button). */
   actions?: React.ReactNode;
   className?: string;
+  /** Vitality/health percentage (0-100) to render a progress ring around the section icon. */
+  health?: number;
 }
 
 /**
@@ -71,6 +85,7 @@ export const CompactSectionHero = React.memo(function CompactSectionHero({
   statusBadges,
   actions,
   className,
+  health,
 }: CompactSectionHeroProps) {
   const accent = accentForSection(section);
   const a = ACCENT_CLASSES[accent];
@@ -109,9 +124,25 @@ export const CompactSectionHero = React.memo(function CompactSectionHero({
 
       {/* Content */}
       <div className="relative flex items-center gap-3 px-4 py-3.5">
-        <div className={cn("shrink-0 rounded-xl bg-gradient-to-br p-2.5 shadow-sm", gradient)}>
-          <Icon size={22} className="text-white" />
-        </div>
+        {health !== undefined ? (
+          <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+            <div className="absolute inset-0 flex items-center justify-center transition-all duration-200">
+              <HealthRing
+                value={health}
+                size={48}
+                color={sectionColor(section)}
+                hideValue={true}
+              />
+            </div>
+            <div className={cn("rounded-lg bg-gradient-to-br p-1.5 shadow-sm relative z-20 w-8 h-8 flex items-center justify-center", gradient)}>
+              <Icon size={16} className="text-white" />
+            </div>
+          </div>
+        ) : (
+          <div className={cn("shrink-0 rounded-xl bg-gradient-to-br p-2.5 shadow-sm", gradient)}>
+            <Icon size={22} className="text-white" />
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">

@@ -3,9 +3,8 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { Loader2, Check, Image as ImageIcon, Trash2, Sparkles } from "lucide-react";
+import { Loader2, Check, Image as ImageIcon, Trash2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -229,7 +228,7 @@ export function CardImageUploadModal({
 
     try {
       await deleteMutation.mutateAsync({ countryId, cardType });
-    } catch (error) {
+    } catch (_error) {
       // Error already handled by mutation
     }
   };
@@ -257,7 +256,7 @@ export function CardImageUploadModal({
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "presets" | "search")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="presets" className="gap-2">
-                <Sparkles className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" />
                 Preset Images
               </TabsTrigger>
               <TabsTrigger value="search" className="gap-2">
@@ -286,7 +285,6 @@ export function CardImageUploadModal({
                     whileHover={{ scale: 1.02 }}
                     onClick={() => setSelectedImage(imageUrl)}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imageUrl}
                       alt={`${preset.label} preset ${idx + 1}`}
@@ -311,7 +309,6 @@ export function CardImageUploadModal({
               {/* Selected Image Preview */}
               {selectedImage && !presetImages.includes(selectedImage) && (
                 <div className="border-primary relative aspect-video overflow-hidden rounded-lg border-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedImage}
                     alt="Selected image"
