@@ -19,6 +19,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { WikiSearch } from "./WikiSearch";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
@@ -80,6 +81,21 @@ const COLOR_CLASSES = {
   amber: "bg-amber-500/20 text-amber-400",
   blue: "bg-blue-500/20 text-blue-400",
   green: "bg-green-500/20 text-green-400",
+} as const;
+
+const TYPE_THEME_CLASSES = {
+  government: {
+    selected: "border-amber-500/50 bg-gradient-to-br from-amber-500/[0.12] to-amber-500/[0.02] shadow-[0_0_25px_rgba(245,158,11,0.12)] scale-[1.01]",
+    unselected: "border-white/[0.06] bg-white/[0.01] hover:border-amber-500/25 hover:bg-amber-500/[0.02] hover:scale-[1.005]",
+  },
+  media: {
+    selected: "border-blue-500/50 bg-gradient-to-br from-blue-500/[0.12] to-blue-500/[0.02] shadow-[0_0_25px_rgba(59,130,246,0.12)] scale-[1.01]",
+    unselected: "border-white/[0.06] bg-white/[0.01] hover:border-blue-500/25 hover:bg-blue-500/[0.02] hover:scale-[1.005]",
+  },
+  citizen: {
+    selected: "border-green-500/50 bg-gradient-to-br from-green-500/[0.12] to-green-500/[0.02] shadow-[0_0_25px_rgba(16,185,129,0.12)] scale-[1.01]",
+    unselected: "border-white/[0.06] bg-white/[0.01] hover:border-green-500/25 hover:bg-green-500/[0.02] hover:scale-[1.005]",
+  },
 } as const;
 
 export function AccountCreationModal({
@@ -290,26 +306,28 @@ export function AccountCreationModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative mx-2 flex max-h-[90vh] w-full max-w-[95vw] flex-col sm:mx-4 sm:max-w-xl md:max-w-2xl"
           >
-            <div className="flex flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl">
+            <div className="relative flex flex-col rounded-2xl glass-modal glass-refraction overflow-hidden shadow-2xl">
+              <TextureOverlay texture="dots" opacity={0.03} />
+
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="relative z-10 flex items-center justify-between border-b border-white/[0.08] px-4 py-3 sm:px-6 sm:py-4 bg-white/[0.01]">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="rounded-lg bg-blue-500/20 p-1.5 sm:p-2">
-                    <Sparkles className="h-5 w-5 text-blue-400 sm:h-6 sm:w-6" />
+                  <div className="rounded-xl bg-gradient-to-br from-blue-500/30 to-indigo-500/10 p-2 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                    <Sparkles className="h-5 w-5 text-blue-400 sm:h-6 sm:w-6 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white sm:text-lg">
+                    <h3 className="text-base font-extrabold text-white tracking-wide sm:text-lg bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
                       Create Thinkpages Account
                     </h3>
-                    <p className="text-xs text-neutral-400 sm:text-sm">
-                      {countryName} • {accountsRemaining} slots remaining
+                    <p className="text-xs font-medium text-neutral-400 sm:text-sm">
+                      {countryName} • <span className="text-emerald-400 font-semibold">{accountsRemaining}</span> slots remaining
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10"
+                  className="rounded-full p-2 text-neutral-400 transition-all duration-200 hover:bg-white/10 hover:text-white hover:rotate-90 active:scale-95"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -363,32 +381,38 @@ export function AccountCreationModal({
                               }
                               disabled={!canCreateThisType || isLoadingAccountCountsByType}
                               className={cn(
-                                "flex w-full items-start gap-2 rounded-lg border-2 p-3 text-left transition-all sm:gap-4 sm:p-4",
+                                "flex w-full items-start gap-2 rounded-xl border p-3 text-left transition-all duration-300 sm:gap-4 sm:p-4",
                                 isSelected
-                                  ? "border-blue-500 bg-blue-500/10"
-                                  : "border-neutral-700 hover:border-blue-400 hover:bg-blue-500/5",
+                                  ? TYPE_THEME_CLASSES[type as keyof typeof TYPE_THEME_CLASSES].selected
+                                  : TYPE_THEME_CLASSES[type as keyof typeof TYPE_THEME_CLASSES].unselected,
                                 (!canCreateThisType || isLoadingAccountCountsByType) &&
-                                  "cursor-not-allowed opacity-50"
+                                  "cursor-not-allowed opacity-40 hover:scale-100 border-neutral-800 bg-neutral-900/10"
                               )}
                             >
                               <div
                                 className={cn(
-                                  "rounded-lg p-1.5 sm:p-2",
-                                  COLOR_CLASSES[config.color]
+                                  "rounded-xl p-2.5 transition-all duration-300 border border-transparent shrink-0",
+                                  isSelected
+                                    ? config.color === "amber"
+                                      ? "bg-amber-500/25 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+                                      : config.color === "blue"
+                                      ? "bg-blue-500/25 text-blue-300 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
+                                      : "bg-green-500/25 text-green-300 border-green-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                                    : COLOR_CLASSES[config.color]
                                 )}
                               >
                                 <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                               </div>
                               <div className="flex-1">
-                                <div className="mb-1 flex flex-wrap items-center gap-1 sm:gap-2">
+                                <div className="mb-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
                                   <h4 className="text-sm font-semibold text-white sm:text-base">
                                     {config.label}
                                   </h4>
-                                  <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300 sm:text-xs">
+                                  <span className="rounded-full bg-white/5 border border-white/5 px-2 py-0.5 text-[10px] text-neutral-300 sm:text-xs">
                                     Max {config.maxAccounts}
                                   </span>
                                   {type === "government" && (
-                                    <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-400 sm:text-xs">
+                                    <span className="rounded-full bg-blue-500/15 border border-blue-500/10 px-2 py-0.5 text-[10px] text-blue-400 font-semibold sm:text-xs">
                                       Auto-Verified
                                     </span>
                                   )}
@@ -396,17 +420,23 @@ export function AccountCreationModal({
                                 <p className="mb-2 text-xs text-neutral-400 sm:text-sm">
                                   {config.description}
                                 </p>
-                                <p className="text-[10px] text-neutral-500 sm:text-xs">
-                                  {canCreateThisType
-                                    ? `Remaining: ${typeAccountsRemaining} / ${config.maxAccounts}`
-                                    : `Limit Reached: ${config.maxAccounts} / ${config.maxAccounts}`}
-                                </p>
-                                <p className="text-[10px] text-neutral-500 sm:text-xs">
-                                  Examples: {config.examples.join(", ")}
-                                </p>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-neutral-500 sm:text-xs">
+                                  <span>
+                                    {canCreateThisType
+                                      ? `Remaining: ${typeAccountsRemaining} / ${config.maxAccounts}`
+                                      : `Limit Reached: ${config.maxAccounts} / ${config.maxAccounts}`}
+                                  </span>
+                                  <span className="text-neutral-600">•</span>
+                                  <span className="text-neutral-500 truncate max-w-[280px]">
+                                    Examples: {config.examples.join(", ")}
+                                  </span>
+                                </div>
                               </div>
                               {isSelected && (
-                                <div className="rounded-full bg-blue-500 p-1 text-white">
+                                <div className={cn(
+                                  "rounded-full p-1 text-white shadow-sm shrink-0",
+                                  config.color === "amber" ? "bg-amber-500" : config.color === "blue" ? "bg-blue-500" : "bg-green-500"
+                                )}>
                                   <Check className="h-4 w-4" />
                                 </div>
                               )}
@@ -426,7 +456,7 @@ export function AccountCreationModal({
                       <div className="flex items-center gap-2 sm:gap-3">
                         <button
                           onClick={() => setStep("type")}
-                          className="rounded-full p-1.5 text-neutral-300 transition-colors hover:bg-white/10 sm:p-2"
+                          className="rounded-full p-1.5 text-neutral-300 transition-all duration-200 hover:bg-white/10 hover:text-white sm:p-2 active:scale-95"
                         >
                           <ArrowLeft className="h-4 w-4" />
                         </button>
@@ -447,8 +477,8 @@ export function AccountCreationModal({
                             }
                             placeholder="Enter first name"
                             className={cn(
-                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-white focus:border-blue-500 focus:ring-blue-500 sm:px-4 sm:py-3 sm:text-sm",
-                              errors.firstName && "border-red-500"
+                              "block w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-xs text-white placeholder-neutral-500 backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30 sm:px-4 sm:py-3 sm:text-sm",
+                              errors.firstName && "border-red-500/50 focus:border-red-500 focus:ring-red-500/30"
                             )}
                           />
                           {errors.firstName && (
@@ -469,8 +499,8 @@ export function AccountCreationModal({
                             }
                             placeholder="Enter last name"
                             className={cn(
-                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-white focus:border-blue-500 focus:ring-blue-500 sm:px-4 sm:py-3 sm:text-sm",
-                              errors.lastName && "border-red-500"
+                              "block w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-xs text-white placeholder-neutral-500 backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30 sm:px-4 sm:py-3 sm:text-sm",
+                              errors.lastName && "border-red-500/50 focus:border-red-500 focus:ring-red-500/30"
                             )}
                           />
                           {errors.lastName && (
@@ -494,9 +524,9 @@ export function AccountCreationModal({
                             onChange={(e) => handleUsernameChange(e.target.value)}
                             placeholder="username"
                             className={cn(
-                              "block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 py-2 pl-6 text-xs text-white focus:border-blue-500 focus:ring-blue-500 sm:px-4 sm:py-3 sm:pl-8 sm:text-sm",
-                              errors.username && "border-red-500",
-                              isUsernameAvailable && "border-green-500"
+                              "block w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 pl-6 text-xs text-white placeholder-neutral-500 backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30 sm:px-4 sm:py-3 sm:pl-8 sm:text-sm",
+                              errors.username && "border-red-500/50 focus:border-red-500/30",
+                              isUsernameAvailable && "border-green-500/50 focus:border-green-500/30"
                             )}
                           />
                           <div className="absolute inset-y-0 right-3 flex items-center">
@@ -541,8 +571,8 @@ export function AccountCreationModal({
                           placeholder="Describe this account..."
                           maxLength={160}
                           className={cn(
-                            "block min-h-[80px] w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500",
-                            errors.bio && "border-red-500"
+                            "block min-h-[90px] w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm text-white placeholder-neutral-500 backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30",
+                            errors.bio && "border-red-500/50 focus:border-red-500/30"
                           )}
                         />
                         <div className="mt-1 flex items-center justify-between">
@@ -561,7 +591,7 @@ export function AccountCreationModal({
                           Profile Picture (optional)
                         </label>
                         <div className="flex items-center gap-4">
-                          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-neutral-700">
+                          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border-2 border-white/10 bg-white/[0.02] shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_25px_rgba(59,130,246,0.1)]">
                             {formData.profileImageUrl ? (
                               <img
                                 src={formData.profileImageUrl}
@@ -578,7 +608,7 @@ export function AccountCreationModal({
                             <button
                               type="button"
                               onClick={() => setShowUnsplashSearch(true)}
-                              className="inline-flex items-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                              className="inline-flex items-center gap-x-2 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-2.5 text-sm font-semibold text-blue-400 transition-all duration-300 hover:bg-blue-600/20 hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-blue-500/5"
                             >
                               Search Image Repository
                             </button>
@@ -586,7 +616,7 @@ export function AccountCreationModal({
                               <button
                                 type="button"
                                 onClick={() => setFormData((p) => ({ ...p, profileImageUrl: "" }))}
-                                className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-white"
+                                className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs font-semibold text-neutral-400 transition-all duration-200 hover:bg-white/5 hover:text-white"
                               >
                                 Remove Image
                               </button>
@@ -598,8 +628,9 @@ export function AccountCreationModal({
                         <button
                           type="button"
                           onClick={() => setShowAdvanced(!showAdvanced)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-white"
+                          className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.01] px-4 py-2 text-xs font-semibold text-neutral-400 transition-all hover:bg-white/[0.04] hover:text-white"
                         >
+                          <Sparkles className={cn("h-3.5 w-3.5 text-blue-400 transition-transform duration-500", showAdvanced && "rotate-180")} />
                           <span>
                             {showAdvanced ? "Hide Advanced Settings" : "Show Advanced Settings"}
                           </span>
@@ -615,7 +646,7 @@ export function AccountCreationModal({
                               className="mt-4 grid grid-cols-1 gap-3 overflow-hidden sm:grid-cols-3 sm:gap-4"
                             >
                               <div>
-                                <label className="mb-2 block text-sm font-medium text-neutral-300">
+                                <label className="mb-2 block text-xs font-medium text-neutral-300">
                                   Posting Frequency
                                 </label>
                                 <select
@@ -626,7 +657,7 @@ export function AccountCreationModal({
                                       postingFrequency: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                                  className="block w-full rounded-xl border border-white/[0.08] bg-neutral-950/40 px-4 py-3 text-sm text-white backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-neutral-950/60 focus:ring-1 focus:ring-blue-500/30"
                                 >
                                   <option value="low">Low</option>
                                   <option value="moderate">Moderate</option>
@@ -634,7 +665,7 @@ export function AccountCreationModal({
                                 </select>
                               </div>
                               <div>
-                                <label className="mb-2 block text-sm font-medium text-neutral-300">
+                                <label className="mb-2 block text-xs font-medium text-neutral-300">
                                   Political Lean
                                 </label>
                                 <select
@@ -645,7 +676,7 @@ export function AccountCreationModal({
                                       politicalLean: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                                  className="block w-full rounded-xl border border-white/[0.08] bg-neutral-950/40 px-4 py-3 text-sm text-white backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-neutral-950/60 focus:ring-1 focus:ring-blue-500/30"
                                 >
                                   <option value="left">Left</option>
                                   <option value="center">Center</option>
@@ -653,7 +684,7 @@ export function AccountCreationModal({
                                 </select>
                               </div>
                               <div>
-                                <label className="mb-2 block text-sm font-medium text-neutral-300">
+                                <label className="mb-2 block text-xs font-medium text-neutral-300">
                                   Personality
                                 </label>
                                 <select
@@ -664,7 +695,7 @@ export function AccountCreationModal({
                                       personality: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                                  className="block w-full rounded-xl border border-white/[0.08] bg-neutral-950/40 px-4 py-3 text-sm text-white backdrop-blur-sm transition-all duration-200 hover:border-white/20 focus:border-blue-500/60 focus:bg-neutral-950/60 focus:ring-1 focus:ring-blue-500/30"
                                 >
                                   <option value="serious">Serious</option>
                                   <option value="casual">Casual</option>
@@ -681,12 +712,12 @@ export function AccountCreationModal({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end border-t border-white/10 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="relative z-10 flex items-center justify-end border-t border-white/[0.08] px-4 py-3 sm:px-6 sm:py-4 bg-white/[0.01]">
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-neutral-700 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-600 disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-sm"
+                    className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-neutral-300 transition-all duration-200 hover:bg-white/[0.08] hover:text-white active:scale-[0.98] sm:px-5 sm:text-sm"
                   >
                     Cancel
                   </button>
@@ -695,7 +726,7 @@ export function AccountCreationModal({
                       type="button"
                       onClick={() => setStep("details")}
                       disabled={!canCreateMoreAccounts}
-                      className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:from-blue-500 hover:to-indigo-500 hover:scale-[1.02] active:scale-[0.98] hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
                     >
                       Continue
                     </button>
@@ -710,7 +741,7 @@ export function AccountCreationModal({
                         isCheckingUsername ||
                         createAccountMutation.isPending
                       }
-                      className="inline-flex items-center justify-center gap-x-2 rounded-lg border border-transparent bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50 sm:px-4 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:from-blue-500 hover:to-indigo-500 hover:scale-[1.02] active:scale-[0.98] hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
                     >
                       {createAccountMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

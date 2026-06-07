@@ -16,7 +16,7 @@ import {
 } from "~/lib/wiki-integration";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
 import { WikiSectionRow } from "./WikiSectionRow";
-import { GeographicReconciliationCard } from "./GeographicReconciliationCard";
+
 
 type MetricView = {
   gdp: "perCapita" | "total";
@@ -229,8 +229,6 @@ export function OverviewTab({
           </span>
         </div>
 
-        {/* Geographic Reconciliation Dashboard */}
-        <GeographicReconciliationCard countryId={country.id} />
 
         {/* ── Identity & Lore (inline, no collapsible wrapper) ── */}
         <div className="border-border/30 space-y-3 border-t pt-3">

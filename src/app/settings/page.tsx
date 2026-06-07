@@ -15,6 +15,7 @@ import {
   Settings,
   BookOpen,
   Link2,
+  Scale,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -31,6 +32,7 @@ import {
   IxnayIDCard,
   VaultSettingsCard,
   PrivacySecurityCard,
+  GeographicReconciliationCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
@@ -57,6 +59,7 @@ function ProfileContent() {
   const [showLore, setShowLore] = useState(false);
   const [showThinkpages, setShowThinkpages] = useState(false);
   const [showIxnayID, setShowIxnayID] = useState(false);
+  const [showGeoReconciliation, setShowGeoReconciliation] = useState(false);
   const [heroCollapsed, setHeroCollapsed] = useState(true);
 
   const profileSettings = useProfileSettings({
@@ -211,6 +214,12 @@ function ProfileContent() {
                     />
                   </div>
                 )}
+
+                {showGeoReconciliation && userProfile?.countryId && (
+                  <div id="geo-reconciliation-section">
+                    <GeographicReconciliationCard countryId={userProfile.countryId} />
+                  </div>
+                )}
                 {showPreferences && (
                   <div id="interface-section">
                     <UserPreferencesCard theme={theme} onThemeChange={setTheme} />
@@ -337,6 +346,47 @@ function ProfileContent() {
                         )}
                       />
                     </button>
+
+                    {userProfile?.countryId && (
+                      <button
+                        onClick={() => {
+                          const next = !showGeoReconciliation;
+                          setShowGeoReconciliation(next);
+                          if (next)
+                            setTimeout(
+                              () =>
+                                document
+                                  .getElementById("geo-reconciliation-section")
+                                  ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                              100
+                            );
+                        }}
+                        className={cn(
+                          "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                          showGeoReconciliation
+                            ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                            : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                        )}
+                      >
+                        <div className="flex items-center">
+                          <Scale
+                            className={cn(
+                              "mr-3 h-4 w-4 shrink-0 transition-colors",
+                              showGeoReconciliation ? "text-purple-500" : "text-slate-400"
+                            )}
+                          />
+                          Geographic Reconciliation
+                        </div>
+                        <div
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full transition-all",
+                            showGeoReconciliation
+                              ? "scale-110 animate-pulse bg-purple-500"
+                              : "bg-slate-300 dark:bg-slate-700"
+                          )}
+                        />
+                      </button>
+                    )}
 
                     <button
                       onClick={() => {
