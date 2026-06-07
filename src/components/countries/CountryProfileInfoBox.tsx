@@ -7,6 +7,8 @@
 "use client";
 
 import React, { useMemo } from "react";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -376,10 +378,12 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
               variant="outline"
               size="sm"
               className="mt-4 w-full text-xs"
-              onClick={() => window.open(`https://ixwiki.com/wiki/${country.name}`, "_blank")}
+              asChild
             >
-              <ExternalLink className="mr-1 h-3 w-3" />
-              View Full Wiki Page
+              <Link href={titleToWikiOSPath(country.name)}>
+                <ExternalLink className="mr-1 h-3 w-3" />
+                View Full Wiki Page
+              </Link>
             </Button>
           </CardContent>
         </Card>

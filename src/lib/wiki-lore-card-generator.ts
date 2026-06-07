@@ -677,7 +677,7 @@ export class WikiLoreCardGenerator {
    */
   private buildWikiUrl(articleTitle: string, wikiSource: WikiSource): string {
     const baseUrls = {
-      ixwiki: "https://ixwiki.com/wiki",
+      ixwiki: `${process.env.BASE_PATH || ""}/w`,
       iiwiki: "https://iiwiki.com/w",
       althistory: "https://althistory.fandom.com/wiki",
     };

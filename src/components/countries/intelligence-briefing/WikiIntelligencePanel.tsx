@@ -6,6 +6,8 @@
  */
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
@@ -162,13 +164,13 @@ export const WikiIntelligencePanel = React.memo<WikiIntelligencePanelProps>(
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                window.open(`https://ixwiki.com/wiki/${encodeURIComponent(countryName)}`, "_blank");
-              }}
+              asChild
               className="flex-1"
             >
-              <RiExternalLinkLine className="mr-1 h-3 w-3" />
-              View Full Article
+              <Link href={titleToWikiOSPath(countryName)}>
+                <RiExternalLinkLine className="mr-1 h-3 w-3" />
+                View Full Article
+              </Link>
             </Button>
           </div>
         </div>

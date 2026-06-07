@@ -451,7 +451,7 @@ export const activitiesRouter = createTRPCRouter({
                     pageTitle: rc.title,
                     sizeChange,
                     isNewPage,
-                    wikiUrl: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+                    wikiUrl: `/w/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
                   },
                 },
                 engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
@@ -1891,7 +1891,7 @@ export const activitiesRouter = createTRPCRouter({
       };
 
       const wikiUrl = (name: string) =>
-        `https://ixwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+        `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
       topGdp.forEach((c, i) => {
         headlines.push({
@@ -2180,7 +2180,7 @@ export const activitiesRouter = createTRPCRouter({
             category: "wiki",
             priority: isNewPage ? "medium" : "low",
             timestamp: wikiTimestamp,
-            url: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+            url: `/w/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
           });
         }
       } catch (error) {
@@ -2382,7 +2382,7 @@ export const activitiesRouter = createTRPCRouter({
               reposts: 0,
             },
             author: undefined,
-            url: `https://ixwiki.com/wiki/${encodeURIComponent(page.title.replace(/ /g, "_"))}`,
+            url: `/w/${encodeURIComponent(page.title.replace(/ /g, "_"))}`,
             excerpt: page.isNew
               ? `New page — ${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""}`
               : `${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""} (${page.totalBytesChanged > 0 ? "+" : ""}${page.totalBytesChanged} bytes)`,

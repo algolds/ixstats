@@ -1977,8 +1977,11 @@ export class IxnayWikiService {
               ? new Date(page.revisions[0].timestamp)
               : new Date(),
             url:
-              page.fullurl ||
-              `https://${this.wikiSource === "ixwiki" ? "ixwiki.com" : "iiwiki.com"}/wiki/${encodeURIComponent(page.title)}`,
+              page.fullurl && this.wikiSource !== "ixwiki"
+                ? page.fullurl
+                : this.wikiSource === "ixwiki"
+                  ? `/w/${encodeURIComponent(page.title)}`
+                  : `https://iiwiki.com/wiki/${encodeURIComponent(page.title)}`,
           };
 
           results.set(page.title, articleData);
@@ -2001,6 +2004,10 @@ export class IxnayWikiService {
    * Get country wiki URL
    */
   getCountryWikiUrl(countryName: string): string {
+    if (this.wikiSource === "ixwiki") {
+      const basePath = process.env.BASE_PATH || "";
+      return `${basePath}/w/${encodeURIComponent(this.sanitizePageName(countryName))}`;
+    }
     return `${MEDIAWIKI_CONFIG.baseUrl}/wiki/${encodeURIComponent(this.sanitizePageName(countryName))}`;
   }
 
@@ -2183,7 +2190,8 @@ export class IxnayWikiService {
    */
   private createWikiLink(target: string, display: string): string {
     const normalizedTarget = target.replace(/ /g, "_").replace(/^_+|_+$/g, "");
-    const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(normalizedTarget)}`;
+    const basePath = process.env.BASE_PATH || "";
+    const wikiUrl = `${basePath}/w/${encodeURIComponent(normalizedTarget)}`;
     const safeDisplay = display.replace(/[&<>"']/g, (char: string) => {
       const escapeMap: Record<string, string> = {
         "&": "&amp;",
@@ -2194,7 +2202,7 @@ export class IxnayWikiService {
       };
       return escapeMap[char] ?? char;
     });
-    return `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" style="color: #429284; text-decoration: none;">${safeDisplay}</a>`;
+    return `<a href="${wikiUrl}" style="color: #429284; text-decoration: none;">${safeDisplay}</a>`;
   }
 
   /**

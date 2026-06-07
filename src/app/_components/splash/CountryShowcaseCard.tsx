@@ -75,7 +75,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
   }, [name, trpcUtils]);
 
   const slug = String(country.slug ?? "");
-  const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+  const wikiUrl = `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`;
   const ixstatsUrl = `/countries/${slug}`;
 
   const growthRate = (country.adjustedGdpGrowth as number | undefined) ?? 0;
@@ -177,15 +177,13 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               {wikiIntro}
             </p>
             <div className="flex items-center gap-4">
-              <a
+              <Link
                 href={wikiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 text-xs ${splashGold.link}`}
               >
                 <ExternalLink className="h-3 w-3" />
                 Read more on IxWiki
-              </a>
+              </Link>
               <Link
                 href={ixstatsUrl}
                 className={`inline-flex items-center gap-2 text-xs ${splashGold.link}`}

@@ -27,6 +27,7 @@ import {
   Pencil,
 } from "lucide-react";
 import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
@@ -327,7 +328,8 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
               (() => {
                 const baseWikiUrl =
                   wikiRichIntro?.wikiUrl ??
-                  `https://ixwiki.com/wiki/${encodeURIComponent(displayName)}`;
+                  titleToWikiOSPath(displayName);
+                const isInternal = baseWikiUrl.startsWith("/") || baseWikiUrl.includes("/w/");
                 return (
                   <div>
                     <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
@@ -345,14 +347,23 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
                                 key={`${section.anchor}-${i}`}
                                 className="border-border/30 rounded-md border p-2"
                               >
-                                <a
-                                  href={sectionUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-600"
-                                >
-                                  {section.line}
-                                </a>
+                                {isInternal ? (
+                                  <Link
+                                    href={sectionUrl}
+                                    className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-600"
+                                  >
+                                    {section.line}
+                                  </Link>
+                                ) : (
+                                  <a
+                                    href={sectionUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-600"
+                                  >
+                                    {section.line}
+                                  </a>
+                                )}
                                 {"preview" in section && section.preview && (
                                   <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10px] leading-snug">
                                     {section.preview as string}
@@ -361,7 +372,15 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
                               </div>
                             );
                           }
-                          return (
+                          return isInternal ? (
+                            <Link
+                              key={`${section.anchor}-${i}`}
+                              href={sectionUrl}
+                              className="text-foreground/50 block truncate pl-3 text-[10px] transition-colors hover:text-blue-600"
+                            >
+                              {section.line}
+                            </Link>
+                          ) : (
                             <a
                               key={`${section.anchor}-${i}`}
                               href={sectionUrl}
@@ -406,17 +425,27 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
 
             {/* Wiki link */}
             {wikiRichIntro?.wikiUrl && (
-              <a
-                href={wikiRichIntro.wikiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-              >
-                <BookOpen className="h-3 w-3" />
-                Read full article on{" "}
-                {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/w/") ? (
+                <Link
+                  href={wikiRichIntro.wikiUrl}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
+                >
+                  <BookOpen className="h-3 w-3" />
+                  Read full article on IxWiki
+                </Link>
+              ) : (
+                <a
+                  href={wikiRichIntro.wikiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
+                >
+                  <BookOpen className="h-3 w-3" />
+                  Read full article on{" "}
+                  {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )
             )}
 
             {!wikiRichIntro && !wikiSections && !wikiImages && (
@@ -466,15 +495,25 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
 
             {wikiRichIntro?.wikiUrl && (
               <div className="mt-3">
-                <a
-                  href={wikiRichIntro.wikiUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-                >
-                  <BookOpen className="h-3 w-3" />
-                  Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-                </a>
+                {wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/w/") ? (
+                  <Link
+                    href={wikiRichIntro.wikiUrl}
+                    className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                  >
+                    <BookOpen className="h-3 w-3" />
+                    Read on IxWiki
+                  </Link>
+                ) : (
+                  <a
+                    href={wikiRichIntro.wikiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                  >
+                    <BookOpen className="h-3 w-3" />
+                    Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
+                  </a>
+                )}
               </div>
             )}
           </div>

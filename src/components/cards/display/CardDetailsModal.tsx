@@ -28,6 +28,7 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { CardPriceHistoryChart } from "./CardPriceHistoryChart";
@@ -134,14 +135,26 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
     // Resolve wiki URL from metadata or construct from source + title
     const wikiUrl = useMemo(() => {
       if (!card) return null;
-      const metaUrl = (card.metadata as Record<string, unknown>)?.wikiUrl as string | undefined;
-      if (metaUrl) return metaUrl;
-      if (card.wikiSource && card.wikiArticleTitle) {
-        const base =
-          card.wikiSource === "ixwiki" ? "https://ixwiki.com/wiki" : "https://iiwiki.com/wiki";
-        return `${base}/${encodeURIComponent(card.wikiArticleTitle)}`;
+      let url = (card.metadata as Record<string, unknown>)?.wikiUrl as string | undefined;
+      if (!url && card.wikiSource && card.wikiArticleTitle) {
+        if (card.wikiSource === "ixwiki") {
+          url = titleToWikiOSPath(card.wikiArticleTitle);
+        } else {
+          url = `https://iiwiki.com/wiki/${encodeURIComponent(card.wikiArticleTitle)}`;
+        }
       }
-      return card.wikiUrl;
+      if (!url) {
+        url = card.wikiUrl ?? null;
+      }
+
+      // Post-process: convert legacy external ixwiki links to internal WikiOS /w/ routes
+      if (url && (url.includes("ixwiki.com/wiki/") || url.includes("/wiki/"))) {
+        const match = url.match(/(?:ixwiki\.com)?\/wiki\/([^#?]+)/);
+        if (match && match[1]) {
+          url = titleToWikiOSPath(decodeURIComponent(match[1]));
+        }
+      }
+      return url;
     }, [card]);
 
     // Handle share action

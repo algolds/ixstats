@@ -128,7 +128,7 @@ export async function fetchWikiIntro(
         wikiSource: wiki,
         wikiUrl:
           wiki === "ixwiki"
-            ? `https://ixwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
+            ? `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`
             : `https://iiwiki.us/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`,
       };
     }

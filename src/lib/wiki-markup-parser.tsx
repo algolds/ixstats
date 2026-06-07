@@ -67,6 +67,7 @@ export const handleWikiLinkClick = (link: string): void => {
   if (link.startsWith("http")) {
     window.open(link, "_blank");
   } else {
-    window.open(`https://ixwiki.com/wiki/${encodeURIComponent(link)}`, "_blank");
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
+    window.location.href = `${basePath}/w/${encodeURIComponent(link)}`;
   }
 };

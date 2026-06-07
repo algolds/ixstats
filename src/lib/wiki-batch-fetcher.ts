@@ -455,7 +455,7 @@ export class WikiBatchFetcher {
   ): Promise<EligibleArticle> {
     // Get article URL
     const baseUrls: Record<WikiSource, string> = {
-      ixwiki: "https://ixwiki.com/wiki",
+      ixwiki: `${process.env.BASE_PATH || ""}/w`,
       iiwiki: "https://iiwiki.com/wiki",
       althistory: "https://althistory.fandom.com/wiki",
     };

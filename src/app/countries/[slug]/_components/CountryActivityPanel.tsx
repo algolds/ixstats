@@ -19,7 +19,9 @@ import {
   ChevronDown,
   ExternalLink,
   Rss,
+  BookOpen,
 } from "lucide-react";
+import Link from "next/link";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
@@ -373,15 +375,13 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
           <Card className="bg-card/50 backdrop-blur-sm">
             <CardContent className="pt-6">
               <WikiLinkPreview title={countryName}>
-                <a
-                  href={`https://ixwiki.com/wiki/${countryName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={`/w/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}
                   className="text-primary flex items-center gap-2 text-sm hover:underline"
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <BookOpen className="h-4 w-4" />
                   View on IxWiki
-                </a>
+                </Link>
               </WikiLinkPreview>
             </CardContent>
           </Card>

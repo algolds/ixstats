@@ -16,6 +16,8 @@
  */
 
 import React, { useRef, useCallback, useState, useEffect, useMemo, Component } from "react";
+import { useRouter } from "next/navigation";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft,
@@ -146,6 +148,7 @@ export default function MapEditorOverlay({
   onExit,
   isWorldMode = false,
 }: MapEditorOverlayProps) {
+  const router = useRouter();
   const mapRef = useRef<EditorMapRef>(null);
 
   // Real-time sync: invalidate map caches when any geo mutation succeeds
@@ -3171,10 +3174,7 @@ export default function MapEditorOverlay({
           onOpenWiki={
             contextMenu.feature.wikiPageTitle
               ? () => {
-                  window.open(
-                    `https://ixwiki.com/wiki/${encodeURIComponent(contextMenu.feature.wikiPageTitle!.replace(/ /g, "_"))}`,
-                    "_blank"
-                  );
+                  router.push(titleToWikiOSPath(contextMenu.feature.wikiPageTitle!));
                   setContextMenu(null);
                 }
               : undefined

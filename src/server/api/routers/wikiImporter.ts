@@ -32,7 +32,7 @@ function toBridgeSource(source: WikiSource): BridgeWikiSource | null {
 function getWikiUrl(source: WikiSource, pageName: string): string {
   const slug = encodeURIComponent(pageName.replace(/ /g, "_"));
   if (source === "iiwiki") return `https://iiwiki.com/wiki/${slug}`;
-  if (source === "ixwiki") return `https://ixwiki.com/wiki/${slug}`;
+  if (source === "ixwiki") return `/w/${slug}`;
   return `https://althistory.fandom.com/wiki/${slug}`;
 }
 

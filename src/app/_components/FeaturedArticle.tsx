@@ -8,6 +8,7 @@ import { BookOpen, ExternalLink, RefreshCw } from "lucide-react";
 import { IxnayWikiService } from "~/lib/mediawiki-service";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
+import Link from "next/link";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { api } from "~/trpc/react";
@@ -106,8 +107,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
       <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
       <div class="featured-links">
-        <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
-        <a href="${createUrl("/countries")}" target="_blank" rel="noopener noreferrer">Browse Countries</a>
+        <a href="${createUrl("/w/Main_Page")}">Visit IxWiki</a>
+        <a href="${createUrl("/countries")}">Browse Countries</a>
       </div>
     </div>
   `;
@@ -212,8 +213,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
             <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
             <div class="featured-links">
-              <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
-              <a href={"/countries"} target="_blank" rel="noopener noreferrer">Browse Countries</a>
+              <a href="${createUrl("/w/Main_Page")}">Visit IxWiki</a>
+              <a href="${createUrl("/countries")}">Browse Countries</a>
             </div>
           </div>
         `);
@@ -384,7 +385,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
           title: "Welcome to IxWiki",
           description:
             "Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.",
-          articleUrl: "https://ixwiki.com/wiki/Main_Page",
+          articleUrl: createUrl("/w/Main_Page"),
           category: "Featured",
           lastUpdated: new Date().toLocaleDateString(),
         };
@@ -461,8 +462,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
             <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
             <div class="featured-links">
-              <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
-              <a href={"/countries"} target="_blank" rel="noopener noreferrer">Browse Countries</a>
+              <a href="${createUrl("/w/Main_Page")}">Visit IxWiki</a>
+              <a href="${createUrl("/countries")}">Browse Countries</a>
             </div>
           </div>
         `);
@@ -487,7 +488,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         title: "Welcome to IxWiki",
         description:
           "Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.",
-        articleUrl: "https://ixwiki.com/wiki/Main_Page",
+        articleUrl: createUrl("/w/Main_Page"),
         category: "Featured",
         lastUpdated: new Date().toLocaleDateString(),
       };
@@ -515,7 +516,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
 
     // Construct the article URL (you might need to adjust this based on your wiki structure)
     const articleUrl = title
-      ? `https://ixwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`
+      ? createUrl(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`)
       : "#";
 
     return {
@@ -622,7 +623,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         summary = summary.substring(0, 300) + "...";
       }
 
-      const articleUrl = `https://ixwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+      const articleUrl = createUrl(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`);
       const imageUrl = imageFileName
         ? `https://ixwiki.com/wiki/Special:Filepath/${encodeURIComponent(imageFileName)}`
         : undefined;
@@ -648,7 +649,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       return {
         title: "Featured Article",
         description: "Discover today's featured article from the wiki.",
-        articleUrl: "https://ixwiki.com/wiki/Main_Page",
+        articleUrl: createUrl("/w/Main_Page"),
         category: "Featured",
         lastUpdated: new Date().toLocaleDateString(),
       };
@@ -698,14 +699,12 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
           <div className="space-y-4">
             <div className="text-sm">
               <h3 className="mb-2 text-lg font-semibold">
-                <a
-                  href="https://ixwiki.com/wiki/Anglasweorċ"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={createUrl("/w/Anglasweorċ")}
                   className="text-blue-600 hover:text-blue-800 hover:underline"
                 >
                   Anglasweorċ
-                </a>
+                </Link>
               </h3>
               <p className="text-muted-foreground leading-relaxed">
                 The Anglasweorċ (literally "English Work") is a series of fortifications that were
@@ -719,15 +718,13 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               <Badge variant="outline" className="text-xs">
                 Featured
               </Badge>
-              <a
-                href="https://ixwiki.com/wiki/Anglasweorċ"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={createUrl("/w/Anglasweorċ")}
                 className="text-primary inline-flex items-center gap-1 text-xs hover:underline"
               >
-                <ExternalLink className="h-3 w-3" />
+                <BookOpen className="h-3 w-3" />
                 View Article
-              </a>
+              </Link>
             </div>
           </div>
         </CardContent>
@@ -792,15 +789,25 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                   <RefreshCw className="h-4 w-4" />
                 </button>
                 {articleData?.articleUrl && (
-                  <a
-                    href={articleData.articleUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary inline-flex items-center gap-1 text-xs transition-all duration-300 hover:scale-105 hover:underline"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    View Article
-                  </a>
+                  articleData.articleUrl.startsWith("/") || articleData.articleUrl.includes("/w/") ? (
+                    <Link
+                      href={articleData.articleUrl}
+                      className="text-primary inline-flex items-center gap-1 text-xs transition-all duration-300 hover:scale-105 hover:underline"
+                    >
+                      <BookOpen className="h-3 w-3" />
+                      View Article
+                    </Link>
+                  ) : (
+                    <a
+                      href={articleData.articleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary inline-flex items-center gap-1 text-xs transition-all duration-300 hover:scale-105 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View Article
+                    </a>
+                  )
                 )}
               </div>
             </div>

@@ -18,7 +18,7 @@ import {
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle, Eye, ExternalLink, ArrowLeft } from "lucide-react";
+import { AlertTriangle, Eye, ArrowLeft, BookOpen } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";
 import { useUser } from "~/context/auth-context";
@@ -262,7 +262,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
               <Card className="glass-hierarchy-child">
                 <CardContent className="p-6 text-center">
                   <h3 className="mb-2 flex items-center justify-center gap-2 text-lg font-semibold">
-                    <ExternalLink className="h-5 w-5" />
+                    <BookOpen className="h-5 w-5 text-blue-500" />
                     IxWiki Page
                   </h3>
                   <p className="text-muted-foreground mb-4">
@@ -271,10 +271,12 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => window.open(`https://ixwiki.com/wiki/${country.name}`, "_blank")}
+                    asChild
                   >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    View Wiki Page
+                    <Link href={createUrl(`/w/${encodeURIComponent(country.name.replace(/ /g, "_"))}`)}>
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      View Wiki Page
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>

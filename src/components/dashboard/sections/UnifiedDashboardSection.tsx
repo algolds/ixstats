@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import {
   AlertTriangle,
@@ -556,7 +557,7 @@ export function UnifiedDashboardSection({
           metadata: {
             source: "ixwiki",
             pageTitle: rc.title,
-            wikiUrl: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+            wikiUrl: titleToWikiOSPath(rc.title),
           },
         },
         engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
@@ -2009,8 +2010,8 @@ function WikiAuthorPopover({ username }: { username: string }) {
     { enabled: open, staleTime: 60_000 }
   );
 
-  const wikiUserUrl = `https://ixwiki.com/wiki/User:${encodeURIComponent(username.replace(/ /g, "_"))}`;
-  const wikiContribsUrl = `https://ixwiki.com/wiki/Special:Contributions/${encodeURIComponent(username.replace(/ /g, "_"))}`;
+  const wikiUserUrl = createUrl(`/w/special/user/${username}`);
+  const wikiContribsUrl = createUrl(`/w/special/contributions/${username}`);
 
   return (
     <HoverCardPrimitive.Root open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>
@@ -2070,24 +2071,20 @@ function WikiAuthorPopover({ username }: { username: string }) {
 
               {/* Quick links */}
               <div className="border-border/30 flex flex-col gap-0.5 border-t pt-1.5">
-                <a
+                <Link
                   href={wikiUserUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
                 >
                   <BookOpen className="h-3 w-3 shrink-0 text-teal-400" />
                   Wiki User Page
-                </a>
-                <a
+                </Link>
+                <Link
                   href={wikiContribsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
                 >
                   <Clock className="h-3 w-3 shrink-0 text-teal-400" />
                   Contributions
-                </a>
+                </Link>
                 {author?.country?.slug && (
                   <>
                     <Link

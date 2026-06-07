@@ -27,6 +27,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { parseWikiText, extractWikiImages, extractWikiLinks } from "~/lib/wikitext-parser";
 import { useNotify } from "~/hooks/useNotify";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { createUrl } from "~/lib/url-utils";
 
 interface WikiTextImporterProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
       // Parse wiki-text to HTML
       const html = parseWikiText(wikitext, {
         imageBaseUrl: "https://ixwiki.com/wiki/Special:Redirect/file",
-        wikiBaseUrl: "https://ixwiki.com/wiki",
+        wikiBaseUrl: createUrl("/w"),
         allowHtml: true,
       });
 

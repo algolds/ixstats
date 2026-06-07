@@ -19,6 +19,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { BookOpen, ExternalLink, MessageSquare, Eye, Users } from "lucide-react";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 
 // ──────────────────────────────────────────────
 // Link detection types
@@ -33,8 +34,8 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
   // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /w/Title (WikiOS)
   const ixMatch =
     href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/) ??
-    href.match(/^\/wiki\/([^#?]+)/) ??
-    href.match(/^\/w\/([^#?]+)/);
+    href.match(/^(?:\/[^/]+)?\/wiki\/([^#?]+)/) ??
+    href.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
   if (ixMatch) {
     const title = decodeURIComponent(ixMatch[1]!).replace(/_/g, " ");
     // Skip special pages that won't have useful previews
@@ -185,8 +186,10 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
 function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wiki.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
-  const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
-  const articleUrl = `${base}/wiki/${encodeURIComponent(title)}`;
+  const articleUrl =
+    wiki === "ixwiki"
+      ? titleToWikiOSPath(title)
+      : `https://iiwiki.com/wiki/${encodeURIComponent(title)}`;
 
   return (
     <div className="space-y-2">
@@ -207,8 +210,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       )}
       <a
         href={articleUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...(wiki === "ixwiki" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
         className="flex items-center gap-1 text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
       >
         Read full article <ExternalLink className="h-2.5 w-2.5" />

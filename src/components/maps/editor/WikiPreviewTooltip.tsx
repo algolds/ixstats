@@ -10,6 +10,8 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { createPortal } from "react-dom";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
@@ -103,15 +105,13 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
               ) : (
                 <p className="text-muted-foreground text-xs">No article found.</p>
               )}
-              <a
-                href={`https://ixwiki.com/wiki/${encodeURIComponent(wikiTitle.replace(/ /g, "_"))}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={titleToWikiOSPath(wikiTitle)}
                 className="text-primary mt-2 flex items-center gap-1 text-[11px] font-medium hover:underline"
               >
                 Open on Wiki
                 <ExternalLink className="h-3 w-3" />
-              </a>
+              </Link>
             </div>
           </div>,
           document.body

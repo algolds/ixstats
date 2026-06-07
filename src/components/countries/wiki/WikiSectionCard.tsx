@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -79,6 +82,7 @@ export function WikiSectionCard({
   countryName,
   wikiSource = "ixwiki",
 }: WikiSectionCardProps): React.ReactElement {
+  const router = useRouter();
   // Get the appropriate icon for this section
   const SectionIcon =
     SECTION_ICONS[section.id as keyof typeof SECTION_ICONS] || SECTION_ICONS.default;
@@ -195,7 +199,13 @@ export function WikiSectionCard({
                           onError={(e: React.SyntheticEvent<HTMLImageElement>) =>
                             (e.currentTarget.style.display = "none")
                           }
-                          onClick={() => window.open(`${imgBaseUrl}File:${fileName}`, "_blank")}
+                          onClick={() => {
+                            if (wikiSource === "ixwiki") {
+                              router.push(titleToWikiOSPath(`File:${fileName}`));
+                            } else {
+                              window.open(`${imgBaseUrl}File:${fileName}`, "_blank");
+                            }
+                          }}
                         />
                       );
                     })}
@@ -208,40 +218,45 @@ export function WikiSectionCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    let pageBaseUrl = "https://ixwiki.com/wiki/";
-                    if (wikiSource === "iiwiki") {
-                      pageBaseUrl = "https://iiwiki.com/wiki/";
-                    } else if (wikiSource === "althistory") {
-                      pageBaseUrl = "https://althistory.fandom.com/wiki/";
-                    }
-                    window.open(
-                      `${pageBaseUrl}${encodeURIComponent(section.sourcePage || section.title)}`,
-                      "_blank"
-                    );
-                  }}
+                  asChild
                   className="text-xs"
                 >
-                  <RiExternalLinkLine className="mr-1 h-3.5 w-3.5" /> View Wiki Source
+                  {wikiSource === "ixwiki" ? (
+                    <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
+                      <RiExternalLinkLine className="mr-1 h-3.5 w-3.5" /> View Wiki Source
+                    </Link>
+                  ) : (
+                    <a
+                      href={`${wikiSource === "iiwiki" ? "https://iiwiki.com/wiki/" : "https://althistory.fandom.com/wiki/"}${encodeURIComponent(section.sourcePage || section.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <RiExternalLinkLine className="mr-1 h-3.5 w-3.5" /> View Wiki Source
+                    </a>
+                  )}
                 </Button>
 
                 {section.images && section.images.length > 0 && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      // Show category page for this section's media
-                      const articleName = section.title.includes(" of ")
-                        ? section.title
-                        : `${section.title} of ${countryName}`;
-                      window.open(
-                        `https://ixwiki.com/wiki/Category:${encodeURIComponent(articleName)}_images`,
-                        "_blank"
-                      );
-                    }}
+                    asChild
                   >
-                    <RiImageLine className="mr-1 h-3 w-3" />
-                    {section.images.length} Media
+                    {wikiSource === "ixwiki" ? (
+                      <Link href={titleToWikiOSPath(`Category:${section.title.includes(" of ") ? section.title : `${section.title} of ${countryName}`}_images`)}>
+                        <RiImageLine className="mr-1 h-3 w-3" />
+                        {section.images.length} Media
+                      </Link>
+                    ) : (
+                      <a
+                        href={`https://ixwiki.com/wiki/Category:${encodeURIComponent(section.title.includes(" of ") ? section.title : `${section.title} of ${countryName}`)}_images`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <RiImageLine className="mr-1 h-3 w-3" />
+                        {section.images.length} Media
+                      </a>
+                    )}
                   </Button>
                 )}
               </div>

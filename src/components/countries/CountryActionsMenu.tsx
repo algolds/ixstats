@@ -27,6 +27,8 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { createUrl } from "~/lib/url-utils";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
@@ -522,11 +524,9 @@ export function CountryActionsMenu({
                     Compare Countries
                   </button>
 
-                  <WikiLinkPreview title={targetCountryName}>
-                    <a
-                      href={`https://ixwiki.com/wiki/${targetCountryName.replace(/\s/g, "_")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                   <WikiLinkPreview title={targetCountryName}>
+                    <Link
+                      href={titleToWikiOSPath(targetCountryName)}
                       className={actionButtonClass(
                         "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
                       )}
@@ -535,7 +535,7 @@ export function CountryActionsMenu({
                       <Globe className="h-4 w-4" />
                       View on IxWiki
                       <ExternalLink className="ml-auto h-3.5 w-3.5 text-white/40" />
-                    </a>
+                    </Link>
                   </WikiLinkPreview>
 
                   <button

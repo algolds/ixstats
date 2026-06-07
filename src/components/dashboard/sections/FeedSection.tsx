@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
@@ -181,7 +182,7 @@ export function FeedSection() {
           metadata: {
             source: "ixwiki",
             pageTitle: rc.title,
-            wikiUrl: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+            wikiUrl: titleToWikiOSPath(rc.title),
           },
         },
         engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
@@ -654,15 +655,15 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
 
 /** External link with wiki/forum tooltip on hover */
 function FeedExternalLink({ url, title }: { url: string; title?: string }) {
-  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/) ?? url.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
   const iiMatch = url.match(/iiwiki\.com\/wiki\/([^#?]+)/);
   const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
 
+  const isInternal = url.startsWith("/") || url.includes("/w/");
   const linkEl = (
     <a
       href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...(isInternal ? {} : { target: "_blank", rel: "noopener noreferrer" })}
       className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
     >
       <ExternalLink className="h-3 w-3" />

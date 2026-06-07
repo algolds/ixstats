@@ -260,7 +260,7 @@ export const wikiRouter = createTRPCRouter({
           mediaType: "",
           mime: img.mime ?? "",
           url: img.url ?? "",
-          pageUrl: `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name ?? "")}`,
+          pageUrl: `/w/File:${encodeURIComponent(img.name ?? "")}`,
         }));
     }),
 

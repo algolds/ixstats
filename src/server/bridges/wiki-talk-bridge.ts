@@ -152,9 +152,11 @@ export const wikiTalkBridge: BridgeAdapter = {
           const isNew = rc.type === "new";
           const comment = rc.comment?.replace(/\/\*.*?\*\/\s*/, "").trim();
 
+          const basePath = process.env.BASE_PATH || "";
+          const wikiUrl = `${basePath}/w/${encodeURIComponent(rc.title)}`;
           const description = isNew
-            ? `<strong>${rc.user}</strong> created <a href="https://ixwiki.com/wiki/${encodeURIComponent(rc.title)}" target="_blank"><strong>${rc.title}</strong></a> (${sizeStr} bytes)`
-            : `<strong>${rc.user}</strong> edited <a href="https://ixwiki.com/wiki/${encodeURIComponent(rc.title)}" target="_blank"><strong>${rc.title}</strong></a> (${sizeStr} bytes)${comment ? `: ${comment}` : ""}`;
+            ? `<strong>${rc.user}</strong> created <a href="${wikiUrl}"><strong>${rc.title}</strong></a> (${sizeStr} bytes)`
+            : `<strong>${rc.user}</strong> edited <a href="${wikiUrl}"><strong>${rc.title}</strong></a> (${sizeStr} bytes)${comment ? `: ${comment}` : ""}`;
 
           await db.thinkshareMessage.create({
             data: {

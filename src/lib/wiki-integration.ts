@@ -65,8 +65,11 @@ export function findCoatOfArmsUrl(
  * the page title is URL-encoded.
  */
 export function getCountryWikiUrl(countryName: string, wikiSource?: string | null): string {
-  const host = wikiSource === "iiwiki" ? "iiwiki.com" : "ixwiki.com";
-  return `https://${host}/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
+  if (wikiSource !== "iiwiki") {
+    const basePath = process.env.BASE_PATH || "";
+    return `${basePath}/w/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
+  }
+  return `https://iiwiki.com/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
 }
 
 /**

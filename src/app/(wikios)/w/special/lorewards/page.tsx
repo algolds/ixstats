@@ -363,14 +363,12 @@ export default function LorewardsPage() {
             <FaqSection icon={<Medal size={16} />} title="What is the Medal Score?">
               <p>
                 The <strong>Medal Score</strong> is the canonical ranking metric maintained on the{" "}
-                <a
-                  href="https://ixwiki.com/wiki/IxWiki:OOL"
-                  target="_blank"
-                  rel="noopener"
+                <Link
+                  href="/w/IxWiki:OOL"
                   className="wikios-lw-faq-link"
                 >
                   IxWiki:OOL
-                </a>{" "}
+                </Link>{" "}
                 page. It&apos;s based on medals earned:
               </p>
               <div className="wikios-lw-faq-medals">

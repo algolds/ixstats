@@ -19,6 +19,8 @@
  */
 
 import React from "react";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import {
   Dialog,
   DialogContent,
@@ -98,17 +100,13 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    // Use the section title directly as it's already the correct page name
-                    window.open(
-                      `https://ixwiki.com/wiki/${encodeURIComponent(section.title)}`,
-                      "_blank"
-                    );
-                  }}
+                  asChild
                   className="flex-1"
                 >
-                  <RiExternalLinkLine className="mr-1 h-3 w-3" />
-                  View on IxWiki
+                  <Link href={titleToWikiOSPath(section.title)}>
+                    <RiExternalLinkLine className="mr-1 h-3 w-3" />
+                    View on IxWiki
+                  </Link>
                 </Button>
                 <Button variant="outline" size="sm" onClick={onClose} className="flex-1">
                   Close

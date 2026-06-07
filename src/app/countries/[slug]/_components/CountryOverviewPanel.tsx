@@ -36,6 +36,7 @@ import {
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
 import { createUrl } from "~/lib/url-utils";
+import Link from "next/link";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -396,15 +397,13 @@ export function CountryOverviewPanel({
                 {/* Wiki + explore links */}
                 <div className="border-border/50 flex items-center justify-between border-t pt-4">
                   <WikiLinkPreview title={country.name}>
-                    <a
-                      href={`https://ixwiki.com/wiki/${country.name}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      href={createUrl(`/w/${encodeURIComponent(country.name.replace(/ /g, "_"))}`)}
                       className="text-primary flex items-center gap-2 text-xs hover:underline"
                     >
-                      <ExternalLink className="h-3 w-3" />
+                      <BookOpen className="h-3 w-3" />
                       Read more on IxWiki
-                    </a>
+                    </Link>
                   </WikiLinkPreview>
                   <div className="flex gap-1.5">
                     <Button

@@ -7,6 +7,8 @@ import { Badge } from "~/components/ui/badge";
 import { Loader2, Search, Plus, X, ExternalLink } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { debounce } from "lodash";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { api } from "~/trpc/react";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
@@ -178,16 +180,14 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
                 className="group hover:bg-destructive/20 flex items-center gap-2 pr-1 transition-colors"
               >
                 <WikiLinkPreview title={page}>
-                  <a
-                    href={`https://ixwiki.com/wiki/${encodeURIComponent(page)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href={titleToWikiOSPath(page)}
                     className="flex items-center gap-1 hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <span>{page}</span>
                     <ExternalLink className="h-3 w-3 opacity-50" />
-                  </a>
+                  </Link>
                 </WikiLinkPreview>
                 <button
                   onClick={() => handleRemovePage(page)}

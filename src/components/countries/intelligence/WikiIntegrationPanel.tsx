@@ -4,6 +4,9 @@
 // Refactored from EnhancedIntelligenceBriefing.tsx
 
 import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -37,6 +40,7 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
   onSaveOverview,
   className,
 }) => {
+  const router = useRouter();
   const [showFullOverview, setShowFullOverview] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [editorContent, setEditorContent] = useState("");
@@ -45,9 +49,9 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
     if (link.startsWith("http")) {
       window.open(link, "_blank");
     } else {
-      window.open(`https://ixwiki.com/wiki/${encodeURIComponent(link)}`, "_blank");
+      router.push(titleToWikiOSPath(link));
     }
-  }, []);
+  }, [router]);
 
   const handleSave = useCallback(() => {
     if (editorContent.trim() && onSaveOverview) {
@@ -266,16 +270,13 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    window.open(
-                      `https://ixwiki.com/wiki/${encodeURIComponent(country.name)}`,
-                      "_blank"
-                    );
-                  }}
+                  asChild
                   className="flex-1"
                 >
-                  <RiExternalLinkLine className="mr-1 h-3 w-3" />
-                  View Full Article
+                  <Link href={titleToWikiOSPath(country.name)}>
+                    <RiExternalLinkLine className="mr-1 h-3 w-3" />
+                    View Full Article
+                  </Link>
                 </Button>
               </div>
             </div>

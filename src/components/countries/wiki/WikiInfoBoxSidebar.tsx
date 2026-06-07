@@ -18,6 +18,8 @@
  */
 
 import React from "react";
+import { useRouter } from "next/navigation";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { RiGlobalLine, RiShieldLine, RiBookOpenLine, RiRefreshLine } from "react-icons/ri";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -69,6 +71,8 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
   viewerClearanceLevel,
   wikiSource = "ixwiki",
 }) => {
+  const router = useRouter();
+
   // Key fields to display in sidebar
   const keyFields = [
     { key: "capital", label: "Capital" },
@@ -106,7 +110,11 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
             <div
               className="group cursor-pointer"
               onClick={() => {
-                window.open(`${baseUrl}File:${flagFile}`, "_blank");
+                if (wikiSource === "ixwiki") {
+                  router.push(titleToWikiOSPath(`File:${flagFile}`));
+                } else {
+                  window.open(`${baseUrl}File:${flagFile}`, "_blank");
+                }
               }}
             >
               <div className="text-center">
@@ -130,7 +138,11 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
             <div
               className="group cursor-pointer"
               onClick={() => {
-                window.open(`${baseUrl}File:${coatFile}`, "_blank");
+                if (wikiSource === "ixwiki") {
+                  router.push(titleToWikiOSPath(`File:${coatFile}`));
+                } else {
+                  window.open(`${baseUrl}File:${coatFile}`, "_blank");
+                }
               }}
             >
               <div className="text-center">

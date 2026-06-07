@@ -28,11 +28,13 @@ export const geoWikiRouter = createTRPCRouter({
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
         const result = await getArticleIntro(name, wiki);
         if (result?.text) {
-          const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
           return {
             extract: result.text.substring(0, 400),
             wikiSource: wiki,
-            wikiUrl: `${base}/wiki/${encodeURIComponent(result.title)}`,
+            wikiUrl:
+              wiki === "ixwiki"
+                ? `/w/${encodeURIComponent(result.title)}`
+                : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
           };
         }
       }
@@ -53,7 +55,10 @@ export const geoWikiRouter = createTRPCRouter({
         const article = await getArticleWikitext(title, wiki);
         if (!article) continue;
 
-        const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
+        const pageUrl =
+          wiki === "ixwiki"
+            ? `/w/${encodeURIComponent(article.title)}`
+            : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
         const parsed = parseInfobox(article.wikitext);
 
         if (!parsed) {
@@ -61,7 +66,7 @@ export const geoWikiRouter = createTRPCRouter({
             found: true,
             hasInfobox: false,
             pageTitle: article.title,
-            pageUrl: `${base}/wiki/${encodeURIComponent(article.title)}`,
+            pageUrl,
             wikiSource: wiki,
             fields: [],
             coordinates: null,
@@ -77,7 +82,7 @@ export const geoWikiRouter = createTRPCRouter({
           hasInfobox: true,
           templateName: parsed.templateName,
           pageTitle: article.title,
-          pageUrl: `${base}/wiki/${encodeURIComponent(article.title)}`,
+          pageUrl,
           wikiSource: wiki,
           fields: parsed.fields.map((f) => ({
             key: f.key,
@@ -115,13 +120,15 @@ export const geoWikiRouter = createTRPCRouter({
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
         const results = await searchPages(input.query, input.limit, wiki);
         if (results.length > 0) {
-          const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
           return {
             wikiSource: wiki,
             results: results.map((r) => ({
               title: r.title,
               description: "",
-              url: `${base}/wiki/${encodeURIComponent(r.title)}`,
+              url:
+                wiki === "ixwiki"
+                  ? `/w/${encodeURIComponent(r.title)}`
+                  : `https://iiwiki.com/wiki/${encodeURIComponent(r.title)}`,
             })),
           };
         }

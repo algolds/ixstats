@@ -66,7 +66,7 @@ export async function enrichFromWiki(wikiPageTitle: string): Promise<WikiEnrichm
 
   // Build wiki URL (try ixwiki first)
   const encoded = encodeURIComponent(wikiPageTitle.replace(/ /g, "_"));
-  result.wikiUrl = `https://ixwiki.com/wiki/${encoded}`;
+  result.wikiUrl = `/w/${encoded}`;
 
   return result;
 }

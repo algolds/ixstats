@@ -12,13 +12,16 @@ export default function WikiRedirectPage() {
   useEffect(() => {
     document.title = "Wiki Integration - IxStats";
 
-    // Auto-redirect after 3 seconds
+    // Auto-redirect after 1.5 seconds
     const timer = setTimeout(() => {
-      window.location.href = "https://ixwiki.com/wiki/";
-    }, 3000);
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
+      window.location.href = `${basePath}/w/`;
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
+
+  const basePath = typeof window !== "undefined" ? (window.location.pathname.startsWith("/projects/ixstates") ? "/projects/ixstates" : "") : "";
 
   return (
     <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-8">
@@ -26,24 +29,22 @@ export default function WikiRedirectPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ExternalLink className="h-5 w-5 text-blue-600" />
-            IxWiki Knowledge Base
+            Wiki OS Integration
           </CardTitle>
-          <CardDescription>Redirecting to the main IxWiki site...</CardDescription>
+          <CardDescription>Redirecting to WikiOS reader...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground text-sm">
-            The IxWiki knowledge base is hosted separately from IxStats. You will be redirected to{" "}
-            <strong>https://ixwiki.com/wiki/</strong> in 3 seconds.
+            The wiki is now integrated directly into IxStats. You will be redirected to the internal WikiOS reader in 1.5 seconds.
           </p>
 
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => (window.location.href = "https://ixwiki.com/wiki/")}
-              className="flex-1"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Go to IxWiki Now
-            </Button>
+            <Link href="/w/" className="flex-1">
+              <Button className="w-full">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Go to WikiOS Now
+              </Button>
+            </Link>
 
             <Link href="/dashboard">
               <Button variant="outline">
@@ -58,38 +59,32 @@ export default function WikiRedirectPage() {
             <ul className="space-y-1">
               <li>
                 <WikiLinkPreview title="Main Page">
-                  <a
-                    href="https://ixwiki.com/wiki/Main_Page"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/w/Main_Page"
                     className="text-blue-600 hover:underline"
                   >
                     Main Page
-                  </a>
+                  </Link>
                 </WikiLinkPreview>
               </li>
               <li>
                 <WikiLinkPreview title="Special:RecentChanges">
-                  <a
-                    href="https://ixwiki.com/wiki/Special:RecentChanges"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/w/special/recent-changes"
                     className="text-blue-600 hover:underline"
                   >
                     Recent Changes
-                  </a>
+                  </Link>
                 </WikiLinkPreview>
               </li>
               <li>
                 <WikiLinkPreview title="Special:AllPages">
-                  <a
-                    href="https://ixwiki.com/wiki/Special:AllPages"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/w/special/all-pages"
                     className="text-blue-600 hover:underline"
                   >
                     All Pages
-                  </a>
+                  </Link>
                 </WikiLinkPreview>
               </li>
             </ul>

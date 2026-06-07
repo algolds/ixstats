@@ -354,9 +354,10 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 />
                 <QuickAction
                   icon={<ExternalLink />}
-                  label="View on MediaWiki"
+                  label="View Full Article"
                   onClick={() => {
-                    window.open(`https://ixwiki.com/wiki/${slug}`, "_blank");
+                    onClose();
+                    navigateWithBasePath(`/w/${slug}`, router);
                   }}
                 />
               </div>

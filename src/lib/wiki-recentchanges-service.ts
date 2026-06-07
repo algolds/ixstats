@@ -104,9 +104,10 @@ export async function getWikiTrendingPages(limit = 10): Promise<WikiTrendingPage
     const latestEdit = new Date(Math.max(...edits.map((e) => new Date(e.timestamp).getTime())));
     const isNew = edits.some((e) => e.type === "new");
 
+    const basePath = process.env.BASE_PATH || "";
     pages.push({
       title,
-      url: `https://ixwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`,
+      url: `${basePath}/w/${encodeURIComponent(title.replace(/ /g, "_"))}`,
       editCount: edits.length,
       uniqueEditors: editors.size,
       totalBytesChanged: totalBytes,

@@ -4,6 +4,8 @@
  * Supports: headings, formatting, lists, links, templates, images, tables, and more
  */
 
+import { BASE_PATH } from "~/lib/base-path";
+
 interface WikiImage {
   filename: string;
   width?: string;
@@ -33,7 +35,7 @@ export class WikiTextParser {
 
   constructor(options: ParseOptions = {}) {
     this.imageBaseUrl = options.imageBaseUrl || "https://ixwiki.com/wiki/Special:Redirect/file";
-    this.wikiBaseUrl = options.wikiBaseUrl || "https://ixwiki.com/wiki";
+    this.wikiBaseUrl = options.wikiBaseUrl || `${BASE_PATH}/w`;
     this.allowHtml = options.allowHtml ?? true;
   }
 

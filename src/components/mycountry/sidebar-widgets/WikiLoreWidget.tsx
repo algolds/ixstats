@@ -11,6 +11,8 @@
  */
 
 import { memo, useState } from "react";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { BookOpen, ChevronDown, ExternalLink, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api } from "~/trpc/react";
@@ -123,19 +125,17 @@ export const WikiLoreWidget = memo(function WikiLoreWidget({
               {/* Article list */}
               <div className="space-y-1">
                 {results?.map((article: { title: string; pageId?: number }, i: number) => {
-                  const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(article.title.replace(/ /g, "_"))}`;
+                  const wikiUrl = titleToWikiOSPath(article.title);
                   return (
-                    <a
+                    <Link
                       key={i}
                       href={wikiUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="text-foreground/80 flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                     >
                       <BookOpen className={`h-3 w-3 shrink-0 ${colors.text}`} />
                       <span className="truncate">{article.title.replace(/_/g, " ")}</span>
                       <ExternalLink className="text-muted-foreground/50 ml-auto h-2.5 w-2.5 shrink-0" />
-                    </a>
+                    </Link>
                   );
                 })}
               </div>

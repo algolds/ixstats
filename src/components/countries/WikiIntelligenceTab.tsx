@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { motion, AnimatePresence } from "motion/react";
 import type { WikiIntelligenceTabProps } from "~/types/wiki-intelligence";
 import { useWikiIntelligence } from "~/hooks/useWikiIntelligence";
@@ -49,6 +51,8 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   viewerClearanceLevel = "PUBLIC",
   flagColors = { primary: "#3b82f6", secondary: "#6366f1", accent: "#8b5cf6" },
 }) => {
+  const router = useRouter();
+
   // State for active view
   const [activeView, setActiveView] = useState<"sections" | "conflicts" | "settings">("sections");
 
@@ -81,16 +85,18 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     (pageName: string) => {
       console.log(`[WikiIntelligence] Wiki link clicked: ${pageName}`);
       const source = wikiData.wikiSource ?? "ixwiki";
-      let baseUrl = "https://ixwiki.com/wiki/";
-      if (source === "iiwiki") {
-        baseUrl = "https://iiwiki.com/wiki/";
-      } else if (source === "althistory") {
-        baseUrl = "https://althistory.fandom.com/wiki/";
+      if (source === "ixwiki") {
+        router.push(titleToWikiOSPath(pageName));
+      } else {
+        let baseUrl = "https://iiwiki.com/wiki/";
+        if (source === "althistory") {
+          baseUrl = "https://althistory.fandom.com/wiki/";
+        }
+        const wikiUrl = `${baseUrl}${encodeURIComponent(pageName)}`;
+        window.open(wikiUrl, "_blank", "noopener,noreferrer");
       }
-      const wikiUrl = `${baseUrl}${encodeURIComponent(pageName)}`;
-      window.open(wikiUrl, "_blank", "noopener,noreferrer");
     },
-    [wikiData.wikiSource]
+    [wikiData.wikiSource, router]
   );
 
   // Handle settings apply

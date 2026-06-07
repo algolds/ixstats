@@ -7,6 +7,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { ExternalLink, BookOpen, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
@@ -60,18 +61,28 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
 
       {wikiUrl && (
         <WikiLinkPreview
-          title={card.wikiArticleTitle || wikiUrl.split("/wiki/").pop()?.replace(/_/g, " ") || ""}
+          title={card.wikiArticleTitle || wikiUrl.split(/\/(?:wiki|w)\//).pop()?.replace(/_/g, " ") || ""}
           wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
         >
-          <a
-            href={wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Read full article on {card.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-          </a>
+          {card.wikiSource === "ixwiki" ? (
+            <Link
+              href={wikiUrl}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Read full article on IxWiki
+            </Link>
+          ) : (
+            <a
+              href={wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Read full article on IIWiki
+            </a>
+          )}
         </WikiLinkPreview>
       )}
     </div>

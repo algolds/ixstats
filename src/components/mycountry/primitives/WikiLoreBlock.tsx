@@ -9,6 +9,7 @@
  */
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen,
@@ -215,14 +216,25 @@ function WikiSectionRow({
                   No content available.
                 </p>
               )}
-              <a
-                href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
-              >
-                Read more <ExternalLink className="h-2.5 w-2.5" />
-              </a>
+              {wikiUrl && (
+                wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+                  <Link
+                    href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
+                    className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
+                  >
+                    Read more
+                  </Link>
+                ) : (
+                  <a
+                    href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
+                  >
+                    Read more <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                )
+              )}
             </div>
           </motion.div>
         )}
@@ -285,20 +297,34 @@ export const WikiLoreBlock = React.memo(function WikiLoreBlock({
           </span>
         )}
         {wikiUrl && (
-          <a
-            href={wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "mr-1 ml-auto flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80",
-              colors.link
-            )}
-            onClick={(e) => e.stopPropagation()}
-            style={{ background: "currentColor", color: "transparent" }}
-          >
-            <span className={colors.link}>Wiki</span>
-            <ExternalLink className={cn("h-2.5 w-2.5", colors.link)} />
-          </a>
+          wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+            <Link
+              href={wikiUrl}
+              className={cn(
+                "mr-1 ml-auto flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80",
+                colors.link
+              )}
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "currentColor", color: "transparent" }}
+            >
+              <span className={colors.link}>Wiki</span>
+            </Link>
+          ) : (
+            <a
+              href={wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "mr-1 ml-auto flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80",
+                colors.link
+              )}
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "currentColor", color: "transparent" }}
+            >
+              <span className={colors.link}>Wiki</span>
+              <ExternalLink className={cn("h-2.5 w-2.5", colors.link)} />
+            </a>
+          )
         )}
         <ChevronDown
           className={cn(
@@ -338,17 +364,29 @@ export const WikiLoreBlock = React.memo(function WikiLoreBlock({
                       +{sectionCount - maxSections} more sections
                     </p>
                   )}
-                  <a
-                    href={wikiUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "mt-1 flex items-center justify-center gap-1 text-xs font-medium hover:underline",
-                      colors.link
-                    )}
-                  >
-                    Read full article on IxWiki <ExternalLink className="h-3 w-3" />
-                  </a>
+                  {wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+                    <Link
+                      href={wikiUrl}
+                      className={cn(
+                        "mt-1 flex items-center justify-center gap-1 text-xs font-medium hover:underline",
+                        colors.link
+                      )}
+                    >
+                      Read full article on IxWiki
+                    </Link>
+                  ) : (
+                    <a
+                      href={wikiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "mt-1 flex items-center justify-center gap-1 text-xs font-medium hover:underline",
+                        colors.link
+                      )}
+                    >
+                      Read full article on IxWiki <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                 </>
               )}
             </div>

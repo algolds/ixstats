@@ -10,6 +10,8 @@
  */
 
 import { memo, useState } from "react";
+import Link from "next/link";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import {
   BookOpen,
   ChevronDown,
@@ -155,14 +157,12 @@ function SectionCard({
                   .slice(0, 1000)}
                 {(sectionContent.content?.length ?? 0) > 1000 ? "..." : ""}
               </p>
-              <a
-                href={`https://ixwiki.com/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`${titleToWikiOSPath(countryName)}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
                 className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:underline"
               >
                 Read full section on IxWiki <ExternalLink className="h-2.5 w-2.5" />
-              </a>
+              </Link>
             </div>
           ) : (
             <p className="text-muted-foreground text-[10px]">
@@ -189,7 +189,7 @@ export const WikiArchivesPanel = memo(function WikiArchivesPanel({
     { staleTime: 10 * 60_000, enabled: !!countryName }
   );
 
-  const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
+  const wikiUrl = titleToWikiOSPath(countryName);
 
   if (isLoading) {
     return (
@@ -247,14 +247,12 @@ export const WikiArchivesPanel = memo(function WikiArchivesPanel({
             {sections.length} sections
           </span>
         </div>
-        <a
+        <Link
           href={wikiUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:underline"
         >
           Full article <ExternalLink className="h-2.5 w-2.5" />
-        </a>
+        </Link>
       </div>
 
       {/* Type filter chips */}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { BookOpen, ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -69,14 +70,23 @@ function InlineWikiExcerpt({
         <p className="text-foreground/75 text-xs leading-relaxed">{excerpt}</p>
       )}
       {wikiUrl && (
-        <a
-          href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn("mt-2 inline-flex items-center gap-1 text-[11px] hover:underline", a.text)}
-        >
-          Read more <ExternalLink className="h-2.5 w-2.5" />
-        </a>
+        wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+          <Link
+            href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
+            className={cn("mt-2 inline-flex items-center gap-1 text-[11px] hover:underline", a.text)}
+          >
+            Read more
+          </Link>
+        ) : (
+          <a
+            href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn("mt-2 inline-flex items-center gap-1 text-[11px] hover:underline", a.text)}
+          >
+            Read more <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        )
       )}
     </PanelCard>
   );

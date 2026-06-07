@@ -12,6 +12,7 @@ import {
   LocateFixed,
   Flag as FlagIcon,
   ExternalLink,
+  BookOpen,
 } from "lucide-react";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import { Button } from "~/components/ui/button";
@@ -83,7 +84,7 @@ export function CountryListCard({
 
   const dominantColor = useDominantColor(flagUrl);
 
-  const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
+  const wikiUrl = `/w/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
 
   const goToDetail = () => {
     router.push(createUrl(`/countries/${country.slug}`));
@@ -168,12 +169,12 @@ export function CountryListCard({
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
-                window.open(wikiUrl, "_blank", "noopener");
+                router.push(createUrl(wikiUrl));
               }}
               aria-label={`View ${country.name} on IxWiki`}
               className="h-7 w-7"
             >
-              <ExternalLink className="text-muted-foreground h-3.5 w-3.5" />
+              <BookOpen className="text-muted-foreground h-3.5 w-3.5" />
             </Button>
             <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-all group-hover:translate-x-0.5" />
           </div>

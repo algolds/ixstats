@@ -109,11 +109,13 @@ async function fetchWikiIntro(
     try {
       const result = await getArticleIntro(name, wiki);
       if (result?.text) {
-        const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
         return {
           extract: result.text.substring(0, 400),
           wikiSource: wiki,
-          wikiUrl: `${base}/wiki/${encodeURIComponent(result.title)}`,
+          wikiUrl:
+            wiki === "ixwiki"
+              ? `/w/${encodeURIComponent(result.title)}`
+              : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
         };
       }
     } catch (err) {
@@ -172,9 +174,11 @@ async function fetchWikiRichIntro(
       const article = await getArticleWikitext(name, wiki);
       if (!article) continue;
 
-      const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
       const wikitext = article.wikitext;
-      const wikiUrl = `${base}/wiki/${encodeURIComponent(article.title)}`;
+      const wikiUrl =
+        wiki === "ixwiki"
+          ? `/w/${encodeURIComponent(article.title)}`
+          : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
 
       // Strip infobox template (match balanced braces)
       let contentAfterInfobox = wikitext;
