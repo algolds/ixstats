@@ -49,8 +49,14 @@ model Subdivision {
   level           Int
   population      Float?
   capital         String?
+  capitalCityId   String?
   areaSqKm        Float?
   color           String?
+  gdpContribution Float?
+  budgetShare     Float?
+  governorName    String?
+  governmentType  String?
+  editableByOwner Boolean                  @default(true)
   status          String                   @default("pending")
   submittedBy     String
   reviewedBy      String?
@@ -63,6 +69,7 @@ model Subdivision {
   pois            PointOfInterest[]        @relation("SubdivisionPOIs")
   storyPins       StoryPin[]               @relation("SubdivisionStoryPins")
   country         Country                  @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
+  capitalCityRef  City?                    @relation("SubdivisionCapital", fields: [capitalCityId], references: [id])
 
   @@index([countryId, status])
   @@index([status, createdAt])
@@ -83,6 +90,14 @@ model City {
   wikiPageTitle        String?
   elevation            Float?
   foundedYear          Int?
+  gdpContribution      Float?
+  populationShare      Float?
+  economyOutput        Float?
+  specialization       String?
+  infrastructureLevel  Int?
+  isPort               Boolean                  @default(false)
+  mayorName            String?
+  editableByOwner      Boolean                  @default(true)
   status               String                   @default("pending")
   submittedBy          String
   reviewedBy           String?
@@ -94,6 +109,9 @@ model City {
   country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
   subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
   transportHubs        TransportHub[]           @relation("CityTransportHubs")
+  nationalCapitalOf    NationalIdentity[]       @relation("NationalCapital")
+  nationalLargestOf    NationalIdentity[]       @relation("NationalLargestCity")
+  subdivisionCapitalOf Subdivision[]            @relation("SubdivisionCapital")
 
   @@index([countryId, status])
   @@index([type, isNationalCapital])

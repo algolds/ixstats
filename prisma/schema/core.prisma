@@ -89,6 +89,7 @@ model Country {
   centroid                    Json?
   boundingBox                 Json?
   coastlineKm                 Float?
+  geoRollupMode               String                    @default("hybrid")
   wikiPageTitle               String?
   wikiSource                  String?                   @default("ixwiki")
   wikiLastSynced              DateTime?
@@ -771,6 +772,8 @@ model NationalIdentity {
   mottoNative          String?
   capitalCity          String?
   largestCity          String?
+  capitalCityId        String?
+  largestCityId        String?
   demonym              String?
   currency             String?
   currencySymbol       String?
@@ -812,6 +815,8 @@ model NationalIdentity {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  capitalCityRef       City?    @relation("NationalCapital", fields: [capitalCityId], references: [id])
+  largestCityRef       City?    @relation("NationalLargestCity", fields: [largestCityId], references: [id])
 
   @@index([countryId])
 }
