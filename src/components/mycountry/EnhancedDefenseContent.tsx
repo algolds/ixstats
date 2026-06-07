@@ -4,9 +4,8 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { Shield, Sword, Target, Activity } from "lucide-react";
+import { Sword, Target, Activity } from "lucide-react";
 import { ShieldCheckIcon } from "~/components/ui/icons";
-import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { OperationsPanel } from "~/components/defense/OperationsPanel";
@@ -216,29 +215,6 @@ export function EnhancedDefenseContent({
       {/* Wiki woven inline */}
       <InlineWiki context="defense" accent="red" maxSections={1} />
     </SectionShell>
-  );
-}
-
-/* ─── Stats Cell ─── */
-function StatCell({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: typeof Shield;
-  label: string;
-  value: string | number;
-  color: string;
-}) {
-  return (
-    <div className="glass-hierarchy-child rounded-lg p-2.5">
-      <div className="flex items-center gap-1.5">
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${color}`} />
-        <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      </div>
-      <div className="mt-0.5 text-sm font-bold">{value}</div>
-    </div>
   );
 }
 
