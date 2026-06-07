@@ -9,9 +9,10 @@
  * Icons: Layers | Analytics | Tools (measure/pin) | Labels toggle
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool, EyeOff, Eye } from "lucide-react";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/map-config";
+import { overlaysByCategory } from "~/lib/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";
 
 interface MapControlsProps {
@@ -37,21 +38,18 @@ interface MapControlsProps {
 
 const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes"];
 
-const FEATURE_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = [
-  { key: "cities", label: "Cities" },
-  { key: "pois", label: "Points of Interest" },
-  { key: "subdivisions", label: "Regions" },
-  { key: "storyPins", label: "Story Pins" },
-  { key: "mapLabels", label: "Map Labels" },
-];
+// Overlay toggle lists are derived from the declarative registry (grouped by
+// category) instead of hardcoded arrays. "feature" overlays live in the Layers
+// panel; "fill" + "analytics" overlays drive the Analytics panel.
+const OVERLAY_GROUPS = overlaysByCategory();
+const FEATURE_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = (
+  OVERLAY_GROUPS.feature ?? []
+).map((o) => ({ key: o.id as keyof OverlayVisibility, label: o.label }));
 
 const ANALYTICS_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = [
-  { key: "wealth", label: "Wealth Map" },
-  { key: "population", label: "Population Density" },
-  { key: "diplomacy", label: "Diplomatic Network" },
-  { key: "crises", label: "Crisis Hotspots" },
-  { key: "transport", label: "Transport Routes" },
-];
+  ...(OVERLAY_GROUPS.fill ?? []),
+  ...(OVERLAY_GROUPS.analytics ?? []),
+].map((o) => ({ key: o.id as keyof OverlayVisibility, label: o.label }));
 
 type PanelId = "layers" | "analytics" | null;
 
@@ -90,11 +88,8 @@ export function MapControls({
   }, []);
 
   const hasActiveAnalytics =
-    overlayVisibility &&
-    (overlayVisibility.wealth ||
-      overlayVisibility.population ||
-      overlayVisibility.diplomacy ||
-      overlayVisibility.crises);
+    !!overlayVisibility &&
+    ANALYTICS_OVERLAYS.some((item) => overlayVisibility[item.key]);
 
   return (
     <div ref={containerRef} className="absolute top-16 left-3 z-10 sm:top-3">

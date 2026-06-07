@@ -33,6 +33,10 @@ import type {
   OverlayVisibility,
 } from "./IxWorldMap";
 import type { FeatureCollection } from "geojson";
+import {
+  buildDefaultVisibility,
+  applyOverlayToggle,
+} from "~/lib/overlay-registry";
 
 // MapLibre CSS - imported here (not in dynamically-loaded IxWorldMap) so it's in the main bundle
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -43,10 +47,6 @@ const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-[#0a1628]" />,
 });
-
-// Fill overlays (wealth/population/crises) are mutually exclusive — they all
-// recolor the same political fill layer via setPaintProperty.
-const FILL_OVERLAY_KEYS: (keyof OverlayVisibility)[] = ["wealth", "population", "crises"];
 
 // Editor overlay — dynamically loaded only when user enters edit mode
 const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
@@ -213,20 +213,14 @@ export function MapContainer({
     };
   }, [batchedOverlayFeatures, storyPinsGeoJson, mapLabelsGeoJson]);
 
-  const [overlayVisibility, setOverlayVisibility] = useState<OverlayVisibility>({
-    cities: true,
-    pois: true,
-    subdivisions: true,
-    wealth: false,
-    population: false,
-    diplomacy: false,
-    crises: false,
-    transport: false,
-    storyPins: true,
-    mapLabels: true,
-  });
+  // Default visibility is derived from the overlay registry's `defaultVisible`
+  // flags (feature overlays on, fill/analytics off) — see ~/lib/overlay-registry.
+  const [overlayVisibility, setOverlayVisibility] = useState<OverlayVisibility>(() =>
+    buildDefaultVisibility()
+  );
 
-  // Analytics overlay data — only fetched when the corresponding toggle is ON
+  // Analytics overlay data — only fetched when the corresponding toggle is ON.
+  // React Query dedupes the two gdpPerCapita queries (wealth + economicTier).
   const { data: wealthData } = api.geoCore.getRegionalChoropleth.useQuery(
     { metric: "gdpPerCapita", groupBy: "country" },
     { enabled: overlayVisibility.wealth, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
@@ -248,7 +242,18 @@ export function MapContainer({
     {},
     { enabled: overlayVisibility.transport, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
+  // NEW registry overlays (reuse the choropleth renderer)
+  const { data: economicTierData } = api.geoCore.getRegionalChoropleth.useQuery(
+    { metric: "gdpPerCapita", groupBy: "country" },
+    { enabled: overlayVisibility.economicTier, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: vitalityData } = api.geoCore.getRegionalChoropleth.useQuery(
+    { metric: "vitality", groupBy: "country" },
+    { enabled: overlayVisibility.vitality, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
 
+  // overlayData is keyed by registry id; IxWorldMap's render loop maps each
+  // entry to its overlay component via the registry's `renderProps` adapter.
   const overlayData = useMemo(
     () => ({
       wealth: wealthData ?? undefined,
@@ -261,26 +266,27 @@ export function MapContainer({
           }
         : undefined,
       transport: transportData ?? undefined,
+      economicTier: economicTierData ?? undefined,
+      vitality: vitalityData ?? undefined,
     }),
-    [wealthData, populationData, crisisData, diplomacyData, transportData]
+    [
+      wealthData,
+      populationData,
+      crisisData,
+      diplomacyData,
+      transportData,
+      economicTierData,
+      vitalityData,
+    ]
   );
 
   const [labelsVisible, setLabelsVisible] = useState(true);
   const toggleLabels = useCallback(() => setLabelsVisible((v) => !v), []);
 
-  // Fill overlays are mutually exclusive — they all color the same political layer
-
+  // Toggle an overlay. Category-based mutual exclusivity for "fill" overlays
+  // (they all recolor the same political layer) is enforced by the registry.
   const toggleOverlay = useCallback((key: keyof OverlayVisibility) => {
-    setOverlayVisibility((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      // Fill overlays are mutually exclusive — turning one ON turns others OFF
-      if (next[key] && FILL_OVERLAY_KEYS.includes(key)) {
-        for (const k of FILL_OVERLAY_KEYS) {
-          if (k !== key) next[k] = false;
-        }
-      }
-      return next;
-    });
+    setOverlayVisibility((prev) => applyOverlayToggle(prev, key as string));
   }, []);
 
   // Build a layer lookup for the pin tool's client-side query

@@ -33,28 +33,11 @@ import {
   DEMOTED_COUNTRY_NAMES,
 } from "~/lib/map-config";
 
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
-const ChoroplethOverlay = lazy(() =>
-  import("~/components/maps/overlays/ChoroplethOverlay").then((m) => ({
-    default: m.ChoroplethOverlay,
-  }))
-);
-const RiskHeatmapOverlay = lazy(() =>
-  import("~/components/maps/overlays/RiskHeatmapOverlay").then((m) => ({
-    default: m.RiskHeatmapOverlay,
-  }))
-);
-const GeopoliticalOverlay = lazy(() =>
-  import("~/components/maps/overlays/GeopoliticalOverlay").then((m) => ({
-    default: m.GeopoliticalOverlay,
-  }))
-);
-const TransportOverlay = lazy(() =>
-  import("~/components/maps/overlays/TransportOverlay").then((m) => ({
-    default: m.TransportOverlay,
-  }))
-);
+// Overlay components + their wiring are declared in a single registry. The render
+// loop below maps each registry entry's data to its component via `renderProps`.
+import { OVERLAY_LIST } from "~/lib/overlay-registry";
 import { registerStoryPinIcons } from "~/lib/story-pin-icons";
 
 // MapLibre types imported dynamically since the module requires browser APIs
@@ -188,20 +171,12 @@ export interface MapOverlayFeatures {
   mapLabels?: FeatureCollection;
 }
 
-/** Which overlays are visible */
-export type OverlayVisibility = Record<
-  | "cities"
-  | "pois"
-  | "subdivisions"
-  | "wealth"
-  | "population"
-  | "diplomacy"
-  | "crises"
-  | "transport"
-  | "storyPins"
-  | "mapLabels",
-  boolean
->;
+/**
+ * Which overlays are visible. Keyed by overlay registry id (see
+ * `~/lib/overlay-registry`). Kept as a string-keyed record so new registry
+ * entries don't require a type change here.
+ */
+export type OverlayVisibility = Record<string, boolean>;
 
 export interface IxWorldMapProps {
   layers: MapLayerData[];
@@ -234,24 +209,12 @@ export interface IxWorldMapProps {
   labelsVisible?: boolean;
   /** Fired when zoom level changes (for LOD-based data loading) */
   onZoomChange?: (zoom: number) => void;
-  /** GeoJSON data for visualization overlays */
-  overlayData?: {
-    wealth?: import("geojson").FeatureCollection & {
-      metadata?: { minVal: number; maxVal: number };
-    };
-    population?: import("geojson").FeatureCollection & {
-      metadata?: { minVal: number; maxVal: number };
-    };
-    diplomacy?: {
-      relations: import("geojson").FeatureCollection;
-      conflicts: import("geojson").FeatureCollection;
-    };
-    crises?: {
-      riskMap: import("geojson").FeatureCollection;
-      crisisEvents: import("geojson").FeatureCollection;
-    };
-    transport?: import("geojson").FeatureCollection;
-  };
+  /**
+   * GeoJSON data for visualization overlays, keyed by overlay registry id.
+   * Each entry's shape is owned by its overlay (the registry's `renderProps`
+   * adapter maps it to the concrete component's props). See ~/lib/overlay-registry.
+   */
+  overlayData?: Record<string, unknown>;
   /** Called when user clicks a transport route on the map */
   onRouteClick?: (routeId: string) => void;
 }
@@ -2128,55 +2091,28 @@ const IxWorldMap = memo(
           </div>
         )}
 
-        {/* Analytics overlay renderers (imperative — manage MapLibre sources/layers) */}
-        <Suspense fallback={null}>
-          {isLoaded && overlayData?.wealth && (
-            <ChoroplethOverlay
-              key="wealth-overlay"
-              map={mapRef.current}
-              data={overlayData.wealth}
-              visible={overlayVisibility?.wealth ?? false}
-              layerId="wealth"
-              colorScale="wealth"
-              metadata={overlayData.wealth.metadata}
-            />
-          )}
-          {isLoaded && overlayData?.population && (
-            <ChoroplethOverlay
-              key="population-overlay"
-              map={mapRef.current}
-              data={overlayData.population}
-              visible={overlayVisibility?.population ?? false}
-              layerId="population"
-              colorScale="population"
-              metadata={overlayData.population.metadata}
-            />
-          )}
-          {isLoaded && overlayData?.crises && (
-            <RiskHeatmapOverlay
-              map={mapRef.current}
-              riskData={overlayData.crises.riskMap}
-              crisisEvents={overlayData.crises.crisisEvents}
-              visible={overlayVisibility?.crises ?? false}
-            />
-          )}
-          {isLoaded && overlayData?.diplomacy && (
-            <GeopoliticalOverlay
-              map={mapRef.current}
-              relations={overlayData.diplomacy.relations}
-              conflicts={overlayData.diplomacy.conflicts}
-              visible={overlayVisibility?.diplomacy ?? false}
-            />
-          )}
-          {isLoaded && overlayData?.transport && (
-            <TransportOverlay
-              map={mapRef.current}
-              routeData={overlayData.transport}
-              visible={overlayVisibility?.transport ?? false}
-              onRouteClick={onRouteClick ? (id) => onRouteClick(id) : undefined}
-            />
-          )}
-        </Suspense>
+        {/* Overlay renderers (imperative — manage MapLibre sources/layers).
+            Driven by the overlay registry: one loop over every entry that has a
+            component + data. The registry's `renderProps` adapter maps the unified
+            data into each component's concrete props, so behavior is unchanged. */}
+        {isLoaded && (
+          <Suspense fallback={null}>
+            {OVERLAY_LIST.map((def) => {
+              const Component = def.component;
+              if (!Component || !def.renderProps) return null;
+              const data = overlayData?.[def.id];
+              if (data === undefined || data === null) return null;
+              const props = def.renderProps({
+                map: mapRef.current,
+                data,
+                visible: overlayVisibility?.[def.id] ?? false,
+                onRouteClick: onRouteClick ? (id) => onRouteClick(id) : undefined,
+              });
+              if (!props) return null;
+              return <Component key={`${def.id}-overlay`} {...props} />;
+            })}
+          </Suspense>
+        )}
       </div>
     );
   })

@@ -4,85 +4,25 @@
  * AnalyticsLegend — Floating legend showing the active analytics overlay's
  * color scale and labels. Appears bottom-left when an overlay is active,
  * auto-hides when none are on.
+ *
+ * Legends are sourced from the overlay registry (`~/lib/overlay-registry`) so a
+ * new overlay's legend ships with its registry entry — no edits here required.
  */
 
+import { OVERLAY_LIST } from "~/lib/overlay-registry";
+import type { OverlayLegend } from "~/lib/overlay-types";
 import type { OverlayVisibility } from "./IxWorldMap";
 
 interface AnalyticsLegendProps {
   overlayVisibility: OverlayVisibility;
 }
 
-interface LegendConfig {
-  title: string;
-  type: "gradient" | "line-legend";
-  stops?: { color: string; label: string }[];
-  lines?: { color: string; style: string; label: string }[];
-}
-
-const LEGENDS: Record<string, LegendConfig> = {
-  wealth: {
-    title: "Wealth Map — GDP per Capita",
-    type: "gradient",
-    stops: [
-      { color: "#94a3b8", label: "Low" },
-      { color: "#6ee7b7", label: "" },
-      { color: "#34d399", label: "Mid" },
-      { color: "#fbbf24", label: "" },
-      { color: "#f59e0b", label: "High" },
-    ],
-  },
-  population: {
-    title: "Population Density",
-    type: "gradient",
-    stops: [
-      { color: "#e0f2fe", label: "Sparse" },
-      { color: "#7dd3fc", label: "" },
-      { color: "#6366f1", label: "Mid" },
-      { color: "#a855f7", label: "" },
-      { color: "#ec4899", label: "Dense" },
-    ],
-  },
-  crises: {
-    title: "Crisis Risk",
-    type: "gradient",
-    stops: [
-      { color: "#22c55e", label: "Low" },
-      { color: "#facc15", label: "Moderate" },
-      { color: "#f97316", label: "Elevated" },
-      { color: "#dc2626", label: "High" },
-    ],
-  },
-  diplomacy: {
-    title: "Diplomatic Relations",
-    type: "line-legend",
-    lines: [
-      { color: "#22c55e", style: "solid", label: "Friendly" },
-      { color: "#f59e0b", style: "dashed", label: "Neutral" },
-      { color: "#ef4444", style: "solid", label: "Hostile" },
-    ],
-  },
-  transport: {
-    title: "Transport Network",
-    type: "line-legend",
-    lines: [
-      { color: "#374151", style: "solid", label: "Rail" },
-      { color: "#f97316", style: "solid", label: "Highway" },
-      { color: "#92400e", style: "dashed", label: "Road" },
-      { color: "#3b82f6", style: "dashed", label: "Shipping" },
-    ],
-  },
-};
-
 export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
-  // Find active overlay
-  const activeKey = (["wealth", "population", "crises", "diplomacy", "transport"] as const).find(
-    (k) => overlayVisibility[k]
-  );
+  // First visible overlay (in registry order) that declares a legend.
+  const active = OVERLAY_LIST.find((o) => o.legend && overlayVisibility[o.id]);
+  if (!active?.legend) return null;
 
-  if (!activeKey) return null;
-
-  const legend = LEGENDS[activeKey];
-  if (!legend) return null;
+  const legend: OverlayLegend = active.legend;
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 absolute bottom-6 left-3 z-10 rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200 sm:bottom-8">
@@ -90,7 +30,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
         {legend.title}
       </div>
 
-      {legend.type === "gradient" && legend.stops && (
+      {legend.type === "gradient" && (
         <div className="mt-1.5">
           {/* Gradient bar */}
           <div
@@ -112,7 +52,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
         </div>
       )}
 
-      {legend.type === "line-legend" && legend.lines && (
+      {legend.type === "line-legend" && (
         <div className="mt-1.5 space-y-1">
           {legend.lines.map((line, i) => (
             <div key={i} className="flex items-center gap-2">
