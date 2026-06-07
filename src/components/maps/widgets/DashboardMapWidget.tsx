@@ -53,6 +53,31 @@ export function DashboardMapWidget({
     ).length;
   }, [embassies, activeCountryId]);
 
+  const partnerCountryIds = useMemo(() => {
+    if (!embassies) return [];
+    return embassies
+      .filter(
+        (e) =>
+          e.countryId &&
+          e.countryId !== activeCountryId &&
+          (e.status === "ACTIVE" || e.status === "active")
+      )
+      .map((e) => e.countryId as string);
+  }, [embassies, activeCountryId]);
+
+  const partnerCountryNames = useMemo(() => {
+    if (!embassies) return [];
+    return embassies
+      .filter(
+        (e) =>
+          e.country &&
+          e.country !== "Unknown" &&
+          e.countryId !== activeCountryId &&
+          (e.status === "ACTIVE" || e.status === "active")
+      )
+      .map((e) => e.country as string);
+  }, [embassies, activeCountryId]);
+
   // 3. Fetch Defense Stats (Branches + Readiness) if in defense mode
   const { data: securityData, isLoading: securityLoading } =
     api.security.getSecurityAssessment.useQuery(
@@ -271,6 +296,8 @@ export function DashboardMapWidget({
       <div className="relative h-52 w-full overflow-hidden">
         <CountryMapEmbed
           countryId={activeCountryId}
+          highlightCountryIds={viewMode === "diplomacy" ? partnerCountryIds : undefined}
+          highlightCountryNames={viewMode === "diplomacy" ? partnerCountryNames : undefined}
           height="h-52"
           interactive={!!onFeatureClick}
           showNeighbors={true}

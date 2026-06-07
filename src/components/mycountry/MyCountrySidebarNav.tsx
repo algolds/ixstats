@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Brain, Shield, Crown, Users, Vote, Lock } from "lucide-react";
+import { Brain, Shield, Crown, Users, Vote, Lock, Edit2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   LayoutDashboardIcon,
@@ -190,10 +190,21 @@ export function MyCountrySidebarNav({
       </Link>
     );
 
+    const mobileEditButton = (
+      <Link
+        href="/mycountry/editor"
+        className="text-muted-foreground/60 rounded p-1 transition-all duration-150 hover:text-amber-500 active:scale-95"
+        title="Edit Country Profile"
+      >
+        <Edit2 size={12} className="shrink-0" />
+      </Link>
+    );
+
     return (
       <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {mobileLogo}
+          {mobileEditButton}
           <div className="h-4 w-px shrink-0 bg-white/10" />
           {visibleItems.map((item) => {
             const isActive = item.id === activeId;
@@ -243,41 +254,56 @@ export function MyCountrySidebarNav({
 
   /* ── Expanded desktop: icon + label sidebar ── */
   if (variant === "expanded") {
-    const logoClass =
-      "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer mb-1.5 border-b border-white/5 text-muted-foreground hover:bg-muted hover:text-foreground";
+    const logoContainerClass =
+      "flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-xs font-medium mb-1.5 border-b border-white/5 text-muted-foreground";
 
-    const logoContent = (
-      <>
-        <CrownIcon size={16} className="shrink-0 text-amber-500" />
-        <span className="truncate font-semibold">MyCountry</span>
-        {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-amber-500/95 uppercase">
-            Premium
-          </span>
-        )}
-      </>
-    );
+    const logoLinkClass =
+      "flex items-center gap-2 transition-all duration-200 cursor-pointer hover:text-foreground py-1";
 
-    const logoHeader = isControlled ? (
+    const logoLink = isControlled ? (
       <button
         type="button"
         onClick={() => {
-          console.log("MyCountry expanded logo clicked");
           onNavigate("overview");
         }}
-        className={logoClass}
+        className={logoLinkClass}
       >
-        {logoContent}
+        <CrownIcon size={16} className="shrink-0 text-amber-500" />
+        <span className="truncate font-semibold">MyCountry</span>
+        {isPremium && (
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
+            Premium
+          </span>
+        )}
       </button>
     ) : (
-      <Link href="/mycountry" className={logoClass}>
-        {logoContent}
+      <Link href="/mycountry" className={logoLinkClass}>
+        <CrownIcon size={16} className="shrink-0 text-amber-500" />
+        <span className="truncate font-semibold">MyCountry</span>
+        {isPremium && (
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
+            Premium
+          </span>
+        )}
+      </Link>
+    );
+
+    const editButton = (
+      <Link
+        href="/mycountry/editor"
+        className="text-muted-foreground/60 rounded-md p-1.5 transition-all duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
+        title="Edit Country Profile"
+      >
+        <Edit2 size={13} className="shrink-0" />
       </Link>
     );
 
     return (
       <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
-        {logoHeader}
+        <div className={logoContainerClass}>
+          {logoLink}
+          {editButton}
+        </div>
         {visibleItems.map((item) => {
           const isActive = item.id === activeId;
           const noteCount = notifications?.[item.id] ?? 0;
@@ -371,9 +397,26 @@ export function MyCountrySidebarNav({
     </Link>
   );
 
+  const editRailIcon = (
+    <Link
+      href="/mycountry/editor"
+      className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 hover:text-amber-500"
+      aria-label="Edit Country Profile"
+    >
+      <Edit2 size={16} className="transition-transform duration-150 group-hover/edit:scale-110" />
+      {/* Tooltip — appears to the right */}
+      <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/edit:opacity-100">
+        Edit Profile
+        {/* Arrow */}
+        <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
+      </span>
+    </Link>
+  );
+
   return (
     <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col items-center gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
       {logoRailHeader}
+      {editRailIcon}
       {visibleItems.map((item) => {
         const isActive = item.id === activeId;
         const noteCount = notifications?.[item.id] ?? 0;

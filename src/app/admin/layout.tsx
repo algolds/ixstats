@@ -10,6 +10,8 @@ import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 
+import { usePathname } from "next/navigation";
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -44,6 +46,7 @@ function AccessDeniedScreen() {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, isLoaded } = useUser();
+  const pathname = usePathname();
 
   if (!isLoaded) {
     return (
@@ -71,6 +74,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return <AccessDeniedScreen />;
+  }
+
+  if (pathname === "/admin/maps/editor") {
+    return <AdminErrorBoundary>{children}</AdminErrorBoundary>;
   }
 
   return (

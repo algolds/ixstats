@@ -36,7 +36,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
     : 0;
 
   return (
-    <div className="border-border bg-card/90 flex h-full flex-col gap-3 overflow-y-auto rounded-lg border p-3 backdrop-blur">
+    <div className="flex h-full flex-col gap-3 overflow-y-auto">
       {/* Feature Info */}
       {featureId ? (
         <div>

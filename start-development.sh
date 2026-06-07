@@ -51,18 +51,33 @@ if [ "$DATABASE_READONLY" = "true" ]; then
     echo ""
 fi
 
-# Use development port 3000 (3001 is used by Discord bot API, 3002 by IxMaps production, 3003 by IxMaps dev)
-DEVELOPMENT_PORT=3000
+# Set port based on standalone maps mode
+if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
+    # Default to 3003 for maps dev (3002 is production maps)
+    DEVELOPMENT_PORT=${PORT:-3003}
+else
+    # Default to 3000 for regular dev
+    DEVELOPMENT_PORT=${PORT:-3000}
+fi
 
 echo "🔍 Development Environment Summary:"
 echo "   NODE_ENV: $NODE_ENV"
+if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
+    echo "   Mode:     🗺️  IxWorld Standalone Maps Mode (maps-only)"
+else
+    echo "   Mode:     Full Application (IxStates)"
+fi
 if [ "$DATABASE_READONLY" = "true" ]; then
     echo "   Database: 🔒 READ-ONLY (production data: 82 nations)"
 else
     echo "   Database: Full access (development mode)"
 fi
 echo "   Port: $DEVELOPMENT_PORT"
-echo "   Base Path: / (root)"
+if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
+    echo "   Base Path: /maps (redirected root)"
+else
+    echo "   Base Path: / (root)"
+fi
 echo "   MediaWiki URL: ${NEXT_PUBLIC_MEDIAWIKI_URL:-https://ixwiki.com/}"
 echo "   IxTime Bot URL: ${IXTIME_BOT_URL:-http://localhost:3001}"
 
@@ -146,13 +161,21 @@ echo ""
 
 # Start the development server
 echo "🌐 Starting Next.js development server..."
-echo "   Development URL: http://localhost:$DEVELOPMENT_PORT/"
+if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
+    echo "   Development URL: http://localhost:$DEVELOPMENT_PORT/ (redirects to /maps)"
+else
+    echo "   Development URL: http://localhost:$DEVELOPMENT_PORT/"
+fi
 echo "   API Endpoints:   http://localhost:$DEVELOPMENT_PORT/api/*"
 echo "   tRPC API:        http://localhost:$DEVELOPMENT_PORT/api/trpc/*"
 echo ""
 echo "   Features:"
 echo "   • Hot reload enabled (Turbopack)"
-echo "   • Root path routing (no basePath)"
+if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
+    echo "   • Standalone Maps Mode active (empty basePath)"
+else
+    echo "   • Root path routing (no basePath)"
+fi
 echo "   • Development database"
 if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]]; then
     echo "   • Clerk authentication (test environment)"

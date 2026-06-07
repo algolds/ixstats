@@ -17,7 +17,7 @@
 import { useRef, useCallback, useState } from "react";
 import { Settings2, List, BookOpen } from "lucide-react";
 
-type MobileTab = "properties" | "features" | "wiki";
+type MobileTab = "properties" | "features";
 
 interface MobileEditorSheetProps {
   /** Content for the properties tab */
@@ -38,7 +38,6 @@ const DISMISS_THRESHOLD = 80;
 const MOBILE_TABS: { id: MobileTab; label: string; Icon: typeof Settings2 }[] = [
   { id: "properties", label: "Properties", Icon: Settings2 },
   { id: "features", label: "Features", Icon: List },
-  { id: "wiki", label: "Wiki", Icon: BookOpen },
 ];
 
 export function MobileEditorSheet({
@@ -153,12 +152,6 @@ export function MobileEditorSheet({
               (featureListContent ?? (
                 <div className="text-muted-foreground py-6 text-center text-xs">
                   No features content available
-                </div>
-              ))}
-            {activeTab === "wiki" &&
-              (wikiContent ?? (
-                <div className="text-muted-foreground py-6 text-center text-xs">
-                  Wiki scanner coming soon
                 </div>
               ))}
           </div>

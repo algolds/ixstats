@@ -4,8 +4,18 @@
  * EditorPanel — Sidebar panel supporting left or right orientation with tabbed navigation.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ChevronRight, ChevronLeft, Settings2, Layers, List, BookOpen, Search } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Settings2,
+  Layers,
+  List,
+  BookOpen,
+  Search,
+  Globe,
+  Link as LinkIcon,
+} from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
 
@@ -14,15 +24,14 @@ const PANEL_MAX_W = 480;
 const PANEL_DEFAULT_W = 320;
 const PANEL_STORAGE_KEY = "ixworld-editor-panel-width";
 
-export type TabId = "properties" | "layers" | "features" | "wiki";
+export type TabId = "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty";
 
 const LEFT_TABS = [
   { id: "layers" as const, label: "Layers", Icon: Layers },
   { id: "features" as const, label: "Features", Icon: List },
-  { id: "wiki" as const, label: "Wiki Scan", Icon: BookOpen },
 ];
 
-const RIGHT_TABS = [{ id: "properties" as const, label: "Props", Icon: Settings2 }];
+const RIGHT_TABS = [{ id: "properties" as const, label: "Properties", Icon: Settings2 }];
 
 interface EditorPanelProps {
   /** Current editor mode — controls which tab auto-activates */
@@ -35,6 +44,8 @@ interface EditorPanelProps {
   featureListContent?: React.ReactNode;
   layersContent?: React.ReactNode;
   wikiContent?: React.ReactNode;
+  linkagesContent?: React.ReactNode;
+  sovereigntyContent?: React.ReactNode;
   /** Feature count for badge */
   featureCount?: number;
   /** Whether import wizard should take over the panel */
@@ -46,6 +57,7 @@ interface EditorPanelProps {
   /** Override active tab */
   activeTabOverride?: TabId;
   onTabChange?: (tab: TabId) => void;
+  isWorldMode?: boolean;
 }
 
 export function EditorPanel({
@@ -56,14 +68,17 @@ export function EditorPanel({
   featureListContent,
   layersContent,
   wikiContent,
+  linkagesContent,
+  sovereigntyContent,
   featureCount,
   importWizardContent,
   featuresLoading,
   side = "right",
   activeTabOverride,
   onTabChange,
+  isWorldMode = false,
 }: EditorPanelProps) {
-  const defaultTab = side === "left" ? "features" : "properties";
+  const defaultTab = side === "left" ? (isWorldMode ? "linkages" : "features") : "properties";
   const [activeTab, setActiveTab] = useState<TabId>(activeTabOverride || defaultTab);
   const userOverrideRef = useRef(false);
 
@@ -129,7 +144,19 @@ export function EditorPanel({
     onTabChange?.(tab);
   };
 
-  const tabs = side === "left" ? LEFT_TABS : RIGHT_TABS;
+  const tabs: { id: TabId; label: string; Icon: React.ComponentType<any> }[] = useMemo(() => {
+    if (side === "left") {
+      if (isWorldMode) {
+        return [
+          { id: "linkages" as const, label: "Links", Icon: LinkIcon },
+          { id: "sovereignty" as const, label: "Sovereign", Icon: Globe },
+          { id: "features" as const, label: "Features", Icon: List },
+        ];
+      }
+      return LEFT_TABS;
+    }
+    return RIGHT_TABS;
+  }, [side, isWorldMode]);
 
   // Import mode takes over the entire panel (only applicable to left feature panel in unified layout)
   if (side === "left" && mode === "import-provinces" && importWizardContent) {
@@ -173,15 +200,15 @@ export function EditorPanel({
             }`}
             onMouseDown={handleResizeStart}
           />
-          {/* Tab bar — compact 32px height */}
-          <div className="border-border bg-muted/20 flex h-8 shrink-0 border-b">
+          {/* Tab bar — compact 36px height, scrollable horizontally if crammed */}
+          <div className="border-border bg-muted/20 flex h-9 w-full shrink-0 scrollbar-none overflow-x-auto border-b">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`flex flex-1 items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                  className={`flex h-full min-w-[60px] flex-1 flex-shrink-0 items-center justify-center gap-1 px-2 text-[10px] font-medium transition-colors sm:text-[11px] ${
                     isActive
                       ? "border-primary bg-card/40 text-foreground border-b-2"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -208,6 +235,12 @@ export function EditorPanel({
             >
               {activeTab === "properties" && propertiesContent && (
                 <div className="h-full px-3 py-3">{propertiesContent}</div>
+              )}
+              {activeTab === "linkages" && linkagesContent && (
+                <div className="h-full">{linkagesContent}</div>
+              )}
+              {activeTab === "sovereignty" && sovereigntyContent && (
+                <div className="h-full">{sovereigntyContent}</div>
               )}
               {activeTab === "layers" && (
                 <div className="flex h-full min-h-0 flex-1 flex-col">

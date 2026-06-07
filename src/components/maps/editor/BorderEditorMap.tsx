@@ -185,7 +185,35 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
     map.on("mousemove", (e) => {
       if (draggingVertex.current) {
-        const to: Position = [e.lngLat.lng, e.lngLat.lat];
+        let to: Position = [e.lngLat.lng, e.lngLat.lat];
+
+        // Magnetic snap: Snap to nearest vertex of any neighbor geometry within a small tolerance
+        if (neighborGeometries && neighborGeometries.length > 0) {
+          const snapTolerance = 0.05; // Snapping tolerance in degrees (~5.5km at equator, fits precision)
+          let bestSnapDist = Infinity;
+          let bestSnapPos: Position | null = null;
+
+          for (const neighbor of neighborGeometries) {
+            const geom = neighbor.geometry as Polygon | MultiPolygon;
+            if (!geom) continue;
+            const rings = geom.type === "Polygon" ? geom.coordinates : geom.coordinates.flat();
+            for (const ring of rings) {
+              for (const coord of ring) {
+                const dx = coord[0] - to[0];
+                const dy = coord[1] - to[1];
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < snapTolerance && dist < bestSnapDist) {
+                  bestSnapDist = dist;
+                  bestSnapPos = [...coord];
+                }
+              }
+            }
+          }
+          if (bestSnapPos) {
+            to = bestSnapPos;
+          }
+        }
+
         onVertexDrag(draggingVertex.current, to);
       }
     });

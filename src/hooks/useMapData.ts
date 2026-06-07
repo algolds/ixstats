@@ -20,7 +20,7 @@ import type { FeatureCollection } from "geojson";
 import { getCachedMapLayers, setCachedMapLayers } from "~/lib/map-idb-cache";
 
 /** Layers that are always visible and cannot be toggled off */
-export const LOCKED_LAYERS: MapLayerType[] = ["background", "altitudes"];
+export const LOCKED_LAYERS: MapLayerType[] = ["background"];
 
 const DEFAULT_VISIBLE: MapLayerType[] = [
   "background",

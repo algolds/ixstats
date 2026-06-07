@@ -35,6 +35,7 @@ interface MapEditorToolbarProps {
   disabled?: boolean;
   /** Horizontal layout for mobile (bottom rail) */
   horizontal?: boolean;
+  disabledTools?: EditorMode[];
 }
 
 interface ToolDef {
@@ -72,6 +73,7 @@ export function MapEditorToolbar({
   onModeChange,
   disabled,
   horizontal,
+  disabledTools = [],
 }: MapEditorToolbarProps) {
   const handleClick = useCallback(
     (toolMode: EditorMode) => {
@@ -99,6 +101,11 @@ export function MapEditorToolbar({
         const showSep = lastGroup !== -1 && tool.group !== lastGroup;
         lastGroup = tool.group;
 
+        const isToolDisabled = disabled || disabledTools.includes(tool.mode);
+        const titleText = disabledTools.includes(tool.mode)
+          ? `${tool.label} (Select a country first)`
+          : `${tool.label} (${tool.shortcut})`;
+
         return (
           <div key={tool.mode} className={horizontal ? "flex items-center" : ""}>
             {showSep &&
@@ -109,30 +116,33 @@ export function MapEditorToolbar({
               ))}
             <button
               onClick={() => handleClick(tool.mode)}
+              disabled={isToolDisabled}
               className={`group relative flex items-center justify-center rounded-md transition-colors ${
                 horizontal ? "h-8 w-8" : "h-9 w-9"
               } ${
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
-              title={`${tool.label} (${tool.shortcut})`}
+              } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
+              title={titleText}
             >
               {AnimatedIcon ? <AnimatedIcon size={16} /> : <FallbackIcon className="h-4 w-4" />}
 
               {/* Tooltip (desktop only, shows on hover to the right / above) */}
-              <div
-                className={`bg-popover text-popover-foreground ring-border pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block ${
-                  horizontal
-                    ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-                    : "top-1/2 left-full ml-1.5 -translate-y-1/2"
-                }`}
-              >
-                {tool.label}
-                <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
-                  {tool.shortcut}
-                </span>
-              </div>
+              {!isToolDisabled && (
+                <div
+                  className={`bg-popover text-popover-foreground ring-border pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block ${
+                    horizontal
+                      ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
+                      : "top-1/2 left-full ml-1.5 -translate-y-1/2"
+                  }`}
+                >
+                  {tool.label}
+                  <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
+                    {tool.shortcut}
+                  </span>
+                </div>
+              )}
             </button>
           </div>
         );

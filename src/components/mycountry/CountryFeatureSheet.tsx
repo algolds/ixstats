@@ -135,8 +135,7 @@ export function CountryFeatureSheet({ countryId, feature, onClose }: CountryFeat
     }
   }, [selectedSubdivision]);
 
-  const invalidateBundle = () =>
-    utils.countryGeo.getCountryGeoBundle.invalidate({ countryId });
+  const invalidateBundle = () => utils.countryGeo.getCountryGeoBundle.invalidate({ countryId });
 
   const upsertCity = api.countryGeo.upsertCity.useMutation({
     onSuccess: () => {
@@ -224,7 +223,11 @@ export function CountryFeatureSheet({ countryId, feature, onClose }: CountryFeat
           </div>
         ) : isCity && selectedCity ? (
           canEdit && cityForm ? (
-            <CityEditForm form={cityForm} setForm={setCityForm} isCapital={!!selectedCity.isNationalCapital} />
+            <CityEditForm
+              form={cityForm}
+              setForm={setCityForm}
+              isCapital={!!selectedCity.isNationalCapital}
+            />
           ) : (
             <CityReadOnly city={selectedCity} />
           )
@@ -287,7 +290,7 @@ function CityEditForm({
   return (
     <div className="grid gap-3">
       {isCapital && (
-        <div className="text-amber-600 dark:text-amber-400 flex items-center gap-1.5 text-xs font-medium">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
           <MapPin className="h-3.5 w-3.5" /> National capital
         </div>
       )}
@@ -348,7 +351,7 @@ function CityEditForm({
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-border/40 py-1.5 text-sm last:border-b-0">
+    <div className="border-border/40 flex items-center justify-between border-b py-1.5 text-sm last:border-b-0">
       <span className="text-muted-foreground">{label}</span>
       <span className="text-foreground font-medium">{value}</span>
     </div>
@@ -363,7 +366,10 @@ function CityReadOnly({ city }: { city: any }) {
       <Stat label="Economy output" value={fmt(city.economyOutput)} />
       <Stat label="GDP contribution" value={fmt(city.gdpContribution)} />
       <Stat label="Specialization" value={city.specialization || "—"} />
-      <Stat label="Infrastructure" value={city.infrastructureLevel != null ? `${city.infrastructureLevel}/10` : "—"} />
+      <Stat
+        label="Infrastructure"
+        value={city.infrastructureLevel != null ? `${city.infrastructureLevel}/10` : "—"}
+      />
       <Stat label="Port" value={city.isPort ? "Yes" : "No"} />
       <Stat label="Mayor" value={city.mayorName || "—"} />
     </div>
@@ -432,7 +438,10 @@ function SubdivisionReadOnly({ subdivision }: { subdivision: any }) {
       <Stat label="Type" value={subdivision.type || "—"} />
       <Stat label="Population" value={fmt(subdivision.population)} />
       <Stat label="GDP contribution" value={fmt(subdivision.gdpContribution)} />
-      <Stat label="Budget share" value={subdivision.budgetShare != null ? `${subdivision.budgetShare}%` : "—"} />
+      <Stat
+        label="Budget share"
+        value={subdivision.budgetShare != null ? `${subdivision.budgetShare}%` : "—"}
+      />
       <Stat label="Governor" value={subdivision.governorName || "—"} />
       <Stat label="Government" value={subdivision.governmentType || "—"} />
     </div>

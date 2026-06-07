@@ -10,7 +10,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool, EyeOff, Eye } from "lucide-react";
+import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool, EyeOff, Eye, Globe } from "lucide-react";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/map-config";
 import { overlaysByCategory } from "~/lib/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";
@@ -34,6 +34,10 @@ interface MapControlsProps {
   canEdit?: boolean;
   /** Open map editor for user's country */
   onEditMap?: () => void;
+  /** Whether to show the world editor button (admin or system owner) */
+  showWorldEditor?: boolean;
+  /** Route/callback to open world editor */
+  onOpenWorldEditor?: () => void;
 }
 
 const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes"];
@@ -67,6 +71,8 @@ export function MapControls({
   toolsVisible = true,
   canEdit,
   onEditMap,
+  showWorldEditor,
+  onOpenWorldEditor,
 }: MapControlsProps) {
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,8 +94,7 @@ export function MapControls({
   }, []);
 
   const hasActiveAnalytics =
-    !!overlayVisibility &&
-    ANALYTICS_OVERLAYS.some((item) => overlayVisibility[item.key]);
+    !!overlayVisibility && ANALYTICS_OVERLAYS.some((item) => overlayVisibility[item.key]);
 
   return (
     <div ref={containerRef} className="absolute top-16 left-3 z-10 sm:top-3">
@@ -150,6 +155,17 @@ export function MapControls({
             isActive={false}
             variant="default"
             onClick={onEditMap}
+          />
+        )}
+
+        {/* World Editor button beside edit map icon */}
+        {showWorldEditor && onOpenWorldEditor && (
+          <IconButton
+            icon={<Globe className="h-4 w-4" />}
+            label="World Editor"
+            isActive={false}
+            variant="default"
+            onClick={onOpenWorldEditor}
           />
         )}
       </div>

@@ -9,7 +9,7 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/map-config";
 import { MapPin, Loader2 } from "lucide-react";
@@ -33,6 +33,8 @@ export interface CountryMapEmbedProps {
   /** Fired when a city/subdivision feature is clicked. Enables click-to-manage. */
   onFeatureClick?: (feature: CountryMapFeature) => void;
   boundsPadding?: number;
+  highlightCountryIds?: string[];
+  highlightCountryNames?: string[];
 }
 
 /** 5-pointed star image for capital markers */
@@ -78,6 +80,8 @@ export function CountryMapEmbed({
   onNeighborClick,
   onFeatureClick,
   boundsPadding = 40,
+  highlightCountryIds,
+  highlightCountryNames,
 }: CountryMapEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -88,6 +92,7 @@ export function CountryMapEmbed({
     centroid,
     bbox,
     featureId,
+    displayName,
     fillColor,
     neighbors,
     cities,
@@ -97,6 +102,18 @@ export function CountryMapEmbed({
     isLoading,
     hasGeometry,
   } = useCountryMapEmbed(countryId);
+
+  const highlightCountryIdsStr = JSON.stringify(highlightCountryIds);
+  const highlightIdsMemo = useMemo(
+    () => new Set(highlightCountryIds || []),
+    [highlightCountryIdsStr]
+  );
+
+  const highlightCountryNamesStr = JSON.stringify(highlightCountryNames);
+  const highlightNamesMemo = useMemo(
+    () => new Set(highlightCountryNames || []),
+    [highlightCountryNamesStr]
+  );
 
   // Build neighbor GeoJSON
   const neighborGeoRef = useRef<GeoJSON.FeatureCollection | null>(null);
@@ -133,10 +150,22 @@ export function CountryMapEmbed({
     map.on("load", () => {
       // ── World political layer (greyed-out neighbor countries) ──
       if (worldPolitical && worldPolitical.features.length > 0) {
-        // Filter out the target country — render all others as grey
+        // Filter out the target country and any highlighted countries — render all others as grey
         const otherCountries: GeoJSON.FeatureCollection = {
           type: "FeatureCollection",
-          features: worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
+          features: worldPolitical.features.filter(
+            (f) =>
+              f.properties?._countryId !== countryId &&
+              (featureId
+                ? f.properties?._id !== featureId && f.properties?.id !== featureId
+                : true) &&
+              (displayName ? f.properties?._displayName !== displayName : true) &&
+              !highlightIdsMemo.has(f.properties?._countryId) &&
+              !highlightIdsMemo.has(f.properties?.countryId) &&
+              !highlightNamesMemo.has(f.properties?._id) &&
+              !highlightNamesMemo.has(f.properties?.id) &&
+              !highlightNamesMemo.has(f.properties?._displayName)
+          ),
         };
 
         map.addSource("source-world-political", {
@@ -188,6 +217,113 @@ export function CountryMapEmbed({
             },
             minzoom: 3,
           });
+        }
+
+        console.log("[CountryMapEmbed] highlightIdsMemo:", Array.from(highlightIdsMemo));
+        console.log(
+          "[CountryMapEmbed] worldPolitical features count:",
+          worldPolitical.features.length
+        );
+
+        // Render highlighted (partner embassy) countries
+        const highlightedCountries: GeoJSON.FeatureCollection = {
+          type: "FeatureCollection",
+          features: worldPolitical.features.filter(
+            (f) =>
+              f.properties?._countryId !== countryId &&
+              (featureId
+                ? f.properties?._id !== featureId && f.properties?.id !== featureId
+                : true) &&
+              (displayName ? f.properties?._displayName !== displayName : true) &&
+              (highlightIdsMemo.has(f.properties?._countryId) ||
+                highlightIdsMemo.has(f.properties?.countryId) ||
+                highlightNamesMemo.has(f.properties?._id) ||
+                highlightNamesMemo.has(f.properties?.id) ||
+                highlightNamesMemo.has(f.properties?._displayName))
+          ),
+        };
+
+        console.log(
+          "[CountryMapEmbed] matched highlightedCountries features count:",
+          highlightedCountries.features.length
+        );
+
+        if (highlightedCountries.features.length > 0) {
+          map.addSource("source-highlighted-countries", {
+            type: "geojson",
+            data: highlightedCountries,
+          });
+
+          // Render highlighted countries with their own color (or fallback cyan)
+          map.addLayer({
+            id: "highlighted-countries-fill",
+            type: "fill",
+            source: "source-highlighted-countries",
+            paint: {
+              "fill-color": ["coalesce", ["get", "_fillColor"], "#06b6d4"],
+              "fill-opacity": 0.45,
+            },
+          });
+
+          map.addLayer({
+            id: "highlighted-countries-stroke",
+            type: "line",
+            source: "source-highlighted-countries",
+            paint: {
+              "line-color": "#333",
+              "line-width": 1.2,
+            },
+          });
+
+          if (showNeighbors) {
+            map.addLayer({
+              id: "highlighted-labels",
+              type: "symbol",
+              source: "source-highlighted-countries",
+              layout: {
+                "text-field": ["coalesce", ["get", "_displayName"], ""] as unknown as string,
+                "text-size": 10.5,
+                "text-allow-overlap": false,
+                "text-optional": true,
+                "text-font": [...MAP_SYMBOL_FONTS.bold],
+              },
+              paint: {
+                "text-color": "#0e7490", // Cyan/Teal labels for partner countries
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 1.5,
+                "text-opacity": 0.95,
+              },
+              minzoom: 2,
+            });
+
+            if (onNeighborClick) {
+              map.on("click", "highlighted-labels", (e) => {
+                const cid =
+                  e.features?.[0]?.properties?.countryId || e.features?.[0]?.properties?._countryId;
+                if (cid) onNeighborClick(cid);
+              });
+              map.on("mouseenter", "highlighted-labels", () => {
+                map.getCanvas().style.cursor = "pointer";
+              });
+              map.on("mouseleave", "highlighted-labels", () => {
+                map.getCanvas().style.cursor = "";
+              });
+            }
+          }
+
+          if (onNeighborClick) {
+            map.on("click", "highlighted-countries-fill", (e) => {
+              const cid =
+                e.features?.[0]?.properties?.countryId || e.features?.[0]?.properties?._countryId;
+              if (cid) onNeighborClick(cid);
+            });
+            map.on("mouseenter", "highlighted-countries-fill", () => {
+              map.getCanvas().style.cursor = "pointer";
+            });
+            map.on("mouseleave", "highlighted-countries-fill", () => {
+              map.getCanvas().style.cursor = "";
+            });
+          }
         }
       }
 
@@ -355,11 +491,54 @@ export function CountryMapEmbed({
       }
 
       // ── Fit to bounds ──
-      if (bbox) {
+      let mapBbox = bbox
+        ? { minLng: bbox.minLng, minLat: bbox.minLat, maxLng: bbox.maxLng, maxLat: bbox.maxLat }
+        : null;
+
+      if ((highlightIdsMemo.size > 0 || highlightNamesMemo.size > 0) && worldPolitical) {
+        const highlightedFeatures = worldPolitical.features.filter(
+          (f) =>
+            highlightIdsMemo.has(f.properties?._countryId) ||
+            highlightIdsMemo.has(f.properties?.countryId) ||
+            highlightNamesMemo.has(f.properties?._id) ||
+            highlightNamesMemo.has(f.properties?.id) ||
+            highlightNamesMemo.has(f.properties?._displayName)
+        );
+
+        if (highlightedFeatures.length > 0) {
+          if (!mapBbox) {
+            const firstCentroidLng = highlightedFeatures[0].properties?._centroidLng;
+            const firstCentroidLat = highlightedFeatures[0].properties?._centroidLat;
+            if (typeof firstCentroidLng === "number" && typeof firstCentroidLat === "number") {
+              mapBbox = {
+                minLng: firstCentroidLng,
+                minLat: firstCentroidLat,
+                maxLng: firstCentroidLng,
+                maxLat: firstCentroidLat,
+              };
+            }
+          }
+
+          if (mapBbox) {
+            for (const f of highlightedFeatures) {
+              const cLng = f.properties?._centroidLng;
+              const cLat = f.properties?._centroidLat;
+              if (typeof cLng === "number" && typeof cLat === "number") {
+                mapBbox.minLng = Math.min(mapBbox.minLng, cLng);
+                mapBbox.maxLng = Math.max(mapBbox.maxLng, cLng);
+                mapBbox.minLat = Math.min(mapBbox.minLat, cLat);
+                mapBbox.maxLat = Math.max(mapBbox.maxLat, cLat);
+              }
+            }
+          }
+        }
+      }
+
+      if (mapBbox) {
         map.fitBounds(
           [
-            [bbox.minLng, bbox.minLat],
-            [bbox.maxLng, bbox.maxLat],
+            [mapBbox.minLng, mapBbox.minLat],
+            [mapBbox.maxLng, mapBbox.maxLat],
           ],
           { padding: boundsPadding, maxZoom: 10, duration: 0 }
         );
@@ -420,6 +599,7 @@ export function CountryMapEmbed({
     centroid,
     bbox,
     featureId,
+    displayName,
     fillColor,
     neighbors,
     cities,
@@ -435,6 +615,8 @@ export function CountryMapEmbed({
     boundsPadding,
     worldPolitical,
     countryId,
+    highlightIdsMemo,
+    highlightNamesMemo,
   ]);
 
   useEffect(() => {

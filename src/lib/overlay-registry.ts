@@ -148,10 +148,7 @@ const VITALITY_LEGEND: OverlayLegend = {
 // IxWorldMap can render every overlay from one loop without rewriting components.
 
 /** ChoroplethOverlay-style fill: data is a FeatureCollection (+ optional metadata). */
-function choroplethRenderProps(
-  colorScale: "wealth" | "population" | "neutral",
-  layerId: string
-) {
+function choroplethRenderProps(colorScale: "wealth" | "population" | "neutral", layerId: string) {
   return ({ map, data, visible }: OverlayRenderCtx) => {
     if (!data) return null;
     const fc = data as FeatureCollection & {
@@ -298,8 +295,7 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     category: "analytics",
     icon: Truck,
     defaultVisible: false,
-    dataFetcher: (utils: TRPCUtils) =>
-      utils.transport.getAllRoutesGeoJSON.fetch({}),
+    dataFetcher: (utils: TRPCUtils) => utils.transport.getAllRoutesGeoJSON.fetch({}),
     component: TransportOverlay,
     renderProps: ({ map, data, visible, onRouteClick }: OverlayRenderCtx) => {
       if (!data) return null;
@@ -350,9 +346,9 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
 export const OVERLAY_LIST: OverlayPluginDefinition[] = Object.values(OVERLAY_REGISTRY);
 
 /** Ids of fill-category overlays (mutually exclusive group). */
-export const FILL_OVERLAY_IDS: string[] = OVERLAY_LIST.filter(
-  (o) => o.category === "fill"
-).map((o) => o.id);
+export const FILL_OVERLAY_IDS: string[] = OVERLAY_LIST.filter((o) => o.category === "fill").map(
+  (o) => o.id
+);
 
 /** Build the default visibility map from `defaultVisible` flags. */
 export function buildDefaultVisibility(): Record<string, boolean> {

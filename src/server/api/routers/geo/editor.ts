@@ -134,6 +134,117 @@ export const geoEditorRouter = createTRPCRouter({
     }),
 
   /**
+   * Admin: Get all details for a specific map feature.
+   */
+  getFeatureDetails: adminProcedure
+    .input(z.object({ featureId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const feature = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        include: {
+          country: {
+            select: {
+              id: true,
+              name: true,
+              wikiPageTitle: true,
+            },
+          },
+        },
+      });
+      if (!feature) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
+      }
+      return {
+        id: feature.id,
+        featureId: feature.featureId,
+        displayName: feature.displayName,
+        countryId: feature.countryId,
+        areaSqKm: feature.areaSqKm,
+        centroid: feature.centroid,
+        boundingBox: feature.boundingBox,
+        properties: feature.properties,
+        wikiPageTitle: feature.country?.wikiPageTitle ?? null,
+        countryName: feature.country?.name ?? null,
+      };
+    }),
+
+  /**
+   * Admin: Update properties (displayName, countryId, properties, wikiPageTitle) of a map feature.
+   */
+  updateFeatureProperties: adminProcedure
+    .input(
+      z.object({
+        featureId: z.string(),
+        displayName: z.string().optional(),
+        countryId: z.string().nullable().optional(),
+        properties: z.record(z.string(), z.any()).optional(),
+        wikiPageTitle: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const feature = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId, isActive: true },
+      });
+      if (!feature) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Feature not found: ${input.featureId}`,
+        });
+      }
+
+      const updateData: any = {};
+      if (input.displayName !== undefined) {
+        updateData.displayName = input.displayName;
+      }
+      if (input.countryId !== undefined) {
+        updateData.countryId = input.countryId;
+      }
+      if (input.properties !== undefined) {
+        updateData.properties = input.properties;
+      }
+
+      await ctx.db.mapLayer.update({
+        where: { id: feature.id },
+        data: updateData,
+      });
+
+      // Update wikiPageTitle on Country if linked
+      const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
+      if (targetCountryId && input.wikiPageTitle !== undefined) {
+        await ctx.db.country.update({
+          where: { id: targetCountryId },
+          data: { wikiPageTitle: input.wikiPageTitle },
+        });
+      }
+
+      if (input.countryId !== undefined) {
+        if (feature.countryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+        }
+        if (input.countryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
+        }
+      }
+
+      clearLayerCache("political");
+      await invalidateCache([
+        "geoCore.listCountries",
+        "geoCore.getWorldMap",
+        "geoEditor.validateLinkage",
+        "geoCore.getCountryLinkage",
+      ]);
+
+      if (input.countryId !== undefined) {
+        broadcastMapUpdate("linkage", input.countryId ?? undefined);
+      }
+
+      return { ok: true };
+    }),
+
+  /**
    * Admin: Auto-link all unlinked political map features to Country records.
    * For each unlinked feature:
    *   1. Try to match an existing Country by name (case-insensitive)
@@ -693,12 +804,13 @@ export const geoEditorRouter = createTRPCRouter({
         proposedGeometry: z.record(z.string(), z.unknown()), // GeoJSON geometry
         affectedFeatures: z.array(z.string()).optional(),
         applyDirectly: z.boolean().default(false),
+        reason: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const feature = await ctx.db.mapLayer.findFirst({
         where: { layerType: "political", featureId: input.featureId, isActive: true },
-        select: { id: true, geometry: true, countryId: true, displayName: true },
+        select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
       });
       if (!feature) {
         throw new TRPCError({
@@ -730,6 +842,19 @@ export const geoEditorRouter = createTRPCRouter({
 
         if (feature.countryId) {
           await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+
+          // Log in BorderHistory
+          await ctx.db.borderHistory.create({
+            data: {
+              countryId: feature.countryId,
+              geometry: input.proposedGeometry as any,
+              changedBy: ctx.auth?.userId ?? "admin",
+              reason: input.reason ?? "Direct map edit via World Editor",
+              oldAreaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : null,
+              newAreaSqMi: area ? area * 0.386102 : null,
+              areaDeltaSqMi: feature.areaSqKm && area ? (area - feature.areaSqKm) * 0.386102 : null,
+            },
+          });
         }
 
         // Clear cache

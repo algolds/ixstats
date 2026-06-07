@@ -17,12 +17,10 @@ import { Skeleton } from "~/components/ui/skeleton";
 import nextDynamic from "next/dynamic";
 
 // Light tabs — static imports (small bundles, no MapLibre)
-import { CountryLinkageTab } from "./_components/CountryLinkageTab";
 import { EditQueuePanel } from "./_components/EditQueuePanel";
 import { MapSettingsTab } from "./_components/MapSettingsTab";
-import { SovereigntyManager } from "./_components/SovereigntyManager";
 
-// Heavy tabs — lazy loaded (MapLibre + procedural generation)
+// Heavy tabs — lazy loaded (MapLibre dependent)
 const LazyLoading = () => (
   <div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
     <Loader2 className="h-5 w-5 animate-spin" />
@@ -30,59 +28,27 @@ const LazyLoading = () => (
   </div>
 );
 
-const WorldMapManager = nextDynamic(
-  () => import("./_components/WorldMapManager").then((m) => m.WorldMapManager),
-  { ssr: false, loading: LazyLoading }
-);
-const BorderEditorTab = nextDynamic(
-  () => import("./_components/BorderEditorTab").then((m) => m.BorderEditorTab),
-  { ssr: false, loading: LazyLoading }
-);
-const TemplateManager = nextDynamic(
-  () => import("./_components/TemplateManager").then((m) => m.TemplateManager),
-  { ssr: false, loading: LazyLoading }
-);
-const WorldGeneratorTab = nextDynamic(
-  () => import("./_components/WorldGeneratorTab").then((m) => m.WorldGeneratorTab),
-  { ssr: false, loading: LazyLoading }
-);
+const MapEditorOverlay = nextDynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
+  ssr: false,
+  loading: LazyLoading,
+});
 const PipelineWizard = nextDynamic(
   () => import("./_components/PipelineWizard").then((m) => m.PipelineWizard),
   { ssr: false, loading: LazyLoading }
 );
-const ForgeTab = nextDynamic(() => import("./_components/ForgeTab").then((m) => m.ForgeTab), {
-  ssr: false,
-  loading: LazyLoading,
-});
 
-type TabId =
-  | "forge"
-  | "pipeline"
-  | "map"
-  | "countries"
-  | "sovereignty"
-  | "edits"
-  | "border-editor"
-  | "templates"
-  | "generator"
-  | "settings";
+type TabId = "editor" | "pipeline" | "edits" | "settings";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "forge", label: "Forge" },
+  { id: "editor", label: "World Editor" },
   { id: "pipeline", label: "Import Pipeline" },
-  { id: "map", label: "World Map" },
-  { id: "countries", label: "Countries" },
-  { id: "sovereignty", label: "Sovereignty" },
   { id: "edits", label: "Edit Queue" },
-  { id: "border-editor", label: "Border Editor" },
-  { id: "templates", label: "Templates" },
-  { id: "generator", label: "World Generator" },
   { id: "settings", label: "Settings" },
 ];
 
 export default function AdminMapsPage() {
   usePageTitle({ title: "Admin - World Map" });
-  const [activeTab, setActiveTab] = useState<TabId>("pipeline");
+  const [activeTab, setActiveTab] = useState<TabId>("editor");
 
   const { data: stats, isLoading } = api.geoCore.getMapStats.useQuery(undefined, {
     refetchInterval: 30000,
@@ -145,15 +111,13 @@ export default function AdminMapsPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === "forge" && <ForgeTab />}
+      {activeTab === "editor" && (
+        <div className="bg-background text-foreground fixed inset-0 z-[100]">
+          <MapEditorOverlay isWorldMode={true} onExit={() => setActiveTab("pipeline")} />
+        </div>
+      )}
       {activeTab === "pipeline" && <PipelineWizard />}
-      {activeTab === "map" && <WorldMapManager />}
-      {activeTab === "countries" && <CountryLinkageTab />}
-      {activeTab === "sovereignty" && <SovereigntyManager />}
       {activeTab === "edits" && <EditQueuePanel />}
-      {activeTab === "border-editor" && <BorderEditorTab />}
-      {activeTab === "templates" && <TemplateManager />}
-      {activeTab === "generator" && <WorldGeneratorTab />}
       {activeTab === "settings" && <MapSettingsTab />}
     </div>
   );

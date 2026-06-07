@@ -70,7 +70,8 @@ export interface BorderEditorActions {
   redo: () => void;
   save: () => Promise<void>;
   submitEdit: (
-    applyDirectly?: boolean
+    applyDirectly?: boolean,
+    reason?: string
   ) => Promise<{ applied: boolean; editRequestId: string | null }>;
   executeSplit: (nameA: string, nameB: string) => Promise<void>;
   executeMerge: (newName: string) => Promise<void>;
@@ -367,7 +368,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   }, [state.sessionId, state.geometry, state.undoStackState, state.mode, saveDraft]);
 
   const submitEditAction = useCallback(
-    async (applyDirectly = false) => {
+    async (applyDirectly = false, reason?: string) => {
       if (!state.featureId || !state.geometry) {
         throw new Error("No feature loaded");
       }
@@ -382,6 +383,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         editSubtype: "vertex_edit",
         proposedGeometry: state.geometry as unknown as Record<string, unknown>,
         applyDirectly,
+        reason,
       });
 
       if (result.applied) {

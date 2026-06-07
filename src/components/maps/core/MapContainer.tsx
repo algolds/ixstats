@@ -7,6 +7,8 @@
 
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useIsAdmin } from "~/hooks/usePermissions";
 import { useMapDataBatched } from "~/hooks/useMapDataBatched";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
@@ -33,10 +35,7 @@ import type {
   OverlayVisibility,
 } from "./IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import {
-  buildDefaultVisibility,
-  applyOverlayToggle,
-} from "~/lib/overlay-registry";
+import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/overlay-registry";
 
 // MapLibre CSS - imported here (not in dynamically-loaded IxWorldMap) so it's in the main bundle
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -61,11 +60,17 @@ export interface MapContainerProps {
   initialLayers?: MapLayerType[];
   /** Country ID to auto-select and fly to on mount (for deep linking) */
   initialCountryId?: string;
+  /** Controlled country selection from parent component */
+  selectedCountryId?: string | null;
   /** Initial map center [lng, lat] for coordinate deep-linking (e.g. ?lat=X&lng=Y) */
   initialCenter?: [number, number];
   /** Initial zoom level for coordinate deep-linking (e.g. ?zoom=Z) */
   initialZoom?: number;
   onCountrySelect?: (country: SelectedCountry | null) => void;
+  forceFlatProjection?: boolean;
+  controlledVisibleLayers?: Set<MapLayerType>;
+  onToggleLayer?: (layer: MapLayerType) => void;
+  hideEditButtons?: boolean;
 }
 
 export function MapContainer({
@@ -75,10 +80,17 @@ export function MapContainer({
   showPopup = true,
   initialLayers,
   initialCountryId,
+  selectedCountryId,
   initialCenter,
   initialZoom,
   onCountrySelect,
+  forceFlatProjection = false,
+  controlledVisibleLayers,
+  onToggleLayer,
+  hideEditButtons = false,
 }: MapContainerProps) {
+  const router = useRouter();
+  const isAdmin = useIsAdmin();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
   const measureToolRef = useRef<{ toggle: () => void }>(null);
@@ -122,6 +134,7 @@ export function MapContainer({
   } | null>(null);
   const [projectionMode, setProjectionMode] = useState<ProjectionMode>("dynamic");
   const [isEditing, setIsEditing] = useState(false);
+  const [isWorldEditing, setIsWorldEditing] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [storyPinModalId, setStoryPinModalId] = useState<string | null>(null);
   const [editingCountryId, setEditingCountryId] = useState<string | null>(null);
@@ -146,6 +159,14 @@ export function MapContainer({
     overlayFeatures: batchedOverlayFeatures,
     capitalsGeoJson: batchedCapitalsGeoJson,
   } = useMapDataBatched(initialLayers, currentZoom);
+
+  const activeMapLayers = useMemo(() => {
+    if (!controlledVisibleLayers) return mapLayers;
+    return mapLayers.map((layer) => ({
+      ...layer,
+      visible: controlledVisibleLayers.has(layer.type),
+    }));
+  }, [mapLayers, controlledVisibleLayers]);
 
   // Overlay features come from batched query + story pins/labels
   const { data: storyPinsGeoJson, isLoading: isStoryPinsLoading } =
@@ -328,6 +349,48 @@ export function MapContainer({
     }
   }, [initialCountryId, initialGeo, onCountrySelect]);
 
+  // Controlled selectedCountryId support
+  const { data: selectedGeo } = api.geoCore.getCountryGeometry.useQuery(
+    { countryId: selectedCountryId! },
+    { enabled: !!selectedCountryId, staleTime: 30 * 60_000 }
+  );
+
+  useEffect(() => {
+    if (selectedCountryId === null) {
+      // Only clear selection if currently selected country has an active countryId.
+      // If selected country is an unlinked/blank feature (countryId is null),
+      // keep it selected to allow linking/editing properties.
+      if (selectedCountry?.countryId) {
+        setSelectedCountry(null);
+        onCountrySelect?.(null);
+      }
+      return;
+    }
+
+    if (!selectedCountryId || !selectedGeo || !mapRef.current) return;
+
+    // Skip if it matches current selection to avoid feedback loop
+    if (selectedCountry?.countryId === selectedCountryId) return;
+
+    const country: SelectedCountry = {
+      featureId: selectedGeo.featureId,
+      displayName: selectedGeo.displayName,
+      fillColor: "#e8e5da",
+      centroidLng: selectedGeo.centroid?.lng ?? 0,
+      centroidLat: selectedGeo.centroid?.lat ?? 0,
+      countryId: selectedGeo.country?.id ?? null,
+    };
+    setSelectedCountry(country);
+    onCountrySelect?.(country);
+
+    if (selectedGeo.bbox) {
+      const b = selectedGeo.bbox;
+      mapRef.current.flyTo((b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2, 4);
+    } else if (selectedGeo.centroid) {
+      mapRef.current.flyTo(selectedGeo.centroid.lng, selectedGeo.centroid.lat, 4);
+    }
+  }, [selectedCountryId, selectedGeo, onCountrySelect, selectedCountry]);
+
   const measuringRef = useRef(false);
   measuringRef.current = isMeasuring;
   const pinToolRef = useRef(false);
@@ -440,6 +503,10 @@ export function MapContainer({
     }
   }, [userCountryId]);
 
+  const handleOpenWorldEditor = useCallback(() => {
+    setIsWorldEditing(true);
+  }, []);
+
   /** Escape key: close panels in priority order */
   const handleEscapePress = useCallback(() => {
     if (isPinToolActive && pinPosition) {
@@ -550,7 +617,7 @@ export function MapContainer({
     <div className={`absolute inset-0 pb-[env(safe-area-inset-bottom)] ${className}`}>
       <IxWorldMap
         ref={mapRef}
-        layers={mapLayers}
+        layers={activeMapLayers}
         capitals={capitalsGeoJson}
         overlayFeatures={overlayFeatures ?? undefined}
         overlayVisibility={overlayVisibility}
@@ -562,7 +629,7 @@ export function MapContainer({
         selectedCountryId={selectedCountry?.featureId}
         isMeasuring={isMeasuring}
         geographyFilter={geographyFilter}
-        projectionMode={projectionMode}
+        projectionMode={forceFlatProjection ? "mercator" : projectionMode}
         topCountryNames={topCountrySet}
         labelsVisible={labelsVisible}
         onZoomChange={setCurrentZoom}
@@ -575,8 +642,8 @@ export function MapContainer({
       {/* Layer controls + tools toolbar */}
       {showControls && (
         <MapControls
-          visibleLayers={visibleLayers}
-          onToggleLayer={toggleLayer}
+          visibleLayers={controlledVisibleLayers ?? visibleLayers}
+          onToggleLayer={onToggleLayer ?? toggleLayer}
           overlayVisibility={overlayVisibility}
           onToggleOverlay={toggleOverlay}
           labelsVisible={labelsVisible}
@@ -586,8 +653,10 @@ export function MapContainer({
           isPinActive={isPinToolActive}
           onTogglePin={togglePinTool}
           toolsVisible={toolsVisible}
-          canEdit={!!userCountryId}
+          canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
           onEditMap={handleOpenMyEditor}
+          showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
+          onOpenWorldEditor={handleOpenWorldEditor}
         />
       )}
 
@@ -604,8 +673,8 @@ export function MapContainer({
       {/* Dynamic Island — unified auth, geo search, and settings */}
       {toolsVisible && (
         <MapDynamicIsland
-          projectionMode={projectionMode}
-          onProjectionChange={setProjectionMode}
+          projectionMode={forceFlatProjection ? "mercator" : projectionMode}
+          onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
           onSearchResult={handleSearchResult}
         />
       )}
@@ -617,8 +686,8 @@ export function MapContainer({
       <MapKeyboardControls
         mapRef={mapRef}
         onEscapePress={handleEscapePress}
-        projectionMode={projectionMode}
-        onProjectionChange={setProjectionMode}
+        projectionMode={forceFlatProjection ? "mercator" : projectionMode}
+        onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
       />
 
       {/* Pin info panel */}
@@ -689,6 +758,15 @@ export function MapContainer({
           countryId={editingCountryId}
           mapLayers={mapLayers}
           onExit={handleExitEditor}
+        />
+      )}
+
+      {/* World map editor overlay */}
+      {isWorldEditing && (
+        <MapEditorOverlay
+          isWorldMode={true}
+          mapLayers={mapLayers}
+          onExit={() => setIsWorldEditing(false)}
         />
       )}
 
