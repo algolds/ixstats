@@ -4,23 +4,35 @@
 
 "use client";
 
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { History, Link2, ExternalLink, X, Trophy, Search, Calendar, Hash } from "lucide-react";
+import {
+  History,
+  Link2,
+  ExternalLink,
+  X,
+  Trophy,
+  Calendar,
+  Star,
+  Users,
+  CheckCircle2,
+  Award,
+  Sparkles,
+} from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wikios/html-transformer";
-import { StickyToc } from "~/components/wikios/reader/StickyToc";
+import { AppleBooksTocDrawer } from "~/components/wikios/reader/AppleBooksTocDrawer";
 import { InfoboxWithMap } from "~/components/wikios/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wikios/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { CategoryBreadcrumb } from "~/components/wikios/reader/CategoryBreadcrumb";
-import { StashButton } from "~/components/wikios/reader/StashButton";
 import { useAnnotationOverlay } from "~/components/wikios/reader/AnnotationOverlay";
 import { useCiteTooltips } from "~/components/wikios/reader/useCiteTooltips";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { Badge } from "~/components/ui/badge";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 interface ArticleRendererProps {
   title: string;
@@ -40,46 +52,226 @@ const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
 
 function WikiOSHeader({
   title,
-  categories,
   lastModified,
   wikiSource,
   countryData,
   featuredImageUrl,
   themeColors,
-  onOpenHistory,
-  onOpenBacklinks,
-  markupToggle,
-  isAuthenticated,
+  awardsData,
+  tocLength,
+  onTocClick,
 }: {
   title: string;
-  categories: string[];
   lastModified: string | null;
   wikiSource?: string;
   countryData?: any;
   featuredImageUrl?: string | null;
   themeColors: any;
-  onOpenHistory: () => void;
-  onOpenBacklinks: () => void;
-  markupToggle: React.ReactNode;
-  isAuthenticated: boolean;
+  awardsData?: {
+    hasAwards: boolean;
+    hasLoreward: boolean;
+    awards: Array<{
+      id: string;
+      category: string;
+      name: string;
+      description: string | null;
+      recipientUsers: string[];
+      awardedAt: string;
+      metadata: string | null;
+    }>;
+  } | null;
+  tocLength: number;
+  onTocClick: () => void;
 }) {
-  const backdropUrl = countryData?.flagUrl || featuredImageUrl;
+  const rawBackdropUrl = countryData?.flagUrl || featuredImageUrl;
+
+  const backdropUrl = useMemo(() => {
+    if (!rawBackdropUrl) return null;
+    const thumbMatch = rawBackdropUrl.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
+    if (thumbMatch) {
+      return rawBackdropUrl.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
+    }
+    return rawBackdropUrl;
+  }, [rawBackdropUrl]);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  const [showPopover, setShowPopover] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Fires gold particle explosion on page mount for award winning articles
+  useEffect(() => {
+    if (awardsData?.hasLoreward) {
+      setShowCelebration(true);
+      const timer = setTimeout(() => setShowCelebration(false), 1800);
+      return () => clearTimeout(timer);
+    }
+    return;
+  }, [awardsData]);
+
+  // Capture natural image dimensions to adjust card aspect ratio dynamically (sleeker panoramic format)
+  useEffect(() => {
+    if (!backdropUrl) {
+      setAspectRatio(null);
+      return;
+    }
+    const img = new Image();
+    img.src = backdropUrl;
+    img.referrerPolicy = "no-referrer";
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        // Clamp aspect ratio to a sleeker wide banner shape (between 2.2 and 4.0)
+        const ratio = img.naturalWidth / img.naturalHeight;
+        setAspectRatio(Math.max(2.2, Math.min(4.0, ratio)));
+      }
+    };
+  }, [backdropUrl]);
+
+  const primaryAward = useMemo(() => {
+    if (!awardsData?.awards || awardsData.awards.length === 0) return null;
+    const priority = [
+      "LOREWARD",
+      "FEATURED",
+      "COLLABORATION",
+      "PEER_REVIEW",
+      "SPECIAL",
+      "EDITOR_MILESTONE",
+    ];
+    const sorted = [...awardsData.awards].sort((a, b) => {
+      return priority.indexOf(a.category) - priority.indexOf(b.category);
+    });
+    return sorted[0]!;
+  }, [awardsData]);
+
+  const badgeConfig = useMemo(() => {
+    if (!primaryAward) return null;
+    switch (primaryAward.category) {
+      case "LOREWARD":
+        return {
+          Icon: Trophy,
+          text: "Loreward Winner",
+          classes:
+            "border-amber-600/20 bg-amber-600/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25 hover:bg-amber-600/20",
+          iconColor: "text-amber-600 dark:text-amber-400",
+        };
+      case "FEATURED":
+        return {
+          Icon: Star,
+          text: "Featured Article",
+          classes:
+            "border-yellow-500/20 bg-yellow-500/10 text-yellow-700 dark:border-yellow-500/30 dark:bg-yellow-500/15 dark:text-yellow-400 dark:hover:bg-yellow-500/25 hover:bg-yellow-500/20",
+          iconColor: "text-yellow-600 dark:text-yellow-400",
+        };
+      case "COLLABORATION":
+        return {
+          Icon: Users,
+          text: "Collaborative Work",
+          classes:
+            "border-green-600/20 bg-green-600/10 text-green-800 dark:border-green-500/30 dark:bg-green-500/15 dark:text-green-400 dark:hover:bg-green-500/25 hover:bg-green-600/20",
+          iconColor: "text-green-600 dark:text-green-400",
+        };
+      case "PEER_REVIEW":
+        return {
+          Icon: CheckCircle2,
+          text: "Peer Reviewed",
+          classes:
+            "border-blue-600/20 bg-blue-600/10 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/25 hover:bg-blue-600/20",
+          iconColor: "text-blue-600 dark:text-blue-400",
+        };
+      case "EDITOR_MILESTONE":
+        return {
+          Icon: Sparkles,
+          text: "Editor Milestone",
+          classes:
+            "border-indigo-600/20 bg-indigo-600/10 text-indigo-800 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400 dark:hover:bg-indigo-500/25 hover:bg-indigo-600/20",
+          iconColor: "text-indigo-600 dark:text-indigo-400",
+        };
+      default:
+        return {
+          Icon: Award,
+          text: "Wiki Award",
+          classes:
+            "border-purple-600/20 bg-purple-600/10 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-400 dark:hover:bg-purple-500/25 hover:bg-purple-600/20",
+          iconColor: "text-purple-600 dark:text-purple-400",
+        };
+    }
+  }, [primaryAward]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setCoords({ x, y });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setCoords({ x: 0, y: 0 });
+  };
+
+  // 3D spring tilt effect
+  const tiltStyle = isHovered
+    ? {
+        transform: `perspective(1200px) rotateY(${coords.x * 12}deg) rotateX(${-coords.y * 12}deg) scale3d(1.015, 1.015, 1.015)`,
+        transition: "transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease",
+      }
+    : {
+        transform: `perspective(1200px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)`,
+        transition: "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease",
+      };
+
+  // Moving sheen/reflection glint effect
+  const sheenStyle = isHovered
+    ? {
+        background: `radial-gradient(circle 250px at ${(coords.x + 0.5) * 100}% ${(coords.y + 0.5) * 100}%, rgba(255, 255, 255, 0.18), transparent)`,
+        mixBlendMode: "overlay" as const,
+      }
+    : {
+        background: "transparent",
+      };
+
+  // Combine tilt transform and dynamic aspect ratio (clamped to a sleeker wide format)
+  const containerStyle = {
+    ...tiltStyle,
+    transformStyle: "preserve-3d" as const,
+    aspectRatio: aspectRatio ? `${aspectRatio}` : "3.2",
+    minHeight: "150px",
+    maxHeight: "260px",
+  } as React.CSSProperties;
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/5 bg-card/45 backdrop-blur-sm p-4 sm:p-5 mb-6 shadow-lg">
-      {/* Backdrop — blurred flag/featured image, or a themed accent wash as fallback */}
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      style={containerStyle}
+      className="wikios-header glass-surface glass-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none"
+    >
+      {/* Immersive Full-Bleed Image Backdrop */}
       {backdropUrl ? (
-        <div aria-hidden="true" className="absolute inset-0 z-0">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl select-none"
+        >
           <img
             src={backdropUrl}
             alt=""
-            className="h-full w-full scale-110 object-cover opacity-20 blur-[24px] saturate-150"
+            className="absolute inset-0 h-full w-full object-cover object-center saturate-110"
             loading="eager"
+            referrerPolicy="no-referrer"
           />
-          <div className="from-card/95 via-card/85 to-card/65 absolute inset-0 bg-gradient-to-r" />
+          {/* Subtle gradient wash to ensure legibility on top of the image */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent" />
         </div>
       ) : (
-        <div aria-hidden="true" className="absolute inset-0 z-0 bg-card">
+        <div
+          aria-hidden="true"
+          className="bg-card pointer-events-none absolute inset-0 z-0 rounded-2xl select-none"
+        >
           <div
             className="absolute inset-0 bg-gradient-to-br"
             style={{
@@ -89,87 +281,167 @@ function WikiOSHeader({
         </div>
       )}
 
-      {/* Content */}
-      <div className="relative z-10 space-y-3">
-        {/* Breadcrumb Path & Search */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>WikiOS</span>
-            <span>&rarr;</span>
+      {/* Floating Glass HUD Box in the Bottom-Left */}
+      <div
+        className="relative z-10 m-3 max-w-xl self-start sm:m-4"
+        style={{
+          transform: "translateZ(30px)",
+          transformStyle: "preserve-3d" as const,
+        }}
+      >
+        <div className="glass-surface glass-refraction space-y-4 rounded-2xl border border-black/15 bg-white/95 p-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          {/* Breadcrumb Path */}
+          <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase">
             <CategoryBreadcrumb title={title} />
           </div>
 
-          {/* Inline Search Button triggers global Search Modal */}
-          <button
-            onClick={() => {
-              window.dispatchEvent(
-                new KeyboardEvent("keydown", {
-                  key: "k",
-                  metaKey: true,
-                  bubbles: true,
-                })
-              );
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-lg border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all outline-none"
-          >
-            <Search size={12} />
-            <span>Search...</span>
-          </button>
-        </div>
+          {/* Title and Badge */}
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h1 className="text-foreground text-xl leading-tight font-bold tracking-tight sm:text-2xl">
+              {title.replace(/_/g, " ")}
+            </h1>
+            {wikiSource && wikiSource !== "ixwiki" && (
+              <Badge
+                variant="outline"
+                className="border-amber-500/20 bg-amber-500/10 px-1.5 py-0 text-[10px] text-amber-400"
+              >
+                {wikiSource}
+              </Badge>
+            )}
+          </div>
 
-        {/* Title and Badge */}
-        <div className="flex flex-wrap items-baseline gap-2.5">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight tracking-tight">
-            {title.replace(/_/g, " ")}
-          </h1>
-          {wikiSource && wikiSource !== "ixwiki" && (
-            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20 py-0 px-1.5">
-              {wikiSource}
-            </Badge>
+          {/* Metadata & Awards Toggle Buttons */}
+          {(lastModified || awardsData?.hasAwards) && (
+            <div className="flex w-full flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-2">
+              <div className="text-muted-foreground flex items-center gap-4 text-[10px]">
+                {lastModified && (
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} className="text-muted-foreground/60" />
+                    Updated: {new Date(lastModified).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {awardsData?.hasAwards && primaryAward && badgeConfig && (
+                  <Popover open={showPopover} onOpenChange={setShowPopover}>
+                    <PopoverTrigger
+                      render={
+                        <button
+                          className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                            badgeConfig.classes
+                          } ${
+                            showCelebration && primaryAward.category === "LOREWARD"
+                              ? "loreward-badge-celebrate"
+                              : ""
+                          }`}
+                        >
+                          {showCelebration && primaryAward.category === "LOREWARD" && (
+                            <div className="pointer-events-none absolute inset-0 overflow-visible">
+                              {[...Array(8)].map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`loreward-particle loreward-particle-${i + 1}`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          <badgeConfig.Icon
+                            className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
+                          />
+
+                          {awardsData.awards.length > 1 && (
+                            <span className="text-[10px] leading-none font-black opacity-80">
+                              +{awardsData.awards.length - 1}
+                            </span>
+                          )}
+                          <span className="tracking-wider uppercase">{badgeConfig.text}</span>
+                        </button>
+                      }
+                    />
+
+                    <PopoverContent
+                      side="bottom"
+                      align="end"
+                      sideOffset={8}
+                      className="z-[100055] w-72 space-y-2.5 rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-xs shadow-[0_12px_36px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90 dark:shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
+                    >
+                      <div className="text-muted-foreground text-left text-[9px] font-bold tracking-wider uppercase">
+                        Awards & Achievements
+                      </div>
+                      <div className="max-h-48 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto pr-1">
+                        {awardsData.awards.map((award, idx) => {
+                          const date = new Date(award.awardedAt);
+
+                          // Determine icon and color based on award category
+                          let AwardIcon = Award;
+                          let iconColor = "text-purple-500";
+                          if (award.category === "LOREWARD") {
+                            AwardIcon = Trophy;
+                            iconColor = "text-amber-500";
+                          } else if (award.category === "FEATURED") {
+                            AwardIcon = Star;
+                            iconColor = "text-yellow-500";
+                          } else if (award.category === "COLLABORATION") {
+                            AwardIcon = Users;
+                            iconColor = "text-green-500";
+                          } else if (award.category === "PEER_REVIEW") {
+                            AwardIcon = CheckCircle2;
+                            iconColor = "text-blue-500";
+                          } else if (award.category === "EDITOR_MILESTONE") {
+                            AwardIcon = Sparkles;
+                            iconColor = "text-indigo-500";
+                          }
+
+                          return (
+                            <div
+                              key={award.id || idx}
+                              className="flex items-start gap-2 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 dark:border-white/5"
+                            >
+                              <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
+                              <div className="flex flex-col text-left">
+                                <span className="text-foreground text-[11px] font-semibold">
+                                  {award.name}
+                                </span>
+                                {award.description && (
+                                  <span className="text-muted-foreground mt-0.5 text-[10px] leading-normal">
+                                    {award.description}
+                                  </span>
+                                )}
+                                <span className="text-muted-foreground/60 mt-0.5 text-[9px]">
+                                  {date.toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
+                        <Link
+                          href={withBasePath("/w/special/lorewards")}
+                          className="text-[10px] font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                        >
+                          View Leaderboard &rarr;
+                        </Link>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Metadata & Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-white/5">
-          {/* Metadata */}
-          <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-            {lastModified && (
-              <span className="flex items-center gap-1">
-                <Calendar size={12} className="text-muted-foreground/60" />
-                Updated: {new Date(lastModified).toLocaleDateString()}
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <Hash size={12} className="text-muted-foreground/60" />
-              {categories.length} Categories
-            </span>
-          </div>
-
-          {/* Action Badges */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={onOpenHistory}
-              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md border border-white/5 bg-white/[0.03] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
-              title="View revision history"
-            >
-              <History size={11} className="text-muted-foreground/60" />
-              <span>History</span>
-            </button>
-
-            <button
-              onClick={onOpenBacklinks}
-              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md border border-white/5 bg-white/[0.03] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
-              title="Pages that link here"
-            >
-              <Link2 size={11} className="text-muted-foreground/60" />
-              <span>Links Here</span>
-            </button>
-
-            {markupToggle}
-            <StashButton title={title} isAuthenticated={isAuthenticated} />
-          </div>
-        </div>
       </div>
+
+      {/* Dynamic Cursor Sheen Overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 z-20 rounded-2xl transition-opacity duration-300"
+        style={sheenStyle}
+      />
     </div>
   );
 }
@@ -186,18 +458,45 @@ export function ArticleRenderer({
 }: ArticleRendererProps) {
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const { setWikiPage } = useWikiContext();
+  const { setWikiPage, activeModal, setActiveModal, setActiveSectionId } = useWikiContext();
   const { user } = useUser();
   const isAuthenticated = !!user;
-
-  // Modal state for quick actions
-  const [activeModal, setActiveModal] = useState<"history" | "backlinks" | null>(null);
+  const [tocOpen, setTocOpen] = useState(false);
 
   // Feed TOC data to WikiContext for Dynamic Island wiki mode
   useEffect(() => {
     setWikiPage(title, toc);
     return () => setWikiPage(null, []);
   }, [title, toc, setWikiPage]);
+
+  // Scroll spy to update the active section ID in global context as user scrolls
+  useEffect(() => {
+    if (toc.length === 0) return;
+
+    function tick() {
+      const ids = toc.map((e) => e.id);
+      let current: string | null = null;
+      // Find the first heading that is currently above or near the top of the viewport
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 120) {
+            current = id;
+          }
+        }
+      }
+      setActiveSectionId(current);
+    }
+
+    window.addEventListener("scroll", tick, { passive: true });
+    tick(); // Run immediately
+
+    return () => {
+      window.removeEventListener("scroll", tick);
+      setActiveSectionId(null);
+    };
+  }, [toc, setActiveSectionId]);
 
   // Make navbox titles clickable to toggle collapse
   useEffect(() => {
@@ -234,29 +533,44 @@ export function ArticleRenderer({
   const isStashed = stashQuery.data?.stashed ?? false;
 
   // Annotation overlay — highlights + selection toolbar
-  const {
-    toggleButton: markupToggle,
-    toolbarPortal,
-    annotationPopover,
-  } = useAnnotationOverlay(contentRef, title, isAuthenticated, isStashed);
+  const { toolbarPortal, annotationPopover } = useAnnotationOverlay(
+    contentRef,
+    title,
+    isAuthenticated,
+    isStashed
+  );
 
   // Citation hover tooltips
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
-  // Award badge detection
-  const awardQuery = api.lorewards.isAwardWinningArticle.useQuery({ title }, { staleTime: 300000 });
-  const awardData = awardQuery.data;
+  // Award and achievement detection
+  const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery(
+    { title },
+    { staleTime: 300000 }
+  );
+  const awardsData = awardsQuery.data;
 
   const slug = encodeURIComponent(title.replace(/ /g, "_"));
 
   const featuredImageUrl = useMemo(() => {
+    const imgRegex = /<img[^>]+src\s*=\s*(?:["']([^"']+)["']|([^>\s"'=]+))/i;
+    let rawUrl: string | null = null;
     if (infoboxHtml) {
-      const match = infoboxHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match && match[1]) return match[1];
+      const match = infoboxHtml.match(imgRegex);
+      if (match) rawUrl = match[1] || match[2] || null;
     }
-    if (contentHtml) {
-      const match = contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match && match[1]) return match[1];
+    if (!rawUrl && contentHtml) {
+      const match = contentHtml.match(imgRegex);
+      if (match) rawUrl = match[1] || match[2] || null;
+    }
+
+    if (rawUrl) {
+      // Transform MediaWiki thumbnail URL to full size original
+      const thumbMatch = rawUrl.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
+      if (thumbMatch) {
+        return rawUrl.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
+      }
+      return rawUrl;
     }
     return null;
   }, [infoboxHtml, contentHtml]);
@@ -335,16 +649,14 @@ export function ArticleRenderer({
       {/* Redesigned Custom WikiOSHeader */}
       <WikiOSHeader
         title={title}
-        categories={categories}
         lastModified={lastModified}
         wikiSource={wikiSource}
         countryData={countryData}
         featuredImageUrl={featuredImageUrl}
         themeColors={themeColors}
-        onOpenHistory={() => setActiveModal("history")}
-        onOpenBacklinks={() => setActiveModal("backlinks")}
-        markupToggle={markupToggle}
-        isAuthenticated={isAuthenticated}
+        awardsData={awardsData}
+        tocLength={toc.length}
+        onTocClick={() => setTocOpen(true)}
       />
 
       {/* External wiki source badge */}
@@ -354,7 +666,7 @@ export function ArticleRenderer({
             href={`${WIKI_SOURCE_LABELS[wikiSource]!.url}${encodeURIComponent(title.replace(/ /g, "_"))}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded bg-amber-50/5 border border-amber-500/10 px-2 py-0.5 text-xs text-amber-500 hover:bg-amber-500/10 transition-colors"
+            className="inline-flex items-center gap-1 rounded border border-amber-500/10 bg-amber-50/5 px-2 py-0.5 text-xs text-amber-500 transition-colors hover:bg-amber-500/10"
           >
             <ExternalLink size={11} />
             From {WIKI_SOURCE_LABELS[wikiSource]!.label}
@@ -362,29 +674,12 @@ export function ArticleRenderer({
         </div>
       )}
 
-      {/* Award banner */}
-      {awardData?.isAward &&
-        (() => {
-          const count = awardData.entries.length;
-          return (
-            <Link href={withBasePath("/w/special/lorewards")} className="wikios-award-banner mb-6">
-              <Trophy size={15} />
-              <span className="wikios-award-banner-text">
-                {count > 1 ? `${count}x Award-winning article` : "Award-winning article"}
-              </span>
-              <span className="wikios-award-banner-detail">
-                {formatAwardDates(awardData.entries)}
-              </span>
-            </Link>
-          );
-        })()}
-
       {/* Page-top notices (WIP, stub, hatnotes) */}
       {noticesHtml && (
         <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
       )}
 
-      {/* Content + sticky TOC side-by-side */}
+      {/* Content layout */}
       <div className="wikios-article-with-toc">
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
@@ -395,14 +690,20 @@ export function ArticleRenderer({
           {categories.length > 0 && <CategoriesBar categories={categories} />}
           <ArticleFooter title={title} lastModified={lastModified} />
         </div>
-
-        {toc.length > 3 && <StickyToc entries={toc} contentRef={contentRef} />}
       </div>
 
       {lightboxPortal}
       {toolbarPortal}
       {annotationPopover}
       {citeTooltipPortal}
+
+      {/* Table of Contents Drawer */}
+      <AppleBooksTocDrawer
+        isOpen={tocOpen}
+        onClose={() => setTocOpen(false)}
+        entries={toc}
+        themeColors={themeColors}
+      />
 
       {/* Quick action modals */}
       {activeModal === "history" && (
@@ -552,75 +853,6 @@ function QuickBacklinksModal({
 }
 
 // ---------------------------------------------------------------------------
-// Award date formatting — groups intelligently by year/month
-// ---------------------------------------------------------------------------
-const SHORT_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function formatAwardDates(entries: Array<{ date: string; type: string }>): string {
-  if (entries.length === 1) {
-    const e = entries[0]!;
-    const d = new Date(e.date);
-    return `${e.type} winner \u00b7 ${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-  }
-
-  // Sort oldest → newest
-  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
-
-  // Group by year, then by month (preserving chronological order)
-  const groups: Array<{ year: number; month: number; days: number[] }> = [];
-  for (const e of sorted) {
-    const d = new Date(e.date);
-    const y = d.getFullYear();
-    const m = d.getMonth();
-    const last = groups[groups.length - 1];
-    if (last && last.year === y && last.month === m) {
-      last.days.push(d.getDate());
-    } else {
-      groups.push({ year: y, month: m, days: [d.getDate()] });
-    }
-  }
-
-  // Build display with consecutive day ranges collapsed: "Mar 19-23, 26 2026"
-  return groups
-    .map((g) => `${SHORT_MONTHS[g.month]} ${collapseDays(g.days)} ${g.year}`)
-    .join(" \u00b7 ");
-}
-
-/** Collapse consecutive days into ranges: [19,20,21,23,26] → "19-21, 23, 26" */
-function collapseDays(days: number[]): string {
-  if (days.length <= 1) return days.join("");
-  const sorted = [...days].sort((a, b) => a - b);
-  const parts: string[] = [];
-  let start = sorted[0]!;
-  let end = start;
-
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] === end + 1) {
-      end = sorted[i]!;
-    } else {
-      parts.push(start === end ? `${start}` : `${start}-${end}`);
-      start = sorted[i]!;
-      end = start;
-    }
-  }
-  parts.push(start === end ? `${start}` : `${start}-${end}`);
-  return parts.join(", ");
-}
-
-// ---------------------------------------------------------------------------
 function CategoriesBar({ categories }: { categories: string[] }) {
   const visible = categories.filter(
     (cat) =>
@@ -652,7 +884,8 @@ function CategoriesBar({ categories }: { categories: string[] }) {
 
 // ---------------------------------------------------------------------------
 function ArticleFooter({ title, lastModified }: { title: string; lastModified: string | null }) {
-  const mwUrl = `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  const mwBaseUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+  const mwUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
   return (
     <div className="wikios-article-footer">
@@ -668,7 +901,7 @@ function ArticleFooter({ title, lastModified }: { title: string; lastModified: s
       )}
       <div className="wikios-footer-links">
         <a href={mwUrl} className="wikios-footer-link" target="_blank" rel="noopener">
-          View on MediaWiki
+          View on Original Wiki
         </a>
       </div>
     </div>

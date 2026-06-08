@@ -27,9 +27,15 @@
   --color-chart-3: var(--color-chart-3);
   --color-chart-4: var(--color-chart-4);
   --color-chart-5: var(--color-chart-5);
+
+  /* Eurostile Font Family Configuration */
+  --font-eurostile: "Eurostile", sans-serif;
+  --font-eurostile-cond: "Eurostile Condensed", var(--font-eurostile), sans-serif;
+  --font-eurostile-extd: "Eurostile Extended", var(--font-eurostile), sans-serif;
 }
 
 /* Import modular CSS files */
+@import "./fonts.css";
 @import "./shared-utilities.css";
 @import "./animations.css";
 @import "./performance.css";

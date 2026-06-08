@@ -9,7 +9,7 @@ import { withBasePath } from "~/lib/base-path";
 export default function WatchlistRedirect() {
   const router = useRouter();
   useEffect(() => {
-    router.replace(withBasePath("/w/special/stashes"));
+    router.replace(withBasePath("/stashes"));
   }, [router]);
   return null;
 }

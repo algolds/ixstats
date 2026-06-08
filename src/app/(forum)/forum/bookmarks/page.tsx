@@ -40,7 +40,7 @@ export default function ForumStashesPage() {
             </p>
           </div>
           <Link
-            href={withBasePath("/w/special/stashes")}
+            href={withBasePath("/stashes")}
             prefetch={false}
             className="flex items-center gap-1.5 rounded-lg border border-[var(--forum-border)] px-3 py-1.5 text-xs font-medium text-[var(--forum-text-dim)] transition-colors hover:border-[var(--forum-accent-border)] hover:text-[var(--forum-accent)]"
           >

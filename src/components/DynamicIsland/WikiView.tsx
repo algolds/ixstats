@@ -7,23 +7,19 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
-  BookOpen,
   Search,
   X,
   FileEdit,
   History,
-  Shuffle,
-  Home,
   ChevronDown,
   ChevronRight,
-  Map,
   Link2,
-  Globe,
   Clock,
   ExternalLink,
-  Users,
   Bell,
   Settings,
+  Bookmark,
+  Loader2,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
@@ -32,15 +28,8 @@ import { api } from "~/trpc/react";
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
 import { PreText } from "~/components/ui/pretext";
+import { cn } from "~/lib/utils";
 import type { DIViewProps } from "./types";
-
-const CountryMapEmbed = dynamic(
-  () =>
-    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
-      default: m.CountryMapEmbed,
-    })),
-  { ssr: false, loading: () => null }
-);
 
 interface WikiViewProps extends DIViewProps {}
 
@@ -51,7 +40,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const { articleTitle, tocEntries, activeSectionId, navigateToSection } = useWikiContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState(false);
-  const [mapOpen, setMapOpen] = useState(true);
   const [recentOpen, setRecentOpen] = useState(false);
 
   const isMainPage =
@@ -66,17 +54,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     { enabled: searchQuery.length >= 2, staleTime: 30_000 }
   );
   const searchResults = searchData?.results ?? [];
-
-  // Country match for map
-  const { data: countries } = api.countries.getSelectList.useQuery(
-    { search: articleTitle ?? "", limit: 5 },
-    { enabled: !!articleTitle && !isMainPage, staleTime: 10 * 60 * 1000 }
-  );
-
-  const matchedCountry = useMemo(() => {
-    if (!countries || !articleTitle) return null;
-    return countries.find((c) => c.name?.toLowerCase() === articleTitle.toLowerCase()) ?? null;
-  }, [countries, articleTitle]);
 
   // Recent changes for the feed
   const { data: recentChanges } = api.wikios.getRecentChanges.useQuery(
@@ -105,25 +82,205 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const slug = articleTitle ? encodeURIComponent(articleTitle.replace(/ /g, "_")) : null;
   const { isSignedIn } = useAuth();
 
+  const utils = api.useUtils();
+
+  // Stash status query
+  const { data: stashData } = api.wikios.isStashed.useQuery(
+    { pageTitle: articleTitle ?? "" },
+    { enabled: !!articleTitle && isSignedIn, retry: false }
+  );
+  const isStashed = stashData?.stashed ?? false;
+  const stashedIn = useMemo(() => stashData?.stashes ?? [], [stashData]);
+
+  // Mutations
+  const stashMutation = api.wikios.stashPage.useMutation({
+    onSuccess: () => {
+      void utils.wikios.isStashed.invalidate({ pageTitle: articleTitle ?? "" });
+      void utils.wikios.getStashes.invalidate();
+    },
+  });
+
+  const unstashMutation = api.wikios.unstashPage.useMutation({
+    onSuccess: () => {
+      void utils.wikios.isStashed.invalidate({ pageTitle: articleTitle ?? "" });
+      void utils.wikios.getStashes.invalidate();
+    },
+  });
+
+  const handleToggleStash = useCallback(() => {
+    if (!articleTitle || !isSignedIn) return;
+    if (isStashed) {
+      const firstStash = stashedIn[0];
+      if (firstStash) {
+        unstashMutation.mutate({ pageTitle: articleTitle, stashId: firstStash.id });
+      } else {
+        unstashMutation.mutate({ pageTitle: articleTitle });
+      }
+    } else {
+      stashMutation.mutate({ pageTitle: articleTitle });
+    }
+  }, [articleTitle, isSignedIn, isStashed, stashedIn, stashMutation, unstashMutation]);
+
+  const stashLoading = stashMutation.isPending || unstashMutation.isPending;
+
+  // Scroll tracking
+  const [scrollPercent, setScrollPercent] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+      setScrollPercent(pct);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Section offsets calculation
+  const [sectionOffsets, setSectionOffsets] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const calculateOffsets = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight <= 0) return;
+
+      const offsets: Record<string, number> = {};
+      for (const entry of visibleToc) {
+        const el = document.getElementById(entry.id);
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          const pct = (top / scrollHeight) * 100;
+          offsets[entry.id] = Math.min(100, Math.max(0, pct));
+        }
+      }
+      setSectionOffsets(offsets);
+    };
+
+    calculateOffsets();
+    window.addEventListener("resize", calculateOffsets);
+
+    return () => window.removeEventListener("resize", calculateOffsets);
+  }, [visibleToc, articleTitle]);
+
+  // Word count & reading time
+  const [readingTime, setReadingTime] = useState<number>(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !articleTitle) {
+      setReadingTime(0);
+      return;
+    }
+    const contentEl = document.querySelector(".wikios-article-content");
+    if (contentEl) {
+      const text = contentEl.textContent || "";
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      setReadingTime(Math.max(1, Math.round(words / 200)));
+    }
+  }, [articleTitle]);
+
+  // Drag / Click handlers for scrubbing
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleScrub = useCallback((pct: number) => {
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (scrollHeight > 0) {
+      window.scrollTo({
+        top: (pct / 100) * scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
+  const updateScrollFromPointer = (e: React.PointerEvent, smooth = false) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const pct = (clickX / rect.width) * 100;
+    const clampedPct = Math.min(100, Math.max(0, pct));
+
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (scrollHeight > 0) {
+      window.scrollTo({
+        top: (clampedPct / 100) * scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    updateScrollFromPointer(e);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    updateScrollFromPointer(e);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
+  const activeSectionTitle = activeEntry?.text ?? "";
+
   return (
     <div className="p-4">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-foreground flex items-center gap-2 text-lg font-bold">
-          <BookOpen className="h-5 w-5 text-blue-400" />
+        <div className="text-foreground flex min-w-0 items-center gap-2 text-lg font-bold">
           <PreText className="text-inherit" whiteSpace="nowrap">
             Wiki
           </PreText>
           {articleTitle && (
-            <PreText
-              className="text-muted-foreground ml-1 max-w-[200px] truncate text-sm font-normal"
-              whiteSpace="nowrap"
-            >
-              {`— ${articleTitle}`}
-            </PreText>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <PreText
+                className="text-muted-foreground ml-1 max-w-[120px] truncate text-sm font-normal sm:max-w-[160px]"
+                whiteSpace="nowrap"
+              >
+                {`— ${articleTitle}`}
+              </PreText>
+              {readingTime > 0 && (
+                <span className="shrink-0 rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-400">
+                  {readingTime} min read
+                </span>
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-1">
+          {articleTitle && isSignedIn && (
+            <button
+              onClick={handleToggleStash}
+              disabled={stashLoading}
+              className={cn(
+                "flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90",
+                isStashed
+                  ? "border border-amber-500/20 bg-amber-500/10 text-amber-400"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+              )}
+              title={isStashed ? "Unstash Article" : "Save to Stash"}
+              type="button"
+            >
+              {stashLoading ? (
+                <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+              ) : (
+                <Bookmark className={cn("h-4 w-4", isStashed && "fill-current")} />
+              )}
+            </button>
+          )}
+
           {onSwitchMode && (
             <>
               <button
@@ -163,32 +320,100 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="mb-3">
-        <div className="border-border bg-accent/5 flex items-center gap-2 rounded-lg border px-3">
-          <Search className="text-muted-foreground h-4 w-4 shrink-0" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search wiki articles..."
-            className="text-foreground placeholder:text-muted-foreground w-full bg-transparent py-2 text-sm outline-none"
-            data-command-palette-search="true"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+      {/* Progressive Scrubbing Track */}
+      {articleTitle && visibleToc.length > 0 && (
+        <div className="mb-4 px-1">
+          <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[10px] font-semibold select-none">
+            <span className="max-w-[200px] truncate">
+              {activeSectionTitle ? `Reading: ${activeSectionTitle}` : "Overview"}
+            </span>
+            <span className="tabular-nums">{Math.round(scrollPercent)}%</span>
+          </div>
+
+          <div
+            ref={trackRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            className="group relative flex h-3 w-full cursor-pointer touch-none items-center select-none"
+            style={{ touchAction: "none" }}
+          >
+            {/* Background Track Line */}
+            <div className="absolute left-0 h-1 w-full rounded-full bg-white/10" />
+
+            {/* Active Progress Fill Line */}
+            <div
+              className="absolute left-0 h-1 rounded-full bg-blue-500"
+              style={{ width: `${scrollPercent}%` }}
+            />
+
+            {/* Section Ticks (Dots) */}
+            {visibleToc.map((entry) => {
+              const offset = sectionOffsets[entry.id] ?? 0;
+              const isActive = activeSectionId === entry.id;
+              return (
+                <div
+                  key={entry.id}
+                  className="group/tick absolute top-1/2 z-20 flex h-3 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                  style={{ left: `${offset}%` }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleScrub(offset);
+                  }}
+                >
+                  <div
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full border transition-all duration-200",
+                      isActive
+                        ? "scale-125 border-blue-400 bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
+                        : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
+                    )}
+                  />
+                  {/* Tooltip */}
+                  <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded border border-white/10 bg-zinc-950/95 px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover/tick:opacity-100">
+                    {entry.text}
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Glowing Scrubber Playhead Handle */}
+            <div
+              className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
+              style={{ left: `${scrollPercent}%` }}
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Search */}
+      {!articleTitle && (
+        <div className="mb-3">
+          <div className="border-border bg-accent/5 flex items-center gap-2 rounded-lg border px-3">
+            <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search wiki articles..."
+              className="text-foreground placeholder:text-muted-foreground w-full bg-transparent py-2 text-sm outline-none"
+              data-command-palette-search="true"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Search Results — full-text with snippets */}
-      {searchQuery.length >= 2 && (
+      {!articleTitle && searchQuery.length >= 2 && (
         <div className="border-border mb-3 border-b pb-3">
           <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
             <PreText className="text-inherit" whiteSpace="nowrap">
@@ -211,7 +436,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full flex-col rounded-md px-2 py-1.5 text-left transition-colors"
               >
                 <span className="flex items-center gap-2 text-sm">
-                  <BookOpen className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">
                     {result.title}
                   </PreText>
@@ -234,91 +458,38 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
       {!searchQuery && (
         <>
-          {/* Sections — collapsible */}
-          {articleTitle && visibleToc.length > 0 && (
+          {/* Recent Activity — collapsible feed (removed on articles) */}
+          {!articleTitle && (
             <CollapsibleSection
-              label="Sections"
-              count={visibleToc.length}
-              open={sectionsOpen}
-              onToggle={() => setSectionsOpen(!sectionsOpen)}
+              label="Recent Activity"
+              icon={<Clock className="h-3 w-3" />}
+              open={recentOpen}
+              onToggle={() => setRecentOpen(!recentOpen)}
             >
-              <div className="max-h-[30vh] overflow-y-auto">
-                {visibleToc.map((entry) => (
-                  <button
-                    key={entry.id}
-                    onClick={() => handleSectionClick(entry.id)}
-                    className={`flex w-full items-center rounded-md px-2 py-1 text-left text-[13px] transition-colors ${
-                      activeSectionId === entry.id
-                        ? "bg-blue-500/10 font-medium text-blue-400"
-                        : "text-foreground/60 hover:bg-accent/10 hover:text-foreground/90"
-                    }`}
-                    style={{ paddingLeft: `${8 + (entry.level - 2) * 14}px` }}
-                  >
-                    {entry.level > 2 && (
-                      <span className="text-muted-foreground/70 mr-1.5 text-[10px]">›</span>
-                    )}
-                    <PreText className="truncate text-inherit" whiteSpace="nowrap">
-                      {entry.text}
-                    </PreText>
-                  </button>
-                ))}
-              </div>
+              {recentChanges && recentChanges.length > 0 ? (
+                <div className="space-y-0.5">
+                  {recentChanges.map((rc, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleNavigateToArticle(rc.title ?? "")}
+                      className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
+                    >
+                      <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
+                        {rc.title}
+                      </PreText>
+                      <PreText className="text-muted-foreground text-[10px]" whiteSpace="nowrap">
+                        {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
+                      </PreText>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
+                  Loading...
+                </PreText>
+              )}
             </CollapsibleSection>
           )}
-
-          {/* Map — only for country pages */}
-          {matchedCountry && (
-            <CollapsibleSection
-              label="Map"
-              icon={<Map className="h-3 w-3" />}
-              open={mapOpen}
-              onToggle={() => setMapOpen(!mapOpen)}
-            >
-              <div
-                className="overflow-hidden rounded-lg border border-white/5"
-                style={{ height: 180 }}
-              >
-                <CountryMapEmbed
-                  countryId={matchedCountry.id}
-                  height="h-[180px]"
-                  showNeighbors
-                  showCities
-                  interactive
-                />
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Recent Activity — collapsible feed */}
-          <CollapsibleSection
-            label="Recent Activity"
-            icon={<Clock className="h-3 w-3" />}
-            open={recentOpen}
-            onToggle={() => setRecentOpen(!recentOpen)}
-          >
-            {recentChanges && recentChanges.length > 0 ? (
-              <div className="space-y-0.5">
-                {recentChanges.map((rc, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleNavigateToArticle(rc.title ?? "")}
-                    className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
-                  >
-                    <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
-                      {rc.title}
-                    </PreText>
-                    <PreText className="text-muted-foreground text-[10px]" whiteSpace="nowrap">
-                      {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
-                    </PreText>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
-                Loading...
-              </PreText>
-            )}
-          </CollapsibleSection>
 
           {/* Page Actions — contextual to current article */}
           {articleTitle && !isMainPage && (
@@ -354,59 +525,20 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 />
                 <QuickAction
                   icon={<ExternalLink />}
-                  label="View Full Article"
+                  label="View on Original Wiki"
                   onClick={() => {
                     onClose();
-                    navigateWithBasePath(`/w/${slug}`, router);
+                    if (articleTitle) {
+                      const mwBaseUrl =
+                        process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+                      const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
+                      window.open(targetUrl, "_blank", "noopener,noreferrer");
+                    }
                   }}
                 />
               </div>
             </div>
           )}
-
-          {/* Navigate */}
-          <div>
-            <SectionHeader label="Navigate" />
-            <div className="space-y-0.5">
-              <QuickAction
-                icon={<Home />}
-                label="Main Page"
-                onClick={() => handleNavigateToArticle("Main Page")}
-              />
-              <QuickAction
-                icon={<Shuffle />}
-                label="Random Article"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath("/w/special/random", router);
-                }}
-              />
-              <QuickAction
-                icon={<Globe />}
-                label="All Countries"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath("/countries", router);
-                }}
-              />
-              <QuickAction
-                icon={<Users />}
-                label="ThinkPages"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath("/dashboard", router);
-                }}
-              />
-              <QuickAction
-                icon={<Map />}
-                label="World Map"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath("/maps", router);
-                }}
-              />
-            </div>
-          </div>
         </>
       )}
     </div>

@@ -5,7 +5,8 @@ import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
-import { BookOpen, Crown, History, Trophy, Flame, User } from "lucide-react";
+import { Crown, History, Trophy, Flame, User } from "lucide-react";
+import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
 import type { ViewMode } from "./types";
 
 interface WikiProfileButtonProps {}
@@ -14,10 +15,11 @@ export function WikiProfileButton({}: WikiProfileButtonProps) {
   const { user } = useUser();
   const { recentArticles, restoreSession } = useWikiContext();
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const router = useRouter();
 
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
-    enabled: popoverOpen && !!user?.id,
+    enabled: (popoverOpen || actionsMenuOpen) && !!user?.id,
   });
 
   // Loreward stats use wiki username (matches country name in the system)
@@ -34,11 +36,16 @@ export function WikiProfileButton({}: WikiProfileButtonProps) {
       : (user?.firstName ?? ""));
 
   return (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-      <PopoverTrigger className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10">
-        <BookOpen className="h-3 w-3 shrink-0 text-blue-400 opacity-70" />
-        <span className="text-foreground/80 text-xs font-medium">WikiOS</span>
-      </PopoverTrigger>
+    <>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger
+        nativeButton={false}
+        render={
+          <span className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10 select-none">
+            <span className="text-foreground/80 text-xs font-medium">WikiOS</span>
+          </span>
+        }
+      />
       <PopoverContent
         side="bottom"
         align="center"
@@ -47,7 +54,6 @@ export function WikiProfileButton({}: WikiProfileButtonProps) {
       >
         {/* Header */}
         <div className="border-border/50 flex items-center gap-2 border-b px-4 py-3">
-          <BookOpen className="h-4 w-4 text-blue-400" />
           <span className="text-sm font-semibold">Wiki Profile</span>
         </div>
 
@@ -93,12 +99,12 @@ export function WikiProfileButton({}: WikiProfileButtonProps) {
               <button
                 onClick={() => {
                   setPopoverOpen(false);
-                  navigateWithBasePath("/mycountry", router);
+                  setActionsMenuOpen(true);
                 }}
                 className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors"
               >
                 <Crown className="h-3 w-3" />
-                <span>MyCountry</span>
+                <span>Country Actions</span>
               </button>
             )}
           </div>
@@ -129,5 +135,17 @@ export function WikiProfileButton({}: WikiProfileButtonProps) {
         </div>
       </PopoverContent>
     </Popover>
-  );
+
+    {userProfile?.countryId && userProfile?.country?.name && (
+      <CountryActionsMenu
+        targetCountryId={userProfile.countryId}
+        targetCountryName={userProfile.country.name}
+        viewerCountryId={userProfile.countryId}
+        isOpen={actionsMenuOpen}
+        onClose={() => setActionsMenuOpen(false)}
+        isOwnCountry={true}
+      />
+    )}
+  </>
+);
 }

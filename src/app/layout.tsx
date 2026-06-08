@@ -24,6 +24,7 @@ import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { DIPluginProvider } from "~/components/DynamicIsland";
+import { WikiContextProvider } from "~/components/wikios/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 
 // Removed force-dynamic to enable static generation and ISR where possible
@@ -66,26 +67,28 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                 <NotificationBadgeProvider>
                   <GlobalNotificationSystem>
                     <DIPluginProvider>
-                      <WebGLErrorHandler />
-                      <MapPrefetcher />
-                      <NavigationTransitionHandler />
-                      {isStandalone ? (
-                        <div className="flex min-h-screen flex-col">
-                          <Navigation />
-                          <main className="flex-1">
-                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                          </main>
-                        </div>
-                      ) : (
-                        <div className="flex min-h-screen flex-col">
-                          <Navigation />
-                          {/* <GlobalActivityMarquee /> */}
-                          <SetupRedirect />
-                          <main className="flex-1">
-                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                          </main>
-                        </div>
-                      )}
+                      <WikiContextProvider>
+                        <WebGLErrorHandler />
+                        <MapPrefetcher />
+                        <NavigationTransitionHandler />
+                        {isStandalone ? (
+                          <div className="flex min-h-screen flex-col">
+                            <Navigation />
+                            <main className="flex-1">
+                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                            </main>
+                          </div>
+                        ) : (
+                          <div className="flex min-h-screen flex-col">
+                            <Navigation />
+                            {/* <GlobalActivityMarquee /> */}
+                            <SetupRedirect />
+                            <main className="flex-1">
+                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                            </main>
+                          </div>
+                        )}
+                      </WikiContextProvider>
                     </DIPluginProvider>
                   </GlobalNotificationSystem>
                 </NotificationBadgeProvider>

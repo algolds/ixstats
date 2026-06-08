@@ -221,3 +221,22 @@ model BlurbResponse {
   @@index([featured])
   @@map("blurb_responses")
 }
+
+/// A general wiki award or milestone achievement assigned to an article.
+model WikiArticleAward {
+  id             String   @id @default(cuid())
+  pageTitle      String
+  pageSlug       String
+  category       String   // FEATURED, COLLABORATION, PEER_REVIEW, SPECIAL, EDITOR_MILESTONE
+  name           String   // e.g. "Featured Article", "10k Prose Milestone"
+  description    String?  // citation or description of the award/milestone
+  recipientUsers Json?    // Array of usernames (e.g. ["User1", "User2"])
+  awardedAt      DateTime @default(now())
+  metadata       String?  // Optional extra JSON string metadata
+
+  @@index([pageTitle])
+  @@index([pageSlug])
+  @@index([category])
+  @@map("wiki_article_awards")
+}
+

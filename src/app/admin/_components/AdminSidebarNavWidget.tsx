@@ -109,7 +109,7 @@ const NAV_ITEMS: NavItem[] = [
     activeColor: "text-cyan-500 dark:text-cyan-400 border-l-cyan-500",
   },
   {
-    label: "Wiki Management",
+    label: "WikiOS Administration",
     href: "/admin/wiki",
     icon: BookOpen,
     description: "Wiki Links & Scanning",

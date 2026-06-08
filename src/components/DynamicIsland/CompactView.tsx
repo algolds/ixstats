@@ -205,7 +205,7 @@ function CompactViewComponent({
                     </div>
                   ) : (
                     <img
-                      src={withBasePath("/images/ix-logo.svg")}
+                      src={withBasePath("/ix-logo-v2.svg")}
                       alt="IxLogo"
                       className={`relative z-10 ${isSticky ? "h-4 w-4" : "h-5 w-5"} opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert`}
                     />
@@ -249,13 +249,17 @@ function CompactViewComponent({
                       onSwitchMode(`plugin:${pluginViewKey}`);
                     }
                   }}
-                  className="flex max-w-[160px] cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
+                  className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
+                    activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
+                  }`}
                   title={`Open ${activePlugin.id} mode`}
                 >
                   {pluginCenter}
                 </button>
               ) : (
-                <div className="flex max-w-[160px] items-center gap-1.5 px-1.5 py-0.5">
+                <div className={`flex items-center gap-1.5 px-1.5 py-0.5 transition-all duration-300 ${
+                  activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
+                }`}>
                   {pluginCenter}
                 </div>
               ))}
@@ -365,13 +369,17 @@ function CompactViewComponent({
                               onSwitchMode(`plugin:${pluginViewKey}`);
                             }
                           }}
-                          className="flex max-w-[220px] cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10"
+                          className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
+                            activeSectionName ? "max-w-[280px]" : "max-w-[220px]"
+                          }`}
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </button>
                       ) : (
-                        <div className="flex max-w-[220px] items-center gap-1.5 px-1.5">
+                        <div className={`flex items-center gap-1.5 px-1.5 transition-all duration-300 ${
+                          activeSectionName ? "max-w-[280px]" : "max-w-[220px]"
+                        }`}>
                           {pluginCenter}
                         </div>
                       )

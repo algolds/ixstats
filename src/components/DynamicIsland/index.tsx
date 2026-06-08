@@ -19,6 +19,7 @@ import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { IOSActivityIndicator } from "~/components/ui/loader";
+import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -106,6 +107,9 @@ function CommandPaletteContent({
   const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
   const isWikiActive = activePlugin?.id === "wiki";
 
+  const { activeSectionId, tocEntries } = useWikiContext();
+  const hasActiveSection = !!(activeSectionId && tocEntries.some((e) => e.id === activeSectionId));
+
   // Dynamic size based on sticky/collapsed state + wiki/forum context + expanded state
   useEffect(() => {
     let newSize: SizePresets;
@@ -130,11 +134,11 @@ function CommandPaletteContent({
     } else {
       if (isWikiActive) {
         if (isSticky && isCollapsed) {
-          newSize = SIZE_PRESETS.WIKI_COMPACT; // 170x32 — compact wiki pill
+          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT : SIZE_PRESETS.WIKI_COMPACT; // 170x32 -> 200x36
         } else if (isSticky) {
-          newSize = SIZE_PRESETS.COMPACT; // 200x36 — hover state
+          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.COMPACT; // 200x36 -> 300x44
         } else {
-          newSize = SIZE_PRESETS.WIKI_INLINE; // 280x38 — inline wiki pill
+          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE; // 280x38 -> 300x44
         }
       } else if (isForumActive) {
         if (isCollapsed) {
@@ -162,6 +166,7 @@ function CommandPaletteContent({
     isExpanded,
     expandedMode,
     isNavLoading,
+    hasActiveSection,
   ]);
 
   useEffect(() => {

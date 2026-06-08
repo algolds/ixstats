@@ -104,6 +104,7 @@ function ProfileContent() {
           <DashboardSidebarLayout
             heroCollapsed={heroCollapsed}
             onHeroExpand={() => setHeroCollapsed(false)}
+            disableCollapse={true}
           >
             <div className="mb-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

@@ -9,7 +9,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
+import { navigateWithBasePath } from "~/lib/base-path";
 
 // Show delay (ms) before tooltip appears — short enough to feel responsive
 const SHOW_DELAY = 150;
@@ -71,8 +71,39 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
       const match = href.match(/\/w\/([^#?]+)/);
       if (!match) return;
 
+      // Exclude non-prose areas and obvious UI/navigation links where UX is concerned
+      if (
+        link.closest(
+          ".wikios-header, .wikios-categories, .wikios-category-link, .wikios-portal, " +
+          ".wikios-portal-pill, .wikios-portal-card, .wikios-breadcrumb, .wikios-breadcrumb-link, " +
+          ".wikios-tree-explorer, .wikios-tree-node, .wikios-tree-label, .wikios-tree-page-link, " +
+          ".wikios-main-categories, .wikios-main-cat-pill, .wikios-main-recent, .wikios-main-world, " +
+          ".wikios-main-world-card, .wikios-main-stats, .wikios-main-stat, " +
+          ".wikios-article-footer, .wikios-notices, .wikios-infobox, .navbox, .wikios-navbox, " +
+          ".wikios-quick-modal, .wikios-award-banner, [role='navigation'], " +
+          ".reference, .cite-note, .wikios-rail, .wikios-sidebar"
+        )
+      ) {
+        return;
+      }
+
       const title = decodeURIComponent(match[1]!).replace(/_/g, " ");
-      if (title.startsWith("Special:") || title.startsWith("File:")) return;
+      const lowerTitle = title.toLowerCase();
+      if (
+        lowerTitle.startsWith("special:") ||
+        lowerTitle.startsWith("special/") ||
+        lowerTitle.startsWith("file:") ||
+        lowerTitle.startsWith("file/") ||
+        lowerTitle.startsWith("category:") ||
+        lowerTitle.startsWith("category/") ||
+        lowerTitle.startsWith("template:") ||
+        lowerTitle.startsWith("help:") ||
+        lowerTitle.startsWith("user:") ||
+        lowerTitle.startsWith("talk:") ||
+        lowerTitle.startsWith("wiki:")
+      ) {
+        return;
+      }
 
       const rect = link.getBoundingClientRect();
       showPreview(title, rect);

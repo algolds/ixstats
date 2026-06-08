@@ -711,6 +711,7 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
       heroCollapsed={heroCollapsed}
       onHeroExpand={() => setHeroCollapsed(false)}
       discordBadge={discordBadge}
+      disableCollapse={true}
     >
       <UnifiedDashboardSection globalStats={globalStats} />
     </DashboardSidebarLayout>

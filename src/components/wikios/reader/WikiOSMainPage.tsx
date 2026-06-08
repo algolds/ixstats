@@ -7,13 +7,16 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
-import { BookOpen, ExternalLink } from "lucide-react";
+import { BookOpen, ExternalLink, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { WikiOSBrandLockup } from "~/components/wikios/shared";
 
 // ---------------------------------------------------------------------------
 // Category definitions (matches live IxWiki navigation grid)
@@ -91,7 +94,7 @@ function BlurbPromptModal({
         </DialogHeader>
 
         {/* Responses */}
-        <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-3">
+        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2.5 overflow-y-auto px-5 py-3">
           {responses.length === 0 && (
             <p className="text-muted-foreground py-6 text-center text-sm">
               No responses yet. Be the first!
@@ -215,37 +218,31 @@ export function WikiOSMainPage() {
   return (
     <div className="wikios-main">
       {/* Hero Header */}
-      <header className="wikios-main-hero">
+      <header className="wikios-main-hero relative">
         <div className="wikios-main-hero-inner">
-          <h1 className="wikios-main-title">
-            <img
-              src="https://ixwiki.com/data/IxWiki_4.svg"
-              alt="IxWiki"
-              className="wikios-main-logo"
-            />
-            IXWIKI
-          </h1>
-          <p className="wikios-main-tagline">
-            A collaborative worldbuilding community &amp; fictional encyclopedia
-          </p>
+          <WikiOSBrandLockup />
         </div>
+        <span className="wikios-hero-est">EST. MMIII</span>
       </header>
 
       {/* Quick Stats Bar */}
       <section className="wikios-main-stats">
-        <div className="wikios-main-stat">
+        <div className="wikios-main-stat relative overflow-hidden">
+          <TextureOverlay texture="paperGrain" opacity={0.08} />
           <span className="wikios-main-stat-value">
             {siteStats?.articles?.toLocaleString() ?? "..."}
           </span>
           <span className="wikios-main-stat-label">Articles</span>
         </div>
-        <div className="wikios-main-stat">
+        <div className="wikios-main-stat relative overflow-hidden">
+          <TextureOverlay texture="paperGrain" opacity={0.08} />
           <span className="wikios-main-stat-value">
             {siteStats?.edits?.toLocaleString() ?? "..."}
           </span>
           <span className="wikios-main-stat-label">Edits</span>
         </div>
-        <div className="wikios-main-stat">
+        <div className="wikios-main-stat relative overflow-hidden">
+          <TextureOverlay texture="paperGrain" opacity={0.08} />
           <span className="wikios-main-stat-value">
             {siteStats?.users?.toLocaleString() ?? "..."}
           </span>
@@ -254,8 +251,9 @@ export function WikiOSMainPage() {
         {activePrompt ? (
           <button
             onClick={() => setBlurbModalOpen(true)}
-            className="wikios-main-stat wikios-main-stat-blurb"
+            className="wikios-main-stat wikios-main-stat-blurb relative overflow-hidden"
           >
+            <TextureOverlay texture="paperGrain" opacity={0.08} />
             <span className="wikios-main-stat-badge">
               Blurbs
               {activePrompt.featured && <span className="wikios-main-stat-featured">Featured</span>}
@@ -268,7 +266,8 @@ export function WikiOSMainPage() {
             </span>
           </button>
         ) : (
-          <div className="wikios-main-stat">
+          <div className="wikios-main-stat relative overflow-hidden">
+            <TextureOverlay texture="paperGrain" opacity={0.08} />
             <span className="wikios-main-stat-value wikios-main-stat-ixtime">0</span>
             <span className="wikios-main-stat-label">Blurbs</span>
           </div>
@@ -278,8 +277,16 @@ export function WikiOSMainPage() {
       <div className="wikios-main-content">
         {/* Featured Article */}
         {featuredArticleHtml && (
-          <section className="wikios-main-featured glass-hierarchy-child">
-            <div className="wikios-main-featured-badge">Featured Article</div>
+          <section className="wikios-main-featured glass-hierarchy-child relative overflow-hidden">
+            <TextureOverlay texture="diagonal" opacity={0.05} />
+            <div className="mb-3 flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 uppercase shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+              >
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Featured Article
+              </Badge>
+            </div>
             <div
               className="wikios-main-featured-content wikios-article-content"
               dangerouslySetInnerHTML={{ __html: featuredArticleHtml }}
@@ -297,10 +304,11 @@ export function WikiOSMainPage() {
                 <Link
                   key={cat.name}
                   href={withBasePath(`/w/special/categories/${encodeURIComponent(cat.name)}`)}
-                  className="wikios-main-cat-pill"
+                  className="wikios-main-cat-pill relative overflow-hidden"
                   style={{ "--cat-color": cat.color } as React.CSSProperties}
                 >
-                  <span className="wikios-main-cat-name">{cat.name}</span>
+                  <TextureOverlay texture="halftone" opacity={0.05} />
+                  <span className="wikios-main-cat-name relative z-10">{cat.name}</span>
                 </Link>
               ))}
             </div>
@@ -319,21 +327,47 @@ export function WikiOSMainPage() {
             </h2>
             {recentChanges && recentChanges.length > 0 ? (
               <ul className="wikios-main-recent">
-                {recentChanges.map((rc, idx) => (
-                  <li key={idx} className="wikios-main-recent-item">
-                    <Link
-                      href={withBasePath(
-                        `/w/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
-                      )}
-                      className="wikios-main-recent-title"
-                    >
-                      {rc.title}
-                    </Link>
-                    <span className="wikios-main-recent-meta">
-                      {rc.user} · {formatMWTimeAgo(rc.timestamp)}
-                    </span>
-                  </li>
-                ))}
+                {recentChanges.map((rc, idx) => {
+                  const diff = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
+                  const diffSign = diff > 0 ? "+" : "";
+                  const formattedDiff = `${diffSign}${diff.toLocaleString()}`;
+
+                  let diffClass = "text-muted-foreground/60";
+                  if (diff > 0) {
+                    diffClass =
+                      diff >= 500
+                        ? "text-emerald-500 font-bold"
+                        : "text-emerald-600 dark:text-emerald-450";
+                  } else if (diff < 0) {
+                    diffClass =
+                      diff <= -500 ? "text-red-500 font-bold" : "text-red-600 dark:text-red-400";
+                  }
+
+                  return (
+                    <li key={idx} className="wikios-main-recent-item">
+                      <Link
+                        href={withBasePath(
+                          `/w/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
+                        )}
+                        className="wikios-main-recent-title"
+                      >
+                        {rc.title}
+                      </Link>
+                      <span className="wikios-main-recent-meta flex items-center gap-1.5">
+                        <span>{rc.user}</span>
+                        <span className="opacity-40">·</span>
+                        <span>{formatMWTimeAgo(rc.timestamp)}</span>
+                        <span className="opacity-40">·</span>
+                        <span
+                          className={cn("font-mono text-[10px]", diffClass)}
+                          title={`${rc.oldLen} → ${rc.newLen} bytes`}
+                        >
+                          ({formattedDiff})
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-sm text-[var(--wikios-text-dim)]">Loading recent changes...</p>

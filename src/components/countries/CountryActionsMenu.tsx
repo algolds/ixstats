@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   UserPlus,
@@ -55,6 +56,11 @@ export function CountryActionsMenu({
   const router = useRouter();
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { data: followStatus, refetch: refetchFollowStatus } =
     api.diplomaticCore.getFollowStatus.useQuery(
@@ -212,7 +218,9 @@ export function CountryActionsMenu({
   const actionButtonClass = (colors: string) =>
     `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${colors}`;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -524,7 +532,7 @@ export function CountryActionsMenu({
                     Compare Countries
                   </button>
 
-                   <WikiLinkPreview title={targetCountryName}>
+                  <WikiLinkPreview title={targetCountryName}>
                     <Link
                       href={titleToWikiOSPath(targetCountryName)}
                       className={actionButtonClass(
@@ -586,6 +594,7 @@ export function CountryActionsMenu({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

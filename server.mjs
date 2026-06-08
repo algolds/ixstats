@@ -4,38 +4,38 @@
  * Enables real-time intelligence updates via WebSocket
  */
 
-import { createServer } from 'http';
-import { parse } from 'url';
-import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
-import next from 'next';
+import { createServer } from "http";
+import { parse } from "url";
+import { existsSync, readFileSync } from "fs";
+import { resolve } from "path";
+import next from "next";
 
 function loadEnvVariables() {
   const envFiles = [];
   const cwd = process.cwd();
-  const mode = process.env.NODE_ENV || 'development';
+  const mode = process.env.NODE_ENV || "development";
 
-  if (mode === 'development') {
-    envFiles.push('.env.local.dev');
-    envFiles.push('.env.local');
-  } else if (mode === 'production') {
-    envFiles.push('.env.production');
-    envFiles.push('.env.local');
+  if (mode === "development") {
+    envFiles.push(".env.local.dev");
+    envFiles.push(".env.local");
+  } else if (mode === "production") {
+    envFiles.push(".env.production");
+    envFiles.push(".env.local");
   }
 
-  envFiles.push('.env');
+  envFiles.push(".env");
 
   for (const file of envFiles) {
     const absolutePath = resolve(cwd, file);
     if (!existsSync(absolutePath)) continue;
 
     try {
-      const content = readFileSync(absolutePath, 'utf8');
+      const content = readFileSync(absolutePath, "utf8");
       for (const rawLine of content.split(/\r?\n/)) {
         const line = rawLine.trim();
-        if (!line || line.startsWith('#')) continue;
+        if (!line || line.startsWith("#")) continue;
 
-        const equalsIndex = line.indexOf('=');
+        const equalsIndex = line.indexOf("=");
         if (equalsIndex === -1) continue;
 
         const key = line.slice(0, equalsIndex).trim();
@@ -59,252 +59,300 @@ function loadEnvVariables() {
 
 loadEnvVariables();
 
-const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.HOSTNAME || 'localhost';
+const dev = process.env.NODE_ENV !== "production";
+const hostname = process.env.HOSTNAME || "localhost";
 // Default to port 3550 in production, 3003 for dev to avoid clashing with production
-const defaultPort = process.env.NODE_ENV === 'production' ? '3550' : '3003';
+const defaultPort = process.env.NODE_ENV === "production" ? "3550" : "3003";
 const port = parseInt(process.env.PORT || defaultPort, 10);
 
 // Initialize Next.js
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
-console.log('[Server] Initializing IxStats with WebSocket support...');
-console.log('[Server] Environment:', process.env.NODE_ENV);
-console.log('[Server] Port:', port);
+console.log("[Server] Initializing IxStats with WebSocket support...");
+console.log("[Server] Environment:", process.env.NODE_ENV);
+console.log("[Server] Port:", port);
 
-app.prepare().then(async () => {
-  // Create HTTP server
-  const httpServer = createServer(async (req, res) => {
-    try {
-      const parsedUrl = parse(req.url, true);
-      await handle(req, res, parsedUrl);
-    } catch (err) {
-      console.error('[Server] Error handling request:', err);
-      res.statusCode = 500;
-      res.end('Internal Server Error');
-    }
-  });
-
-  // ──────────────────────────────────────────────
-  // Subsystem status tracking
-  // ──────────────────────────────────────────────
-  const subsystems = {
-    intelligenceWS: { status: 'skipped', detail: '' },
-    marketWS: { status: 'skipped', detail: '' },
-    cron: { status: 'skipped', detail: '' },
-  };
-  let marketWsInstance = null;
-
-  // ──────────────────────────────────────────────
-  // WebSocket: Intelligence (production only)
-  // ──────────────────────────────────────────────
-  try {
-    if (dev) {
-      subsystems.intelligenceWS = { status: 'disabled', detail: 'dev mode' };
-      console.log('[Server] ⚠ Intelligence WebSocket disabled in development mode');
-    } else {
-      const { initializeWebSocketServer } = await import('./src/server/websocket-server.js');
-      await initializeWebSocketServer(httpServer);
-      subsystems.intelligenceWS = { status: 'ok', detail: 'initialized' };
-      console.log('[Server] ✓ Intelligence WebSocket initialized');
-    }
-  } catch (error) {
-    subsystems.intelligenceWS = { status: 'failed', detail: error.message };
-    console.error('[Server] ✗ Intelligence WebSocket initialization failed:', error.message);
-    console.warn('[Server] Continuing without Intelligence WebSocket support');
-  }
-
-  // ──────────────────────────────────────────────
-  // WebSocket: Market (always enabled)
-  // ──────────────────────────────────────────────
-  try {
-    const { initializeMarketWebSocket } = await import('./src/lib/market-websocket-server.js');
-    marketWsInstance = initializeMarketWebSocket(httpServer, '/api/market-ws');
-    subsystems.marketWS = { status: 'ok', detail: '/api/market-ws' };
-    console.log('[Server] ✓ Market WebSocket initialized at /api/market-ws');
-  } catch (error) {
-    subsystems.marketWS = { status: 'failed', detail: error.message };
-    console.error('[Server] ✗ Market WebSocket initialization failed:', error.message);
-    console.warn('[Server] Continuing without Market WebSocket support');
-  }
-
-  // ──────────────────────────────────────────────
-  // Cron jobs (individually isolated)
-  // ──────────────────────────────────────────────
-  let cron = null;
-  let cronJobsScheduled = 0;
-  let cronJobsFailed = 0;
-
-  try {
-    cron = await import('node-cron');
-  } catch (error) {
-    console.error('[Cron] ✗ Failed to import node-cron:', error.message);
-    console.warn('[Cron] Continuing without scheduled jobs');
-  }
-
-  if (cron) {
-    // Helper: schedule a cron job with isolated error handling
-    const scheduleCron = (name, schedule, handler) => {
+app
+  .prepare()
+  .then(async () => {
+    // Create HTTP server
+    const httpServer = createServer(async (req, res) => {
       try {
-        cron.default.schedule(schedule, handler, { timezone: 'UTC' });
-        cronJobsScheduled++;
-        console.log(`[Cron] ✓ ${name}`);
-      } catch (error) {
-        cronJobsFailed++;
-        console.error(`[Cron] ✗ Failed to schedule ${name}:`, error.message);
+        const parsedUrl = parse(req.url, true);
+        await handle(req, res, parsedUrl);
+      } catch (err) {
+        console.error("[Server] Error handling request:", err);
+        res.statusCode = 500;
+        res.end("Internal Server Error");
       }
+    });
+
+    // ──────────────────────────────────────────────
+    // Subsystem status tracking
+    // ──────────────────────────────────────────────
+    const subsystems = {
+      intelligenceWS: { status: "skipped", detail: "" },
+      marketWS: { status: "skipped", detail: "" },
+      cron: { status: "skipped", detail: "" },
     };
+    let marketWsInstance = null;
 
-    // 1. Auction completion (every minute)
-    scheduleCron('Auction completion (every minute)', '* * * * *', async () => {
-      try {
-        const { processExpiredAuctions } = await import('./src/lib/auction-completion-cron.js');
-        await processExpiredAuctions();
-      } catch (error) {
-        console.error('[Cron] Auction completion failed:', error);
+    // ──────────────────────────────────────────────
+    // WebSocket: Intelligence (production only)
+    // ──────────────────────────────────────────────
+    try {
+      if (dev) {
+        subsystems.intelligenceWS = { status: "disabled", detail: "dev mode" };
+        console.log("[Server] ⚠ Intelligence WebSocket disabled in development mode");
+      } else {
+        const { initializeWebSocketServer } = await import("./src/server/websocket-server.js");
+        await initializeWebSocketServer(httpServer);
+        subsystems.intelligenceWS = { status: "ok", detail: "initialized" };
+        console.log("[Server] ✓ Intelligence WebSocket initialized");
       }
-    });
+    } catch (error) {
+      subsystems.intelligenceWS = { status: "failed", detail: error.message };
+      console.error("[Server] ✗ Intelligence WebSocket initialization failed:", error.message);
+      console.warn("[Server] Continuing without Intelligence WebSocket support");
+    }
 
-    // 2. Passive income distribution (daily at 00:00 UTC)
-    scheduleCron('Passive income distribution (daily at 00:00 UTC)', '0 0 * * *', async () => {
-      try {
-        const { distributePassiveIncome } = await import('./src/lib/passive-income-distribution-cron.js');
-        await distributePassiveIncome();
-      } catch (error) {
-        console.error('[Cron] Passive income distribution failed:', error);
-      }
-    });
+    // ──────────────────────────────────────────────
+    // WebSocket: Market (always enabled)
+    // ──────────────────────────────────────────────
+    try {
+      const { initializeMarketWebSocket } = await import("./src/lib/market-websocket-server.js");
+      marketWsInstance = initializeMarketWebSocket(httpServer, "/api/market-ws");
+      subsystems.marketWS = { status: "ok", detail: "/api/market-ws" };
+      console.log("[Server] ✓ Market WebSocket initialized at /api/market-ws");
+    } catch (error) {
+      subsystems.marketWS = { status: "failed", detail: error.message };
+      console.error("[Server] ✗ Market WebSocket initialization failed:", error.message);
+      console.warn("[Server] Continuing without Market WebSocket support");
+    }
 
-    // 3. Card value tracking (every 6 hours)
-    scheduleCron('Card value tracking (every 6 hours)', '0 */6 * * *', async () => {
-      try {
-        const { updateCardValues } = await import('./src/lib/nation-card-value-update-cron.js');
-        await updateCardValues();
-      } catch (error) {
-        console.error('[Cron] Card value update failed:', error);
-      }
-    });
+    // ──────────────────────────────────────────────
+    // Cron jobs (individually isolated)
+    // ──────────────────────────────────────────────
+    let cron = null;
+    let cronJobsScheduled = 0;
+    let cronJobsFailed = 0;
 
-    // 4. Lore card generation (daily at 02:00 UTC)
-    scheduleCron('Lore card generation (daily at 02:00 UTC)', '0 2 * * *', async () => {
-      try {
-        const { generateDailyLoreCards } = await import('./src/lib/lore-card-generation-cron.js');
-        await generateDailyLoreCards();
-      } catch (error) {
-        console.error('[Cron] Lore card generation failed:', error);
-      }
-    });
+    try {
+      cron = await import("node-cron");
+    } catch (error) {
+      console.error("[Cron] ✗ Failed to import node-cron:", error.message);
+      console.warn("[Cron] Continuing without scheduled jobs");
+    }
 
-    // 5. IxTwitter Discord sync (every hour)
-    scheduleCron('IxTwitter Discord sync (every hour)', '0 * * * *', async () => {
+    if (cron) {
+      // Fetch cron schedules from database
+      let cronSchedule_lorewardsScoring = "0 6 * * *";
+      let cronSchedule_passiveIncome = "0 0 * * *";
+      let cronSchedule_cardValue = "0 */6 * * *";
+
       try {
-        const { syncIxTwitterToThinkPages } = await import('./src/lib/discord-ixtwitter-sync.js');
-        const result = await syncIxTwitterToThinkPages();
-        if (result.posted > 0) {
-          console.log(`[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`);
+        const { PrismaClient } = await import("@prisma/client");
+        const dbInstance = new PrismaClient();
+        const configs = await dbInstance.systemConfig.findMany({
+          where: {
+            key: {
+              in: [
+                "cronSchedule_lorewardsScoring",
+                "cronSchedule_passiveIncome",
+                "cronSchedule_cardValue",
+              ],
+            },
+          },
+        });
+        for (const config of configs) {
+          if (config.key === "cronSchedule_lorewardsScoring" && config.value) {
+            cronSchedule_lorewardsScoring = config.value.trim();
+          } else if (config.key === "cronSchedule_passiveIncome" && config.value) {
+            cronSchedule_passiveIncome = config.value.trim();
+          } else if (config.key === "cronSchedule_cardValue" && config.value) {
+            cronSchedule_cardValue = config.value.trim();
+          }
         }
+        await dbInstance.$disconnect();
       } catch (error) {
-        console.error('[Cron] IxTwitter sync failed:', error);
+        console.warn(
+          "[Cron] Failed to fetch custom cron schedules from database, using defaults:",
+          error.message
+        );
       }
-    });
 
-    // 6. Lorewards full sync (daily at 06:00 UTC)
-    let loreSyncRunning = false;
-    scheduleCron('Lorewards fullSync (daily at 06:00 UTC)', '0 6 * * *', async () => {
-      if (loreSyncRunning) {
-        console.log('[Cron] Lorewards fullSync already running, skipping this run');
-        return;
-      }
-      loreSyncRunning = true;
-      try {
-        const { fullSync } = await import('./src/lib/lorewards-sync.js');
-        await fullSync();
-        console.log('[Cron] Lorewards fullSync completed successfully');
-      } catch (error) {
-        console.error('[Cron] Lorewards fullSync failed:', error);
-      } finally {
-        loreSyncRunning = false;
-      }
-    });
+      // Helper: schedule a cron job with isolated error handling
+      const scheduleCron = (name, schedule, handler) => {
+        try {
+          cron.default.schedule(schedule, handler, { timezone: "UTC" });
+          cronJobsScheduled++;
+          console.log(`[Cron] ✓ ${name} (${schedule})`);
+        } catch (error) {
+          cronJobsFailed++;
+          console.error(`[Cron] ✗ Failed to schedule ${name} (${schedule}):`, error.message);
+        }
+      };
 
-    // 7. Trade expiry (every 5 minutes)
-    scheduleCron('Trade expiry (every 5 minutes)', '*/5 * * * *', async () => {
-      try {
-        const { processExpiredTrades } = await import('./src/lib/trade-expiry-cron.js');
-        await processExpiredTrades();
-      } catch (error) {
-        console.error('[Cron] Trade expiry failed:', error);
-      }
-    });
+      // 1. Auction completion (every minute)
+      scheduleCron("Auction completion", "* * * * *", async () => {
+        try {
+          const { processExpiredAuctions } = await import("./src/lib/auction-completion-cron.js");
+          await processExpiredAuctions();
+        } catch (error) {
+          console.error("[Cron] Auction completion failed:", error);
+        }
+      });
 
-    subsystems.cron = {
-      status: cronJobsFailed === 0 ? 'ok' : 'partial',
-      detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,
-    };
-  }
+      // 2. Passive income distribution (daily at 00:00 UTC default)
+      scheduleCron("Passive income distribution", cronSchedule_passiveIncome, async () => {
+        try {
+          const { distributePassiveIncome } =
+            await import("./src/lib/passive-income-distribution-cron.js");
+          await distributePassiveIncome();
+        } catch (error) {
+          console.error("[Cron] Passive income distribution failed:", error);
+        }
+      });
 
-  // ──────────────────────────────────────────────
-  // Start listening
-  // ──────────────────────────────────────────────
-  await new Promise((resolve) => {
-    httpServer.listen(port, () => {
-      resolve();
-    });
-  });
+      // 3. Card value tracking (every 6 hours default)
+      scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
+        try {
+          const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
+          await updateCardValues();
+        } catch (error) {
+          console.error("[Cron] Card value update failed:", error);
+        }
+      });
 
-  // ──────────────────────────────────────────────
-  // Startup banner
-  // ──────────────────────────────────────────────
-  const statusIcon = (s) => s === 'ok' ? '✓' : s === 'failed' ? '✗' : s === 'partial' ? '⚠' : '–';
-  console.log('');
-  console.log('┌─────────────────────────────────────────────────┐');
-  console.log('│            IxStats Server — Ready                │');
-  console.log('├─────────────────────────────────────────────────┤');
-  console.log(`│  URL:              http://${hostname}:${port}`);
-  console.log(`│  Environment:      ${process.env.NODE_ENV}`);
-  console.log(`│  Intelligence WS:  ${statusIcon(subsystems.intelligenceWS.status)} ${subsystems.intelligenceWS.detail}`);
-  console.log(`│  Market WS:        ${statusIcon(subsystems.marketWS.status)} ${subsystems.marketWS.detail}`);
-  console.log(`│  Cron Jobs:        ${statusIcon(subsystems.cron.status)} ${subsystems.cron.detail}`);
-  console.log('└─────────────────────────────────────────────────┘');
-  console.log('');
+      // 4. Lore card generation (daily at 02:00 UTC)
+      scheduleCron("Lore card generation", "0 2 * * *", async () => {
+        try {
+          const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
+          await generateDailyLoreCards();
+        } catch (error) {
+          console.error("[Cron] Lore card generation failed:", error);
+        }
+      });
 
-  // ──────────────────────────────────────────────
-  // Graceful shutdown (await WS cleanup)
-  // ──────────────────────────────────────────────
-  const shutdown = async () => {
-    console.log('\n[Server] Graceful shutdown initiated...');
+      // 5. IxTwitter Discord sync (every hour)
+      scheduleCron("IxTwitter Discord sync", "0 * * * *", async () => {
+        try {
+          const { syncIxTwitterToThinkPages } = await import("./src/lib/discord-ixtwitter-sync.js");
+          const result = await syncIxTwitterToThinkPages();
+          if (result.posted > 0) {
+            console.log(
+              `[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`
+            );
+          }
+        } catch (error) {
+          console.error("[Cron] IxTwitter sync failed:", error);
+        }
+      });
 
-    // 1. Close WebSocket servers first (allows clients to reconnect elsewhere)
-    try {
-      if (marketWsInstance && typeof marketWsInstance.shutdown === 'function') {
-        await Promise.race([
-          marketWsInstance.shutdown(),
-          new Promise((r) => setTimeout(r, 3000)),
-        ]);
-        console.log('[Server] Market WebSocket closed');
-      }
-    } catch (err) {
-      console.error('[Server] Error closing Market WebSocket:', err.message);
+      // 6. Lorewards full sync (daily at 06:00 UTC default)
+      let loreSyncRunning = false;
+      scheduleCron("Lorewards fullSync", cronSchedule_lorewardsScoring, async () => {
+        if (loreSyncRunning) {
+          console.log("[Cron] Lorewards fullSync already running, skipping this run");
+          return;
+        }
+        loreSyncRunning = true;
+        try {
+          const { fullSync } = await import("./src/lib/lorewards-sync.js");
+          await fullSync();
+          console.log("[Cron] Lorewards fullSync completed successfully");
+        } catch (error) {
+          console.error("[Cron] Lorewards fullSync failed:", error);
+        } finally {
+          loreSyncRunning = false;
+        }
+      });
+
+      // 7. Trade expiry (every 5 minutes)
+      scheduleCron("Trade expiry (every 5 minutes)", "*/5 * * * *", async () => {
+        try {
+          const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");
+          await processExpiredTrades();
+        } catch (error) {
+          console.error("[Cron] Trade expiry failed:", error);
+        }
+      });
+
+      subsystems.cron = {
+        status: cronJobsFailed === 0 ? "ok" : "partial",
+        detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,
+      };
     }
 
-    // 2. Close the HTTP server
-    httpServer.close(() => {
-      console.log('[Server] HTTP server closed');
-      process.exit(0);
+    // ──────────────────────────────────────────────
+    // Start listening
+    // ──────────────────────────────────────────────
+    await new Promise((resolve) => {
+      httpServer.listen(port, () => {
+        resolve();
+      });
     });
 
-    // Force exit after 10 seconds if graceful shutdown hangs
-    setTimeout(() => {
-      console.error('[Server] Forced exit after shutdown timeout');
-      process.exit(1);
-    }, 10000).unref();
-  };
+    // ──────────────────────────────────────────────
+    // Startup banner
+    // ──────────────────────────────────────────────
+    const statusIcon = (s) =>
+      s === "ok" ? "✓" : s === "failed" ? "✗" : s === "partial" ? "⚠" : "–";
+    console.log("");
+    console.log("┌─────────────────────────────────────────────────┐");
+    console.log("│            IxStats Server — Ready                │");
+    console.log("├─────────────────────────────────────────────────┤");
+    console.log(`│  URL:              http://${hostname}:${port}`);
+    console.log(`│  Environment:      ${process.env.NODE_ENV}`);
+    console.log(
+      `│  Intelligence WS:  ${statusIcon(subsystems.intelligenceWS.status)} ${subsystems.intelligenceWS.detail}`
+    );
+    console.log(
+      `│  Market WS:        ${statusIcon(subsystems.marketWS.status)} ${subsystems.marketWS.detail}`
+    );
+    console.log(
+      `│  Cron Jobs:        ${statusIcon(subsystems.cron.status)} ${subsystems.cron.detail}`
+    );
+    console.log("└─────────────────────────────────────────────────┘");
+    console.log("");
 
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+    // ──────────────────────────────────────────────
+    // Graceful shutdown (await WS cleanup)
+    // ──────────────────────────────────────────────
+    const shutdown = async () => {
+      console.log("\n[Server] Graceful shutdown initiated...");
 
-}).catch((err) => {
-  console.error('[Server] Fatal error during initialization:', err);
-  process.exit(1);
-});
+      // 1. Close WebSocket servers first (allows clients to reconnect elsewhere)
+      try {
+        if (marketWsInstance && typeof marketWsInstance.shutdown === "function") {
+          await Promise.race([
+            marketWsInstance.shutdown(),
+            new Promise((r) => setTimeout(r, 3000)),
+          ]);
+          console.log("[Server] Market WebSocket closed");
+        }
+      } catch (err) {
+        console.error("[Server] Error closing Market WebSocket:", err.message);
+      }
+
+      // 2. Close the HTTP server
+      httpServer.close(() => {
+        console.log("[Server] HTTP server closed");
+        process.exit(0);
+      });
+
+      // Force exit after 10 seconds if graceful shutdown hangs
+      setTimeout(() => {
+        console.error("[Server] Forced exit after shutdown timeout");
+        process.exit(1);
+      }, 10000).unref();
+    };
+
+    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", shutdown);
+  })
+  .catch((err) => {
+    console.error("[Server] Fatal error during initialization:", err);
+    process.exit(1);
+  });

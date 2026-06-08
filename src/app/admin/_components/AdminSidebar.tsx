@@ -104,7 +104,7 @@ const NAV_ITEMS: NavItem[] = [
     description: "Unified Data Manager",
   },
   {
-    label: "Wiki Management",
+    label: "WikiOS Administration",
     href: "/admin/wiki",
     icon: BookOpen,
     description: "Wiki Links & Scanning",

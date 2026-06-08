@@ -1,16 +1,17 @@
 // src/app/admin/wiki/page.tsx
-// Admin wiki management — link status, manual editor, bulk scanner
+// Admin wiki management — links, lorewards, custom awards, system tuning
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
@@ -26,6 +27,22 @@ import {
   ExternalLink,
   Save,
   AlertTriangle,
+  Play,
+  Square,
+  Terminal,
+  Sliders,
+  Database,
+  Trash2,
+  Award,
+  Users,
+  Check,
+  Sparkles,
+  Award as AwardIcon,
+  SlidersHorizontal,
+  Trophy,
+  Star,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -506,7 +523,6 @@ function BulkScannerSection({ countriesData }: { countriesData: any }) {
     const selected = scanResults.filter((r) => r.selected);
     if (selected.length === 0) return;
 
-    // Zod input limits to 100 items; chunk requests to be safe
     const chunks: (typeof selected)[] = [];
     for (let i = 0; i < selected.length; i += 100) {
       chunks.push(selected.slice(i, i + 100));
@@ -688,10 +704,1526 @@ function BulkScannerSection({ countriesData }: { countriesData: any }) {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Lorewards & Bot Section ──────────────────────────────────────────────────
+
+function LorewardsBotSection() {
+  const notify = useNotify();
+  const utils = api.useUtils();
+
+  // PM2 Process control
+  const { data: botProcesses, refetch: refetchProcesses } = api.admin.getBotProcesses.useQuery(
+    undefined,
+    { refetchInterval: 5000 }
+  );
+
+  const controlBotMutation = api.admin.controlBotProcess.useMutation({
+    onSuccess: (data) => {
+      notify.success("Process Control", data.message);
+      refetchProcesses();
+    },
+    onError: (err) => notify.error("Process Error", err.message),
+  });
+
+  const handleProcessControl = (
+    processName: "ixwiki-discord-bot" | "ixstats-ixtwitter",
+    action: "start" | "stop" | "restart"
+  ) => {
+    controlBotMutation.mutate({ processName, action });
+  };
+
+  // Bot Logs terminal
+  const [selectedProcess, setSelectedProcess] = useState<
+    "ixwiki-discord-bot" | "ixstats-ixtwitter"
+  >("ixwiki-discord-bot");
+  const [logType, setLogType] = useState<"out" | "err">("out");
+
+  const {
+    data: logsData,
+    refetch: refetchLogs,
+    isFetching: isFetchingLogs,
+  } = api.admin.getBotProcessLogs.useQuery(
+    { processName: selectedProcess, logType },
+    { refetchInterval: 5000 }
+  );
+
+  // Manual Loreward Run Console
+  const [runDate, setRunDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [scoringResult, setScoringResult] = useState<any>(null);
+
+  const triggerScoringMutation = api.admin.triggerLorewardScoring.useMutation({
+    onSuccess: (data) => {
+      setScoringResult(data);
+      notify.success("Scoring Engine", "Successfully generated candidate lists.");
+    },
+    onError: (err) => notify.error("Scoring Error", err.message),
+  });
+
+  const pushToBotMutation = api.admin.pushLorewardToBot.useMutation({
+    onSuccess: () => notify.success("Announced", "Broadcasted winner embed to Discord channel"),
+    onError: (err) => notify.error("Broadcast Error", err.message),
+  });
+
+  const saveOverrideMutation = api.admin.saveLorewardWinnerOverride.useMutation({
+    onSuccess: () => notify.success("Saved", "Saved winner details override to database"),
+    onError: (err) => notify.error("Override Error", err.message),
+  });
+
+  const handleTriggerScoring = () => {
+    triggerScoringMutation.mutate({ date: runDate });
+  };
+
+  const handlePushToBot = () => {
+    if (!scoringResult || !scoringResult.winner) return;
+    pushToBotMutation.mutate({
+      date: runDate,
+      winner: {
+        user: scoringResult.winner.user,
+        page: scoringResult.winner.page,
+        score: scoringResult.winner.score ?? scoringResult.winner.finalScore ?? 0,
+        bytesAdded: scoringResult.winner.bytesAdded ?? 0,
+      },
+      runnerUp: scoringResult.runnerUp
+        ? {
+            user: scoringResult.runnerUp.user,
+            page: scoringResult.runnerUp.page,
+            score: scoringResult.runnerUp.score ?? scoringResult.runnerUp.finalScore ?? 0,
+            bytesAdded: scoringResult.runnerUp.bytesAdded ?? 0,
+          }
+        : null,
+      candidates: scoringResult.candidates || [],
+      editCount: scoringResult.editCount || 0,
+    });
+  };
+
+  const handleSaveOverride = () => {
+    if (!scoringResult || !scoringResult.winner) return;
+    saveOverrideMutation.mutate({
+      date: runDate,
+      winnerUser: scoringResult.winner.user,
+      winnerPage: scoringResult.winner.page,
+      winnerScore: scoringResult.winner.score ?? scoringResult.winner.finalScore ?? 0,
+      winnerBytes: scoringResult.winner.bytesAdded ?? 0,
+      runnerUpUser: scoringResult.runnerUp?.user ?? null,
+      runnerUpPage: scoringResult.runnerUp?.page ?? null,
+      runnerUpScore: scoringResult.runnerUp?.score ?? scoringResult.runnerUp?.finalScore ?? null,
+      runnerUpBytes: scoringResult.runnerUp?.bytesAdded ?? null,
+      type: "daily",
+    });
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes) return "0 Bytes";
+    const k = 1024;
+    const dm = 2;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* PM2 Controls */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Sliders className="h-5 w-5 text-indigo-500" />
+            PM2 Process Manager
+          </CardTitle>
+          <CardDescription>Control active backend integrations in real-time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            {botProcesses?.map((proc) => (
+              <div
+                key={proc.name}
+                className="border-border/30 bg-muted/20 flex flex-col justify-between rounded-xl border p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-foreground font-semibold">{proc.name}</h4>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "h-2 w-2 rounded-full",
+                          proc.status === "online" ? "bg-emerald-500" : "bg-red-500"
+                        )}
+                      />
+                      <span className="text-muted-foreground text-xs capitalize">
+                        {proc.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleProcessControl(proc.name as any, "start")}
+                      disabled={proc.status === "online"}
+                      className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10"
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleProcessControl(proc.name as any, "stop")}
+                      disabled={proc.status !== "online"}
+                      className="h-8 w-8 text-red-500 hover:bg-red-500/10"
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleProcessControl(proc.name as any, "restart")}
+                      className="h-8 w-8 text-amber-500 hover:bg-amber-500/10"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-border/20 text-muted-foreground mt-4 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                  <div>
+                    <span className="block opacity-60">CPU Load</span>
+                    <span className="text-foreground font-mono font-medium">{proc.cpu}%</span>
+                  </div>
+                  <div>
+                    <span className="block opacity-60">Memory</span>
+                    <span className="text-foreground font-mono font-medium">
+                      {formatBytes(proc.memory)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block opacity-60">Restarts</span>
+                    <span className="text-foreground font-mono font-medium">{proc.restarts}</span>
+                  </div>
+                  <div>
+                    <span className="block opacity-60">Uptime</span>
+                    <span className="text-foreground font-mono font-medium">
+                      {proc.uptime ? `${Math.round(proc.uptime / 60000)}m` : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bot Logs Console */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Terminal className="h-5 w-5 text-emerald-400" />
+                Live Console logs
+              </CardTitle>
+              <CardDescription>Auditing output stream of Discord bot processes</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedProcess}
+                onChange={(e) => setSelectedProcess(e.target.value as any)}
+                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+              >
+                <option value="ixwiki-discord-bot">Discord Bot</option>
+                <option value="ixstats-ixtwitter">IxTwitter Feed</option>
+              </select>
+              <select
+                value={logType}
+                onChange={(e) => setLogType(e.target.value as any)}
+                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+              >
+                <option value="out">Stdout (info)</option>
+                <option value="err">Stderr (errors)</option>
+              </select>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => refetchLogs()}
+                disabled={isFetchingLogs}
+                className="text-muted-foreground h-8 w-8"
+              >
+                <RefreshCw className={cn("h-4 w-4", isFetchingLogs && "animate-spin")} />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="scrollbar-thumb-muted-foreground/30 max-h-72 min-h-60 scrollbar-thin overflow-y-auto rounded-xl bg-zinc-950 p-4 font-mono text-xs text-zinc-300">
+            {logsData && logsData.length > 0 ? (
+              logsData.map((line, idx) => (
+                <div key={idx} className="py-0.5 leading-5 hover:bg-zinc-900/50">
+                  <span className="pr-3 text-zinc-600 select-none">{idx + 1}</span>
+                  <span className={cn(logType === "err" ? "text-red-400" : "text-zinc-300")}>
+                    {line}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="flex min-h-48 items-center justify-center text-zinc-500 italic">
+                No logs recorded yet.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Loreward Run Console */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Award className="h-5 w-5 text-amber-500" />
+            Loreward Run Console
+          </CardTitle>
+          <CardDescription>
+            Manually trigger scoring run, preview candidates, and push updates
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Input
+              type="date"
+              value={runDate}
+              onChange={(e) => setRunDate(e.target.value)}
+              className="max-w-[12rem]"
+            />
+            <Button
+              onClick={handleTriggerScoring}
+              disabled={triggerScoringMutation.isPending}
+              className="gap-2"
+            >
+              {triggerScoringMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Trigger Daily Scoring
+            </Button>
+          </div>
+
+          {scoringResult && (
+            <div className="border-border/30 mt-6 space-y-4 rounded-xl border p-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-sm font-semibold text-emerald-500">
+                    <CheckCircle className="h-4 w-4" />
+                    Winner Picked
+                  </h4>
+                  {scoringResult.winner ? (
+                    <div className="text-muted-foreground mt-2 text-sm">
+                      <p className="text-foreground font-semibold">{scoringResult.winner.user}</p>
+                      <p>Page: {scoringResult.winner.page}</p>
+                      <p>Score: {scoringResult.winner.score ?? scoringResult.winner.finalScore}</p>
+                      <p>Bytes: {scoringResult.winner.bytesAdded?.toLocaleString() || 0} bytes</p>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground mt-2 text-sm italic">None found</p>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-sm font-semibold text-blue-400">
+                    <CheckCircle className="h-4 w-4" />
+                    Runner-up Picked
+                  </h4>
+                  {scoringResult.runnerUp ? (
+                    <div className="text-muted-foreground mt-2 text-sm">
+                      <p className="text-foreground font-semibold">{scoringResult.runnerUp.user}</p>
+                      <p>Page: {scoringResult.runnerUp.page}</p>
+                      <p>
+                        Score: {scoringResult.runnerUp.score ?? scoringResult.runnerUp.finalScore}
+                      </p>
+                      <p>Bytes: {scoringResult.runnerUp.bytesAdded?.toLocaleString() || 0} bytes</p>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground mt-2 text-sm italic">None found</p>
+                  )}
+                </div>
+              </div>
+
+              {scoringResult.candidates && scoringResult.candidates.length > 0 && (
+                <div className="border-border/20 mt-4 border-t pt-3">
+                  <h4 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
+                    Scoring Candidate Queue
+                  </h4>
+                  <div className="text-muted-foreground space-y-1.5 text-xs">
+                    {scoringResult.candidates.map((c: any, index: number) => (
+                      <div
+                        key={index}
+                        className="border-border/10 flex justify-between border-b py-1"
+                      >
+                        <span>
+                          {index + 1}. **{c.user}** on *{c.page}*
+                        </span>
+                        <span className="text-foreground font-mono font-semibold">
+                          {c.score ?? c.finalScore} pts (+{c.bytesAdded?.toLocaleString() || 0}b)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  onClick={handleSaveOverride}
+                  disabled={saveOverrideMutation.isPending}
+                  variant="outline"
+                  className="gap-2 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                >
+                  {saveOverrideMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save Winner Override to DB
+                </Button>
+                <Button
+                  onClick={handlePushToBot}
+                  disabled={pushToBotMutation.isPending}
+                  className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  {pushToBotMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Announce & Sync to Discord Bot
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Awards Manager Section ───────────────────────────────────────────────────
+
+function AwardsManagerSection() {
+  const notify = useNotify();
+
+  // Creation form states
+  const [pageTitle, setPageTitle] = useState("");
+  const [category, setCategory] = useState("FEATURED");
+  const [name, setName] = useState("");
+  const [recipientText, setRecipientText] = useState("");
+  const [description, setDescription] = useState("");
+
+  const [awardSearch, setAwardSearch] = useState("");
+  const [awardCategory, setAwardCategory] = useState<string>("all");
+  const [milestonePages, setMilestonePages] = useState("");
+
+  const {
+    data: awards,
+    refetch: refetchAwards,
+    isLoading: isLoadingAwards,
+  } = api.admin.getWikiArticleAwards.useQuery({
+    category: awardCategory === "all" ? undefined : awardCategory,
+    search: awardSearch || undefined,
+  });
+
+  const createAwardMutation = api.admin.createWikiArticleAwardBatch.useMutation({
+    onSuccess: () => {
+      notify.success("Awards Issued", "Wiki award(s) added successfully");
+      refetchAwards();
+      setPageTitle("");
+      setName("");
+      setRecipientText("");
+      setDescription("");
+    },
+    onError: (err) => notify.error("Creation Error", err.message),
+  });
+
+  const evaluateMilestonesMutation = api.admin.evaluateWikiMilestones.useMutation({
+    onSuccess: (data) => {
+      notify.success(
+        "Scan Complete",
+        `Scan complete. Generated ${data.createdCount} new milestone awards.`
+      );
+      refetchAwards();
+      setMilestonePages("");
+    },
+    onError: (err) => notify.error("Milestone Scan Error", err.message),
+  });
+
+  const deleteAwardMutation = api.admin.deleteWikiArticleAward.useMutation({
+    onSuccess: () => {
+      notify.success("Award Removed", "Wiki award deleted");
+      refetchAwards();
+    },
+    onError: (err) => notify.error("Deletion Error", err.message),
+  });
+
+  const handleCreateAward = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pageTitle.trim() || !name.trim()) return;
+
+    const titles = pageTitle
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const recipients = recipientText
+      ? recipientText
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    createAwardMutation.mutate({
+      pageTitles: titles,
+      category,
+      name,
+      description: description || undefined,
+      recipientUsers: recipients,
+    });
+  };
+
+  const handleScanMilestones = (e: React.FormEvent) => {
+    e.preventDefault();
+    const titles = milestonePages
+      ? milestonePages
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
+
+    evaluateMilestonesMutation.mutate({ pageTitles: titles });
+  };
+
+  const handleDeleteAward = (id: string) => {
+    if (confirm("Are you sure you want to delete this award?")) {
+      deleteAwardMutation.mutate({ id });
+    }
+  };
+
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
+      case "FEATURED":
+        return <Trophy className="h-4 w-4 text-amber-500" />;
+      case "COLLABORATION":
+        return <Users className="h-4 w-4 text-cyan-500" />;
+      case "PEER_REVIEW":
+        return <Check className="h-4 w-4 text-emerald-500" />;
+      case "SPECIAL":
+        return <Star className="h-4 w-4 text-purple-500" />;
+      case "EDITOR_MILESTONE":
+      default:
+        return <Sparkles className="h-4 w-4 text-pink-500" />;
+    }
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      <div className="flex flex-col gap-6 lg:col-span-1">
+        {/* Creation form */}
+        <Card className="border-border/50 bg-card/80 h-fit backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <AwardIcon className="h-5 w-5 text-amber-500" />
+              Issue Custom Award
+            </CardTitle>
+            <CardDescription>Assign article-level trophies or achievements</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateAward} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Page Title(s) (comma-separated)
+                </label>
+                <Input
+                  placeholder="e.g. Main Page, Caphiria..."
+                  value={pageTitle}
+                  onChange={(e) => setPageTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="bg-background border-border/50 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="FEATURED">🏆 Featured Article</option>
+                  <option value="COLLABORATION">👥 Collaboration Milestone</option>
+                  <option value="PEER_REVIEW">✔️ Peer Reviewed</option>
+                  <option value="SPECIAL">⭐ Special Recognition</option>
+                  <option value="EDITOR_MILESTONE">✨ Editor Milestone</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">Award Title / Badge</label>
+                <Input
+                  placeholder="e.g. Winner, Gold Star, 10k prose"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Recipients (Comma-separated)
+                </label>
+                <Input
+                  placeholder="e.g. User1, User2"
+                  value={recipientText}
+                  onChange={(e) => setRecipientText(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Citation / Description
+                </label>
+                <textarea
+                  placeholder="Enter citation details..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="bg-background border-border/50 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={createAwardMutation.isPending}
+                className="mt-2 w-full gap-2"
+              >
+                {createAwardMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Create & Issue Award
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Automated Milestones Panel */}
+        <Card className="border-border/50 bg-card/80 h-fit backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Sparkles className="h-5 w-5 text-pink-500" />
+              Automated Milestones
+            </CardTitle>
+            <CardDescription>Scan page histories and auto-assign milestones</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-muted-foreground space-y-2 text-xs">
+              <p>Runs database analysis on article histories to award:</p>
+              <ul className="list-disc space-y-1 pl-4">
+                <li>
+                  <strong>Prose Length:</strong> 10k, 50k, 100k milestone badges
+                </li>
+                <li>
+                  <strong>Collaboration:</strong> 3+ unique contributors
+                </li>
+                <li>
+                  <strong>Edit Depth:</strong> 50+ total revisions
+                </li>
+              </ul>
+            </div>
+
+            <form onSubmit={handleScanMilestones} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Specific Pages to Scan (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. Caphiria, Main Page (comma-separated)"
+                  value={milestonePages}
+                  onChange={(e) => setMilestonePages(e.target.value)}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={evaluateMilestonesMutation.isPending}
+                className="w-full gap-2 border-0 bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700"
+              >
+                {evaluateMilestonesMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Scan & Generate Milestones
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Active Awards List */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm lg:col-span-2">
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-lg">Issued Awards</CardTitle>
+              <CardDescription>Chronological list of all manual wiki rewards</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={awardCategory}
+                onChange={(e) => setAwardCategory(e.target.value)}
+                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+              >
+                <option value="all">All Categories</option>
+                <option value="FEATURED">Featured</option>
+                <option value="COLLABORATION">Collaboration</option>
+                <option value="PEER_REVIEW">Peer Review</option>
+                <option value="SPECIAL">Special</option>
+                <option value="EDITOR_MILESTONE">Milestones</option>
+              </select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Input
+              placeholder="Search awards by page title..."
+              value={awardSearch}
+              onChange={(e) => setAwardSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {isLoadingAwards ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : !awards || awards.length === 0 ? (
+            <div className="text-muted-foreground py-8 text-center text-sm">
+              No awards match your filter criteria.
+            </div>
+          ) : (
+            <div className="border-border/30 max-h-[30rem] overflow-y-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
+                  <tr className="border-border/30 border-b">
+                    <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
+                      Article
+                    </th>
+                    <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
+                      Award & Badge
+                    </th>
+                    <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium sm:table-cell">
+                      Recipients
+                    </th>
+                    <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium md:table-cell">
+                      Awarded At
+                    </th>
+                    <th className="w-12 px-4 py-2.5" />
+                  </tr>
+                </thead>
+                <tbody className="divide-border/20 divide-y">
+                  {awards.map((award) => {
+                    const recipients = Array.isArray(award.recipientUsers)
+                      ? (award.recipientUsers as string[])
+                      : typeof award.recipientUsers === "string"
+                        ? (JSON.parse(award.recipientUsers) as string[])
+                        : [];
+
+                    return (
+                      <tr key={award.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="text-foreground px-4 py-2.5 font-medium">
+                          {award.pageTitle}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-1.5">
+                            {getCategoryIcon(award.category)}
+                            <span className="font-medium">{award.name}</span>
+                          </div>
+                          {award.description && (
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+                              {award.description}
+                            </p>
+                          )}
+                        </td>
+                        <td className="hidden px-4 py-2.5 text-xs sm:table-cell">
+                          {recipients.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {recipients.map((user) => (
+                                <Badge key={user} variant="secondary" className="px-1.5 py-0">
+                                  {user}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground opacity-50">—</span>
+                          )}
+                        </td>
+                        <td className="text-muted-foreground hidden px-4 py-2.5 text-xs md:table-cell">
+                          {new Date(award.awardedAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteAward(award.id)}
+                            className="h-8 w-8 text-red-500 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── System & Tuning Section ───────────────────────────────────────────────────
+
+function SystemTuningSection() {
+  const notify = useNotify();
+  const utils = api.useUtils();
+
+  // Scoring parameters weights
+  const { data: weights, refetch: refetchWeights } = api.admin.getLorewardWeights.useQuery();
+  const [tempWeights, setTempWeights] = useState<any>(null);
+
+  useEffect(() => {
+    if (weights) {
+      setTempWeights({ ...weights });
+    }
+  }, [weights]);
+
+  const saveWeightsMutation = api.admin.saveLorewardWeights.useMutation({
+    onSuccess: () => {
+      notify.success("Weights Saved", "System scoring weights updated successfully");
+      refetchWeights();
+    },
+    onError: (err) => notify.error("Error", err.message),
+  });
+
+  const handleWeightChange = (key: string, value: number) => {
+    setTempWeights((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
+  };
+
+  const handleSaveWeights = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tempWeights) return;
+    saveWeightsMutation.mutate(tempWeights);
+  };
+
+  // Weight Tuning Preview console
+  const [previewDate, setPreviewDate] = useState(
+    new Date(Date.now() - 86400000).toISOString().split("T")[0]
+  );
+  const [currentPreviewData, setCurrentPreviewData] = useState<any>(null);
+  const [simulatedPreviewData, setSimulatedPreviewData] = useState<any>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  const handleRunPreview = async () => {
+    if (!tempWeights || !weights) return;
+    setIsPreviewLoading(true);
+    try {
+      const current = await utils.admin.previewLorewardScoring.fetch({
+        date: previewDate,
+        proseWeight: weights.lorewardWeight_proseRatio,
+        collaborativeBonus: weights.lorewardWeight_collaborationBonus,
+        depthMaxBonus: weights.lorewardWeight_editDepth,
+        noveltyBonus: weights.lorewardWeight_newArticleBonus,
+        importanceMaxBonus: 0.2,
+      });
+
+      const simulated = await utils.admin.previewLorewardScoring.fetch({
+        date: previewDate,
+        proseWeight: tempWeights.lorewardWeight_proseRatio,
+        collaborativeBonus: tempWeights.lorewardWeight_collaborationBonus,
+        depthMaxBonus: tempWeights.lorewardWeight_editDepth,
+        noveltyBonus: tempWeights.lorewardWeight_newArticleBonus,
+        importanceMaxBonus: 0.2,
+      });
+
+      setCurrentPreviewData(current);
+      setSimulatedPreviewData(simulated);
+      notify.success("Preview Generated", `Fetched scoring data for ${previewDate}`);
+    } catch (err: any) {
+      notify.error("Preview Error", err.message);
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const getRankDeltas = () => {
+    if (!currentPreviewData || !simulatedPreviewData) return [];
+
+    const currentMap = new Map<string, { rank: number; score: number }>();
+    currentPreviewData.candidates.forEach((cand: any, idx: number) => {
+      currentMap.set(`${cand.user}|${cand.page}`, {
+        rank: idx + 1,
+        score: cand.finalScore,
+      });
+    });
+
+    return simulatedPreviewData.candidates.map((cand: any, idx: number) => {
+      const simRank = idx + 1;
+      const key = `${cand.user}|${cand.page}`;
+      const curr = currentMap.get(key);
+
+      const rankDelta = curr ? curr.rank - simRank : 0;
+      const scoreDelta = curr ? cand.finalScore - curr.score : 0;
+
+      return {
+        user: cand.user,
+        page: cand.page,
+        currentRank: curr ? curr.rank : "N/A",
+        simulatedRank: simRank,
+        currentScore: curr ? curr.score : 0,
+        simulatedScore: cand.finalScore,
+        rankDelta,
+        scoreDelta,
+      };
+    });
+  };
+
+  const rankDeltas = getRankDeltas();
+
+  // Cache Operations
+  const [purgePage, setPurgePage] = useState("");
+  const purgeCacheMutation = api.admin.purgeWikiCache.useMutation({
+    onSuccess: (data) => {
+      notify.success(
+        "Cache Purged",
+        `Cleared ${data.clearedCount} cache entries for "${purgePage}"`
+      );
+      setPurgePage("");
+    },
+    onError: (err) => notify.error("Error", err.message),
+  });
+
+  const purgeAllCacheMutation = api.admin.purgeAllWikiCache.useMutation({
+    onSuccess: (data) => {
+      notify.success("Cache Purged", `Cleared all ${data.clearedCount} wiki cache entries`);
+    },
+    onError: (err) => notify.error("Error", err.message),
+  });
+
+  const handlePurgePage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!purgePage.trim()) return;
+    purgeCacheMutation.mutate({ pageTitle: purgePage });
+  };
+
+  const handlePurgeAll = () => {
+    if (
+      confirm(
+        "Are you sure you want to flush ALL cached wiki articles? This will force Parsoid fetches on reload."
+      )
+    ) {
+      purgeAllCacheMutation.mutate();
+    }
+  };
+
+  // Synced Templates list & Sync Actions
+  const [templateSearchInput, setTemplateSearchInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [templateCategoryInput, setTemplateCategoryInput] = useState("");
+
+  const {
+    data: templates,
+    isLoading: isLoadingTemplates,
+    refetch: refetchTemplates,
+  } = api.admin.getWikiTemplatesList.useQuery();
+
+  const { data: suggestions } = api.admin.searchMediaWikiTemplates.useQuery(
+    { query: templateSearchInput },
+    { enabled: templateSearchInput.trim().length >= 2 }
+  );
+
+  const syncTemplateMutation = api.admin.syncWikiTemplateByName.useMutation({
+    onSuccess: (data: any) => {
+      notify.success("Template Synced", `Successfully synced template: ${data.name}`);
+      refetchTemplates();
+      setTemplateSearchInput("");
+      setShowSuggestions(false);
+    },
+    onError: (err) => notify.error("Sync Error", err.message),
+  });
+
+  const syncCategoryMutation = api.admin.syncWikiTemplatesByCategory.useMutation({
+    onSuccess: (data) => {
+      notify.success(
+        "Category Synced",
+        `Successfully synced ${data.synced} of ${data.total} templates.`
+      );
+      refetchTemplates();
+      setTemplateCategoryInput("");
+    },
+    onError: (err) => notify.error("Sync Error", err.message),
+  });
+
+  const handleSyncTemplate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!templateSearchInput.trim()) return;
+    syncTemplateMutation.mutate({ name: templateSearchInput.trim() });
+  };
+
+  const handleSyncCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!templateCategoryInput.trim()) return;
+    syncCategoryMutation.mutate({ category: templateCategoryInput.trim() });
+  };
+
+  // Cron schedule editor
+  const { data: cronSchedules, refetch: refetchCron } = api.admin.getCronSchedules.useQuery();
+  const [cronScoring, setCronScoring] = useState("");
+  const [cronIncome, setCronIncome] = useState("");
+  const [cronCard, setCronCard] = useState("");
+
+  useEffect(() => {
+    if (cronSchedules) {
+      setCronScoring(cronSchedules.cronSchedule_lorewardsScoring);
+      setCronIncome(cronSchedules.cronSchedule_passiveIncome);
+      setCronCard(cronSchedules.cronSchedule_cardValue);
+    }
+  }, [cronSchedules]);
+
+  const saveCronMutation = api.admin.saveCronSchedules.useMutation({
+    onSuccess: () => {
+      notify.success("Cron Saved", "Cron schedules updated. Restart PM2 server to apply.");
+      refetchCron();
+    },
+    onError: (err) => notify.error("Error Saving Cron", err.message),
+  });
+
+  const handleSaveCron = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveCronMutation.mutate({
+      cronSchedule_lorewardsScoring: cronScoring,
+      cronSchedule_passiveIncome: cronIncome,
+      cronSchedule_cardValue: cronCard,
+    });
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-6">
+        {/* Scoring Parameter Weights */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <SlidersHorizontal className="h-5 w-5 text-blue-500" />
+              Scoring Parameters Tuning
+            </CardTitle>
+            <CardDescription>
+              Tune the daily Loreward scoring engine weights in real-time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {tempWeights ? (
+              <form onSubmit={handleSaveWeights} className="space-y-5">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-foreground font-medium">Bytes Added Weight</span>
+                      <span className="font-mono font-semibold text-blue-500">
+                        {tempWeights.lorewardWeight_bytesAdded}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={tempWeights.lorewardWeight_bytesAdded}
+                      onChange={(e) =>
+                        handleWeightChange("lorewardWeight_bytesAdded", parseFloat(e.target.value))
+                      }
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-foreground font-medium">Prose Ratio Weight</span>
+                      <span className="font-mono font-semibold text-blue-500">
+                        {tempWeights.lorewardWeight_proseRatio}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={tempWeights.lorewardWeight_proseRatio}
+                      onChange={(e) =>
+                        handleWeightChange("lorewardWeight_proseRatio", parseFloat(e.target.value))
+                      }
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-foreground font-medium">Edit Depth Weight</span>
+                      <span className="font-mono font-semibold text-blue-500">
+                        {tempWeights.lorewardWeight_editDepth}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={tempWeights.lorewardWeight_editDepth}
+                      onChange={(e) =>
+                        handleWeightChange("lorewardWeight_editDepth", parseFloat(e.target.value))
+                      }
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-foreground font-medium">
+                        Collaboration Bonus Weight
+                      </span>
+                      <span className="font-mono font-semibold text-blue-500">
+                        {tempWeights.lorewardWeight_collaborationBonus}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={tempWeights.lorewardWeight_collaborationBonus}
+                      onChange={(e) =>
+                        handleWeightChange(
+                          "lorewardWeight_collaborationBonus",
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-foreground font-medium">New Article Bonus Weight</span>
+                      <span className="font-mono font-semibold text-blue-500">
+                        {tempWeights.lorewardWeight_newArticleBonus}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={tempWeights.lorewardWeight_newArticleBonus}
+                      onChange={(e) =>
+                        handleWeightChange(
+                          "lorewardWeight_newArticleBonus",
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={saveWeightsMutation.isPending}
+                  className="w-full gap-2"
+                >
+                  {saveWeightsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Save className="h-4 w-4" />
+                  Save Weight Configuration
+                </Button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weight Tuning Preview Console */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <SlidersHorizontal className="h-5 w-5 text-indigo-500" />
+              Weight Tuning Preview
+            </CardTitle>
+            <CardDescription>Preview candidate ranks under simulated weights</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1.5">
+                <label className="text-foreground text-sm font-medium">Scoring Date</label>
+                <Input
+                  type="date"
+                  value={previewDate}
+                  onChange={(e) => setPreviewDate(e.target.value)}
+                />
+              </div>
+              <Button
+                onClick={handleRunPreview}
+                disabled={isPreviewLoading || !tempWeights}
+                className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+              >
+                {isPreviewLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SlidersHorizontal className="h-4 w-4" />
+                )}
+                Preview Ranks
+              </Button>
+            </div>
+
+            {isPreviewLoading ? (
+              <div className="space-y-2 py-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : rankDeltas.length > 0 ? (
+              <div className="border-border/30 max-h-80 overflow-y-auto rounded-lg border text-xs">
+                <table className="w-full">
+                  <thead className="bg-muted/80 sticky top-0 font-medium backdrop-blur-sm">
+                    <tr className="border-border/30 border-b">
+                      <th className="text-muted-foreground w-16 px-3 py-2 text-left">Rank</th>
+                      <th className="text-muted-foreground px-3 py-2 text-left">Candidate</th>
+                      <th className="text-muted-foreground px-3 py-2 text-right">Curr Score</th>
+                      <th className="text-muted-foreground px-3 py-2 text-right font-semibold">
+                        Sim Score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-border/20 divide-y">
+                    {rankDeltas.map((item: any, idx: number) => {
+                      const delta = item.rankDelta;
+                      return (
+                        <tr key={idx} className="hover:bg-muted/30">
+                          <td className="px-3 py-2 font-mono">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold">{item.simulatedRank}</span>
+                              {delta > 0 && (
+                                <span className="font-bold text-emerald-500">▲{delta}</span>
+                              )}
+                              {delta < 0 && (
+                                <span className="font-bold text-red-500">▼{Math.abs(delta)}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="text-foreground font-semibold">{item.user}</span>
+                            <span className="text-muted-foreground block text-[10px]">
+                              {item.page}
+                            </span>
+                          </td>
+                          <td className="text-muted-foreground px-3 py-2 text-right font-mono">
+                            {item.currentScore.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">
+                            <span className="font-semibold">{item.simulatedScore.toFixed(2)}</span>
+                            {item.scoreDelta !== 0 && (
+                              <span
+                                className={cn(
+                                  "block text-[10px] font-medium",
+                                  item.scoreDelta > 0 ? "text-emerald-500" : "text-red-500"
+                                )}
+                              >
+                                {item.scoreDelta > 0 ? "+" : ""}
+                                {item.scoreDelta.toFixed(2)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : currentPreviewData ? (
+              <div className="text-muted-foreground py-8 text-center text-xs italic">
+                No edits or candidates qualified on {previewDate}.
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        {/* Cache Utilities */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Database className="h-5 w-5 text-emerald-500" />
+              Cache Operations
+            </CardTitle>
+            <CardDescription>
+              Purge article wikitext and page parse trees from memory
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handlePurgePage} className="flex gap-2">
+              <Input
+                placeholder="Enter article title to purge..."
+                value={purgePage}
+                onChange={(e) => setPurgePage(e.target.value)}
+                required
+              />
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={purgeCacheMutation.isPending}
+                className="shrink-0"
+              >
+                {purgeCacheMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Purge Page"
+                )}
+              </Button>
+            </form>
+
+            <div className="border-border/20 border-t pt-2">
+              <Button
+                onClick={handlePurgeAll}
+                disabled={purgeAllCacheMutation.isPending}
+                variant="destructive"
+                className="w-full gap-2"
+              >
+                {purgeAllCacheMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Purge All Article Caches
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Wiki Templates Synchronization */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <SlidersHorizontal className="h-5 w-5 text-indigo-500" />
+              Wiki Templates Synchronization
+            </CardTitle>
+            <CardDescription>Registered template components synced from MediaWiki</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Sync forms */}
+            <div className="border-border/20 grid gap-4 border-b pb-2 md:grid-cols-2">
+              <form onSubmit={handleSyncTemplate} className="space-y-2">
+                <label className="text-foreground block text-xs font-semibold">Sync by Name</label>
+                <div className="relative flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="e.g. Infobox Country"
+                      value={templateSearchInput}
+                      onChange={(e) => {
+                        setTemplateSearchInput(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    />
+                    {showSuggestions && suggestions && suggestions.length > 0 && (
+                      <div className="border-border bg-card/95 absolute z-50 mt-1 max-h-40 w-full overflow-y-auto rounded-md border p-1 shadow-lg backdrop-blur-md">
+                        {suggestions.map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => {
+                              setTemplateSearchInput(name);
+                              setShowSuggestions(false);
+                            }}
+                            className="hover:bg-accent hover:text-accent-foreground w-full rounded px-3 py-1.5 text-left text-xs transition-colors"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={syncTemplateMutation.isPending}
+                    className="shrink-0"
+                  >
+                    {syncTemplateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Sync"
+                    )}
+                  </Button>
+                </div>
+              </form>
+
+              <form onSubmit={handleSyncCategory} className="space-y-2">
+                <label className="text-foreground block text-xs font-semibold">
+                  Sync by Category
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. Country templates"
+                    value={templateCategoryInput}
+                    onChange={(e) => setTemplateCategoryInput(e.target.value)}
+                  />
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={syncCategoryMutation.isPending}
+                    className="shrink-0"
+                  >
+                    {syncCategoryMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Sync"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+
+            {/* List */}
+            {isLoadingTemplates ? (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : !templates || templates.length === 0 ? (
+              <div className="text-muted-foreground py-4 text-center text-xs italic">
+                No templates synchronized yet.
+              </div>
+            ) : (
+              <div className="border-border/30 max-h-[12rem] overflow-y-auto rounded-lg border text-xs">
+                <table className="w-full">
+                  <thead className="bg-muted sticky top-0 font-medium">
+                    <tr className="border-border/30 border-b">
+                      <th className="text-muted-foreground px-3 py-2 text-left">Template Name</th>
+                      <th className="text-muted-foreground px-3 py-2 text-left">Category</th>
+                      <th className="text-muted-foreground px-3 py-2 text-right">Usage</th>
+                      <th className="text-muted-foreground px-3 py-2 text-right">Params</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-border/20 divide-y">
+                    {templates.map((tpl) => (
+                      <tr key={tpl.id} className="hover:bg-muted/30">
+                        <td className="text-foreground px-3 py-2 font-mono font-medium">
+                          {tpl.name}
+                        </td>
+                        <td className="text-muted-foreground px-3 py-2">{tpl.category || "—"}</td>
+                        <td className="text-muted-foreground px-3 py-2 text-right font-mono">
+                          {tpl.usageCount}
+                        </td>
+                        <td className="text-muted-foreground px-3 py-2 text-right font-mono">
+                          {tpl.paramCount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Cron Schedules Editor */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Sliders className="h-5 w-5 text-emerald-500" />
+              Cron Schedules Editor
+            </CardTitle>
+            <CardDescription>
+              Configure background job intervals in standard 5-field cron syntax
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleSaveCron} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Lorewards Scoring Schedule
+                </label>
+                <Input
+                  placeholder="e.g. 0 6 * * *"
+                  value={cronScoring}
+                  onChange={(e) => setCronScoring(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Passive Income Schedule
+                </label>
+                <Input
+                  placeholder="e.g. 0 0 * * *"
+                  value={cronIncome}
+                  onChange={(e) => setCronIncome(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-foreground text-sm font-medium">
+                  Card Value Tracking Schedule
+                </label>
+                <Input
+                  placeholder="e.g. 0 */6 * * *"
+                  value={cronCard}
+                  onChange={(e) => setCronCard(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+                <div>
+                  <p className="font-semibold">PM2 Restart Required</p>
+                  <p className="mt-0.5 opacity-80">
+                    Changing schedules updates SystemConfig values. Next time the custom server is
+                    restarted via PM2, these new schedule intervals will be scheduled.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={saveCronMutation.isPending}
+                className="w-full gap-2 border-0 bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
+              >
+                {saveCronMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                <Save className="h-4 w-4" />
+                Save Cron Configuration
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminWikiPage() {
-  usePageTitle({ title: "Admin - Wiki Management" });
+  usePageTitle({ title: "Admin - WikiOS Administration" });
 
   const { data: countriesData, isLoading } = api.countries.getAll.useQuery(
     { limit: 500 },
@@ -702,13 +2234,56 @@ export default function AdminWikiPage() {
     <div className="space-y-6">
       <AdminHeader
         icon={BookOpen}
-        title="Wiki Management"
-        description="Manage wiki page links, scan for matches, and configure lore integration"
+        title="WikiOS Administration"
+        description="Unified portal for managing links, lorewards, custom article awards, and parser systems"
       />
 
-      <WikiLinkStatusSection countriesData={countriesData} isLoading={isLoading} />
-      <ManualLinkEditorSection countriesData={countriesData} />
-      <BulkScannerSection countriesData={countriesData} />
+      <Tabs defaultValue="links" className="w-full">
+        <TabsList className="border-border/30 mb-4 flex h-fit w-full justify-start rounded-none border-b bg-transparent p-0">
+          <TabsTrigger
+            value="links"
+            className="data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground hover:border-border/50 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-transparent"
+          >
+            Wiki Links
+          </TabsTrigger>
+          <TabsTrigger
+            value="lorewards"
+            className="data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground hover:border-border/50 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-transparent"
+          >
+            Lorewards & Bot
+          </TabsTrigger>
+          <TabsTrigger
+            value="awards"
+            className="data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground hover:border-border/50 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-transparent"
+          >
+            Awards Manager
+          </TabsTrigger>
+          <TabsTrigger
+            value="system"
+            className="data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground hover:border-border/50 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-transparent"
+          >
+            System & Tuning
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="links" className="space-y-6 outline-none">
+          <WikiLinkStatusSection countriesData={countriesData} isLoading={isLoading} />
+          <ManualLinkEditorSection countriesData={countriesData} />
+          <BulkScannerSection countriesData={countriesData} />
+        </TabsContent>
+
+        <TabsContent value="lorewards" className="outline-none">
+          <LorewardsBotSection />
+        </TabsContent>
+
+        <TabsContent value="awards" className="outline-none">
+          <AwardsManagerSection />
+        </TabsContent>
+
+        <TabsContent value="system" className="outline-none">
+          <SystemTuningSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -49,8 +49,8 @@ export default function TalkPage() {
   const sections = sectionsData?.sections ?? [];
 
   return (
-    <div className="wikios-root min-h-screen bg-[#0f1114] text-[#e4e4e7] p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto wikios-special-page">
+    <div className="wikios-root min-h-screen bg-[#0f1114] p-4 text-[#e4e4e7] sm:p-6 lg:p-8">
+      <div className="wikios-special-page mx-auto max-w-4xl">
         {/* Navigation */}
         <div
           style={{

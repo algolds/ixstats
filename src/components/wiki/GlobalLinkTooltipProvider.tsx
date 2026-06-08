@@ -38,8 +38,21 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
     href.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
   if (ixMatch) {
     const title = decodeURIComponent(ixMatch[1]!).replace(/_/g, " ");
+    const lowerTitle = title.toLowerCase();
     // Skip special pages that won't have useful previews
-    if (title.startsWith("Special:") || title.startsWith("File:") || title.startsWith("Category:"))
+    if (
+      lowerTitle.startsWith("special:") ||
+      lowerTitle.startsWith("special/") ||
+      lowerTitle.startsWith("file:") ||
+      lowerTitle.startsWith("file/") ||
+      lowerTitle.startsWith("category:") ||
+      lowerTitle.startsWith("category/") ||
+      lowerTitle.startsWith("template:") ||
+      lowerTitle.startsWith("help:") ||
+      lowerTitle.startsWith("user:") ||
+      lowerTitle.startsWith("talk:") ||
+      lowerTitle.startsWith("wiki:")
+    )
       return null;
     return { kind: "wiki", title, wiki: "ixwiki", x: clampX(rect), y: rect.bottom + 4 };
   }
@@ -48,7 +61,20 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
   const iiMatch = href.match(/(?:https?:\/\/)?iiwiki\.(?:com|us)\/wiki\/([^#?]+)/);
   if (iiMatch) {
     const title = decodeURIComponent(iiMatch[1]!).replace(/_/g, " ");
-    if (title.startsWith("Special:") || title.startsWith("File:") || title.startsWith("Category:"))
+    const lowerTitle = title.toLowerCase();
+    if (
+      lowerTitle.startsWith("special:") ||
+      lowerTitle.startsWith("special/") ||
+      lowerTitle.startsWith("file:") ||
+      lowerTitle.startsWith("file/") ||
+      lowerTitle.startsWith("category:") ||
+      lowerTitle.startsWith("category/") ||
+      lowerTitle.startsWith("template:") ||
+      lowerTitle.startsWith("help:") ||
+      lowerTitle.startsWith("user:") ||
+      lowerTitle.startsWith("talk:") ||
+      lowerTitle.startsWith("wiki:")
+    )
       return null;
     return { kind: "wiki", title, wiki: "iiwiki", x: clampX(rect), y: rect.bottom + 4 };
   }
@@ -110,9 +136,11 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
       const link = target.closest("a[href]") as HTMLAnchorElement | null;
       if (!link) return;
 
-      // Don't show tooltip for links inside another tooltip or the wiki sidebar
+      // Don't show tooltip for links inside another tooltip, the wiki sidebar, or WikiOS shells
       if (link.closest(".global-link-tooltip")) return;
       if (link.closest(".no-wiki-tooltip")) return;
+      if (link.closest(".wikios-root")) return;
+      if (link.closest(".wikios-shell")) return;
 
       const href = link.getAttribute("href") ?? "";
       if (!href) return;

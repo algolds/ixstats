@@ -1,0 +1,163 @@
+/* ===================================
+   EUROSTILE FONT FAMILY DECLARATIONS
+   =================================== */
+
+/* --- Eurostile (Standard) --- */
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Regular_Oblique.otf")
+    format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Medium_Italic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Bold_Oblique.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Heavy_Italic.otf") format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Black_Italic.otf") format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* --- Eurostile Condensed --- */
+@font-face {
+  font-family: "Eurostile Condensed";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Condensed";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond_Regular_Italic.otf")
+    format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Condensed";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond_Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Condensed";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond_Heavy_Italic.otf")
+    format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* --- Eurostile Extended --- */
+@font-face {
+  font-family: "Eurostile Extended";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Extended";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Regular_Italic.otf")
+    format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Extended";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Extended";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eurostile Extended";
+  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Black_Italic.otf")
+    format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}

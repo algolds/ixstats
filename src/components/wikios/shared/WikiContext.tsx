@@ -6,7 +6,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
+import { navigateWithBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wikios/html-transformer";
 
 interface WikiContextState {
@@ -28,6 +28,10 @@ interface WikiContextState {
   navigateToSection: (id: string) => void;
   /** Navigate to a recently visited wiki article */
   restoreSession: (title?: string) => void;
+  /** Active overlay modal (history or backlinks) */
+  activeModal: "history" | "backlinks" | null;
+  /** Set the active modal */
+  setActiveModal: (modal: "history" | "backlinks" | null) => void;
 }
 
 const WikiContext = createContext<WikiContextState>({
@@ -40,6 +44,8 @@ const WikiContext = createContext<WikiContextState>({
   setActiveSectionId: () => {},
   navigateToSection: () => {},
   restoreSession: () => {},
+  activeModal: null,
+  setActiveModal: () => {},
 });
 
 export function WikiContextProvider({ children }: { children: ReactNode }) {
@@ -48,6 +54,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [recentArticles, setRecentArticles] = useState<string[]>([]);
+  const [activeModal, setActiveModal] = useState<"history" | "backlinks" | null>(null);
 
   // Restore recent articles from sessionStorage on mount
   useEffect(() => {
@@ -108,6 +115,8 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
         setActiveSectionId,
         navigateToSection,
         restoreSession,
+        activeModal,
+        setActiveModal,
       }}
     >
       {children}

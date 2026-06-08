@@ -251,6 +251,7 @@ const createPrismaClient = () => {
     "LorewardEntry",
     "LorewardUserStats",
     "LorewardCrossValidation",
+    "WikiArticleAward",
     // Blurbs — Topic Tuesday prompts & user responses
     "BlurbPrompt",
     "BlurbResponse",

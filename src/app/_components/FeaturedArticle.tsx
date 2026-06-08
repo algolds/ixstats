@@ -788,8 +788,9 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </button>
-                {articleData?.articleUrl && (
-                  articleData.articleUrl.startsWith("/") || articleData.articleUrl.includes("/w/") ? (
+                {articleData?.articleUrl &&
+                  (articleData.articleUrl.startsWith("/") ||
+                  articleData.articleUrl.includes("/w/") ? (
                     <Link
                       href={articleData.articleUrl}
                       className="text-primary inline-flex items-center gap-1 text-xs transition-all duration-300 hover:scale-105 hover:underline"
@@ -807,8 +808,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                       <ExternalLink className="h-3 w-3" />
                       View Article
                     </a>
-                  )
-                )}
+                  ))}
               </div>
             </div>
           </div>

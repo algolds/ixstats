@@ -2,6 +2,7 @@
 
 import { ZoomIn } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface CommonsImage {
   pageid: number;
@@ -54,8 +55,13 @@ export function CommonsResultsGrid({
             <button
               key={img.pageid}
               onClick={() => onSelect(img)}
-              className={`wikios-commons-card ${isSelected ? "wikios-commons-card--selected" : ""}`}
+              className={`wikios-commons-card relative overflow-hidden ${
+                isSelected ? "wikios-commons-card--selected" : ""
+              }`}
+              style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
             >
+              <TextureOverlay texture="paperGrain" opacity={0.05} className="mix-blend-overlay" />
+              <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
               <div className="wikios-commons-card-thumb">
                 <img src={img.thumbUrl} alt={cleanTitle} loading="lazy" />
                 <div className="wikios-commons-card-overlay">

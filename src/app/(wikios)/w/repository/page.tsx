@@ -1,9 +1,9 @@
-// src/app/(wikios)/w/special/images/page.tsx
+// src/app/(wikios)/w/repository/page.tsx
 // WikiOS Commons Explorer — category browsing, full-text search, stash integration.
 
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from "react";
 import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import { CommonsCategoryBrowser } from "~/components/wikios/commons/CommonsCategoryBrowser";
 import { CommonsResultsGrid } from "~/components/wikios/commons/CommonsResultsGrid";
@@ -11,7 +11,9 @@ import { CommonsDetailPanel } from "~/components/wikios/commons/CommonsDetailPan
 import { ImageSearchGrid } from "~/components/wikios/editor/ImageSearchGrid";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
-import { Search, X, Globe, Database } from "lucide-react";
+import { Search, X, Globe, Database, HelpCircle } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { RepositoryWelcomeModal } from "~/components/wikios/commons/RepositoryWelcomeModal";
 
 interface CommonsImage {
   pageid: number;
@@ -29,8 +31,26 @@ interface CommonsImage {
 
 type Tab = "commons" | "ixwiki";
 
-export default function ImagesPage() {
-  usePageTitle({ title: "Image Browser" });
+function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
+  const m = (mime || "").toLowerCase();
+  const t = (title || "").toLowerCase();
+  if (m.includes("jpeg") || m.includes("jpg") || t.endsWith(".jpg") || t.endsWith(".jpeg"))
+    return "jpg";
+  if (m.includes("png") || t.endsWith(".png")) return "png";
+  if (m.includes("svg") || t.endsWith(".svg")) return "svg";
+  return "other";
+}
+
+function getImageOrientation(width: number, height: number): "landscape" | "portrait" | "square" {
+  if (!width || !height) return "landscape";
+  const ratio = width / height;
+  if (ratio > 1.1) return "landscape";
+  if (ratio < 0.9) return "portrait";
+  return "square";
+}
+
+export default function RepositoryPage() {
+  usePageTitle({ title: "Image Repository" });
 
   const [tab, setTab] = useState<Tab>("commons");
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +62,16 @@ export default function ImagesPage() {
   const [searchOffset, setSearchOffset] = useState(0);
   const [catOffset, setCatOffset] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Filters state
+  const [fileTypeFilter, setFileTypeFilter] = useState<"all" | "jpg" | "png" | "svg">("all");
+  const [orientationFilter, setOrientationFilter] = useState<
+    "all" | "landscape" | "portrait" | "square"
+  >("all");
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+
+  const deferredFileTypeFilter = useDeferredValue(fileTypeFilter);
+  const deferredOrientationFilter = useDeferredValue(orientationFilter);
 
   useEffect(
     () => () => {
@@ -128,12 +158,27 @@ export default function ImagesPage() {
     setSearchQuery("");
   };
 
+  // Client-side dynamic filtering of results
+  const filteredImages = useMemo(() => {
+    return allImages.filter((img) => {
+      if (deferredFileTypeFilter !== "all") {
+        const type = getImageType(img.mime ?? "", img.title);
+        if (type !== deferredFileTypeFilter) return false;
+      }
+      if (deferredOrientationFilter !== "all") {
+        const orient = getImageOrientation(img.width, img.height);
+        if (orient !== deferredOrientationFilter) return false;
+      }
+      return true;
+    });
+  }, [allImages, deferredFileTypeFilter, deferredOrientationFilter]);
+
   return (
     <WikiOSLayout>
       <div className="wikios-commons-browser">
         {/* Header bar */}
         <div className="wikios-commons-header">
-          <div className="wikios-commons-header-left">
+          <div className="wikios-commons-header-left flex items-center gap-2">
             <div className="wikios-commons-tabs">
               <button
                 onClick={() => setTab("commons")}
@@ -150,6 +195,14 @@ export default function ImagesPage() {
                 IxWiki
               </button>
             </div>
+            <button
+              onClick={() => setWelcomeOpen(true)}
+              className="cursor-pointer rounded-full p-1 text-[var(--wikios-text-dim)] transition-colors hover:bg-white/5 hover:text-blue-500"
+              title="Open Welcome Guide"
+              type="button"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
           </div>
 
           {tab === "commons" && (
@@ -176,6 +229,74 @@ export default function ImagesPage() {
             </div>
           )}
         </div>
+
+        {/* Filter controls */}
+        {tab === "commons" && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-1 pb-3 text-xs">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              {/* File Type Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+                  Type:
+                </span>
+                <div className="wikios-filter-group">
+                  {(["all", "jpg", "png", "svg"] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFileTypeFilter(type)}
+                      className={cn(
+                        "wikios-filter-btn",
+                        fileTypeFilter === type && "wikios-filter-btn--active"
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Orientation Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+                  Orientation:
+                </span>
+                <div className="wikios-filter-group">
+                  {(["all", "landscape", "portrait", "square"] as const).map((orient) => (
+                    <button
+                      key={orient}
+                      onClick={() => setOrientationFilter(orient)}
+                      className={cn(
+                        "wikios-filter-btn",
+                        orientationFilter === orient && "wikios-filter-btn--active"
+                      )}
+                    >
+                      {orient === "landscape"
+                        ? "Land"
+                        : orient === "portrait"
+                          ? "Port"
+                          : orient === "square"
+                            ? "Sq"
+                            : "All"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Clear filters trigger */}
+            {(fileTypeFilter !== "all" || orientationFilter !== "all") && (
+              <button
+                onClick={() => {
+                  setFileTypeFilter("all");
+                  setOrientationFilter("all");
+                }}
+                className="cursor-pointer text-[9px] font-bold tracking-wider text-[var(--wikios-accent)] uppercase select-none hover:underline"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Active category chips */}
         {tab === "commons" && activeCategories.length > 0 && (
@@ -217,11 +338,12 @@ export default function ImagesPage() {
           >
             <CommonsCategoryBrowser
               activeCategories={activeCategories}
+              browsingCategory={browsingCategory}
               onToggleCategory={handleToggleCategory}
               onBrowseCategory={handleBrowseCategory}
             />
             <CommonsResultsGrid
-              images={allImages}
+              images={filteredImages}
               selectedImage={selectedImage}
               onSelect={setSelectedImage}
               onLoadMore={handleLoadMore}
@@ -239,6 +361,7 @@ export default function ImagesPage() {
           </div>
         )}
       </div>
+      <RepositoryWelcomeModal open={welcomeOpen} onOpenChangeAction={setWelcomeOpen} />
     </WikiOSLayout>
   );
 }

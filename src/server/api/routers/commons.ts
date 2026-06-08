@@ -263,4 +263,27 @@ export const commonsRouter = createTRPCRouter({
         (c: any) => c["*"] ?? c.title ?? ""
       ) as string[];
     }),
+
+  /**
+   * Get image info (thumbnails, dimensions, descriptions, license, etc) for a batch of file titles.
+   */
+  getImageInfoByTitles: publicProcedure
+    .input(
+      z.object({
+        titles: z.array(z.string().min(1)).max(50),
+      })
+    )
+    .query(async ({ input }) => {
+      if (input.titles.length === 0) return [];
+
+      const data = await commonsApiFetch({
+        action: "query",
+        titles: input.titles.join("|"),
+        prop: "imageinfo",
+        iiprop: "url|extmetadata|size|mime",
+        iiurlwidth: 300,
+      });
+
+      return parseImagePages(data);
+    }),
 });

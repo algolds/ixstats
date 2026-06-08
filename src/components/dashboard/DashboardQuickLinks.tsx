@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, MessageSquare } from "lucide-react";
+import { BookOpen, MessageSquare, Bookmark } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/status-indicator";
 import { BUILD_VERSION, IXWORLD_VERSION } from "~/lib/buildVersion";
@@ -19,6 +19,12 @@ const EXTERNAL_LINKS = [
     href: "/help/getting-started",
     icon: BookOpen,
     color: "text-amber-600 dark:text-amber-500",
+  },
+  {
+    label: "Lore Stashes",
+    href: "/stashes",
+    icon: Bookmark,
+    color: "text-blue-500",
   },
 ] as const;
 
