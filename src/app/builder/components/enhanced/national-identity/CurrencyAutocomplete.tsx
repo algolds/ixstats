@@ -32,7 +32,6 @@ interface CurrencyAutocompleteProps {
   showValidation?: boolean;
   allowCustom?: boolean;
   currencySymbol?: string;
-  onSymbolSelect?: (symbol: string) => void;
 }
 
 export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
@@ -43,7 +42,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
   onSave,
   showValidation = true,
   allowCustom = true,
-  onSymbolSelect,
 }: CurrencyAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMode, setInputMode] = useState<"selector" | "input">("selector");
@@ -66,11 +64,8 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
       if (onSave && newValue.trim()) {
         onSave(fieldName, newValue.trim());
       }
-      if (symbol && onSymbolSelect) {
-        onSymbolSelect(symbol);
-      }
     },
-    [onChange, onSave, fieldName, onSymbolSelect]
+    [onChange, onSave, fieldName]
   );
 
   const availableCurrencies = getAvailableCurrencies();
@@ -159,6 +154,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
                   onValueChange={handleValueChange}
                   placeholder="Enter custom currency name"
                   showValidation={showValidation}
+                  allowCustom={allowCustom}
                 />
               </div>
             </div>

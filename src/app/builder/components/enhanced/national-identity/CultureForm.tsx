@@ -88,10 +88,6 @@ export const CultureForm = React.memo(
       }
     }, [onIdentityChange]);
 
-    const handleCurrencySymbolChange = useCallback((symbol: string) => {
-      onIdentityChange("currencySymbol", symbol);
-    }, [onIdentityChange]);
-
     const [isNativeMottoOpen, setIsNativeMottoOpen] = useState(false);
     const [isSymbolsOpen, setIsSymbolsOpen] = useState(false);
     const [imagePickerField, setImagePickerField] = useState<string | null>(null);
@@ -392,7 +388,6 @@ export const CultureForm = React.memo(
                 onChange={handleCurrencyChange}
                 placeholder="Select or enter currency"
                 currencySymbol={identity.currencySymbol || "$"}
-                onSymbolSelect={handleCurrencySymbolChange}
               />
             </div>
           </GlassCardContent>
