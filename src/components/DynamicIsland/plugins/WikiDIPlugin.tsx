@@ -12,6 +12,7 @@ import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { WikiView } from "~/components/DynamicIsland/WikiView";
 import { WikiProfileButton } from "~/components/DynamicIsland/WikiProfileButton";
+import { WikiProfileView } from "~/components/DynamicIsland/WikiProfileView";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -123,7 +124,7 @@ export function WikiDIPlugin() {
       id: "wiki",
       priority: 10,
       center: articleTitle ? <WikiBreadcrumb /> : <WikiProfileButton />,
-      expandedViews: articleTitle ? { wiki: WikiView } : undefined,
+      expandedViews: articleTitle ? { wiki: WikiView } : { profile: WikiProfileView },
       accentColor: "#3b82f6",
       stickyLabel: "Wiki",
     }),

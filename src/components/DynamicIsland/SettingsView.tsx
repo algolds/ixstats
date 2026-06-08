@@ -21,6 +21,7 @@ import {
   MessageSquare,
   List,
   ExternalLink,
+  Search,
 } from "lucide-react";
 import type { SettingsViewProps } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
@@ -99,6 +100,10 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   );
   const [autoExpandToc, toggleAutoExpandToc] = useLocalToggle("wikios:autoExpandToc", false);
   const [openInNewTab, toggleOpenInNewTab] = useLocalToggle("wikios:openInNewTab", false);
+  const [dynamicSearchWiki, toggleDynamicSearchWiki] = useLocalToggle(
+    "wikios:dynamicSearchWiki",
+    true
+  );
 
   // Refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -149,7 +154,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
           <div className="bg-muted/30 rounded-xl p-6">
             <User className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
             <PreText className="text-foreground mb-1 text-sm font-medium" whiteSpace="nowrap">
-              {isOnWikiPage ? "Welcome to WikiOS" : "Welcome to IxStats"}
+              {isOnWikiPage ? "Welcome to IxWiki" : "Welcome to IxStats"}
             </PreText>
             <PreText className="text-muted-foreground mb-4 text-xs" whiteSpace="nowrap">
               Sign in to access your settings
@@ -242,6 +247,15 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               description="Hover footnotes to preview"
             >
               <ToggleSwitch enabled={showCiteTooltips} onToggle={toggleCiteTooltips} />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<Search className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
+              iconBg="bg-blue-500/15"
+              label="Dynamic Wiki Search"
+              description="Default search filter to Wiki"
+            >
+              <ToggleSwitch enabled={dynamicSearchWiki} onToggle={toggleDynamicSearchWiki} />
             </SettingsRow>
 
             <SettingsRow

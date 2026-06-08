@@ -14,7 +14,16 @@ export function WikiOSWordmark({ className }: WikiOSWordmarkProps) {
         alt="IX"
         className="wikios-brand-title-ix"
       />
-      WIKI
+      <span
+        style={{
+          fontFamily: "var(--font-playfair)",
+          fontWeight: 600,
+          letterSpacing: "0.15em",
+          marginLeft: "-0.03em",
+        }}
+      >
+        WIKI
+      </span>
     </h1>
   );
 }

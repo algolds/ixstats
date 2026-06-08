@@ -3907,30 +3907,35 @@ button.wikios-rc-expand-btn:hover {
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 0;
+  overflow: hidden;
+  padding: 10px;
+  border-radius: 22px;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="light"] .wikios-brand-logo-container,
 html:not([data-theme="dark"]) .wikios-brand-logo-container {
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.01) 100%) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.04) !important;
 }
 
 .wikios-brand-logo {
   height: 1.3em;
   width: auto;
-  filter: invert(1);
+  filter: invert(0.89);
   transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   display: block;
 }
 
 [data-theme="light"] .wikios-brand-logo,
 html:not([data-theme="dark"]) .wikios-brand-logo {
-  filter: none;
+  filter: invert(0.1);
 }
 
 .wikios-logo-sheen {
@@ -3942,23 +3947,13 @@ html:not([data-theme="dark"]) .wikios-brand-logo {
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0) 30%,
-    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0.45) 50%,
     rgba(255, 255, 255, 0) 70%
   );
   background-size: 200% 100%;
   background-position: 150% 0;
   transition: background-position 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
-
-  /* Mask the sheen exactly to the logo silhouette to avoid rectangular box overlay issues */
-  -webkit-mask-image: url("https://ixwiki.com/data/IxWiki_4.svg");
-  mask-image: url("https://ixwiki.com/data/IxWiki_4.svg");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
 }
 
 /* Hovering brand lockup triggers sheen sweep and logo highlight */
@@ -3967,12 +3962,12 @@ html:not([data-theme="dark"]) .wikios-brand-logo {
 }
 
 .wikios-brand-lockup:hover .wikios-brand-logo {
-  filter: invert(1) brightness(1.25) drop-shadow(0 0 8px rgba(255, 255, 255, 0.25));
+  filter: invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.2));
 }
 
 [data-theme="light"] .wikios-brand-lockup:hover .wikios-brand-logo,
 html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
-  filter: brightness(0.85) drop-shadow(0 0 8px rgba(0, 0, 0, 0.15));
+  filter: invert(0.2) drop-shadow(0 0 6px rgba(0, 0, 0, 0.05));
 }
 
 
@@ -3990,7 +3985,6 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
   font-weight: 800;
   font-size: 1em;
   letter-spacing: 0.025em;
-  color: var(--wikios-text);
   margin: 0 0 2px;
   line-height: 0.95;
   text-transform: uppercase;
@@ -3999,23 +3993,66 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
   user-select: none;
   -webkit-user-select: none;
   pointer-events: none;
+
+  /* Shimmer sweep on text matching font color */
+  background: linear-gradient(
+    135deg,
+    var(--wikios-text) 35%,
+    #ffffff 50%,
+    var(--wikios-text) 65%
+  );
+  background-size: 200% 100%;
+  background-position: 150% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: background-position 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] .wikios-brand-title,
+html:not([data-theme="dark"]) .wikios-brand-title {
+  background: linear-gradient(
+    135deg,
+    var(--wikios-text) 35%,
+    #a1a1aa 50%,
+    var(--wikios-text) 65%
+  );
+  background-size: 200% 100%;
+  background-position: 150% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.wikios-brand-lockup:hover .wikios-brand-title {
+  background-position: -50% 0;
 }
 
 .wikios-brand-title-ix {
   height: 0.85em;
   width: auto;
-  filter: invert(1);
+  filter: invert(0.89);
   display: block;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+  transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.wikios-brand-lockup:hover .wikios-brand-title-ix {
+  filter: invert(1);
+}
 
 [data-theme="light"] .wikios-brand-title-ix,
 html:not([data-theme="dark"]) .wikios-brand-title-ix {
-  filter: none;
+  filter: invert(0.1);
 }
+
+[data-theme="light"] .wikios-brand-lockup:hover .wikios-brand-title-ix,
+html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix {
+  filter: invert(0.2);
+}
+
 
 .wikios-brand-subtitle {
   font-family: var(--wikios-font-ui);

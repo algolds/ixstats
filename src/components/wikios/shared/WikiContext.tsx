@@ -103,6 +103,86 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     [recentArticles, router]
   );
 
+  // Auto-save scroll position on scroll
+  useEffect(() => {
+    if (!articleTitle || typeof window === "undefined" || articleTitle === "Main Page") return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      // Debounce saving to avoid excessive localStorage writes on every pixel scrolled
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+        const roundedPct = Math.round(pct);
+
+        try {
+          const stored = localStorage.getItem("wikios:pausedSessions");
+          let sessions = stored ? JSON.parse(stored) : [];
+          if (!Array.isArray(sessions)) sessions = [];
+
+          const existingIndex = sessions.findIndex((s: any) => s.title === articleTitle);
+
+          if (existingIndex !== -1) {
+            if (sessions[existingIndex].scrollPercent !== roundedPct) {
+              sessions[existingIndex].scrollPercent = roundedPct;
+              sessions[existingIndex].updatedAt = Date.now();
+              sessions.sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+              localStorage.setItem("wikios:pausedSessions", JSON.stringify(sessions));
+            }
+          } else {
+            sessions.unshift({
+              title: articleTitle,
+              scrollPercent: roundedPct,
+              updatedAt: Date.now(),
+            });
+            sessions = sessions.slice(0, 5);
+            localStorage.setItem("wikios:pausedSessions", JSON.stringify(sessions));
+          }
+        } catch (e) {
+          // ignore
+        }
+      }, 250);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [articleTitle]);
+
+  // Restore scroll position on page load if progress exists
+  useEffect(() => {
+    if (!articleTitle || typeof window === "undefined" || articleTitle === "Main Page") return;
+
+    try {
+      const stored = localStorage.getItem("wikios:pausedSessions");
+      if (stored) {
+        const sessions = JSON.parse(stored);
+        const session = sessions.find((s: any) => s.title === articleTitle);
+        // Only auto-restore progress if it's substantial (between 2% and 98%)
+        if (session && session.scrollPercent > 2 && session.scrollPercent < 98) {
+          const timer = setTimeout(() => {
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (scrollHeight > 0) {
+              window.scrollTo({
+                top: (session.scrollPercent / 100) * scrollHeight,
+                behavior: "smooth",
+              });
+            }
+          }, 350); // 350ms delay to let contents render
+          return () => clearTimeout(timer);
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return;
+  }, [articleTitle]);
+
   return (
     <WikiContext.Provider
       value={{

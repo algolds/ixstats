@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -17,6 +17,8 @@ import {
   Link2,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Home,
   Shuffle,
 } from "lucide-react";
@@ -56,6 +58,28 @@ export function WikiOSUnifiedSidebar({
   pathname,
 }: WikiOSUnifiedSidebarProps) {
   const { isCollapsed, toggleCollapsed } = useSidebar();
+
+  const isArticlePage = !isSpecialPage && slug;
+
+  // Auto-expand hidden items if one of them is active
+  const hasActiveHiddenItem = 
+    pathname === "/stashes" ||
+    pathname.startsWith("/stashes/") ||
+    pathname.startsWith("/blurbs") ||
+    pathname === "/w/repository" ||
+    pathname.startsWith("/w/repository/") ||
+    pathname === "/w/special/lorewards" ||
+    pathname.startsWith("/w/special/lorewards/") ||
+    activeId === "history" ||
+    activeId === "backlinks";
+
+  const [showMore, setShowMore] = useState(hasActiveHiddenItem);
+
+  useEffect(() => {
+    if (hasActiveHiddenItem) {
+      setShowMore(true);
+    }
+  }, [pathname, activeId, hasActiveHiddenItem]);
 
   // Keyboard shortcut listener (Ctrl+B / Cmd+B)
   useEffect(() => {
@@ -140,6 +164,27 @@ export function WikiOSUnifiedSidebar({
     );
   };
 
+  const getToggleIcon = () => {
+    if (!showMore) return ChevronDown;
+    return isCollapsed ? ChevronRight : ChevronUp;
+  };
+
+  const getToggleTitle = () => {
+    if (!showMore) return "See More";
+    return isCollapsed ? "Expand Sidebar" : "See Less";
+  };
+
+  const handleToggleClick = () => {
+    if (!showMore) {
+      setShowMore(true);
+    } else if (isCollapsed) {
+      toggleCollapsed();
+    } else {
+      setShowMore(false);
+      toggleCollapsed();
+    }
+  };
+
   return (
     <div className="wikios-sidebar relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start select-none group/sidebar border-r border-white/5 hover:border-blue-500/15 transition-colors duration-300 pr-1.5 pb-2">
       <div className="flex flex-col gap-1.5 w-full">
@@ -185,7 +230,7 @@ export function WikiOSUnifiedSidebar({
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
         {/* Library Items */}
-        {renderRow({
+        {(!isArticlePage || showMore) && renderRow({
           id: "stashes",
           href: withBasePath("/stashes"),
           icon: Bookmark,
@@ -194,7 +239,7 @@ export function WikiOSUnifiedSidebar({
           isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
         })}
 
-        {renderRow({
+        {(!isArticlePage || showMore) && renderRow({
           id: "blurbs",
           href: withBasePath("/blurbs"),
           icon: BookOpen,
@@ -203,7 +248,7 @@ export function WikiOSUnifiedSidebar({
           isActive: pathname.startsWith("/blurbs"),
         })}
 
-        {renderRow({
+        {(!isArticlePage || showMore) && renderRow({
           id: "images",
           href: withBasePath("/w/repository"),
           icon: ImageIcon,
@@ -212,7 +257,7 @@ export function WikiOSUnifiedSidebar({
           isActive: pathname === "/w/repository" || pathname.startsWith("/w/repository/"),
         })}
 
-        {renderRow({
+        {(!isArticlePage || showMore) && renderRow({
           id: "lorewards",
           href: withBasePath("/w/special/lorewards"),
           icon: Trophy,
@@ -222,7 +267,7 @@ export function WikiOSUnifiedSidebar({
         })}
 
         {/* Page Tools: Dynamically shown on article page */}
-        {!isSpecialPage && slug && (
+        {isArticlePage && (
           <>
             <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
@@ -245,7 +290,7 @@ export function WikiOSUnifiedSidebar({
               isActive: activeId === "talk",
             })}
 
-            {renderRow({
+            {showMore && renderRow({
               id: "history",
               onClick: () => setActiveModal("history"),
               icon: Clock,
@@ -254,7 +299,7 @@ export function WikiOSUnifiedSidebar({
               isActive: activeId === "history",
             })}
 
-            {renderRow({
+            {showMore && renderRow({
               id: "backlinks",
               onClick: () => setActiveModal("backlinks"),
               icon: Link2,
@@ -277,8 +322,21 @@ export function WikiOSUnifiedSidebar({
                 Stash Page
               </span>
             </div>
+
           </>
         )}
+
+        <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
+
+        {/* Toggle See More Button */}
+        {renderRow({
+          id: "toggle-more",
+          onClick: handleToggleClick,
+          icon: getToggleIcon(),
+          title: getToggleTitle(),
+          glowClass: "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
+          isActive: false,
+        })}
 
         {/* Active Country Flag */}
         {countryData && (
@@ -288,25 +346,6 @@ export function WikiOSUnifiedSidebar({
           </>
         )}
       </div>
-
-      {/* Floating Border Toggle Handle */}
-      <button
-        onClick={toggleCollapsed}
-        className={cn(
-          "absolute top-1/2 -translate-y-1/2 -right-[14px] z-45",
-          "flex h-7 w-7 items-center justify-center rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 shadow-md",
-          "text-[var(--wikios-text-muted)] hover:text-blue-400 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all duration-200 active:scale-95",
-          "opacity-30 group-hover/sidebar:opacity-100 cursor-pointer"
-        )}
-        title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-        type="button"
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover/sidebar:translate-x-0.5" />
-        ) : (
-          <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover/sidebar:-translate-x-0.5" />
-        )}
-      </button>
     </div>
   );
 }

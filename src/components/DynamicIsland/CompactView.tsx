@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { cn } from "~/lib/utils";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
@@ -188,34 +189,65 @@ function CompactViewComponent({
             } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
             {/* ── IX Logo ──────────────────────────────────────── */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() =>
-                    (window.location.href = createAbsoluteUrl(isStandalone ? "/maps" : "/"))
-                  }
-                  className={`group relative flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${
-                    isSticky ? "h-6 w-6" : "h-7 w-7"
-                  }`}
-                >
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  {activePlugin?.id === "builder" ? (
-                    <div className="relative z-10 flex origin-center scale-60 items-center justify-center sm:scale-75">
-                      <MyCountryLogo size="sm" variant="icon-only" animated={false} />
-                    </div>
-                  ) : (
-                    <img
-                      src={withBasePath("/ix-logo-v2.svg")}
-                      alt="IxLogo"
-                      className={`relative z-10 ${isSticky ? "h-4 w-4" : "h-5 w-5"} opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert`}
-                    />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {activePlugin?.id === "builder" ? "Builder Home" : "Home"}
-              </TooltipContent>
-            </Tooltip>
+            {(() => {
+              const isWikiActive = activePlugin?.id === "wiki";
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() =>
+                        (window.location.href = createAbsoluteUrl(isStandalone ? "/maps" : "/"))
+                      }
+                      className={cn(
+                        "group relative flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95",
+                        isWikiActive
+                          ? "h-9 w-10 flex-col gap-0.5"
+                          : isSticky
+                            ? "h-6 w-6"
+                            : "h-7 w-7"
+                      )}
+                    >
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      {isWikiActive ? (
+                        <div className="relative z-10 flex flex-col items-center justify-center gap-0 leading-none">
+                          <img
+                            src={withBasePath("/ix-logo-v2.svg")}
+                            alt="IxLogo"
+                            className="h-3 w-auto opacity-95 transition-all duration-300 group-hover:scale-110 dark:brightness-0 dark:invert"
+                          />
+                          <span
+                            className="text-foreground text-[10px] font-semibold tracking-[0.1em] leading-none mt-0.5 antialiased"
+                            style={{ fontFamily: "var(--font-playfair)" }}
+                          >
+                            WIKI
+                          </span>
+                        </div>
+                      ) : activePlugin?.id === "builder" ? (
+                        <div className="relative z-10 flex origin-center scale-60 items-center justify-center sm:scale-75">
+                          <MyCountryLogo size="sm" variant="icon-only" animated={false} />
+                        </div>
+                      ) : (
+                        <img
+                          src={withBasePath("/ix-logo-v2.svg")}
+                          alt="IxLogo"
+                          className={cn(
+                            "relative z-10 opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert",
+                            isSticky ? "h-4 w-4" : "h-5 w-5"
+                          )}
+                        />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {activePlugin?.id === "builder"
+                      ? "Builder Home"
+                      : isWikiActive
+                        ? "Wiki Home"
+                        : "Home"}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })()}
 
             {/* ── Sticky: peek text or wiki breadcrumb ──────────────── */}
             {isSticky && peekText && (

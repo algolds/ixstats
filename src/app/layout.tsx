@@ -2,7 +2,7 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Playfair_Display } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -48,6 +48,11 @@ export const metadata: Metadata = {
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
 });
 
 const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>) => {
@@ -107,7 +112,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
   }
 
   return (
-    <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
         <ConsentManager>
           <ChunkLoadErrorHandler />

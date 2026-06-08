@@ -154,7 +154,7 @@ export function useDynamicIslandState() {
 
   // Wiki full-text search — only fires when query is active and relevant filter
   const { data: wikiSearchData } = api.wikios.advancedSearch.useQuery(
-    { query: debouncedSearchQuery, limit: 5 },
+    { query: debouncedSearchQuery, limit: searchFilter === "wiki" ? 12 : 5 },
     {
       enabled:
         debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki"),
@@ -206,7 +206,24 @@ export function useDynamicIslandState() {
     } else {
       setIsExpanded(false);
     }
-  }, []);
+
+    if (newMode === "search") {
+      let isDynamicWikiSearchEnabled = true;
+      try {
+        const stored = localStorage.getItem("wikios:dynamicSearchWiki");
+        if (stored !== null) {
+          isDynamicWikiSearchEnabled = stored === "true";
+        }
+      } catch {
+        // SSR or storage access error
+      }
+      if (isDynamicWikiSearchEnabled && isWikiActive) {
+        setSearchFilter("wiki");
+      } else {
+        setSearchFilter("all");
+      }
+    }
+  }, [isWikiActive, setSearchFilter]);
 
   // Pre-compute lowercase search indexes for static data (avoids repeated .toLowerCase() per keystroke)
   const commandIndex = useMemo(() => {
@@ -280,14 +297,20 @@ export function useDynamicIslandState() {
     if (!debouncedSearchQuery.trim()) return [];
 
     const query = debouncedSearchQuery.toLowerCase();
-    const results: SearchResult[] = [];
+    
+    // Separate matches by category
+    const matchedCountries: SearchResult[] = [];
+    const matchedCommands: SearchResult[] = [];
+    const matchedFeatures: SearchResult[] = [];
+    const matchedWiki: SearchResult[] = [];
 
-    // Countries — pre-indexed lowercase match
+    // Gather Countries
     if (searchFilter === "all" || searchFilter === "countries") {
+      const limit = searchFilter === "all" ? 3 : 12;
       for (const country of countryIndex) {
         if (country._lower.includes(query)) {
           const slug = country.slug ?? country.id;
-          results.push({
+          matchedCountries.push({
             id: `country-${country.id}`,
             type: "country",
             title: country.name,
@@ -299,15 +322,16 @@ export function useDynamicIslandState() {
             action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
           });
         }
-        if (results.length >= 5 && searchFilter !== "countries") break;
+        if (matchedCountries.length >= limit) break;
       }
     }
 
-    // Commands — pre-indexed lowercase match
+    // Gather Commands
     if (searchFilter === "all" || searchFilter === "commands") {
+      const limit = searchFilter === "all" ? 3 : 12;
       for (const cmd of commandIndex) {
         if (cmd._lower.includes(query)) {
-          results.push({
+          matchedCommands.push({
             id: `command-${cmd.name.toLowerCase().replace(/\s+/g, "-")}`,
             type: "command",
             title: cmd.name,
@@ -318,15 +342,16 @@ export function useDynamicIslandState() {
             },
           });
         }
-        if (results.length >= 8 && searchFilter !== "commands") break;
+        if (matchedCommands.length >= limit) break;
       }
     }
 
-    // Features — pre-indexed lowercase match
+    // Gather Features
     if (searchFilter === "all" || searchFilter === "features") {
+      const limit = searchFilter === "all" ? 3 : 12;
       for (const feat of featureIndex) {
         if (feat._lower.includes(query)) {
-          results.push({
+          matchedFeatures.push({
             id: `feature-${feat.name.toLowerCase().replace(/\s+/g, "-")}`,
             type: "feature",
             title: feat.name,
@@ -351,14 +376,15 @@ export function useDynamicIslandState() {
             },
           });
         }
-        if (results.length >= 10 && searchFilter !== "features") break;
+        if (matchedFeatures.length >= limit) break;
       }
     }
 
-    // Wiki articles — from advancedSearch API (already server-ranked by relevance)
+    // Gather Wiki
     if (searchFilter === "all" || searchFilter === "wiki") {
+      const limit = searchFilter === "all" ? 3 : 12;
       for (const article of wikiSearchData?.results ?? []) {
-        results.push({
+        matchedWiki.push({
           id: `wiki-${article.title}`,
           type: "wiki",
           title: article.title,
@@ -372,7 +398,38 @@ export function useDynamicIslandState() {
             );
           },
         });
+        if (matchedWiki.length >= limit) break;
       }
+    }
+
+    // Combine and order results
+    let results: SearchResult[] = [];
+    if (searchFilter === "all") {
+      if (isWikiActive) {
+        // Prepend Wiki articles when on a wiki page
+        results = [
+          ...matchedWiki,
+          ...matchedCountries,
+          ...matchedCommands,
+          ...matchedFeatures,
+        ];
+      } else {
+        // Default combined ordering
+        results = [
+          ...matchedCountries,
+          ...matchedCommands,
+          ...matchedFeatures,
+          ...matchedWiki,
+        ];
+      }
+    } else {
+      // Single category filter mode
+      results = [
+        ...matchedCountries,
+        ...matchedCommands,
+        ...matchedFeatures,
+        ...matchedWiki,
+      ];
     }
 
     return results.slice(0, 12);
@@ -384,6 +441,7 @@ export function useDynamicIslandState() {
     featureIndex,
     switchMode,
     wikiSearchData,
+    isWikiActive,
   ]);
 
   // Cycling timeout ref
