@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { Users } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
@@ -21,7 +21,7 @@ export function WorkforceSection({
 }: WorkforceSectionProps) {
   return (
     <div className="space-y-4">
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Labor Force Participation Rate"
         description="Percentage of working-age population in the labor force"
         value={laborMarket.laborForceParticipationRate}
@@ -34,9 +34,10 @@ export function WorkforceSection({
         icon={Users}
         showValue={true}
         showRange={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Female Participation Rate"
         description="Female labor force participation rate"
         value={laborMarket.femaleParticipationRate}
@@ -48,9 +49,10 @@ export function WorkforceSection({
         sectionId="labor"
         icon={Users}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Male Participation Rate"
         description="Male labor force participation rate"
         value={laborMarket.maleParticipationRate}
@@ -62,11 +64,12 @@ export function WorkforceSection({
         sectionId="labor"
         icon={Users}
         showValue={true}
+        defaultMode="slider"
       />
 
       {showAdvanced && (
         <div className="space-y-4 border-t pt-4">
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Youth Unemployment Rate"
             description="Unemployment rate for ages 15-24"
             value={laborMarket.youthUnemploymentRate}
@@ -78,9 +81,10 @@ export function WorkforceSection({
             sectionId="labor"
             icon={Users}
             showValue={true}
+            defaultMode="slider"
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Senior Employment Rate"
             description="Employment rate for ages 55+"
             value={laborMarket.seniorEmploymentRate}
@@ -92,6 +96,7 @@ export function WorkforceSection({
             sectionId="labor"
             icon={Users}
             showValue={true}
+            defaultMode="slider"
           />
         </div>
       )}

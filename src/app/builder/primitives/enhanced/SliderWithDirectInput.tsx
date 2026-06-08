@@ -22,6 +22,7 @@ interface SliderWithDirectInputProps extends EnhancedInputProps {
   helpTitle?: string;
   defaultMode?: "slider" | "input";
   allowModeToggle?: boolean;
+  onCommit?: (value: number) => void;
 }
 
 export function SliderWithDirectInput({
@@ -56,6 +57,7 @@ export function SliderWithDirectInput({
   helpTitle,
   defaultMode = "input",
   allowModeToggle = true,
+  onCommit,
 }: SliderWithDirectInputProps) {
   const [inputMode, setInputMode] = useState<"slider" | "input">(defaultMode);
   const [localValue, setLocalValue] = useState(value.toString());
@@ -87,7 +89,7 @@ export function SliderWithDirectInput({
     () =>
       debounce((val: number) => {
         onChange(val);
-      }, 100),
+      }, 16),
     [onChange]
   );
 
@@ -130,7 +132,10 @@ export function SliderWithDirectInput({
   const handleInputBlur = useCallback(() => {
     setIsFocused(false);
     setLocalValue(numericValue.toFixed(precision));
-  }, [numericValue, precision]);
+    if (onCommit) {
+      onCommit(numericValue);
+    }
+  }, [numericValue, precision, onCommit]);
 
   // Handle slider change
   const handleSliderChange = useCallback(
@@ -151,8 +156,11 @@ export function SliderWithDirectInput({
     const finalValue = parseFloat(localValue);
     if (!isNaN(finalValue)) {
       onChange(finalValue);
+      if (onCommit) {
+        onCommit(finalValue);
+      }
     }
-  }, [onChange, localValue, debouncedOnChange]);
+  }, [onChange, localValue, debouncedOnChange, onCommit]);
 
   // Generate tick marks
   const ticks = showTicks
@@ -293,7 +301,8 @@ export function SliderWithDirectInput({
             {/* Progress Track */}
             <motion.div
               className={cn(
-                "absolute rounded-full transition-all duration-200",
+                "absolute rounded-full",
+                !isDragging && "transition-all duration-200",
                 isDragging && "scale-[1.02] shadow-lg",
                 "bg-blue-500 dark:bg-blue-600"
               )}

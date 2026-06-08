@@ -30,6 +30,7 @@ import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
+import { getCurrencyInfo } from "~/lib/format-utils";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
@@ -86,6 +87,10 @@ export const CultureForm = React.memo(
       } else {
         onIdentityChange("currency", value);
       }
+    }, [onIdentityChange]);
+
+    const handleCurrencySymbolChange = useCallback((symbol: any) => {
+      onIdentityChange("currencySymbol", String(symbol));
     }, [onIdentityChange]);
 
     const [isNativeMottoOpen, setIsNativeMottoOpen] = useState(false);
@@ -381,7 +386,7 @@ export const CultureForm = React.memo(
               acceptText={true}
             />
 
-            <div className="border-border/20 border-t pt-4">
+            <div className="border-border/20 border-t pt-4 space-y-4">
               <CurrencyAutocomplete
                 fieldName="currency"
                 value={String(identity.currency || "")}
@@ -389,6 +394,23 @@ export const CultureForm = React.memo(
                 placeholder="Select or enter currency"
                 currencySymbol={identity.currencySymbol || "$"}
               />
+
+              {identity.currency && !getCurrencyInfo(identity.currency).isISO && (
+                <div className="animate-in fade-in slide-in-from-top-1 border-border/20 border-t pt-4 duration-200">
+                  <EnhancedNumberInput
+                    label="Custom Currency Symbol"
+                    description="Specify the symbol for your custom currency (e.g. ₮, ℳ, ©, Cr)"
+                    value={identity.currencySymbol || "$"}
+                    onChange={handleCurrencySymbolChange}
+                    sectionId="symbols"
+                    showReset={true}
+                    resetValue="$"
+                    showButtons={false}
+                    placeholder="e.g. ₮, Cr, ₡..."
+                    acceptText={true}
+                  />
+                </div>
+              )}
             </div>
           </GlassCardContent>
         </GlassCard>

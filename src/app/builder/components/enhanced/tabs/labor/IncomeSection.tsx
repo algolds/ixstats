@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { EnhancedNumberInput, EnhancedSlider } from "../../../../primitives/enhanced";
+import { EnhancedNumberInput, SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { DollarSign, Users, Shield } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
@@ -49,23 +49,9 @@ export function IncomeSection({
         format={(value) => `$${Number(value).toFixed(2)}`}
       />
 
-      <EnhancedNumberInput
-        label="Living Wage (Hourly)"
-        description="Living wage for basic needs"
-        value={laborMarket.livingWageHourly}
-        onChange={(value) => onChange("livingWageHourly", value)}
-        min={componentBounds?.livingWage?.min ?? 10}
-        max={componentBounds?.livingWage?.max ?? 100}
-        step={0.5}
-        sectionId="labor"
-        icon={DollarSign}
-        showButtons={true}
-        format={(value) => `$${Number(value).toFixed(2)}`}
-      />
-
       {showAdvanced && (
         <div className="space-y-4 border-t pt-4">
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Unionization Rate"
             description="Percentage of workers in unions"
             value={laborMarket.unionizationRate}
@@ -77,9 +63,10 @@ export function IncomeSection({
             sectionId="labor"
             icon={Users}
             showValue={true}
+            defaultMode="slider"
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Collective Bargaining Coverage"
             description="Percentage covered by collective agreements"
             value={laborMarket.collectiveBargainingCoverage}
@@ -91,6 +78,7 @@ export function IncomeSection({
             sectionId="labor"
             icon={Shield}
             showValue={true}
+            defaultMode="slider"
           />
         </div>
       )}

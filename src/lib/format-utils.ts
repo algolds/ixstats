@@ -604,8 +604,8 @@ export function parseNumberInput(input: string | number): number {
     return input;
   }
 
-  // Remove currency symbols, spaces, and convert to uppercase
-  const cleaned = input.replace(/[$€£¥,\s]/g, "").toUpperCase();
+  // Remove currency symbols (including custom ones), spaces, and convert to uppercase
+  const cleaned = input.replace(/[^-\d.KMBTkmbt]/g, "").toUpperCase();
 
   // Check for suffix multipliers
   const suffixMultipliers: Record<string, number> = {

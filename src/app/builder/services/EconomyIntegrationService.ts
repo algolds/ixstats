@@ -302,6 +302,7 @@ export class EconomyIntegrationService extends BaseBuilderService<
     const impacts: Record<string, number> = {};
     const sectors = [
       "agriculture",
+      "mining",
       "manufacturing",
       "services",
       "technology",
@@ -362,8 +363,9 @@ export class EconomyIntegrationService extends BaseBuilderService<
   ) {
     const sectors = [
       { id: "agriculture", name: "Agriculture", base: 5 },
+      { id: "mining", name: "Mining & Extraction", base: 5 },
       { id: "manufacturing", name: "Manufacturing", base: 20 },
-      { id: "services", name: "Services", base: 60 },
+      { id: "services", name: "Services", base: 55 },
       { id: "technology", name: "Technology", base: 8 },
       { id: "finance", name: "Finance", base: 5 },
       { id: "government", name: "Government", base: 2 },
@@ -405,14 +407,20 @@ export class EconomyIntegrationService extends BaseBuilderService<
     const baseUnemployment = 5;
     const baseParticipation = 65;
 
+    const calculatedUnemployment = baseUnemployment + (impacts.unemployment || 0);
+    const unemploymentRate = Math.max(0, calculatedUnemployment);
+    const employmentRate = Math.min(100, 100 - unemploymentRate);
+    const underemploymentRate = unemploymentRate * 0.6;
+    const youthUnemploymentRate = unemploymentRate * 2.2;
+
     return {
       totalWorkforce: Math.round(population * 0.65 * (impacts.participation || 1)),
       laborForceParticipationRate: baseParticipation * (impacts.participation || 1),
-      employmentRate: 100 - (baseUnemployment + (impacts.unemployment || 0)),
-      unemploymentRate: baseUnemployment + (impacts.unemployment || 0),
-      underemploymentRate: (baseUnemployment + (impacts.unemployment || 0)) * 0.6,
+      employmentRate,
+      unemploymentRate,
+      underemploymentRate,
 
-      youthUnemploymentRate: (baseUnemployment + (impacts.unemployment || 0)) * 2.2,
+      youthUnemploymentRate,
       seniorEmploymentRate: 55,
       femaleParticipationRate: baseParticipation * 0.85,
       maleParticipationRate: baseParticipation * 1.15,

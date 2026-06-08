@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { Users, TrendingUp, TrendingDown, Globe } from "lucide-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
@@ -49,7 +49,7 @@ export function PopulationSection({
 
       {showAdvanced && (
         <div className="space-y-4 border-t pt-4">
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Net Migration Rate"
             description="Net migration per 1000 population"
             value={demographics.netMigrationRate}
@@ -61,9 +61,10 @@ export function PopulationSection({
             sectionId="demographics"
             icon={Globe}
             showValue={true}
+            defaultMode="slider"
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Immigration Rate"
             description="Immigration per 1000 population"
             value={demographics.immigrationRate}
@@ -75,9 +76,10 @@ export function PopulationSection({
             sectionId="demographics"
             icon={TrendingUp}
             showValue={true}
+            defaultMode="slider"
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Emigration Rate"
             description="Emigration per 1000 population"
             value={demographics.emigrationRate}
@@ -89,6 +91,7 @@ export function PopulationSection({
             sectionId="demographics"
             icon={TrendingDown}
             showValue={true}
+            defaultMode="slider"
           />
         </div>
       )}

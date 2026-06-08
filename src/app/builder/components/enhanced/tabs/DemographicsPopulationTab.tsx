@@ -23,7 +23,7 @@ import type {
 } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
-import { calculateDerivedDemographics, getRegionColor } from "./utils/demographicsCalculations";
+import { calculateDerivedDemographics, getRegionColor, balanceAgeDistribution } from "./utils/demographicsCalculations";
 import { PopulationSection } from "./demographics/PopulationSection";
 import { AgeDistributionSection } from "./demographics/AgeDistributionSection";
 import { GeographicSection } from "./demographics/GeographicSection";
@@ -158,6 +158,18 @@ export function DemographicsPopulationTab({
           urban: Math.round((100 - safeVal) * 10) / 10,
         };
       }
+    }
+
+    // Auto-balance age distribution fields to sum to 100
+    if (parentField === "ageDistribution") {
+      const val = typeof value === "number" ? value : parseFloat(String(value ?? 0));
+      const safeVal = Number.isNaN(val) ? 0 : val;
+      const currentDist = economyBuilder.demographics.ageDistribution;
+      nextParentValue = balanceAgeDistribution(
+        currentDist,
+        field as "under15" | "age15to64" | "over65",
+        safeVal
+      );
     }
 
     onEconomyBuilderChange({

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { Building2, MapPin, Plus, Minus, Settings, Users, Target } from "lucide-react";
 import type { DemographicsConfiguration, RegionDistribution } from "~/types/economy-builder";
 import { Input } from "~/components/ui/input";
@@ -28,7 +28,7 @@ export function GeographicSection({
 
   return (
     <div className="space-y-4">
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Urban Population"
         description="Percentage living in urban areas"
         value={demographics.urbanRuralSplit.urban}
@@ -40,9 +40,10 @@ export function GeographicSection({
         sectionId="demographics"
         icon={Building2}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Rural Population"
         description="Percentage living in rural areas"
         value={demographics.urbanRuralSplit.rural}
@@ -54,6 +55,7 @@ export function GeographicSection({
         sectionId="demographics"
         icon={MapPin}
         showValue={true}
+        defaultMode="slider"
       />
 
       <div className="space-y-3">
@@ -124,7 +126,7 @@ export function GeographicSection({
                   />
                 </div>
 
-                <EnhancedSlider
+                <SliderWithDirectInput
                   label="Population Percent"
                   value={region.populationPercent}
                   onChange={(value) => onRegionChange(index, "populationPercent", value)}
@@ -135,8 +137,9 @@ export function GeographicSection({
                   sectionId="demographics"
                   icon={Users}
                   showValue={true}
+                  defaultMode="slider"
                 />
-                <EnhancedSlider
+                <SliderWithDirectInput
                   label="Urban Percent"
                   value={region.urbanPercent}
                   onChange={(value) => onRegionChange(index, "urbanPercent", value)}
@@ -147,8 +150,9 @@ export function GeographicSection({
                   sectionId="demographics"
                   icon={Building2}
                   showValue={true}
+                  defaultMode="slider"
                 />
-                <EnhancedSlider
+                <SliderWithDirectInput
                   label="Economic Activity"
                   value={region.economicActivity}
                   onChange={(value) => onRegionChange(index, "economicActivity", value)}
@@ -159,6 +163,7 @@ export function GeographicSection({
                   sectionId="demographics"
                   icon={Target}
                   showValue={true}
+                  defaultMode="slider"
                 />
               </motion.div>
             )}

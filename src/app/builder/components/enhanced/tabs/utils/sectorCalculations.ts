@@ -9,7 +9,7 @@
 import type { SectorConfiguration } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { Factory, Leaf, Users, Zap, DollarSign, Building2, type LucideIcon } from "lucide-react";
+import { Factory, Leaf, Users, Zap, DollarSign, Building2, Pickaxe, type LucideIcon } from "lucide-react";
 
 /**
  * Template defining default properties for an economic sector
@@ -44,6 +44,14 @@ export const SECTOR_TEMPLATES: Record<string, SectorTemplate> = {
     description: "Farming, forestry, fishing, and related activities",
     characteristics: ["Labor-intensive", "Weather-dependent", "Export potential"],
   },
+  mining: {
+    name: "Mining & Extraction",
+    icon: Pickaxe,
+    color: "amber",
+    baseContribution: 5,
+    description: "Extraction of minerals, metals, oil, gas, and quarrying",
+    characteristics: ["Capital-intensive", "Resource-dependent", "High environmental impact"],
+  },
   manufacturing: {
     name: "Manufacturing",
     icon: Factory,
@@ -56,7 +64,7 @@ export const SECTOR_TEMPLATES: Record<string, SectorTemplate> = {
     name: "Services",
     icon: Users,
     color: "purple",
-    baseContribution: 60,
+    baseContribution: 55,
     description: "Professional, business, and consumer services",
     characteristics: ["Knowledge-based", "Domestic-focused", "High-value"],
   },
@@ -185,7 +193,7 @@ export function getSectorConstraints(
     const recommended = recommendedBy.length > 0;
 
     // Scale slider ranges based on impact
-    const baseMaxGDP = 50;
+    const baseMaxGDP = 95;
     const baseMinGDP = 0;
     const baseMaxGrowth = 15;
     const baseMinGrowth = -5;

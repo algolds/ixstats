@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { EnhancedSlider, EnhancedNumberInput } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput, EnhancedNumberInput } from "../../../../primitives/enhanced";
 import { Shield, Heart } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
@@ -25,7 +25,7 @@ export function ProtectionsSection({
       <div className="space-y-3">
         <h4 className="font-medium">Worker Protection Scores</h4>
         {Object.entries(laborMarket.workerProtections).map(([protection, value]) => (
-          <EnhancedSlider
+          <SliderWithDirectInput
             key={protection}
             label={protection.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
             value={value}
@@ -38,11 +38,12 @@ export function ProtectionsSection({
             icon={Shield}
             showValue={true}
             showRange={true}
+            defaultMode="slider"
           />
         ))}
       </div>
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Workplace Safety Index"
         description="Overall workplace safety rating"
         value={laborMarket.workplaceSafetyIndex}
@@ -55,9 +56,10 @@ export function ProtectionsSection({
         icon={Shield}
         showValue={true}
         showRange={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Labor Rights Score"
         description="Overall labor rights and freedoms rating"
         value={laborMarket.laborRightsScore}
@@ -70,6 +72,7 @@ export function ProtectionsSection({
         icon={Shield}
         showValue={true}
         showRange={true}
+        defaultMode="slider"
       />
 
       {showAdvanced && (

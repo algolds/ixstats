@@ -367,14 +367,14 @@ export const StepRenderer = memo(function StepRenderer({
   onGovernmentStructureChange,
   onGovernmentStructureSave,
 }: StepRendererProps) {
-  const { builderState, setBuilderState, updateStep, countryId, mode } = useBuilderContext();
+  const { builderState, setBuilderState, updateStep, countryId, mode, updateEconomicInputs } = useBuilderContext();
   const { handleTabChange } = useBuilderActions({ builderState, setBuilderState, mode });
 
   const handleEconomicInputsChange = useCallback(
     (inputs: EconomicInputs) => {
-      setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
+      updateEconomicInputs(inputs);
     },
-    [setBuilderState]
+    [updateEconomicInputs]
   );
 
   const handlePersistEconomyBuilder = useCallback(
@@ -472,9 +472,7 @@ export const StepRenderer = memo(function StepRenderer({
       <div className="space-y-6">
         <NationalIdentitySection
           inputs={builderState.economicInputs}
-          onInputsChange={(economicInputs: EconomicInputs) => {
-            setBuilderState((prev) => ({ ...prev, economicInputs }));
-          }}
+          onInputsChange={updateEconomicInputs}
           referenceCountry={builderState.selectedCountry}
           countryId={countryId}
         />
@@ -499,9 +497,7 @@ export const StepRenderer = memo(function StepRenderer({
         }}
         onGovernmentStructureChange={onGovernmentStructureChange}
         onGovernmentStructureSave={onGovernmentStructureSave}
-        onEconomicInputsChange={(inputs) => {
-          setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
-        }}
+        onEconomicInputsChange={updateEconomicInputs}
         onTabChange={(tab) => handleTabChange("government", tab)}
       />
     );

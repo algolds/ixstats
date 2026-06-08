@@ -748,13 +748,13 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             value="modern"
             className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
-            Economic Setup
+            Economy Presets
           </TabsTrigger>
           <TabsTrigger
             value="historical"
             className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
-            Government Structure
+            Government Presets
           </TabsTrigger>
         </TabsList>
 

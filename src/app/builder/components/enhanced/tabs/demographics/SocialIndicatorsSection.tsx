@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { EnhancedSlider, EnhancedNumberInput } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput, EnhancedNumberInput } from "../../../../primitives/enhanced";
 import { Heart, GraduationCap, Baby } from "lucide-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
@@ -20,7 +20,7 @@ export function SocialIndicatorsSection({
 }: SocialIndicatorsSectionProps) {
   return (
     <div className="space-y-4">
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Life Expectancy"
         description="Average life expectancy at birth"
         value={demographics.lifeExpectancy}
@@ -32,9 +32,10 @@ export function SocialIndicatorsSection({
         sectionId="demographics"
         icon={Heart}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Literacy Rate"
         description="Percentage of literate adults"
         value={demographics.literacyRate}
@@ -46,11 +47,12 @@ export function SocialIndicatorsSection({
         sectionId="demographics"
         icon={GraduationCap}
         showValue={true}
+        defaultMode="slider"
       />
 
       <div className="space-y-3">
         <h4 className="font-medium">Education Levels</h4>
-        <EnhancedSlider
+        <SliderWithDirectInput
           label="No Education"
           value={demographics.educationLevels.noEducation}
           onChange={(value) => onNestedChange("educationLevels", "noEducation", value)}
@@ -61,8 +63,9 @@ export function SocialIndicatorsSection({
           sectionId="demographics"
           icon={GraduationCap}
           showValue={true}
+          defaultMode="slider"
         />
-        <EnhancedSlider
+        <SliderWithDirectInput
           label="Primary Education"
           value={demographics.educationLevels.primary}
           onChange={(value) => onNestedChange("educationLevels", "primary", value)}
@@ -73,8 +76,9 @@ export function SocialIndicatorsSection({
           sectionId="demographics"
           icon={GraduationCap}
           showValue={true}
+          defaultMode="slider"
         />
-        <EnhancedSlider
+        <SliderWithDirectInput
           label="Secondary Education"
           value={demographics.educationLevels.secondary}
           onChange={(value) => onNestedChange("educationLevels", "secondary", value)}
@@ -85,8 +89,9 @@ export function SocialIndicatorsSection({
           sectionId="demographics"
           icon={GraduationCap}
           showValue={true}
+          defaultMode="slider"
         />
-        <EnhancedSlider
+        <SliderWithDirectInput
           label="Tertiary Education"
           value={demographics.educationLevels.tertiary}
           onChange={(value) => onNestedChange("educationLevels", "tertiary", value)}
@@ -97,6 +102,7 @@ export function SocialIndicatorsSection({
           sectionId="demographics"
           icon={GraduationCap}
           showValue={true}
+          defaultMode="slider"
         />
       </div>
 
@@ -128,7 +134,7 @@ export function SocialIndicatorsSection({
             showButtons={true}
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Health Expenditure (GDP %)"
             description="Health spending as percentage of GDP"
             value={demographics.healthExpenditureGDP}
@@ -140,6 +146,7 @@ export function SocialIndicatorsSection({
             sectionId="demographics"
             icon={Heart}
             showValue={true}
+            defaultMode="slider"
           />
         </div>
       )}

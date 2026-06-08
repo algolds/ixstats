@@ -283,11 +283,13 @@ export function BuilderNotchBar({
     if (window.scrollY < threshold) {
       container.style.transform = "translateY(0px)";
       container.style.opacity = "1";
+      container.style.visibility = "visible";
       setIsScrolled(false);
     } else {
       const height = container.offsetHeight || 60;
       container.style.transform = `translateY(${-height - 20}px)`;
       container.style.opacity = "0";
+      container.style.visibility = "hidden";
       setIsScrolled(true);
     }
   };
@@ -325,7 +327,10 @@ export function BuilderNotchBar({
             <div ref={containerRef} className="w-full transition-all duration-300 ease-in-out">
               {/* Notch bar */}
               <div
-                className="mx-auto max-w-[680px] px-2 pointer-events-auto"
+                className={cn(
+                  "mx-auto max-w-[680px] px-2",
+                  isScrolled ? "pointer-events-none" : "pointer-events-auto"
+                )}
                 style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.25))" }}
               >
                 <div

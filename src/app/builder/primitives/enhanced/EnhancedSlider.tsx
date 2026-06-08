@@ -87,7 +87,7 @@ export function EnhancedSlider({
     () =>
       debounce((val: number) => {
         onChange(val);
-      }, 100),
+      }, 16),
     [onChange]
   );
 
@@ -319,7 +319,8 @@ export function EnhancedSlider({
           {/* Progress Track */}
           <motion.div
             className={cn(
-              "absolute rounded-full transition-all duration-200",
+              "absolute rounded-full",
+              !isDragging && "transition-all duration-200",
               isDragging && "scale-[1.02] shadow-lg",
               "bg-blue-500 dark:bg-blue-600"
             )}
@@ -389,8 +390,7 @@ export function EnhancedSlider({
               left: isDragging
                 ? {
                     type: "tween",
-                    duration: 0.05,
-                    ease: "linear",
+                    duration: 0,
                   }
                 : {
                     type: "spring",
@@ -401,8 +401,7 @@ export function EnhancedSlider({
               bottom: isDragging
                 ? {
                     type: "tween",
-                    duration: 0.05,
-                    ease: "linear",
+                    duration: 0,
                   }
                 : {
                     type: "spring",

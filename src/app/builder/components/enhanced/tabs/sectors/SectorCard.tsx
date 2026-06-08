@@ -19,7 +19,7 @@ import {
 import { cn } from "~/lib/utils";
 import type { SectorConfiguration } from "~/types/economy-builder";
 import type { SectorTemplate, SectorConstraint } from "../utils/sectorCalculations";
-import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { FieldIndicator } from "~/app/builder/primitives/FieldIndicator";
 import { Button } from "~/components/ui/button";
 
@@ -264,34 +264,36 @@ export function SectorCard({
 
             {/* Core Sliders */}
             <div className="space-y-3">
-              <EnhancedSlider
+              <SliderWithDirectInput
                 label="GDP Contribution"
                 value={activeConfig.gdpContribution}
                 onChange={(value: number) => onChange?.("gdpContribution", value)}
                 onCommit={(value: number) => onCommit?.("gdpContribution", value)}
                 min={constraint?.minGDP ?? 0}
-                max={constraint?.maxGDP ?? 50}
+                max={constraint?.maxGDP ?? 95}
                 step={0.1}
                 unit="%"
                 sectionId="sectors"
                 icon={DollarSign}
                 showValue={true}
                 showRange={true}
+                defaultMode="slider"
               />
 
-              <EnhancedSlider
+              <SliderWithDirectInput
                 label="Employment Share"
                 value={activeConfig.employmentShare}
                 onChange={(value: number) => onChange?.("employmentShare", value)}
                 onCommit={(value: number) => onCommit?.("employmentShare", value)}
                 min={0}
-                max={50}
+                max={constraint?.maxGDP ?? 95}
                 step={0.1}
                 unit="%"
                 sectionId="sectors"
                 icon={Users}
                 showValue={true}
                 showRange={true}
+                defaultMode="slider"
               />
             </div>
 
@@ -303,7 +305,7 @@ export function SectorCard({
                 className="space-y-3 border-t border-white/5 pt-3"
               >
                 <div className="grid grid-cols-2 gap-2">
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Productivity"
                     value={activeConfig.productivity}
                     onChange={(value: number) => onChange?.("productivity", value)}
@@ -314,9 +316,10 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={TrendingUp}
                     showValue={true}
+                    defaultMode="slider"
                   />
 
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Growth Rate"
                     value={activeConfig.growthRate}
                     onChange={(value: number) => onChange?.("growthRate", value)}
@@ -327,11 +330,12 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={TrendingUp}
                     showValue={true}
+                    defaultMode="slider"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Exports"
                     value={activeConfig.exports}
                     onChange={(value: number) => onChange?.("exports", value)}
@@ -342,9 +346,10 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={Globe}
                     showValue={true}
+                    defaultMode="slider"
                   />
 
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Automation"
                     value={activeConfig.automation}
                     onChange={(value: number) => onChange?.("automation", value)}
@@ -355,11 +360,12 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={Zap}
                     showValue={true}
+                    defaultMode="slider"
                   />
                 </div>
 
                 <div className="space-y-3">
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Innovation"
                     value={activeConfig.innovation}
                     onChange={(value: number) => onChange?.("innovation", value)}
@@ -370,9 +376,10 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={Zap}
                     showValue={true}
+                    defaultMode="slider"
                   />
 
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Sustainability"
                     value={activeConfig.sustainability}
                     onChange={(value: number) => onChange?.("sustainability", value)}
@@ -383,9 +390,10 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={Leaf}
                     showValue={true}
+                    defaultMode="slider"
                   />
 
-                  <EnhancedSlider
+                  <SliderWithDirectInput
                     label="Competitiveness"
                     value={activeConfig.competitiveness}
                     onChange={(value: number) => onChange?.("competitiveness", value)}
@@ -396,6 +404,7 @@ export function SectorCard({
                     sectionId="sectors"
                     icon={TargetIcon}
                     showValue={true}
+                    defaultMode="slider"
                   />
                 </div>
               </motion.div>

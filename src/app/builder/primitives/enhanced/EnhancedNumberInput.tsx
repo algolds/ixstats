@@ -28,8 +28,8 @@ interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "o
 function formatInputOnTheFly(val: string): string {
   if (!val || val === "-") return val;
 
-  // Clean value by removing spaces and any currency symbols
-  let cleaned = val.replace(/[$€£¥\s]/g, "");
+  // Clean value by removing spaces and any currency symbols (including custom ones)
+  let cleaned = val.replace(/[^-\d.KMBTkmbt]/g, "");
 
   // Check for leading minus sign
   const hasMinus = cleaned.startsWith("-");

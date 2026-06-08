@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { TrendingDown, Clock, Briefcase } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
@@ -23,7 +23,7 @@ export function EmploymentSection({
 }: EmploymentSectionProps) {
   return (
     <div className="space-y-4">
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Unemployment Rate"
         description="Overall unemployment rate"
         value={laborMarket.unemploymentRate}
@@ -36,9 +36,10 @@ export function EmploymentSection({
         icon={TrendingDown}
         showValue={true}
         showRange={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Underemployment Rate"
         description="Rate of underemployed workers"
         value={laborMarket.underemploymentRate}
@@ -50,9 +51,10 @@ export function EmploymentSection({
         sectionId="labor"
         icon={TrendingDown}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Average Workweek Hours"
         description="Average hours worked per week"
         value={laborMarket.averageWorkweekHours}
@@ -64,9 +66,10 @@ export function EmploymentSection({
         sectionId="labor"
         icon={Clock}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Average Overtime Hours"
         description="Average overtime hours per week"
         value={laborMarket.averageOvertimeHours}
@@ -78,6 +81,7 @@ export function EmploymentSection({
         sectionId="labor"
         icon={Clock}
         showValue={true}
+        defaultMode="slider"
       />
 
       {showAdvanced && (
@@ -85,7 +89,7 @@ export function EmploymentSection({
           <div className="space-y-3">
             <h4 className="font-medium">Employment Type Distribution</h4>
             {Object.entries(laborMarket.employmentType).map(([type, value]) => (
-              <EnhancedSlider
+              <SliderWithDirectInput
                 key={type}
                 label={type.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
                 value={value}
@@ -97,6 +101,7 @@ export function EmploymentSection({
                 sectionId="labor"
                 icon={Briefcase}
                 showValue={true}
+                defaultMode="slider"
               />
             ))}
           </div>

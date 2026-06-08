@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Progress } from "~/components/ui/progress";
-import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SliderWithDirectInput } from "../../../../primitives/enhanced";
 import { Baby, UserCheck, Heart } from "lucide-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
@@ -19,7 +19,7 @@ export function AgeDistributionSection({
 }: AgeDistributionSectionProps) {
   return (
     <div className="space-y-4">
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Under 15 Years"
         description="Percentage of population under 15"
         value={demographics.ageDistribution.under15}
@@ -31,9 +31,10 @@ export function AgeDistributionSection({
         sectionId="demographics"
         icon={Baby}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Working Age (15-64)"
         description="Percentage of population aged 15-64"
         value={demographics.ageDistribution.age15to64}
@@ -45,9 +46,10 @@ export function AgeDistributionSection({
         sectionId="demographics"
         icon={UserCheck}
         showValue={true}
+        defaultMode="slider"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Over 65 Years"
         description="Percentage of population over 65"
         value={demographics.ageDistribution.over65}
@@ -59,6 +61,7 @@ export function AgeDistributionSection({
         sectionId="demographics"
         icon={Heart}
         showValue={true}
+        defaultMode="slider"
       />
 
       {showAdvanced && (
