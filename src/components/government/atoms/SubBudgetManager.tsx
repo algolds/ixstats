@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { formatExactCurrency } from "~/lib/format-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -81,12 +82,7 @@ export function SubBudgetManager({
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatExactCurrency(amount, currency);
   };
 
   const totalAllocated = data.reduce((sum, item) => sum + item.percent, 0);

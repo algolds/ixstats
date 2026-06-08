@@ -2,6 +2,7 @@
 
 import NumberFlow from "@number-flow/react";
 import { cn } from "~/lib/utils";
+import { getCurrencyInfo, safeFormatCurrency } from "~/lib/format-utils";
 
 interface NumberFlowDisplayProps {
   value: number;
@@ -21,6 +22,7 @@ interface NumberFlowDisplayProps {
   trend?: "up" | "down" | "stable";
   locale?: string;
   useGrouping?: boolean;
+  currency?: string;
 }
 
 // Enhanced format helpers with proper locale support
@@ -189,6 +191,7 @@ export function NumberFlowDisplay({
   trend,
   locale = "en-US",
   useGrouping = true,
+  currency = "USD",
 }: NumberFlowDisplayProps) {
   // Ensure value is a valid number
   const safeValue = typeof value === "number" && !isNaN(value) ? value : 0;
@@ -216,28 +219,32 @@ export function NumberFlowDisplay({
 
   // Handle different formatting types
   switch (format) {
-    case "currency":
+    case "currency": {
+      const curInfo = getCurrencyInfo(currency);
+      const curSymbol = curInfo.symbol || curInfo.name || currency;
+
       if (safeValue >= 1e12) {
         displayValue = safeValue / 1e12;
         displaySuffix = "T";
         formattedValue = formatters.financial(displayValue, Math.max(autoDecimalPlaces, 1), locale);
-        displayPrefix = "$";
+        displayPrefix = curSymbol;
       } else if (safeValue >= 1e9) {
         displayValue = safeValue / 1e9;
         displaySuffix = "B";
         formattedValue = formatters.financial(displayValue, Math.max(autoDecimalPlaces, 1), locale);
-        displayPrefix = "$";
+        displayPrefix = curSymbol;
       } else if (safeValue >= 1e6) {
         displayValue = safeValue / 1e6;
         displaySuffix = "M";
         formattedValue = formatters.financial(displayValue, Math.max(autoDecimalPlaces, 1), locale);
-        displayPrefix = "$";
+        displayPrefix = curSymbol;
       } else {
-        formattedValue = formatters.currency(safeValue, autoDecimalPlaces, locale);
+        formattedValue = safeFormatCurrency(safeValue, currency, autoDecimalPlaces > 0);
         displayPrefix = "";
         displaySuffix = "";
       }
       break;
+    }
 
     case "financial":
       formattedValue = formatters.financial(safeValue, autoDecimalPlaces, locale);

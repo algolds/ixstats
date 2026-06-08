@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { formatExactCurrency } from "~/lib/format-utils";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -36,6 +37,7 @@ interface TaxEconomySyncProps {
   };
   onOptimize?: () => void;
   className?: string;
+  currency?: string;
 }
 
 interface TaxBurdenAnalysis {
@@ -74,6 +76,7 @@ export function TaxEconomySyncDisplay({
   economicData,
   onOptimize = () => {},
   className = "",
+  currency = "USD",
 }: TaxEconomySyncProps) {
   // Determine economic tier based on GDP per capita
   const economicTier = useMemo((): EconomicTierRecommendation["tier"] => {
@@ -426,12 +429,7 @@ export function TaxEconomySyncDisplay({
 
   // Format helpers
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatExactCurrency(amount, currency);
   };
 
   const formatPercentage = (rate: number) => {

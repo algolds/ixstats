@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { formatCompactCurrency, formatExactCurrency } from "~/lib/format-utils";
 import { motion, AnimatePresence } from "motion/react";
 import { TrendingUp, Briefcase, Users, DollarSign } from "lucide-react";
 import { ChevronRight } from "lucide-react";
@@ -32,6 +33,7 @@ export function LaborTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("workforce");
+  const currency = country?.nationalIdentity?.currency || "USD";
 
   const toggleSection = (sectionId: string) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -218,16 +220,8 @@ export function LaborTab({
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.compensation === "minimum"
-                        ? (economyData?.labor?.minimumWage ?? 0).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            maximumFractionDigits: 0,
-                          })
-                        : (economyData?.labor?.averageAnnualIncome ?? 0).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            maximumFractionDigits: 0,
-                          })}
+                        ? formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)
+                        : formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -425,11 +419,7 @@ export function LaborTab({
                       Average Annual Income
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {(economyData?.labor?.averageAnnualIncome ?? 0).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Mean earnings</p>
                   </div>
@@ -438,11 +428,7 @@ export function LaborTab({
                       Minimum Wage
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {(economyData?.labor?.minimumWage ?? 0).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Per year</p>
                   </div>

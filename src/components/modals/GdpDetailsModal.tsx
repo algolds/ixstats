@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { formatCompactCurrency } from "~/lib/format-utils";
 import {
   DollarSign,
   Calculator,
@@ -212,12 +213,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 2,
-    }).format(value);
+    const currency = countryData?.nationalIdentity?.currency || countryData?.currency || "USD";
+    return formatCompactCurrency(value, "N/A", currency);
   };
 
   const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {

@@ -3,6 +3,7 @@
  * Intelligently parses data from Core Indicators and Government Builder to pre-populate Tax Builder
  */
 
+import { formatExactCurrency } from "./format-utils";
 import type {
   TaxSystemInput,
   TaxCategoryInput,
@@ -648,10 +649,5 @@ export function calculateRecommendedTaxRevenue(
  * Helper: Format currency
  */
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatExactCurrency(amount, "USD");
 }

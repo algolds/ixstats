@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { formatCompactCurrency, formatExactCurrency } from "~/lib/format-utils";
 import { motion, AnimatePresence } from "motion/react";
 import { TrendingUp, TrendingDown, Briefcase, Building, Globe } from "lucide-react";
 import { ChevronRight } from "lucide-react";
@@ -33,6 +34,7 @@ export function EconomyTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("sectors");
+  const currency = country?.nationalIdentity?.currency || "USD";
 
   const toggleSection = (sectionId: string) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -123,13 +125,9 @@ export function EconomyTab({
                       transition={{ duration: 0.15 }}
                       className="text-foreground flex items-center text-lg font-bold tracking-tight hover:underline"
                     >
-                      $
                       {metricView.economyGdp === "perCapita"
-                        ? Math.round(economyData?.core.gdpPerCapita ?? 0).toLocaleString("en-US")
-                        : Math.round(economyData?.core.nominalGDP ?? 0).toLocaleString("en-US", {
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          })}
+                        ? formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)
+                        : formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)}
                     </motion.p>
                   </AnimatePresence>
                   {(() => {
@@ -154,8 +152,8 @@ export function EconomyTab({
                 </div>
                 <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
                   {metricView.economyGdp === "perCapita"
-                    ? `${country.economicTier || "Developing"} · $${(economyData?.core.nominalGDP ?? 0).toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 })} total`
-                    : `Per capita: $${Math.round(economyData?.core.gdpPerCapita ?? 0).toLocaleString("en-US")}`}
+                    ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
+                    : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
                 </p>
               </button>
 
@@ -189,12 +187,7 @@ export function EconomyTab({
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.fiscal === "balance"
-                        ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          })
+                        ? formatCompactCurrency(economyData?.fiscal?.budgetDeficitSurplus ?? 0, "N/A", currency)
                         : `${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
                     </motion.p>
                   </AnimatePresence>
@@ -238,18 +231,8 @@ export function EconomyTab({
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.trade === "imports"
-                        ? ((economyData?.core.nominalGDP ?? 0) * 0.32).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          })
-                        : ((economyData?.core.nominalGDP ?? 0) * 0.35).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          })}
+                        ? formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)
+                        : formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -409,11 +392,7 @@ export function EconomyTab({
                       Total Exports
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {((economyData?.core.nominalGDP ?? 0) * 0.35).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        notation: "compact",
-                      })}
+                      {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">35.0% of GDP</p>
                   </div>
@@ -422,11 +401,7 @@ export function EconomyTab({
                       Total Imports
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {((economyData?.core.nominalGDP ?? 0) * 0.32).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        notation: "compact",
-                      })}
+                      {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">32.0% of GDP</p>
                   </div>
@@ -435,11 +410,7 @@ export function EconomyTab({
                       Trade Balance
                     </p>
                     <p className="mt-0.5 text-sm font-bold text-emerald-500">
-                      {((economyData?.core.nominalGDP ?? 0) * 0.03).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        notation: "compact",
-                      })}
+                      {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.03, "N/A", currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Surplus (+3.0%)</p>
                   </div>
@@ -453,6 +424,7 @@ export function EconomyTab({
                     showProgressBars={true}
                     cardWrapper="panel"
                     accent="emerald"
+                    currency={currency}
                     sectors={[
                       {
                         id: "manufactured",
@@ -506,11 +478,12 @@ export function EconomyTab({
                     showProgressBars={true}
                     cardWrapper="panel"
                     accent="emerald"
+                    currency={currency}
                     sectors={[
                       {
                         id: "energy",
                         name: "Energy & Fuels",
-                        value: 0,
+                        value: (economyData?.core.nominalGDP ?? 0) * 0.32 * 0.30,
                         percentage: 30,
                         color: "red",
                         trend: "down",

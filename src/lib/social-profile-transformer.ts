@@ -17,6 +17,7 @@ import type {
   MilestoneTarget,
 } from "~/types/social-profile";
 import { IxTime } from "~/lib/ixtime";
+import { formatExactCurrency } from "~/lib/format-utils";
 
 // Updated to match tRPC country data structure
 interface CountryDataInput {
@@ -650,12 +651,7 @@ export class SocialProfileTransformer {
   }
 
   private static formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatExactCurrency(amount, "USD");
   }
 
   private static formatPopulation(population: number): string {

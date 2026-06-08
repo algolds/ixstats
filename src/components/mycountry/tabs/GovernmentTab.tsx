@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { formatCompactCurrency, formatExactCurrency } from "~/lib/format-utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Building, DollarSign, Crown } from "lucide-react";
 import { ChevronRight } from "lucide-react";
@@ -34,6 +35,7 @@ export function GovernmentTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("structure");
+  const currency = country?.nationalIdentity?.currency || "USD";
 
   const toggleSection = (sectionId: string) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -158,12 +160,7 @@ export function GovernmentTab({
                     >
                       {metricView.budget === "percentage"
                         ? `${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`
-                        : (economyData?.spending?.totalSpending ?? 0).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          })}
+                        : formatCompactCurrency(economyData?.spending?.totalSpending ?? 0, "N/A", currency)}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -205,15 +202,12 @@ export function GovernmentTab({
                     >
                       {metricView.debt === "ratio"
                         ? `${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`
-                        : (
+                        : formatCompactCurrency(
                             (economyData?.core.nominalGDP ?? 0) *
-                            ((economyData?.fiscal?.totalDebtGDPRatio ?? 0) / 100)
-                          ).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            notation: "compact",
-                            maximumFractionDigits: 1,
-                          })}
+                              ((economyData?.fiscal?.totalDebtGDPRatio ?? 0) / 100),
+                            "N/A",
+                            currency
+                          )}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -419,11 +413,7 @@ export function GovernmentTab({
                       Total Spending
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {(economyData?.spending?.totalSpending ?? 0).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        notation: "compact",
-                      })}
+                      {formatCompactCurrency(economyData?.spending?.totalSpending ?? 0, "N/A", currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       Annual expenditure
@@ -445,11 +435,7 @@ export function GovernmentTab({
                       Spending per Capita
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {(economyData?.spending?.spendingPerCapita ?? 0).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatExactCurrency(economyData?.spending?.spendingPerCapita ?? 0, currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Per citizen share</p>
                   </div>
@@ -465,11 +451,7 @@ export function GovernmentTab({
                           : "mt-0.5 text-sm font-bold text-red-500";
                       })()}
                     >
-                      {(economyData?.spending?.deficitSurplus ?? 0).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        notation: "compact",
-                      })}
+                      {formatCompactCurrency(economyData?.spending?.deficitSurplus ?? 0, "N/A", currency)}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       {(economyData?.spending?.deficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit"}
@@ -484,6 +466,7 @@ export function GovernmentTab({
                   showProgressBars={true}
                   cardWrapper="panel"
                   accent="amber"
+                  currency={currency}
                   sectors={[
                     {
                       id: "education",
@@ -596,14 +579,12 @@ export function GovernmentTab({
                       Total Debt
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {(
+                      {formatCompactCurrency(
                         (economyData?.core.nominalGDP ?? 0) *
-                        ((economyData?.fiscal?.totalDebtGDPRatio ?? 0) / 100)
-                      ).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        notation: "compact",
-                      })}
+                          ((economyData?.fiscal?.totalDebtGDPRatio ?? 0) / 100),
+                        "N/A",
+                        currency
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       Outstanding national debt

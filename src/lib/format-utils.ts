@@ -568,12 +568,6 @@ export function safeFormatCurrency(
   forceDecimals: boolean = false,
   fallbackCurrency: string = "USD"
 ): string {
-  // If currency is invalid, use fallback immediately
-  if (!isValidCurrency(currency)) {
-    console.warn(`Invalid currency ${currency}, using fallback ${fallbackCurrency}`);
-    return formatCurrency(amount, fallbackCurrency, forceDecimals);
-  }
-
   try {
     return formatCurrency(amount, currency, forceDecimals);
   } catch (error) {
@@ -581,7 +575,14 @@ export function safeFormatCurrency(
       `Currency formatting failed for ${currency}, using fallback ${fallbackCurrency}:`,
       error
     );
-    return formatCurrency(amount, fallbackCurrency, forceDecimals);
+    try {
+      return formatCurrency(amount, fallbackCurrency, forceDecimals);
+    } catch (fallbackError) {
+      return `${currency} ${amount.toLocaleString("en-US", {
+        minimumFractionDigits: forceDecimals ? 2 : 0,
+        maximumFractionDigits: forceDecimals ? 2 : 0,
+      })}`;
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { safeFormatCurrency } from "~/lib/format-utils";
 import { motion, AnimatePresence } from "motion/react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
@@ -37,22 +38,20 @@ export interface InteractiveMetricProps {
   color?: "default" | "green" | "blue" | "purple" | "red" | "amber";
   animate?: boolean;
   className?: string;
+  currency?: string;
 }
 
 // Format value based on format type with null safety
 function formatValue(
   value: number | undefined | null,
   format: InteractiveMetricProps["format"],
-  decimals: number
+  decimals: number,
+  currency: string = "USD"
 ): string {
   if (value == null || !isFinite(value)) return "0";
   switch (format) {
     case "currency":
-      return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: decimals,
-      });
+      return safeFormatCurrency(value, currency, decimals > 0);
     case "percent":
       return `${value.toFixed(decimals)}%`;
     case "compact":
@@ -149,6 +148,7 @@ export function InteractiveMetric({
   color = "default",
   animate = true,
   className = "",
+  currency = "USD",
 }: InteractiveMetricProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -235,9 +235,14 @@ export function InteractiveMetric({
             <span className={cn(sizes.value, "font-bold tracking-tight", colors.text)}>
               {prefix}
               {animate ? (
-                <NumberFlowDisplay value={value} decimalPlaces={decimals} />
+                <NumberFlowDisplay
+                  value={value}
+                  decimalPlaces={decimals}
+                  format={format === "currency" ? "currency" : format === "compact" ? "compact" : "default"}
+                  currency={currency}
+                />
               ) : (
-                formatValue(value, format, decimals)
+                formatValue(value, format, decimals, currency)
               )}
               {suffix}
             </span>

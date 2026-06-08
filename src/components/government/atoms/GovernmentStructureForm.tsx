@@ -270,11 +270,7 @@ export function GovernmentStructureForm({
                 sectionId="spending"
                 size="sm"
                 format={(val) =>
-                  new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: data.budgetCurrency || "USD",
-                    minimumFractionDigits: 0,
-                  }).format(Number(val))
+                  safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)
                 }
                 placeholder="Enter budget limit..."
                 className="animate-fade-in text-zinc-900 dark:text-white"
@@ -733,17 +729,13 @@ export function GovernmentStructureForm({
                     sectionId="spending"
                     size="sm"
                     format={(val) =>
-                      new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: data.budgetCurrency || "USD",
-                        minimumFractionDigits: 0,
-                      }).format(Number(val))
+                      safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)
                     }
                     placeholder="Enter budget limit..."
                   />
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-semibold text-cyan-500">
-                      Live: <NumberFlowDisplay value={data.totalBudget || 0} format="currency" />
+                      Live: <NumberFlowDisplay value={data.totalBudget || 0} format="currency" currency={data.budgetCurrency || "USD"} />
                     </span>
                     {gdpData?.nominalGDP &&
                       gdpData.nominalGDP > 0 &&

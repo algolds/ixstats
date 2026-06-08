@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
+import { formatExactCurrency } from "~/lib/format-utils";
 import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -167,12 +168,7 @@ export function RevenueSourceForm({
   totalRevenueRef.current = totalRevenue;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatExactCurrency(amount, currency);
   };
 
   const formatNumber = (num: number) => {

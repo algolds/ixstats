@@ -22,6 +22,7 @@ interface PreviewTabProps {
   selectedAtomicTaxComponents: string[];
   activeGovernmentComponents: ComponentType[];
   showAtomicIntegration: boolean;
+  currency?: string;
 }
 
 export function PreviewTab({
@@ -32,6 +33,7 @@ export function PreviewTab({
   selectedAtomicTaxComponents,
   activeGovernmentComponents,
   showAtomicIntegration,
+  currency,
 }: PreviewTabProps) {
   return (
     <div className="space-y-6">
@@ -88,6 +90,7 @@ export function PreviewTab({
             taxSystem={previewTaxSystem}
             economicData={{ core: economicData as any }}
             onOptimize={() => {}}
+            currency={currency}
           />
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { formatCompactCurrency } from "~/lib/format-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -276,12 +277,7 @@ export function AdvancedBudgetDashboard({
   }, [budgetCategories, budgetAnalytics]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(amount);
+    return formatCompactCurrency(amount, "N/A", currency);
   };
 
   const handleCategoryUpdate = (categoryId: string, updates: Partial<BudgetCategory>) => {

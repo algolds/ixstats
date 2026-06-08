@@ -469,6 +469,7 @@ export function TaxBuilder({
               selectedAtomicTaxComponents={selectedAtomicTaxComponents}
               activeGovernmentComponents={activeComponents}
               showAtomicIntegration={showAtomicIntegration}
+              currency={governmentData?.structure?.budgetCurrency || "USD"}
             />
           )}
 
@@ -538,6 +539,7 @@ export function TaxBuilder({
                 selectedAtomicTaxComponents={selectedAtomicTaxComponents}
                 activeGovernmentComponents={activeComponents}
                 showAtomicIntegration={showAtomicIntegration}
+                currency={governmentData?.structure?.budgetCurrency || "USD"}
               />
             )}
 

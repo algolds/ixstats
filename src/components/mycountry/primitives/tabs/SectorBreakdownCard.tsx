@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { formatCompactCurrency } from "~/lib/format-utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
@@ -50,15 +51,11 @@ export interface SectorBreakdownCardProps {
 // Format currency value with null safety
 function formatCurrency(
   value: number | undefined | null,
-  notation: "compact" | "standard" = "compact"
+  notation: "compact" | "standard" = "compact",
+  currency: string = "USD"
 ): string {
-  if (value == null || !isFinite(value)) return "$0";
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation,
-    maximumFractionDigits: 1,
-  });
+  if (value == null || !isFinite(value)) return "0";
+  return formatCompactCurrency(value, "N/A", currency);
 }
 
 // Format people/population counts without decimals
@@ -266,7 +263,7 @@ export function SectorBreakdownCard({
                         >
                           {valueAsPeople
                             ? formatPeopleCount(sector.value)
-                            : formatCurrency(sector.value)}
+                            : formatCurrency(sector.value, "compact", _currency)}
                         </div>
                       )}
                       <div
@@ -325,7 +322,7 @@ export function SectorBreakdownCard({
                           <span className={cn("text-sm font-medium", colors.text)}>
                             {valueAsPeople
                               ? formatPeopleCount(sector.value)
-                              : formatCurrency(sector.value)}
+                              : formatCurrency(sector.value, "compact", _currency)}
                           </span>
                         </>
                       )}
@@ -354,7 +351,7 @@ export function SectorBreakdownCard({
           <div className="border-border/50 mt-3 flex items-center justify-between border-t pt-3">
             <span className="text-muted-foreground text-sm font-medium">Total</span>
             <span className="text-lg font-bold">
-              {valueAsPeople ? formatPeopleCount(totalValue) : formatCurrency(totalValue)}
+              {valueAsPeople ? formatPeopleCount(totalValue) : formatCurrency(totalValue, "compact", _currency)}
             </span>
           </div>
         )}

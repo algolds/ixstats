@@ -10,6 +10,7 @@ import { GovernmentBuilder } from "~/components/government";
 import type { SectionContentProps } from "../types/builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { GovernmentBuilderState } from "~/types/government";
+import { formatExactCurrency } from "~/lib/format-utils";
 
 interface GovernmentStructureSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
@@ -207,12 +208,10 @@ export function GovernmentStructureSection({
                 <div className="space-y-2">
                   <div className="text-muted-foreground text-sm">Budget Information</div>
                   <div className="text-foreground font-bold">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: governmentData.structure.budgetCurrency,
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(governmentData.structure.totalBudget)}
+                    {formatExactCurrency(
+                      governmentData.structure.totalBudget,
+                      governmentData.structure.budgetCurrency
+                    )}
                   </div>
                   <div className="text-muted-foreground text-sm">
                     {(
