@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ChevronUp,
   ClipboardList,
-  FileText,
   Layers,
   Users,
   DollarSign,
@@ -273,11 +272,11 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         )}
 
         {/* Compact horizontal row of quick-action icons */}
-        <div className="grid grid-cols-4 gap-1 pt-2">
+        <div className="grid grid-cols-3 gap-1.5 pt-2">
           {/* Messages */}
           <Link
             href="/messages"
-            className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-1 py-2 transition-all hover:scale-105 hover:bg-indigo-500/20"
+            className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-2 py-2.5 transition-all hover:scale-105 hover:bg-indigo-500/20"
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
@@ -290,7 +289,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 {totalUnreadMessages}
               </span>
             )}
-            <span className="mt-1 text-[8px] font-semibold tracking-wider text-indigo-600 uppercase dark:text-indigo-400">
+            <span className="mt-1.5 text-[9px] font-semibold tracking-normal text-indigo-600 uppercase dark:text-indigo-400">
               Mail
             </span>
           </Link>
@@ -299,7 +298,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive")}
-              className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-1 py-2 transition-all hover:scale-105 hover:bg-amber-500/20"
+              className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-2.5 transition-all hover:scale-105 hover:bg-amber-500/20"
               title={`${issueCount} pending issues (${urgentCount} urgent)`}
             >
               <ClipboardList className="h-4 w-4 text-amber-600 transition-colors dark:text-amber-500" />
@@ -313,41 +312,15 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                   {urgentCount > 0 ? urgentCount : issueCount}
                 </span>
               )}
-              <span className="mt-1 text-[8px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-500">
+              <span className="mt-1.5 text-[9px] font-semibold tracking-normal text-amber-600 uppercase dark:text-amber-500">
                 Issues
               </span>
             </Link>
           ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-1 py-2 opacity-35">
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-2 py-2.5 opacity-35">
               <ClipboardList className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1 text-[8px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground mt-1.5 text-[9px] font-semibold tracking-normal uppercase">
                 Issues
-              </span>
-            </div>
-          )}
-
-          {/* Policies */}
-          {hasCountry ? (
-            <Link
-              href={createUrl("/mycountry/executive")}
-              className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 px-1 py-2 transition-all hover:scale-105 hover:bg-blue-500/20"
-              title={`${activePolicies}/${totalPolicies} active policies`}
-            >
-              <FileText className="h-4 w-4 text-blue-600 transition-colors dark:text-blue-400" />
-              {totalPolicies > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-blue-500/35 bg-blue-500/20 px-1 text-[8px] font-semibold text-blue-400 shadow-sm backdrop-blur-md">
-                  {activePolicies}
-                </span>
-              )}
-              <span className="mt-1 text-[8px] font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
-                Policy
-              </span>
-            </Link>
-          ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-1 py-2 opacity-35">
-              <FileText className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1 text-[8px] font-semibold tracking-wider uppercase">
-                Policy
               </span>
             </div>
           )}
@@ -357,7 +330,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Link
               href={createUrl("/mycountry/executive")}
               className={cn(
-                "group/icon relative flex flex-col items-center justify-center rounded-lg px-1 py-2 transition-all hover:scale-105",
+                "group/icon relative flex flex-col items-center justify-center rounded-lg px-2 py-2.5 transition-all hover:scale-105",
                 pendingActions > 0
                   ? "border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20"
                   : "border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20"
@@ -378,7 +351,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               />
               <span
                 className={cn(
-                  "mt-1 text-[8px] font-semibold tracking-wider uppercase",
+                  "mt-1.5 text-[9px] font-semibold tracking-normal uppercase",
                   pendingActions > 0 ? "text-orange-500" : "text-emerald-600 dark:text-emerald-400"
                 )}
               >
@@ -386,9 +359,9 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               </span>
             </Link>
           ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-1 py-2 opacity-35">
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-2 py-2.5 opacity-35">
               <Layers className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1 text-[8px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground mt-1.5 text-[9px] font-semibold tracking-normal uppercase">
                 Actions
               </span>
             </div>

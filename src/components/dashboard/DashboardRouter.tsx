@@ -12,6 +12,7 @@ import {
   BarChart3,
   Swords,
   ChevronUp,
+  Coins,
   Wallet,
   Flame,
   Bell,
@@ -27,6 +28,7 @@ import {
   AlertTriangle,
   TrendingUp,
   Users,
+  Map as MapIcon,
 } from "lucide-react";
 import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
@@ -43,7 +45,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { DistortedGlass } from "~/components/ui/distorted-glass";
 import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
+
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 const CountryMapEmbed = dynamic(
@@ -313,36 +315,22 @@ function DashboardHero({
                 gdp: v.gdp === "perCapita" ? "total" : "perCapita",
               }))
             }
-            className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
           >
-            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
-              {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
-            </p>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <p className="text-foreground text-[11px] font-bold tracking-tight">
+            <Coins className="h-3 w-3 shrink-0 text-amber-500" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
+                {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
+              </p>
+              <p className="text-foreground text-[11px] font-bold">
                 $
                 {metricView.gdp === "perCapita"
                   ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
                   : Math.round(stats.currentTotalGdp).toLocaleString("en-US")}
               </p>
-              {stats.gdpGrowth !== 0 && (
-                <span
-                  className={cn(
-                    "flex items-center gap-0.5 text-[9px] font-semibold",
-                    stats.gdpGrowth > 0 ? "text-emerald-500" : "text-red-500"
-                  )}
-                >
-                  {stats.gdpGrowth > 0 ? (
-                    <ArrowTrendingUpIcon size={10} />
-                  ) : (
-                    <ArrowTrendingDownIcon size={10} />
-                  )}
-                  {stats.gdpGrowth > 0 ? "+" : ""}
-                  {stats.gdpGrowth.toFixed(1)}%
-                </span>
-              )}
             </div>
           </button>
+
           <button
             onClick={() =>
               setMetricView((v) => ({
@@ -350,32 +338,23 @@ function DashboardHero({
                 population: v.population === "total" ? "density" : "total",
               }))
             }
-            className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
           >
-            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
-              {metricView.population === "total" ? "Population" : "Density"}
-            </p>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <p className="text-foreground text-[11px] font-bold tracking-tight">
+            <Users className="h-3 w-3 shrink-0 text-amber-500" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
+                {metricView.population === "total" ? "Population" : "Density"}
+              </p>
+              <p className="text-foreground text-[11px] font-bold">
                 {metricView.population === "total"
                   ? Math.round(stats.population).toLocaleString("en-US")
                   : stats.populationDensity
                     ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
                     : "N/A"}
               </p>
-              {stats.popGrowth !== 0 && metricView.population === "total" && (
-                <span
-                  className={cn(
-                    "flex items-center gap-0.5 text-[9px] font-semibold",
-                    stats.popGrowth > 0 ? "text-emerald-500" : "text-red-500"
-                  )}
-                >
-                  {stats.popGrowth > 0 ? "+" : ""}
-                  {stats.popGrowth.toFixed(1)}%
-                </span>
-              )}
             </div>
           </button>
+
           <button
             onClick={
               stats.areaSqMi && stats.landArea
@@ -383,26 +362,53 @@ function DashboardHero({
                 : undefined
             }
             className={cn(
-              "rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all",
+              "flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all",
               stats.areaSqMi && stats.landArea && "hover:bg-white/[0.07] active:scale-[0.98]"
             )}
           >
-            <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
-              Land Area
-            </p>
-            <p className="text-foreground mt-0.5 text-[11px] font-bold tracking-tight">
-              {metricView.area === "km"
-                ? stats.landArea
-                  ? `${stats.landArea.toLocaleString()} km²`
-                  : "N/A"
-                : stats.areaSqMi
-                  ? `${stats.areaSqMi.toLocaleString()} mi²`
-                  : "N/A"}
-            </p>
+            <MapIcon className="h-3 w-3 shrink-0 text-amber-500" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
+                Land Area
+              </p>
+              <p className="text-foreground text-[11px] font-bold">
+                {metricView.area === "km"
+                  ? stats.landArea
+                    ? `${stats.landArea.toLocaleString()} km²`
+                    : "N/A"
+                  : stats.areaSqMi
+                    ? `${stats.areaSqMi.toLocaleString()} mi²`
+                    : "N/A"}
+              </p>
+            </div>
           </button>
         </div>
       </TooltipTrigger>
-      <TooltipContent side="bottom">Click metrics to toggle views</TooltipContent>
+      <TooltipContent side="bottom">
+        <div className="space-y-1 text-xs">
+          <p className="font-semibold text-foreground">Click metrics to toggle views</p>
+          <div className="border-t border-white/10 my-1 pt-1 space-y-0.5 text-muted-foreground">
+            {stats.gdpGrowth !== 0 && (
+              <p className="flex items-center gap-1">
+                GDP Growth:{" "}
+                <span className={cn("font-bold flex items-center gap-0.5", stats.gdpGrowth > 0 ? "text-emerald-400" : "text-red-400")}>
+                  {stats.gdpGrowth > 0 ? "+" : ""}
+                  {stats.gdpGrowth.toFixed(1)}%
+                </span>
+              </p>
+            )}
+            {stats.popGrowth !== 0 && (
+              <p className="flex items-center gap-1">
+                Pop Growth:{" "}
+                <span className={cn("font-bold", stats.popGrowth > 0 ? "text-emerald-400" : "text-red-400")}>
+                  {stats.popGrowth > 0 ? "+" : ""}
+                  {stats.popGrowth.toFixed(1)}%
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+      </TooltipContent>
     </Tooltip>
   );
 
@@ -624,7 +630,9 @@ function DashboardHero({
               </div>
             </div>
 
-            {renderSectionContent()}
+            <div className="min-h-[48px]">
+              {renderSectionContent()}
+            </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
               {econTier && <EconomicTierBadge tier={econTier} />}
