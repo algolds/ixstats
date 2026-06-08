@@ -28,13 +28,13 @@ function WikiBreadcrumb() {
   return (
     <span
       className={cn(
-        "flex items-center gap-1.5 overflow-hidden transition-all duration-300 w-full",
+        "flex w-full items-center gap-1.5 overflow-hidden transition-all duration-300",
         activeSectionName ? "max-w-[260px] min-w-[200px]" : "max-w-[200px] min-w-[140px]"
       )}
     >
       <span
         className={cn(
-          "di-wiki-title transition-all duration-300 flex-1",
+          "di-wiki-title flex-1 transition-all duration-300",
           activeSectionName ? "max-w-[120px] min-w-[100px]" : "max-w-[180px] min-w-[140px]"
         )}
       >
@@ -55,7 +55,7 @@ function WikiBreadcrumb() {
               nativeButton={false}
               render={
                 <span
-                  className="max-w-[110px] min-w-[60px] overflow-hidden flex-1 text-left hover:text-foreground hover:bg-white/20 px-1 py-0.5 rounded transition-all duration-200 cursor-pointer active:scale-95 relative z-[60] inline-block"
+                  className="hover:text-foreground relative z-[60] inline-block max-w-[110px] min-w-[60px] flex-1 cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left transition-all duration-200 hover:bg-white/20 active:scale-95"
                   onClick={(e) => {
                     e.stopPropagation();
                     setPopoverOpen((prev) => !prev);
@@ -77,9 +77,9 @@ function WikiBreadcrumb() {
               side="bottom"
               align="start"
               sideOffset={8}
-              className="w-56 p-1.5 bg-zinc-950/95 dark:bg-black/90 border border-white/10 backdrop-blur-xl rounded-xl"
+              className="w-56 rounded-xl border border-white/10 bg-zinc-950/95 p-1.5 backdrop-blur-xl dark:bg-black/90"
             >
-              <div className="max-h-[200px] overflow-y-auto space-y-0.5 select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <div className="max-h-[200px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto select-none">
                 {tocEntries
                   .filter((e) => e.level <= 3)
                   .map((entry) => {
@@ -92,7 +92,7 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "w-full text-left flex items-center py-1.5 px-2.5 rounded-lg text-[11px] font-semibold transition-all duration-150 cursor-pointer select-none",
+                          "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold transition-all duration-150 select-none",
                           isActive
                             ? "bg-white/15 text-white"
                             : "text-muted-foreground hover:text-foreground hover:bg-white/5",

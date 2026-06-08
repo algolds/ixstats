@@ -232,7 +232,7 @@ interface EconomicEffectivenessProps {
 
 export const EconomicEffectiveness: React.FC<EconomicEffectivenessProps> = ({
   selectedComponents,
-  maxComponents = 12,
+  maxComponents = 15,
   className = "",
 }) => {
   const calculateEffectiveness = () => {
@@ -301,6 +301,13 @@ export const EconomicEffectiveness: React.FC<EconomicEffectivenessProps> = ({
     return "from-red-500 to-red-600";
   };
 
+  const getEffectivenessStrokeColor = (value: number) => {
+    if (value >= 85) return "stroke-green-600 dark:stroke-green-400";
+    if (value >= 70) return "stroke-blue-600 dark:stroke-blue-400";
+    if (value >= 55) return "stroke-yellow-600 dark:stroke-yellow-400";
+    return "stroke-red-600 dark:stroke-red-400";
+  };
+
   return (
     <Card className={`p-6 ${className}`}>
       <div className="space-y-4">
@@ -322,20 +329,18 @@ export const EconomicEffectiveness: React.FC<EconomicEffectivenessProps> = ({
                 cx="50"
                 cy="50"
                 r="40"
-                stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
-                className="text-gray-200 dark:text-gray-700"
+                className="stroke-gray-200 dark:stroke-gray-700"
               />
               <circle
                 cx="50"
                 cy="50"
                 r="40"
-                stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
                 strokeDasharray={`${effectiveness * 2.51} 251`}
-                className={`transition-all duration-500 ${getEffectivenessColor(effectiveness)}`}
+                className={`transition-all duration-500 ${getEffectivenessStrokeColor(effectiveness)}`}
                 strokeLinecap="round"
               />
             </svg>

@@ -77,7 +77,7 @@ export interface AtomicEconomicComponentSelectorProps {
 export function AtomicEconomicComponentSelector({
   selectedComponents,
   onComponentChange,
-  maxComponents = 12,
+  maxComponents = 15,
   isReadOnly = false,
   governmentComponents = [],
   hideSelectedList = false,
@@ -587,7 +587,7 @@ export interface AtomicEconomicBuilderProps {
 export function AtomicEconomicBuilder({
   countryId,
   initialSelection = [],
-  maxComponents = 12,
+  maxComponents = 15,
   onSave,
   onCancel,
   isReadOnly = false,

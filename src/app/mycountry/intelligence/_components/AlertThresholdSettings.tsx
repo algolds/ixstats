@@ -272,122 +272,124 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Threshold Ranges</h4>
 
-              {/* Critical Thresholds */}
-              <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20">
-                <div className="mb-2 flex items-center justify-between">
-                  <Label className="font-semibold text-red-700 dark:text-red-400">
-                    Critical Level
-                  </Label>
-                  <Badge variant="destructive">Highest Priority</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Minimum</Label>
-                    <Input
-                      type="number"
-                      placeholder="Min value"
-                      value={formData.criticalMin ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          criticalMin: e.target.value ? parseFloat(e.target.value) : undefined,
-                        })
-                      }
-                    />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {/* Critical Thresholds */}
+                <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20">
+                  <div className="mb-2 flex items-center justify-between">
+                    <Label className="font-semibold text-red-700 dark:text-red-400">
+                      Critical Level
+                    </Label>
+                    <Badge variant="destructive">Highest Priority</Badge>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Maximum</Label>
-                    <Input
-                      type="number"
-                      placeholder="Max value"
-                      value={formData.criticalMax ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          criticalMax: e.target.value ? parseFloat(e.target.value) : undefined,
-                        })
-                      }
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Minimum</Label>
+                      <Input
+                        type="number"
+                        placeholder="Min value"
+                        value={formData.criticalMin ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            criticalMin: e.target.value ? parseFloat(e.target.value) : undefined,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Maximum</Label>
+                      <Input
+                        type="number"
+                        placeholder="Max value"
+                        value={formData.criticalMax ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            criticalMax: e.target.value ? parseFloat(e.target.value) : undefined,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* High Thresholds */}
-              <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950/20">
-                <div className="mb-2 flex items-center justify-between">
-                  <Label className="font-semibold text-orange-700 dark:text-orange-400">
-                    High Level
-                  </Label>
-                  <Badge className="bg-orange-500">High Priority</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Minimum</Label>
-                    <Input
-                      type="number"
-                      placeholder="Min value"
-                      value={formData.highMin ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          highMin: e.target.value ? parseFloat(e.target.value) : undefined,
-                        })
-                      }
-                    />
+                {/* High Thresholds */}
+                <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950/20">
+                  <div className="mb-2 flex items-center justify-between">
+                    <Label className="font-semibold text-orange-700 dark:text-orange-400">
+                      High Level
+                    </Label>
+                    <Badge className="bg-orange-500">High Priority</Badge>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Maximum</Label>
-                    <Input
-                      type="number"
-                      placeholder="Max value"
-                      value={formData.highMax ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          highMax: e.target.value ? parseFloat(e.target.value) : undefined,
-                        })
-                      }
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Minimum</Label>
+                      <Input
+                        type="number"
+                        placeholder="Min value"
+                        value={formData.highMin ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            highMin: e.target.value ? parseFloat(e.target.value) : undefined,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Maximum</Label>
+                      <Input
+                        type="number"
+                        placeholder="Max value"
+                        value={formData.highMax ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            highMax: e.target.value ? parseFloat(e.target.value) : undefined,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Medium Thresholds */}
-              <div className="space-y-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-950/20">
-                <div className="mb-2 flex items-center justify-between">
-                  <Label className="font-semibold text-yellow-700 dark:text-yellow-400">
-                    Medium Level
-                  </Label>
-                  <Badge className="bg-yellow-500">Medium Priority</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Minimum</Label>
-                    <Input
-                      type="number"
-                      placeholder="Min value"
-                      value={formData.mediumMin ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          mediumMin: e.target.value ? parseFloat(e.target.value) : undefined,
-                        })
-                      }
-                    />
+                {/* Medium Thresholds */}
+                <div className="space-y-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-950/20">
+                  <div className="mb-2 flex items-center justify-between">
+                    <Label className="font-semibold text-yellow-700 dark:text-yellow-400">
+                      Medium Level
+                    </Label>
+                    <Badge className="bg-yellow-500">Medium Priority</Badge>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Maximum</Label>
-                    <Input
-                      type="number"
-                      placeholder="Max value"
-                      value={formData.mediumMax ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          mediumMax: e.target.value ? parseFloat(e.target.value) : undefined,
-                        })
-                      }
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Minimum</Label>
+                      <Input
+                        type="number"
+                        placeholder="Min value"
+                        value={formData.mediumMin ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            mediumMin: e.target.value ? parseFloat(e.target.value) : undefined,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Maximum</Label>
+                      <Input
+                        type="number"
+                        placeholder="Max value"
+                        value={formData.mediumMax ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            mediumMax: e.target.value ? parseFloat(e.target.value) : undefined,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

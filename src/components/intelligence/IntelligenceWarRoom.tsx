@@ -242,7 +242,7 @@ export function IntelligenceWarRoom({ countryId, countryName }: IntelligenceWarR
         open={activeSheet === "settings"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
       >
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5 text-blue-600" />

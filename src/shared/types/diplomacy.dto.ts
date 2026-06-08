@@ -14,6 +14,8 @@ export interface DiplomaticRelationDto {
   culturalExchange: string;
   activePolicies: string[];
   recentIncidents: string[];
+  flagUrl?: string | null;
+  establishedAt?: string;
 }
 
 export interface EmbassyDto {

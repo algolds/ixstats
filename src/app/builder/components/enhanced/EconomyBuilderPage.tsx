@@ -950,7 +950,7 @@ export function EconomyBuilderPage({
                         >
                           <HelpCircle className="h-4 w-4" />
                         </button>
-                        <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
+                        <Badge variant="outline">{selectedComponents.length} / 15 selected</Badge>
                       </>
                     }
                   />
@@ -958,7 +958,7 @@ export function EconomyBuilderPage({
                     <AtomicEconomicComponentSelector
                       selectedComponents={selectedComponents}
                       onComponentChange={handleComponentChange}
-                      maxComponents={12}
+                      maxComponents={15}
                       governmentComponents={governmentComponents}
                       hideSelectedList={true}
                     />

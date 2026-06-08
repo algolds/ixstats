@@ -45,13 +45,16 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
   const [showEditor, setShowEditor] = useState(false);
   const [editorContent, setEditorContent] = useState("");
 
-  const handleWikiLinkClick = useCallback((link: string) => {
-    if (link.startsWith("http")) {
-      window.open(link, "_blank");
-    } else {
-      router.push(titleToWikiOSPath(link));
-    }
-  }, [router]);
+  const handleWikiLinkClick = useCallback(
+    (link: string) => {
+      if (link.startsWith("http")) {
+        window.open(link, "_blank");
+      } else {
+        router.push(titleToWikiOSPath(link));
+      }
+    },
+    [router]
+  );
 
   const handleSave = useCallback(() => {
     if (editorContent.trim() && onSaveOverview) {
@@ -267,12 +270,7 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
 
               {/* Full Article Access */}
               <div className="border-border/30 flex gap-2 border-t pt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" asChild className="flex-1">
                   <Link href={titleToWikiOSPath(country.name)}>
                     <RiExternalLinkLine className="mr-1 h-3 w-3" />
                     View Full Article

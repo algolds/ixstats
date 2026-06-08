@@ -77,13 +77,20 @@ export const CultureForm = React.memo(
       onIdentityChange("nationalSport", String(value));
     }, []);
 
-    const handleCurrencyChange = useCallback((value: string) => {
-      onIdentityChange("currency", value);
-    }, []);
+    const handleCurrencyChange = useCallback((value: string, symbol?: string) => {
+      if (symbol !== undefined) {
+        onIdentityChange({
+          currency: value,
+          currencySymbol: symbol,
+        } as any, undefined);
+      } else {
+        onIdentityChange("currency", value);
+      }
+    }, [onIdentityChange]);
 
     const handleCurrencySymbolChange = useCallback((symbol: string) => {
       onIdentityChange("currencySymbol", symbol);
-    }, []);
+    }, [onIdentityChange]);
 
     const [isNativeMottoOpen, setIsNativeMottoOpen] = useState(false);
     const [isSymbolsOpen, setIsSymbolsOpen] = useState(false);
@@ -312,7 +319,7 @@ export const CultureForm = React.memo(
         <GlassCard
           depth="base"
           theme="indigo"
-          className="border-indigo-500/20"
+          className="border-indigo-500/20 !overflow-visible"
           texture="chevron"
           textureOpacity={0.06}
         >

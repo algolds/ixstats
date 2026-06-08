@@ -115,6 +115,7 @@ interface CurrencyInputProps {
   disabled?: boolean;
   className?: string;
   showValidation?: boolean;
+  allowCustom?: boolean;
 }
 
 export function CurrencyInput({
@@ -124,8 +125,10 @@ export function CurrencyInput({
   disabled = false,
   className = "",
   showValidation = true,
+  allowCustom = true,
 }: CurrencyInputProps) {
-  const isValid = !value || isValidCurrency(value);
+  const isStandard = !value || isValidCurrency(value);
+  const isValid = isStandard || allowCustom;
   const currencyInfo = value ? getCurrencyInfo(value) : null;
 
   return (
@@ -158,8 +161,10 @@ export function CurrencyInput({
 
       {showValidation && value && (
         <div className="text-xs">
-          {isValid ? (
-            <span className="text-green-600 dark:text-green-400">✓ Valid currency code</span>
+          {isStandard ? (
+            <span className="text-green-600 dark:text-green-400">✓ Valid standard currency</span>
+          ) : allowCustom ? (
+            <span className="text-blue-600 dark:text-blue-400">✓ Custom currency</span>
           ) : (
             <span className="text-red-600 dark:text-red-400">✗ Invalid currency code</span>
           )}

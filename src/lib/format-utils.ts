@@ -101,6 +101,18 @@ const CUSTOM_CURRENCIES: Record<string, CustomCurrency> = {
   Real: { code: "Real", symbol: "R$", name: "Real", decimalPlaces: 2 },
 };
 
+const DYNAMIC_CUSTOM_CURRENCIES: Record<string, CustomCurrency> = {};
+
+export function registerCustomCurrency(
+  code: string,
+  symbol: string,
+  name: string = code,
+  decimalPlaces: number = 2
+): void {
+  if (!code) return;
+  DYNAMIC_CUSTOM_CURRENCIES[code] = { code, symbol, name, decimalPlaces };
+}
+
 /**
  * Check if a currency code is a valid ISO 4217 code
  */
@@ -112,7 +124,7 @@ function isISOCurrency(currency: string): boolean {
  * Get custom currency configuration
  */
 function getCustomCurrency(currency: string): CustomCurrency | null {
-  return CUSTOM_CURRENCIES[currency] || null;
+  return CUSTOM_CURRENCIES[currency] || DYNAMIC_CUSTOM_CURRENCIES[currency] || null;
 }
 
 /**
@@ -471,7 +483,7 @@ export function getScaledValue(num: number): { value: number; suffix: string } {
  * Get all available currency codes (ISO + custom)
  */
 export function getAvailableCurrencies(): string[] {
-  return [...ISO_CURRENCY_CODES, ...Object.keys(CUSTOM_CURRENCIES)];
+  return [...ISO_CURRENCY_CODES, ...Object.keys(CUSTOM_CURRENCIES), ...Object.keys(DYNAMIC_CUSTOM_CURRENCIES)];
 }
 
 const ISO_CURRENCY_SYMBOLS: Record<string, string> = {

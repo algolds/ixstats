@@ -6,6 +6,12 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 
 import {
   Globe,
@@ -72,33 +78,31 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 }: EconomicArchetypeDisplayProps) {
   const [selectedArchetype, setSelectedArchetype] = useState<EconomicArchetype | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("browse");
+  const [activeTab, setActiveTab] = useState("modern");
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Fetch archetypes from database with fallback
   const { archetypes } = useArchetypes(era);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [eraFilter, setEraFilter] = useState<string>("all");
   const [complexityFilter, setComplexityFilter] = useState<string>("all");
 
   const filteredArchetypes = useMemo(() => {
     return (archetypes || []).filter((archetype) => {
-      // 1. Search Query
+      // 1. Filter by Active Tab (modern vs historical)
+      const archetypeEra =
+        (archetype as any).era || (modernArchetypes.has(archetype.id) ? "modern" : "historical");
+      if (archetypeEra !== activeTab) {
+        return false;
+      }
+
+      // 2. Search Query
       if (searchQuery.trim() !== "") {
         const query = searchQuery.toLowerCase();
         const matchesName = archetype.name?.toLowerCase().includes(query);
         const matchesDesc = archetype.description?.toLowerCase().includes(query);
         const matchesRegion = archetype.region?.toLowerCase().includes(query);
         if (!matchesName && !matchesDesc && !matchesRegion) {
-          return false;
-        }
-      }
-
-      // 2. Era Filter
-      if (era === "all" && eraFilter !== "all") {
-        const archetypeEra =
-          (archetype as any).era || (modernArchetypes.has(archetype.id) ? "modern" : "historical");
-        if (archetypeEra !== eraFilter) {
           return false;
         }
       }
@@ -112,7 +116,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
       return true;
     });
-  }, [archetypes, searchQuery, eraFilter, complexityFilter, era]);
+  }, [archetypes, searchQuery, complexityFilter, activeTab]);
 
   const handleApplyArchetype = () => {
     if (!selectedArchetype) return;
@@ -126,7 +130,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       onArchetypeApplied?.(currentState as any, archetypeId, selectedArchetype);
 
       // Show success message
-      setActiveTab("browse");
+      setIsDetailsOpen(false);
       setSelectedArchetype(null);
     } catch (error) {
       console.error("Failed to apply archetype:", error);
@@ -343,7 +347,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             <Button
               onClick={() => {
                 setSelectedArchetype(archetype);
-                setActiveTab("details");
+                setIsDetailsOpen(true);
               }}
               variant="outline"
               className="border-border hover:bg-accent hover:text-accent-foreground h-8 flex-1 cursor-pointer text-xs"
@@ -741,20 +745,20 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/50 border-border grid h-11 w-full grid-cols-2 rounded-xl border p-1">
           <TabsTrigger
-            value="browse"
+            value="modern"
             className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
-            Browse Archetypes
+            Economic Setup
           </TabsTrigger>
           <TabsTrigger
-            value="details"
+            value="historical"
             className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
-            Detailed View
+            Government Structure
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="browse" className="mt-6 space-y-6">
+        <div className="mt-6 space-y-6">
           {archetypes.length > 0 && (
             <div className="border-border/40 bg-card/10 flex flex-col gap-4 rounded-xl border p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
@@ -768,20 +772,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                     className="bg-background/30 border-border/50 pr-4 pl-9 text-sm"
                   />
                 </div>
-
-                {/* Era Filter */}
-                {era === "all" && (
-                  <Select value={eraFilter} onValueChange={setEraFilter}>
-                    <SelectTrigger className="bg-background/30 border-border/50 w-full sm:w-44">
-                      <SelectValue placeholder="Select Era" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Eras</SelectItem>
-                      <SelectItem value="modern">Modern Era</SelectItem>
-                      <SelectItem value="historical">Historical Era</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
 
                 {/* Complexity Filter */}
                 <Select value={complexityFilter} onValueChange={setComplexityFilter}>
@@ -799,7 +789,10 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
               {/* Counter */}
               <div className="text-muted-foreground shrink-0 text-xs font-semibold">
-                Showing {filteredArchetypes.length} of {archetypes.length}
+                Showing {filteredArchetypes.length} of {archetypes.filter(a => {
+                  const archetypeEra = (a as any).era || (modernArchetypes.has(a.id) ? "modern" : "historical");
+                  return archetypeEra === activeTab;
+                }).length}
               </div>
             </div>
           )}
@@ -835,26 +828,22 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
               )}
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="details" className="mt-6">
-          {selectedArchetype ? (
-            renderArchetypeDetails()
-          ) : (
-            <div className="border-border bg-card/25 rounded-xl border-2 border-dashed p-16 text-center">
-              <div className="space-y-4">
-                <div className="bg-muted border-border mx-auto w-fit rounded-full border p-4">
-                  <Target className="text-muted-foreground h-8 w-8" />
-                </div>
-                <h3 className="text-foreground text-lg font-semibold">Select an Archetype</h3>
-                <p className="text-muted-foreground mx-auto max-w-md text-sm">
-                  Choose an archetype from the Browse tab to view detailed information.
-                </p>
-              </div>
-            </div>
-          )}
-        </TabsContent>
+        </div>
       </Tabs>
+
+      {/* Details Modal */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="border-border/60 bg-background/95 text-foreground flex max-h-[85vh] w-full max-w-5xl flex-col gap-0 border p-0 shadow-2xl backdrop-blur-3xl dark:shadow-emerald-950/20">
+          <DialogHeader className="border-border/40 shrink-0 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+            <DialogTitle className="text-foreground text-xl font-bold">
+              {selectedArchetype?.name} Preset Details
+            </DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {selectedArchetype && renderArchetypeDetails()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });

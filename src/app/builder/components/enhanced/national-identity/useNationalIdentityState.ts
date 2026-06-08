@@ -141,20 +141,31 @@ export function useNationalIdentityState(
   }, [inputs.nationalIdentity, isEditingCustomName]);
 
   // Event handlers - use refs to prevent recreation when inputs change
-  const handleIdentityChange = useCallback((field: string | number | symbol, value: any) => {
+  const handleIdentityChange = useCallback((fieldOrFields: string | number | symbol | Record<string, any>, value?: any) => {
     const currentInputs = inputsRef.current;
     const currentIdentity = currentInputs.nationalIdentity || identity;
+    
+    let updatedFields: Record<string, any> = {};
+    if (typeof fieldOrFields === "object" && fieldOrFields !== null) {
+      updatedFields = fieldOrFields;
+    } else {
+      updatedFields = { [fieldOrFields as string]: value };
+    }
+
     const newIdentity: NationalIdentityData = {
       ...currentIdentity,
-      [field]: value,
-      drivingSide:
-        field === "drivingSide"
-          ? (value as "left" | "right")
-          : (currentIdentity.drivingSide ?? ("right" as "left" | "right")),
+      ...updatedFields,
     };
 
-    if (field === "countryName" && value && !newIdentity.demonym) {
-      let demonym = value.toString();
+    if ("drivingSide" in updatedFields) {
+      newIdentity.drivingSide = updatedFields.drivingSide as "left" | "right";
+    } else {
+      newIdentity.drivingSide = currentIdentity.drivingSide ?? ("right" as "left" | "right");
+    }
+
+    if ("countryName" in updatedFields && updatedFields.countryName && !newIdentity.demonym) {
+      const countryVal = updatedFields.countryName;
+      let demonym = countryVal.toString();
       if (demonym.endsWith("a")) demonym += "n";
       else if (demonym.endsWith("y")) demonym = demonym.slice(0, -1) + "ian";
       else demonym += "ian";
@@ -164,9 +175,9 @@ export function useNationalIdentityState(
     onInputsChangeRef.current({
       ...currentInputs,
       nationalIdentity: newIdentity,
-      countryName: field === "countryName" ? value : currentInputs.countryName,
+      countryName: "countryName" in updatedFields ? updatedFields.countryName : currentInputs.countryName,
     });
-  }, []); // No dependencies - uses refs
+  }, [identity]); // Depend on identity for fallback
 
   const handleFlagUrlChange = useCallback((url: string) => {
     const currentInputs = inputsRef.current;

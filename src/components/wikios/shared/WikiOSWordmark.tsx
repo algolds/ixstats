@@ -9,11 +9,7 @@ interface WikiOSWordmarkProps {
 export function WikiOSWordmark({ className }: WikiOSWordmarkProps) {
   return (
     <h1 className={cn("wikios-brand-title", className)}>
-      <img
-        src={withBasePath("/ix-logo-v2.svg")}
-        alt="IX"
-        className="wikios-brand-title-ix"
-      />
+      <img src={withBasePath("/ix-logo-v2.svg")} alt="IX" className="wikios-brand-title-ix" />
       <span
         style={{
           fontFamily: "var(--font-playfair)",

@@ -57,7 +57,7 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
 
   return (
     <div className="relative w-full" ref={popoverRef}>
-      <div className="flex w-full items-center px-2.5 py-1 rounded-xl hover:bg-white/5 transition-all duration-200 group">
+      <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
         <button
           onClick={() => {
             if (isCollapsed) {
@@ -67,7 +67,7 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
             }
           }}
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95 shrink-0",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
             popoverOpen
               ? "rail-glow-gold border-amber-500/40 bg-amber-500/10 text-amber-400"
               : "rail-glow-gold border-amber-500/20 bg-amber-500/5 text-amber-400 hover:scale-110"
@@ -81,15 +81,15 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
         <button
           onClick={() => setActionsMenuOpen(true)}
           className={cn(
-            "text-left transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden flex-1 outline-none",
-            isCollapsed ? "w-0 opacity-0 pointer-events-none" : "w-auto opacity-100 pl-3"
+            "flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-300 ease-in-out outline-none",
+            isCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
           )}
           type="button"
         >
-          <span className="text-xs font-semibold text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] block truncate">
+          <span className="block truncate text-xs font-semibold text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]">
             {activeCountry.name}
           </span>
-          <span className="text-[9px] text-[var(--wikios-text-dim)] block leading-tight">
+          <span className="block text-[9px] leading-tight text-[var(--wikios-text-dim)]">
             {isOwnCountry ? "My Country" : "Active Page"}
           </span>
         </button>
@@ -100,11 +100,7 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
           {/* Header */}
           <div className="mb-2.5 flex items-center gap-2.5 border-b border-white/5 pb-2.5">
             <div className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm">
-              <UnifiedCountryFlag
-                countryName={activeCountry.name}
-                size="sm"
-                showTooltip={false}
-              />
+              <UnifiedCountryFlag countryName={activeCountry.name} size="sm" showTooltip={false} />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-foreground truncate text-xs leading-tight font-bold">

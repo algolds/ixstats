@@ -181,49 +181,52 @@ export function useDynamicIslandState() {
   const prevActivePluginIdRef = useRef<string | undefined>(undefined);
 
   // Mode switching with dropdown behavior
-  const switchMode = useCallback((newMode: ViewMode) => {
-    setMode(newMode);
-    setIsUserInteracting(true);
+  const switchMode = useCallback(
+    (newMode: ViewMode) => {
+      setMode(newMode);
+      setIsUserInteracting(true);
 
-    // Clear existing timeout before setting new one
-    if (interactionTimeoutRef.current) {
-      clearTimeout(interactionTimeoutRef.current);
-    }
-
-    // Reset user interaction after 30 seconds
-    interactionTimeoutRef.current = setTimeout(() => setIsUserInteracting(false), 30000);
-
-    const isExpandedMode =
-      newMode === "search" ||
-      newMode === "notifications" ||
-      newMode === "settings" ||
-      newMode === "mycountry" ||
-      newMode.startsWith("plugin:");
-
-    if (isExpandedMode) {
-      setIsExpanded(true);
-      setExpandedMode(newMode);
-    } else {
-      setIsExpanded(false);
-    }
-
-    if (newMode === "search") {
-      let isDynamicWikiSearchEnabled = true;
-      try {
-        const stored = localStorage.getItem("wikios:dynamicSearchWiki");
-        if (stored !== null) {
-          isDynamicWikiSearchEnabled = stored === "true";
-        }
-      } catch {
-        // SSR or storage access error
+      // Clear existing timeout before setting new one
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
       }
-      if (isDynamicWikiSearchEnabled && isWikiActive) {
-        setSearchFilter("wiki");
+
+      // Reset user interaction after 30 seconds
+      interactionTimeoutRef.current = setTimeout(() => setIsUserInteracting(false), 30000);
+
+      const isExpandedMode =
+        newMode === "search" ||
+        newMode === "notifications" ||
+        newMode === "settings" ||
+        newMode === "mycountry" ||
+        newMode.startsWith("plugin:");
+
+      if (isExpandedMode) {
+        setIsExpanded(true);
+        setExpandedMode(newMode);
       } else {
-        setSearchFilter("all");
+        setIsExpanded(false);
       }
-    }
-  }, [isWikiActive, setSearchFilter]);
+
+      if (newMode === "search") {
+        let isDynamicWikiSearchEnabled = true;
+        try {
+          const stored = localStorage.getItem("wikios:dynamicSearchWiki");
+          if (stored !== null) {
+            isDynamicWikiSearchEnabled = stored === "true";
+          }
+        } catch {
+          // SSR or storage access error
+        }
+        if (isDynamicWikiSearchEnabled && isWikiActive) {
+          setSearchFilter("wiki");
+        } else {
+          setSearchFilter("all");
+        }
+      }
+    },
+    [isWikiActive, setSearchFilter]
+  );
 
   // Pre-compute lowercase search indexes for static data (avoids repeated .toLowerCase() per keystroke)
   const commandIndex = useMemo(() => {
@@ -297,7 +300,7 @@ export function useDynamicIslandState() {
     if (!debouncedSearchQuery.trim()) return [];
 
     const query = debouncedSearchQuery.toLowerCase();
-    
+
     // Separate matches by category
     const matchedCountries: SearchResult[] = [];
     const matchedCommands: SearchResult[] = [];
@@ -407,29 +410,14 @@ export function useDynamicIslandState() {
     if (searchFilter === "all") {
       if (isWikiActive) {
         // Prepend Wiki articles when on a wiki page
-        results = [
-          ...matchedWiki,
-          ...matchedCountries,
-          ...matchedCommands,
-          ...matchedFeatures,
-        ];
+        results = [...matchedWiki, ...matchedCountries, ...matchedCommands, ...matchedFeatures];
       } else {
         // Default combined ordering
-        results = [
-          ...matchedCountries,
-          ...matchedCommands,
-          ...matchedFeatures,
-          ...matchedWiki,
-        ];
+        results = [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki];
       }
     } else {
       // Single category filter mode
-      results = [
-        ...matchedCountries,
-        ...matchedCommands,
-        ...matchedFeatures,
-        ...matchedWiki,
-      ];
+      results = [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki];
     }
 
     return results.slice(0, 12);

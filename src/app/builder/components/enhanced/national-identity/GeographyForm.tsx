@@ -113,7 +113,7 @@ export const GeographyForm = React.memo(
         <GlassCard
           depth="base"
           theme="teal"
-          className="border-teal-500/20 lg:col-span-2"
+          className="border-teal-500/20 lg:col-span-2 !overflow-visible"
           texture="chevron"
           textureOpacity={0.06}
         >

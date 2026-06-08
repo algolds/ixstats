@@ -83,6 +83,9 @@ export class PreviewSeeder {
     }
     await this.seedCalculationLogs();
 
+    // Step 7: Seed Vault Store Items
+    await this.seedVaultStoreItems();
+
     if (process.env.NODE_ENV === "development") {
       console.log("✅ Preview data seeding completed successfully!");
     }
@@ -669,6 +672,34 @@ export class PreviewSeeder {
         },
       });
     }
+  }
+
+  private async seedVaultStoreItems(): Promise<void> {
+    if (process.env.NODE_ENV === "development") {
+      console.log("💎 Seeding Vault Store Items...");
+    }
+    await this.db.vaultStoreItem.upsert({
+      where: { id: "upgrade_archetype_proposal" },
+      update: {
+        name: "Archetype Proposal Token",
+        description: "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
+        price: 3500,
+        quality: "EPIC",
+        icon: "Ticket",
+        category: "upgrades",
+        isActive: true,
+      },
+      create: {
+        id: "upgrade_archetype_proposal",
+        name: "Archetype Proposal Token",
+        description: "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
+        price: 3500,
+        quality: "EPIC",
+        icon: "Ticket",
+        category: "upgrades",
+        isActive: true,
+      },
+    });
   }
 
   private calculatePopulationGrowthRate(country: any): number {

@@ -26,7 +26,7 @@ function getSymbolForCurrency(code: string): string | undefined {
 interface CurrencyAutocompleteProps {
   fieldName: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, symbol?: string) => void;
   placeholder?: string;
   onSave?: (fieldName: string, value: string) => void;
   showValidation?: boolean;
@@ -61,11 +61,11 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
 
   const handleValueChange = useCallback(
     (newValue: string) => {
-      onChange(newValue);
+      const symbol = newValue ? getSymbolForCurrency(newValue) : undefined;
+      onChange(newValue, symbol);
       if (onSave && newValue.trim()) {
         onSave(fieldName, newValue.trim());
       }
-      const symbol = newValue ? getSymbolForCurrency(newValue) : undefined;
       if (symbol && onSymbolSelect) {
         onSymbolSelect(symbol);
       }

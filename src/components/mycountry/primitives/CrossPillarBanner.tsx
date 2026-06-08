@@ -104,7 +104,7 @@ export function CrossPillarBanner({ section, countryId, onNavigate }: CrossPilla
     }));
 
     const seatSummary: SeatSummary[] =
-      parliament?.seatSummary?.map((s: any) => ({
+      parliament?.partySummary?.map((s: any) => ({
         partyId: s.partyId || s.id || "",
         partyName: s.partyName || s.name || "",
         seats: s.seats || 0,

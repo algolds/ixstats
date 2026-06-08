@@ -24,6 +24,7 @@ import {
   premiumProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
+import { evaluateThresholds } from "./intelligence/alerts";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notification-api";
@@ -135,6 +136,15 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
+        // Evaluate thresholds on-the-fly
+        try {
+          if (ctx.user?.id) {
+            await evaluateThresholds(ctx.db, input.countryId, ctx.user.id);
+          }
+        } catch (e) {
+          console.error("Error evaluating thresholds in getOverview:", e);
+        }
+
         // Parallelize all independent queries for 3-6x performance improvement
         const [country, vitalitySnapshots, alerts, briefings, recentMeetings, activePolicies] =
           await Promise.all([

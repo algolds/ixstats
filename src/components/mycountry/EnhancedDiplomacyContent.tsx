@@ -11,7 +11,6 @@ import type { CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbe
 import {
   useCountryData,
   SectionShell,
-  CompactSectionHero,
   InlineWiki,
   type StatusBadgeConfig,
 } from "./primitives";
@@ -106,16 +105,10 @@ export function EnhancedDiplomacyContent({
     <SectionShell
       section="diplomacy"
       hero={
-        <CompactSectionHero
-          section="diplomacy"
-          title="Diplomacy"
-          subtitle="Embassies, relations & foreign policy"
-          icon={GlobeAltIcon}
-          countryName={country.name}
-          flagUrl={flagUrl}
-          stats={heroStats}
-          statusBadges={statusBadges}
-          health={diplomaticHealth}
+        <DashboardMapWidget
+          countryId={country.id}
+          viewMode="diplomacy"
+          onFeatureClick={setSelectedFeature}
         />
       }
       contextWidget={<DiplomacySidebarWidget countryId={country.id} />}
@@ -129,16 +122,6 @@ export function EnhancedDiplomacyContent({
 
       {/* War Room — 3-panel command center (leads; carries the guided empty-state CTAs) */}
       <DiplomacyWarRoom countryId={country.id} />
-
-      {/* Embassy network map — secondary, shown once there's a network to plot.
-          Click a city/subdivision to manage it (tier-0 interaction canvas). */}
-      {!isGuided && (
-        <DashboardMapWidget
-          countryId={country.id}
-          viewMode="diplomacy"
-          onFeatureClick={setSelectedFeature}
-        />
-      )}
 
       {/* Wiki woven inline */}
       <InlineWiki context="diplomacy" accent="cyan" maxSections={1} />

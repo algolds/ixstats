@@ -102,10 +102,10 @@ export function AppleBooksTocDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 z-[100021] w-80 max-w-[85vw] bg-zinc-950/95 dark:bg-black/90 border-l border-white/10 shadow-2xl backdrop-blur-3xl flex flex-col h-full text-foreground"
+            className="text-foreground fixed top-0 right-0 bottom-0 z-[100021] flex h-full w-80 max-w-[85vw] flex-col border-l border-white/10 bg-zinc-950/95 shadow-2xl backdrop-blur-3xl dark:bg-black/90"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 shrink-0">
+            <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">
               <div className="flex items-center gap-2">
                 <svg
                   width="16"
@@ -118,13 +118,13 @@ export function AppleBooksTocDrawer({
                 >
                   <path d="M2 4h12M2 8h8M2 12h10" />
                 </svg>
-                <h3 className="text-sm font-bold tracking-wider uppercase text-foreground">
+                <h3 className="text-foreground text-sm font-bold tracking-wider uppercase">
                   Table of Contents
                 </h3>
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer active:scale-90"
+                className="text-muted-foreground hover:text-foreground cursor-pointer rounded-full p-1.5 transition-all duration-200 hover:bg-white/10 active:scale-90"
                 aria-label="Close Table of Contents"
               >
                 <X size={16} />
@@ -132,7 +132,7 @@ export function AppleBooksTocDrawer({
             </div>
 
             {/* List Entries */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-1 overflow-y-auto px-4 py-4 select-none">
               {entries.map((item) => {
                 const isActive = activeId === item.id;
                 return (
@@ -140,7 +140,7 @@ export function AppleBooksTocDrawer({
                     key={item.id}
                     onClick={() => handleNavigate(item.id)}
                     className={cn(
-                      "w-full text-left flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+                      "flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all duration-200 select-none",
                       isActive
                         ? "bg-white/10 text-white"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5",
@@ -150,7 +150,8 @@ export function AppleBooksTocDrawer({
                       isActive
                         ? {
                             borderLeft: `2.5px solid ${themeColors.primary}`,
-                            paddingLeft: item.level === 3 ? "21.5px" : item.level > 3 ? "33.5px" : "9.5px",
+                            paddingLeft:
+                              item.level === 3 ? "21.5px" : item.level > 3 ? "33.5px" : "9.5px",
                           }
                         : {}
                     }

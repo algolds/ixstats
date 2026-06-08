@@ -97,20 +97,21 @@ export function DashboardSidebarLayout({
                 "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
                 variant === "rail"
                   ? isCollapsedNow
-                    ? "w-14 opacity-100 -left-6 xl:-left-12"
-                    : "w-64 opacity-100 -left-6 xl:-left-12"
+                    ? "-left-6 w-14 opacity-100 xl:-left-12"
+                    : "-left-6 w-64 opacity-100 xl:-left-12"
                   : isCollapsedNow
                     ? "pointer-events-none mr-[-24px] w-0 opacity-0"
                     : "w-48 opacity-100"
               )}
               style={{
-                width: variant === "rail"
-                  ? isCollapsedNow
-                    ? "3.5rem"
-                    : "16rem"
-                  : isCollapsedNow
-                    ? "0px"
-                    : "12rem",
+                width:
+                  variant === "rail"
+                    ? isCollapsedNow
+                      ? "3.5rem"
+                      : "16rem"
+                    : isCollapsedNow
+                      ? "0px"
+                      : "12rem",
               }}
             >
               <div

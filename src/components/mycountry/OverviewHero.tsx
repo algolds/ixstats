@@ -75,37 +75,61 @@ const indicatorColor = (label: string) => {
   }
 };
 
+const SECTION_MAP: Record<string, MyCountrySection> = {
+  Exec: "executive",
+  Diplo: "diplomacy",
+  Pol: "politics",
+  Intel: "intelligence",
+  Def: "defense",
+};
+
+const LABEL_NAMES: Record<string, string> = {
+  Exec: "Executive",
+  Diplo: "Diplomacy",
+  Pol: "Politics",
+  Intel: "Intelligence",
+  Def: "Defense",
+};
+
 function StatusIndicator({
   icon: Icon,
   label,
   health,
+  onNavigate,
 }: {
   icon: any;
   label: string;
   health: number;
+  onNavigate?: (section: MyCountrySection) => void;
 }) {
   const status = health < 40 ? "critical" : health < 70 ? "warning" : "healthy";
   const colorClass =
     status === "critical"
-      ? "text-red-500 bg-red-500/10 border-red-500/20"
+      ? "text-red-500 bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
       : status === "warning"
-        ? "text-amber-500 bg-amber-500/10 border-amber-500/20"
-        : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
+        ? "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20"
+        : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20";
+  
+  const section = SECTION_MAP[label] || "overview";
+
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onNavigate?.(section)}
       className={cn(
-        "flex flex-1 flex-col items-center rounded-lg border px-1 py-1 text-center text-[9px] font-semibold transition-colors",
+        "flex flex-1 flex-col items-center rounded-lg border px-1 py-1.5 text-center text-[9px] font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95",
         colorClass
       )}
     >
-      <div className="relative mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center">
+      <div className="relative mb-1 flex h-8 w-8 shrink-0 items-center justify-center">
         <div className="absolute inset-0 flex items-center justify-center">
           <HealthRing value={health} size={32} color={indicatorColor(label)} hideValue={true} />
         </div>
         <Icon className="relative z-10 h-3 w-3 shrink-0" style={{ color: indicatorColor(label) }} />
       </div>
-      <span>{Math.round(health)}%</span>
-    </div>
+      <span className="font-bold tracking-tight">{LABEL_NAMES[label] || label}</span>
+      <span className="text-[8px] opacity-80 mt-0.5">{Math.round(health)}%</span>
+    </button>
   );
 }
 
@@ -260,7 +284,7 @@ export function OverviewHero({
   const partyCount = parties?.length ?? 0;
   const totalSeats = legislature?.totalSeats ?? 0;
   const filledSeats =
-    parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+    parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
   const pendingElections =
     elections?.filter(
       (e: any) =>
@@ -304,7 +328,7 @@ export function OverviewHero({
           militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount
         )
       : 0;
-  const securityScore = securityData?.securityScore ?? 50;
+  const securityScore = securityData?.overallSecurityScore ?? 50;
   const defenseHealth = Math.max(
     0,
     Math.min(100, Math.round(securityScore * 0.6 + avgReadiness * 0.4))
@@ -638,13 +662,13 @@ export function OverviewHero({
 
               {/* Status Row */}
               <div className="mt-1.5 mb-3 flex justify-between gap-1.5">
-                <StatusIndicator icon={Crown} label="Exec" health={executiveHealth} />
-                <StatusIndicator icon={Users} label="Diplo" health={diplomaticHealth} />
-                <StatusIndicator icon={Vote} label="Pol" health={politicsHealth} />
+                <StatusIndicator icon={Crown} label="Exec" health={executiveHealth} onNavigate={onNavigate} />
+                <StatusIndicator icon={Users} label="Diplo" health={diplomaticHealth} onNavigate={onNavigate} />
+                <StatusIndicator icon={Vote} label="Pol" health={politicsHealth} onNavigate={onNavigate} />
                 {isPremium && (
                   <>
-                    <StatusIndicator icon={Brain} label="Intel" health={intelligenceHealth} />
-                    <StatusIndicator icon={Shield} label="Def" health={defenseHealth} />
+                    <StatusIndicator icon={Brain} label="Intel" health={intelligenceHealth} onNavigate={onNavigate} />
+                    <StatusIndicator icon={Shield} label="Def" health={defenseHealth} onNavigate={onNavigate} />
                   </>
                 )}
               </div>

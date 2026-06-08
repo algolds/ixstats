@@ -426,8 +426,9 @@ export const StoryPinModal = memo(function StoryPinModal({
                     <p className="text-foreground/80 text-xs leading-relaxed">
                       {wikiEnrichment.intro}
                     </p>
-                    {wikiEnrichment.wikiUrl && (
-                      wikiEnrichment.wikiUrl.startsWith("/") || wikiEnrichment.wikiUrl.includes("/w/") ? (
+                    {wikiEnrichment.wikiUrl &&
+                      (wikiEnrichment.wikiUrl.startsWith("/") ||
+                      wikiEnrichment.wikiUrl.includes("/w/") ? (
                         <Link
                           href={wikiEnrichment.wikiUrl}
                           className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:underline"
@@ -443,8 +444,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                         >
                           Read full article <ExternalLink className="h-3 w-3" />
                         </a>
-                      )
-                    )}
+                      ))}
                   </div>
                 )}
 
@@ -522,8 +522,9 @@ export const StoryPinModal = memo(function StoryPinModal({
           {/* ── Footer Actions ── */}
           <div className="border-border/30 shrink-0 border-t px-5 py-3">
             <div className="flex flex-wrap items-center gap-2">
-              {wikiEnrichment?.wikiUrl && (
-                wikiEnrichment.wikiUrl.startsWith("/") || wikiEnrichment.wikiUrl.includes("/w/") ? (
+              {wikiEnrichment?.wikiUrl &&
+                (wikiEnrichment.wikiUrl.startsWith("/") ||
+                wikiEnrichment.wikiUrl.includes("/w/") ? (
                   <Link
                     href={wikiEnrichment.wikiUrl}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300"
@@ -541,8 +542,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                     <BookOpen className="h-3 w-3" />
                     Read on IxWiki
                   </a>
-                )
-              )}
+                ))}
               {pin.country.slug && (
                 <Link
                   href={`/countries/${pin.country.slug}`}

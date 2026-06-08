@@ -138,19 +138,12 @@ export function PolicyCreatorSheet({
     setFormTargetMetrics("");
   };
 
-  const createPolicy = api.policies.createPolicy.useMutation({
-    onSuccess: () => {
-      notify.success("Policy created as draft");
-      resetForm();
-      onOpenChange(false);
-      onCreated?.();
-    },
-    onError: (error) => {
-      notify.error(error.message || "Failed to create policy");
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createPolicy = api.policies.createPolicy.useMutation();
+  const activatePolicy = api.policies.activatePolicy.useMutation();
+
+  const handleCreateDraft = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formTitle.trim()) {
@@ -166,23 +159,72 @@ export function PolicyCreatorSheet({
       return;
     }
 
-    createPolicy.mutate({
-      countryId,
-      userId: user.id,
-      name: formTitle,
-      description: formDescription,
-      policyType: formType as
-        | "economic"
-        | "social"
-        | "diplomatic"
-        | "infrastructure"
-        | "governance",
-      category: formCategory,
-      priority: formPriority,
-      targetMetrics: formTargetMetrics || undefined,
-      implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
-      maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
-    });
+    setIsPending(true);
+    try {
+      await createPolicy.mutateAsync({
+        countryId,
+        userId: user.id,
+        name: formTitle,
+        description: formDescription,
+        policyType: formType as any,
+        category: formCategory,
+        priority: formPriority,
+        targetMetrics: formTargetMetrics || undefined,
+        implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
+        maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
+      });
+
+      notify.success("Policy created as draft");
+      resetForm();
+      onOpenChange(false);
+      onCreated?.();
+    } catch (error: any) {
+      notify.error(error.message || "Failed to create policy");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleCreateAndLaunch = async () => {
+    if (!formTitle.trim()) {
+      notify.error("Policy title is required");
+      return;
+    }
+    if (!formDescription.trim()) {
+      notify.error("Policy description is required");
+      return;
+    }
+    if (!user?.id) {
+      notify.error("You must be signed in to create a policy");
+      return;
+    }
+
+    setIsPending(true);
+    try {
+      const policy = await createPolicy.mutateAsync({
+        countryId,
+        userId: user.id,
+        name: formTitle,
+        description: formDescription,
+        policyType: formType as any,
+        category: formCategory,
+        priority: formPriority,
+        targetMetrics: formTargetMetrics || undefined,
+        implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
+        maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
+      });
+
+      await activatePolicy.mutateAsync({ id: policy.id });
+
+      notify.success("Policy created and launched!");
+      resetForm();
+      onOpenChange(false);
+      onCreated?.();
+    } catch (error: any) {
+      notify.error(error.message || "Failed to launch policy");
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -214,7 +256,7 @@ export function PolicyCreatorSheet({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+        <form onSubmit={handleCreateDraft} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
             {/* Basic Info — always visible */}
             <div className="space-y-3">
@@ -349,12 +391,27 @@ export function PolicyCreatorSheet({
           </div>
 
           {/* Sticky footer */}
-          <DialogFooter className="border-border/50 border-t px-6 py-4">
+          <DialogFooter className="border-border/50 border-t px-6 py-4 flex gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={createPolicy.isPending}>
-              {createPolicy.isPending ? "Creating..." : "Create as Draft"}
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              disabled={isPending || !formTitle.trim() || !formDescription.trim()}
+            >
+              {isPending ? "Creating..." : "Save Draft"}
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              disabled={isPending || !formTitle.trim() || !formDescription.trim()}
+              onClick={handleCreateAndLaunch}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            >
+              {isPending ? "Launching..." : "Create & Launch"}
             </Button>
           </DialogFooter>
         </form>

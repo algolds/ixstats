@@ -374,12 +374,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
               )}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4 w-full text-xs"
-              asChild
-            >
+            <Button variant="outline" size="sm" className="mt-4 w-full text-xs" asChild>
               <Link href={titleToWikiOSPath(country.name)}>
                 <ExternalLink className="mr-1 h-3 w-3" />
                 View Full Wiki Page

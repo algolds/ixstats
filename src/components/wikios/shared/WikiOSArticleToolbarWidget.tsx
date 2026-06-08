@@ -95,10 +95,10 @@ export function WikiOSArticleToolbarWidget({
         <Link
           href={withBasePath(`/w/${slug}/talk`)}
           className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all hover:bg-white/5"
-          >
-            <MessageSquare className="h-3.5 w-3.5 shrink-0 text-purple-400" />
-            <span>Discussion (Talk)</span>
-          </Link>
+        >
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+          <span>Discussion (Talk)</span>
+        </Link>
 
         {/* History */}
         <button

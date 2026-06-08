@@ -215,12 +215,7 @@ export function WikiSectionCard({
 
               {/* Full Article Access */}
               <div className="border-border/30 flex gap-2 border-t pt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="text-xs"
-                >
+                <Button variant="outline" size="sm" asChild className="text-xs">
                   {wikiSource === "ixwiki" ? (
                     <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
                       <RiExternalLinkLine className="mr-1 h-3.5 w-3.5" /> View Wiki Source
@@ -237,13 +232,13 @@ export function WikiSectionCard({
                 </Button>
 
                 {section.images && section.images.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
+                  <Button variant="outline" size="sm" asChild>
                     {wikiSource === "ixwiki" ? (
-                      <Link href={titleToWikiOSPath(`Category:${section.title.includes(" of ") ? section.title : `${section.title} of ${countryName}`}_images`)}>
+                      <Link
+                        href={titleToWikiOSPath(
+                          `Category:${section.title.includes(" of ") ? section.title : `${section.title} of ${countryName}`}_images`
+                        )}
+                      >
                         <RiImageLine className="mr-1 h-3 w-3" />
                         {section.images.length} Media
                       </Link>

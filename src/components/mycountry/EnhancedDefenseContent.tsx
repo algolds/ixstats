@@ -13,7 +13,6 @@ import { DefenseCommandPanel } from "~/components/defense/DefenseCommandPanel";
 import {
   useCountryData,
   SectionShell,
-  CompactSectionHero,
   InlineWiki,
   TabHeroBanner,
   type StatusBadgeConfig,
@@ -120,26 +119,13 @@ export function EnhancedDefenseContent({
     <SectionShell
       section="defense"
       hero={
-        <CompactSectionHero
-          section="defense"
-          title="Defense"
-          subtitle="Defense & national security operations"
-          icon={ShieldCheckIcon}
-          countryName={country.name}
-          flagUrl={flagUrl}
-          stats={heroStats}
-          statusBadges={statusBadges}
-          health={defenseHealth}
-        />
+        <DashboardMapWidget countryId={country.id} viewMode="defense" />
       }
       contextWidget={<DefenseSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}
     >
-      {/* Defense Territory Map */}
-      <DashboardMapWidget countryId={country.id} viewMode="defense" />
-
       {/* Main Content Tabs */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

@@ -273,44 +273,56 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         )}
 
         {/* Compact horizontal row of quick-action icons */}
-        <div className="grid grid-cols-4 gap-1.5 pt-1">
+        <div className="grid grid-cols-4 gap-1 pt-2">
           {/* Messages */}
           <Link
             href="/messages"
-            className="relative flex flex-col items-center justify-center rounded-lg bg-indigo-500/5 hover:bg-indigo-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
-            title={totalUnreadMessages > 0 ? `${totalUnreadMessages} unread messages` : "No unread messages"}
+            className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-1 py-2 transition-all hover:scale-105 hover:bg-indigo-500/20"
+            title={
+              totalUnreadMessages > 0
+                ? `${totalUnreadMessages} unread messages`
+                : "No unread messages"
+            }
           >
-            <Mail className="h-4 w-4 text-muted-foreground group-hover/icon:text-indigo-400 transition-colors" />
+            <Mail className="h-4 w-4 text-indigo-600 transition-colors dark:text-indigo-400" />
             {totalUnreadMessages > 0 && (
               <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[8px] font-bold text-white shadow-sm">
                 {totalUnreadMessages}
               </span>
             )}
-            <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-indigo-300">Mail</span>
+            <span className="mt-1 text-[8px] font-semibold tracking-wider text-indigo-600 uppercase dark:text-indigo-400">
+              Mail
+            </span>
           </Link>
 
           {/* Issues */}
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive")}
-              className="relative flex flex-col items-center justify-center rounded-lg bg-amber-500/5 hover:bg-amber-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+              className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-1 py-2 transition-all hover:scale-105 hover:bg-amber-500/20"
               title={`${issueCount} pending issues (${urgentCount} urgent)`}
             >
-              <ClipboardList className="h-4 w-4 text-muted-foreground group-hover/icon:text-amber-400 transition-colors" />
+              <ClipboardList className="h-4 w-4 text-amber-600 transition-colors dark:text-amber-500" />
               {(issueCount > 0 || urgentCount > 0) && (
-                <span className={cn(
-                  "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm",
-                  urgentCount > 0 ? "bg-red-500 animate-pulse" : "bg-amber-500"
-                )}>
+                <span
+                  className={cn(
+                    "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm",
+                    urgentCount > 0 ? "animate-pulse bg-red-500" : "bg-amber-500"
+                  )}
+                >
                   {urgentCount > 0 ? urgentCount : issueCount}
                 </span>
               )}
-              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-amber-300">Issues</span>
+              <span className="mt-1 text-[8px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-500">
+                Issues
+              </span>
             </Link>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-lg bg-white/5 border border-white/5 p-1.5 opacity-35 cursor-not-allowed">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">Issues</span>
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-1 py-2 opacity-35">
+              <ClipboardList className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground mt-1 text-[8px] font-semibold tracking-wider uppercase">
+                Issues
+              </span>
             </div>
           )}
 
@@ -318,21 +330,25 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive")}
-              className="relative flex flex-col items-center justify-center rounded-lg bg-blue-500/5 hover:bg-blue-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+              className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 px-1 py-2 transition-all hover:scale-105 hover:bg-blue-500/20"
               title={`${activePolicies}/${totalPolicies} active policies`}
             >
-              <FileText className="h-4 w-4 text-muted-foreground group-hover/icon:text-blue-400 transition-colors" />
+              <FileText className="h-4 w-4 text-blue-600 transition-colors dark:text-blue-400" />
               {totalPolicies > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500/20 border border-blue-500/35 px-1 text-[8px] font-semibold text-blue-400 shadow-sm backdrop-blur-md">
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-blue-500/35 bg-blue-500/20 px-1 text-[8px] font-semibold text-blue-400 shadow-sm backdrop-blur-md">
                   {activePolicies}
                 </span>
               )}
-              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-blue-300">Policy</span>
+              <span className="mt-1 text-[8px] font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                Policy
+              </span>
             </Link>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-lg bg-white/5 border border-white/5 p-1.5 opacity-35 cursor-not-allowed">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">Policy</span>
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-1 py-2 opacity-35">
+              <FileText className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground mt-1 text-[8px] font-semibold tracking-wider uppercase">
+                Policy
+              </span>
             </div>
           )}
 
@@ -340,20 +356,41 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive")}
-              className="relative flex flex-col items-center justify-center rounded-lg bg-emerald-500/5 hover:bg-emerald-500/10 border border-white/5 p-1.5 transition-all hover:scale-105 group/icon"
+              className={cn(
+                "group/icon relative flex flex-col items-center justify-center rounded-lg px-1 py-2 transition-all hover:scale-105",
+                pendingActions > 0
+                  ? "border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20"
+                  : "border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20"
+              )}
               title={pendingActions > 0 ? `${pendingActions} pending actions` : "All actions clear"}
             >
-              <Layers className="h-4 w-4 text-muted-foreground group-hover/icon:text-emerald-400 transition-colors" />
-              <span className={cn(
-                "absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full shadow-sm",
-                pendingActions > 0 ? "bg-orange-500" : "bg-emerald-500"
-              )} />
-              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider group-hover/icon:text-emerald-300">Actions</span>
+              <Layers
+                className={cn(
+                  "h-4 w-4 transition-colors",
+                  pendingActions > 0 ? "text-orange-500" : "text-emerald-600 dark:text-emerald-400"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full shadow-sm",
+                  pendingActions > 0 ? "bg-orange-500" : "bg-emerald-500"
+                )}
+              />
+              <span
+                className={cn(
+                  "mt-1 text-[8px] font-semibold tracking-wider uppercase",
+                  pendingActions > 0 ? "text-orange-500" : "text-emerald-600 dark:text-emerald-400"
+                )}
+              >
+                Actions
+              </span>
             </Link>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-lg bg-white/5 border border-white/5 p-1.5 opacity-35 cursor-not-allowed">
-              <Layers className="h-4 w-4 text-muted-foreground" />
-              <span className="mt-1 text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">Actions</span>
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-1 py-2 opacity-35">
+              <Layers className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground mt-1 text-[8px] font-semibold tracking-wider uppercase">
+                Actions
+              </span>
             </div>
           )}
         </div>
@@ -363,11 +400,13 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <div className="mt-1 border-t border-red-500/15 pt-2">
             <Link
               href={createUrl("/mycountry/executive")}
-              className="flex items-center gap-1.5 justify-center rounded bg-red-500/5 border border-red-500/10 py-1 text-red-500 hover:bg-red-500/10 transition-colors animate-pulse"
+              className="flex animate-pulse items-center justify-center gap-1.5 rounded border border-red-500/10 bg-red-500/5 py-1 text-red-500 transition-colors hover:bg-red-500/10"
               title={`${crisesCount} active crises! Click to view.`}
             >
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">{crisesCount} Crises Active</span>
+              <span className="text-[9px] font-bold tracking-wider uppercase">
+                {crisesCount} Crises Active
+              </span>
             </Link>
           </div>
         )}

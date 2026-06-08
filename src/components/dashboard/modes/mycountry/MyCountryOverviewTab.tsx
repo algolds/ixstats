@@ -22,15 +22,17 @@ export function MyCountryOverviewTab({
   onNavigate,
 }: MyCountryOverviewTabProps) {
   return (
-    <TabsContent value="overview" className="mt-6 space-y-6">
+    <TabsContent value="overview" className="mt-6 space-y-8">
       {/* National Performance Dashboard */}
-      <div className="space-y-4">
-        <h3 className="text-foreground flex items-center gap-3 text-lg font-bold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
-            <BarChart3 className="h-4 w-4 text-white" />
-          </div>
-          National Performance Overview
-        </h3>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-foreground flex items-center gap-3 text-xl font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+              <BarChart3 className="h-4 w-4 text-white" />
+            </div>
+            National Performance Overview
+          </h3>
+        </div>
 
         <MyCountryCard
           countryData={
@@ -86,13 +88,15 @@ export function MyCountryOverviewTab({
       </div>
 
       {/* Quick Actions */}
-      <div className="space-y-4">
-        <h3 className="text-foreground flex items-center gap-2 text-lg font-bold sm:gap-3 sm:text-xl">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 sm:h-8 sm:w-8">
-            <Zap className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-          </div>
-          Quick Actions
-        </h3>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-foreground flex items-center gap-3 text-xl font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+              <Zap className="h-4 w-4 text-white" />
+            </div>
+            Quick Actions
+          </h3>
+        </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
           <button

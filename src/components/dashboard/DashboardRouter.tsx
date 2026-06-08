@@ -313,13 +313,13 @@ function DashboardHero({
                 gdp: v.gdp === "perCapita" ? "total" : "perCapita",
               }))
             }
-            className="rounded-lg bg-white/[0.04] p-2 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+            className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
           >
             <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
             </p>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <p className="text-foreground text-sm font-bold tracking-tight">
+              <p className="text-foreground text-[11px] font-bold tracking-tight">
                 $
                 {metricView.gdp === "perCapita"
                   ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
@@ -350,13 +350,13 @@ function DashboardHero({
                 population: v.population === "total" ? "density" : "total",
               }))
             }
-            className="rounded-lg bg-white/[0.04] p-2 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+            className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
           >
             <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               {metricView.population === "total" ? "Population" : "Density"}
             </p>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <p className="text-foreground text-sm font-bold tracking-tight">
+              <p className="text-foreground text-[11px] font-bold tracking-tight">
                 {metricView.population === "total"
                   ? Math.round(stats.population).toLocaleString("en-US")
                   : stats.populationDensity
@@ -383,14 +383,14 @@ function DashboardHero({
                 : undefined
             }
             className={cn(
-              "rounded-lg bg-white/[0.04] p-2 text-left transition-all",
+              "rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all",
               stats.areaSqMi && stats.landArea && "hover:bg-white/[0.07] active:scale-[0.98]"
             )}
           >
             <p className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase">
               Land Area
             </p>
-            <p className="text-foreground mt-0.5 text-sm font-bold tracking-tight">
+            <p className="text-foreground mt-0.5 text-[11px] font-bold tracking-tight">
               {metricView.area === "km"
                 ? stats.landArea
                   ? `${stats.landArea.toLocaleString()} km²`

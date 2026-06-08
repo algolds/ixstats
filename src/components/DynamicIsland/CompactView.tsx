@@ -216,7 +216,7 @@ function CompactViewComponent({
                             className="h-3 w-auto opacity-95 transition-all duration-300 group-hover:scale-110 dark:brightness-0 dark:invert"
                           />
                           <span
-                            className="text-foreground text-[10px] font-semibold tracking-[0.1em] leading-none mt-0.5 antialiased"
+                            className="text-foreground mt-0.5 text-[10px] leading-none font-semibold tracking-[0.1em] antialiased"
                             style={{ fontFamily: "var(--font-playfair)" }}
                           >
                             WIKI
@@ -289,9 +289,11 @@ function CompactViewComponent({
                   {pluginCenter}
                 </button>
               ) : (
-                <div className={`flex items-center gap-1.5 px-1.5 py-0.5 transition-all duration-300 ${
-                  activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
-                }`}>
+                <div
+                  className={`flex items-center gap-1.5 px-1.5 py-0.5 transition-all duration-300 ${
+                    activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
+                  }`}
+                >
                   {pluginCenter}
                 </div>
               ))}
@@ -409,9 +411,11 @@ function CompactViewComponent({
                           {pluginCenter}
                         </button>
                       ) : (
-                        <div className={`flex items-center gap-1.5 px-1.5 transition-all duration-300 ${
-                          activeSectionName ? "max-w-[280px]" : "max-w-[220px]"
-                        }`}>
+                        <div
+                          className={`flex items-center gap-1.5 px-1.5 transition-all duration-300 ${
+                            activeSectionName ? "max-w-[280px]" : "max-w-[220px]"
+                          }`}
+                        >
                           {pluginCenter}
                         </div>
                       )

@@ -20,7 +20,7 @@ export function WikiOSBrandLockup({ className }: WikiOSBrandLockupProps) {
       >
         {/* Dynamic Island refraction glow, edge highlights, and pulse shimmer */}
         <DynamicIslandEffects glowOpacity={0.6} showGlow={true} showShimmer={true} />
-        
+
         <img
           src="https://ixwiki.com/data/IxWiki_4.svg"
           alt="IxWiki"
@@ -35,4 +35,3 @@ export function WikiOSBrandLockup({ className }: WikiOSBrandLockupProps) {
     </div>
   );
 }
-

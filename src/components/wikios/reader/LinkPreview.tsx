@@ -75,13 +75,13 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
       if (
         link.closest(
           ".wikios-header, .wikios-categories, .wikios-category-link, .wikios-portal, " +
-          ".wikios-portal-pill, .wikios-portal-card, .wikios-breadcrumb, .wikios-breadcrumb-link, " +
-          ".wikios-tree-explorer, .wikios-tree-node, .wikios-tree-label, .wikios-tree-page-link, " +
-          ".wikios-main-categories, .wikios-main-cat-pill, .wikios-main-recent, .wikios-main-world, " +
-          ".wikios-main-world-card, .wikios-main-stats, .wikios-main-stat, " +
-          ".wikios-article-footer, .wikios-notices, .wikios-infobox, .navbox, .wikios-navbox, " +
-          ".wikios-quick-modal, .wikios-award-banner, [role='navigation'], " +
-          ".reference, .cite-note, .wikios-rail, .wikios-sidebar"
+            ".wikios-portal-pill, .wikios-portal-card, .wikios-breadcrumb, .wikios-breadcrumb-link, " +
+            ".wikios-tree-explorer, .wikios-tree-node, .wikios-tree-label, .wikios-tree-page-link, " +
+            ".wikios-main-categories, .wikios-main-cat-pill, .wikios-main-recent, .wikios-main-world, " +
+            ".wikios-main-world-card, .wikios-main-stats, .wikios-main-stat, " +
+            ".wikios-article-footer, .wikios-notices, .wikios-infobox, .navbox, .wikios-navbox, " +
+            ".wikios-quick-modal, .wikios-award-banner, [role='navigation'], " +
+            ".reference, .cite-note, .wikios-rail, .wikios-sidebar"
         )
       ) {
         return;

@@ -158,7 +158,7 @@ export function MyCountrySidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     const mobileLogoClass =
-      "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer text-muted-foreground hover:bg-muted hover:text-foreground";
+      "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer text-muted-foreground";
 
     const mobileLogoContent = (
       <>
@@ -212,13 +212,35 @@ export function MyCountrySidebarNav({
             const noteCount = notifications?.[item.id] ?? 0;
             const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
             const cls = cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
+              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
               isActive
-                ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
+                ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", item.gradient)
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             );
             const dot = noteCount > 0 && !isActive && (
               <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
+            );
+
+            const content = (
+              <>
+                {isActive && (
+                  <span
+                    className={cn(
+                      "absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r",
+                      item.id === "executive" ? "bg-amber-300" :
+                      item.id === "diplomacy" ? "bg-cyan-300" :
+                      item.id === "politics" ? "bg-indigo-300" :
+                      item.id === "intelligence" ? "bg-blue-300" :
+                      item.id === "defense" ? "bg-red-300" :
+                      "bg-slate-300"
+                    )}
+                  />
+                )}
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
+                <span className="whitespace-nowrap">{item.title}</span>
+                {isLocked && <Lock className="h-3 w-3 shrink-0 text-yellow-400/70" />}
+                {dot}
+              </>
             );
 
             return isControlled ? (
@@ -228,10 +250,7 @@ export function MyCountrySidebarNav({
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
-                <span className="whitespace-nowrap">{item.title}</span>
-                {isLocked && <Lock className="h-3 w-3 shrink-0 text-yellow-400/70" />}
-                {dot}
+                {content}
               </button>
             ) : (
               <Link
@@ -240,10 +259,7 @@ export function MyCountrySidebarNav({
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
-                <span className="whitespace-nowrap">{item.title}</span>
-                {isLocked && <Lock className="h-3 w-3 shrink-0 text-yellow-400/70" />}
-                {dot}
+                {content}
               </Link>
             );
           })}
@@ -258,7 +274,19 @@ export function MyCountrySidebarNav({
       "flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-xs font-medium mb-1.5 border-b border-white/5 text-muted-foreground";
 
     const logoLinkClass =
-      "flex items-center gap-2 transition-all duration-200 cursor-pointer hover:text-foreground py-1";
+      "relative flex items-center gap-2 cursor-pointer py-1 text-muted-foreground";
+
+    const logoLinkContent = (
+      <>
+        <CrownIcon size={16} className="shrink-0 text-amber-500" />
+        <span className="truncate font-semibold">MyCountry</span>
+        {isPremium && (
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
+            Premium
+          </span>
+        )}
+      </>
+    );
 
     const logoLink = isControlled ? (
       <button
@@ -268,23 +296,11 @@ export function MyCountrySidebarNav({
         }}
         className={logoLinkClass}
       >
-        <CrownIcon size={16} className="shrink-0 text-amber-500" />
-        <span className="truncate font-semibold">MyCountry</span>
-        {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
-            Premium
-          </span>
-        )}
+        {logoLinkContent}
       </button>
     ) : (
       <Link href="/mycountry" className={logoLinkClass}>
-        <CrownIcon size={16} className="shrink-0 text-amber-500" />
-        <span className="truncate font-semibold">MyCountry</span>
-        {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
-            Premium
-          </span>
-        )}
+        {logoLinkContent}
       </Link>
     );
 
@@ -299,7 +315,7 @@ export function MyCountrySidebarNav({
     );
 
     return (
-      <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
+      <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg animate-fade-in">
         <div className={logoContainerClass}>
           {logoLink}
           {editButton}
@@ -309,9 +325,9 @@ export function MyCountrySidebarNav({
           const noteCount = notifications?.[item.id] ?? 0;
           const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
           const cls = cn(
-            "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200",
+            "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
             isActive
-              ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
+              ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", item.gradient, item.activeGlow)
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           );
           const badge = noteCount > 0 && (
@@ -325,6 +341,28 @@ export function MyCountrySidebarNav({
             </span>
           );
 
+          const content = (
+            <>
+              {isActive && (
+                <span
+                  className={cn(
+                    "absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r",
+                    item.id === "executive" ? "bg-amber-300" :
+                    item.id === "diplomacy" ? "bg-cyan-300" :
+                    item.id === "politics" ? "bg-indigo-300" :
+                    item.id === "intelligence" ? "bg-blue-300" :
+                    item.id === "defense" ? "bg-red-300" :
+                    "bg-slate-300"
+                  )}
+                />
+              )}
+              <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
+              <span className="truncate">{item.title}</span>
+              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-yellow-400/70" />}
+              {!isLocked && badge}
+            </>
+          );
+
           return isControlled ? (
             <button
               key={item.id}
@@ -332,10 +370,7 @@ export function MyCountrySidebarNav({
               className={cls}
               aria-current={isActive ? "page" : undefined}
             >
-              <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
-              <span className="truncate">{item.title}</span>
-              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-yellow-400/70" />}
-              {!isLocked && badge}
+              {content}
             </button>
           ) : (
             <Link
@@ -344,10 +379,7 @@ export function MyCountrySidebarNav({
               className={cls}
               aria-current={isActive ? "page" : undefined}
             >
-              <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
-              <span className="truncate">{item.title}</span>
-              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-yellow-400/70" />}
-              {!isLocked && badge}
+              {content}
             </Link>
           );
         })}
@@ -357,13 +389,13 @@ export function MyCountrySidebarNav({
 
   /* ── Desktop: icon rail with tooltip labels ── */
   const logoRailClass =
-    "group/logo relative flex h-9 w-9 items-center justify-center rounded-lg border-b border-white/5 pb-1.5 mb-1.5 transition-all duration-200 outline-none cursor-pointer text-muted-foreground/85 hover:text-foreground hover:bg-muted";
+    "group/logo relative flex h-9 w-9 items-center justify-center rounded-lg border-b border-white/5 pb-1.5 mb-1.5 outline-none cursor-pointer text-muted-foreground/80";
 
   const logoRailContent = (
     <>
       <CrownIcon
         size={16}
-        className="text-amber-500 transition-transform duration-150 group-hover/logo:scale-110"
+        className="text-amber-500 transition-transform duration-150"
       />
       {/* Tooltip ── appears to the right */}
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100">
@@ -425,12 +457,25 @@ export function MyCountrySidebarNav({
         const iconEl = (
           <div
             className={cn(
-              "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200",
+              "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 overflow-hidden",
               isActive
-                ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
+                ? cn("bg-gradient-to-br text-white shadow-lg pl-1", item.gradient, item.activeGlow)
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
+            {isActive && (
+              <span
+                className={cn(
+                  "absolute left-0 top-1 bottom-1 w-0.5 rounded-r-sm",
+                  item.id === "executive" ? "bg-amber-300" :
+                  item.id === "diplomacy" ? "bg-cyan-300" :
+                  item.id === "politics" ? "bg-indigo-300" :
+                  item.id === "intelligence" ? "bg-blue-300" :
+                  item.id === "defense" ? "bg-red-300" :
+                  "bg-slate-300"
+                )}
+              />
+            )}
             <NavIcon
               id={item.id}
               fallback={item.icon}

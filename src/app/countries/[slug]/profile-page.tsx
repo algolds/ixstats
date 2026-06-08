@@ -268,12 +268,10 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                   <p className="text-muted-foreground mb-4">
                     Explore detailed history, culture, and lore about {country.name} on IxWiki.
                   </p>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    asChild
-                  >
-                    <Link href={createUrl(`/w/${encodeURIComponent(country.name.replace(/ /g, "_"))}`)}>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link
+                      href={createUrl(`/w/${encodeURIComponent(country.name.replace(/ /g, "_"))}`)}
+                    >
                       <BookOpen className="mr-2 h-4 w-4" />
                       View Wiki Page
                     </Link>

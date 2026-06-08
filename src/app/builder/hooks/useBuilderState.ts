@@ -34,6 +34,7 @@ import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
 import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
 import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
+import { registerCustomCurrency } from "~/lib/format-utils";
 
 const CURRENT_SCHEMA_VERSION = 1;
 
@@ -1309,7 +1310,27 @@ export function useBuilderState(
 
   // Update handlers
   const updateEconomicInputs = useCallback((inputs: EconomicInputs) => {
-    setBuilderState((prev) => ({ ...prev, economicInputs: sanitizeEconomicInputs(inputs) }));
+    setBuilderState((prev) => {
+      const sanitized = sanitizeEconomicInputs(inputs);
+      const nextState = { ...prev, economicInputs: sanitized };
+
+      const currency = sanitized.nationalIdentity?.currency;
+      if (currency) {
+        const symbol = sanitized.nationalIdentity?.currencySymbol || "$";
+        registerCustomCurrency(currency, symbol);
+
+        if (nextState.governmentStructure?.structure) {
+          nextState.governmentStructure = {
+            ...nextState.governmentStructure,
+            structure: {
+              ...nextState.governmentStructure.structure,
+              budgetCurrency: currency,
+            },
+          };
+        }
+      }
+      return nextState;
+    });
   }, []);
 
   const updateGovernmentComponents = useCallback((components: ComponentType[]) => {
@@ -1599,6 +1620,12 @@ export function useBuilderState(
 export function sanitizeEconomicInputs(inputs: any): any {
   if (!inputs) return inputs;
   const clean = { ...inputs };
+  if (clean.nationalIdentity?.currency) {
+    registerCustomCurrency(
+      clean.nationalIdentity.currency,
+      clean.nationalIdentity.currencySymbol || "$"
+    );
+  }
   if (clean.laborEmployment) {
     clean.laborEmployment = { ...clean.laborEmployment };
     const toBoundedPercent = (value: unknown, fallback: number) => {

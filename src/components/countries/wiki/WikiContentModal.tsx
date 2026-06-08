@@ -97,12 +97,7 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
               </div>
 
               <div className="border-border/30 flex gap-2 border-t pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" asChild className="flex-1">
                   <Link href={titleToWikiOSPath(section.title)}>
                     <RiExternalLinkLine className="mr-1 h-3 w-3" />
                     View on IxWiki

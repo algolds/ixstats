@@ -849,7 +849,7 @@ export async function seedDiplomacy(
   let count = 0;
 
   const otherCountries = await prisma.country.findMany({
-    where: { isDemo: false, id: { not: countryId } },
+    where: { id: { not: countryId } },
     take: 6,
     select: { id: true, name: true, flag: true },
   });
@@ -937,7 +937,7 @@ export async function seedDiplomacyExtras(
   let count = 0;
 
   const otherCountries = await prisma.country.findMany({
-    where: { isDemo: false, id: { not: countryId } },
+    where: { id: { not: countryId } },
     take: 6,
     select: { id: true, name: true },
   });

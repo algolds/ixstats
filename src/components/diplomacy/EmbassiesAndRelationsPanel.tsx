@@ -32,6 +32,7 @@ import {
   EmptyState,
 } from "~/components/diplomatic/embassy-network";
 import { SharedDataModal } from "~/components/diplomatic/SharedDataModal";
+import { DiplomaticRelationsList } from "./DiplomaticRelationsList";
 
 // Alliance sub-component
 import { AllianceDashboard } from "./alliances/AllianceDashboard";
@@ -60,6 +61,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   const [showAllianceCreator, setShowAllianceCreator] = useState(false);
 
   // Collapsible sections
+  const [relationsExpanded, setRelationsExpanded] = useState(false);
   const [exchangesExpanded, setExchangesExpanded] = useState(false);
   const [eventsExpanded, setEventsExpanded] = useState(false);
 
@@ -185,6 +187,30 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           />
         ) : (
           <EmptyState isOwner={isOwner} onEstablishEmbassy={() => setShowEmbassyCreator(true)} />
+        )}
+      </section>
+
+      <Separator />
+
+      {/* ─── Diplomatic Relations (collapsible) ─── */}
+      <section className="space-y-3">
+        <button
+          className="hover:bg-muted/50 flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors"
+          onClick={() => setRelationsExpanded(!relationsExpanded)}
+        >
+          <div className="flex items-center gap-2">
+            <Handshake className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-semibold">Diplomatic Relations</h3>
+          </div>
+          {relationsExpanded ? (
+            <ChevronDown className="text-muted-foreground h-4 w-4" />
+          ) : (
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
+          )}
+        </button>
+
+        {relationsExpanded && (
+          <DiplomaticRelationsList countryId={countryId} />
         )}
       </section>
 

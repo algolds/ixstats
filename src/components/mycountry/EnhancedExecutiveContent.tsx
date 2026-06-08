@@ -5,7 +5,6 @@ import { CrownIcon } from "~/components/ui/icons";
 import {
   useCountryData,
   SectionShell,
-  CompactSectionHero,
   InlineWiki,
   type StatusBadgeConfig,
 } from "./primitives";
@@ -94,19 +93,6 @@ export function EnhancedExecutiveContent({
   return (
     <SectionShell
       section="executive"
-      hero={
-        <CompactSectionHero
-          section="executive"
-          title="Executive"
-          subtitle="Crisis management & executive command"
-          icon={CrownIcon}
-          countryName={country.name}
-          flagUrl={flagUrl}
-          stats={heroStats}
-          statusBadges={statusBadges}
-          health={executiveHealth}
-        />
-      }
       contextWidget={<ExecutiveSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}

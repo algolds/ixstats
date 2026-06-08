@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Building2, Handshake, Scale, Globe } from "lucide-react";
 import { api } from "~/trpc/react";
+import { DiplomaticRelationsList } from "./DiplomaticRelationsList";
 import {
   Dialog,
   DialogContent,
@@ -264,10 +265,10 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
         <DialogContent className="max-w-2xl" style={{ maxHeight: "85vh", overflowY: "auto" }}>
           <DialogHeader>
             <DialogTitle>Diplomatic Relations</DialogTitle>
-            <DialogDescription>Overview of all diplomatic relationships</DialogDescription>
+            <DialogDescription>Detailed list of diplomatic relationships</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <DiplomacyOverview countryId={countryId} />
+            <DiplomaticRelationsList countryId={countryId} />
           </div>
         </DialogContent>
       </Dialog>

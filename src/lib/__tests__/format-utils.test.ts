@@ -9,6 +9,7 @@ import {
   getAvailableCurrencies,
   getCurrencyInfo,
   isValidCurrency,
+  registerCustomCurrency,
 } from "../format-utils";
 
 describe("Currency Formatting", () => {
@@ -142,6 +143,20 @@ describe("Currency Formatting", () => {
     test("handles very large amounts", () => {
       expect(formatCurrency(1e15, "USD")).toBe("$1,000.0T");
       expect(formatCurrency(1e15, "Taler")).toBe("₮1,000.0T");
+    });
+  });
+
+  describe("Dynamic Custom Currency Registration", () => {
+    test("registers and formats custom currency correctly", () => {
+      registerCustomCurrency("GoldCoin", "⚜");
+      expect(isValidCurrency("GoldCoin")).toBe(true);
+
+      const info = getCurrencyInfo("GoldCoin");
+      expect(info.isISO).toBe(false);
+      expect(info.symbol).toBe("⚜");
+
+      expect(formatCurrency(1234, "GoldCoin")).toBe("⚜1.2K");
+      expect(formatExactCurrency(1234, "GoldCoin")).toBe("⚜1,234");
     });
   });
 });

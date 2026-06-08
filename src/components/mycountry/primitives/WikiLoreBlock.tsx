@@ -216,8 +216,8 @@ function WikiSectionRow({
                   No content available.
                 </p>
               )}
-              {wikiUrl && (
-                wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+              {wikiUrl &&
+                (wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
                   <Link
                     href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
                     className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
@@ -233,8 +233,7 @@ function WikiSectionRow({
                   >
                     Read more <ExternalLink className="h-2.5 w-2.5" />
                   </a>
-                )
-              )}
+                ))}
             </div>
           </motion.div>
         )}
@@ -296,8 +295,8 @@ export const WikiLoreBlock = React.memo(function WikiLoreBlock({
             {sectionCount} section{sectionCount !== 1 ? "s" : ""}
           </span>
         )}
-        {wikiUrl && (
-          wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+        {wikiUrl &&
+          (wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
             <Link
               href={wikiUrl}
               className={cn(
@@ -324,8 +323,7 @@ export const WikiLoreBlock = React.memo(function WikiLoreBlock({
               <span className={colors.link}>Wiki</span>
               <ExternalLink className={cn("h-2.5 w-2.5", colors.link)} />
             </a>
-          )
-        )}
+          ))}
         <ChevronDown
           className={cn(
             "text-muted-foreground h-3.5 w-3.5 shrink-0 transition-transform",

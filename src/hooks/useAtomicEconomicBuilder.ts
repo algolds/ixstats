@@ -100,7 +100,7 @@ export interface UseAtomicEconomicBuilderReturn {
 export function useAtomicEconomicBuilder({
   countryId,
   initialSelection = [],
-  maxComponents = 12,
+  maxComponents = 15,
   onSelectionChange,
 }: UseAtomicEconomicBuilderProps = {}): UseAtomicEconomicBuilderReturn {
   // ============================================================================

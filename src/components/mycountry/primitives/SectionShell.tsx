@@ -1,14 +1,17 @@
 "use client";
 
-import type { ReactNode } from "react";
+import React, { useState, type ReactNode } from "react";
 import { MyCountrySidebarLayout } from "~/components/mycountry/MyCountrySidebarLayout";
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
+import { useCountryData } from "./CountryDataProvider";
+import { OverviewHero } from "../OverviewHero";
+import { AgendaBar } from "../PillarCards";
 
 interface SectionShellProps {
   /** Which section this shell renders (defaults the active nav state). */
   section: MyCountrySection;
-  /** The section hero — CompactSectionHero for sections, big HeroSection for home. */
-  hero: ReactNode;
+  /** The section hero — defaults to standardized OverviewHero if omitted. */
+  hero?: ReactNode;
   /** The unified left context widget (quick-stats + activity). Optional. */
   contextWidget?: ReactNode;
   /** Alerts/banners rendered above the content. */
@@ -23,9 +26,7 @@ interface SectionShellProps {
 
 /**
  * SectionShell — the single canonical layout every MyCountry section renders
- * through. Thin, opinionated wrapper over MyCountrySidebarLayout that enforces
- * the unified pattern: compact hero + nav rail + context widget + content.
- * Keeps the existing single-page router / URL sync untouched.
+ * through. Enforces the unified pattern: dynamic map/hero + daily agenda + content.
  */
 export function SectionShell({
   section,
@@ -37,15 +38,37 @@ export function SectionShell({
   notifications,
   children,
 }: SectionShellProps) {
+  const { country } = useCountryData();
+  const [heroCollapsed, setHeroCollapsed] = useState(false);
+
+  // Fallback to standard OverviewHero if no custom hero is passed
+  const finalHero = hero ?? (country?.id ? (
+    <OverviewHero
+      collapsed={heroCollapsed}
+      onCollapsedChange={setHeroCollapsed}
+      countryId={country.id}
+      onNavigate={onNavigate}
+    />
+  ) : null);
+
   return (
     <MyCountrySidebarLayout
-      heroSection={hero}
+      heroSection={finalHero}
       sidebarExtra={contextWidget}
       alerts={alerts}
       activeSection={activeSection ?? section}
       onNavigate={onNavigate}
       notifications={notifications}
     >
+      {/* Daily Agenda Bar — actionable national issues & tasks */}
+      {country?.id && onNavigate && (
+        <AgendaBar
+          countryId={country.id}
+          onNavigate={onNavigate}
+          activeSection={activeSection ?? section}
+        />
+      )}
+
       {children}
     </MyCountrySidebarLayout>
   );

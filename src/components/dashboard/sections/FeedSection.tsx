@@ -655,7 +655,8 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
 
 /** External link with wiki/forum tooltip on hover */
 function FeedExternalLink({ url, title }: { url: string; title?: string }) {
-  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/) ?? url.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
+  const wikiMatch =
+    url.match(/ixwiki\.com\/wiki\/([^#?]+)/) ?? url.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
   const iiMatch = url.match(/iiwiki\.com\/wiki\/([^#?]+)/);
   const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
 

@@ -248,7 +248,7 @@ export function MeetingScheduler({
       return;
     }
 
-    if (selectedOfficials.length === 0) {
+    if (officials && officials.length > 0 && selectedOfficials.length === 0) {
       notify.error("Please select at least one attendee");
       return;
     }
@@ -271,6 +271,27 @@ export function MeetingScheduler({
       });
 
       // Persist agenda items and attendances against the new meeting.
+      const attendancePromises = selectedOfficials.length > 0
+        ? selectedOfficials.map((officialId) => {
+            const official = officials?.find((o) => o.id === officialId);
+            return recordAttendance.mutateAsync({
+              meetingId: meeting.id,
+              officialId,
+              attendeeName: official?.name ?? "Official",
+              attendanceStatus: "invited",
+              attendeeRole: official?.title || undefined,
+            });
+          })
+        : [
+            recordAttendance.mutateAsync({
+              meetingId: meeting.id,
+              officialId: null,
+              attendeeName: user.fullName || user.username || "Ruler",
+              attendanceStatus: "invited",
+              attendeeRole: "Head of State",
+            }),
+          ];
+
       await Promise.all([
         ...agendaItems.map((item, index) =>
           addAgendaItemMutation.mutateAsync({
@@ -282,16 +303,7 @@ export function MeetingScheduler({
             priority: "medium",
           })
         ),
-        ...selectedOfficials.map((officialId) => {
-          const official = officials?.find((o) => o.id === officialId);
-          return recordAttendance.mutateAsync({
-            meetingId: meeting.id,
-            officialId,
-            attendeeName: official?.name ?? "Official",
-            attendanceStatus: "invited",
-            attendeeRole: official?.title || undefined,
-          });
-        }),
+        ...attendancePromises,
       ]);
 
       notify.success("Meeting scheduled!", `${title} has been added to your calendar.`);
@@ -663,7 +675,7 @@ export function MeetingScheduler({
             <Button
               type="submit"
               size="sm"
-              disabled={isSubmitting || agendaItems.length === 0 || selectedOfficials.length === 0}
+              disabled={isSubmitting || agendaItems.length === 0 || (officials && officials.length > 0 && selectedOfficials.length === 0)}
             >
               {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
             </Button>

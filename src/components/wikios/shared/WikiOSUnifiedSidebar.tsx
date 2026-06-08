@@ -62,7 +62,7 @@ export function WikiOSUnifiedSidebar({
   const isArticlePage = !isSpecialPage && slug;
 
   // Auto-expand hidden items if one of them is active
-  const hasActiveHiddenItem = 
+  const hasActiveHiddenItem =
     pathname === "/stashes" ||
     pathname.startsWith("/stashes/") ||
     pathname.startsWith("/blurbs") ||
@@ -129,17 +129,17 @@ export function WikiOSUnifiedSidebar({
         </div>
         <span
           className={cn(
-            "text-xs font-medium transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden text-left flex-1",
-            isCollapsed ? "w-0 opacity-0 pointer-events-none" : "w-auto opacity-100 pl-3",
+            "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
+            isCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100",
             isActive
-              ? "text-blue-400 font-semibold"
+              ? "font-semibold text-blue-400"
               : "text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]"
           )}
         >
           {title}
         </span>
         {badge && !isCollapsed && (
-          <div className="shrink-0 transition-opacity duration-300 pl-2">{badge}</div>
+          <div className="shrink-0 pl-2 transition-opacity duration-300">{badge}</div>
         )}
       </>
     );
@@ -186,15 +186,16 @@ export function WikiOSUnifiedSidebar({
   };
 
   return (
-    <div className="wikios-sidebar relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start select-none group/sidebar border-r border-white/5 hover:border-blue-500/15 transition-colors duration-300 pr-1.5 pb-2">
-      <div className="flex flex-col gap-1.5 w-full">
+    <div className="wikios-sidebar group/sidebar relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start border-r border-white/5 pr-1.5 pb-2 transition-colors duration-300 select-none hover:border-blue-500/15">
+      <div className="flex w-full flex-col gap-1.5">
         {/* Search */}
         {renderRow({
           id: "search",
           onClick: onSearchClick,
           icon: Search,
           title: "Search Wiki",
-          glowClass: "border-teal-500/20 bg-teal-500/5 text-teal-400 hover:bg-teal-500/15 rail-glow-teal rail-animate-spin",
+          glowClass:
+            "border-teal-500/20 bg-teal-500/5 text-teal-400 hover:bg-teal-500/15 rail-glow-teal rail-animate-spin",
           isActive: activeId === "search",
           badge: (
             <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-[8px]">
@@ -230,41 +231,50 @@ export function WikiOSUnifiedSidebar({
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
         {/* Library Items */}
-        {(!isArticlePage || showMore) && renderRow({
-          id: "stashes",
-          href: withBasePath("/stashes"),
-          icon: Bookmark,
-          title: "Stashes",
-          glowClass: "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
-          isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
-        })}
+        {(!isArticlePage || showMore) &&
+          renderRow({
+            id: "stashes",
+            href: withBasePath("/stashes"),
+            icon: Bookmark,
+            title: "Stashes",
+            glowClass:
+              "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
+            isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
+          })}
 
-        {(!isArticlePage || showMore) && renderRow({
-          id: "blurbs",
-          href: withBasePath("/blurbs"),
-          icon: BookOpen,
-          title: "Blurbs",
-          glowClass: "rail-glow-green rail-animate-bounce border-green-500/20 bg-green-500/5 text-green-400 hover:bg-green-500/15",
-          isActive: pathname.startsWith("/blurbs"),
-        })}
+        {(!isArticlePage || showMore) &&
+          renderRow({
+            id: "blurbs",
+            href: withBasePath("/blurbs"),
+            icon: BookOpen,
+            title: "Blurbs",
+            glowClass:
+              "rail-glow-green rail-animate-bounce border-green-500/20 bg-green-500/5 text-green-400 hover:bg-green-500/15",
+            isActive: pathname.startsWith("/blurbs"),
+          })}
 
-        {(!isArticlePage || showMore) && renderRow({
-          id: "images",
-          href: withBasePath("/w/repository"),
-          icon: ImageIcon,
-          title: "Repository",
-          glowClass: "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
-          isActive: pathname === "/w/repository" || pathname.startsWith("/w/repository/"),
-        })}
+        {(!isArticlePage || showMore) &&
+          renderRow({
+            id: "images",
+            href: withBasePath("/w/repository"),
+            icon: ImageIcon,
+            title: "Repository",
+            glowClass:
+              "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
+            isActive: pathname === "/w/repository" || pathname.startsWith("/w/repository/"),
+          })}
 
-        {(!isArticlePage || showMore) && renderRow({
-          id: "lorewards",
-          href: withBasePath("/w/special/lorewards"),
-          icon: Trophy,
-          title: "Lorewards",
-          glowClass: "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
-          isActive: pathname === "/w/special/lorewards" || pathname.startsWith("/w/special/lorewards/"),
-        })}
+        {(!isArticlePage || showMore) &&
+          renderRow({
+            id: "lorewards",
+            href: withBasePath("/w/special/lorewards"),
+            icon: Trophy,
+            title: "Lorewards",
+            glowClass:
+              "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
+            isActive:
+              pathname === "/w/special/lorewards" || pathname.startsWith("/w/special/lorewards/"),
+          })}
 
         {/* Page Tools: Dynamically shown on article page */}
         {isArticlePage && (
@@ -277,7 +287,8 @@ export function WikiOSUnifiedSidebar({
                 href: withBasePath(`/w/${slug}/edit`),
                 icon: FileEdit,
                 title: "Edit Article",
-                glowClass: "rail-glow-blue rail-animate-bounce border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15",
+                glowClass:
+                  "rail-glow-blue rail-animate-bounce border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15",
                 isActive: activeId === "edit",
               })}
 
@@ -286,43 +297,47 @@ export function WikiOSUnifiedSidebar({
               href: withBasePath(`/w/${slug}/talk`),
               icon: MessageSquare,
               title: "Discussion (Talk)",
-              glowClass: "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
+              glowClass:
+                "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
               isActive: activeId === "talk",
             })}
 
-            {showMore && renderRow({
-              id: "history",
-              onClick: () => setActiveModal("history"),
-              icon: Clock,
-              title: "Revision History",
-              glowClass: "rail-glow-amber rail-animate-spin border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
-              isActive: activeId === "history",
-            })}
+            {showMore &&
+              renderRow({
+                id: "history",
+                onClick: () => setActiveModal("history"),
+                icon: Clock,
+                title: "Revision History",
+                glowClass:
+                  "rail-glow-amber rail-animate-spin border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
+                isActive: activeId === "history",
+              })}
 
-            {showMore && renderRow({
-              id: "backlinks",
-              onClick: () => setActiveModal("backlinks"),
-              icon: Link2,
-              title: "What Links Here",
-              glowClass: "rail-glow-teal rail-animate-bounce border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
-              isActive: activeId === "backlinks",
-            })}
+            {showMore &&
+              renderRow({
+                id: "backlinks",
+                onClick: () => setActiveModal("backlinks"),
+                icon: Link2,
+                title: "What Links Here",
+                glowClass:
+                  "rail-glow-teal rail-animate-bounce border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
+                isActive: activeId === "backlinks",
+              })}
 
             {/* Stash button */}
-            <div className="flex w-full items-center px-2.5 py-1 rounded-xl hover:bg-white/5 transition-all duration-200 group">
+            <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
               <div className="shrink-0">
                 <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
               </div>
               <span
                 className={cn(
-                  "text-xs font-medium transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden text-left flex-1 text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]",
-                  isCollapsed ? "w-0 opacity-0 pointer-events-none" : "w-auto opacity-100 pl-3"
+                  "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-300 ease-in-out group-hover:text-[var(--wikios-text)]",
+                  isCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
                 )}
               >
                 Stash Page
               </span>
             </div>
-
           </>
         )}
 
@@ -334,7 +349,8 @@ export function WikiOSUnifiedSidebar({
           onClick: handleToggleClick,
           icon: getToggleIcon(),
           title: getToggleTitle(),
-          glowClass: "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
+          glowClass:
+            "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
           isActive: false,
         })}
 

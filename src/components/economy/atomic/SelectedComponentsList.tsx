@@ -31,7 +31,7 @@ export interface SelectedComponentsListProps {
 function SelectedComponentsListComponent({
   selectedComponents,
   onDeselect,
-  maxComponents = 12,
+  maxComponents = 15,
 }: SelectedComponentsListProps) {
   if (selectedComponents.length === 0) {
     return (

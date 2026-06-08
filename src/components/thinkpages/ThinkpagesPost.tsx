@@ -896,6 +896,7 @@ const ThinkpagesPostComponent = ({
 
                       const pillContent = (
                         <div
+                          key={type}
                           className={cn(
                             "bg-muted/50 border-border/50 text-muted-foreground flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-all duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5",
                             isDiscordImported
@@ -936,7 +937,7 @@ const ThinkpagesPostComponent = ({
                         );
                       }
 
-                      return <div key={type}>{pillContent}</div>;
+                      return pillContent;
                     })}
                   </div>
                 );

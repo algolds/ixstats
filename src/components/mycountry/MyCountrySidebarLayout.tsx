@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { cn } from "~/lib/utils";
 import { MyCountrySidebarNav, type MyCountrySection } from "./MyCountrySidebarNav";
 
 interface MyCountrySidebarLayoutProps {
@@ -19,6 +20,43 @@ interface MyCountrySidebarLayoutProps {
   notifications?: Partial<Record<string, number>>;
 }
 
+const SECTION_THEMES: Record<
+  MyCountrySection,
+  {
+    borderClass: string;
+    shadowClass: string;
+  }
+> = {
+  overview: {
+    borderClass: "border-t-slate-400/40",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(148,163,184,0.15)]",
+  },
+  executive: {
+    borderClass: "border-t-amber-500",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(245,158,11,0.2)]",
+  },
+  diplomacy: {
+    borderClass: "border-t-cyan-500",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(6,182,212,0.2)]",
+  },
+  politics: {
+    borderClass: "border-t-indigo-500",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(99,102,241,0.2)]",
+  },
+  intelligence: {
+    borderClass: "border-t-blue-500",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(59,130,246,0.2)]",
+  },
+  defense: {
+    borderClass: "border-t-red-500",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(239,68,68,0.2)]",
+  },
+  "map-editor": {
+    borderClass: "border-t-emerald-500",
+    shadowClass: "shadow-[0_-8px_25px_-8px_rgba(16,185,129,0.2)]",
+  },
+};
+
 export function MyCountrySidebarLayout({
   children,
   heroSection,
@@ -28,6 +66,9 @@ export function MyCountrySidebarLayout({
   onNavigate,
   notifications,
 }: MyCountrySidebarLayoutProps) {
+  const currentSection = activeSection ?? "overview";
+  const theme = SECTION_THEMES[currentSection] || SECTION_THEMES.overview;
+
   return (
     <div className="space-y-0">
       {/* Hero Section */}
@@ -66,7 +107,16 @@ export function MyCountrySidebarLayout({
               />
             </div>
 
-            <div className="space-y-3 sm:space-y-4">{children}</div>
+            {/* Content panel with thin glowing top border & shadow theme */}
+            <div
+              className={cn(
+                "rounded-t-xl border-t-2 pt-2 transition-all duration-500 ease-in-out",
+                theme.borderClass,
+                theme.shadowClass
+              )}
+            >
+              <div className="space-y-3 sm:space-y-4">{children}</div>
+            </div>
           </div>
         </div>
       </div>

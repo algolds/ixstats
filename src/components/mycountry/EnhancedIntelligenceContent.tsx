@@ -6,7 +6,6 @@ import { BrainIcon } from "~/components/ui/icons";
 import {
   useCountryData,
   SectionShell,
-  CompactSectionHero,
   InlineWiki,
   type StatusBadgeConfig,
 } from "./primitives";
@@ -102,17 +101,9 @@ export function EnhancedIntelligenceContent({
     <SectionShell
       section="intelligence"
       hero={
-        <CompactSectionHero
-          section="intelligence"
-          title="Intelligence"
-          subtitle="Threat monitoring & security analytics"
-          icon={BrainIcon}
-          countryName={country.name}
-          flagUrl={flagUrl}
-          stats={heroStats}
-          statusBadges={statusBadges}
-          health={intelligenceHealth}
-        />
+        !isGuided ? (
+          <DashboardMapWidget countryId={country.id} viewMode="intelligence" />
+        ) : undefined
       }
       contextWidget={<IntelligenceSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
@@ -121,9 +112,6 @@ export function EnhancedIntelligenceContent({
     >
       {/* 3-panel command dashboard (matching executive/diplomacy war room layouts) */}
       <IntelligenceWarRoom countryId={country.id} countryName={country.name} />
-
-      {/* Geopolitical Map — hidden in guided onboarding state */}
-      {!isGuided && <DashboardMapWidget countryId={country.id} viewMode="intelligence" />}
 
       {/* Wiki woven inline */}
       <InlineWiki context="intelligence" accent="blue" maxSections={1} />

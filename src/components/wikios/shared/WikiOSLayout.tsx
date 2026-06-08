@@ -111,9 +111,7 @@ export function WikiOSLayout({ title, children }: { title?: string; children: Re
         disableCollapse={false}
         variant="rail"
       >
-        <WikiOSContentWrapper title={title}>
-          {children}
-        </WikiOSContentWrapper>
+        <WikiOSContentWrapper title={title}>{children}</WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
       <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3 border-t border-white/5 pt-6 pb-8 text-center text-xs">
@@ -148,4 +146,3 @@ export function WikiOSLayout({ title, children }: { title?: string; children: Re
     </div>
   );
 }
-

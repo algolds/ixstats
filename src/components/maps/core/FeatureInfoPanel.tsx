@@ -170,8 +170,8 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* Action buttons */}
         <div className="mt-4 flex flex-col gap-2">
-          {wikiIntro?.wikiUrl && (
-            wikiIntro.wikiUrl.startsWith("/") || wikiIntro.wikiUrl.includes("/w/") ? (
+          {wikiIntro?.wikiUrl &&
+            (wikiIntro.wikiUrl.startsWith("/") || wikiIntro.wikiUrl.includes("/w/") ? (
               <Link
                 href={wikiIntro.wikiUrl}
                 className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
@@ -190,8 +190,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
                 Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
                 <ExternalLink className="h-3 w-3" />
               </a>
-            )
-          )}
+            ))}
           {feature.countrySlug && (
             <Link
               href={`/countries/${feature.countrySlug}`}

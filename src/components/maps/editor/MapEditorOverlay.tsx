@@ -202,14 +202,7 @@ export default function MapEditorOverlay({
     // If country has no geometry, point placement/painting tools are disabled,
     // but add-subdivision and import-provinces are enabled so geometry can be created.
     if (!hasGeometry) {
-      return [
-        "add-city",
-        "add-poi",
-        "add-route",
-        "add-story-pin",
-        "add-label",
-        "paint",
-      ];
+      return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label", "paint"];
     }
     return [];
   }, [isWorldMode, activeCountryId, hasGeometry]);
@@ -433,7 +426,9 @@ export default function MapEditorOverlay({
       const dbFeatureName = mapSelectedCountry.displayName || "";
       const dbCountryId = mapSelectedCountry.countryId || "";
       const dbWikiTitle = featureDetails?.wikiPageTitle || "";
-      const dbPropsJson = featureDetails?.properties ? JSON.stringify(featureDetails.properties, null, 2) : "";
+      const dbPropsJson = featureDetails?.properties
+        ? JSON.stringify(featureDetails.properties, null, 2)
+        : "";
 
       if (editableFeatureName !== dbFeatureName) return true;
       if (editableCountryLinkageId !== dbCountryId) return true;
@@ -1118,7 +1113,7 @@ export default function MapEditorOverlay({
 
       const shortcutsDisabled = isWorldMode
         ? !activeCountryId
-        : (!editor.linkage?.isLinked || !editor.countryGeo);
+        : !editor.linkage?.isLinked || !editor.countryGeo;
       if (inInput || shortcutsDisabled) return;
 
       switch (e.key.toLowerCase()) {
@@ -1190,7 +1185,16 @@ export default function MapEditorOverlay({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editor, importer, handleRequestExit, handleDeleteFeature, handleSubmit, disabledTools, isWorldMode, activeCountryId]);
+  }, [
+    editor,
+    importer,
+    handleRequestExit,
+    handleDeleteFeature,
+    handleSubmit,
+    disabledTools,
+    isWorldMode,
+    activeCountryId,
+  ]);
 
   // Track map cursor position + hovered features for status bar & tooltip
   const handleMapMouseMove = useCallback(
@@ -1960,11 +1964,11 @@ export default function MapEditorOverlay({
               </div>
 
               {/* Common Attributes */}
-              <div className="border-t border-border/30 pt-3 space-y-2">
+              <div className="border-border/30 space-y-2 border-t pt-3">
                 <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
                   Common Attributes
                 </label>
-                
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-muted-foreground mb-1 block text-[9px] uppercase">
@@ -1973,7 +1977,10 @@ export default function MapEditorOverlay({
                     <select
                       value={parsedProperties.subdivisionType || ""}
                       onChange={(e) => {
-                        const newProps = { ...parsedProperties, subdivisionType: e.target.value || undefined };
+                        const newProps = {
+                          ...parsedProperties,
+                          subdivisionType: e.target.value || undefined,
+                        };
                         setPropertiesJsonString(JSON.stringify(newProps, null, 2));
                       }}
                       className={inputClasses}
@@ -1996,7 +2003,10 @@ export default function MapEditorOverlay({
                       value={parsedProperties.population || ""}
                       onChange={(e) => {
                         const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
-                        const newProps = { ...parsedProperties, population: isNaN(val as any) ? undefined : val };
+                        const newProps = {
+                          ...parsedProperties,
+                          population: isNaN(val as any) ? undefined : val,
+                        };
                         setPropertiesJsonString(JSON.stringify(newProps, null, 2));
                       }}
                       placeholder="e.g. 5000000"
@@ -2014,7 +2024,10 @@ export default function MapEditorOverlay({
                       type="text"
                       value={parsedProperties.climate || ""}
                       onChange={(e) => {
-                        const newProps = { ...parsedProperties, climate: e.target.value || undefined };
+                        const newProps = {
+                          ...parsedProperties,
+                          climate: e.target.value || undefined,
+                        };
                         setPropertiesJsonString(JSON.stringify(newProps, null, 2));
                       }}
                       placeholder="e.g. Temperate"
@@ -2030,9 +2043,12 @@ export default function MapEditorOverlay({
                         const newProps = { ...parsedProperties, isCapital: e.target.checked };
                         setPropertiesJsonString(JSON.stringify(newProps, null, 2));
                       }}
-                      className="rounded border-border bg-background text-blue-600 focus:ring-blue-500"
+                      className="border-border bg-background rounded text-blue-600 focus:ring-blue-500"
                     />
-                    <label htmlFor="prop-is-capital" className="text-[10px] text-muted-foreground cursor-pointer select-none">
+                    <label
+                      htmlFor="prop-is-capital"
+                      className="text-muted-foreground cursor-pointer text-[10px] select-none"
+                    >
                       Is Capital / Hub
                     </label>
                   </div>
@@ -2293,9 +2309,9 @@ export default function MapEditorOverlay({
           ? featureList.filter((f) => !f.countryId && !f.isClaimed)
           : [];
         mainContent = (
-          <div className="space-y-4 text-xs animate-[fadeIn_0.2s_ease-out]">
+          <div className="animate-[fadeIn_0.2s_ease-out] space-y-4 text-xs">
             {/* Header / Identity */}
-            <div className="flex items-center gap-3 border-b border-border/40 pb-3">
+            <div className="border-border/40 flex items-center gap-3 border-b pb-3">
               {countryInfo?.flagUrl ? (
                 <img
                   src={countryInfo.flagUrl}
@@ -2303,27 +2319,25 @@ export default function MapEditorOverlay({
                   className="h-8 w-12 rounded object-cover shadow-md"
                 />
               ) : (
-                <div className="flex h-8 w-12 items-center justify-center rounded bg-muted text-[10px] text-muted-foreground">
+                <div className="bg-muted text-muted-foreground flex h-8 w-12 items-center justify-center rounded text-[10px]">
                   No Flag
                 </div>
               )}
               <div>
-                <h4 className="text-sm font-bold text-foreground">
+                <h4 className="text-foreground text-sm font-bold">
                   {countryInfo?.name || "Loading..."}
                 </h4>
-                <span className="text-[10px] text-muted-foreground">
-                  Country Identity
-                </span>
+                <span className="text-muted-foreground text-[10px]">Country Identity</span>
               </div>
             </div>
 
             {/* Warning status */}
             <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-amber-500">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
-                  <p className="font-semibold text-xs">Unlinked Country</p>
-                  <p className="text-[10px] leading-relaxed text-amber-500/80 mt-1">
+                  <p className="text-xs font-semibold">Unlinked Country</p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-amber-500/80">
                     This country is not currently linked to any political map feature geometry.
                   </p>
                 </div>
@@ -2354,14 +2368,17 @@ export default function MapEditorOverlay({
                 <button
                   onClick={() => {
                     if (!unlinkedFeatureIdToAssign) return;
-                    assignMutation.mutate({
-                      featureId: unlinkedFeatureIdToAssign,
-                      countryId: activeCountryId,
-                    }, {
-                      onSuccess: () => {
-                        setUnlinkedFeatureIdToAssign("");
+                    assignMutation.mutate(
+                      {
+                        featureId: unlinkedFeatureIdToAssign,
+                        countryId: activeCountryId,
+                      },
+                      {
+                        onSuccess: () => {
+                          setUnlinkedFeatureIdToAssign("");
+                        },
                       }
-                    });
+                    );
                   }}
                   disabled={!unlinkedFeatureIdToAssign || assignMutation.isPending}
                   className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
@@ -3217,13 +3234,13 @@ export default function MapEditorOverlay({
               <h3 className="text-foreground text-lg font-bold">Confirm Border Changes</h3>
             </div>
 
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               You are about to save changes to feature border geometry. These changes will be
               applied directly to the map database.
             </p>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-muted-foreground uppercase">
+              <label className="text-muted-foreground block text-xs font-semibold uppercase">
                 Reason for Edit
               </label>
               <textarea
@@ -3238,14 +3255,14 @@ export default function MapEditorOverlay({
             <div className="border-border/30 flex justify-end gap-2 border-t pt-3">
               <button
                 onClick={() => setShowConfirmSaveModal(false)}
-                className="rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg px-3 py-2 text-xs transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmBorderSave}
                 disabled={!saveReason.trim() || isSubmitting}
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-600/40 disabled:text-muted-foreground/50"
+                className="disabled:text-muted-foreground/50 flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-600/40"
               >
                 {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Confirm & Save
@@ -3256,19 +3273,19 @@ export default function MapEditorOverlay({
       )}
 
       {showExitConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_0.15s_ease-out]">
+        <div className="fixed inset-0 z-[100] flex animate-[fadeIn_0.15s_ease-out] items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="border-border/40 bg-card/95 w-full max-w-sm space-y-4 rounded-2xl border p-6 shadow-2xl backdrop-blur-md">
             <div className="border-border/30 flex items-center gap-2 border-b pb-2">
-              <AlertCircle className="h-5 w-5 text-amber-500 animate-pulse" />
+              <AlertCircle className="h-5 w-5 animate-pulse text-amber-500" />
               <h3 className="text-foreground text-lg font-bold">Unsaved Changes</h3>
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               You have unsaved changes in the editor. Exiting now will discard these modifications.
             </p>
             <div className="border-border/30 flex justify-end gap-2 border-t pt-3">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg px-3 py-2 text-xs transition-colors"
               >
                 Keep Editing
               </button>
@@ -3277,7 +3294,7 @@ export default function MapEditorOverlay({
                   setShowExitConfirm(false);
                   onExit();
                 }}
-                className="rounded-lg bg-red-650 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+                className="bg-red-650 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
               >
                 Discard & Leave
               </button>

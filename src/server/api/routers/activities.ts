@@ -1890,8 +1890,7 @@ export const activitiesRouter = createTRPCRouter({
         return Math.round(v).toLocaleString();
       };
 
-      const wikiUrl = (name: string) =>
-        `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+      const wikiUrl = (name: string) => `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
       topGdp.forEach((c, i) => {
         headlines.push({

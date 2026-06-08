@@ -61,7 +61,14 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
 
       {wikiUrl && (
         <WikiLinkPreview
-          title={card.wikiArticleTitle || wikiUrl.split(/\/(?:wiki|w)\//).pop()?.replace(/_/g, " ") || ""}
+          title={
+            card.wikiArticleTitle ||
+            wikiUrl
+              .split(/\/(?:wiki|w)\//)
+              .pop()
+              ?.replace(/_/g, " ") ||
+            ""
+          }
           wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
         >
           {card.wikiSource === "ixwiki" ? (

@@ -259,6 +259,13 @@ export const intelAlertsRouter = createTRPCRouter({
           },
         });
 
+        // Run threshold check on-the-fly
+        try {
+          await evaluateThresholds(ctx.db, input.countryId, input.userId);
+        } catch (e) {
+          console.error("Error evaluating thresholds on update:", e);
+        }
+
         // Send notification
         await notificationAPI.create({
           title: "🎯 Alert Threshold Updated",
@@ -922,4 +929,182 @@ async function calculateRealTimeMetrics(db: any, countryId: string) {
     security: Math.round(securityScore),
     political: Math.round(politicalScore),
   };
+}
+
+/**
+ * Evaluate alert thresholds for a country and generate intelligence alerts if breached
+ */
+export async function evaluateThresholds(db: any, countryId: string, userId: string) {
+  // Fetch active thresholds
+  const thresholds = await db.intelligenceAlertThreshold.findMany({
+    where: { countryId, userId, isActive: true },
+  });
+
+  if (thresholds.length === 0) return;
+
+  // Fetch country data
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    include: {
+      securityAssessment: true,
+    },
+  });
+
+  if (!country) return;
+
+  // Fetch active relations & embassies
+  const activeRelationships = await db.diplomaticRelation.count({
+    where: {
+      OR: [{ country1: countryId }, { country2: countryId }],
+      status: "active",
+    },
+  });
+
+  const embassyCount = await db.embassy.count({
+    where: {
+      OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }],
+      status: "active",
+    },
+  });
+
+  // Calculate real-time metrics
+  const realTimeMetrics = await calculateRealTimeMetrics(db, countryId);
+
+  // Helper to map metric names to values
+  const getMetricValue = (metricName: string): number => {
+    switch (metricName) {
+      // GDP
+      case "gdpGrowthRate":
+        return country.adjustedGdpGrowth * 100;
+      case "gdpPerCapita":
+        return country.currentGdpPerCapita;
+      case "totalGDP":
+        return country.currentTotalGdp;
+      // Population
+      case "populationGrowthRate":
+        return country.populationGrowthRate * 100;
+      case "totalPopulation":
+        return country.currentPopulation;
+      case "populationWellbeing":
+        return country.populationWellbeing;
+      // Security
+      case "securityScore":
+        return realTimeMetrics.security;
+      case "militaryStrength":
+        return country.securityAssessment?.militaryStrength ?? 60;
+      case "threatLevel":
+        return country.securityAssessment?.activeThreatCount ?? 0;
+      // Diplomatic
+      case "diplomaticStanding":
+        return country.diplomaticStanding;
+      case "activeRelationships":
+        return activeRelationships;
+      case "embassyCount":
+        return embassyCount;
+      // Economic
+      case "economicVitality":
+        return country.economicVitality;
+      case "tradeBalance":
+        return country.tradeBalance;
+      case "unemploymentRate":
+        return country.unemploymentRate ?? 5;
+      // Governance
+      case "governmentalEfficiency":
+        return country.governmentalEfficiency;
+      case "activePolicies":
+        return realTimeMetrics.political;
+      case "publicApproval":
+        return country.publicApproval;
+      default:
+        return 0;
+    }
+  };
+
+  const mapCategory = (alertType: string): any => {
+    const upper = alertType.toUpperCase();
+    if (upper === "GDP") return "ECONOMIC";
+    if (upper === "POPULATION") return "SOCIAL";
+    return upper as any;
+  };
+
+  for (const t of thresholds) {
+    const val = getMetricValue(t.metricName);
+
+    // Determine severity breached
+    let severityBreached: "critical" | "high" | "medium" | null = null;
+
+    // Check critical (min/max)
+    if (t.criticalMin !== null && val < t.criticalMin) severityBreached = "critical";
+    else if (t.criticalMax !== null && val > t.criticalMax) severityBreached = "critical";
+    // Check high
+    else if (t.highMin !== null && val < t.highMin) severityBreached = "high";
+    else if (t.highMax !== null && val > t.highMax) severityBreached = "high";
+    // Check medium
+    else if (t.mediumMin !== null && val < t.mediumMin) severityBreached = "medium";
+    else if (t.mediumMax !== null && val > t.mediumMax) severityBreached = "medium";
+
+    if (severityBreached) {
+      // Check if we should notify
+      const shouldNotify =
+        (severityBreached === "critical" && t.notifyOnCritical) ||
+        (severityBreached === "high" && t.notifyOnHigh) ||
+        (severityBreached === "medium" && t.notifyOnMedium);
+
+      if (shouldNotify) {
+        const alertTitle = `🚨 ${t.metricName} breached ${severityBreached} threshold`;
+        const alertDescription = `Current value: ${val.toFixed(2)}. Threshold ranges breached: ${severityBreached.toUpperCase()}`;
+
+        const existingAlert = await db.intelligenceAlert.findFirst({
+          where: {
+            countryId,
+            alertType: "threshold_breach",
+            title: alertTitle,
+            isActive: true,
+            isResolved: false,
+          },
+        });
+
+        if (!existingAlert) {
+          const alert = await db.intelligenceAlert.create({
+            data: {
+              countryId,
+              title: alertTitle,
+              description: alertDescription,
+              severity: severityBreached.toUpperCase() as any,
+              category: mapCategory(t.alertType),
+              alertType: "threshold_breach",
+              isActive: true,
+              isResolved: false,
+              detectedAt: new Date(),
+              currentValue: val,
+              expectedValue: t.criticalMin ?? t.highMin ?? t.mediumMin ?? 0,
+              deviation: val - (t.criticalMin ?? t.highMin ?? t.mediumMin ?? 0),
+              zScore: 1.0,
+              factors: JSON.stringify([]),
+              confidence: 100,
+            },
+          });
+
+          // Create notification
+          await notificationAPI.create({
+            title: alertTitle,
+            message: alertDescription,
+            countryId,
+            category: "intelligence",
+            priority: severityBreached as any,
+            type: "alert",
+            href: "/mycountry/intelligence",
+            source: "intelligence-system",
+            actionable: false,
+            metadata: {
+              alertId: alert.id,
+              thresholdId: t.id,
+              metricName: t.metricName,
+              val,
+            },
+          });
+        }
+      }
+    }
+  }
 }

@@ -29,7 +29,6 @@ export function EnhancedMyCountryContent({
   notifications,
 }: EnhancedMyCountryContentProps) {
   const { country, isLoading } = useCountryData();
-  const [heroCollapsed, setHeroCollapsed] = useState(false);
 
   if (isLoading || !country) {
     return null; // Loading handled by AuthenticationGuard
@@ -38,14 +37,6 @@ export function EnhancedMyCountryContent({
   return (
     <SectionShell
       section="overview"
-      hero={
-        <OverviewHero
-          collapsed={heroCollapsed}
-          onCollapsedChange={setHeroCollapsed}
-          countryId={country.id}
-          onNavigate={onNavigate}
-        />
-      }
       contextWidget={<OverviewSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
@@ -53,11 +44,6 @@ export function EnhancedMyCountryContent({
     >
       {/* New-player onboarding — self-hides once established */}
       {country?.id && <SetupChecklist countryId={country.id} onNavigate={onNavigate} />}
-
-      {/* Daily Agenda Bar — actionable national issues & tasks */}
-      {onNavigate && (
-        <AgendaBar countryId={country.id} onNavigate={onNavigate} activeSection={activeSection} />
-      )}
 
       {/* Economy & Government tabs */}
       <div id="tabs">

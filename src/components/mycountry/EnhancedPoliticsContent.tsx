@@ -7,7 +7,6 @@ import {
   useCountryData,
   VitalityRings,
   SectionShell,
-  CompactSectionHero,
   InlineWiki,
   type RingConfig,
   type StatusBadgeConfig,
@@ -60,7 +59,7 @@ export function EnhancedPoliticsContent({
   const politicsRings = useMemo((): RingConfig[] => {
     const partyCount = parties?.length ?? 0;
     const filledSeats =
-      parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+      parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
     const completedElections =
       elections?.filter((e: any) => e.status === "COMPLETED" || e.status === "completed").length ??
       0;
@@ -133,7 +132,7 @@ export function EnhancedPoliticsContent({
 
   const partyCount = parties?.length ?? 0;
   const filledSeats =
-    parliament?.seatSummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+    parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
   const politicsHealth = Math.max(
     0,
     Math.min(
@@ -156,19 +155,6 @@ export function EnhancedPoliticsContent({
   return (
     <SectionShell
       section="politics"
-      hero={
-        <CompactSectionHero
-          section="politics"
-          title="Politics"
-          subtitle="Legislature, parties & elections"
-          icon={VoteIcon}
-          countryName={country.name}
-          flagUrl={flagUrl}
-          stats={heroStats}
-          statusBadges={statusBadges}
-          health={politicsHealth}
-        />
-      }
       contextWidget={<PoliticsSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}

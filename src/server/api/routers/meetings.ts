@@ -157,7 +157,7 @@ export const meetingsRouter = createTRPCRouter({
     .input(
       z.object({
         meetingId: z.string(),
-        officialId: z.string(),
+        officialId: z.string().nullish(),
         attendeeName: z.string(),
         attendanceStatus: z.enum(["invited", "confirmed", "attended", "declined", "absent"]),
         attendeeRole: z.string().optional(),
@@ -166,26 +166,41 @@ export const meetingsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Check if attendance record already exists
-      const existing = await ctx.db.meetingAttendance.findFirst({
-        where: {
-          meetingId: input.meetingId,
-          officialId: input.officialId,
-        },
-      });
+      const existing = input.officialId
+        ? await ctx.db.meetingAttendance.findFirst({
+            where: {
+              meetingId: input.meetingId,
+              officialId: input.officialId,
+            },
+          })
+        : await ctx.db.meetingAttendance.findFirst({
+            where: {
+              meetingId: input.meetingId,
+              attendeeName: input.attendeeName,
+              officialId: null,
+            },
+          });
 
       if (existing) {
         return await ctx.db.meetingAttendance.update({
           where: { id: existing.id },
           data: {
             attendanceStatus: input.attendanceStatus,
-            attendeeRole: input.attendeeRole,
-            notes: input.notes,
+            attendeeRole: input.attendeeRole ?? null,
+            notes: input.notes ?? null,
           },
         });
       }
 
       return await ctx.db.meetingAttendance.create({
-        data: input,
+        data: {
+          meetingId: input.meetingId,
+          officialId: input.officialId ?? null,
+          attendeeName: input.attendeeName,
+          attendanceStatus: input.attendanceStatus,
+          attendeeRole: input.attendeeRole ?? null,
+          notes: input.notes ?? null,
+        },
       });
     }),
 

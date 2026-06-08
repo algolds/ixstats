@@ -282,10 +282,8 @@ export function MyCountryCard({
           className={cn(
             "glass-hierarchy-parent group relative overflow-hidden",
             "rounded-xl border border-neutral-200 p-5 transition-all duration-200 dark:border-white/[0.2]",
-            "mycountry-card hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20"
+            "mycountry-card hover:-translate-y-0.5 hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20"
           )}
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
           data-theme="executive"
           style={{ willChange: "transform" }}
         >
