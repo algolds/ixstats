@@ -490,10 +490,7 @@ export function TaxCalculator({
   };
 
   const formatCurrency = (amount: number) => {
-    return formatExactCurrency(
-      amount,
-      governmentData?.structure?.budgetCurrency || "USD"
-    );
+    return formatExactCurrency(amount, governmentData?.structure?.budgetCurrency || "USD");
   };
 
   const formatPercentage = (rate: number) => {

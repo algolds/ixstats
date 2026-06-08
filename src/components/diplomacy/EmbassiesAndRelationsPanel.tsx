@@ -209,9 +209,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           )}
         </button>
 
-        {relationsExpanded && (
-          <DiplomaticRelationsList countryId={countryId} />
-        )}
+        {relationsExpanded && <DiplomaticRelationsList countryId={countryId} />}
       </section>
 
       <Separator />

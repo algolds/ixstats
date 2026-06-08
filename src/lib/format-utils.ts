@@ -483,7 +483,11 @@ export function getScaledValue(num: number): { value: number; suffix: string } {
  * Get all available currency codes (ISO + custom)
  */
 export function getAvailableCurrencies(): string[] {
-  return [...ISO_CURRENCY_CODES, ...Object.keys(CUSTOM_CURRENCIES), ...Object.keys(DYNAMIC_CUSTOM_CURRENCIES)];
+  return [
+    ...ISO_CURRENCY_CODES,
+    ...Object.keys(CUSTOM_CURRENCIES),
+    ...Object.keys(DYNAMIC_CUSTOM_CURRENCIES),
+  ];
 }
 
 const ISO_CURRENCY_SYMBOLS: Record<string, string> = {

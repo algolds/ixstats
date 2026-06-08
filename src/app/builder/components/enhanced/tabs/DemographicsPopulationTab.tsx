@@ -23,7 +23,11 @@ import type {
 } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
-import { calculateDerivedDemographics, getRegionColor, balanceAgeDistribution } from "./utils/demographicsCalculations";
+import {
+  calculateDerivedDemographics,
+  getRegionColor,
+  balanceAgeDistribution,
+} from "./utils/demographicsCalculations";
 import { PopulationSection } from "./demographics/PopulationSection";
 import { AgeDistributionSection } from "./demographics/AgeDistributionSection";
 import { GeographicSection } from "./demographics/GeographicSection";

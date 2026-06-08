@@ -391,7 +391,7 @@ export function PolicyCreatorSheet({
           </div>
 
           {/* Sticky footer */}
-          <DialogFooter className="border-border/50 border-t px-6 py-4 flex gap-2">
+          <DialogFooter className="border-border/50 flex gap-2 border-t px-6 py-4">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -409,7 +409,7 @@ export function PolicyCreatorSheet({
               size="sm"
               disabled={isPending || !formTitle.trim() || !formDescription.trim()}
               onClick={handleCreateAndLaunch}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
             >
               {isPending ? "Launching..." : "Create & Launch"}
             </Button>

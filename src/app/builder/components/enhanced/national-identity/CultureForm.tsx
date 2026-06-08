@@ -78,20 +78,29 @@ export const CultureForm = React.memo(
       onIdentityChange("nationalSport", String(value));
     }, []);
 
-    const handleCurrencyChange = useCallback((value: string, symbol?: string) => {
-      if (symbol !== undefined) {
-        onIdentityChange({
-          currency: value,
-          currencySymbol: symbol,
-        } as any, undefined);
-      } else {
-        onIdentityChange("currency", value);
-      }
-    }, [onIdentityChange]);
+    const handleCurrencyChange = useCallback(
+      (value: string, symbol?: string) => {
+        if (symbol !== undefined) {
+          onIdentityChange(
+            {
+              currency: value,
+              currencySymbol: symbol,
+            } as any,
+            undefined
+          );
+        } else {
+          onIdentityChange("currency", value);
+        }
+      },
+      [onIdentityChange]
+    );
 
-    const handleCurrencySymbolChange = useCallback((symbol: any) => {
-      onIdentityChange("currencySymbol", String(symbol));
-    }, [onIdentityChange]);
+    const handleCurrencySymbolChange = useCallback(
+      (symbol: any) => {
+        onIdentityChange("currencySymbol", String(symbol));
+      },
+      [onIdentityChange]
+    );
 
     const [isNativeMottoOpen, setIsNativeMottoOpen] = useState(false);
     const [isSymbolsOpen, setIsSymbolsOpen] = useState(false);
@@ -320,7 +329,7 @@ export const CultureForm = React.memo(
         <GlassCard
           depth="base"
           theme="indigo"
-          className="border-indigo-500/20 !overflow-visible"
+          className="!overflow-visible border-indigo-500/20"
           texture="chevron"
           textureOpacity={0.06}
         >
@@ -386,7 +395,7 @@ export const CultureForm = React.memo(
               acceptText={true}
             />
 
-            <div className="border-border/20 border-t pt-4 space-y-4">
+            <div className="border-border/20 space-y-4 border-t pt-4">
               <CurrencyAutocomplete
                 fieldName="currency"
                 value={String(identity.currency || "")}

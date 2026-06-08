@@ -321,7 +321,7 @@ export function BuilderNotchBar({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
-            className="sticky top-[68px] z-[900] w-full pointer-events-none"
+            className="pointer-events-none sticky top-[68px] z-[900] w-full"
             style={{ paddingTop: "6px" }}
           >
             <div ref={containerRef} className="w-full transition-all duration-300 ease-in-out">

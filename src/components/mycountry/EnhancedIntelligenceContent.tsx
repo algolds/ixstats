@@ -3,12 +3,7 @@
 import dynamic from "next/dynamic";
 import { AlertTriangle } from "lucide-react";
 import { BrainIcon } from "~/components/ui/icons";
-import {
-  useCountryData,
-  SectionShell,
-  InlineWiki,
-  type StatusBadgeConfig,
-} from "./primitives";
+import { useCountryData, SectionShell, InlineWiki, type StatusBadgeConfig } from "./primitives";
 import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useSectionDensity } from "~/hooks/useSectionDensity";

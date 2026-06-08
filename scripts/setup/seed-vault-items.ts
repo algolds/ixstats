@@ -11,7 +11,8 @@ export async function seedVaultStoreItems() {
       where: { id: "upgrade_archetype_proposal" },
       update: {
         name: "Archetype Proposal Token",
-        description: "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
+        description:
+          "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
         price: 3500,
         quality: "EPIC",
         icon: "Ticket",
@@ -21,7 +22,8 @@ export async function seedVaultStoreItems() {
       create: {
         id: "upgrade_archetype_proposal",
         name: "Archetype Proposal Token",
-        description: "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
+        description:
+          "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
         price: 3500,
         quality: "EPIC",
         icon: "Ticket",

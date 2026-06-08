@@ -42,14 +42,16 @@ export function SectionShell({
   const [heroCollapsed, setHeroCollapsed] = useState(false);
 
   // Fallback to standard OverviewHero if no custom hero is passed
-  const finalHero = hero ?? (country?.id ? (
-    <OverviewHero
-      collapsed={heroCollapsed}
-      onCollapsedChange={setHeroCollapsed}
-      countryId={country.id}
-      onNavigate={onNavigate}
-    />
-  ) : null);
+  const finalHero =
+    hero ??
+    (country?.id ? (
+      <OverviewHero
+        collapsed={heroCollapsed}
+        onCollapsedChange={setHeroCollapsed}
+        countryId={country.id}
+        onNavigate={onNavigate}
+      />
+    ) : null);
 
   return (
     <MyCountrySidebarLayout

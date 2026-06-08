@@ -351,7 +351,9 @@ export function SectorBreakdownCard({
           <div className="border-border/50 mt-3 flex items-center justify-between border-t pt-3">
             <span className="text-muted-foreground text-sm font-medium">Total</span>
             <span className="text-lg font-bold">
-              {valueAsPeople ? formatPeopleCount(totalValue) : formatCurrency(totalValue, "compact", _currency)}
+              {valueAsPeople
+                ? formatPeopleCount(totalValue)
+                : formatCurrency(totalValue, "compact", _currency)}
             </span>
           </div>
         )}

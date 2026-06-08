@@ -366,7 +366,7 @@ export const BasicInfoForm = React.memo(
           <GlassCard
             depth="base"
             theme="gold"
-            className="border-amber-500/20 !overflow-visible z-10"
+            className="z-10 !overflow-visible border-amber-500/20"
             texture="chevron"
             textureOpacity={0.06}
           >

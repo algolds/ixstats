@@ -160,7 +160,11 @@ export function GovernmentTab({
                     >
                       {metricView.budget === "percentage"
                         ? `${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`
-                        : formatCompactCurrency(economyData?.spending?.totalSpending ?? 0, "N/A", currency)}
+                        : formatCompactCurrency(
+                            economyData?.spending?.totalSpending ?? 0,
+                            "N/A",
+                            currency
+                          )}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -413,7 +417,11 @@ export function GovernmentTab({
                       Total Spending
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency(economyData?.spending?.totalSpending ?? 0, "N/A", currency)}
+                      {formatCompactCurrency(
+                        economyData?.spending?.totalSpending ?? 0,
+                        "N/A",
+                        currency
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       Annual expenditure
@@ -451,7 +459,11 @@ export function GovernmentTab({
                           : "mt-0.5 text-sm font-bold text-red-500";
                       })()}
                     >
-                      {formatCompactCurrency(economyData?.spending?.deficitSurplus ?? 0, "N/A", currency)}
+                      {formatCompactCurrency(
+                        economyData?.spending?.deficitSurplus ?? 0,
+                        "N/A",
+                        currency
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       {(economyData?.spending?.deficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit"}

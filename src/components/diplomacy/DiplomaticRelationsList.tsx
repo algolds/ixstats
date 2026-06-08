@@ -40,10 +40,11 @@ const STATUS_THEMES: Record<string, { badge: string; text: string; progress: str
 };
 
 export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListProps) {
-  const { data: relations, isLoading, error } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const {
+    data: relations,
+    isLoading,
+    error,
+  } = api.diplomaticCore.getRelationships.useQuery({ countryId }, { enabled: !!countryId });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -89,8 +90,9 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
       <div className="border-border/40 bg-muted/20 flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center">
         <Globe className="text-muted-foreground/40 mb-3 h-10 w-10" />
         <h4 className="text-sm font-semibold">No Diplomatic Relations</h4>
-        <p className="text-muted-foreground mt-1 text-xs max-w-sm">
-          You haven't established diplomatic relationships with other nations yet. Create an embassy to start building ties.
+        <p className="text-muted-foreground mt-1 max-w-sm text-xs">
+          You haven't established diplomatic relationships with other nations yet. Create an embassy
+          to start building ties.
         </p>
       </div>
     );
@@ -110,8 +112,8 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
           >
             {/* Header info */}
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="border-border/30 overflow-hidden rounded border shrink-0">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="border-border/30 shrink-0 overflow-hidden rounded border">
                   <UnifiedCountryFlag
                     countryName={targetName}
                     flagUrl={rel.targetCountryFlag || rel.flagUrl}
@@ -119,7 +121,7 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
                   />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="truncate text-sm font-bold text-foreground">
+                  <h4 className="text-foreground truncate text-sm font-bold">
                     {targetName.replace(/_/g, " ")}
                   </h4>
                   <p className="text-muted-foreground text-[10px]">
@@ -128,7 +130,10 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
                 </div>
               </div>
 
-              <Badge variant="outline" className={`text-[10px] shrink-0 border uppercase font-semibold ${theme.badge}`}>
+              <Badge
+                variant="outline"
+                className={`shrink-0 border text-[10px] font-semibold uppercase ${theme.badge}`}
+              >
                 {rel.relationship || "NEUTRAL"}
               </Badge>
             </div>
@@ -136,34 +141,36 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
             {/* Strength indicator */}
             <div className="mt-4 space-y-1">
               <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground font-medium flex items-center gap-1">
+                <span className="text-muted-foreground flex items-center gap-1 font-medium">
                   <Handshake className="h-3 w-3" />
                   Relation Strength
                 </span>
                 <span className={`font-bold ${theme.text}`}>{rel.strength}%</span>
               </div>
-              <Progress value={rel.strength} className="h-1.5" indicatorClassName={theme.progress} />
+              <Progress
+                value={rel.strength}
+                className="h-1.5"
+                indicatorClassName={theme.progress}
+              />
             </div>
 
             {/* Details Grid */}
             <div className="border-border/10 mt-4 grid grid-cols-2 gap-2 border-t pt-3 text-[10px]">
               <div className="flex flex-col gap-0.5">
-                <span className="text-muted-foreground font-medium flex items-center gap-1">
+                <span className="text-muted-foreground flex items-center gap-1 font-medium">
                   <Landmark className="h-3 w-3 shrink-0 text-cyan-500" />
                   Bilateral Trade
                 </span>
-                <span className="font-bold text-foreground">
+                <span className="text-foreground font-bold">
                   {rel.tradeVolume ? formatCurrency(rel.tradeVolume) : "$0"}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-muted-foreground font-medium flex items-center gap-1">
+                <span className="text-muted-foreground flex items-center gap-1 font-medium">
                   <Calendar className="h-3 w-3 shrink-0 text-amber-500" />
                   Last Contact
                 </span>
-                <span className="font-bold text-foreground">
-                  {formatDate(rel.lastContact)}
-                </span>
+                <span className="text-foreground font-bold">{formatDate(rel.lastContact)}</span>
               </div>
             </div>
           </div>

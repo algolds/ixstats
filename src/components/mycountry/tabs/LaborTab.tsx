@@ -221,7 +221,10 @@ export function LaborTab({
                     >
                       {metricView.compensation === "minimum"
                         ? formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)
-                        : formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
+                        : formatExactCurrency(
+                            economyData?.labor?.averageAnnualIncome ?? 0,
+                            currency
+                          )}
                     </motion.p>
                   </AnimatePresence>
                 </div>

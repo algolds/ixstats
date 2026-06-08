@@ -226,13 +226,18 @@ export function MyCountrySidebarNav({
                 {isActive && (
                   <span
                     className={cn(
-                      "absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r",
-                      item.id === "executive" ? "bg-amber-300" :
-                      item.id === "diplomacy" ? "bg-cyan-300" :
-                      item.id === "politics" ? "bg-indigo-300" :
-                      item.id === "intelligence" ? "bg-blue-300" :
-                      item.id === "defense" ? "bg-red-300" :
-                      "bg-slate-300"
+                      "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
+                      item.id === "executive"
+                        ? "bg-amber-300"
+                        : item.id === "diplomacy"
+                          ? "bg-cyan-300"
+                          : item.id === "politics"
+                            ? "bg-indigo-300"
+                            : item.id === "intelligence"
+                              ? "bg-blue-300"
+                              : item.id === "defense"
+                                ? "bg-red-300"
+                                : "bg-slate-300"
                     )}
                   />
                 )}
@@ -315,7 +320,7 @@ export function MyCountrySidebarNav({
     );
 
     return (
-      <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg animate-fade-in">
+      <nav className="border-border bg-card/60 dark:bg-card/40 animate-fade-in flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
         <div className={logoContainerClass}>
           {logoLink}
           {editButton}
@@ -346,13 +351,18 @@ export function MyCountrySidebarNav({
               {isActive && (
                 <span
                   className={cn(
-                    "absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r",
-                    item.id === "executive" ? "bg-amber-300" :
-                    item.id === "diplomacy" ? "bg-cyan-300" :
-                    item.id === "politics" ? "bg-indigo-300" :
-                    item.id === "intelligence" ? "bg-blue-300" :
-                    item.id === "defense" ? "bg-red-300" :
-                    "bg-slate-300"
+                    "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
+                    item.id === "executive"
+                      ? "bg-amber-300"
+                      : item.id === "diplomacy"
+                        ? "bg-cyan-300"
+                        : item.id === "politics"
+                          ? "bg-indigo-300"
+                          : item.id === "intelligence"
+                            ? "bg-blue-300"
+                            : item.id === "defense"
+                              ? "bg-red-300"
+                              : "bg-slate-300"
                   )}
                 />
               )}
@@ -393,10 +403,7 @@ export function MyCountrySidebarNav({
 
   const logoRailContent = (
     <>
-      <CrownIcon
-        size={16}
-        className="text-amber-500 transition-transform duration-150"
-      />
+      <CrownIcon size={16} className="text-amber-500 transition-transform duration-150" />
       {/* Tooltip ── appears to the right */}
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100">
         <span>Overview</span>
@@ -457,22 +464,27 @@ export function MyCountrySidebarNav({
         const iconEl = (
           <div
             className={cn(
-              "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 overflow-hidden",
+              "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-all duration-200",
               isActive
-                ? cn("bg-gradient-to-br text-white shadow-lg pl-1", item.gradient, item.activeGlow)
+                ? cn("bg-gradient-to-br pl-1 text-white shadow-lg", item.gradient, item.activeGlow)
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             {isActive && (
               <span
                 className={cn(
-                  "absolute left-0 top-1 bottom-1 w-0.5 rounded-r-sm",
-                  item.id === "executive" ? "bg-amber-300" :
-                  item.id === "diplomacy" ? "bg-cyan-300" :
-                  item.id === "politics" ? "bg-indigo-300" :
-                  item.id === "intelligence" ? "bg-blue-300" :
-                  item.id === "defense" ? "bg-red-300" :
-                  "bg-slate-300"
+                  "absolute top-1 bottom-1 left-0 w-0.5 rounded-r-sm",
+                  item.id === "executive"
+                    ? "bg-amber-300"
+                    : item.id === "diplomacy"
+                      ? "bg-cyan-300"
+                      : item.id === "politics"
+                        ? "bg-indigo-300"
+                        : item.id === "intelligence"
+                          ? "bg-blue-300"
+                          : item.id === "defense"
+                            ? "bg-red-300"
+                            : "bg-slate-300"
                 )}
               />
             )}

@@ -898,14 +898,9 @@ const ThinkpagesPostComponent = ({
                         <div
                           key={type}
                           className={cn(
-                            "bg-muted/50 border-border/50 text-muted-foreground flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-all duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5",
-                            isDiscordImported
-                              ? "cursor-help"
-                              : "hover:bg-muted hover:border-border cursor-pointer dark:hover:border-white/20 dark:hover:bg-white/10"
+                            "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-all duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10"
                           )}
-                          onClick={
-                            isDiscordImported ? undefined : () => setShowReactionsDialog(true)
-                          }
+                          onClick={() => setShowReactionsDialog(true)}
                         >
                           {discordUrl ? (
                             <img
@@ -923,19 +918,6 @@ const ThinkpagesPostComponent = ({
                           <span className="font-medium">{count as number}</span>
                         </div>
                       );
-
-                      if (isDiscordImported) {
-                        return (
-                          <Tooltip key={type}>
-                            <TooltipTrigger asChild>{pillContent}</TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[240px] text-xs">
-                              These reactions were synchronized directly from our official{" "}
-                              <span className="font-semibold text-[#5865F2]">#ixtwitter</span>{" "}
-                              Discord channel!
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      }
 
                       return pillContent;
                     })}

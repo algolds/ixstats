@@ -8,12 +8,7 @@ import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { CountryFeatureSheet } from "./CountryFeatureSheet";
 import type { CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbed";
-import {
-  useCountryData,
-  SectionShell,
-  InlineWiki,
-  type StatusBadgeConfig,
-} from "./primitives";
+import { useCountryData, SectionShell, InlineWiki, type StatusBadgeConfig } from "./primitives";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
 import { DiplomacySidebarWidget } from "./sidebar-widgets/DiplomacySidebarWidget";
 import { DiplomacyWarRoom } from "~/components/diplomacy/DiplomacyWarRoom";

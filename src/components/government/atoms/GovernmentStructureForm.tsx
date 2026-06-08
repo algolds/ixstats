@@ -735,7 +735,12 @@ export function GovernmentStructureForm({
                   />
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-semibold text-cyan-500">
-                      Live: <NumberFlowDisplay value={data.totalBudget || 0} format="currency" currency={data.budgetCurrency || "USD"} />
+                      Live:{" "}
+                      <NumberFlowDisplay
+                        value={data.totalBudget || 0}
+                        format="currency"
+                        currency={data.budgetCurrency || "USD"}
+                      />
                     </span>
                     {gdpData?.nominalGDP &&
                       gdpData.nominalGDP > 0 &&

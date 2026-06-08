@@ -386,12 +386,17 @@ function DashboardHero({
       </TooltipTrigger>
       <TooltipContent side="bottom">
         <div className="space-y-1 text-xs">
-          <p className="font-semibold text-foreground">Click metrics to toggle views</p>
-          <div className="border-t border-white/10 my-1 pt-1 space-y-0.5 text-muted-foreground">
+          <p className="text-foreground font-semibold">Click metrics to toggle views</p>
+          <div className="text-muted-foreground my-1 space-y-0.5 border-t border-white/10 pt-1">
             {stats.gdpGrowth !== 0 && (
               <p className="flex items-center gap-1">
                 GDP Growth:{" "}
-                <span className={cn("font-bold flex items-center gap-0.5", stats.gdpGrowth > 0 ? "text-emerald-400" : "text-red-400")}>
+                <span
+                  className={cn(
+                    "flex items-center gap-0.5 font-bold",
+                    stats.gdpGrowth > 0 ? "text-emerald-400" : "text-red-400"
+                  )}
+                >
                   {stats.gdpGrowth > 0 ? "+" : ""}
                   {stats.gdpGrowth.toFixed(1)}%
                 </span>
@@ -400,7 +405,12 @@ function DashboardHero({
             {stats.popGrowth !== 0 && (
               <p className="flex items-center gap-1">
                 Pop Growth:{" "}
-                <span className={cn("font-bold", stats.popGrowth > 0 ? "text-emerald-400" : "text-red-400")}>
+                <span
+                  className={cn(
+                    "font-bold",
+                    stats.popGrowth > 0 ? "text-emerald-400" : "text-red-400"
+                  )}
+                >
                   {stats.popGrowth > 0 ? "+" : ""}
                   {stats.popGrowth.toFixed(1)}%
                 </span>
@@ -630,9 +640,7 @@ function DashboardHero({
               </div>
             </div>
 
-            <div className="min-h-[48px]">
-              {renderSectionContent()}
-            </div>
+            <div className="min-h-[48px]">{renderSectionContent()}</div>
 
             <div className="flex flex-wrap items-center gap-1.5">
               {econTier && <EconomicTierBadge tier={econTier} />}

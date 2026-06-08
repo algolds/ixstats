@@ -238,7 +238,13 @@ export function InteractiveMetric({
                 <NumberFlowDisplay
                   value={value}
                   decimalPlaces={decimals}
-                  format={format === "currency" ? "currency" : format === "compact" ? "compact" : "default"}
+                  format={
+                    format === "currency"
+                      ? "currency"
+                      : format === "compact"
+                        ? "compact"
+                        : "default"
+                  }
                   currency={currency}
                 />
               ) : (

@@ -187,7 +187,11 @@ export function EconomyTab({
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.fiscal === "balance"
-                        ? formatCompactCurrency(economyData?.fiscal?.budgetDeficitSurplus ?? 0, "N/A", currency)
+                        ? formatCompactCurrency(
+                            economyData?.fiscal?.budgetDeficitSurplus ?? 0,
+                            "N/A",
+                            currency
+                          )
                         : `${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
                     </motion.p>
                   </AnimatePresence>
@@ -231,8 +235,16 @@ export function EconomyTab({
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.trade === "imports"
-                        ? formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)
-                        : formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
+                        ? formatCompactCurrency(
+                            (economyData?.core.nominalGDP ?? 0) * 0.32,
+                            "N/A",
+                            currency
+                          )
+                        : formatCompactCurrency(
+                            (economyData?.core.nominalGDP ?? 0) * 0.35,
+                            "N/A",
+                            currency
+                          )}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -392,7 +404,11 @@ export function EconomyTab({
                       Total Exports
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
+                      {formatCompactCurrency(
+                        (economyData?.core.nominalGDP ?? 0) * 0.35,
+                        "N/A",
+                        currency
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">35.0% of GDP</p>
                   </div>
@@ -401,7 +417,11 @@ export function EconomyTab({
                       Total Imports
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)}
+                      {formatCompactCurrency(
+                        (economyData?.core.nominalGDP ?? 0) * 0.32,
+                        "N/A",
+                        currency
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">32.0% of GDP</p>
                   </div>
@@ -410,7 +430,11 @@ export function EconomyTab({
                       Trade Balance
                     </p>
                     <p className="mt-0.5 text-sm font-bold text-emerald-500">
-                      {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.03, "N/A", currency)}
+                      {formatCompactCurrency(
+                        (economyData?.core.nominalGDP ?? 0) * 0.03,
+                        "N/A",
+                        currency
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Surplus (+3.0%)</p>
                   </div>
@@ -483,7 +507,7 @@ export function EconomyTab({
                       {
                         id: "energy",
                         name: "Energy & Fuels",
-                        value: (economyData?.core.nominalGDP ?? 0) * 0.32 * 0.30,
+                        value: (economyData?.core.nominalGDP ?? 0) * 0.32 * 0.3,
                         percentage: 30,
                         color: "red",
                         trend: "down",

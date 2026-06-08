@@ -6,12 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 import {
   Globe,
@@ -789,10 +784,14 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
               {/* Counter */}
               <div className="text-muted-foreground shrink-0 text-xs font-semibold">
-                Showing {filteredArchetypes.length} of {archetypes.filter(a => {
-                  const archetypeEra = (a as any).era || (modernArchetypes.has(a.id) ? "modern" : "historical");
-                  return archetypeEra === activeTab;
-                }).length}
+                Showing {filteredArchetypes.length} of{" "}
+                {
+                  archetypes.filter((a) => {
+                    const archetypeEra =
+                      (a as any).era || (modernArchetypes.has(a.id) ? "modern" : "historical");
+                    return archetypeEra === activeTab;
+                  }).length
+                }
               </div>
             </div>
           )}

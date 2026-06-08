@@ -118,9 +118,7 @@ export function EnhancedDefenseContent({
   return (
     <SectionShell
       section="defense"
-      hero={
-        <DashboardMapWidget countryId={country.id} viewMode="defense" />
-      }
+      hero={<DashboardMapWidget countryId={country.id} viewMode="defense" />}
       contextWidget={<DefenseSidebarWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
