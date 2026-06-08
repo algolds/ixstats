@@ -16,6 +16,7 @@ import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import { withBasePath } from "~/lib/base-path";
+import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
 import type { CompactViewProps } from "./types";
 import { useRouter, usePathname } from "next/navigation";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
@@ -211,7 +212,7 @@ function CompactViewComponent({
                       {isWikiActive ? (
                         <div className="relative z-10 flex flex-col items-center justify-center gap-0 leading-none">
                           <img
-                            src={withBasePath("/ix-logo-v2.svg")}
+                            src={IxLogoV2.src}
                             alt="IxLogo"
                             className="h-3 w-auto opacity-95 transition-all duration-300 group-hover:scale-110 dark:brightness-0 dark:invert"
                           />
@@ -228,7 +229,7 @@ function CompactViewComponent({
                         </div>
                       ) : (
                         <img
-                          src={withBasePath("/ix-logo-v2.svg")}
+                          src={IxLogoV2.src}
                           alt="IxLogo"
                           className={cn(
                             "relative z-10 opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert",
