@@ -532,7 +532,7 @@ export function OverviewHero({
                 Land Area
               </span>
               <span className="text-foreground font-bold">
-                {stats.landArea ? `${stats.landArea.toLocaleString()} km²` : "N/A"}
+                {stats.landArea ? `${Math.round(stats.landArea).toLocaleString()} km²` : "N/A"}
               </span>
             </div>
           </div>

@@ -17,8 +17,22 @@ import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
+function getRgbaColor(colorStr: string, opacity: number): string {
+  if (colorStr.startsWith("#")) {
+    const cleanHex = colorStr.replace("#", "");
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  if (colorStr.startsWith("hsl")) {
+    return colorStr.replace("hsl(", "hsla(").replace(")", `, ${opacity})`);
+  }
+  return `rgba(59, 130, 246, ${opacity})`;
+}
+
 function WikiBreadcrumb() {
-  const { articleTitle, activeSectionId, tocEntries, navigateToSection } = useWikiContext();
+  const { articleTitle, activeSectionId, tocEntries, navigateToSection, themeColors } = useWikiContext();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const activeSectionName = activeSectionId
@@ -93,11 +107,21 @@ function WikiBreadcrumb() {
                         }}
                         className={cn(
                           "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold transition-all duration-150 select-none",
-                          isActive
+                          isActive && !themeColors
                             ? "bg-white/15 text-white"
-                            : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                            : isActive
+                              ? ""
+                              : "text-muted-foreground hover:text-foreground hover:bg-white/5",
                           entry.level === 3 ? "pl-5" : ""
                         )}
+                        style={
+                          isActive && themeColors
+                            ? {
+                                color: themeColors.primary,
+                                backgroundColor: getRgbaColor(themeColors.primary, 0.08),
+                              }
+                            : {}
+                        }
                         type="button"
                       >
                         {entry.level === 3 && (
@@ -124,7 +148,10 @@ export function WikiDIPlugin() {
       id: "wiki",
       priority: 10,
       center: articleTitle ? <WikiBreadcrumb /> : <WikiProfileButton />,
-      expandedViews: articleTitle ? { wiki: WikiView } : { profile: WikiProfileView },
+      expandedViews: (articleTitle ? { wiki: WikiView } : { profile: WikiProfileView }) as Record<
+        string,
+        React.ComponentType<any>
+      >,
       accentColor: "#3b82f6",
       stickyLabel: "Wiki",
     }),

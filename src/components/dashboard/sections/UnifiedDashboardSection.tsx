@@ -736,13 +736,15 @@ export function UnifiedDashboardSection({
                   );
                 })}
                 {/* Settings gear */}
-                <button
-                  onClick={() => setIsAccountModalOpen(true)}
-                  className="text-muted-foreground hover:text-foreground relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-white/10"
-                  title="Feed & Account Settings"
-                >
-                  <Settings className="h-3.5 w-3.5" />
-                </button>
+                {isSignedIn && (
+                  <button
+                    onClick={() => setIsAccountModalOpen(true)}
+                    className="text-muted-foreground hover:text-foreground relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-white/10"
+                    title="Feed & Account Settings"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </motion.div>
 

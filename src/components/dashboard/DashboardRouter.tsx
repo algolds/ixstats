@@ -374,10 +374,10 @@ function DashboardHero({
               <p className="text-foreground text-[11px] font-bold">
                 {metricView.area === "km"
                   ? stats.landArea
-                    ? `${stats.landArea.toLocaleString()} km²`
+                    ? `${Math.round(stats.landArea).toLocaleString()} km²`
                     : "N/A"
                   : stats.areaSqMi
-                    ? `${stats.areaSqMi.toLocaleString()} mi²`
+                    ? `${Math.round(stats.areaSqMi).toLocaleString()} mi²`
                     : "N/A"}
               </p>
             </div>

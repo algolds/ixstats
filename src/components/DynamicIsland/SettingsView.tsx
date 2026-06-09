@@ -44,6 +44,9 @@ function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => voi
       const next = !prev;
       try {
         localStorage.setItem(key, String(next));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("wikios-settings-changed"));
+        }
       } catch {
         /* ignore */
       }
@@ -98,7 +101,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     "wikios:showCitationTooltips",
     true
   );
-  const [autoExpandToc, toggleAutoExpandToc] = useLocalToggle("wikios:autoExpandToc", false);
+  const [showWikiToc, toggleShowWikiToc] = useLocalToggle("wikios:showWikiToc", true);
   const [openInNewTab, toggleOpenInNewTab] = useLocalToggle("wikios:openInNewTab", false);
   const [dynamicSearchWiki, toggleDynamicSearchWiki] = useLocalToggle(
     "wikios:dynamicSearchWiki",
@@ -144,36 +147,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
     : (user?.firstName ?? "");
 
-  // ─── Signed-out state ────────────────────────────────────────────────────
-
-  if (isLoaded && !isSignedIn) {
-    return (
-      <div className="p-4">
-        <SettingsHeader onClose={onClose} isOnWikiPage={isOnWikiPage} />
-        <div className="py-6 text-center">
-          <div className="bg-muted/30 rounded-xl p-6">
-            <User className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-            <PreText className="text-foreground mb-1 text-sm font-medium" whiteSpace="nowrap">
-              {isOnWikiPage ? "Welcome to IxWiki" : "Welcome to IxStats"}
-            </PreText>
-            <PreText className="text-muted-foreground mb-4 text-xs" whiteSpace="nowrap">
-              Sign in to access your settings
-            </PreText>
-            <Button
-              size="sm"
-              onClick={() =>
-                (window.location.href =
-                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
-              }
-              className="w-full"
-            >
-              Sign In
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // ─── Signed-out state early return removed to ungate settings ───
 
   if (!isLoaded) {
     return (
@@ -188,7 +162,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     );
   }
 
-  // ─── Signed-in state ─────────────────────────────────────────────────────
+  // ─── Main state ─────────────────────────────────────────────────────
 
   return (
     <div className="p-4">
@@ -261,10 +235,10 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             <SettingsRow
               icon={<List className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />}
               iconBg="bg-cyan-500/15"
-              label="Auto-Expand TOC"
-              description="Table of contents starts open"
+              label="Enable Wiki TOC"
+              description="Show table of contents sidebar"
             >
-              <ToggleSwitch enabled={autoExpandToc} onToggle={toggleAutoExpandToc} />
+              <ToggleSwitch enabled={showWikiToc} onToggle={toggleShowWikiToc} />
             </SettingsRow>
 
             <SettingsRow
@@ -278,51 +252,68 @@ export function SettingsView({ onClose }: SettingsViewProps) {
           </>
         )}
 
-        {/* ── Account ────────────────────────────────────────────────── */}
-        <SectionLabel>Account</SectionLabel>
+        {/* ── Account section (only for signed-in users) ────────────────── */}
+        {isSignedIn ? (
+          <>
+            <SectionLabel>Account</SectionLabel>
 
-        {/* Profile link */}
-        <button
-          onClick={() =>
-            (window.location.href =
-              isOnWikiPage && wikiUsername
-                ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
-                : createAbsoluteUrl("/settings"))
-          }
-          className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
-        >
-          <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
-            <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
-              {isOnWikiPage ? "Wiki Profile" : "Settings"}
-            </PreText>
-            <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
-              {isOnWikiPage ? "Contributions and awards" : "Account and preferences"}
-            </PreText>
-          </div>
-          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
-        </button>
-
-        {/* Sign Out */}
-        <div className="border-border mt-1 border-t pt-2">
-          <Button
-            asChild
-            size="sm"
-            variant="ghost"
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex w-full items-center justify-start gap-2 px-3 py-2"
-          >
-            <SignOutButton>
-              <div className="flex items-center gap-2">
-                <LogOut className="h-3.5 w-3.5" />
-                <PreText className="text-sm" whiteSpace="nowrap">
-                  Sign Out
+            {/* Profile link */}
+            <button
+              onClick={() =>
+                (window.location.href =
+                  isOnWikiPage && wikiUsername
+                    ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
+                    : createAbsoluteUrl("/settings"))
+              }
+              className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
+            >
+              <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
+                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+                  {isOnWikiPage ? "Wiki Profile" : "Settings"}
+                </PreText>
+                <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
+                  {isOnWikiPage ? "Contributions and awards" : "Account and preferences"}
                 </PreText>
               </div>
-            </SignOutButton>
-          </Button>
-        </div>
+              <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+            </button>
+
+            {/* Sign Out */}
+            <div className="border-border mt-1 border-t pt-2">
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex w-full items-center justify-start gap-2 px-3 py-2"
+              >
+                <SignOutButton>
+                  <div className="flex items-center gap-2">
+                    <LogOut className="h-3.5 w-3.5" />
+                    <PreText className="text-sm" whiteSpace="nowrap">
+                      Sign Out
+                    </PreText>
+                  </div>
+                </SignOutButton>
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="border-border mt-3 border-t pt-4 text-center">
+            <Button
+              size="sm"
+              onClick={() =>
+                (window.location.href =
+                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
+              }
+              className="w-full"
+            >
+              Sign In
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

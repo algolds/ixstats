@@ -184,7 +184,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       items: [
         {
           label: "Land Area",
-          value: country.landArea ? `${country.landArea.toLocaleString()} km²` : null,
+          value: country.landArea ? `${Math.round(country.landArea).toLocaleString()} km²` : null,
         },
         {
           label: "Population Density",

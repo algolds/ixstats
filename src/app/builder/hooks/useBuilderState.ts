@@ -478,7 +478,28 @@ export function useBuilderState(
                 priority: dept.priority ?? undefined,
                 parentDepartmentId: dept.parentDepartmentId ?? undefined,
                 organizationalLevel: (dept.organizationalLevel || "Department") as any,
-                functions: Array.isArray(dept.functions) ? dept.functions : [],
+                functions: (() => {
+                  try {
+                    return Array.isArray(dept.functions)
+                      ? dept.functions
+                      : typeof dept.functions === "string"
+                        ? JSON.parse(dept.functions)
+                        : [];
+                  } catch (e) {
+                    return [];
+                  }
+                })(),
+                kpis: (() => {
+                  try {
+                    return Array.isArray(dept.kpis)
+                      ? dept.kpis
+                      : typeof dept.kpis === "string"
+                        ? JSON.parse(dept.kpis)
+                        : [];
+                  } catch (e) {
+                    return [];
+                  }
+                })(),
               }) as DepartmentInput
           ),
           budgetAllocations: existingGovernment.budgetAllocations.map((alloc: any) => ({

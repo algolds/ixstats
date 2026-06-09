@@ -2,16 +2,259 @@
 // WikiOS Talk Page — discussion/collaboration page for an article
 "use client";
 
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
+import { MessageSquare, Clock, Plus, ArrowLeft } from "lucide-react";
 
+interface Comment {
+  id: string;
+  author: string;
+  timestamp: string;
+  content: string;
+  level: number;
+  sectionIndex: number;
+}
+
+interface Section {
+  index: number;
+  title: string;
+  id: string;
+  comments: Comment[];
+}
+
+// ---------------------------------------------------------------------------
+// CommentCard Component
+// ---------------------------------------------------------------------------
+function CommentCard({
+  comment,
+  sectionTitle,
+  onQuote,
+  onReply,
+}: {
+  comment: Comment;
+  sectionTitle: string;
+  onQuote: (html: string) => void;
+  onReply: () => void;
+}) {
+  const { data: authorData } = api.users.resolveWikiAuthor.useQuery(
+    { wikiUsername: comment.author },
+    { staleTime: 10 * 60 * 1000, enabled: !!comment.author }
+  );
+
+  const indentStyle = {
+    marginLeft: `${Math.min(comment.level * 20, 120)}px`,
+  };
+
+  const roleBadge = authorData?.role ? (
+    <span
+      className={cn(
+        "px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase border leading-none shrink-0",
+        authorData.role.name === "system-owner" || authorData.role.name === "admin"
+          ? "border-amber-500/20 bg-amber-500/10 text-amber-400"
+          : "border-indigo-500/20 bg-indigo-500/10 text-indigo-400"
+      )}
+    >
+      {authorData.role.displayName}
+    </span>
+  ) : null;
+
+  const countryBadge = authorData?.country ? (
+    <Link
+      href={withBasePath(`/countries/${authorData.country.id}`)}
+      className="inline-flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-white transition-colors bg-white/5 border border-white/5 px-2 py-0.5 rounded-lg shrink-0"
+    >
+      {authorData.country.flag && (
+        <img
+          src={authorData.country.flag}
+          alt=""
+          className="h-2.5 w-3.5 object-cover rounded-sm"
+          referrerPolicy="no-referrer"
+        />
+      )}
+      <span>{authorData.country.name}</span>
+    </Link>
+  ) : null;
+
+  return (
+    <div
+      style={indentStyle}
+      className="relative pl-4 mb-4 border-l border-white/5 hover:border-blue-500/20 transition-all duration-300"
+    >
+      {/* Visual Thread Nesting Connector */}
+      <div className="absolute left-0 top-0 bottom-0 w-px bg-white/5" />
+
+      <div className="glass-surface glass-refraction p-4 rounded-2xl border border-white/5 bg-white/[0.01] shadow-lg flex flex-col gap-2.5">
+        {/* Header: Author, Role, Country, Timestamp */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-zinc-200">{comment.author}</span>
+            {roleBadge}
+            {countryBadge}
+          </div>
+          <div className="text-zinc-500 text-[10px] font-medium">{comment.timestamp}</div>
+        </div>
+
+        {/* Comment Body */}
+        <div
+          className="text-sm text-zinc-300 leading-relaxed font-sans wikios-comment-body"
+          dangerouslySetInnerHTML={{ __html: comment.content }}
+        />
+
+        {/* Actions: Quote, Reply */}
+        <div className="flex items-center justify-end gap-4 mt-1 text-[10px] font-bold text-zinc-500">
+          <button
+            onClick={() => onQuote(comment.content)}
+            className="hover:text-blue-400 transition-colors cursor-pointer select-none"
+            type="button"
+          >
+            Quote
+          </button>
+          <button
+            onClick={onReply}
+            className="hover:text-emerald-400 transition-colors cursor-pointer select-none"
+            type="button"
+          >
+            Reply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HTML Thread Parser
+// ---------------------------------------------------------------------------
+function parseTalkHtml(html: string): { sections: Section[] } {
+  if (typeof window === "undefined") return { sections: [] };
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const body = doc.body;
+
+  const parsedSections: Section[] = [];
+  let currentSection: Section | null = null;
+  let sectionIndex = 0;
+
+  function extractSignature(element: HTMLElement): { author: string; date: string; contentHtml: string } {
+    let author = "Anonymous";
+    let date = "";
+    let contentHtml = element.innerHTML;
+
+    // Try to find User links
+    const links = Array.from(element.querySelectorAll("a"));
+    const userLink = links.find(l => {
+      const href = l.getAttribute("href") || "";
+      return href.includes("User:") || href.includes("User_talk:") || href.includes("User%3A");
+    });
+
+    if (userLink) {
+      const href = userLink.getAttribute("href") || "";
+      const match = href.match(/User:(.+)$/) || href.match(/User%3A(.+?)(?:[&#]|$)/);
+      author = match ? decodeURIComponent(match[1]!).replace(/_/g, " ") : userLink.textContent || "Anonymous";
+      author = author.split("/")[0]!;
+    }
+
+    // Try to find standard signature timestamp e.g. 12:34, 9 June 2026 (UTC)
+    const text = element.textContent || "";
+    const dateRegex = /(\d{2}:\d{2},\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+\(UTC\))/;
+    const dateMatch = text.match(dateRegex);
+    
+    if (dateMatch) {
+      date = dateMatch[1]!;
+      contentHtml = contentHtml.replace(date, "");
+      
+      if (userLink) {
+        contentHtml = contentHtml.replace(userLink.outerHTML, "");
+      }
+      
+      contentHtml = contentHtml.replace(/\s*\(talk\)\s*$/, "")
+                               .replace(/\s*-\s*$/, "")
+                               .replace(/--\s*$/, "")
+                               .trim();
+    }
+
+    return { author, date, contentHtml };
+  }
+
+  function visit(node: Node, depth: number) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+      const tagName = el.tagName.toLowerCase();
+
+      if (tagName === "h2") {
+        const headingText = el.textContent?.replace(/\[edit\]/i, "").trim() || `Section ${sectionIndex + 1}`;
+        currentSection = {
+          index: sectionIndex++,
+          title: headingText,
+          id: `section-${sectionIndex}`,
+          comments: []
+        };
+        parsedSections.push(currentSection);
+        return;
+      }
+
+      if (tagName === "p" || tagName === "dd" || tagName === "li") {
+        const text = el.textContent || "";
+        const hasSig = text.includes("(UTC)") || text.match(/\d{2}:\d{2}/);
+        
+        if (hasSig && text.trim().length > 5) {
+          if (!currentSection) {
+            currentSection = {
+              index: sectionIndex++,
+              title: "General Discussion",
+              id: `section-${sectionIndex}`,
+              comments: []
+            };
+            parsedSections.push(currentSection);
+          }
+          const sig = extractSignature(el);
+          currentSection.comments.push({
+            id: Math.random().toString(36).substring(2, 9),
+            author: sig.author,
+            timestamp: sig.date,
+            content: sig.contentHtml,
+            level: Math.max(0, depth - 1),
+            sectionIndex: currentSection.index
+          });
+          return;
+        }
+      }
+
+      if (tagName === "dl" || tagName === "ul" || tagName === "ol") {
+        const children = Array.from(el.childNodes);
+        for (const child of children) {
+          visit(child, depth + 1);
+        }
+        return;
+      }
+    }
+
+    const children = Array.from(node.childNodes);
+    for (const child of children) {
+      visit(child, depth);
+    }
+  }
+
+  const children = Array.from(body.childNodes);
+  for (const child of children) {
+    visit(child, 0);
+  }
+
+  return { sections: parsedSections };
+}
+
+// ---------------------------------------------------------------------------
+// Main TalkPage Component
+// ---------------------------------------------------------------------------
 export default function TalkPage() {
   const params = useParams<{ slug: string }>();
   const title = decodeURIComponent(params.slug).replace(/_/g, " ");
+  const talkTitle = `Talk:${title}`;
 
   const { data, isLoading, refetch } = api.wikios.getTalkPage.useQuery(
     { title },
@@ -46,124 +289,100 @@ export default function TalkPage() {
     },
   });
 
-  const sections = sectionsData?.sections ?? [];
+  // Parse threaded comments on the client
+  const parsedData = useMemo(() => {
+    if (!data?.contentHtml) return { sections: [] };
+    return parseTalkHtml(data.contentHtml);
+  }, [data?.contentHtml]);
+
+  const tocEntries = useMemo(() => {
+    return parsedData.sections.map((sec) => ({
+      id: sec.id,
+      name: sec.title,
+      level: 2,
+    }));
+  }, [parsedData.sections]);
+
+  const handleQuote = (html: string, secIndex: number, secTitle: string) => {
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
+    const text = temp.textContent || temp.innerText || "";
+    setReplyContent(`<blockquote>${text.trim()}</blockquote>\n\n`);
+    setReplyTarget({ index: secIndex, title: secTitle });
+  };
+
+  const talkUrl = `/w/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
   return (
-    <div className="wikios-root min-h-screen bg-[#0f1114] p-4 text-[#e4e4e7] sm:p-6 lg:p-8">
-      <div className="wikios-special-page mx-auto max-w-4xl">
-        {/* Navigation */}
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            marginBottom: 16,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Link
-            href={withBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`)}
-            className="wikios-action-btn"
-            style={{ fontSize: "0.8125rem" }}
-          >
-            &larr; Article
-          </Link>
-          <Link
-            href={withBasePath(
-              `/w/special/history/${encodeURIComponent(`Talk:${title.replace(/ /g, "_")}`)}`
-            )}
-            className="wikios-action-btn"
-            style={{ fontSize: "0.8125rem" }}
-          >
-            Talk history
-          </Link>
+    <WikiOSLayout title={talkTitle} sections={tocEntries}>
+      <div className="wikios-special-page mx-auto max-w-4xl py-6">
+        {/* Navigation & Header */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href={withBasePath(talkUrl)}
+              className="wikios-action-btn flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Article</span>
+            </Link>
+            <Link
+              href={withBasePath(`/w/special/history/${encodeURIComponent(talkTitle.replace(/ /g, "_"))}`)}
+              className="wikios-action-btn flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3"
+            >
+              <Clock size={14} />
+              <span>Talk History</span>
+            </Link>
+          </div>
           <button
-            className="wikios-action-btn"
-            style={{
-              fontSize: "0.8125rem",
-              background: "rgba(59,130,246,0.12)",
-              borderColor: "rgba(59,130,246,0.3)",
-              color: "#60a5fa",
+            className="wikios-editor-btn-primary flex items-center gap-1.5 text-xs font-bold py-1.5 px-3"
+            onClick={() => {
+              setReplyTarget(null);
+              setShowNewSection(true);
             }}
-            onClick={() => setShowNewSection(true)}
           >
-            + New Section
+            <Plus size={14} />
+            <span>New Section</span>
           </button>
         </div>
 
         {/* New section form */}
         {showNewSection && (
-          <div
-            style={{
-              marginBottom: 20,
-              padding: "16px",
-              borderRadius: 10,
-              background: "rgba(59,130,246,0.05)",
-              border: "1px solid rgba(59,130,246,0.2)",
-            }}
-          >
-            <h3
-              style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 10, color: "#93c5fd" }}
-            >
-              New Discussion Section
-            </h3>
+          <div className="mb-6 p-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-md">
+            <h3 className="text-sm font-bold text-blue-400 mb-3">New Discussion Section</h3>
             <input
               type="text"
               placeholder="Section title"
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                marginBottom: 8,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "inherit",
-                fontSize: "0.875rem",
-              }}
+              className="w-full px-3 py-2 rounded-xl mb-3 bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-blue-500/40"
             />
             <textarea
               placeholder="Your message (wikitext supported)..."
               value={sectionContent}
               onChange={(e) => setSectionContent(e.target.value)}
               rows={5}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                marginBottom: 8,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "inherit",
-                fontSize: "0.875rem",
-                fontFamily: "monospace",
-                resize: "vertical",
-              }}
+              className="w-full px-3 py-2 rounded-xl mb-3 bg-white/5 border border-white/10 text-white text-sm font-mono outline-none resize-vertical focus:border-blue-500/40"
             />
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex gap-2">
               <button
-                className="wikios-action-btn"
-                style={{
-                  background: "rgba(59,130,246,0.15)",
-                  borderColor: "rgba(59,130,246,0.3)",
-                  color: "#60a5fa",
-                }}
-                disabled={
-                  !sectionTitle.trim() || !sectionContent.trim() || addSectionMutation.isPending
-                }
+                className="wikios-editor-btn-primary text-xs"
+                disabled={!sectionTitle.trim() || !sectionContent.trim() || addSectionMutation.isPending}
                 onClick={() =>
                   addSectionMutation.mutate({ title, sectionTitle, content: sectionContent })
                 }
               >
                 {addSectionMutation.isPending ? "Posting..." : "Post Section"}
               </button>
-              <button className="wikios-action-btn" onClick={() => setShowNewSection(false)}>
+              <button
+                className="wikios-action-btn text-xs"
+                onClick={() => setShowNewSection(false)}
+              >
                 Cancel
               </button>
             </div>
             {addSectionMutation.isError && (
-              <p style={{ color: "#f87171", marginTop: 8, fontSize: "0.8125rem" }}>
+              <p className="text-rose-400 text-xs mt-3">
                 Error: {addSectionMutation.error.message}
               </p>
             )}
@@ -172,46 +391,18 @@ export default function TalkPage() {
 
         {/* Reply form */}
         {replyTarget && (
-          <div
-            style={{
-              marginBottom: 20,
-              padding: "16px",
-              borderRadius: 10,
-              background: "rgba(34,197,94,0.05)",
-              border: "1px solid rgba(34,197,94,0.2)",
-            }}
-          >
-            <h3
-              style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 10, color: "#86efac" }}
-            >
-              Replying to: {replyTarget.title}
-            </h3>
+          <div className="mb-6 p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md">
+            <h3 className="text-sm font-bold text-emerald-400 mb-3">Replying to: {replyTarget.title}</h3>
             <textarea
               placeholder="Your reply (wikitext supported)..."
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
               rows={4}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                marginBottom: 8,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "inherit",
-                fontSize: "0.875rem",
-                fontFamily: "monospace",
-                resize: "vertical",
-              }}
+              className="w-full px-3 py-2 rounded-xl mb-3 bg-white/5 border border-white/10 text-white text-sm font-mono outline-none resize-vertical focus:border-emerald-500/40"
             />
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex gap-2">
               <button
-                className="wikios-action-btn"
-                style={{
-                  background: "rgba(34,197,94,0.15)",
-                  borderColor: "rgba(34,197,94,0.3)",
-                  color: "#4ade80",
-                }}
+                className="wikios-editor-btn-primary text-xs bg-emerald-600 hover:bg-emerald-700"
                 disabled={!replyContent.trim() || replyMutation.isPending}
                 onClick={() =>
                   replyMutation.mutate({
@@ -223,12 +414,15 @@ export default function TalkPage() {
               >
                 {replyMutation.isPending ? "Posting..." : "Post Reply"}
               </button>
-              <button className="wikios-action-btn" onClick={() => setReplyTarget(null)}>
+              <button
+                className="wikios-action-btn text-xs"
+                onClick={() => setReplyTarget(null)}
+              >
                 Cancel
               </button>
             </div>
             {replyMutation.isError && (
-              <p style={{ color: "#f87171", marginTop: 8, fontSize: "0.8125rem" }}>
+              <p className="text-rose-400 text-xs mt-3">
                 Error: {replyMutation.error.message}
               </p>
             )}
@@ -237,55 +431,70 @@ export default function TalkPage() {
 
         {/* Loading */}
         {isLoading && (
-          <div className="wikios-loading" style={{ minHeight: 200 }}>
+          <div className="wikios-loading min-h-60">
             <div className="wikios-loading-spinner" />
           </div>
         )}
 
-        {/* Talk page content */}
-        {data?.exists && data.contentHtml && (
-          <div>
-            {/* Section reply buttons */}
-            {sections.length > 0 && (
-              <div style={{ marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {sections.map((s) => (
+        {/* Threaded comments rendering */}
+        {!isLoading && parsedData.sections.length > 0 && (
+          <div className="space-y-8">
+            {parsedData.sections.map((sec) => (
+              <div key={sec.id} id={sec.id} className="scroll-mt-20">
+                {/* Section Header */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-4">
+                  <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                    <MessageSquare size={16} className="text-purple-400" />
+                    <span>{sec.title}</span>
+                  </h2>
                   <button
-                    key={s.index}
-                    className="wikios-action-btn"
-                    style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                    onClick={() => setReplyTarget({ index: s.index, title: s.title })}
-                    title={`Reply to "${s.title}"`}
+                    className="wikios-action-btn text-[11px] font-bold py-1 px-2.5 rounded-lg border border-white/5 bg-white/5 text-zinc-300 hover:text-white"
+                    onClick={() => setReplyTarget({ index: sec.index, title: sec.title })}
                   >
-                    Reply: {s.title.length > 30 ? `${s.title.slice(0, 30)}...` : s.title}
+                    Reply Section
                   </button>
-                ))}
-              </div>
-            )}
+                </div>
 
-            {/* Rendered talk page HTML */}
-            <div
-              className="wikios-article-body"
-              dangerouslySetInnerHTML={{ __html: data.contentHtml }}
-            />
+                {/* Section comments */}
+                {sec.comments.length > 0 ? (
+                  <div className="space-y-1 pl-1">
+                    {sec.comments.map((comment) => (
+                      <CommentCard
+                        key={comment.id}
+                        comment={comment}
+                        sectionTitle={sec.title}
+                        onQuote={(html) => handleQuote(html, sec.index, sec.title)}
+                        onReply={() => setReplyTarget({ index: sec.index, title: sec.title })}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500 italic pl-6 mb-4">
+                    No comments in this section yet.
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
+        )}
+
+        {/* Fallback if wikitext cannot be structured */}
+        {!isLoading && data?.exists && parsedData.sections.length === 0 && data.contentHtml && (
+          <div
+            className="wikios-article-body"
+            dangerouslySetInnerHTML={{ __html: data.contentHtml }}
+          />
         )}
 
         {/* Empty talk page */}
-        {data && !data.exists && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px 20px",
-              color: "var(--wikios-text-muted, #71717a)",
-            }}
-          >
-            <p style={{ fontSize: "1rem", marginBottom: 8 }}>No discussion yet for this article.</p>
-            <p style={{ fontSize: "0.875rem" }}>
-              Click &ldquo;+ New Section&rdquo; above to start a discussion.
-            </p>
+        {!isLoading && data && !data.exists && (
+          <div className="text-center py-16 text-zinc-500">
+            <MessageSquare size={36} className="mx-auto text-zinc-600 mb-3" />
+            <p className="text-sm font-semibold mb-1">No discussion yet for this article</p>
+            <p className="text-xs">Click &ldquo;New Section&rdquo; above to start the discussion.</p>
           </div>
         )}
       </div>
-    </div>
+    </WikiOSLayout>
   );
 }

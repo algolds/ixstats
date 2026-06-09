@@ -260,7 +260,7 @@ export const commonsRouter = createTRPCRouter({
       });
 
       return (data?.query?.allcategories ?? []).map(
-        (c: any) => c["*"] ?? c.title ?? ""
+        (c: any) => c.category ?? c["*"] ?? c.title ?? ""
       ) as string[];
     }),
 

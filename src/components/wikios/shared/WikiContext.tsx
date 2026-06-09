@@ -9,6 +9,12 @@ import { useRouter } from "next/navigation";
 import { navigateWithBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wikios/html-transformer";
 
+export interface WikiThemeColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+}
+
 interface WikiContextState {
   /** Whether we're on a WikiOS page */
   isWikiPage: boolean;
@@ -16,12 +22,14 @@ interface WikiContextState {
   articleTitle: string | null;
   /** TOC entries for the current article */
   tocEntries: TocEntry[];
+  /** Theme colors of the current wiki article */
+  themeColors: WikiThemeColors | null;
   /** Currently active section ID (tracked by IntersectionObserver) */
   activeSectionId: string | null;
   /** Recent wiki articles visited (from sessionStorage, newest first) */
   recentArticles: string[];
   /** Set the wiki page state */
-  setWikiPage: (title: string | null, toc: TocEntry[]) => void;
+  setWikiPage: (title: string | null, toc: TocEntry[], colors?: WikiThemeColors | null) => void;
   /** Update the active section */
   setActiveSectionId: (id: string | null) => void;
   /** Navigate to a section */
@@ -38,6 +46,7 @@ const WikiContext = createContext<WikiContextState>({
   isWikiPage: false,
   articleTitle: null,
   tocEntries: [],
+  themeColors: null,
   activeSectionId: null,
   recentArticles: [],
   setWikiPage: () => {},
@@ -52,6 +61,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [articleTitle, setArticleTitle] = useState<string | null>(null);
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
+  const [themeColors, setThemeColors] = useState<WikiThemeColors | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [recentArticles, setRecentArticles] = useState<string[]>([]);
   const [activeModal, setActiveModal] = useState<"history" | "backlinks" | null>(null);
@@ -66,9 +76,10 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setWikiPage = useCallback((title: string | null, toc: TocEntry[]) => {
+  const setWikiPage = useCallback((title: string | null, toc: TocEntry[], colors: WikiThemeColors | null = null) => {
     setArticleTitle(title);
     setTocEntries(toc);
+    setThemeColors(colors);
 
     // Track recent articles in sessionStorage (last 5, no duplicates)
     if (title && title !== "Main Page") {
@@ -189,6 +200,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
         isWikiPage: articleTitle !== null,
         articleTitle,
         tocEntries,
+        themeColors,
         activeSectionId,
         recentArticles,
         setWikiPage,

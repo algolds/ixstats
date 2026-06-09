@@ -68,8 +68,17 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
   };
 
   const handleStash = () => {
-    stashMutation.mutate({ pageTitle: `commons:${image.title}` });
+    const isLocal = image.descriptionUrl.includes("ixwiki.com");
+    const isIiwiki = image.descriptionUrl.includes("iiwiki.com");
+    let title = `commons:${image.title}`;
+    if (isLocal) {
+      title = image.title;
+    } else if (isIiwiki) {
+      title = `iiwiki:${image.title}`;
+    }
+    stashMutation.mutate({ pageTitle: title });
   };
+
 
   return (
     <div className="wikios-commons-detail relative overflow-hidden">

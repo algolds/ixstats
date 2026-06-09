@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { BookOpen, MessageSquare, Bookmark } from "lucide-react";
@@ -12,6 +14,7 @@ import {
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
+import { useUser } from "~/context/auth-context";
 
 const EXTERNAL_LINKS = [
   {
@@ -35,6 +38,7 @@ interface DashboardQuickLinksProps {
 
 export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { isSignedIn } = useUser();
 
   return (
     <CutoutCard
@@ -70,7 +74,10 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           {/* Discord badge — server-rendered, passed through props */}
           {discordBadge}
 
-          {EXTERNAL_LINKS.map((link) => {
+           {EXTERNAL_LINKS.map((link) => {
+            if (link.label === "Stashes" && !isSignedIn) {
+              return null;
+            }
             const Icon = link.icon;
             const isExternal = link.href.startsWith("http");
             const Comp = isExternal ? "a" : Link;

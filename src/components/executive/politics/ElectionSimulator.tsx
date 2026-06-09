@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -73,6 +74,59 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
     { enabled: !!countryId }
   );
 
+  // Multi-chamber tabs
+  const chambers = parliament?.legislature?.chambers ?? [];
+  const [activeChamberTab, setActiveChamberTab] = useState<string>("");
+
+  useEffect(() => {
+    if (chambers.length > 0) {
+      if (!activeChamberTab || !chambers.some((c) => c.name === activeChamberTab)) {
+        setActiveChamberTab(chambers[0].name);
+      }
+    } else {
+      setActiveChamberTab("");
+    }
+  }, [chambers]);
+
+  // Dynamically filter seats and aggregate summary for the active chamber tab
+  const activeChamberSeats = useMemo(() => {
+    if (!parliament) return [];
+    if (chambers.length <= 1) return parliament.seats;
+    return parliament.seats.filter((s: any) => s.chamber === activeChamberTab);
+  }, [parliament, chambers, activeChamberTab]);
+
+  const activeChamberSeatsCount = useMemo(() => {
+    if (!parliament) return 0;
+    if (chambers.length <= 1) return parliament.legislature.totalSeats;
+    const activeChamber = chambers.find((c: any) => c.name === activeChamberTab);
+    return activeChamber ? activeChamber.seats : activeChamberSeats.length;
+  }, [parliament, chambers, activeChamberTab, activeChamberSeats]);
+
+  const activeChamberPartySummary = useMemo(() => {
+    if (!parliament) return [];
+    if (chambers.length <= 1) return parliament.partySummary;
+
+    const counts = new Map<string, { party: any; seats: number }>();
+    for (const seat of activeChamberSeats) {
+      if (seat.partyId) {
+        const existing = counts.get(seat.partyId);
+        if (existing) {
+          existing.seats++;
+        } else {
+          const refSummary = parliament.partySummary.find((ps: any) => ps.party.id === seat.partyId);
+          const partyObj = refSummary
+            ? refSummary.party
+            : { id: seat.partyId, name: seat.partyName, shortName: null, color: seat.partyColor, ideology: "center" };
+          counts.set(seat.partyId, {
+            party: partyObj,
+            seats: 1,
+          });
+        }
+      }
+    }
+    return Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
+  }, [parliament, activeChamberSeats, chambers]);
+
   const scheduleElection = api.elections.scheduleElection.useMutation({
     onSuccess: () => {
       refetchElections();
@@ -106,17 +160,41 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
       {parliament && parliament.seats.length > 0 && (
         <Card className="glass-hierarchy-child border-amber-500/20">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Landmark className="h-4 w-4 text-amber-600" />
-              Current Parliament
-            </CardTitle>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Landmark className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-base">Current Parliament</CardTitle>
+                {activeChamberSeatsCount > 0 && (
+                  <Badge variant="outline" className="ml-auto text-[10px]">
+                    {activeChamberSeatsCount} seats
+                  </Badge>
+                )}
+              </div>
+              {chambers.length > 1 && (
+                <div className="mt-1 border-t border-slate-800 pt-2">
+                  <Tabs value={activeChamberTab} onValueChange={setActiveChamberTab}>
+                    <TabsList className="flex-wrap gap-1 bg-transparent p-0">
+                      {chambers.map((chamber: any) => (
+                        <TabsTrigger
+                          key={chamber.name}
+                          value={chamber.name}
+                          className="h-7 text-[10px] px-2.5 py-1 bg-slate-900 border border-slate-800 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:border-indigo-600 animate-in fade-in zoom-in duration-200"
+                        >
+                          {chamber.name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <ParliamentHemicycle
-              seats={parliament.seats}
-              totalSeats={parliament.legislature.totalSeats}
-              partySummary={parliament.partySummary}
-              legislatureName={parliament.legislature.name}
+              seats={activeChamberSeats}
+              totalSeats={activeChamberSeatsCount}
+              partySummary={activeChamberPartySummary}
+              legislatureName={chambers.length > 1 ? activeChamberTab : parliament.legislature.name}
             />
           </CardContent>
         </Card>

@@ -70,7 +70,7 @@ export function IxStatsEmbed({ countryId, compact = false }: IxStatsEmbedProps) 
         <StatCell label="GDP per Capita" value={`$${formatNumber(data.gdpPerCapita)}`} />
         <StatCell label="Total GDP" value={`$${formatNumber(data.totalGdp)}`} />
         <StatCell label="GDP Growth" value={`${(data.gdpGrowth * 100).toFixed(1)}%`} />
-        <StatCell label="Land Area" value={`${formatNumber(data.landArea)} km²`} />
+        <StatCell label="Land Area" value={`${Math.round(data.landArea).toLocaleString()} km²`} />
         <StatCell label="Economic Tier" value={data.economicTier} />
       </div>
 

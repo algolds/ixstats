@@ -850,7 +850,7 @@ export const managementProcedures = {
                     isActive: deptInput.isActive ?? true,
                     organizationalLevel: deptInput.organizationalLevel || "Ministry",
                     functions: deptInput.functions ? JSON.stringify(deptInput.functions) : null,
-                    kpis: deptInput.kpis,
+                    kpis: deptInput.kpis ? JSON.stringify(deptInput.kpis) : null,
                   },
                 });
                 deptIdMap.set(tempId, department.id);
@@ -1700,7 +1700,7 @@ export const managementProcedures = {
                     isActive: deptInput.isActive ?? true,
                     organizationalLevel: deptInput.organizationalLevel || "Ministry",
                     functions: deptInput.functions ? JSON.stringify(deptInput.functions) : null,
-                    kpis: deptInput.kpis,
+                    kpis: deptInput.kpis ? JSON.stringify(deptInput.kpis) : null,
                   },
                 });
                 deptIdMap.set(tempId, department.id);

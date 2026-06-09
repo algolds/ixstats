@@ -11,11 +11,13 @@ import { cn } from "~/lib/utils";
 export interface SidebarContextProps {
   isCollapsed: boolean;
   toggleCollapsed: () => void;
+  isHovered?: boolean;
 }
 
 export const SidebarContext = createContext<SidebarContextProps>({
   isCollapsed: false,
   toggleCollapsed: () => {},
+  isHovered: false,
 });
 
 export const useSidebar = () => useContext(SidebarContext);
@@ -54,6 +56,7 @@ export function DashboardSidebarLayout({
 }: DashboardSidebarLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(defaultCollapsed);
   const [isMounted, setIsMounted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (disableCollapse) {
@@ -78,6 +81,7 @@ export function DashboardSidebarLayout({
   };
 
   const isCollapsedNow = !disableCollapse && isSidebarCollapsed && isMounted;
+  const isHoverActive = isCollapsedNow && isHovered;
 
   const defaultExpandedWidthClass = variant === "rail" ? "w-64" : "w-48";
   const defaultExpandedWidthStyle = variant === "rail" ? "16rem" : "12rem";
@@ -87,7 +91,11 @@ export function DashboardSidebarLayout({
 
   return (
     <SidebarContext.Provider
-      value={{ isCollapsed: isCollapsedNow, toggleCollapsed: handleToggleSidebar }}
+      value={{
+        isCollapsed: isCollapsedNow,
+        toggleCollapsed: handleToggleSidebar,
+        isHovered: isHoverActive,
+      }}
     >
       <div className="relative min-h-screen space-y-0">
         {/* Hero Section */}
@@ -117,10 +125,12 @@ export function DashboardSidebarLayout({
           <div className="flex gap-4 sm:gap-6">
             {/* Desktop: Fixed icon rail */}
             <div
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
               className={cn(
                 "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
                 variant === "rail"
-                  ? isCollapsedNow
+                  ? (isCollapsedNow && !isHoverActive)
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
                     : cn("-left-6 opacity-100 xl:-left-12", resolvedExpandedWidthClass)
                   : isCollapsedNow
@@ -130,7 +140,7 @@ export function DashboardSidebarLayout({
               style={{
                 width:
                   variant === "rail"
-                    ? isCollapsedNow
+                    ? (isCollapsedNow && !isHoverActive)
                       ? "3.5rem"
                       : resolvedExpandedWidthStyle
                     : isCollapsedNow

@@ -109,23 +109,25 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-            className="group relative flex-shrink-0 rounded-full transition-transform hover:scale-105 active:scale-95"
-            title="Account Settings"
-          >
-            {user?.imageUrl ? (
-              <img
-                src={user.imageUrl}
-                alt=""
-                className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60"
-              />
-            ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60">
-                <User className="h-3.5 w-3.5 text-blue-400" />
-              </div>
-            )}
-          </button>
+          {user && (
+            <button
+              onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
+              className="group relative flex-shrink-0 rounded-full transition-transform hover:scale-105 active:scale-95"
+              title="Account Settings"
+            >
+              {user?.imageUrl ? (
+                <img
+                  src={user.imageUrl}
+                  alt=""
+                  className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60"
+                />
+              ) : (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60">
+                  <User className="h-3.5 w-3.5 text-blue-400" />
+                </div>
+              )}
+            </button>
+          )}
           <div>
             <PreText className="text-foreground text-xs font-semibold" whiteSpace="nowrap">
               {user?.firstName ? user.firstName : "My Account"}

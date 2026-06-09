@@ -12,13 +12,8 @@ import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
-import { DashboardSidebarLayout, useSidebar } from "~/components/dashboard/DashboardSidebarLayout";
-import { ServerDiscordBadge } from "~/components/dashboard/ServerDiscordBadge";
+import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
 import { StatusIndicator } from "~/components/status-indicator";
-import { DashboardPlayerWidget } from "~/components/dashboard/DashboardPlayerWidget";
-import { VaultWidget } from "~/components/mycountry/VaultWidget";
-import { DashboardQuickLinks } from "~/components/dashboard/DashboardQuickLinks";
-import { cn } from "~/lib/utils";
 import {
   Popover,
   PopoverTrigger,
@@ -32,74 +27,20 @@ import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 
-function MergedSidebarContent({
-  activeId,
-  onSearchClick,
-  activeTitle,
-  slug,
-  isSignedIn,
-  setActiveModal,
-  countryData,
-  isSpecialPage,
-  pathname,
-  discordBadge,
-}: {
-  activeId: string | null;
-  onSearchClick: () => void;
-  activeTitle: string;
-  slug: string | null;
-  isSignedIn: boolean;
-  setActiveModal: (modal: "history" | "backlinks" | null) => void;
-  countryData: any;
-  isSpecialPage: boolean;
-  pathname: string;
-  discordBadge?: ReactNode;
-}) {
-  const { isCollapsed } = useSidebar();
 
-  return (
-    <div className="flex h-full items-stretch">
-      {/* Standard sidebar widgets (collapsible) */}
-      <div
-        className={cn(
-          "flex flex-col gap-3 transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-0 opacity-0 pointer-events-none overflow-hidden" : "w-48 opacity-100"
-        )}
-      >
-        <DashboardPlayerWidget />
-        <VaultWidget />
-        <DashboardQuickLinks discordBadge={discordBadge} />
-      </div>
-
-      {/* Vertical divider line */}
-      {!isCollapsed && <div className="mx-1.5 w-px bg-white/5" />}
-
-      {/* Wiki Icon Rail (permanently in icon-only mode) */}
-      <div className="w-14 shrink-0">
-        <WikiOSUnifiedSidebar
-          activeId={activeId}
-          onSearchClick={onSearchClick}
-          title={activeTitle}
-          slug={slug}
-          isSignedIn={isSignedIn}
-          setActiveModal={setActiveModal}
-          countryData={countryData}
-          isSpecialPage={isSpecialPage}
-          pathname={pathname}
-          forceCollapsed={true}
-        />
-      </div>
-    </div>
-  );
-}
+import type { TocEntry } from "~/lib/wikios/html-transformer";
 
 export function WikiOSLayout({
   title,
   sidebarVariant = "wiki",
+  hideTitleHeading = false,
+  sections,
   children,
 }: {
   title?: string;
   sidebarVariant?: "wiki" | "dashboard";
+  hideTitleHeading?: boolean;
+  sections?: TocEntry[];
   children: ReactNode;
 }) {
   useWikiOSShortcuts();
@@ -166,15 +107,7 @@ export function WikiOSLayout({
   const isSpecialPage =
     pathname.includes("/w/special/") || pathname.includes("/blurbs") || isMainPage;
 
-  const useComboSidebar =
-    sidebarVariant === "dashboard" ||
-    (isSpecialPage && !isMainPage) ||
-    pathname.includes("/w/repository") ||
-    pathname.includes("/stashes");
-
-  const discordBadge = useComboSidebar ? <ServerDiscordBadge /> : undefined;
-
-  const sidebarContent = !useComboSidebar ? (
+  const sidebarContent = (
     <WikiOSUnifiedSidebar
       activeId={activeId}
       onSearchClick={() => setSearchOpen(true)}
@@ -185,19 +118,7 @@ export function WikiOSLayout({
       countryData={countryData}
       isSpecialPage={isSpecialPage}
       pathname={pathname}
-    />
-  ) : (
-    <MergedSidebarContent
-      activeId={activeId}
-      onSearchClick={() => setSearchOpen(true)}
-      activeTitle={activeTitle}
-      slug={slug}
-      isSignedIn={isSignedIn}
-      setActiveModal={setActiveModal}
-      countryData={countryData}
-      isSpecialPage={isSpecialPage}
-      pathname={pathname}
-      discordBadge={discordBadge}
+      sections={sections}
     />
   );
 
@@ -209,10 +130,10 @@ export function WikiOSLayout({
         defaultCollapsed={true}
         disableCollapse={false}
         variant="rail"
-        expandedWidthClassName={useComboSidebar ? "w-64" : "w-48"}
-        expandedWidthStyle={useComboSidebar ? "16rem" : "12rem"}
+        expandedWidthClassName="w-48"
+        expandedWidthStyle="12rem"
       >
-        <WikiOSContentWrapper title={title}>{children}</WikiOSContentWrapper>
+        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>{children}</WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
       <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3 border-t border-white/5 pt-6 pb-8 text-center text-xs">

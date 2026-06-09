@@ -85,7 +85,7 @@ export function ParliamentHemicycle({
     return positions;
   }, [seats, totalSeats]);
 
-  const seatRadius = totalSeats > 300 ? 2.5 : totalSeats > 150 ? 3.5 : 4.5;
+  const seatRadius = totalSeats > 2000 ? 1.2 : totalSeats > 1000 ? 1.8 : totalSeats > 300 ? 2.5 : totalSeats > 150 ? 3.5 : 4.5;
 
   return (
     <div className="space-y-4">

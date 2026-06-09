@@ -19,6 +19,7 @@ import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { createPortal } from "react-dom";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -154,10 +155,10 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
           onMouseLeave={handleMouseLeave}
           disabled={isPending}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
+            "wikios-sidebar-icon-box flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
             isStashed
               ? "rail-glow-amber rail-animate-pulse border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15"
-              : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:scale-105 hover:bg-rose-500/15",
+              : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
             animState === "pulse" && "wikios-stash-pulse",
             animState === "ripple" && "wikios-stash-ripple",
             animState === "color-shift" && "wikios-stash-color-shift"
@@ -447,6 +448,11 @@ function StashManagerModal({
   const [newColor, setNewColor] = useState("#3b82f6");
   const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const utils = api.useUtils();
   const stashesQuery = api.wikios.getStashes.useQuery(undefined, { staleTime: 5000 });
@@ -476,7 +482,9 @@ function StashManagerModal({
     createMutation.mutate({ name: trimmed, color: newColor });
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="wikios-modal-backdrop" onClick={onClose}>
       <div className="wikios-quick-modal wikios-stash-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wikios-quick-modal-header">
@@ -601,6 +609,7 @@ function StashManagerModal({
           Go to My Stashes
         </Link>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

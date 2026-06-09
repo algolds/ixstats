@@ -22,6 +22,8 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wikios/html-transformer";
 import { AppleBooksTocDrawer } from "~/components/wikios/reader/AppleBooksTocDrawer";
+import { StickyToc } from "~/components/wikios/reader/StickyToc";
+import { useWikiSetting } from "~/hooks/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wikios/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wikios/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
@@ -33,6 +35,22 @@ import { useUser } from "~/context/auth-context";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { createPortal } from "react-dom";
+import { MapPin, Settings as Cog, Anchor, Shield, Building, Flag, Navigation } from "lucide-react";
+
+function getRgbaColor(colorStr: string, opacity: number): string {
+  if (colorStr.startsWith("#")) {
+    const cleanHex = colorStr.replace("#", "");
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  if (colorStr.startsWith("hsl")) {
+    return colorStr.replace("hsl(", "hsla(").replace(")", `, ${opacity})`);
+  }
+  return `rgba(59, 130, 246, ${opacity})`;
+}
 
 interface ArticleRendererProps {
   title: string;
@@ -446,6 +464,8 @@ function WikiOSHeader({
   );
 }
 
+const EMPTY_STATS_DATA = {};
+
 export function ArticleRenderer({
   title,
   contentHtml,
@@ -462,12 +482,166 @@ export function ArticleRenderer({
   const { user } = useUser();
   const isAuthenticated = !!user;
   const [tocOpen, setTocOpen] = useState(false);
+  const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
+
+  // --- Portal & Dynamic Widgets Setup ---
+  // 1. Extract keys from contentHtml before rendering
+  const statKeys = useMemo(() => {
+    const keys = new Set<string>();
+    const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi;
+    let match;
+    while ((match = regex.exec(contentHtml)) !== null) {
+      if (match[1]) keys.add(match[1]);
+    }
+    const linkRegex = /Template:((?:MyCountry|CountryData|BusinessData):[^"|?#&]+)/gi;
+    while ((match = linkRegex.exec(contentHtml)) !== null) {
+      if (match[1]) keys.add(decodeURIComponent(match[1]));
+    }
+    return Array.from(keys);
+  }, [contentHtml]);
+
+  // 2. Fetch the batch data
+  const statsQuery = api.wiki.resolveWikiPlaceholders.useQuery(
+    { placeholders: statKeys },
+    { enabled: statKeys.length > 0, staleTime: 5 * 60 * 1000 }
+  );
+  const statsData = statsQuery.data || EMPTY_STATS_DATA;
+
+  // 3. User & Country details for calculations
+  const { data: currentUserData } = api.users.getCurrentUserWithRole.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const { data: viewerCountryData } = api.countries.getByIdBasic.useQuery(
+    { id: currentUserData?.user?.country?.id || "" },
+    { enabled: !!currentUserData?.user?.country?.id }
+  );
+  const viewerCentroid = useMemo(() => {
+    if (!viewerCountryData?.centroid) return null;
+    const c = viewerCountryData.centroid as { lat: number; lng: number } | [number, number];
+    if (Array.isArray(c)) {
+      return { lng: c[0] || 0, lat: c[1] || 0 };
+    }
+    return { lat: c.lat || 0, lng: c.lng || 0 };
+  }, [viewerCountryData]);
+
+  // 4. Transform HTML string to inject placeholders
+  const processedHtml = useMemo(() => injectPlaceholderElements(contentHtml), [contentHtml]);
+
+  // 5. Track targets in DOM to render Portals into
+  interface PortalTarget {
+    element: Element;
+    type: "coords" | "map-embed" | "stat";
+    data: any;
+  }
+  const [portalTargets, setPortalTargets] = useState<PortalTarget[]>([]);
+
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const targets: PortalTarget[] = [];
+
+    container.querySelectorAll(".wikios-coords-placeholder").forEach((el) => {
+      const lat = parseFloat(el.getAttribute("data-lat") || "0");
+      const lng = parseFloat(el.getAttribute("data-lng") || "0");
+      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
+      const label = el.getAttribute("data-label") || "Location";
+      targets.push({
+        element: el,
+        type: "coords",
+        data: { lat, lng, zoom, label },
+      });
+    });
+
+    container.querySelectorAll(".wikios-map-embed-placeholder").forEach((el) => {
+      const lat = parseFloat(el.getAttribute("data-lat") || "0");
+      const lng = parseFloat(el.getAttribute("data-lng") || "0");
+      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
+      const options = el.getAttribute("data-options") || "";
+      targets.push({
+        element: el,
+        type: "map-embed",
+        data: { lat, lng, zoom, options },
+      });
+    });
+
+    container.querySelectorAll(".wikios-stat-placeholder").forEach((el) => {
+      const key = el.getAttribute("data-key") || "";
+      targets.push({
+        element: el,
+        type: "stat",
+        data: { key },
+      });
+    });
+
+    setPortalTargets(targets);
+  }, [processedHtml]);
+
+  const { data: countryData } = api.countries.getByIdBasic.useQuery(
+    { id: title },
+    {
+      enabled:
+        !!title &&
+        title.trim() !== "" &&
+        title !== "Main Page" &&
+        title !== "Main_Page" &&
+        !title.includes(":"),
+      retry: false,
+    }
+  );
+
+  const themeColors = useMemo(() => {
+    if (countryData?.name) {
+      return getFlagColors(countryData.name);
+    }
+
+    // Fallback: category/namespace matching
+    let hue = 217; // Default blue
+
+    const catStr = categories.join(" ").toLowerCase();
+    if (
+      catStr.includes("history") ||
+      catStr.includes("politics") ||
+      catStr.includes("executive") ||
+      catStr.includes("government")
+    ) {
+      hue = 38; // Gold/Amber
+    } else if (
+      catStr.includes("military") ||
+      catStr.includes("war") ||
+      catStr.includes("conflict") ||
+      catStr.includes("defense")
+    ) {
+      hue = 0; // Red
+    } else if (
+      catStr.includes("diplomacy") ||
+      catStr.includes("geography") ||
+      catStr.includes("relation")
+    ) {
+      hue = 188; // Cyan
+    } else if (catStr.includes("file") || catStr.includes("media") || catStr.includes("image")) {
+      hue = 142; // Green
+    } else if (catStr.includes("talk") || catStr.includes("discussion")) {
+      hue = 262; // Purple
+    } else if (title.startsWith("File:")) {
+      hue = 142; // Green
+    } else if (title.startsWith("Talk:")) {
+      hue = 262; // Purple
+    }
+
+    return {
+      primary: `hsl(${hue}, 80%, 45%)`,
+      secondary: `hsl(${hue}, 60%, 60%)`,
+      accent: `hsl(${hue}, 80%, 45%)`,
+      rgbPrimary: { r: 59, g: 130, b: 246 },
+    };
+  }, [countryData, categories, title]);
 
   // Feed TOC data to WikiContext for Dynamic Island wiki mode
   useEffect(() => {
-    setWikiPage(title, toc);
-    return () => setWikiPage(null, []);
-  }, [title, toc, setWikiPage]);
+    setWikiPage(title, toc, themeColors);
+    return () => setWikiPage(null, [], null);
+  }, [title, toc, themeColors, setWikiPage]);
 
   // Scroll spy to update the active section ID in global context as user scrolls
   useEffect(() => {
@@ -575,69 +749,10 @@ export function ArticleRenderer({
     return null;
   }, [infoboxHtml, contentHtml]);
 
-  const { data: countryData } = api.countries.getByIdBasic.useQuery(
-    { id: title },
-    {
-      enabled:
-        !!title &&
-        title.trim() !== "" &&
-        title !== "Main Page" &&
-        title !== "Main_Page" &&
-        !title.includes(":"),
-      retry: false,
-    }
-  );
-
-  const themeColors = useMemo(() => {
-    if (countryData?.name) {
-      return getFlagColors(countryData.name);
-    }
-
-    // Fallback: category/namespace matching
-    let hue = 217; // Default blue
-
-    const catStr = categories.join(" ").toLowerCase();
-    if (
-      catStr.includes("history") ||
-      catStr.includes("politics") ||
-      catStr.includes("executive") ||
-      catStr.includes("government")
-    ) {
-      hue = 38; // Gold/Amber
-    } else if (
-      catStr.includes("military") ||
-      catStr.includes("war") ||
-      catStr.includes("conflict") ||
-      catStr.includes("defense")
-    ) {
-      hue = 0; // Red
-    } else if (
-      catStr.includes("diplomacy") ||
-      catStr.includes("geography") ||
-      catStr.includes("relation")
-    ) {
-      hue = 188; // Cyan
-    } else if (catStr.includes("file") || catStr.includes("media") || catStr.includes("image")) {
-      hue = 142; // Green
-    } else if (catStr.includes("talk") || catStr.includes("discussion")) {
-      hue = 262; // Purple
-    } else if (title.startsWith("File:")) {
-      hue = 142; // Green
-    } else if (title.startsWith("Talk:")) {
-      hue = 262; // Purple
-    }
-
-    return {
-      primary: `hsl(${hue}, 80%, 45%)`,
-      secondary: `hsl(${hue}, 60%, 60%)`,
-      accent: `hsl(${hue}, 80%, 45%)`,
-      rgbPrimary: { r: 59, g: 130, b: 246 },
-    };
-  }, [countryData, categories, title]);
-
   const containerStyle = {
     "--wikios-accent": themeColors.primary,
     "--wikios-accent-hover": themeColors.secondary,
+    "--wikios-accent-bg": getRgbaColor(themeColors.primary, 0.08),
     "--wikios-link": themeColors.primary,
     "--wikios-link-hover": themeColors.secondary,
   } as React.CSSProperties;
@@ -684,12 +799,53 @@ export function ArticleRenderer({
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
             {infoboxHtml && <InfoboxWithMap infoboxHtml={infoboxHtml} articleTitle={title} />}
-            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
+            
+            {/* Render portals into injected placeholder nodes */}
+            {portalTargets.map((target, idx) => {
+              if (target.type === "coords") {
+                return createPortal(
+                  <CoordsPill
+                    lat={target.data.lat}
+                    lng={target.data.lng}
+                    zoom={target.data.zoom}
+                    label={target.data.label}
+                    viewerCentroid={viewerCentroid}
+                  />,
+                  target.element
+                );
+              }
+              if (target.type === "map-embed") {
+                return createPortal(
+                  <MapEmbedComponent
+                    lat={target.data.lat}
+                    lng={target.data.lng}
+                    zoom={target.data.zoom}
+                    options={target.data.options}
+                  />,
+                  target.element
+                );
+              }
+              if (target.type === "stat") {
+                return createPortal(
+                  <DynamicStatSpan
+                    placeholderKey={target.data.key}
+                    data={statsData[target.data.key]}
+                  />,
+                  target.element
+                );
+              }
+              return null;
+            })}
           </div>
 
           {categories.length > 0 && <CategoriesBar categories={categories} />}
           <ArticleFooter title={title} lastModified={lastModified} />
         </div>
+
+        {showWikiToc && toc.length > 3 && (
+          <StickyToc entries={toc} contentRef={contentRef} />
+        )}
       </div>
 
       {lightboxPortal}
@@ -852,6 +1008,593 @@ function QuickBacklinksModal({
   );
 }
 
+// ---------------------------------------------------------------------------
+// HTML Placeholder Injection Helper
+// ---------------------------------------------------------------------------
+function injectPlaceholderElements(html: string): string {
+  let processed = html;
+
+  // 1. Process Coords anchors e.g. <a href="...Coords:lat,lng,zoom...">Label</a>
+  processed = processed.replace(
+    /<a[^>]*href="[^"]*Coords:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    (match, coordsStr, label) => {
+      const decoded = decodeURIComponent(coordsStr);
+      const [lat, lng, zoom] = decoded.split(",");
+      return `<span class="wikios-coords-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-label="${label || "Location"}">${label || "Location"}</span>`;
+    }
+  );
+
+  // 2. Process raw Coords wikitext e.g. [[Coords:lat,lng,zoom|Label]]
+  processed = processed.replace(
+    /\[\[Coords:([^\]|]+)(?:\|([^\]]+))?\]\]/gi,
+    (match, coordsStr, label) => {
+      const decoded = decodeURIComponent(coordsStr);
+      const [lat, lng, zoom] = decoded.split(",");
+      const cleanLabel = label || "Location";
+      return `<span class="wikios-coords-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-label="${cleanLabel}">${cleanLabel}</span>`;
+    }
+  );
+
+  // 3. Process MapEmbed anchors e.g. <a href="...MapEmbed:lat,lng,zoom...">options</a>
+  processed = processed.replace(
+    /<a[^>]*href="[^"]*MapEmbed:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    (match, coordsStr, options) => {
+      const decoded = decodeURIComponent(coordsStr);
+      const [lat, lng, zoom] = decoded.split(",");
+      return `<div class="wikios-map-embed-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-options="${options || ""}"></div>`;
+    }
+  );
+
+  // 4. Process raw MapEmbed wikitext e.g. [[MapEmbed:lat,lng,zoom|options]]
+  processed = processed.replace(
+    /\[\[MapEmbed:([^\]|]+)(?:\|([^\]]+))?\]\]/gi,
+    (match, coordsStr, options) => {
+      const decoded = decodeURIComponent(coordsStr);
+      const [lat, lng, zoom] = decoded.split(",");
+      return `<div class="wikios-map-embed-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-options="${options || ""}"></div>`;
+    }
+  );
+
+  // 5. Process Template stats anchors e.g. <a href="...Template:MyCountry:field...">
+  processed = processed.replace(
+    /<a[^>]*href="[^"]*Template:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    (match, templateName, label) => {
+      const decoded = decodeURIComponent(templateName);
+      if (decoded.startsWith("MyCountry:") || decoded.startsWith("CountryData:") || decoded.startsWith("BusinessData:")) {
+        return `<span class="wikios-stat-placeholder" data-key="${decoded}"></span>`;
+      }
+      return match;
+    }
+  );
+
+  // 6. Process raw wikitext templates e.g. {{MyCountry:field}}
+  processed = processed.replace(
+    /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi,
+    (match, key) => {
+      return `<span class="wikios-stat-placeholder" data-key="${key}"></span>`;
+    }
+  );
+
+  return processed;
+}
+
+// ---------------------------------------------------------------------------
+// Map Calculation Helper
+// ---------------------------------------------------------------------------
+function calculateDistanceAndBearing(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): { distanceKm: number; bearing: string } {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distanceKm = Math.round(R * c);
+
+  const y = Math.sin(dLng) * Math.cos((lat2 * Math.PI) / 180);
+  const x =
+    Math.cos((lat1 * Math.PI) / 180) * Math.sin((lat2 * Math.PI) / 180) -
+    Math.sin((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.cos(dLng);
+  let brng = (Math.atan2(y, x) * 180) / Math.PI;
+  brng = (brng + 360) % 360;
+
+  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const index = Math.round(brng / 45) % 8;
+  const bearing = directions[index]!;
+
+  return { distanceKm, bearing };
+}
+
+// ---------------------------------------------------------------------------
+// CoordsMiniMap component centered on a custom coordinate
+// ---------------------------------------------------------------------------
+const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) => {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    let map: any = null;
+    let active = true;
+
+    const init = async () => {
+      const maplibregl = (await import("maplibre-gl")).default;
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      const { buildBaseStyle } = await import("~/lib/map-config");
+
+      if (!active || !mapContainerRef.current) return;
+
+      const baseStyle = buildBaseStyle() as any;
+      map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: baseStyle,
+        center: [lng, lat],
+        zoom: zoom,
+        attributionControl: false,
+        interactive: true,
+      });
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (!active) return;
+        new maplibregl.Marker({ color: "#f43f5e" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+      });
+    };
+
+    init();
+
+    return () => {
+      active = false;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [lat, lng, zoom]);
+
+  return <div ref={mapContainerRef} className="w-full h-32 rounded-lg overflow-hidden bg-white/5 border border-white/10" style={{ height: 130 }} />;
+};
+
+// ---------------------------------------------------------------------------
+// CoordsPill Component
+// ---------------------------------------------------------------------------
+function CoordsPill({
+  lat,
+  lng,
+  zoom,
+  label,
+  viewerCentroid,
+}: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  label: string;
+  viewerCentroid?: { lat: number; lng: number } | null;
+}) {
+  const calc = useMemo(() => {
+    if (!viewerCentroid) return null;
+    return calculateDistanceAndBearing(viewerCentroid.lat, viewerCentroid.lng, lat, lng);
+  }, [viewerCentroid, lat, lng]);
+
+  return (
+    <Popover>
+      <PopoverTrigger>
+        <span className="wikios-coords-pill inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer select-none text-blue-400">
+          <MapPin size={11} className="text-blue-400 animate-pulse" />
+          <span>{label}</span>
+          <span className="text-[10px] opacity-65 font-mono">({lat.toFixed(2)}, {lng.toFixed(2)})</span>
+        </span>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-3 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold text-zinc-200">{label}</span>
+          <span className="text-[10px] text-zinc-400 font-mono">Zoom {zoom}</span>
+        </div>
+        
+        <CoordsMiniMap lat={lat} lng={lng} zoom={zoom} />
+        
+        <div className="flex flex-col gap-0.5 text-[10px] text-zinc-400 font-medium">
+          <div>Latitude: <span className="text-zinc-200 font-mono">{lat.toFixed(4)}</span></div>
+          <div>Longitude: <span className="text-zinc-200 font-mono">{lng.toFixed(4)}</span></div>
+          {calc && (
+            <div className="text-blue-400 font-semibold mt-1">
+              Distance: {calc.distanceKm.toLocaleString()} km {calc.bearing} of home
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DynamicStatSpan Component
+// ---------------------------------------------------------------------------
+function DynamicStatSpan({
+  placeholderKey,
+  data,
+}: {
+  placeholderKey: string;
+  data?: { value: string; rawVal: any; metadata?: any } | null;
+}) {
+  if (!data) {
+    return <span className="text-zinc-500 font-mono text-xs">Loading...</span>;
+  }
+
+  const metadata = data.metadata;
+
+  return (
+    <Popover>
+      <PopoverTrigger>
+        <span className="wikios-stat-span font-semibold text-zinc-200 border-b border-dotted border-white/40 hover:border-white/90 hover:text-white transition-all cursor-pointer select-none">
+          {data.value}
+        </span>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-4 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-2xl z-[10001] shadow-2xl flex flex-col gap-3">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          Simulation Metrics
+        </div>
+
+        <div className="flex flex-col text-left">
+          <span className="text-xs text-zinc-400 font-medium">{metadata?.label || "Value"}</span>
+          <span className="text-xl font-bold text-white leading-tight mt-0.5">{data.value}</span>
+          {metadata?.comparisonRank && (
+            <span className="text-[10px] text-blue-400 font-semibold mt-1">
+              {metadata.comparisonRank}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1 border-t border-white/5 pt-2.5 text-[10px] text-zinc-400">
+          {metadata?.countryName && (
+            <div className="flex justify-between">
+              <span>Country</span>
+              <span className="text-zinc-200 font-medium">{metadata.countryName}</span>
+            </div>
+          )}
+          {metadata?.companyName && (
+            <div className="flex justify-between">
+              <span>Enterprise</span>
+              <span className="text-zinc-200 font-medium">{metadata.companyName}</span>
+            </div>
+          )}
+          {metadata?.lastCalculated && (
+            <div className="flex justify-between">
+              <span>Updated</span>
+              <span className="text-zinc-200 font-mono">
+                {new Date(metadata.lastCalculated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {metadata?.detailsUrl && (
+          <Link
+            href={withBasePath(metadata.detailsUrl)}
+            className="text-[10px] font-bold text-center text-blue-400 hover:text-blue-300 transition-colors border-t border-white/5 pt-2"
+          >
+            Analyze Dashboard &rarr;
+          </Link>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MapEmbedComponent
+// ---------------------------------------------------------------------------
+function MapEmbedComponent({
+  lat,
+  lng,
+  zoom,
+  options,
+}: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  options: string;
+}) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [poiTargets, setPoiTargets] = useState<any[]>([]);
+  const [cityTargets, setCityTargets] = useState<any[]>([]);
+
+  const parsedOptions = useMemo(() => {
+    const opts = {
+      height: 350,
+      layers: ["political", "POIs"],
+      controls: true,
+    };
+    if (!options) return opts;
+    const decoded = decodeURIComponent(options);
+    const parts = decoded.split("&");
+    for (const p of parts) {
+      const [k, v] = p.split("=");
+      if (k === "height") opts.height = parseInt(v || "350", 10);
+      if (k === "controls") opts.controls = v !== "false";
+      if (k === "layers" && v) opts.layers = v.split(",");
+    }
+    return opts;
+  }, [options]);
+
+  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
+    { layers: ["political"] },
+    { staleTime: 30 * 60 * 1000 }
+  );
+
+  const { data: featuresData } = api.geoCore.getAllMapFeatures.useQuery(
+    undefined,
+    { staleTime: 30 * 60 * 1000 }
+  );
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    let map: any = null;
+    let active = true;
+
+    const init = async () => {
+      const maplibregl = (await import("maplibre-gl")).default;
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      const { buildBaseStyle } = await import("~/lib/map-config");
+
+      if (!active || !mapContainerRef.current) return;
+
+      const baseStyle = buildBaseStyle() as any;
+      map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: baseStyle,
+        center: [lng, lat],
+        zoom: zoom,
+        attributionControl: false,
+        interactive: true,
+      });
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (!active) return;
+
+        // Political boundaries
+        if (parsedOptions.layers.includes("political") && worldMap?.political) {
+          map.addSource("source-world-political", {
+            type: "geojson",
+            data: worldMap.political,
+          });
+          map.addLayer({
+            id: "world-political-fill",
+            type: "fill",
+            source: "source-world-political",
+            paint: {
+              "fill-color": ["coalesce", ["get", "_fillColor"], "#c5cae9"],
+              "fill-opacity": 0.3,
+            },
+          });
+          map.addLayer({
+            id: "world-political-stroke",
+            type: "line",
+            source: "source-world-political",
+            paint: {
+              "line-color": "rgba(255,255,255,0.15)",
+              "line-width": 1.0,
+            },
+          });
+        }
+
+        // Add zoom controls
+        if (parsedOptions.controls) {
+          map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+        }
+
+        // POIs
+        if (parsedOptions.layers.includes("POIs") && featuresData?.pois?.features) {
+          const newPoiTargets: any[] = [];
+          featuresData.pois.features.forEach((poi: any) => {
+            const [poiLng, poiLat] = poi.geometry.coordinates;
+            const distLng = Math.abs(poiLng - lng);
+            const distLat = Math.abs(poiLat - lat);
+            if (distLng > 20 || distLat > 20) return;
+
+            const markerEl = document.createElement("div");
+            markerEl.className = "wikios-map-poi-marker-container";
+            
+            new maplibregl.Marker({ element: markerEl })
+              .setLngLat([poiLng, poiLat])
+              .addTo(map);
+
+            newPoiTargets.push({
+              element: markerEl,
+              properties: poi.properties,
+              coordinates: [poiLng, poiLat],
+            });
+          });
+          setPoiTargets(newPoiTargets);
+        }
+
+        // Cities
+        if (parsedOptions.layers.includes("cities") && featuresData?.cities?.features) {
+          const newCityTargets: any[] = [];
+          featuresData.cities.features.forEach((city: any) => {
+            const [cityLng, cityLat] = city.geometry.coordinates;
+            const distLng = Math.abs(cityLng - lng);
+            const distLat = Math.abs(cityLat - lat);
+            if (distLng > 20 || distLat > 20) return;
+
+            const markerEl = document.createElement("div");
+            markerEl.className = "wikios-map-city-marker-container";
+
+            new maplibregl.Marker({ element: markerEl })
+              .setLngLat([cityLng, cityLat])
+              .addTo(map);
+
+            newCityTargets.push({
+              element: markerEl,
+              properties: city.properties,
+              coordinates: [cityLng, cityLat],
+            });
+          });
+          setCityTargets(newCityTargets);
+        }
+
+        setMapReady(true);
+      });
+    };
+
+    init();
+
+    return () => {
+      active = false;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [lat, lng, zoom, worldMap, featuresData, parsedOptions]);
+
+  return (
+    <div
+      className="wikios-ixworld-embed glass-hierarchy-child my-6 rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative"
+      style={{ height: parsedOptions.height }}
+    >
+      <div ref={mapContainerRef} className="w-full h-full" style={{ height: "100%", minHeight: 200 }} />
+      {!mapReady && (
+        <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md flex items-center justify-center text-xs text-zinc-400">
+          <div className="wikios-loading-spinner mr-2" style={{ width: 16, height: 16 }} />
+          Loading map graphics...
+        </div>
+      )}
+
+      {/* Render POI markers inside portals */}
+      {mapReady && poiTargets.map((target, idx) => 
+        createPortal(
+          <PoiMarker key={`poi-${idx}`} properties={target.properties} coordinates={target.coordinates} />,
+          target.element
+        )
+      )}
+
+      {/* Render City markers inside portals */}
+      {mapReady && cityTargets.map((target, idx) => 
+        createPortal(
+          <CityMarker key={`city-${idx}`} properties={target.properties} coordinates={target.coordinates} />,
+          target.element
+        )
+      )}
+
+      <div className="absolute bottom-3 left-3 bg-zinc-950/80 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 select-none">
+        IxWorld embed
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PoiMarker Component
+// ---------------------------------------------------------------------------
+function PoiMarker({ properties, coordinates }: { properties: any; coordinates: [number, number] }) {
+  const Icon = useMemo(() => {
+    const cat = String(properties.category).toLowerCase();
+    if (cat.includes("industrial") || cat.includes("factory")) return Cog;
+    if (cat.includes("port") || cat.includes("naval")) return Anchor;
+    if (cat.includes("fortress") || cat.includes("military")) return Shield;
+    if (cat.includes("palace") || cat.includes("parliament") || cat.includes("government")) return Building;
+    if (cat.includes("landmark") || cat.includes("founding") || cat.includes("monument")) return Flag;
+    return MapPin;
+  }, [properties.category]);
+
+  return (
+    <Popover>
+      <PopoverTrigger>
+        <button
+          type="button"
+          className="glass-surface glass-refraction h-6 w-6 rounded-full flex items-center justify-center border border-white/20 bg-zinc-950/80 shadow-md cursor-pointer hover:scale-125 transition-all text-white hover:border-rose-400"
+        >
+          <Icon size={11} className="text-zinc-200" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-3 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2">
+        <div className="text-xs font-bold text-zinc-200">{properties.name}</div>
+        {properties.description && (
+          <div className="text-[10px] text-zinc-400 leading-normal">{properties.description}</div>
+        )}
+        <div className="flex justify-between items-center border-t border-white/5 pt-1.5 mt-1 text-[9px] text-zinc-500 font-mono">
+          <span>{coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}</span>
+          {properties.wikiPageTitle && (
+            <Link
+              href={withBasePath(`/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`)}
+              className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Read Article &rarr;
+            </Link>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CityMarker Component
+// ---------------------------------------------------------------------------
+function CityMarker({ properties, coordinates }: { properties: any; coordinates: [number, number] }) {
+  return (
+    <Popover>
+      <PopoverTrigger>
+        <button
+          type="button"
+          className="relative flex items-center justify-center h-4 w-4 cursor-pointer group"
+        >
+          <span className="absolute h-2 w-2 bg-white rounded-full border border-zinc-800 shadow group-hover:scale-130 transition-all" />
+          {properties.isCapital && (
+            <span className="absolute h-3 w-3 border border-amber-400 rounded-full animate-ping opacity-60" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-2.5 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-1.5">
+        <div className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+          <span>{properties.name}</span>
+          {properties.isCapital && (
+            <span className="text-[8px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1 rounded uppercase font-extrabold leading-none">
+              Capital
+            </span>
+          )}
+        </div>
+        {properties.population && (
+          <div className="text-[10px] text-zinc-400">
+            Population: <span className="font-semibold text-zinc-300">{properties.population.toLocaleString()}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center border-t border-white/5 pt-1.5 text-[9px] text-zinc-500 font-mono">
+          <span>{coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}</span>
+          {properties.wikiPageTitle && (
+            <Link
+              href={withBasePath(`/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`)}
+              className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Read Article &rarr;
+            </Link>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CategoriesBar
 // ---------------------------------------------------------------------------
 function CategoriesBar({ categories }: { categories: string[] }) {
   const visible = categories.filter(

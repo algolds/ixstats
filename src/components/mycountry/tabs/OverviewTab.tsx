@@ -178,19 +178,19 @@ export function OverviewTab({
                 <p className="text-foreground mt-0.5 text-lg font-bold tracking-tight">
                   {metricView.area === "km"
                     ? country.landArea
-                      ? `${country.landArea.toLocaleString()} km²`
+                      ? `${Math.round(country.landArea).toLocaleString()} km²`
                       : "N/A"
                     : country.areaSqMi
-                      ? `${country.areaSqMi.toLocaleString()} sq mi`
+                      ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
                       : "N/A"}
                 </p>
                 <p className="text-muted-foreground mt-0.5 text-[11px]">
                   {metricView.area === "km"
                     ? country.areaSqMi
-                      ? `${country.areaSqMi.toLocaleString()} sq mi`
+                      ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
                       : ""
                     : country.landArea
-                      ? `${country.landArea.toLocaleString()} km²`
+                      ? `${Math.round(country.landArea).toLocaleString()} km²`
                       : ""}
                 </p>
               </button>

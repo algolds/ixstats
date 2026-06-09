@@ -63,7 +63,7 @@ function CompactViewComponent({
   pluginActions,
   pluginBadge,
 }: CompactViewProps) {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
@@ -470,53 +470,55 @@ function CompactViewComponent({
               <TooltipContent side="bottom">Search</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    if (messageUnreadCount > 0) {
-                      router.push("/messages");
-                    } else {
-                      onSwitchMode("notifications");
-                    }
-                  }}
-                  className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
-                    isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                  }`}
-                >
-                  {messageUnreadCount > 0 ? (
-                    <MessageCircle
-                      className={`text-blue-400 transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                    />
-                  ) : (
-                    <Bell
-                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                    />
-                  )}
-                  <AnimatePresence>
-                    {totalUnreadCount > 0 && (
-                      <motion.div
-                        key={totalUnreadCount}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                        className={`absolute flex items-center justify-center rounded-full border-0 bg-gradient-to-r from-red-500 to-pink-500 text-[10px] font-bold text-white shadow-lg ${
-                          isSticky
-                            ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
-                            : "-top-1 -right-1 h-3 w-3 p-0"
-                        }`}
-                      >
-                        {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-                      </motion.div>
+            {isLoaded && isSignedIn && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (messageUnreadCount > 0) {
+                        router.push("/messages");
+                      } else {
+                        onSwitchMode("notifications");
+                      }
+                    }}
+                    className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
+                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                    }`}
+                  >
+                    {messageUnreadCount > 0 ? (
+                      <MessageCircle
+                        className={`text-blue-400 transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                      />
+                    ) : (
+                      <Bell
+                        className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                      />
                     )}
-                  </AnimatePresence>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Alerts</TooltipContent>
-            </Tooltip>
+                    <AnimatePresence>
+                      {totalUnreadCount > 0 && (
+                        <motion.div
+                          key={totalUnreadCount}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                          className={`absolute flex items-center justify-center rounded-full border-0 bg-gradient-to-r from-red-500 to-pink-500 text-[10px] font-bold text-white shadow-lg ${
+                            isSticky
+                              ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
+                              : "-top-1 -right-1 h-3 w-3 p-0"
+                          }`}
+                        >
+                          {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Alerts</TooltipContent>
+              </Tooltip>
+            )}
 
             <Tooltip>
               <TooltipTrigger asChild>

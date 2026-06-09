@@ -5,10 +5,18 @@
 
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { api } from "~/trpc/react";
 import { ImageSearchModal } from "~/components/wikios/editor/ImageSearchModal";
+import {
+  InfoboxCountryModal,
+  CountryStatsModal,
+  BusinessStatsModal,
+  MapCoordsModal,
+} from "~/components/wikios/editor/WikiTemplateModals";
+import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { useNotify } from "~/hooks/useNotify";
 import {
   EditorView,
   keymap,
@@ -21,7 +29,7 @@ import {
   ViewPlugin,
 } from "@codemirror/view";
 import type { DecorationSet, ViewUpdate } from "@codemirror/view";
-import { EditorState, RangeSetBuilder } from "@codemirror/state";
+import { EditorState, RangeSetBuilder, Compartment } from "@codemirror/state";
 import {
   defaultKeymap,
   history,
@@ -38,6 +46,7 @@ import {
   foldGutter,
 } from "@codemirror/language";
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
+import { autocompletion, closeBrackets } from "@codemirror/autocomplete";
 import {
   Bold,
   Italic,
@@ -64,7 +73,19 @@ import {
   Hash,
   FileCode,
   Type,
+  ChevronDown,
+  Sparkles,
+  MapPin,
+  Map as MapIcon,
+  Globe,
+  Crown,
+  Bookmark,
+  Copy,
+  Check,
+  Loader2,
+  Settings,
 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 const headingDeco = Decoration.mark({ class: "cm-wikitext-heading" });
 const listDeco = Decoration.mark({ class: "cm-wikitext-list" });
@@ -240,9 +261,14 @@ const wikitextHighlightPlugin = ViewPlugin.fromClass(
 interface WikiSourceEditorProps {
   initialWikitext: string;
   title: string;
-  onSave: (wikitext: string, summary: string, minor: boolean) => void;
+  onSave: (
+    wikitext: string,
+    summary: string,
+    minor: boolean,
+    keepEditing?: boolean
+  ) => Promise<void> | void;
   onCancel: () => void;
-  onSwitchToVisual?: () => void;
+  onSwitchToVisual?: (dirty: boolean) => void;
 }
 
 export function WikiSourceEditor({
@@ -259,16 +285,156 @@ export function WikiSourceEditor({
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const notify = useNotify();
+  const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
+   const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
+  const [saving, setSaving] = useState(false);
+  const [writerMode, setWriterMode] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const [showLineNumbers, setShowLineNumbers] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("wikios-editor-line-numbers") !== "false";
+    }
+    return true;
+  });
+
+  const [enableWordWrap, setEnableWordWrap] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("wikios-editor-word-wrap") !== "false";
+    }
+    return true;
+  });
+
+  const [enableAutocomplete, setEnableAutocomplete] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("wikios-editor-autocomplete") !== "false";
+    }
+    return true;
+  });
+
+  // CodeMirror 6 Compartments for dynamic configuration reconfiguration
+  const lineNumbersComp = useRef(new Compartment());
+  const wordWrapComp = useRef(new Compartment());
+  const autocompleteComp = useRef(new Compartment());
+
+  const handleToggleWriterMode = useCallback((active: boolean) => {
+    setWriterMode(active);
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("wikios-writer-mode", active);
+      if (active) {
+        viewRef.current?.focus();
+      }
+    }
+  }, []);
+
+  const handleToggleLineNumbers = useCallback((val: boolean) => {
+    setShowLineNumbers(val);
+    localStorage.setItem("wikios-editor-line-numbers", String(val));
+  }, []);
+
+  const handleToggleWordWrap = useCallback((val: boolean) => {
+    setEnableWordWrap(val);
+    localStorage.setItem("wikios-editor-word-wrap", String(val));
+  }, []);
+
+  const handleToggleAutocomplete = useCallback((val: boolean) => {
+    setEnableAutocomplete(val);
+    localStorage.setItem("wikios-editor-autocomplete", String(val));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("wikios-writer-mode");
+      }
+    };
+  }, []);
+
+  // Sync preferences with CodeMirror dynamically
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: [
+          lineNumbersComp.current.reconfigure(showLineNumbers ? [lineNumbers(), highlightActiveLineGutter(), foldGutter()] : []),
+        ]
+      });
+    }
+  }, [showLineNumbers]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: [
+          wordWrapComp.current.reconfigure(enableWordWrap ? EditorView.lineWrapping : []),
+        ]
+      });
+    }
+  }, [enableWordWrap]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: [
+          autocompleteComp.current.reconfigure(enableAutocomplete ? [autocompletion(), closeBrackets()] : []),
+        ]
+      });
+    }
+  }, [enableAutocomplete]);
   const [wordCount, setWordCount] = useState(0);
   const [lineCount, setLineCount] = useState(0);
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const [showPreview, setShowPreview] = useState(false);
+  const [showInfoboxModal, setShowInfoboxModal] = useState(false);
+  const [showCountryStatsModal, setShowCountryStatsModal] = useState(false);
+  const [showBusinessStatsModal, setShowBusinessStatsModal] = useState(false);
+  const [showMapCoordsModal, setShowMapCoordsModal] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [stashesOpen, setStashesOpen] = useState(false);
   const previewTimerRef = useRef<NodeJS.Timeout | null>(null);
   const refreshPreviewRef = useRef<() => void>(() => {});
   const previewMutation = api.wikios.previewWikitext.useMutation({
     onSuccess: (data) => setPreviewHtml(data.html),
   });
+
+  // --- Stashed Images Setup ---
+  const stashesQuery = api.wikios.getStashes.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+  const stashes = stashesQuery.data || [];
+  const defaultStash = stashes.find((s) => s.isDefault) || stashes[0];
+  const [selectedStashId, setSelectedStashId] = useState<string | null>(null);
+  const activeStashId = selectedStashId || defaultStash?.id || "";
+
+  const stashItemsQuery = api.wikios.getStashItems.useQuery(
+    { stashId: activeStashId, limit: 50 },
+    { enabled: !!activeStashId, staleTime: 10_000 }
+  );
+  const stashItems = stashItemsQuery.data?.items || [];
+
+  const imageItems = useMemo(() => {
+    return stashItems.filter((item) => item.pageTitle.startsWith("commons:"));
+  }, [stashItems]);
+
+  const imageTitles = useMemo(() => {
+    return imageItems.map((item) => item.pageTitle.replace(/^commons:/, ""));
+  }, [imageItems]);
+
+  const { data: resolvedImages } = api.commons.getImageInfoByTitles.useQuery(
+    { titles: imageTitles },
+    { enabled: imageTitles.length > 0, staleTime: 5 * 60 * 1000 }
+  );
+
+  const imagesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    if (resolvedImages) {
+      for (const img of resolvedImages) {
+        map.set(`commons:${img.title}`, img);
+      }
+    }
+    return map;
+  }, [resolvedImages]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -294,10 +460,10 @@ export function WikiSourceEditor({
     const state = EditorState.create({
       doc: initialWikitext,
       extensions: [
-        lineNumbers(),
-        highlightActiveLineGutter(),
+        lineNumbersComp.current.of(showLineNumbers ? [lineNumbers(), highlightActiveLineGutter(), foldGutter()] : []),
+        wordWrapComp.current.of(enableWordWrap ? EditorView.lineWrapping : []),
+        autocompleteComp.current.of(enableAutocomplete ? [autocompletion(), closeBrackets()] : []),
         history(),
-        foldGutter(),
         drawSelection(),
         rectangularSelection(),
         bracketMatching(),
@@ -307,7 +473,6 @@ export function WikiSourceEditor({
         wikitextHighlightPlugin,
         oneDark,
         keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
-        EditorView.lineWrapping,
         updateStats,
         EditorView.theme({
           "&": {
@@ -437,10 +602,59 @@ export function WikiSourceEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPreview]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     const wikitext = viewRef.current?.state.doc.toString() ?? initialWikitext;
-    onSave(wikitext, summary, minor);
-  }, [onSave, summary, minor, initialWikitext]);
+    setSaving(true);
+    const isSession = saveActionType === "session";
+    try {
+      await onSave(wikitext, summary, minor, isSession);
+      localStorage.removeItem(`wikios-draft-${title}`); // Clear draft
+      setIsDirty(false);
+      setShowSavePanel(false);
+      notify.success(
+        isSession ? "Session Saved" : "Article Published",
+        isSession
+          ? "Your progress has been saved successfully."
+          : "Your changes have been published to the wiki."
+      );
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  }, [onSave, summary, minor, initialWikitext, title, saveActionType, notify]);
+
+  const handleSaveDraft = useCallback(() => {
+    const wikitext = viewRef.current?.state.doc.toString() ?? "";
+    try {
+      localStorage.setItem(`wikios-draft-${title}`, wikitext);
+      setIsDirty(false);
+      notify.success("Draft Saved", "Your draft has been saved locally.");
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+      notify.error("Save Draft Failed", "Could not write draft to local storage.");
+    }
+  }, [title, notify]);
+
+  // Check for local draft on mount
+  useEffect(() => {
+    const draft = localStorage.getItem(`wikios-draft-${title}`);
+    if (draft && draft !== initialWikitext) {
+      const timer = setTimeout(() => {
+        const restore = window.confirm(
+          `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
+        );
+        if (restore && viewRef.current) {
+          const docLength = viewRef.current.state.doc.length;
+          viewRef.current.dispatch({
+            changes: { from: 0, to: docLength, insert: draft },
+          });
+          setIsDirty(true);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [title, initialWikitext]);
 
   // Wikitext formatting helpers
   const wrapSelection = useCallback((before: string, after: string) => {
@@ -502,7 +716,29 @@ export function WikiSourceEditor({
         <div className="wikios-editor-titlebar-left">
           <FileText className="h-4 w-4 text-blue-400" />
           <span className="wikios-editor-titlebar-name">{title}</span>
+          {isDirty && (
+            <span className="wikios-ve-dirty ml-1.5 opacity-60 text-[10px] text-blue-400 uppercase font-semibold">
+              Unsaved
+            </span>
+          )}
         </div>
+
+        {/* Center: Apple-style switch toggle */}
+        <div className="wikios-editor-titlebar-center">
+          <div className="flex items-center gap-2.5 text-xs font-semibold select-none">
+            <span style={{ color: "var(--wikios-text)" }} className="transition-colors duration-150">Source</span>
+            <AppleSwitch
+              checked={false}
+              onCheckedChange={(checked) => {
+                if (checked) onSwitchToVisual?.(isDirty);
+              }}
+              size="sm"
+              tone="accent"
+            />
+            <span style={{ color: "var(--wikios-text-dim)" }} className="transition-colors duration-150">Canvas</span>
+          </div>
+        </div>
+
         <div className="wikios-editor-titlebar-actions">
           <button
             className={`wikios-editor-btn-secondary ${showPreview ? "wikios-editor-btn-active" : ""}`}
@@ -513,27 +749,65 @@ export function WikiSourceEditor({
             {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             Preview
           </button>
-          {onSwitchToVisual && (
-            <button
-              className="wikios-editor-btn-secondary"
-              onClick={onSwitchToVisual}
-              type="button"
-            >
-              Visual
-            </button>
-          )}
           <button className="wikios-editor-btn-secondary" onClick={onCancel} type="button">
             <X className="h-3.5 w-3.5" />
             Cancel
           </button>
-          <button
-            className="wikios-editor-btn-primary"
-            onClick={() => setShowSavePanel(!showSavePanel)}
-            type="button"
-          >
-            <Save className="h-3.5 w-3.5" />
-            Publish
-          </button>
+
+          <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
+            <PopoverTrigger
+              className="wikios-editor-btn-primary flex items-center gap-1.5"
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              <span>Save</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-52 p-1 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+              <div className="flex flex-col gap-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveDropdownOpen(false);
+                    setSaveActionType("publish");
+                    setShowSavePanel(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Save className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Save and Publish</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveDropdownOpen(false);
+                    handleSaveDraft();
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <FileText className="h-3.5 w-3.5 text-blue-400" />
+                  <span>Save as Draft</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveDropdownOpen(false);
+                    setSaveActionType("session");
+                    if (!summary) setSummary("Session save");
+                    setShowSavePanel(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Bookmark className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Save Session</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -555,8 +829,17 @@ export function WikiSourceEditor({
             <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />
             Minor
           </label>
-          <button className="wikios-editor-btn-primary" onClick={handleSave} type="button">
-            Publish
+          <button className="wikios-editor-btn-primary" onClick={handleSave} type="button" disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                Saving...
+              </>
+            ) : saveActionType === "publish" ? (
+              "Save & Publish"
+            ) : (
+              "Save Session"
+            )}
           </button>
         </div>
       )}
@@ -648,6 +931,71 @@ export function WikiSourceEditor({
         {/* Media & Templates */}
         <div className="wikios-editor-format-group">
           <FmtBtn icon={Image} title="Insert image" onClick={() => setShowImageSearch(true)} />
+
+          {/* Stashed Images Quick Insert */}
+          <Popover open={stashesOpen} onOpenChange={setStashesOpen}>
+            <PopoverTrigger
+              className="wikios-editor-format-btn"
+              title="Stashed Images"
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-3 glass-surface glass-refraction bg-[#0c1524]/95 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+                  <Bookmark className="h-3.5 w-3.5 text-rose-500" />
+                  <span>Stashed Images</span>
+                </span>
+                
+                {stashes.length > 1 && (
+                  <select
+                    value={activeStashId}
+                    onChange={(e) => setSelectedStashId(e.target.value)}
+                    className="text-[10px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-zinc-300 focus:outline-none focus:border-white/20 cursor-pointer"
+                  >
+                    {stashes.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-zinc-950 text-zinc-300">
+                        {s.name} ({s.itemCount})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {stashesQuery.isLoading || (activeStashId && stashItemsQuery.isLoading) ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                </div>
+              ) : imageItems.length === 0 ? (
+                <div className="text-center py-6 px-4">
+                  <p className="text-[11px] text-zinc-400">No stashed images found.</p>
+                  <p className="text-[9px] text-zinc-500 mt-1">Stash images from the Category Browser to insert them here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1 wikios-custom-scrollbar">
+                  {imageItems.map((item) => {
+                    const imgInfo = imagesMap.get(item.pageTitle);
+                    const filename = item.pageTitle.replace(/^commons:File:/, "");
+                    const cleanTitle = filename.replace(/_/g, " ");
+
+                    return (
+                      <StashImageCard
+                        key={item.id}
+                        imgInfo={imgInfo}
+                        cleanTitle={cleanTitle}
+                        filename={filename}
+                        onInsert={() => {
+                          setStashesOpen(false);
+                          insertAtCursor(`[[File:${filename}|thumb|]]`);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+
           <FmtBtn
             icon={Table}
             title="Table"
@@ -660,6 +1008,128 @@ export function WikiSourceEditor({
           <FmtBtn icon={FileCode} title="Template" onClick={() => wrapSelection("{{", "}}")} />
           <FmtBtn icon={Hash} title="Category" onClick={() => insertAtCursor("[[Category:]]")} />
           <FmtBtn icon={Type} title="Reference" onClick={() => wrapSelection("<ref>", "</ref>")} />
+          
+          <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
+            <PopoverTrigger
+              className="wikios-editor-format-btn !w-auto flex items-center gap-1.5 px-2.5 rounded"
+              title="Insert Templates & Widgets"
+            >
+              <FileCode className="h-3.5 w-3.5" />
+              <span className="text-xs font-semibold">Templates</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-1 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+              <div className="flex flex-col gap-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    setShowInfoboxModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <FileText className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Infobox Country</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    setShowCountryStatsModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <MyCountryTinyIcon />
+                  <span>Country Stats</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    setShowBusinessStatsModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-teal-400" />
+                  <span>Business Stats</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    setShowMapCoordsModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Map Coords &amp; Embeds</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Far right: Editor Settings */}
+        <div className="ml-auto flex items-center">
+          <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <PopoverTrigger
+              className="wikios-editor-format-btn"
+              title="Editor Settings"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-2 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+              <div className="flex flex-col gap-2.5 text-xs p-1">
+                <div className="font-semibold border-b border-[var(--wikios-border)] pb-1.5 mb-1 text-[var(--wikios-text-dim)]">
+                  Editor Settings
+                </div>
+                
+                {/* Writer Mode */}
+                <div className="flex items-center justify-between select-none">
+                  <span className="font-medium">Writer Mode</span>
+                  <AppleSwitch
+                    checked={writerMode}
+                    onCheckedChange={handleToggleWriterMode}
+                    size="sm"
+                    tone="accent"
+                  />
+                </div>
+
+                {/* Line Numbers */}
+                <div className="flex items-center justify-between select-none">
+                  <span className="font-medium">Line Numbers</span>
+                  <AppleSwitch
+                    checked={showLineNumbers}
+                    onCheckedChange={handleToggleLineNumbers}
+                    size="sm"
+                    tone="accent"
+                  />
+                </div>
+
+                {/* Word Wrap */}
+                <div className="flex items-center justify-between select-none">
+                  <span className="font-medium">Word Wrap</span>
+                  <AppleSwitch
+                    checked={enableWordWrap}
+                    onCheckedChange={handleToggleWordWrap}
+                    size="sm"
+                    tone="accent"
+                  />
+                </div>
+
+                {/* Autocomplete */}
+                <div className="flex items-center justify-between select-none">
+                  <span className="font-medium">Autocomplete</span>
+                  <AppleSwitch
+                    checked={enableAutocomplete}
+                    onCheckedChange={handleToggleAutocomplete}
+                    size="sm"
+                    tone="accent"
+                  />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -699,6 +1169,91 @@ export function WikiSourceEditor({
         onClose={() => setShowImageSearch(false)}
         onInsert={(wikitext) => insertAtCursor(wikitext)}
       />
+
+      {/* Infobox Country Modal */}
+      <InfoboxCountryModal
+        isOpen={showInfoboxModal}
+        onClose={() => setShowInfoboxModal(false)}
+        onInsert={insertAtCursor}
+      />
+
+      {/* Country Stats Modal */}
+      <CountryStatsModal
+        isOpen={showCountryStatsModal}
+        onClose={() => setShowCountryStatsModal(false)}
+        onInsert={insertAtCursor}
+      />
+
+      {/* Business Stats Modal */}
+      <BusinessStatsModal
+        isOpen={showBusinessStatsModal}
+        onClose={() => setShowBusinessStatsModal(false)}
+        onInsert={insertAtCursor}
+      />
+
+      {/* Map Coords & Embeds Modal */}
+      <MapCoordsModal
+        isOpen={showMapCoordsModal}
+        onClose={() => setShowMapCoordsModal(false)}
+        onInsert={insertAtCursor}
+      />
+    </div>
+  );
+}
+
+// Stash Image Card Component
+function StashImageCard({
+  imgInfo,
+  cleanTitle,
+  filename,
+  onInsert,
+}: {
+  imgInfo: any;
+  cleanTitle: string;
+  filename: string;
+  onInsert: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(`[[File:${filename}|thumb|]]`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div
+      onClick={onInsert}
+      className="group relative aspect-square bg-white/5 border border-white/5 rounded-lg overflow-hidden cursor-pointer hover:border-white/10 hover:bg-white/10 transition-all"
+      title={`Click to insert [[File:${filename}]]`}
+    >
+      {imgInfo?.thumbUrl ? (
+        <img
+          src={imgInfo.thumbUrl}
+          alt={cleanTitle}
+          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="h-3 w-3 rounded-full border border-zinc-700 border-t-zinc-400 animate-spin" />
+        </div>
+      )}
+      
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="p-1 bg-zinc-950/80 border border-white/10 rounded-md text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
+          title="Copy Wikitext Link"
+        >
+          {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+        </button>
+      </div>
+
+      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 to-transparent p-1 truncate text-[8px] text-zinc-300 group-hover:text-white">
+        {cleanTitle}
+      </div>
     </div>
   );
 }
@@ -709,5 +1264,19 @@ function FmtBtn({ icon: Icon, title, onClick }: { icon: any; title: string; onCl
     <button onClick={onClick} title={title} type="button" className="wikios-editor-format-btn">
       <Icon className="h-3.5 w-3.5" />
     </button>
+  );
+}
+
+// Tiny MyCountry Logo representation for Popovers
+function MyCountryTinyIcon() {
+  return (
+    <div className="relative flex items-center justify-center h-4 w-4 shrink-0">
+      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 border border-amber-300/50 flex items-center justify-center shadow-sm">
+        <Globe className="h-2 w-2 text-amber-950" />
+      </div>
+      <div className="absolute -top-0.5 -right-0.5 rounded-full border border-amber-300 bg-amber-400 p-[0.5px] flex items-center justify-center shadow-sm">
+        <Crown className="text-amber-950 h-1.5 w-1.5" />
+      </div>
+    </div>
   );
 }

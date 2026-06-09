@@ -96,27 +96,55 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
   },
 ];
 
+const LOCAL_CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    label: "Core Media",
+    categories: [
+      "Flags",
+      "Maps",
+      "Images",
+    ],
+  },
+  {
+    label: "Society & Culture",
+    categories: [
+      "Coats of arms",
+      "Buildings",
+      "Churches",
+      "Castles",
+      "Military",
+    ],
+  },
+];
+
 interface CommonsCategoryBrowserProps {
   activeCategories: string[];
   browsingCategory: string | null;
   onToggleCategory: (category: string) => void;
   onBrowseCategory: (category: string) => void;
+  wiki?: "commons" | "ixwiki" | "iiwiki";
 }
 
 // Flatten all categories for the batch info query (max 20 per call)
 const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
+const ALL_LOCAL_CATEGORIES = LOCAL_CATEGORY_GROUPS.flatMap((g) => g.categories);
 
 export function CommonsCategoryBrowser({
   activeCategories,
   browsingCategory,
   onToggleCategory,
   onBrowseCategory,
+  wiki = "commons",
 }: CommonsCategoryBrowserProps) {
+  const isCommons = wiki === "commons";
+  const groups = isCommons ? CATEGORY_GROUPS : LOCAL_CATEGORY_GROUPS;
+  const allCats = isCommons ? ALL_CATEGORIES : ALL_LOCAL_CATEGORIES;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
-    () => ({ [CATEGORY_GROUPS[0]!.label]: true }) // First group open by default
+    () => ({ [groups[0]!.label]: true }) // First group open by default
   );
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,21 +155,27 @@ export function CommonsCategoryBrowser({
     []
   );
 
+  // Reset expansion states when wiki source changes
+  useEffect(() => {
+    setExpandedGroups({ [groups[0]!.label]: true });
+    setExpanded({});
+  }, [wiki, groups]);
+
   // Auto-expand parent category and group if browsingCategory is selected
   useEffect(() => {
     if (!browsingCategory) return;
 
     // Auto-expand the main category folder
-    if (ALL_CATEGORIES.includes(browsingCategory)) {
+    if (allCats.includes(browsingCategory)) {
       setExpanded((prev) => ({ ...prev, [browsingCategory]: true }));
     }
 
     // Auto-expand the parent group that contains the browsingCategory
-    const parentGroup = CATEGORY_GROUPS.find((g) => g.categories.includes(browsingCategory));
+    const parentGroup = groups.find((g) => g.categories.includes(browsingCategory));
     if (parentGroup) {
       setExpandedGroups((prev) => ({ ...prev, [parentGroup.label]: true }));
     }
-  }, [browsingCategory]);
+  }, [browsingCategory, groups, allCats]);
 
   const handleSearch = useCallback((val: string) => {
     setSearchQuery(val);
@@ -149,21 +183,38 @@ export function CommonsCategoryBrowser({
     timerRef.current = setTimeout(() => setDebouncedQuery(val), 300);
   }, []);
 
-  // Autocomplete when searching
-  const { data: autocompleteResults } = api.commons.autocompleteCategories.useQuery(
-    { prefix: debouncedQuery, limit: 15 },
-    { enabled: debouncedQuery.length >= 2, staleTime: 60_000 }
-  );
-
   const isSearching = debouncedQuery.length >= 2;
 
-  const { data: searchCounts } = api.commons.getCategoryTotalCounts.useQuery(
+  // Autocomplete when searching
+  const { data: commonsAutocomplete } = api.commons.autocompleteCategories.useQuery(
+    { prefix: debouncedQuery, limit: 15 },
+    { enabled: isCommons && isSearching, staleTime: 60_000 }
+  );
+
+  const { data: localAutocomplete } = api.wiki.autocompleteCategories.useQuery(
+    { prefix: debouncedQuery, limit: 15, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    { enabled: !isCommons && isSearching, staleTime: 60_000 }
+  );
+
+  const autocompleteResults = isCommons ? commonsAutocomplete : localAutocomplete;
+
+  const { data: commonsSearchCounts } = api.commons.getCategoryTotalCounts.useQuery(
     { categories: autocompleteResults ?? [] },
     {
-      enabled: isSearching && !!autocompleteResults && autocompleteResults.length > 0,
+      enabled: isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
       staleTime: 30 * 60 * 1000,
     }
   );
+
+  const { data: localSearchCounts } = api.wiki.getCategoryTotalCounts.useQuery(
+    { categories: autocompleteResults ?? [], wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    {
+      enabled: !isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
+      staleTime: 30 * 60 * 1000,
+    }
+  );
+
+  const searchCounts = isCommons ? commonsSearchCounts : localSearchCounts;
 
   return (
     <div className="wikios-commons-sidebar">
@@ -199,6 +250,7 @@ export function CommonsCategoryBrowser({
                   }
                 }}
                 onExpand={() => setExpanded((prev) => ({ ...prev, [cat]: !prev[cat] }))}
+                wiki={wiki}
               />
             ))}
             {(!autocompleteResults || autocompleteResults.length === 0) && (
@@ -206,7 +258,7 @@ export function CommonsCategoryBrowser({
             )}
           </>
         ) : (
-          CATEGORY_GROUPS.map((group) => (
+          groups.map((group) => (
             <CategoryGroupSection
               key={group.label}
               group={group}
@@ -220,6 +272,7 @@ export function CommonsCategoryBrowser({
               onToggleCategory={onToggleCategory}
               onBrowseCategory={onBrowseCategory}
               setExpanded={setExpanded}
+              wiki={wiki}
             />
           ))
         )}
@@ -242,6 +295,7 @@ interface CategoryGroupSectionProps {
   onToggleCategory: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  wiki?: "commons" | "ixwiki" | "iiwiki";
 }
 
 function CategoryGroupSection({
@@ -254,11 +308,21 @@ function CategoryGroupSection({
   onToggleCategory,
   onBrowseCategory,
   setExpanded,
+  wiki = "commons",
 }: CategoryGroupSectionProps) {
-  const { data: groupCounts } = api.commons.getCategoryTotalCounts.useQuery(
+  const isCommons = wiki === "commons";
+
+  const { data: commonsGroupCounts } = api.commons.getCategoryTotalCounts.useQuery(
     { categories: group.categories },
-    { enabled: isGroupOpen, staleTime: 30 * 60 * 1000 }
+    { enabled: isCommons && isGroupOpen, staleTime: 30 * 60 * 1000 }
   );
+
+  const { data: localGroupCounts } = api.wiki.getCategoryTotalCounts.useQuery(
+    { categories: group.categories, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    { enabled: !isCommons && isGroupOpen, staleTime: 30 * 60 * 1000 }
+  );
+
+  const groupCounts = isCommons ? commonsGroupCounts : localGroupCounts;
 
   return (
     <div className="wikios-commons-group">
@@ -283,6 +347,7 @@ function CategoryGroupSection({
               }
             }}
             onExpand={() => setExpanded((prev) => ({ ...prev, [cat]: !prev[cat] }))}
+            wiki={wiki}
           />
         ))}
     </div>
@@ -302,6 +367,7 @@ function CategoryRow({
   onToggle,
   onBrowse,
   onExpand,
+  wiki = "commons",
 }: {
   name: string;
   totalCount?: number;
@@ -311,11 +377,21 @@ function CategoryRow({
   onToggle: () => void;
   onBrowse: (categoryName: string) => void;
   onExpand: () => void;
+  wiki?: "commons" | "ixwiki" | "iiwiki";
 }) {
-  const { data: subcats } = api.commons.getSubcategories.useQuery(
+  const isCommons = wiki === "commons";
+
+  const { data: commonsSubcats } = api.commons.getSubcategories.useQuery(
     { category: name, limit: 20 },
-    { enabled: isExpanded, staleTime: 5 * 60 * 1000 }
+    { enabled: isCommons && isExpanded, staleTime: 5 * 60 * 1000 }
   );
+
+  const { data: localSubcats } = api.wiki.getSubcategories.useQuery(
+    { category: name, limit: 20, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    { enabled: !isCommons && isExpanded, staleTime: 5 * 60 * 1000 }
+  );
+
+  const subcats = isCommons ? commonsSubcats : localSubcats;
 
   const isBrowsingThisCat = browsingCategory === name;
 

@@ -235,7 +235,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                   icon={<RiMapPin2Line className="h-2.5 w-2.5 text-orange-400" />}
                   label="Area"
                 >
-                  <NumberFlowDisplay value={country.landArea} suffix=" km²" className="" />
+                  <NumberFlowDisplay value={Math.round(country.landArea)} suffix=" km²" className="" />
                 </CompactStat>
               )}
               {country.populationDensity != null && (

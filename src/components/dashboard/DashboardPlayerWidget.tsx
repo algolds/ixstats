@@ -255,7 +255,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                     <MapIcon className="h-3 w-3 text-amber-500 dark:text-amber-400" /> Area
                   </span>
                   <span className="text-foreground text-[10px] font-semibold">
-                    {formatCompactNumber((country as any)?.newStats?.landArea)} km²
+                    {Math.round((country as any)?.newStats?.landArea).toLocaleString()} km²
                   </span>
                 </div>
               )}

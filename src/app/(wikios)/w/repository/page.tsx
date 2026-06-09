@@ -8,7 +8,6 @@ import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import { CommonsCategoryBrowser } from "~/components/wikios/commons/CommonsCategoryBrowser";
 import { CommonsResultsGrid } from "~/components/wikios/commons/CommonsResultsGrid";
 import { CommonsDetailPanel } from "~/components/wikios/commons/CommonsDetailPanel";
-import { ImageSearchGrid } from "~/components/wikios/editor/ImageSearchGrid";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Search, X, Globe, Database, HelpCircle } from "lucide-react";
@@ -29,7 +28,7 @@ interface CommonsImage {
   license: string;
 }
 
-type Tab = "commons" | "ixwiki";
+type Tab = "commons" | "ixwiki" | "iiwiki";
 
 function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
   const m = (mime || "").toLowerCase();
@@ -62,6 +61,18 @@ export default function RepositoryPage() {
   const [searchOffset, setSearchOffset] = useState(0);
   const [catOffset, setCatOffset] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTabChange = useCallback((newTab: Tab) => {
+    setTab(newTab);
+    setSearchQuery("");
+    setDebouncedQuery("");
+    setAllImages([]);
+    setSearchOffset(0);
+    setCatOffset(0);
+    setBrowsingCategory(null);
+    setSelectedImage(null);
+    setActiveCategories([]);
+  }, []);
 
   // Filters state
   const [fileTypeFilter, setFileTypeFilter] = useState<"all" | "jpg" | "png" | "svg">("all");
@@ -113,34 +124,102 @@ export default function RepositoryPage() {
     { enabled: tab === "commons" && isBrowseMode, staleTime: 60_000 }
   );
 
+  // Map category to local equivalent for IxWiki/IIWiki
+  const localCategoryName = useMemo(() => {
+    if (!browsingCategory) return null;
+    const cat = browsingCategory.toLowerCase();
+    if (cat.includes("flag")) return "Flags";
+    if (cat.includes("map")) return "Maps";
+    if (cat.includes("castle")) return "Castles";
+    if (cat.includes("cathedral") || cat.includes("church") || cat.includes("mosque") || cat.includes("monastery") || cat.includes("religious building")) return "Churches";
+    if (cat.includes("coat of arm") || cat.includes("heraldry")) return "Coats of arms";
+    if (cat.includes("palace") || cat.includes("royal residence") || cat.includes("government building")) return "Buildings";
+    if (cat.includes("uniform") || cat.includes("military")) return "Military";
+    if (cat.includes("portrait") || cat.includes("painting")) return "Images";
+    return browsingCategory;
+  }, [browsingCategory]);
+
+  const localIsBrowseMode = (tab === "ixwiki" || tab === "iiwiki") && !debouncedQuery && !!localCategoryName;
+
+  // Search local or external wiki files query
+  const { data: wikiFileData, isFetching: wikiFileFetching } = api.wiki.searchFiles.useQuery(
+    {
+      query: debouncedQuery || undefined,
+      category: localIsBrowseMode ? (localCategoryName ?? undefined) : undefined,
+      limit: 50,
+      wiki: tab === "iiwiki" ? "iiwiki" : "ixwiki"
+    },
+    { enabled: (tab === "ixwiki" || tab === "iiwiki") && (debouncedQuery.length >= 2 || localIsBrowseMode), staleTime: 60_000 }
+  );
+
   // Merge incoming data into allImages
   useEffect(() => {
-    if (searchData?.images && isSearchMode) {
-      setAllImages((prev) =>
-        searchOffset === 0 ? searchData.images : [...prev, ...searchData.images]
-      );
+    if (tab === "commons") {
+      if (searchData?.images && isSearchMode) {
+        setAllImages((prev) =>
+          searchOffset === 0 ? searchData.images : [...prev, ...searchData.images]
+        );
+      }
     }
-  }, [searchData, searchOffset, isSearchMode]);
+  }, [searchData, searchOffset, isSearchMode, tab]);
 
   useEffect(() => {
-    if (catData?.images && isBrowseMode) {
-      setAllImages((prev) => (catOffset === 0 ? catData.images : [...prev, ...catData.images]));
+    if (tab === "commons") {
+      if (catData?.images && isBrowseMode) {
+        setAllImages((prev) => (catOffset === 0 ? catData.images : [...prev, ...catData.images]));
+      }
     }
-  }, [catData, catOffset, isBrowseMode]);
+  }, [catData, catOffset, isBrowseMode, tab]);
+
+  // Map and set ixwiki/iiwiki images
+  useEffect(() => {
+    if (tab === "ixwiki" || tab === "iiwiki") {
+      if (debouncedQuery.length < 2 && !localIsBrowseMode) {
+        setAllImages([]);
+        return;
+      }
+      if (wikiFileData) {
+        const isIiwiki = tab === "iiwiki";
+        const offset = isIiwiki ? 2000000 : 1000000;
+        const mapped = wikiFileData.map((img: { name: string; size: number; width: number; height: number; mime?: string; url?: string }, index: number) => ({
+          pageid: index + offset,
+          title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
+          thumbUrl: img.url,
+          url: img.url,
+          descriptionUrl: isIiwiki
+            ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
+            : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
+          width: img.width || 0,
+          height: img.height || 0,
+          mime: img.mime || "image/png",
+          description: isIiwiki
+            ? `External upload on IIWiki. Size: ${(img.size / 1024).toFixed(1)} KB`
+            : `Local upload on IxWiki. Size: ${(img.size / 1024).toFixed(1)} KB`,
+          artist: isIiwiki ? "IIWiki Contributor" : "IxWiki Contributor",
+          license: "CC BY-SA 3.0",
+        }));
+        setAllImages(mapped);
+      }
+    }
+  }, [wikiFileData, tab, debouncedQuery, localIsBrowseMode]);
 
   const handleLoadMore = () => {
-    if (isSearchMode && searchData?.nextOffset != null) {
-      setSearchOffset(searchData.nextOffset);
-    } else if (isBrowseMode && catData?.nextOffset != null) {
-      setCatOffset(catData.nextOffset);
+    if (tab === "commons") {
+      if (isSearchMode && searchData?.nextOffset != null) {
+        setSearchOffset(searchData.nextOffset);
+      } else if (isBrowseMode && catData?.nextOffset != null) {
+        setCatOffset(catData.nextOffset);
+      }
     }
   };
 
-  const hasMore = isSearchMode
-    ? searchData?.nextOffset != null
-    : isBrowseMode
-      ? catData?.nextOffset != null
-      : false;
+  const hasMore = tab === "commons"
+    ? (isSearchMode
+      ? searchData?.nextOffset != null
+      : isBrowseMode
+        ? catData?.nextOffset != null
+        : false)
+    : false;
 
   const handleToggleCategory = (cat: string) => {
     setActiveCategories((prev) =>
@@ -179,22 +258,6 @@ export default function RepositoryPage() {
         {/* Header bar */}
         <div className="wikios-commons-header">
           <div className="wikios-commons-header-left flex items-center gap-2">
-            <div className="wikios-commons-tabs">
-              <button
-                onClick={() => setTab("commons")}
-                className={`wikios-commons-tab ${tab === "commons" ? "wikios-commons-tab--active" : ""}`}
-              >
-                <Globe className="h-3.5 w-3.5" />
-                Commons
-              </button>
-              <button
-                onClick={() => setTab("ixwiki")}
-                className={`wikios-commons-tab ${tab === "ixwiki" ? "wikios-commons-tab--active" : ""}`}
-              >
-                <Database className="h-3.5 w-3.5" />
-                IxWiki
-              </button>
-            </div>
             <button
               onClick={() => setWelcomeOpen(true)}
               className="cursor-pointer rounded-full p-1 text-[var(--wikios-text-dim)] transition-colors hover:bg-white/5 hover:text-blue-500"
@@ -203,16 +266,45 @@ export default function RepositoryPage() {
             >
               <HelpCircle className="h-4 w-4" />
             </button>
+            <div className="wikios-commons-tabs">
+              <button
+                onClick={() => handleTabChange("commons")}
+                className={`wikios-commons-tab ${tab === "commons" ? "wikios-commons-tab--active" : ""}`}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                Commons
+              </button>
+              <button
+                onClick={() => handleTabChange("ixwiki")}
+                className={`wikios-commons-tab ${tab === "ixwiki" ? "wikios-commons-tab--active" : ""}`}
+              >
+                <Database className="h-3.5 w-3.5" />
+                IxWiki
+              </button>
+              <button
+                onClick={() => handleTabChange("iiwiki")}
+                className={`wikios-commons-tab ${tab === "iiwiki" ? "wikios-commons-tab--active" : ""}`}
+              >
+                <Database className="h-3.5 w-3.5" />
+                IIWiki
+              </button>
+            </div>
           </div>
 
-          {tab === "commons" && (
+          {(tab === "commons" || tab === "ixwiki" || tab === "iiwiki") && (
             <div className="wikios-commons-search">
               <Search className="h-4 w-4 shrink-0 text-[var(--wikios-text-dim)]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder='Search images... e.g. "medieval castle", "15th century portrait"'
+                placeholder={
+                  tab === "commons"
+                    ? 'Search Commons... e.g. "medieval castle", "15th century portrait"'
+                    : tab === "iiwiki"
+                      ? 'Search IIWiki files... e.g. "map", "flag"'
+                      : 'Search IxWiki files... e.g. "map", "flag"'
+                }
                 className="wikios-commons-search-input"
               />
               {searchQuery && (
@@ -231,7 +323,7 @@ export default function RepositoryPage() {
         </div>
 
         {/* Filter controls */}
-        {tab === "commons" && (
+        {(tab === "commons" || tab === "ixwiki" || tab === "iiwiki") && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-1 pb-3 text-xs">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {/* File Type Filter */}
@@ -315,10 +407,10 @@ export default function RepositoryPage() {
         )}
 
         {/* Browsing category label */}
-        {tab === "commons" && browsingCategory && !isSearchMode && (
+        {browsingCategory && !isSearchMode && (
           <div className="wikios-commons-chips">
             <span className="wikios-commons-chip wikios-commons-chip--browse">
-              Browsing: {browsingCategory}
+              Browsing: {browsingCategory} {localIsBrowseMode && `(${localCategoryName})`}
               <button
                 onClick={() => {
                   setBrowsingCategory(null);
@@ -332,34 +424,34 @@ export default function RepositoryPage() {
         )}
 
         {/* Main panels */}
-        {tab === "commons" ? (
-          <div
-            className={`wikios-commons-panels ${selectedImage ? "wikios-commons-panels--detail" : ""}`}
-          >
-            <CommonsCategoryBrowser
-              activeCategories={activeCategories}
-              browsingCategory={browsingCategory}
-              onToggleCategory={handleToggleCategory}
-              onBrowseCategory={handleBrowseCategory}
-            />
-            <CommonsResultsGrid
-              images={filteredImages}
-              selectedImage={selectedImage}
-              onSelect={setSelectedImage}
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              isLoading={searchFetching || catFetching}
-              totalHits={searchData?.totalHits}
-            />
-            {selectedImage && (
-              <CommonsDetailPanel image={selectedImage} onClose={() => setSelectedImage(null)} />
-            )}
-          </div>
-        ) : (
-          <div className="wikios-commons-ixwiki">
-            <ImageSearchGrid />
-          </div>
-        )}
+        <div
+          className={cn(
+            "wikios-commons-panels",
+            selectedImage && "wikios-commons-panels--detail"
+          )}
+        >
+          <CommonsCategoryBrowser
+            activeCategories={activeCategories}
+            browsingCategory={browsingCategory}
+            onToggleCategory={handleToggleCategory}
+            onBrowseCategory={handleBrowseCategory}
+            wiki={tab === "commons" ? "commons" : tab === "iiwiki" ? "iiwiki" : "ixwiki"}
+          />
+
+          <CommonsResultsGrid
+            images={filteredImages}
+            selectedImage={selectedImage}
+            onSelect={setSelectedImage}
+            onLoadMore={handleLoadMore}
+            hasMore={hasMore}
+            isLoading={tab === "commons" ? (searchFetching || catFetching) : wikiFileFetching}
+            totalHits={tab === "commons" ? searchData?.totalHits : wikiFileData?.length}
+          />
+
+          {selectedImage && (
+            <CommonsDetailPanel image={selectedImage} onClose={() => setSelectedImage(null)} />
+          )}
+        </div>
       </div>
       <RepositoryWelcomeModal open={welcomeOpen} onOpenChangeAction={setWelcomeOpen} />
     </WikiOSLayout>

@@ -1,11 +1,12 @@
 // @ts-nocheck
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Vote, Landmark, Scale, Calendar, TrendingUp } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { TabHeroBanner } from "~/components/mycountry/primitives/TabHeroBanner";
 import { ParliamentHemicycle } from "./ParliamentHemicycle";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // ── Type shapes inferred from tRPC query returns ──────────────────────────
 
@@ -129,6 +130,18 @@ const CHAMBER_LABELS: Record<string, string> = {
   bicameral: "Bicameral",
 };
 
+const getChamberLabel = (chamberType: string) => {
+  if (chamberType && chamberType.includes("|")) {
+    const base = chamberType.split("|")[0];
+    if (base === "unicameral") return "Unicameral";
+    if (base === "bicameral") return "Bicameral";
+    if (base === "tricameral") return "Tricameral";
+    if (base === "tetracameral") return "Tetracameral";
+    return base || "Custom Legislature";
+  }
+  return CHAMBER_LABELS[chamberType] ?? chamberType;
+};
+
 const TYPE_LABELS: Record<string, string> = {
   general: "General",
   special: "By-Election",
@@ -244,10 +257,60 @@ export function PoliticsOverview({
   const partySummary = parliament?.partySummary ?? [];
   const totalSeats = legislature?.totalSeats ?? 0;
 
+  // Multi-chamber tabs
+  const chambers = parliament?.legislature?.chambers ?? [];
+  const [activeChamberTab, setActiveChamberTab] = useState<string>("");
+
+  useEffect(() => {
+    if (chambers.length > 0) {
+      if (!activeChamberTab || !chambers.some((c) => c.name === activeChamberTab)) {
+        setActiveChamberTab(chambers[0].name);
+      }
+    } else {
+      setActiveChamberTab("");
+    }
+  }, [chambers]);
+
+  // Dynamically filter seats and aggregate summary for the active chamber tab
+  const activeChamberSeats = useMemo(() => {
+    if (chambers.length <= 1) return hemicycleSeats;
+    return hemicycleSeats.filter((s) => s.chamber === activeChamberTab);
+  }, [hemicycleSeats, chambers, activeChamberTab]);
+
+  const activeChamberSeatsCount = useMemo(() => {
+    if (chambers.length <= 1) return totalSeats;
+    const activeChamber = chambers.find((c) => c.name === activeChamberTab);
+    return activeChamber ? activeChamber.seats : activeChamberSeats.length;
+  }, [chambers, activeChamberTab, activeChamberSeats, totalSeats]);
+
+  const activeChamberPartySummary = useMemo(() => {
+    if (chambers.length <= 1) return partySummary;
+
+    const counts = new Map<string, { party: any; seats: number }>();
+    for (const seat of activeChamberSeats) {
+      if (seat.partyId) {
+        const existing = counts.get(seat.partyId);
+        if (existing) {
+          existing.seats++;
+        } else {
+          const refSummary = partySummary.find((ps) => ps.party.id === seat.partyId);
+          const partyObj = refSummary
+            ? refSummary.party
+            : { id: seat.partyId, name: seat.partyName, shortName: null, color: seat.partyColor, ideology: "center" };
+          counts.set(seat.partyId, {
+            party: partyObj,
+            seats: 1,
+          });
+        }
+      }
+    }
+    return Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
+  }, [activeChamberSeats, chambers, partySummary]);
+
   const visibleParties = activeSortedParties.slice(0, 6);
   const extraParties = activeSortedParties.length - 6;
-  const visiblePartySummary = partySummary.slice(0, 6);
-  const extraSummary = partySummary.length - 6;
+  const visiblePartySummary = activeChamberPartySummary.slice(0, 6);
+  const extraSummary = activeChamberPartySummary.length - 6;
 
   return (
     <div className="space-y-4">
@@ -274,7 +337,7 @@ export function PoliticsOverview({
           label="Legislature"
           value={
             legislature
-              ? `${legislature.name} (${CHAMBER_LABELS[legislature.chamberType] ?? legislature.chamberType})`
+              ? `${legislature.name} (${getChamberLabel(legislature.chamberType)})`
               : "Not configured"
           }
           muted={!legislature}
@@ -301,23 +364,44 @@ export function PoliticsOverview({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Parliament Composition */}
         <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
-          <div className="flex items-center gap-2">
-            <Landmark className="h-4 w-4 text-indigo-500" />
-            <h3 className="text-sm font-semibold">Parliament Composition</h3>
-            {totalSeats > 0 && (
-              <Badge variant="outline" className="ml-auto text-[10px]">
-                {totalSeats} seats
-              </Badge>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-indigo-500" />
+              <h3 className="text-sm font-semibold">Parliament Composition</h3>
+              {activeChamberSeatsCount > 0 && (
+                <Badge variant="outline" className="ml-auto text-[10px]">
+                  {activeChamberSeatsCount} seats
+                </Badge>
+              )}
+            </div>
+
+            {/* Chamber Tabs */}
+            {chambers.length > 1 && (
+              <div className="mt-1 border-t border-slate-800 pt-2">
+                <Tabs value={activeChamberTab} onValueChange={setActiveChamberTab}>
+                  <TabsList className="flex-wrap gap-1 bg-transparent p-0">
+                    {chambers.map((chamber) => (
+                      <TabsTrigger
+                        key={chamber.name}
+                        value={chamber.name}
+                        className="h-7 text-[10px] px-2.5 py-1 bg-slate-900 border border-slate-800 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:border-indigo-600 animate-in fade-in zoom-in duration-200"
+                      >
+                        {chamber.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
             )}
           </div>
 
-          {hemicycleSeats.length > 0 && totalSeats > 0 ? (
+          {activeChamberSeats.length > 0 && activeChamberSeatsCount > 0 ? (
             <>
               <ParliamentHemicycle
-                seats={hemicycleSeats}
-                totalSeats={totalSeats}
-                partySummary={partySummary}
-                legislatureName={legislature?.name}
+                seats={activeChamberSeats}
+                totalSeats={activeChamberSeatsCount}
+                partySummary={activeChamberPartySummary}
+                legislatureName={chambers.length > 1 ? activeChamberTab : legislature?.name}
               />
               {visiblePartySummary.length > 0 && (
                 <div className="border-border space-y-0.5 border-t pt-2">
@@ -325,7 +409,7 @@ export function PoliticsOverview({
                     <PartyRow
                       key={ps.party.id}
                       party={ps.party}
-                      totalSeats={totalSeats}
+                      totalSeats={activeChamberSeatsCount}
                       seats={ps.seats}
                       showSeats
                     />

@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import {
   Bold,
   Italic,
@@ -35,18 +35,43 @@ import {
   Table,
   Indent,
   Outdent,
+  Bookmark,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Check,
+  Sparkles,
+  Map as MapIcon,
+  FileCode,
+  Globe,
+  Crown,
+  Settings,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { TemplateInserter } from "~/components/wikios/editor/TemplateInserter";
 import { ImageSearchModal } from "~/components/wikios/editor/ImageSearchModal";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import {
+  InfoboxCountryModal,
+  CountryStatsModal,
+  BusinessStatsModal,
+  MapCoordsModal,
+} from "~/components/wikios/editor/WikiTemplateModals";
+import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { useNotify } from "~/hooks/useNotify";
 
 interface WikiVisualEditorProps {
   initialHtml: string;
   title: string;
-  onSave: (html: string, summary: string, minor: boolean) => void;
+  onSave: (
+    html: string,
+    summary: string,
+    minor: boolean,
+    keepEditing?: boolean
+  ) => Promise<void> | void;
   onCancel: () => void;
-  onSwitchToSource: () => void;
+  onSwitchToSource: (dirty: boolean) => void;
 }
 
 export function WikiVisualEditor({
@@ -64,6 +89,10 @@ export function WikiVisualEditor({
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showTemplateInserter, setShowTemplateInserter] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
+  const [showInfoboxModal, setShowInfoboxModal] = useState(false);
+  const [showCountryStatsModal, setShowCountryStatsModal] = useState(false);
+  const [showBusinessStatsModal, setShowBusinessStatsModal] = useState(false);
+  const [showMapCoordsModal, setShowMapCoordsModal] = useState(false);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
   const [editingTemplate, setEditingTemplate] = useState<{
     element: HTMLElement;
@@ -72,17 +101,85 @@ export function WikiVisualEditor({
   } | null>(null);
   const [wordCount, setWordCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const notify = useNotify();
+  const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
+  const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
+  const [writerMode, setWriterMode] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const [enableAutocomplete, setEnableAutocomplete] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("wikios-editor-autocomplete") !== "false";
+    }
+    return true;
+  });
+
+  const handleToggleWriterMode = useCallback((active: boolean) => {
+    setWriterMode(active);
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("wikios-writer-mode", active);
+      if (active) {
+        editableRef.current?.focus();
+      }
+    }
+  }, []);
+
+  const handleToggleAutocomplete = useCallback((val: boolean) => {
+    setEnableAutocomplete(val);
+    localStorage.setItem("wikios-editor-autocomplete", String(val));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("wikios-writer-mode");
+      }
+    };
+  }, []);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [stashesOpen, setStashesOpen] = useState(false);
 
   const previewMutation = api.wikios.previewWikitext.useMutation();
 
-  // ---------------------------------------------------------------------------
-  // Mount Parsoid HTML + protect templates/images
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    const el = editableRef.current;
-    if (!el) return;
-    el.innerHTML = initialHtml;
+  // --- Stashed Images Setup ---
+  const stashesQuery = api.wikios.getStashes.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+  const stashes = stashesQuery.data || [];
+  const defaultStash = stashes.find((s) => s.isDefault) || stashes[0];
+  const [selectedStashId, setSelectedStashId] = useState<string | null>(null);
+  const activeStashId = selectedStashId || defaultStash?.id || "";
 
+  const stashItemsQuery = api.wikios.getStashItems.useQuery(
+    { stashId: activeStashId, limit: 50 },
+    { enabled: !!activeStashId, staleTime: 10_000 }
+  );
+  const stashItems = stashItemsQuery.data?.items || [];
+
+  const imageItems = useMemo(() => {
+    return stashItems.filter((item) => item.pageTitle.startsWith("commons:"));
+  }, [stashItems]);
+
+  const imageTitles = useMemo(() => {
+    return imageItems.map((item) => item.pageTitle.replace(/^commons:/, ""));
+  }, [imageItems]);
+
+  const { data: resolvedImages } = api.commons.getImageInfoByTitles.useQuery(
+    { titles: imageTitles },
+    { enabled: imageTitles.length > 0, staleTime: 5 * 60 * 1000 }
+  );
+
+  const imagesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    if (resolvedImages) {
+      for (const img of resolvedImages) {
+        map.set(`commons:${img.title}`, img);
+      }
+    }
+    return map;
+  }, [resolvedImages]);
+
+  const protectTemplatesAndImages = useCallback((el: HTMLElement) => {
     // Protect template transclusions.
     // Parsoid uses `about` attributes to group elements belonging to the same transclusion.
     // The `typeof="mw:Transclusion"` may be on a <style> tag while the visible <table> shares the same `about`.
@@ -122,9 +219,37 @@ export function WikiVisualEditor({
       (fig as HTMLElement).contentEditable = "false";
       fig.classList.add("wikios-ve-media");
     });
+  }, []);
 
+  // ---------------------------------------------------------------------------
+  // Mount Parsoid HTML + protect templates/images
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const el = editableRef.current;
+    if (!el) return;
+    el.innerHTML = initialHtml;
+    protectTemplatesAndImages(el);
     setWordCount(el.innerText.split(/\s+/).filter(Boolean).length);
-  }, [initialHtml]);
+  }, [initialHtml, protectTemplatesAndImages]);
+
+  // Check for local HTML draft on mount
+  useEffect(() => {
+    const draft = localStorage.getItem(`wikios-draft-html-${title}`);
+    if (draft && draft !== initialHtml) {
+      const timer = setTimeout(() => {
+        const restore = window.confirm(
+          `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
+        );
+        if (restore && editableRef.current) {
+          editableRef.current.innerHTML = draft;
+          protectTemplatesAndImages(editableRef.current);
+          setIsDirty(true);
+          setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [title, initialHtml, protectTemplatesAndImages]);
 
   // ---------------------------------------------------------------------------
   // Selection state tracking — powers toolbar active indicators
@@ -346,14 +471,36 @@ export function WikiVisualEditor({
   const handleSave = useCallback(async () => {
     const html = editableRef.current?.innerHTML ?? "";
     setSaving(true);
+    const isSession = saveActionType === "session";
     try {
-      await onSave(html, summary, minor);
+      await onSave(html, summary, minor, isSession);
+      localStorage.removeItem(`wikios-draft-html-${title}`); // Clear draft
+      setIsDirty(false);
+      setShowSavePanel(false);
+      notify.success(
+        isSession ? "Session Saved" : "Article Published",
+        isSession
+          ? "Your progress has been saved successfully."
+          : "Your changes have been published to the wiki."
+      );
     } catch (err) {
       console.error("Save failed:", err);
     } finally {
       setSaving(false);
     }
-  }, [onSave, summary, minor]);
+  }, [onSave, summary, minor, title, saveActionType, notify]);
+
+  const handleSaveDraft = useCallback(() => {
+    const html = editableRef.current?.innerHTML ?? "";
+    try {
+      localStorage.setItem(`wikios-draft-html-${title}`, html);
+      setIsDirty(false);
+      notify.success("Draft Saved", "Your draft has been saved locally.");
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+      notify.error("Save Draft Failed", "Could not write draft to local storage.");
+    }
+  }, [title, notify]);
 
   // ---------------------------------------------------------------------------
   // Template insertion
@@ -503,29 +650,91 @@ export function WikiVisualEditor({
       {/* Title bar */}
       <div className="wikios-ve-titlebar">
         <div className="wikios-ve-titlebar-left">
-          <span className="wikios-ve-titlebar-badge">Visual Editor</span>
+          <FileText className="h-4 w-4 text-blue-400" />
           <span className="wikios-ve-titlebar-name">{title}</span>
-          {isDirty && <span className="wikios-ve-dirty">Unsaved</span>}
+          {isDirty && (
+            <span className="wikios-ve-dirty ml-1.5 opacity-60 text-[10px] text-blue-400 uppercase font-semibold">
+              Unsaved
+            </span>
+          )}
         </div>
+
+        {/* Center: Apple-style switch toggle */}
+        <div className="wikios-ve-titlebar-center">
+          <div className="flex items-center gap-2.5 text-xs font-semibold select-none">
+            <span style={{ color: "var(--wikios-text-dim)" }} className="transition-colors duration-150">Source</span>
+            <AppleSwitch
+              checked={true}
+              onCheckedChange={(checked) => {
+                if (!checked) onSwitchToSource(isDirty);
+              }}
+              size="sm"
+              tone="accent"
+            />
+            <span style={{ color: "var(--wikios-text)" }} className="transition-colors duration-150">Canvas</span>
+          </div>
+        </div>
+
         <div className="wikios-ve-titlebar-actions">
-          <button
-            className="wikios-ve-btn wikios-ve-btn-ghost"
-            onClick={onSwitchToSource}
-            type="button"
-          >
-            <FileText size={14} /> Source
-          </button>
-          <button className="wikios-ve-btn wikios-ve-btn-ghost" onClick={onCancel} type="button">
+          <button className="wikios-editor-btn-secondary" onClick={onCancel} type="button">
+            <X className="h-3.5 w-3.5" />
             Cancel
           </button>
-          <button
-            className="wikios-ve-btn wikios-ve-btn-primary"
-            onClick={() => setShowSavePanel(!showSavePanel)}
-            type="button"
-          >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            Publish
-          </button>
+
+          <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
+            <PopoverTrigger
+              className="wikios-editor-btn-primary flex items-center gap-1.5"
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              <span>Save</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-52 p-1 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+              <div className="flex flex-col gap-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveDropdownOpen(false);
+                    setSaveActionType("publish");
+                    setShowSavePanel(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Save className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Save and Publish</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveDropdownOpen(false);
+                    handleSaveDraft();
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <FileText className="h-3.5 w-3.5 text-blue-400" />
+                  <span>Save as Draft</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveDropdownOpen(false);
+                    setSaveActionType("session");
+                    if (!summary) setSummary("Session save");
+                    setShowSavePanel(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Bookmark className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Save Session</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -544,15 +753,25 @@ export function WikiVisualEditor({
             }}
           />
           <label className="wikios-ve-save-minor">
-            <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />{" "}
+            <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />
             Minor
           </label>
           <button
-            className="wikios-ve-btn wikios-ve-btn-primary"
+            className="wikios-editor-btn-primary"
             onClick={handleSave}
             type="button"
+            disabled={saving}
           >
-            {saving ? "Publishing..." : "Publish"}
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                Saving...
+              </>
+            ) : saveActionType === "publish" ? (
+              "Save & Publish"
+            ) : (
+              "Save Session"
+            )}
           </button>
         </div>
       )}
@@ -699,15 +918,150 @@ export function WikiVisualEditor({
               setShowImageSearch(true);
             }}
           />
+
+          <Popover open={stashesOpen} onOpenChange={setStashesOpen}>
+            <PopoverTrigger
+              className="wikios-editor-format-btn"
+              title="Stashed Images"
+              onClick={saveSelection}
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-3 glass-surface glass-refraction bg-[#0c1524]/95 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2 text-white">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+                  <Bookmark className="h-3.5 w-3.5 text-rose-500" />
+                  <span>Stashed Images</span>
+                </span>
+                
+                {stashes.length > 1 && (
+                  <select
+                    value={activeStashId}
+                    onChange={(e) => setSelectedStashId(e.target.value)}
+                    className="text-[10px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-zinc-300 focus:outline-none focus:border-white/20 cursor-pointer"
+                  >
+                    {stashes.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-zinc-950 text-zinc-300">
+                        {s.name} ({s.itemCount})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {stashesQuery.isLoading || (activeStashId && stashItemsQuery.isLoading) ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                </div>
+              ) : imageItems.length === 0 ? (
+                <div className="text-center py-6 px-4">
+                  <p className="text-[11px] text-zinc-400">No stashed images found.</p>
+                  <p className="text-[9px] text-zinc-500 mt-1">Stash images from the Category Browser to insert them here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1 wikios-custom-scrollbar">
+                  {imageItems.map((item) => {
+                    const imgInfo = imagesMap.get(item.pageTitle);
+                    const filename = item.pageTitle.replace(/^commons:File:/, "");
+                    const cleanTitle = filename.replace(/_/g, " ");
+
+                    return (
+                      <StashImageCard
+                        key={item.id}
+                        imgInfo={imgInfo}
+                        cleanTitle={cleanTitle}
+                        filename={filename}
+                        onInsert={() => {
+                          setStashesOpen(false);
+                          restoreSelection();
+                          handleInsertImage(`[[File:${filename}|thumb|]]`);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+
           <VEBtn icon={<Table size={14} />} title="Insert table" onClick={insertTable} />
-          <VEBtn
-            icon={<Puzzle size={14} />}
-            title="Insert template"
-            onClick={() => {
-              saveSelection();
-              setShowTemplateInserter(!showTemplateInserter);
-            }}
-          />
+
+          <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
+            <PopoverTrigger
+              className="wikios-editor-format-btn !w-auto flex items-center gap-1.5 px-2.5 rounded text-zinc-300 hover:text-white"
+              title="Insert Templates & Widgets"
+              onClick={saveSelection}
+            >
+              <FileCode className="h-3.5 w-3.5" />
+              <span className="text-xs font-semibold">Templates</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-1 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+              <div className="flex flex-col gap-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    restoreSelection();
+                    setShowInfoboxModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <FileText className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Infobox Country</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    restoreSelection();
+                    setShowCountryStatsModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <MyCountryTinyIcon />
+                  <span>Country Stats</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    restoreSelection();
+                    setShowBusinessStatsModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-teal-400" />
+                  <span>Business Stats</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    restoreSelection();
+                    setShowMapCoordsModal(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Map Coords &amp; Embeds</span>
+                </button>
+                <div className="border-t border-[var(--wikios-border)] my-0.5" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                    restoreSelection();
+                    setShowTemplateInserter(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+                >
+                  <Puzzle className="h-3.5 w-3.5" />
+                  <span>Generic Template...</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <VEBtn icon={<Minus size={14} />} title="Horizontal rule" onClick={insertHR} />
           <VEBtn
             icon={
@@ -728,6 +1082,47 @@ export function WikiVisualEditor({
             title="Clear formatting"
             onClick={clearFormatting}
           />
+        </div>
+
+        {/* Far right: Editor Settings */}
+        <div className="ml-auto flex items-center">
+          <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <PopoverTrigger
+              className="wikios-editor-format-btn"
+              title="Editor Settings"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-2 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+              <div className="flex flex-col gap-2.5 text-xs p-1">
+                <div className="font-semibold border-b border-[var(--wikios-border)] pb-1.5 mb-1 text-[var(--wikios-text-dim)]">
+                  Editor Settings
+                </div>
+                
+                {/* Writer Mode */}
+                <div className="flex items-center justify-between select-none">
+                  <span className="font-medium">Writer Mode</span>
+                  <AppleSwitch
+                    checked={writerMode}
+                    onCheckedChange={handleToggleWriterMode}
+                    size="sm"
+                    tone="accent"
+                  />
+                </div>
+
+                {/* Autocomplete */}
+                <div className="flex items-center justify-between select-none">
+                  <span className="font-medium">Autocomplete</span>
+                  <AppleSwitch
+                    checked={enableAutocomplete}
+                    onCheckedChange={handleToggleAutocomplete}
+                    size="sm"
+                    tone="accent"
+                  />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -764,6 +1159,46 @@ export function WikiVisualEditor({
         isOpen={showImageSearch}
         onClose={() => setShowImageSearch(false)}
         onInsert={handleInsertImage}
+      />
+
+      {/* Custom Template Modals */}
+      <InfoboxCountryModal
+        isOpen={showInfoboxModal}
+        onClose={() => setShowInfoboxModal(false)}
+        onInsert={(wikitext) => {
+          restoreSelection();
+          const { templateName, params } = parseWikitextTemplate(wikitext);
+          handleInsertTemplate(templateName, params);
+        }}
+      />
+
+      <CountryStatsModal
+        isOpen={showCountryStatsModal}
+        onClose={() => setShowCountryStatsModal(false)}
+        onInsert={(wikitext) => {
+          restoreSelection();
+          const { templateName, params } = parseWikitextTemplate(wikitext);
+          handleInsertTemplate(templateName, params);
+        }}
+      />
+
+      <BusinessStatsModal
+        isOpen={showBusinessStatsModal}
+        onClose={() => setShowBusinessStatsModal(false)}
+        onInsert={(wikitext) => {
+          restoreSelection();
+          const { templateName, params } = parseWikitextTemplate(wikitext);
+          handleInsertTemplate(templateName, params);
+        }}
+      />
+
+      <MapCoordsModal
+        isOpen={showMapCoordsModal}
+        onClose={() => setShowMapCoordsModal(false)}
+        onInsert={(wikitext) => {
+          restoreSelection();
+          insertHtmlAtCursor(wikitext);
+        }}
       />
 
       {editingTemplate && (
@@ -911,6 +1346,99 @@ function TemplateEditorDialog({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Stash Image Card Component for Visual Editor
+// ---------------------------------------------------------------------------
+function StashImageCard({
+  imgInfo,
+  cleanTitle,
+  filename,
+  onInsert,
+}: {
+  imgInfo: any;
+  cleanTitle: string;
+  filename: string;
+  onInsert: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(`[[File:${filename}|thumb|]]`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div
+      onClick={onInsert}
+      className="group relative aspect-square bg-white/5 border border-white/5 rounded-lg overflow-hidden cursor-pointer hover:border-white/10 hover:bg-white/10 transition-all text-white"
+      title={`Click to insert [[File:${filename}]]`}
+    >
+      {imgInfo?.thumbUrl ? (
+        <img
+          src={imgInfo.thumbUrl}
+          alt={cleanTitle}
+          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="h-3 w-3 rounded-full border border-zinc-700 border-t-zinc-400 animate-spin" />
+        </div>
+      )}
+      
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="p-1 bg-zinc-950/80 border border-white/10 rounded-md text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
+          title="Copy Wikitext Link"
+        >
+          {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+        </button>
+      </div>
+
+      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 to-transparent p-1 truncate text-[8px] text-zinc-300 group-hover:text-white">
+        {cleanTitle}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wikitext template parser utility
+// ---------------------------------------------------------------------------
+function parseWikitextTemplate(wikitext: string) {
+  const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
+  const parts = clean.split("|");
+  const templateName = parts[0]?.trim() || "";
+  const params: Record<string, string> = {};
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i]!;
+    const eqIdx = part.indexOf("=");
+    if (eqIdx !== -1) {
+      const key = part.slice(0, eqIdx).trim();
+      const val = part.slice(eqIdx + 1).trim();
+      params[key] = val;
+    }
+  }
+  return { templateName, params };
+}
+
+// Tiny MyCountry Logo representation for Popovers
+function MyCountryTinyIcon() {
+  return (
+    <div className="relative flex items-center justify-center h-4 w-4 shrink-0">
+      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 border border-amber-300/50 flex items-center justify-center shadow-sm">
+        <Globe className="h-2 w-2 text-amber-950" />
+      </div>
+      <div className="absolute -top-0.5 -right-0.5 rounded-full border border-amber-300 bg-amber-400 p-[0.5px] flex items-center justify-center shadow-sm">
+        <Crown className="text-amber-950 h-1.5 w-1.5" />
       </div>
     </div>
   );

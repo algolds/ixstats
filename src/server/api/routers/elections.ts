@@ -57,6 +57,49 @@ function fptpAllocation(
   return seats;
 }
 
+export interface ChamberConfig {
+  name: string;
+  seats: number;
+  electoralSystem: "proportional" | "fptp" | "mixed";
+}
+
+export function parseChambers(
+  chamberType: string,
+  legislatureName: string,
+  totalSeats: number,
+  globalElectoralSystem: string
+): ChamberConfig[] {
+  if (chamberType.includes("|")) {
+    const [, serialized] = chamberType.split("|");
+    if (serialized) {
+      const parts = serialized.split(";").filter(Boolean);
+      return parts.map((part) => {
+        const [name, seatsStr, system] = part.split(":");
+        return {
+          name: name || "Chamber",
+          seats: Number(seatsStr) || 100,
+          electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+        };
+      });
+    }
+  }
+
+  // Fallbacks
+  const system = (globalElectoralSystem || "proportional") as any;
+  if (chamberType === "bicameral") {
+    const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
+    const houseSeats = Math.max(10, totalSeats - senateSeats);
+    return [
+      { name: "House of Representatives", seats: houseSeats, electoralSystem: system },
+      { name: "Senate", seats: senateSeats, electoralSystem: system },
+    ];
+  }
+
+  return [
+    { name: legislatureName || "National Assembly", seats: totalSeats, electoralSystem: system },
+  ];
+}
+
 export const electionsRouter = createTRPCRouter({
   // ─── Political Parties ─────────────────────────────────
 
@@ -203,62 +246,93 @@ export const electionsRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         name: z.string().min(1).max(200),
-        chamberType: z.enum(["unicameral", "bicameral"]).default("unicameral"),
-        totalSeats: z.number().int().min(10).max(1000).default(100),
-        electoralSystem: z.enum(["proportional", "fptp", "mixed"]).default("proportional"),
-        termLength: z.number().int().min(1).max(10).default(4),
+        chamberType: z.string(),
+        totalSeats: z.number().min(10).max(10000),
+        electoralSystem: z.enum(["proportional", "fptp", "mixed"]),
+        termLength: z.number().min(1).max(10),
         electionCycle: z.enum(["fixed", "variable"]).default("fixed"),
       })
     )
     .mutation(async ({ ctx, input }) => {
       if (ctx.user?.countryId !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only manage legislature for your own country",
+        });
       }
 
-      const legislature = await ctx.db.legislature.upsert({
+      const chambers = parseChambers(
+        input.chamberType,
+        input.name,
+        input.totalSeats,
+        input.electoralSystem
+      );
+      const computedTotalSeats = chambers.reduce((acc, c) => acc + c.seats, 0);
+
+      let legislature = await ctx.db.legislature.findUnique({
         where: { countryId: input.countryId },
-        create: {
-          countryId: input.countryId,
-          name: input.name,
-          chamberType: input.chamberType,
-          totalSeats: input.totalSeats,
-          electoralSystem: input.electoralSystem,
-          termLength: input.termLength,
-          electionCycle: input.electionCycle,
-        },
-        update: {
-          name: input.name,
-          chamberType: input.chamberType,
-          totalSeats: input.totalSeats,
-          electoralSystem: input.electoralSystem,
-          termLength: input.termLength,
-          electionCycle: input.electionCycle,
-        },
       });
 
-      // Initialize seats if they don't exist yet
-      const existingSeats = await ctx.db.legislativeSeat.count({
+      if (legislature) {
+        legislature = await ctx.db.legislature.update({
+          where: { countryId: input.countryId },
+          data: {
+            name: input.name,
+            chamberType: input.chamberType,
+            totalSeats: computedTotalSeats,
+            electoralSystem: input.electoralSystem,
+            termLength: input.termLength,
+            electionCycle: input.electionCycle,
+          },
+        });
+      } else {
+        legislature = await ctx.db.legislature.create({
+          data: {
+            countryId: input.countryId,
+            name: input.name,
+            chamberType: input.chamberType,
+            totalSeats: computedTotalSeats,
+            electoralSystem: input.electoralSystem,
+            termLength: input.termLength,
+            electionCycle: input.electionCycle,
+          },
+        });
+      }
+
+      await ctx.db.legislativeSeat.deleteMany({
         where: { legislatureId: legislature.id },
       });
 
-      if (existingSeats === 0) {
-        const seatData = Array.from({ length: input.totalSeats }, (_, i) => ({
-          legislatureId: legislature.id,
-          seatNumber: i + 1,
-          isActive: true,
-        }));
-        await ctx.db.legislativeSeat.createMany({ data: seatData });
-      } else if (existingSeats !== input.totalSeats) {
-        // Resize: delete all and recreate
-        await ctx.db.legislativeSeat.deleteMany({
-          where: { legislatureId: legislature.id },
+      const seatsToCreate = [];
+      let seatNumber = 1;
+      for (const chamber of chambers) {
+        for (let i = 0; i < chamber.seats; i++) {
+          seatsToCreate.push({
+            legislatureId: legislature.id,
+            seatNumber: seatNumber++,
+            region: chamber.name,
+            isActive: true,
+          });
+        }
+      }
+
+      await ctx.db.legislativeSeat.createMany({
+        data: seatsToCreate,
+      });
+
+      try {
+        await notificationAPI.create({
+          title: "Legislature Configured",
+          message: `Legislature "${input.name}" has been configured with ${computedTotalSeats} seats across ${chambers.length} chamber(s).`,
+          countryId: input.countryId,
+          category: "governance",
+          priority: "medium",
+          type: "info",
+          source: "elections",
+          href: "/mycountry/politics",
         });
-        const seatData = Array.from({ length: input.totalSeats }, (_, i) => ({
-          legislatureId: legislature.id,
-          seatNumber: i + 1,
-          isActive: true,
-        }));
-        await ctx.db.legislativeSeat.createMany({ data: seatData });
+      } catch (e) {
+        console.warn("[Notifications] elections.configureLegislature:", e);
       }
 
       return legislature;
@@ -493,21 +567,38 @@ export const electionsRouter = createTRPCRouter({
       const totalVotesCast = Math.floor((country?.currentPopulation || 1000000) * 0.65);
       const turnout = Math.min(95, 55 + (country?.overallNationalHealth ?? 50) * 0.3);
 
-      // Step 3: Allocate seats based on electoral system
-      let seatAllocation: Map<string, number>;
-      if (legislature.electoralSystem === "proportional") {
-        seatAllocation = dHondtAllocation(partyVotes, totalSeats);
-      } else if (legislature.electoralSystem === "fptp") {
-        seatAllocation = fptpAllocation(partyVotes, totalSeats);
-      } else {
-        // Mixed: half proportional, half FPTP
-        const propSeats = Math.floor(totalSeats / 2);
-        const fptpSeats = totalSeats - propSeats;
-        const propAlloc = dHondtAllocation(partyVotes, propSeats);
-        const fptpAlloc = fptpAllocation(partyVotes, fptpSeats);
-        seatAllocation = new Map<string, number>();
-        for (const [pid, s] of propAlloc) {
-          seatAllocation.set(pid, s + (fptpAlloc.get(pid) ?? 0));
+      // Step 3: Allocate seats based on electoral system per chamber
+      const chambers = parseChambers(
+        legislature.chamberType,
+        legislature.name,
+        legislature.totalSeats,
+        legislature.electoralSystem
+      );
+
+      const chamberAllocations: { chamberName: string; allocation: Map<string, number> }[] = [];
+      const totalSeatsWonPerParty = new Map<string, number>();
+
+      for (const chamber of chambers) {
+        let alloc: Map<string, number>;
+        if (chamber.electoralSystem === "proportional") {
+          alloc = dHondtAllocation(partyVotes, chamber.seats);
+        } else if (chamber.electoralSystem === "fptp") {
+          alloc = fptpAllocation(partyVotes, chamber.seats);
+        } else {
+          // Mixed: half proportional, half FPTP
+          const propSeats = Math.floor(chamber.seats / 2);
+          const fptpSeats = chamber.seats - propSeats;
+          const propAlloc = dHondtAllocation(partyVotes, propSeats);
+          const fptpAlloc = fptpAllocation(partyVotes, fptpSeats);
+          alloc = new Map<string, number>();
+          for (const [pid, s] of propAlloc) {
+            alloc.set(pid, s + (fptpAlloc.get(pid) ?? 0));
+          }
+        }
+        chamberAllocations.push({ chamberName: chamber.name, allocation: alloc });
+
+        for (const [partyId, seatsWon] of alloc) {
+          totalSeatsWonPerParty.set(partyId, (totalSeatsWonPerParty.get(partyId) ?? 0) + seatsWon);
         }
       }
 
@@ -515,7 +606,7 @@ export const electionsRouter = createTRPCRouter({
       const results = [];
       for (const pv of partyVotes) {
         const pctOfTotal = (pv.votes / partyVotes.reduce((s, x) => s + x.votes, 0)) * 100;
-        const seatsWon = seatAllocation.get(pv.partyId) ?? 0;
+        const seatsWon = totalSeatsWonPerParty.get(pv.partyId) ?? 0;
 
         const result = await ctx.db.electionResult.create({
           data: {
@@ -529,37 +620,63 @@ export const electionsRouter = createTRPCRouter({
         results.push({ ...result, partyId: pv.partyId });
       }
 
-      // Step 5: Update LegislativeSeat assignments
-      // Sort parties by seats won descending for hemicycle layout (governing coalition on right)
-      const sortedParties = [...seatAllocation.entries()].sort((a, b) => b[1] - a[1]);
-      let seatIdx = 1;
-      for (const [partyId, seatsWon] of sortedParties) {
-        for (let i = 0; i < seatsWon; i++) {
-          await ctx.db.legislativeSeat.updateMany({
-            where: {
-              legislatureId: legislature.id,
-              seatNumber: seatIdx,
-            },
-            data: { partyId },
+      // Step 5: Update LegislativeSeat assignments per chamber
+      const allSeats = await ctx.db.legislativeSeat.findMany({
+        where: { legislatureId: legislature.id },
+        orderBy: { seatNumber: "asc" },
+      });
+
+      const updatedSeatIds = new Set<string>();
+      let seatOffset = 0;
+
+      for (const { chamberName, allocation } of chamberAllocations) {
+        let chamberSeats = allSeats.filter((s) => s.region === chamberName);
+        if (chamberSeats.length === 0) {
+          const chamberConfig = chambers.find((c) => c.name === chamberName);
+          const numSeats = chamberConfig ? chamberConfig.seats : 0;
+          chamberSeats = allSeats.slice(seatOffset, seatOffset + numSeats);
+          seatOffset += numSeats;
+        }
+
+        const sortedChamberParties = [...allocation.entries()].sort((a, b) => b[1] - a[1]);
+
+        let chamberSeatIdx = 0;
+        for (const [partyId, seatsWon] of sortedChamberParties) {
+          for (let i = 0; i < seatsWon; i++) {
+            if (chamberSeatIdx < chamberSeats.length) {
+              const seat = chamberSeats[chamberSeatIdx]!;
+              await ctx.db.legislativeSeat.update({
+                where: { id: seat.id },
+                data: { partyId },
+              });
+              updatedSeatIds.add(seat.id);
+              chamberSeatIdx++;
+            }
+          }
+        }
+
+        while (chamberSeatIdx < chamberSeats.length) {
+          const seat = chamberSeats[chamberSeatIdx]!;
+          await ctx.db.legislativeSeat.update({
+            where: { id: seat.id },
+            data: { partyId: null },
           });
-          seatIdx++;
+          updatedSeatIds.add(seat.id);
+          chamberSeatIdx++;
         }
       }
-      // Clear any remaining seats (shouldn't happen, but safety)
-      while (seatIdx <= totalSeats) {
-        await ctx.db.legislativeSeat.updateMany({
-          where: {
-            legislatureId: legislature.id,
-            seatNumber: seatIdx,
-          },
+
+      const unassignedSeats = allSeats.filter((s) => !updatedSeatIds.has(s.id));
+      for (const seat of unassignedSeats) {
+        await ctx.db.legislativeSeat.update({
+          where: { id: seat.id },
           data: { partyId: null },
         });
-        seatIdx++;
       }
 
       // Step 6: Calculate margin of victory
       const sortedResults = [...results].sort(
-        (a, b) => (seatAllocation.get(b.partyId) ?? 0) - (seatAllocation.get(a.partyId) ?? 0)
+        (a, b) => (totalSeatsWonPerParty.get(b.partyId) ?? 0) - (totalSeatsWonPerParty.get(a.partyId) ?? 0)
       );
       const marginOfVictory =
         sortedResults.length >= 2
@@ -749,12 +866,19 @@ export const electionsRouter = createTRPCRouter({
           totalSeats: legislature.totalSeats,
           electoralSystem: legislature.electoralSystem,
           termLength: legislature.termLength,
+          chambers: parseChambers(
+            legislature.chamberType,
+            legislature.name,
+            legislature.totalSeats,
+            legislature.electoralSystem
+          ),
         },
         seats: legislature.seats.map((s) => ({
           seatNumber: s.seatNumber,
           partyId: s.partyId,
           partyColor: s.party?.color ?? "#94a3b8",
           partyName: s.party?.name ?? "Vacant",
+          chamber: s.region ?? "Assembly",
         })),
         partySummary: Array.from(partySeatCounts.values()).sort((a, b) => b.seats - a.seats),
       };

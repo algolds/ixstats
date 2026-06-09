@@ -327,8 +327,7 @@
   width: 200px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
-  padding: 12px 10px;
-  border-radius: 16px;
+  padding: 12px 14px;
   font-family: var(--wikios-font-ui);
   display: flex;
   flex-direction: column;
@@ -338,50 +337,25 @@
     padding 0.2s,
     opacity 0.2s;
 
-  /* Glass blur — same as Dynamic Island ExpandedView */
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Matches the rail's transparent border-l layout */
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
-/* Refraction border glow — subtle gradient edges */
+/* Refraction border glow — disabled for transparent aesthetic */
 .wikios-sticky-toc::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  pointer-events: none;
-  background: linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.12),
-      transparent 40%,
-      transparent 60%,
-      rgba(255, 255, 255, 0.06)
-    )
-    border-box;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) padding-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) padding-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  padding: 1px;
+  display: none;
 }
 
 /* Light mode */
 [data-theme="light"] .wikios-sticky-toc,
 html:not([data-theme="dark"]) .wikios-sticky-toc {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 /* Collapsed state */
@@ -412,6 +386,213 @@ html:not([data-theme="dark"]) .wikios-sticky-toc {
 [data-theme="light"] .wikios-sticky-toc-header,
 html:not([data-theme="dark"]) .wikios-sticky-toc-header {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.wikios-sticky-toc-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--wikios-text-dim);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+
+.wikios-sticky-toc-search-btn:hover {
+  color: var(--wikios-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .wikios-sticky-toc-search-btn:hover,
+html:not([data-theme="dark"]) .wikios-sticky-toc-search-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.wikios-sticky-toc-search-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 4px;
+  animation: wikios-search-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes wikios-search-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wikios-sticky-toc-search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.wikios-sticky-toc-search-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--wikios-text);
+  font-size: 11px;
+  padding: 3px 36px 3px 6px; /* Leave space for count badge */
+  outline: none;
+  font-family: var(--wikios-font-ui);
+  text-transform: none; /* Override uppercase from header */
+  letter-spacing: normal;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.wikios-sticky-toc-search-input:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .wikios-sticky-toc-search-input,
+html:not([data-theme="dark"]) .wikios-sticky-toc-search-input {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .wikios-sticky-toc-search-input:focus,
+html:not([data-theme="dark"]) .wikios-sticky-toc-search-input:focus {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.wikios-sticky-toc-search-count {
+  position: absolute;
+  right: 6px;
+  font-size: 8px;
+  font-weight: 600;
+  font-family: var(--wikios-font-ui);
+  color: var(--wikios-text-dim);
+  opacity: 0.8;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+[data-theme="light"] .wikios-sticky-toc-search-count,
+html:not([data-theme="dark"]) .wikios-sticky-toc-search-count {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.wikios-sticky-toc-search-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.wikios-sticky-toc-search-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--wikios-text-dim);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    background 0.12s;
+  flex-shrink: 0;
+}
+
+.wikios-sticky-toc-search-nav-btn:hover:not(:disabled) {
+  color: var(--wikios-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .wikios-sticky-toc-search-nav-btn:hover:not(:disabled),
+html:not([data-theme="dark"]) .wikios-sticky-toc-search-nav-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.wikios-sticky-toc-search-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.wikios-sticky-toc-search-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--wikios-text-dim);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    background 0.12s;
+  flex-shrink: 0;
+}
+
+.wikios-sticky-toc-search-close:hover {
+  color: var(--wikios-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .wikios-sticky-toc-search-close:hover,
+html:not([data-theme="dark"]) .wikios-sticky-toc-search-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Inline text search highlighting */
+.wikios-search-match {
+  background: rgba(245, 158, 11, 0.25);
+  color: #f59e0b;
+  border-bottom: 2px solid #f59e0b;
+  border-radius: 2px;
+  padding: 0 1px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="light"] .wikios-search-match,
+html:not([data-theme="dark"]) .wikios-search-match {
+  background: rgba(245, 158, 11, 0.2);
+  color: #d97706;
+  border-bottom-color: #d97706;
+  box-shadow: 0 0 4px rgba(217, 119, 6, 0.2);
+}
+
+/* Active Highlight */
+.wikios-search-match--active {
+  background: rgba(245, 158, 11, 0.5) !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 0 1px #f59e0b !important;
+}
+
+[data-theme="light"] .wikios-search-match--active,
+html:not([data-theme="dark"]) .wikios-search-match--active {
+  background: rgba(245, 158, 11, 0.4) !important;
+  color: #000000 !important;
+  border-bottom-color: #000000 !important;
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.5), 0 0 0 1px #d97706 !important;
 }
 
 .wikios-sticky-toc-toggle {
@@ -455,28 +636,16 @@ html:not([data-theme="dark"]) .wikios-sticky-toc-header {
   border-radius: 3px;
 }
 
-/* Vertical track — gradient fade at ends */
+/* Vertical track — disabled in favor of border-l */
 .wikios-sticky-toc-track {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(59, 130, 246, 0.15) 15%,
-    rgba(59, 130, 246, 0.15) 85%,
-    transparent
-  );
-  border-radius: 1px;
+  display: none;
 }
 
 /* TOC links */
 .wikios-sticky-toc-item {
   display: block;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
   color: var(--wikios-text-dim);
   text-decoration: none;
   font-size: 12px;
@@ -501,21 +670,21 @@ html:not([data-theme="dark"]) .wikios-sticky-toc-item:hover {
 .wikios-sticky-toc-item--active {
   color: var(--wikios-accent);
   font-weight: 600;
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--wikios-accent-bg);
 }
 
 /* Blue dot indicator on the track */
 .wikios-sticky-toc-item--active::before {
   content: "";
   position: absolute;
-  left: -4px;
+  left: -20px;
   top: 50%;
   transform: translateY(-50%);
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--wikios-accent);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 8px var(--wikios-accent);
 }
 
 .wikios-sticky-toc-text {
@@ -3013,6 +3182,16 @@ button.wikios-rc-expand-btn:hover {
   padding: 0 !important;
 }
 
+.wikios-content:has(.wikios-editor-page),
+.wikios-content:has(.wikios-ve-container) {
+  padding-bottom: 0 !important;
+}
+
+.wikios-root:has(.wikios-editor-page) .wikios-main-footer,
+.wikios-root:has(.wikios-ve-container) .wikios-main-footer {
+  display: none !important;
+}
+
 .wikios-editor-saving {
   display: flex;
   align-items: center;
@@ -3038,31 +3217,54 @@ button.wikios-rc-expand-btn:hover {
 }
 
 /* Title bar */
-.wikios-editor-titlebar {
-  display: flex;
+.wikios-editor-titlebar,
+.wikios-ve-titlebar {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid var(--wikios-border);
+  padding: 0 16px !important;
+  height: 48px !important;
+  background: rgba(12, 21, 36, 0.7) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.wikios-editor-titlebar-left {
+.wikios-editor-titlebar-left,
+.wikios-ve-titlebar-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-self: start;
+  min-width: 0;
 }
 
-.wikios-editor-titlebar-name {
-  font-size: 14px;
+.wikios-editor-titlebar-name,
+.wikios-ve-titlebar-name {
+  font-size: 13px;
   font-weight: 600;
   color: var(--wikios-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.wikios-editor-titlebar-actions {
+.wikios-editor-titlebar-actions,
+.wikios-ve-titlebar-actions {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+
+.wikios-editor-titlebar-center,
+.wikios-ve-titlebar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
 }
 
 .wikios-editor-btn-secondary {
@@ -9214,58 +9416,50 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
 .wikios-ve-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 48px);
-  width: 100%;
-  background: var(--wikios-bg);
-  overflow: hidden;
+  height: calc(100vh - 60px) !important;
+  border: 1px solid var(--wikios-border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  background: var(--wikios-surface) !important;
+  box-sizing: border-box;
 }
 
 /* Title bar */
-.wikios-ve-titlebar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  height: 44px;
-  border-bottom: 1px solid var(--wikios-border);
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(12px);
-  flex-shrink: 0;
+/* Segmented Control styling */
+.wikios-segmented-control {
+  display: inline-flex;
+  padding: 2.5px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 9px;
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.wikios-ve-titlebar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.wikios-ve-titlebar-badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(139, 92, 246, 0.12);
-  color: #a78bfa;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
-}
-
-.wikios-ve-titlebar-name {
-  font-size: 13px;
+.wikios-segmented-btn {
+  padding: 4px 14px;
+  font-size: 11.5px;
   font-weight: 500;
-  color: var(--wikios-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.45);
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+  user-select: none;
 }
 
-.wikios-ve-titlebar-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+.wikios-segmented-btn:hover:not(:disabled):not(.active) {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.wikios-segmented-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 1px rgba(255, 255, 255, 0.2);
+  cursor: default;
 }
 
 .wikios-ve-dirty {
@@ -9428,6 +9622,7 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
   font-size: 15px;
   line-height: 1.7;
   color: var(--wikios-text);
+  text-align: left !important;
 }
 
 .wikios-ve-editable:focus {
@@ -9653,6 +9848,34 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
   .wikios-ve-titlebar-name {
     max-width: 120px;
   }
+}
+
+/* Ensure neutral left alignment for visual editor canvas elements */
+.wikios-ve-editable p,
+.wikios-ve-editable h1,
+.wikios-ve-editable h2,
+.wikios-ve-editable h3,
+.wikios-ve-editable h4,
+.wikios-ve-editable h5,
+.wikios-ve-editable h6,
+.wikios-ve-editable ul,
+.wikios-ve-editable ol,
+.wikios-ve-editable li,
+.wikios-ve-editable blockquote {
+  text-align: left !important;
+}
+
+/* Ensure infobox templates float to the right in the editor to match rendered output */
+.wikios-ve-template:has(.infobox),
+.wikios-ve-template.wikios-ve-infobox,
+div[typeof*="mw:Transclusion"]:has(.infobox),
+.wikios-ve-infobox {
+  float: right !important;
+  clear: right !important;
+  margin: 0.5em 0 1.5em 1.5em !important;
+  width: var(--wikios-infobox-width) !important;
+  max-width: 340px !important;
+  display: block !important;
 }
 
 /* ===================================
@@ -9924,6 +10147,7 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
   font-size: 10px;
   color: var(--wikios-text-dim);
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .wikios-commons-cat-chip {
@@ -10190,6 +10414,29 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
    WikiOS Left Rail Custom Animations & Hover Glows
    =========================================================================== */
 
+/* Centralized spring transition for rail icons */
+.wikios-sidebar-icon-box {
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Apple Depth Lift & Glow Animation: scale up to 1.12, shift right 3px */
+.group:hover .wikios-sidebar-icon-box {
+  transform: scale(1.12) translateX(3px) !important;
+}
+
+/* Slide-right text animation synced with icon box hover shift */
+.wikios-sidebar span {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.group:hover .wikios-sidebar span {
+  transform: translateX(3px);
+}
+
 @keyframes rail-bounce {
   0%,
   100% {
@@ -10225,18 +10472,22 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
 .rail-animate-rotate svg {
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.group:hover .rail-animate-rotate svg,
 .rail-animate-rotate:hover svg {
   transform: rotate(90deg);
 }
 
+.group:hover .rail-animate-bounce svg,
 .rail-animate-bounce:hover svg {
   animation: rail-bounce 0.4s ease-in-out;
 }
 
+.group:hover .rail-animate-wiggle svg,
 .rail-animate-wiggle:hover svg {
   animation: rail-wiggle 0.3s ease-in-out;
 }
 
+.group:hover .rail-animate-spin svg,
 .rail-animate-spin:hover svg {
   animation: rail-spin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -10251,53 +10502,61 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
   }
 }
 
+.group:hover .rail-animate-pulse svg,
 .rail-animate-pulse:hover svg {
   animation: rail-pulse 0.6s infinite ease-in-out;
 }
 
 /* Custom glows */
-.rail-glow-teal:hover {
+.rail-glow-teal:hover,
+.group:hover .rail-glow-teal {
   border-color: rgba(20, 184, 166, 0.45) !important;
   box-shadow: 0 0 12px rgba(20, 184, 166, 0.25) !important;
   background-color: rgba(20, 184, 166, 0.08) !important;
   color: rgb(45, 212, 191) !important;
 }
 
-.rail-glow-blue:hover {
+.rail-glow-blue:hover,
+.group:hover .rail-glow-blue {
   border-color: rgba(59, 130, 246, 0.45) !important;
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.25) !important;
   background-color: rgba(59, 130, 246, 0.08) !important;
   color: rgb(96, 165, 250) !important;
 }
 
-.rail-glow-amber:hover {
+.rail-glow-amber:hover,
+.group:hover .rail-glow-amber {
   border-color: rgba(245, 158, 11, 0.45) !important;
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
   background-color: rgba(245, 158, 11, 0.08) !important;
   color: rgb(251, 191, 36) !important;
 }
 
-.rail-glow-green:hover {
+.rail-glow-green:hover,
+.group:hover .rail-glow-green {
   border-color: rgba(16, 185, 129, 0.45) !important;
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
   background-color: rgba(16, 185, 129, 0.08) !important;
   color: rgb(52, 211, 153) !important;
 }
 
-.rail-glow-purple:hover {
+.rail-glow-purple:hover,
+.group:hover .rail-glow-purple {
   border-color: rgba(168, 85, 247, 0.45) !important;
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.25) !important;
   background-color: rgba(168, 85, 247, 0.08) !important;
   color: rgb(192, 132, 252) !important;
 }
 
-.rail-glow-gold:hover {
+.rail-glow-gold:hover,
+.group:hover .rail-glow-gold {
   border-color: rgba(212, 175, 55, 0.5) !important;
   box-shadow: 0 0 14px rgba(212, 175, 55, 0.25) !important;
   background-color: rgba(212, 175, 55, 0.08) !important;
 }
 
-.rail-glow-gray:hover {
+.rail-glow-gray:hover,
+.group:hover .rail-glow-gray {
   border-color: rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.08) !important;
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -10305,28 +10564,33 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
 }
 
 [data-theme="light"] .rail-glow-gray:hover,
-html:not([data-theme="dark"]) .rail-glow-gray:hover {
+[data-theme="light"] .group:hover .rail-glow-gray,
+html:not([data-theme="dark"]) .rail-glow-gray:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-gray {
   border-color: rgba(0, 0, 0, 0.15) !important;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05) !important;
   background-color: rgba(0, 0, 0, 0.05) !important;
   color: var(--wikios-text) !important;
 }
 
-.rail-glow-pink:hover {
+.rail-glow-pink:hover,
+.group:hover .rail-glow-pink {
   border-color: rgba(236, 72, 153, 0.45) !important;
   box-shadow: 0 0 12px rgba(236, 72, 153, 0.25) !important;
   background-color: rgba(236, 72, 153, 0.08) !important;
   color: rgb(244, 114, 182) !important;
 }
 
-.rail-glow-indigo:hover {
+.rail-glow-indigo:hover,
+.group:hover .rail-glow-indigo {
   border-color: rgba(99, 102, 241, 0.45) !important;
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
   background-color: rgba(99, 102, 241, 0.08) !important;
   color: rgb(129, 140, 248) !important;
 }
 
-.rail-glow-di:hover {
+.rail-glow-di:hover,
+.group:hover .rail-glow-di {
   border-color: rgba(139, 92, 246, 0.4) !important;
   background: linear-gradient(
     135deg,
@@ -10341,7 +10605,9 @@ html:not([data-theme="dark"]) .rail-glow-gray:hover {
 }
 
 [data-theme="light"] .rail-glow-di:hover,
-html:not([data-theme="dark"]) .rail-glow-di:hover {
+[data-theme="light"] .group:hover .rail-glow-di,
+html:not([data-theme="dark"]) .rail-glow-di:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-di {
   border-color: rgba(139, 92, 246, 0.3) !important;
   background: linear-gradient(
     135deg,
@@ -10354,7 +10620,8 @@ html:not([data-theme="dark"]) .rail-glow-di:hover {
   color: #7c3aed !important;
 }
 
-.rail-glow-rose:hover {
+.rail-glow-rose:hover,
+.group:hover .rail-glow-rose {
   border-color: rgba(244, 63, 94, 0.45) !important;
   box-shadow: 0 0 12px rgba(244, 63, 94, 0.25) !important;
   background-color: rgba(244, 63, 94, 0.08) !important;
@@ -10362,7 +10629,9 @@ html:not([data-theme="dark"]) .rail-glow-di:hover {
 }
 
 [data-theme="light"] .rail-glow-rose:hover,
-html:not([data-theme="dark"]) .rail-glow-rose:hover {
+[data-theme="light"] .group:hover .rail-glow-rose,
+html:not([data-theme="dark"]) .rail-glow-rose:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-rose {
   border-color: rgba(244, 63, 94, 0.3) !important;
   box-shadow: 0 0 10px rgba(244, 63, 94, 0.15) !important;
   background-color: rgba(244, 63, 94, 0.05) !important;
@@ -10371,7 +10640,9 @@ html:not([data-theme="dark"]) .rail-glow-rose:hover {
 
 /* Light mode overrides for existing rail glows */
 [data-theme="light"] .rail-glow-teal:hover,
-html:not([data-theme="dark"]) .rail-glow-teal:hover {
+[data-theme="light"] .group:hover .rail-glow-teal,
+html:not([data-theme="dark"]) .rail-glow-teal:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-teal {
   border-color: rgba(13, 148, 136, 0.3) !important;
   box-shadow: 0 0 10px rgba(13, 148, 136, 0.15) !important;
   background-color: rgba(13, 148, 136, 0.05) !important;
@@ -10379,7 +10650,9 @@ html:not([data-theme="dark"]) .rail-glow-teal:hover {
 }
 
 [data-theme="light"] .rail-glow-blue:hover,
-html:not([data-theme="dark"]) .rail-glow-blue:hover {
+[data-theme="light"] .group:hover .rail-glow-blue,
+html:not([data-theme="dark"]) .rail-glow-blue:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-blue {
   border-color: rgba(37, 99, 235, 0.3) !important;
   box-shadow: 0 0 10px rgba(37, 99, 235, 0.15) !important;
   background-color: rgba(37, 99, 235, 0.05) !important;
@@ -10387,7 +10660,9 @@ html:not([data-theme="dark"]) .rail-glow-blue:hover {
 }
 
 [data-theme="light"] .rail-glow-amber:hover,
-html:not([data-theme="dark"]) .rail-glow-amber:hover {
+[data-theme="light"] .group:hover .rail-glow-amber,
+html:not([data-theme="dark"]) .rail-glow-amber:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-amber {
   border-color: rgba(217, 119, 6, 0.3) !important;
   box-shadow: 0 0 10px rgba(217, 119, 6, 0.15) !important;
   background-color: rgba(217, 119, 6, 0.05) !important;
@@ -10395,7 +10670,9 @@ html:not([data-theme="dark"]) .rail-glow-amber:hover {
 }
 
 [data-theme="light"] .rail-glow-green:hover,
-html:not([data-theme="dark"]) .rail-glow-green:hover {
+[data-theme="light"] .group:hover .rail-glow-green,
+html:not([data-theme="dark"]) .rail-glow-green:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-green {
   border-color: rgba(22, 163, 74, 0.3) !important;
   box-shadow: 0 0 10px rgba(22, 163, 74, 0.15) !important;
   background-color: rgba(22, 163, 74, 0.05) !important;
@@ -10403,7 +10680,9 @@ html:not([data-theme="dark"]) .rail-glow-green:hover {
 }
 
 [data-theme="light"] .rail-glow-purple:hover,
-html:not([data-theme="dark"]) .rail-glow-purple:hover {
+[data-theme="light"] .group:hover .rail-glow-purple,
+html:not([data-theme="dark"]) .rail-glow-purple:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-purple {
   border-color: rgba(147, 51, 234, 0.3) !important;
   box-shadow: 0 0 10px rgba(147, 51, 234, 0.15) !important;
   background-color: rgba(147, 51, 234, 0.05) !important;
@@ -10411,7 +10690,9 @@ html:not([data-theme="dark"]) .rail-glow-purple:hover {
 }
 
 [data-theme="light"] .rail-glow-pink:hover,
-html:not([data-theme="dark"]) .rail-glow-pink:hover {
+[data-theme="light"] .group:hover .rail-glow-pink,
+html:not([data-theme="dark"]) .rail-glow-pink:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-pink {
   border-color: rgba(219, 39, 119, 0.3) !important;
   box-shadow: 0 0 10px rgba(219, 39, 119, 0.15) !important;
   background-color: rgba(219, 39, 119, 0.05) !important;
@@ -10419,7 +10700,9 @@ html:not([data-theme="dark"]) .rail-glow-pink:hover {
 }
 
 [data-theme="light"] .rail-glow-indigo:hover,
-html:not([data-theme="dark"]) .rail-glow-indigo:hover {
+[data-theme="light"] .group:hover .rail-glow-indigo,
+html:not([data-theme="dark"]) .rail-glow-indigo:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-indigo {
   border-color: rgba(79, 70, 229, 0.3) !important;
   box-shadow: 0 0 10px rgba(79, 70, 229, 0.15) !important;
   background-color: rgba(79, 70, 229, 0.05) !important;
@@ -10611,4 +10894,33 @@ html:not([data-theme="dark"]) .rail-glow-indigo:hover {
   border-color: var(--wikios-border) !important;
   color: var(--wikios-accent) !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ===========================================================================
+   WRITER MODE
+   =========================================================================== */
+html.wikios-writer-mode body {
+  overflow: hidden !important;
+}
+
+html.wikios-writer-mode .dashboard-sidebar-rail,
+html.wikios-writer-mode .dashboard-header,
+html.wikios-writer-mode .wikios-icon-rail,
+html.wikios-writer-mode .wikios-main-footer,
+html.wikios-writer-mode [data-slot="dynamic-island-container"],
+html.wikios-writer-mode .dynamic-island-container,
+html.wikios-writer-mode [id="command-palette"] {
+  display: none !important;
+}
+
+html.wikios-writer-mode .wikios-editor-modern,
+html.wikios-writer-mode .wikios-ve-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 100000 !important;
+  border-radius: 0 !important;
+  border: none !important;
 }

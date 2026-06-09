@@ -765,7 +765,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Land Area:</span>
                               <span className="text-foreground">
-                                {demographicMetrics.landArea.toLocaleString()} km²
+                                {Math.round(demographicMetrics.landArea).toLocaleString()} km²
                               </span>
                             </div>
                           )}

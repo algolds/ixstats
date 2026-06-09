@@ -33,14 +33,71 @@ import type { DIViewProps } from "./types";
 
 interface WikiViewProps extends DIViewProps {}
 
+interface LocalDraft {
+  title: string;
+  type: "source" | "visual";
+}
+
+interface PausedSession {
+  title: string;
+  scrollPercent: number;
+  updatedAt: number;
+}
+
 export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { articleTitle, tocEntries, activeSectionId, navigateToSection } = useWikiContext();
+  const { articleTitle, tocEntries, themeColors, activeSectionId, navigateToSection } = useWikiContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
+  const [draftsOpen, setDraftsOpen] = useState(true);
+  const [sessionsOpen, setSessionsOpen] = useState(true);
+  const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
+  const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
+
+  // Scan drafts and reading sessions
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // 1. Scan local drafts
+    const drafts: LocalDraft[] = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          if (key.startsWith("wikios-draft-html-")) {
+            const title = key.substring("wikios-draft-html-".length);
+            drafts.push({ title, type: "visual" });
+          } else if (key.startsWith("wikios-draft-")) {
+            const title = key.substring("wikios-draft-".length);
+            if (!drafts.some((d) => d.title === title)) {
+              drafts.push({ title, type: "source" });
+            }
+          }
+        }
+      }
+      setLocalDrafts(drafts);
+    } catch (e) {
+      console.error("Failed to read drafts:", e);
+    }
+
+    // 2. Scan paused sessions
+    try {
+      const stored = localStorage.getItem("wikios:pausedSessions");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setPausedSessions(parsed);
+        }
+      } else {
+        setPausedSessions([]);
+      }
+    } catch (e) {
+      console.error("Failed to read paused sessions:", e);
+    }
+  }, [articleTitle, pathname]);
 
   const isMainPage =
     pathname?.includes("/w/Main_Page") || pathname?.includes("/w/Main%20Page") || false;
@@ -344,7 +401,10 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             {/* Active Progress Fill Line */}
             <div
               className="absolute left-0 h-1 rounded-full bg-blue-500"
-              style={{ width: `${scrollPercent}%` }}
+              style={{ 
+                width: `${scrollPercent}%`,
+                backgroundColor: themeColors?.primary ?? undefined,
+              }}
             />
 
             {/* Section Ticks (Dots) */}
@@ -364,10 +424,17 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                   <div
                     className={cn(
                       "h-1.5 w-1.5 rounded-full border transition-all duration-200",
-                      isActive
+                      isActive && !themeColors
                         ? "scale-125 border-blue-400 bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
-                        : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
+                        : isActive
+                          ? "scale-125"
+                          : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
                     )}
+                    style={isActive && themeColors ? {
+                      borderColor: themeColors.secondary,
+                      backgroundColor: themeColors.primary,
+                      boxShadow: `0 0 8px ${themeColors.primary}`,
+                    } : undefined}
                   />
                   {/* Tooltip */}
                   <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded border border-white/10 bg-zinc-950/95 px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover/tick:opacity-100">
@@ -380,7 +447,11 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             {/* Glowing Scrubber Playhead Handle */}
             <div
               className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
-              style={{ left: `${scrollPercent}%` }}
+              style={{ 
+                left: `${scrollPercent}%`,
+                borderColor: themeColors?.primary ?? undefined,
+                boxShadow: themeColors ? `0 0 8px ${themeColors.primary}` : undefined,
+              }}
             />
           </div>
         </div>
@@ -458,6 +529,73 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
       {!searchQuery && (
         <>
+          {/* Local Drafts Section */}
+          {localDrafts.length > 0 && (
+            <CollapsibleSection
+              label="Local Drafts"
+              icon={<FileEdit className="h-3 w-3 text-blue-400" />}
+              count={localDrafts.length}
+              open={draftsOpen}
+              onToggle={() => setDraftsOpen(!draftsOpen)}
+            >
+              <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {localDrafts.map((draft, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      onClose();
+                      navigateWithBasePath(`/w/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`, router);
+                    }}
+                    className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                  >
+                    <div className="flex flex-col min-w-0 flex-1 pr-2">
+                      <PreText className="truncate text-[13px] text-inherit font-medium" whiteSpace="nowrap">
+                        {draft.title}
+                      </PreText>
+                      <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                        {draft.type === "visual" ? "Visual Editor (Canvas) Draft" : "Source Editor Draft"}
+                      </PreText>
+                    </div>
+                    <span className="text-[10px] text-blue-400 font-semibold shrink-0">Resume ›</span>
+                  </button>
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Reading Progress / Paused Sessions Section */}
+          {pausedSessions.length > 0 && (
+            <CollapsibleSection
+              label="Reading Progress"
+              icon={<Clock className="h-3 w-3 text-emerald-400" />}
+              count={pausedSessions.length}
+              open={sessionsOpen}
+              onToggle={() => setSessionsOpen(!sessionsOpen)}
+            >
+              <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {pausedSessions.map((session, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleNavigateToArticle(session.title)}
+                    className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                  >
+                    <div className="flex flex-col min-w-0 flex-1 pr-2">
+                      <PreText className="truncate text-[13px] text-inherit font-medium" whiteSpace="nowrap">
+                        {session.title}
+                      </PreText>
+                      <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                        {`Last read ${formatTimeAgo(session.updatedAt)}`}
+                      </PreText>
+                    </div>
+                    <span className="text-muted-foreground text-[10px] tabular-nums font-semibold bg-white/5 border border-white/5 rounded px-1.5 py-0.5 shrink-0">
+                      {session.scrollPercent}%
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
           {/* Recent Activity — collapsible feed (removed on articles) */}
           {!articleTitle && (
             <CollapsibleSection
@@ -576,7 +714,7 @@ function CollapsibleSection({
     <div className="border-border mb-3 border-b pb-3">
       <button
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full items-center justify-between text-[10px] font-semibold tracking-wider uppercase"
+        className="text-muted-foreground hover:text-foreground mb-1 flex w-full items-center justify-between text-[10px] font-semibold tracking-wider uppercase cursor-pointer"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -628,4 +766,15 @@ function QuickAction({
       )}
     </button>
   );
+}
+
+function formatTimeAgo(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  if (diff < 60000) return "just now";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

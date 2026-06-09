@@ -433,7 +433,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
                   {country.landArea && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Land Area:</span>
-                      <span className="font-semibold">{country.landArea.toLocaleString()} km²</span>
+                      <span className="font-semibold">{Math.round(country.landArea).toLocaleString()} km²</span>
                     </div>
                   )}
                 </div>

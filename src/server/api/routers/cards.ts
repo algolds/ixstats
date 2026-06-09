@@ -669,7 +669,7 @@ export const cardsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       const collection = await ctx.db.cardCollection.create({
         data: {
           userId,
@@ -682,7 +682,7 @@ export const cardsRouter = createTRPCRouter({
     }),
 
   getMyCollections: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.auth.userId;
+    const userId = ctx.user.id;
     return ctx.db.cardCollection.findMany({
       where: { userId },
       include: { _count: { select: { items: true } } },
@@ -693,7 +693,7 @@ export const cardsRouter = createTRPCRouter({
   getCollectionCards: protectedProcedure
     .input(z.object({ collectionId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       // Verify ownership
       const collection = await ctx.db.cardCollection.findFirst({
         where: { id: input.collectionId, userId },
@@ -722,7 +722,7 @@ export const cardsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       // Verify collection ownership
       const collection = await ctx.db.cardCollection.findFirst({
         where: { id: input.collectionId, userId },
@@ -753,7 +753,7 @@ export const cardsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       // Verify collection ownership
       const collection = await ctx.db.cardCollection.findFirst({
         where: { id: input.collectionId, userId },
@@ -772,7 +772,7 @@ export const cardsRouter = createTRPCRouter({
   deleteCollection: protectedProcedure
     .input(z.object({ collectionId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       const collection = await ctx.db.cardCollection.findFirst({
         where: { id: input.collectionId, userId },
       });

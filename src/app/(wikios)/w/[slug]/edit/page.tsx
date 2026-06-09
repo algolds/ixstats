@@ -42,23 +42,35 @@ export default function WikiOSEditPage() {
     title = slug.replace(/_/g, " ");
   }
 
-  const [mode, setMode] = useState<EditorMode>("source");
+  const [mode, setMode] = useState<EditorMode>(() => {
+    if (typeof window !== "undefined") {
+      const htmlDraft = localStorage.getItem(`wikios-draft-html-${title}`);
+      const wtDraft = localStorage.getItem(`wikios-draft-${title}`);
+      if (htmlDraft && !wtDraft) {
+        return "visual";
+      }
+    }
+    return "source";
+  });
   const [saving, setSaving] = useState(false);
   const [editConflict, setEditConflict] = useState(false);
 
   const switchMode = useCallback(
-    (newMode: EditorMode) => {
+    (newMode: EditorMode, dirty: boolean) => {
       if (newMode === mode) return;
-      const confirmed = window.confirm(
-        "Switching editor mode will discard any unsaved changes. Continue?"
-      );
-      if (confirmed) setMode(newMode);
+      if (dirty) {
+        const confirmed = window.confirm(
+          "Switching editor mode will discard any unsaved changes. Continue?"
+        );
+        if (!confirmed) return;
+      }
+      setMode(newMode);
     },
     [mode]
   );
 
   // Fetch Parsoid HTML for visual editor (raw, with data-mw attributes)
-  const { data: editorHtml, isLoading: editorLoading } = api.wikios.getEditorHtml.useQuery(
+  const { data: editorHtml, isLoading: editorLoading, refetch: refetchEditorHtml } = api.wikios.getEditorHtml.useQuery(
     { title },
     { enabled: !!title && mode === "visual", staleTime: 5 * 60 * 1000 }
   );
@@ -83,7 +95,7 @@ export default function WikiOSEditPage() {
   }, [router, articleUrl]);
 
   const handleVisualSave = useCallback(
-    async (html: string, summary: string, minor: boolean) => {
+    async (html: string, summary: string, minor: boolean, keepEditing?: boolean) => {
       setSaving(true);
       setEditConflict(false);
       try {
@@ -98,7 +110,11 @@ export default function WikiOSEditPage() {
           setEditConflict(true);
           return;
         }
-        router.push(articleUrl);
+        if (keepEditing) {
+          await refetchEditorHtml();
+        } else {
+          router.push(articleUrl);
+        }
       } catch (err) {
         console.error("Save failed:", err);
         alert("Save failed. Try the source editor instead.");
@@ -106,11 +122,11 @@ export default function WikiOSEditPage() {
         setSaving(false);
       }
     },
-    [saveArticle, title, router, articleUrl, editorHtml?.timestamp]
+    [saveArticle, title, router, articleUrl, editorHtml?.timestamp, refetchEditorHtml]
   );
 
   const handleSourceSave = useCallback(
-    async (wikitext: string, summary: string, minor: boolean) => {
+    async (wikitext: string, summary: string, minor: boolean, keepEditing?: boolean) => {
       setSaving(true);
       setEditConflict(false);
       try {
@@ -125,7 +141,11 @@ export default function WikiOSEditPage() {
           setEditConflict(true);
           return;
         }
-        router.push(articleUrl);
+        if (keepEditing) {
+          await refetchWikitext();
+        } else {
+          router.push(articleUrl);
+        }
       } catch (err) {
         console.error("Save failed:", err);
         alert("Save failed. Please try again.");
@@ -133,7 +153,7 @@ export default function WikiOSEditPage() {
         setSaving(false);
       }
     },
-    [saveWikitext, title, router, articleUrl, wikitextData?.timestamp]
+    [saveWikitext, title, router, articleUrl, wikitextData?.timestamp, refetchWikitext]
   );
 
   const isLoading = mode === "visual" ? editorLoading : wtLoading;
@@ -212,35 +232,37 @@ export default function WikiOSEditPage() {
     </div>
   );
 
-  // Visual editor is full-page immersive (no sidebar wrapper)
+  // Visual editor mode wrapped in WikiOSLayout
   if (mode === "visual") {
     return (
-      <>
-        {saving && (
-          <div className="wikios-editor-saving">
-            <div className="wikios-loading-spinner" />
-            <span>Saving...</span>
-          </div>
-        )}
-        {conflictBanner}
-        {isLoading && <EditorLoading />}
-        {!isLoading && editorHtml && (
-          <WikiVisualEditor
-            initialHtml={editorHtml.html}
-            title={title}
-            onSave={handleVisualSave}
-            onCancel={handleCancel}
-            onSwitchToSource={() => switchMode("source")}
-          />
-        )}
-      </>
+      <WikiOSLayout title={title} hideTitleHeading={true}>
+        <div className="wikios-editor-page w-full">
+          {saving && (
+            <div className="wikios-editor-saving">
+              <div className="wikios-loading-spinner" />
+              <span>Saving...</span>
+            </div>
+          )}
+          {conflictBanner}
+          {isLoading && <EditorLoading />}
+          {!isLoading && editorHtml && (
+            <WikiVisualEditor
+              initialHtml={editorHtml.html}
+              title={title}
+              onSave={handleVisualSave}
+              onCancel={handleCancel}
+              onSwitchToSource={(dirty) => switchMode("source", dirty)}
+            />
+          )}
+        </div>
+      </WikiOSLayout>
     );
   }
 
-  // Source editor uses fullscreen layout instead of WikiOSLayout
+  // Source editor mode wrapped in WikiOSLayout
   return (
-    <div className="wikios-root min-h-screen bg-[#0f1114] p-4 text-[#e4e4e7] sm:p-6">
-      <div className="wikios-editor-page mx-auto max-w-7xl">
+    <WikiOSLayout title={title} hideTitleHeading={true}>
+      <div className="wikios-editor-page w-full">
         {saving && (
           <div className="wikios-editor-saving">
             <div className="wikios-loading-spinner" />
@@ -255,10 +277,10 @@ export default function WikiOSEditPage() {
             title={title}
             onSave={handleSourceSave}
             onCancel={handleCancel}
-            onSwitchToVisual={() => switchMode("visual")}
+            onSwitchToVisual={(dirty) => switchMode("visual", dirty)}
           />
         )}
       </div>
-    </div>
+    </WikiOSLayout>
   );
 }

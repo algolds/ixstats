@@ -16,7 +16,8 @@ interface ActiveCountryUnifiedWidgetProps {
 }
 
 export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidgetProps) {
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed: sidebarCollapsed, isHovered } = useSidebar();
+  const isCollapsed = sidebarCollapsed && !isHovered;
   const { country: myCountry, userProfile } = useUserCountry();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
@@ -67,10 +68,10 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
             }
           }}
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
+            "wikios-sidebar-icon-box flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
             popoverOpen
               ? "rail-glow-gold border-amber-500/40 bg-amber-500/10 text-amber-400"
-              : "rail-glow-gold border-amber-500/20 bg-amber-500/5 text-amber-400 hover:scale-110"
+              : "rail-glow-gold border-amber-500/20 bg-amber-500/5 text-amber-400"
           )}
           title={`Country Context: ${activeCountry.name} ${isCollapsed ? "(Click for details)" : "(Click for actions)"}`}
           type="button"
@@ -90,7 +91,7 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
             {activeCountry.name}
           </span>
           <span className="block text-[9px] leading-tight text-[var(--wikios-text-dim)]">
-            {isOwnCountry ? "My Country" : "Active Page"}
+            {isOwnCountry ? "MyCountry" : "MyCountry Actions"}
           </span>
         </button>
       </div>
@@ -107,7 +108,7 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
                 {activeCountry.name}
               </h4>
               <p className="text-muted-foreground text-[9px] leading-tight">
-                {activeCountry.continent} {isOwnCountry ? "(My Country)" : "(Active Page)"}
+                {activeCountry.continent} {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
               </p>
             </div>
           </div>

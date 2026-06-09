@@ -1401,7 +1401,6 @@ export const usersRouter = createTRPCRouter({
       });
     }),
 
-  // Resolve a wiki username to their IxStats country (for feed hover cards)
   resolveWikiAuthor: rateLimitedPublicProcedure
     .input(z.object({ wikiUsername: z.string().min(1).max(100) }))
     .query(async ({ ctx, input }) => {
@@ -1409,6 +1408,12 @@ export const usersRouter = createTRPCRouter({
         where: { wikiUsername: input.wikiUsername },
         select: {
           wikiUsername: true,
+          role: {
+            select: {
+              name: true,
+              displayName: true,
+            },
+          },
           country: {
             select: {
               id: true,
@@ -1425,6 +1430,12 @@ export const usersRouter = createTRPCRouter({
       if (!user) return null;
       return {
         wikiUsername: user.wikiUsername,
+        role: user.role
+          ? {
+              name: user.role.name,
+              displayName: user.role.displayName,
+            }
+          : null,
         country: user.country
           ? {
               id: user.country.id,

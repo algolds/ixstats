@@ -27,6 +27,7 @@ export const identityProcedures = {
           landArea: true,
           populationDensity: true,
           geometry: true,
+          centroid: true,
         },
       });
 
@@ -49,6 +50,7 @@ export const identityProcedures = {
         landArea: country.landArea,
         populationDensity: country.populationDensity,
         geometry: country.geometry,
+        centroid: country.centroid,
       };
     }),
 
