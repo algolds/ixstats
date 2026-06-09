@@ -9,6 +9,7 @@ import type { VaultSection } from "./VaultSidebarNav";
 import { DashboardPlayerWidget } from "~/components/dashboard/DashboardPlayerWidget";
 import { VaultWidget } from "~/components/mycountry/VaultWidget";
 import { DashboardQuickLinks } from "~/components/dashboard/DashboardQuickLinks";
+import { useTheme } from "~/context/theme-context";
 
 interface VaultSidebarLayoutProps {
   children: ReactNode;
@@ -30,6 +31,29 @@ export function VaultSidebarLayout({
   onNavigate,
 }: VaultSidebarLayoutProps) {
   const pathname = stripBasePath(usePathname());
+  const { showNsImporter } = useTheme();
+
+  const isImportActive = pathname.startsWith("/vault/import");
+  const shouldShowImport = isImportActive || showNsImporter;
+
+  const mobileNavItems = [
+    { id: "dashboard", href: "/vault", label: "Wallet" },
+    { id: "cards", href: "/vault/cards", label: "Collection" },
+    {
+      id: "marketplace",
+      href: "/vault/marketplace",
+      label: "Marketplace",
+    },
+    { id: "import", href: "/vault/import", label: "Import" },
+    {
+      id: "achievements",
+      href: "/achievements",
+      label: "Achievements",
+    },
+  ].filter((item) => {
+    if (item.id === "import") return shouldShowImport;
+    return true;
+  });
 
   return (
     <div className="space-y-0">
@@ -57,21 +81,7 @@ export function VaultSidebarLayout({
             <div className="mb-4 lg:hidden">
               <div className="glass-hierarchy-child scrollbar-none overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1.5 backdrop-blur-md">
                 <div className="flex min-w-max gap-1.5">
-                  {[
-                    { id: "dashboard", href: "/vault", label: "Wallet" },
-                    { id: "cards", href: "/vault/cards", label: "Collection" },
-                    {
-                      id: "marketplace",
-                      href: "/vault/marketplace",
-                      label: "Marketplace",
-                    },
-                    { id: "import", href: "/vault/import", label: "Import" },
-                    {
-                      id: "achievements",
-                      href: "/achievements",
-                      label: "Achievements",
-                    },
-                  ].map((item) => {
+                  {mobileNavItems.map((item) => {
                     const isActive =
                       item.id === "dashboard"
                         ? pathname === "/vault" || pathname === "/vault/"

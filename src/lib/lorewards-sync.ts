@@ -14,22 +14,11 @@ import {
   parseActiveMembers,
   parseAnnualWinners,
 } from "~/lib/lorewards-ool-parser";
+import { getWikiDbPool } from "~/lib/wiki-bridge";
 
 // Direct MySQL for namespace 4 (Project/IxWiki) pages
-let oolPool: mysql.Pool | null = null;
 function getPool(): mysql.Pool {
-  if (!oolPool) {
-    oolPool = mysql.createPool({
-      host: process.env.IXWIKI_DB_HOST || "localhost",
-      port: Number(process.env.IXWIKI_DB_PORT) || 3306,
-      user: process.env.IXWIKI_DB_USER || "ixwiki",
-      password: process.env.IXWIKI_DB_PASSWORD || "",
-      database: process.env.IXWIKI_DB_NAME || "ixwiki",
-      waitForConnections: true,
-      connectionLimit: 2,
-    });
-  }
-  return oolPool;
+  return getWikiDbPool() as mysql.Pool;
 }
 
 async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string | null> {

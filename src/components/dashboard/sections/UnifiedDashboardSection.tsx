@@ -49,6 +49,11 @@ import {
 } from "~/components/mycountry/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import {
+  DynamicIslandEffects,
+  DYNAMIC_ISLAND_STYLE,
+  DYNAMIC_ISLAND_BORDER_CLASS,
+} from "~/app/builder/components/glass";
 import { cn } from "~/lib/utils";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { createUrl } from "~/lib/url-utils";
@@ -683,10 +688,19 @@ export function UnifiedDashboardSection({
           <div className="space-y-5 lg:col-span-2">
             {/* Feed Tab Bar */}
             <motion.div variants={staggerItem}>
-              <div className="glass-surface glass-refraction relative flex gap-1 rounded-xl p-1">
+              <div
+                className={cn(
+                  "relative flex gap-1 overflow-hidden rounded-xl p-1",
+                  DYNAMIC_ISLAND_BORDER_CLASS
+                )}
+                style={DYNAMIC_ISLAND_STYLE}
+              >
+                {/* Dynamic Island refraction edge, sheen highlights, and pulse shimmer */}
+                <DynamicIslandEffects showGlow={false} showShimmer={false} />
+
                 {/* Sliding indicator behind active tab */}
                 <motion.div
-                  className="absolute inset-y-1 rounded-lg bg-white/8"
+                  className="absolute inset-y-1 rounded-lg border border-white/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 shadow-md backdrop-blur-md"
                   layout
                   layoutId="feed-tab-indicator"
                   style={{
@@ -704,7 +718,9 @@ export function UnifiedDashboardSection({
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
                         "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-200",
-                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        isActive
+                          ? "text-foreground font-semibold"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                       whileTap={{ scale: 0.97 }}
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -722,7 +738,7 @@ export function UnifiedDashboardSection({
                 {/* Settings gear */}
                 <button
                   onClick={() => setIsAccountModalOpen(true)}
-                  className="text-muted-foreground hover:text-foreground relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-white/5"
+                  className="text-muted-foreground hover:text-foreground relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-white/10"
                   title="Feed & Account Settings"
                 >
                   <Settings className="h-3.5 w-3.5" />

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home, Grid3x3, ShoppingCart, Download } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
+import { useTheme } from "~/context/theme-context";
 
 import {
   CutoutCard,
@@ -139,12 +140,22 @@ export function VaultSidebarNav({
   const activeId = activeSection ?? getSectionFromPathname(pathname);
   const isControlled = !!onNavigate;
 
+  const { showNsImporter } = useTheme();
+
+  const isImportActive = pathname.startsWith("/vault/import");
+  const shouldShowImport = isImportActive || showNsImporter;
+
+  const filteredNavItems = VAULT_NAV_ITEMS.filter((item) => {
+    if (item.id === "import") return shouldShowImport;
+    return true;
+  });
+
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
       <nav className="glass-hierarchy-child border-border overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
-          {VAULT_NAV_ITEMS.map((item) => {
+          {filteredNavItems.map((item) => {
             const isActive = item.id === activeId;
             const Icon = item.icon;
             const cls = cn(
@@ -211,7 +222,7 @@ export function VaultSidebarNav({
         <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
       </div>
       <CutoutCardContent className="space-y-1.5 p-2.5 pt-1">
-        {VAULT_NAV_ITEMS.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = item.id === activeId;
           const Icon = item.icon;
 

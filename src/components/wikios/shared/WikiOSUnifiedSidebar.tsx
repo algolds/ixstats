@@ -44,6 +44,7 @@ interface WikiOSUnifiedSidebarProps {
   countryData: any;
   isSpecialPage: boolean;
   pathname: string;
+  forceCollapsed?: boolean;
 }
 
 export function WikiOSUnifiedSidebar({
@@ -56,8 +57,10 @@ export function WikiOSUnifiedSidebar({
   countryData,
   isSpecialPage,
   pathname,
+  forceCollapsed = false,
 }: WikiOSUnifiedSidebarProps) {
-  const { isCollapsed, toggleCollapsed } = useSidebar();
+  const { isCollapsed: sidebarCollapsed, toggleCollapsed } = useSidebar();
+  const isCollapsed = forceCollapsed || sidebarCollapsed;
 
   const isArticlePage = !isSpecialPage && slug;
 
@@ -65,7 +68,6 @@ export function WikiOSUnifiedSidebar({
   const hasActiveHiddenItem =
     pathname === "/stashes" ||
     pathname.startsWith("/stashes/") ||
-    pathname.startsWith("/blurbs") ||
     pathname === "/w/repository" ||
     pathname.startsWith("/w/repository/") ||
     pathname === "/w/special/lorewards" ||
@@ -242,16 +244,7 @@ export function WikiOSUnifiedSidebar({
             isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
           })}
 
-        {(!isArticlePage || showMore) &&
-          renderRow({
-            id: "blurbs",
-            href: withBasePath("/blurbs"),
-            icon: BookOpen,
-            title: "Blurbs",
-            glowClass:
-              "rail-glow-green rail-animate-bounce border-green-500/20 bg-green-500/5 text-green-400 hover:bg-green-500/15",
-            isActive: pathname.startsWith("/blurbs"),
-          })}
+
 
         {(!isArticlePage || showMore) &&
           renderRow({
@@ -269,7 +262,7 @@ export function WikiOSUnifiedSidebar({
             id: "lorewards",
             href: withBasePath("/w/special/lorewards"),
             icon: Trophy,
-            title: "Lorewards",
+            title: "Wiki & Lore",
             glowClass:
               "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
             isActive:

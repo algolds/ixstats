@@ -1,0 +1,377 @@
+"use client";
+
+import React, { useState } from "react";
+import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { Lock, Crown, Layers, Package } from "lucide-react";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { createUrl } from "~/lib/url-utils";
+
+interface QuestPathCardProps {
+  path: {
+    name: string;
+    description: string;
+    icon: React.ComponentType<any>;
+    badgeColor: string;
+    glowColor: string;
+    lineColor: string;
+    activeLineColor: string;
+    nodeColor: string;
+    keys: string[];
+  };
+  achievements: any[] | undefined;
+  getRarityColor: (rarity: string) => string;
+  getRarityBg: (rarity: string, isUnlocked?: boolean) => string;
+}
+
+export function QuestPathCard({
+  path,
+  achievements,
+  getRarityColor,
+  getRarityBg,
+}: QuestPathCardProps) {
+  const PathIcon = path.icon;
+  // Gather path achievements
+  const pathAchievements = path.keys
+    .map((key) => achievements?.find((a) => a.key === key))
+    .filter(Boolean) as any[];
+
+  const unlockedCount = pathAchievements.filter((a) => a.isUnlocked).length;
+  const totalCount = pathAchievements.length;
+  const progressPercent = totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0;
+
+  // Track currently selected node in path card to show detail panel (prevents vertical tooltip cut-off)
+  const [selectedNodeKey, setSelectedNodeKey] = useState<string | null>(
+    pathAchievements[0]?.key || null
+  );
+  const selectedNode = pathAchievements.find((a) => a.key === selectedNodeKey);
+
+  return (
+    <CutoutCard
+      className={cn(
+        cutoutCardSurfaceClassName,
+        "border-border/50 bg-card/65 relative overflow-hidden rounded-2xl shadow-lg backdrop-blur-md"
+      )}
+      texture="horizontalLines"
+      textureOpacity={0.03}
+      trackPointerHover={false}
+    >
+      <CutoutCardContent className="relative z-10 p-0">
+        {/* Path Header */}
+        <div className="border-border/40 bg-muted/20 border-b px-6 py-4 dark:border-white/5 dark:bg-white/[0.01]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn("rounded-lg border p-2", path.badgeColor)}>
+                <PathIcon className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-foreground text-base font-bold">{path.name}</h3>
+                <p className="text-muted-foreground text-xs">{path.description}</p>
+              </div>
+            </div>
+            <div className="bg-muted/40 border-border/50 flex items-center gap-3 rounded-lg border px-3 py-1.5 dark:border-white/5 dark:bg-black/40">
+              <span className="text-xs font-semibold text-[--intel-gold]">
+                {unlockedCount} / {totalCount} ({Math.round(progressPercent)}%)
+              </span>
+              <div className="bg-muted/50 h-1.5 w-24 overflow-hidden rounded-full dark:bg-white/10">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-500",
+                    path.nodeColor === "emerald"
+                      ? "bg-emerald-500"
+                      : path.nodeColor === "yellow"
+                        ? "bg-yellow-500"
+                        : path.nodeColor === "red"
+                          ? "bg-red-500"
+                          : path.nodeColor === "blue"
+                            ? "bg-blue-500"
+                            : path.nodeColor === "purple"
+                              ? "bg-purple-500"
+                              : "bg-pink-500"
+                  )}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Path Nodes container */}
+        <div className="scrollbar-thumb-muted-foreground/20 scrollbar-thin overflow-x-auto px-6 py-8">
+          <div className="relative flex min-w-max items-center justify-start gap-4 py-4">
+            {pathAchievements.map((achievement: any, idx: number) => {
+              const isUnlocked = achievement.isUnlocked;
+              const nextNode = pathAchievements[idx + 1];
+              const isSelected = selectedNodeKey === achievement.key;
+              const isSecret =
+                (achievement.key.startsWith("vid-") || achievement.key.startsWith("meme-")) &&
+                !isUnlocked;
+
+              let count = 0;
+              if (achievement.metadata) {
+                try {
+                  const parsed = typeof achievement.metadata === "string" ? JSON.parse(achievement.metadata) : achievement.metadata;
+                  count = parsed.count || 0;
+                } catch (e) {
+                  // ignore
+                }
+              }
+
+              return (
+                <React.Fragment key={achievement.key}>
+                  {/* Node */}
+                  <div className="group relative z-10 flex flex-col items-center gap-3">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setSelectedNodeKey(achievement.key)}
+                          onMouseEnter={() => setSelectedNodeKey(achievement.key)}
+                          className={cn(
+                            "relative flex h-16 w-16 items-center justify-center rounded-full border transition-all duration-300 select-none",
+                            isUnlocked
+                              ? "bg-card cursor-pointer border-amber-500 shadow-lg dark:border-amber-400"
+                              : "bg-muted/80 border-border opacity-40",
+                            isSelected && "ring-primary ring-offset-background ring-2 ring-offset-2"
+                          )}
+                        >
+                          {isUnlocked ? (
+                            achievement.iconUrl?.startsWith("http") || achievement.iconUrl?.startsWith("/") ? (
+                              <img
+                                src={achievement.iconUrl?.startsWith("/") ? createUrl(achievement.iconUrl) : achievement.iconUrl}
+                                alt={achievement.title}
+                                className="h-10 w-10 object-contain transition duration-300 group-hover:scale-110"
+                              />
+                            ) : (
+                              <span className="text-3xl transition duration-300 group-hover:scale-110">
+                                {achievement.iconUrl}
+                              </span>
+                            )
+                          ) : (
+                            <Lock className="text-muted-foreground/50 h-5 w-5" />
+                          )}
+
+                          {isUnlocked && count > 1 && (
+                            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-black border border-background shadow-md z-20">
+                              {count}
+                            </span>
+                          )}
+
+                          {/* Glow Ring */}
+                          {isUnlocked && (
+                            <div
+                              className={cn(
+                                "absolute inset-0 rounded-full opacity-35 blur-md transition duration-300 group-hover:opacity-65",
+                                path.nodeColor === "emerald"
+                                  ? "bg-emerald-500"
+                                  : path.nodeColor === "yellow"
+                                    ? "bg-yellow-500"
+                                    : path.nodeColor === "red"
+                                      ? "bg-red-500"
+                                      : path.nodeColor === "blue"
+                                        ? "bg-blue-500"
+                                        : path.nodeColor === "purple"
+                                          ? "bg-purple-500"
+                                          : "bg-pink-500"
+                              )}
+                            />
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="bg-card/95 border-border/80 text-card-foreground z-50 w-64 space-y-1.5 p-3 shadow-2xl backdrop-blur-md"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {isUnlocked && (achievement.iconUrl?.startsWith("http") || achievement.iconUrl?.startsWith("/")) ? (
+                              <img
+                                src={achievement.iconUrl?.startsWith("/") ? createUrl(achievement.iconUrl) : achievement.iconUrl}
+                                alt={achievement.title}
+                                className="h-5 w-5 object-contain"
+                              />
+                            ) : (
+                              <span className="text-lg select-none">
+                                {isUnlocked ? achievement.iconUrl : "🔒"}
+                              </span>
+                            )}
+                            <span className="text-foreground text-xs leading-none font-bold">
+                              {isSecret ? "Secret Achievement" : achievement.title}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "px-1.5 py-0 text-[8px] leading-none",
+                                getRarityColor(achievement.rarity),
+                                getRarityBg(achievement.rarity, isUnlocked)
+                              )}
+                            >
+                              {achievement.rarity}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground text-[10px] leading-normal">
+                            {isSecret
+                              ? "Keep playing to unlock this secret achievement challenge."
+                              : achievement.description}
+                          </p>
+                          <div className="border-border/30 mt-1 flex items-center justify-between border-t pt-1.5 text-[9px]">
+                            <span className="font-bold text-green-600 dark:text-green-400">
+                              {achievement.points} pts
+                            </span>
+                            {achievement.globalUnlockPercent !== undefined && (
+                              <span className="text-muted-foreground/60">
+                                ({achievement.globalUnlockPercent}% unlocked)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <span
+                      className={cn(
+                        "max-w-[110px] truncate text-center text-xs font-medium",
+                        isUnlocked ? "text-foreground font-semibold" : "text-muted-foreground/50"
+                      )}
+                    >
+                      {isSecret ? "Secret" : achievement.title}
+                    </span>
+                  </div>
+
+                  {/* Connector Line */}
+                  {idx < pathAchievements.length - 1 && (
+                    <div className="relative z-0 h-0.5 w-10 shrink-0">
+                      <div
+                        className={cn(
+                          "absolute inset-0 transition-all duration-300",
+                          isUnlocked && nextNode?.isUnlocked
+                            ? path.activeLineColor
+                            : "bg-muted dark:bg-white/5"
+                        )}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected Node Details Panel (Prevents cut-offs and supports touch screens) */}
+        {selectedNode && (
+          <div className="border-border/40 bg-muted/10 border-t p-5 transition-all duration-300 dark:border-white/5 dark:bg-white/[0.01]">
+            <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+              <div className="flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {selectedNode.iconUrl?.startsWith("http") || selectedNode.iconUrl?.startsWith("/") ? (
+                    <img
+                      src={selectedNode.iconUrl?.startsWith("/") ? createUrl(selectedNode.iconUrl) : selectedNode.iconUrl}
+                      alt={selectedNode.title}
+                      className="h-8 w-8 object-contain"
+                    />
+                  ) : (
+                    <span className="text-2xl select-none">{selectedNode.iconUrl}</span>
+                  )}
+                  <span className="text-foreground text-sm font-bold md:text-base">
+                    {selectedNode.title}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "px-1.5 py-0 text-[9px] leading-none",
+                      getRarityColor(selectedNode.rarity),
+                      getRarityBg(selectedNode.rarity)
+                    )}
+                  >
+                    {selectedNode.rarity}
+                  </Badge>
+                  {selectedNode.isUnlocked ? (
+                    <Badge className="border-green-500/20 bg-green-500/10 px-1.5 py-0 text-[9px] leading-none text-green-600 dark:text-green-400">
+                      Unlocked
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-muted text-muted-foreground/60 border-border/50 px-1.5 py-0 text-[9px] leading-none">
+                      Locked
+                    </Badge>
+                  )}
+                  <span className="text-muted-foreground/50 text-[10px] font-semibold tracking-widest uppercase">
+                    {selectedNode.category}
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  {selectedNode.description}
+                </p>
+                {selectedNode.isUnlocked && selectedNode.unlockedAt && (
+                  <div className="text-muted-foreground/50 text-[10px]">
+                    Unlocked on {new Date(selectedNode.unlockedAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-border/30 flex w-full shrink-0 flex-col gap-2.5 border-t pt-3 md:w-auto md:items-end md:border-t-0 md:pt-0">
+                <div className="text-green-655 flex items-center gap-1.5 text-xs font-bold select-none dark:text-green-400">
+                  <span>Value:</span>
+                  <span>{selectedNode.points} pts</span>
+                  {selectedNode.globalUnlockPercent !== undefined && (
+                    <span className="text-muted-foreground/60 font-normal">
+                      ({selectedNode.globalUnlockPercent}% unlocked)
+                    </span>
+                  )}
+                </div>
+
+                {selectedNode.rewards && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedNode.rewards.credits > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="border-emerald-500/20 bg-emerald-500/10 text-[9px] text-emerald-600 dark:text-emerald-400"
+                      >
+                        <IxCreditsSymbol className="mr-1 inline-block h-3 w-3 align-text-top" />
+                        {selectedNode.rewards.credits} IxC
+                      </Badge>
+                    )}
+                    {selectedNode.rewards.cardIds?.map((cId: string) => (
+                      <Badge
+                        key={cId}
+                        variant="secondary"
+                        className="border-blue-500/20 bg-blue-500/10 text-[9px] text-blue-600 dark:text-blue-400"
+                      >
+                        <Layers className="mr-1 inline-block h-3 w-3 align-text-top" />
+                        Card
+                      </Badge>
+                    ))}
+                    {selectedNode.rewards.cardPacks?.map((pId: string) => (
+                      <Badge
+                        key={pId}
+                        variant="secondary"
+                        className="text-purple-650 border-purple-500/20 bg-purple-500/10 text-[9px] dark:text-purple-400"
+                      >
+                        <Package className="mr-1 inline-block h-3 w-3 align-text-top" />
+                        Pack
+                      </Badge>
+                    ))}
+                    {selectedNode.rewards.titles?.map((t: string) => (
+                      <Badge
+                        key={t}
+                        variant="secondary"
+                        className="border-pink-500/20 bg-pink-500/10 text-[9px] text-pink-600 dark:text-pink-400"
+                      >
+                        <Crown className="mr-1 inline-block h-3 w-3 align-text-top" />
+                        Title: {t}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </CutoutCardContent>
+    </CutoutCard>
+  );
+}

@@ -31,6 +31,7 @@ import {
   Coins,
   ChevronDown,
   ChevronUp,
+  BookOpen,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -75,6 +76,13 @@ const QUICK_ACTIONS = [
     description: "Balances, Streaks & Store CRUD",
     href: "/admin/vault",
     color: "amber",
+  },
+  {
+    icon: BookOpen,
+    label: "WikiOS Admin",
+    description: "Links, awards & scoring configs",
+    href: "/admin/wiki",
+    color: "indigo",
   },
   {
     icon: Database,

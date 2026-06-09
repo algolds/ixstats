@@ -34,6 +34,7 @@ import {
 } from "~/components/ui/cutout-card";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { PreText } from "~/components/ui/pretext";
+import { useTheme } from "~/context/theme-context";
 
 import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
 
@@ -41,6 +42,8 @@ export function VaultWidget() {
   const { userId } = useAuth();
   const [showPassiveIncome, setShowPassiveIncome] = useState(false);
   const pathname = stripBasePath(usePathname());
+  const { showNsImporter } = useTheme();
+  const isImportActive = pathname.startsWith("/vault/import");
   const isOnVault = pathname.startsWith("/vault") || pathname.startsWith("/achievements");
   const isMainVaultPage = pathname === "/vault" || pathname === "/vault/";
 
@@ -135,13 +138,13 @@ export function VaultWidget() {
                       }`}
                       title={
                         showPassiveIncome
-                          ? "Hide Passive Income Details"
-                          : "Show Passive Income Details"
+                          ? "Hide Treasury Revenue Details"
+                          : "Show Treasury Revenue Details"
                       }
                       aria-label={
                         showPassiveIncome
-                          ? "Hide Passive Income Details"
-                          : "Show Passive Income Details"
+                          ? "Hide Treasury Revenue Details"
+                          : "Show Treasury Revenue Details"
                       }
                     >
                       <svg
@@ -184,7 +187,7 @@ export function VaultWidget() {
                 </div>
               )}
 
-              {/* Passive Income Projection */}
+              {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
                 <div className="animate-in fade-in slide-in-from-top-1 rounded-lg border border-blue-300 bg-blue-50 p-2 duration-200 dark:border-blue-500/30 dark:bg-blue-900/20">
                   <p className="mb-1 flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-300">
@@ -196,7 +199,7 @@ export function VaultWidget() {
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Passive Income
+                    Treasury Revenue
                   </p>
                   <div className="text-muted-foreground space-y-0.5 text-xs">
                     <div className="flex justify-between">
@@ -331,7 +334,10 @@ export function VaultWidget() {
                   activeGlow: "shadow-amber-500/10",
                   activeText: "text-amber-600 dark:text-amber-400",
                 },
-              ].map((item) => {
+              ].filter((item) => {
+                if (item.id === "import") return isImportActive || showNsImporter;
+                return true;
+              }).map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link

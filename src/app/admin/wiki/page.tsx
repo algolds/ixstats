@@ -43,7 +43,12 @@ import {
   Star,
   ChevronUp,
   ChevronDown,
+  Ban,
+  Info,
+  Zap,
+  Calendar,
 } from "lucide-react";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -710,6 +715,130 @@ function LorewardsBotSection() {
   const notify = useNotify();
   const utils = api.useUtils();
 
+  // Blacklist form states
+  const [blacklistUser, setBlacklistUser] = useState<string>("");
+  const [blacklistDuration, setBlacklistDuration] = useState<string>("permanent");
+  const [blacklistExpiry, setBlacklistExpiry] = useState<string>("");
+
+  // Override form states
+  const [overrideDate, setOverrideDate] = useState<string>("");
+  const [overrideType, setOverrideType] = useState<string>("daily");
+  const [overrideWinnerUser, setOverrideWinnerUser] = useState<string>("");
+  const [overrideWinnerPage, setOverrideWinnerPage] = useState<string>("");
+  const [overrideWinnerScore, setOverrideWinnerScore] = useState<number>(100);
+  const [overrideWinnerBytes, setOverrideWinnerBytes] = useState<number>(1000);
+  const [overrideRunnerUpUser, setOverrideRunnerUpUser] = useState<string>("");
+  const [overrideRunnerUpPage, setOverrideRunnerUpPage] = useState<string>("");
+  const [overrideRunnerUpScore, setOverrideRunnerUpScore] = useState<number>(50);
+  const [overrideRunnerUpBytes, setOverrideRunnerUpBytes] = useState<number>(500);
+
+  // Cross-validation / Sync states
+  const [adminDate, setAdminDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1); // Default to yesterday
+    return d.toISOString().slice(0, 10);
+  });
+  const [validationResult, setValidationResult] = useState<any>(null);
+
+  // Blacklist query
+  const { data: blacklist, refetch: refetchBlacklist } = api.lorewards.getBlacklist.useQuery();
+
+  // Blacklist Mutation
+  const updateBlacklistMutation = api.lorewards.updateBlacklist.useMutation({
+    onSuccess: () => {
+      notify.success("Blacklist Updated", "The user's blacklist status has been successfully updated.");
+      refetchBlacklist();
+    },
+    onError: (err) => {
+      notify.error("Blacklist Update Failed", err.message);
+    }
+  });
+
+  // Override Winner Mutation
+  const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
+    onSuccess: () => {
+      notify.success("Winner Overridden", "The winner override has been successfully synced.");
+    },
+    onError: (err) => {
+      notify.error("Override Failed", err.message);
+    }
+  });
+
+  // Admin sync mutation
+  const triggerSyncMutation = api.lorewards.triggerSync.useMutation({
+    onSuccess: () => {
+      notify.success("Database Sync Complete", "Successfully synchronized state file and OOL page.");
+    },
+    onError: (err) => {
+      notify.error("Database Sync Failed", err.message);
+    }
+  });
+
+  // Cross validate mutation
+  const crossValidateMutation = api.lorewards.crossValidate.useMutation({
+    onSuccess: (data) => {
+      setValidationResult(data);
+      notify.success("Cross-Validation Complete", `Calculated match stats for ${data.date}.`);
+    },
+    onError: (err) => {
+      notify.error("Cross-Validation Failed", err.message);
+    }
+  });
+
+  // Fetch validation history for admin console
+  const { data: validationHistory } = api.lorewards.getCrossValidationHistory.useQuery(
+    { limit: 5 }
+  );
+
+  const handleAddBlacklist = () => {
+    if (!blacklistUser.trim()) {
+      notify.error("Validation Error", "Please input a valid username.");
+      return;
+    }
+    let expiry: string | null = null;
+    if (blacklistDuration === "7days") {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      expiry = d.toISOString().slice(0, 10);
+    } else if (blacklistDuration === "30days") {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      expiry = d.toISOString().slice(0, 10);
+    } else if (blacklistDuration === "custom") {
+      if (!blacklistExpiry) {
+        notify.error("Validation Error", "Please choose a custom expiry date.");
+        return;
+      }
+      expiry = blacklistExpiry;
+    }
+
+    updateBlacklistMutation.mutate({
+      username: blacklistUser.trim(),
+      action: "add",
+      expiryDate: expiry,
+    });
+    setBlacklistUser("");
+  };
+
+  const handleOverrideSubmit = () => {
+    if (!overrideDate) {
+      notify.error("Validation Error", "Please select a date for the override.");
+      return;
+    }
+    overrideWinnerMutation.mutate({
+      date: overrideDate,
+      type: overrideType as "daily" | "weekly" | "monthly",
+      winnerUser: overrideWinnerUser || null,
+      winnerPage: overrideWinnerPage || null,
+      winnerScore: overrideWinnerScore ? Number(overrideWinnerScore) : null,
+      winnerBytes: overrideWinnerBytes ? Number(overrideWinnerBytes) : null,
+      runnerUpUser: overrideRunnerUpUser || null,
+      runnerUpPage: overrideRunnerUpPage || null,
+      runnerUpScore: overrideRunnerUpScore ? Number(overrideRunnerUpScore) : null,
+      runnerUpBytes: overrideRunnerUpBytes ? Number(overrideRunnerUpBytes) : null,
+    });
+  };
+
   // PM2 Process control
   const { data: botProcesses, refetch: refetchProcesses } = api.admin.getBotProcesses.useQuery(
     undefined,
@@ -1088,6 +1217,355 @@ function LorewardsBotSection() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Sync & Cross-Validation Diagnostics */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Database className="h-5 w-5 text-blue-500" />
+            Sync & Cross-Validation Diagnostics
+          </CardTitle>
+          <CardDescription>
+            Force sync the scoring db and cross-validate daily outcomes between bot scanning and WikiOS core
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => triggerSyncMutation.mutate()}
+              disabled={triggerSyncMutation.isPending}
+              className="bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500/20 text-xs font-bold gap-2"
+              size="sm"
+            >
+              {triggerSyncMutation.isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3.5 h-3.5" />
+                  Trigger Full State Sync
+                </>
+              )}
+            </Button>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <Input
+                type="date"
+                value={adminDate}
+                onChange={(e) => setAdminDate(e.target.value)}
+                className="h-9 text-xs w-36"
+              />
+              <Button
+                onClick={() => crossValidateMutation.mutate({ date: adminDate })}
+                disabled={crossValidateMutation.isPending}
+                className="bg-blue-500/10 border border-blue-500/30 text-blue-550 hover:bg-blue-500/20 text-xs font-bold h-9 gap-2"
+                size="sm"
+              >
+                {crossValidateMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  "Run Cross-Validation"
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Validation Result Display */}
+          {validationResult && (
+            <div className="border border-blue-500/20 bg-blue-500/5 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Info className="w-4 h-4" />
+                  Cross-Validation Report for {validationResult.date}
+                </span>
+                <span className={cn(
+                  "text-xs font-black px-2 py-0.5 rounded",
+                  validationResult.winnersAgree ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-550"
+                )}>
+                  {validationResult.winnersAgree ? "Winners Agree" : "Winners Disagree"}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <h6 className="font-bold text-muted-foreground uppercase text-[10px] mb-1">Bot Result:</h6>
+                  <p>Winner: <strong>{validationResult.bot.winner || "None"}</strong> ({validationResult.bot.winnerPage || "No page"})</p>
+                  <p>Score: <strong>{validationResult.bot.score || "—"}</strong></p>
+                </div>
+                <div>
+                  <h6 className="font-bold text-muted-foreground uppercase text-[10px] mb-1">WikiOS Core Result:</h6>
+                  <p>Winner: <strong>{validationResult.wikios.winner || "None"}</strong> ({validationResult.wikios.winnerPage || "No page"})</p>
+                  <p>Score: <strong>{validationResult.wikios.score || "—"}</strong></p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recent validation history list */}
+          <div className="space-y-2">
+            <h6 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Recent Cross-Validation History:</h6>
+            <div className="border border-border/40 rounded-xl overflow-hidden bg-black/10 text-xs divide-y divide-border/20">
+              {validationHistory?.results && validationHistory.results.length > 0 ? (
+                validationHistory.results.map((r: any) => (
+                  <div key={r.date} className="p-3 flex items-center justify-between hover:bg-white/5">
+                    <span className="font-mono font-semibold">{r.date}</span>
+                    <div className="flex items-center gap-3 text-[11px]">
+                      <span>Bot: <strong>{r.botWinner || "None"}</strong></span>
+                      <span>WikiOS: <strong>{r.wikiosWinner || "None"}</strong></span>
+                      <span className={cn(
+                        "font-bold px-1.5 py-0.2 rounded text-[10px]",
+                        r.winnersAgree ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-550"
+                      )}>
+                        {r.winnersAgree ? "MATCH" : "MISMATCH"}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-muted-foreground italic">
+                  No cross-validation records found.
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Silent Blacklist Manager */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Ban className="h-5 w-5 text-red-500" />
+            Silent Blacklist Manager
+          </CardTitle>
+          <CardDescription>
+            Excludes specified users from the bot's daily scans and win eligibility for a configurable duration
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase">Username</label>
+              <Input
+                placeholder="Wiki username to blacklist"
+                value={blacklistUser}
+                onChange={(e) => setBlacklistUser(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase">Duration</label>
+              <select
+                value={blacklistDuration}
+                onChange={(e) => setBlacklistDuration(e.target.value)}
+                className="w-full h-9 rounded-md border border-border/50 bg-background text-xs px-2.5 text-foreground focus:outline-none"
+              >
+                <option value="permanent">Permanent</option>
+                <option value="7days">7 Days</option>
+                <option value="30days">30 Days</option>
+                <option value="custom">Custom Date</option>
+              </select>
+            </div>
+            {blacklistDuration === "custom" && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase">Expiry Date</label>
+                <Input
+                  type="date"
+                  value={blacklistExpiry}
+                  onChange={(e) => setBlacklistExpiry(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+            )}
+          </div>
+          <Button
+            onClick={handleAddBlacklist}
+            disabled={updateBlacklistMutation.isPending}
+            className="w-full sm:w-auto bg-red-650 hover:bg-red-750 text-white font-bold h-9 text-xs"
+          >
+            Add to Blacklist
+          </Button>
+
+          {/* Active Blacklisted Users List */}
+          <div className="space-y-2">
+            <h6 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Blacklisted Users:</h6>
+            <div className="border border-border/40 rounded-xl overflow-hidden bg-black/10 max-h-48 overflow-y-auto text-xs divide-y divide-border/20">
+              {blacklist && Object.keys(blacklist).length > 0 ? (
+                Object.entries(blacklist).map(([user, date]: [string, any]) => (
+                  <div key={user} className="p-3 flex items-center justify-between hover:bg-white/5">
+                    <div className="font-bold flex items-center gap-2">
+                      <UnifiedCountryFlag countryName={user} size="xs" showTooltip={false} />
+                      {user}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Expires: {date ? String(date).slice(0, 10) : "Permanent"}
+                      </span>
+                      <button
+                        onClick={() => updateBlacklistMutation.mutate({ username: user, action: "remove" })}
+                        disabled={updateBlacklistMutation.isPending}
+                        className="text-red-550 hover:text-red-650"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-muted-foreground italic">
+                  No blacklisted users found.
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Manual Winner Override Tool */}
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Sliders className="h-5 w-5 text-amber-500" />
+            Manual Winner Override Tool
+          </CardTitle>
+          <CardDescription>
+            Manually rewrite the winning details of past daily, weekly, or monthly entries and push announcement updates to the Discord bot
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase">Date</label>
+              <Input
+                type="date"
+                value={overrideDate}
+                onChange={(e) => setOverrideDate(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase">Type</label>
+              <select
+                value={overrideType}
+                onChange={(e) => setOverrideType(e.target.value)}
+                className="w-full h-9 rounded-md border border-border/50 bg-background text-xs px-2.5 text-foreground focus:outline-none"
+              >
+                <option value="daily">Daily Loreward</option>
+                <option value="weekly">Weekly Loreward</option>
+                <option value="monthly">Monthly Loreward</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Winner details */}
+          <div className="space-y-2 border-t border-border/20 pt-2">
+            <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider">1. Winner Details</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Username</label>
+                <Input
+                  placeholder="Winner username"
+                  value={overrideWinnerUser}
+                  onChange={(e) => setOverrideWinnerUser(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Page Title</label>
+                <Input
+                  placeholder="Winner article page"
+                  value={overrideWinnerPage}
+                  onChange={(e) => setOverrideWinnerPage(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Score</label>
+                <Input
+                  type="number"
+                  placeholder="Winner score"
+                  value={overrideWinnerScore}
+                  onChange={(e) => setOverrideWinnerScore(Number(e.target.value))}
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Bytes Added</label>
+                <Input
+                  type="number"
+                  placeholder="Winner bytes"
+                  value={overrideWinnerBytes}
+                  onChange={(e) => setOverrideWinnerBytes(Number(e.target.value))}
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Runner up details */}
+          <div className="space-y-2 border-t border-border/20 pt-2">
+            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">2. Runner-up Details</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Username</label>
+                <Input
+                  placeholder="Runner-up username"
+                  value={overrideRunnerUpUser}
+                  onChange={(e) => setOverrideRunnerUpUser(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Page Title</label>
+                <Input
+                  placeholder="Runner-up article page"
+                  value={overrideRunnerUpPage}
+                  onChange={(e) => setOverrideRunnerUpPage(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Score</label>
+                <Input
+                  type="number"
+                  placeholder="Runner-up score"
+                  value={overrideRunnerUpScore}
+                  onChange={(e) => setOverrideRunnerUpScore(Number(e.target.value))}
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase">Bytes Added</label>
+                <Input
+                  type="number"
+                  placeholder="Runner-up bytes"
+                  value={overrideRunnerUpBytes}
+                  onChange={(e) => setOverrideRunnerUpBytes(Number(e.target.value))}
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleOverrideSubmit}
+            disabled={overrideWinnerMutation.isPending}
+            className="w-full bg-amber-550 hover:bg-amber-600 text-black font-bold h-9 text-xs gap-2"
+          >
+            {overrideWinnerMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Save and Sync Winner Override
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -2225,6 +2703,18 @@ function SystemTuningSection() {
 export default function AdminWikiPage() {
   usePageTitle({ title: "Admin - WikiOS Administration" });
 
+  const [activeTab, setActiveTab] = useState<string>("links");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam && ["links", "lorewards", "awards", "system"].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
+
   const { data: countriesData, isLoading } = api.countries.getAll.useQuery(
     { limit: 500 },
     { refetchOnWindowFocus: false }
@@ -2238,7 +2728,7 @@ export default function AdminWikiPage() {
         description="Unified portal for managing links, lorewards, custom article awards, and parser systems"
       />
 
-      <Tabs defaultValue="links" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="border-border/30 mb-4 flex h-fit w-full justify-start rounded-none border-b bg-transparent p-0">
           <TabsTrigger
             value="links"

@@ -21,7 +21,7 @@ const EXTERNAL_LINKS = [
     color: "text-amber-600 dark:text-amber-500",
   },
   {
-    label: "Lore Stashes",
+    label: "Stashes",
     href: "/stashes",
     icon: Bookmark,
     color: "text-blue-500",

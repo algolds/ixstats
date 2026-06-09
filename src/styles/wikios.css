@@ -3908,8 +3908,8 @@ button.wikios-rc-expand-btn:hover {
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: 10px;
-  border-radius: 22px;
+  padding: 8px;
+  border-radius: 18px;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
@@ -3926,16 +3926,16 @@ html:not([data-theme="dark"]) .wikios-brand-logo-container {
 }
 
 .wikios-brand-logo {
-  height: 1.3em;
+  height: 0.95em;
   width: auto;
-  filter: invert(0.89);
+  filter: brightness(0) invert(1) brightness(0.9) opacity(0.85);
   transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   display: block;
 }
 
 [data-theme="light"] .wikios-brand-logo,
 html:not([data-theme="dark"]) .wikios-brand-logo {
-  filter: invert(0.1);
+  filter: grayscale(1) brightness(0.35) contrast(1.1) opacity(0.85);
 }
 
 .wikios-logo-sheen {
@@ -3962,12 +3962,12 @@ html:not([data-theme="dark"]) .wikios-brand-logo {
 }
 
 .wikios-brand-lockup:hover .wikios-brand-logo {
-  filter: invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.2));
+  filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.25));
 }
 
 [data-theme="light"] .wikios-brand-lockup:hover .wikios-brand-logo,
 html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
-  filter: invert(0.2) drop-shadow(0 0 6px rgba(0, 0, 0, 0.05));
+  filter: grayscale(1) brightness(0.1) contrast(1.2) opacity(1) drop-shadow(0 0 8px rgba(0, 0, 0, 0.08));
 }
 
 
@@ -3975,9 +3975,9 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
 .wikios-brand-text {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  text-align: left;
+  text-align: center;
 }
 
 .wikios-brand-title {
@@ -4029,7 +4029,7 @@ html:not([data-theme="dark"]) .wikios-brand-title {
 }
 
 .wikios-brand-title-ix {
-  height: 0.85em;
+  height: 0.95em;
   width: auto;
   filter: invert(0.89);
   display: block;
@@ -4057,10 +4057,12 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
 .wikios-brand-subtitle {
   font-family: var(--wikios-font-ui);
   font-size: 0.28em;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--wikios-text-muted);
-  margin: 0;
+  margin: 4px 0 0 0;
   line-height: 1.1;
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
 }
 
 .wikios-hero-est {

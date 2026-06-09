@@ -1581,4 +1581,29 @@ export const nsImportRouter = createTRPCRouter({
       zeroValueChecked: zeroValueCards.length,
     };
   }),
+
+  /**
+   * Check if user has already verified/imported any NS nation
+   */
+  hasImported: protectedProcedure.query(async ({ ctx }) => {
+    // Check if they have verified ownership of any nation
+    const verification = await ctx.db.nSVerification.findFirst({
+      where: {
+        userId: ctx.user.id,
+        verified: true,
+      },
+    });
+    if (verification) return true;
+
+    // Check if they have any card from NS_IMPORT type
+    const cardCount = await ctx.db.cardOwnership.count({
+      where: {
+        userId: ctx.user.id,
+        cards: {
+          cardType: "NS_IMPORT",
+        },
+      },
+    });
+    return cardCount > 0;
+  }),
 });

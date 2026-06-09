@@ -34,6 +34,7 @@ import { globalCache } from "~/lib/advanced-cache-system";
 import { scoreDailyWikiOS } from "~/lib/lorewards-scoring";
 import type { ScoringWeights } from "~/lib/lorewards-scoring";
 import * as mysql from "mysql2/promise";
+import { getWikiDbPool } from "~/lib/wiki-bridge";
 import { fetchTemplateData, categorizeTemplate } from "~/lib/wikios/template-registry";
 
 export const adminRouter = createTRPCRouter({
@@ -3525,18 +3526,4 @@ export const adminRouter = createTRPCRouter({
     }),
 });
 
-let wikiDbPool: mysql.Pool | null = null;
-function getWikiDbPool(): mysql.Pool {
-  if (!wikiDbPool) {
-    wikiDbPool = mysql.createPool({
-      host: process.env.IXWIKI_DB_HOST || "localhost",
-      port: Number(process.env.IXWIKI_DB_PORT) || 3306,
-      user: process.env.IXWIKI_DB_USER || "ixwiki",
-      password: process.env.IXWIKI_DB_PASSWORD || "",
-      database: process.env.IXWIKI_DB_NAME || "ixwiki",
-      waitForConnections: true,
-      connectionLimit: 3,
-    });
-  }
-  return wikiDbPool;
-}
+// getWikiDbPool is now imported from "~/lib/wiki-bridge"

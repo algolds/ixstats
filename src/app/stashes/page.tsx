@@ -32,9 +32,12 @@ import {
   Download,
   ZoomIn,
   MessageSquare,
+  HelpCircle,
+  ImageIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import "~/styles/wikios.css";
+import { StashWelcomeModal } from "~/components/wikios/shared/StashWelcomeModal";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -62,7 +65,7 @@ interface CommonsImage {
 }
 
 export default function StashesPage() {
-  usePageTitle({ title: "Lore Stashes" });
+  usePageTitle({ title: "My Stash" });
 
   const [selectedStashId, setSelectedStashId] = useState<string | null>(null);
   const [editingStash, setEditingStash] = useState<string | null>(null);
@@ -75,6 +78,7 @@ export default function StashesPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<CommonsImage | null>(null);
   const [stashTab, setStashTab] = useState<"pages" | "images" | "threads">("pages");
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
 
   // Reset tab when active stash changes
   useEffect(() => {
@@ -178,14 +182,21 @@ export default function StashesPage() {
   return (
     <>
       <SignedIn>
-        <WikiOSLayout title="Lore Stashes">
+        <WikiOSLayout sidebarVariant="dashboard">
           <div className="wikios-root min-h-screen p-1 sm:p-2">
-            <div className="wikios-special-page">
+            <div className="w-full px-2 sm:px-4">
               {/* Header */}
               <div className="wikios-stashes-page-header">
                 <div>
-                  <h1 className="wikios-stashes-page-title">
-                    <Bookmark size={22} /> Lore Stashes
+                  <h1 className="wikios-stashes-page-title flex items-center gap-2">
+                    <Bookmark size={22} /> My Stash
+                    <button
+                      onClick={() => setWelcomeOpen(true)}
+                      className="text-muted-foreground hover:text-rose-500 transition-colors ml-1 p-0.5 rounded hover:bg-white/5 cursor-pointer"
+                      title="Open Help Guide"
+                    >
+                      <HelpCircle size={16} />
+                    </button>
                   </h1>
                   <p className="wikios-stashes-page-subtitle">
                     {totalPages} {totalPages === 1 ? "page" : "pages"} across {stashes.length}{" "}
@@ -317,9 +328,9 @@ export default function StashesPage() {
 
               {/* Main layout */}
               {stashes.length > 0 && (
-                <div className="wikios-stashes-layout">
+                <div className="flex flex-col md:flex-row gap-6 mt-6">
                   {/* Sidebar */}
-                  <div className="wikios-stashes-sidebar">
+                  <div className="w-full md:w-60 shrink-0 wikios-stashes-sidebar">
                     <div className="wikios-stashes-sidebar-label">Your Stashes</div>
                     {stashes.map((s) => (
                       <div key={s.id} className="wikios-stash-sidebar-item-wrapper">
@@ -455,7 +466,7 @@ export default function StashesPage() {
                   </div>
 
                   {/* Main content */}
-                  <div className="wikios-stashes-main">
+                  <div className="flex-1 min-w-0 wikios-stashes-main">
                     {activeStash && (
                       <div className="wikios-stashes-content-header flex flex-wrap items-center justify-between gap-4">
                         <div>
@@ -769,6 +780,7 @@ export default function StashesPage() {
               }}
             />
           )}
+          <StashWelcomeModal open={welcomeOpen} onOpenChangeAction={setWelcomeOpen} />
         </WikiOSLayout>
       </SignedIn>
       <SignedOut>
@@ -802,8 +814,76 @@ function StashedImageModal({
   const [format, setFormat] = useState<"thumb" | "embed" | "raw" | "url">("thumb");
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [copiedImage, setCopiedImage] = useState(false);
+  const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const utils = api.useUtils();
 
   const cleanTitle = image.title.replace(/^File:/, "").replace(/_/g, " ");
+
+  const handleCopyImage = async () => {
+    setIsCopyingImage(true);
+    try {
+      let blob: Blob;
+      try {
+        const response = await fetch(image.url);
+        if (!response.ok) throw new Error("CORS or direct fetch failed");
+        blob = await response.blob();
+      } catch (directErr) {
+        console.warn("Direct fetch failed, falling back to server download:", directErr);
+        const cleanName = image.title.replace(/^File:/, "");
+        const res = await utils.wiki.downloadFile.fetch({ filename: cleanName });
+        if (!res || !res.content) {
+          throw new Error("Failed to download image from server");
+        }
+        const byteCharacters = atob(res.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        blob = new Blob([byteArray], { type: res.mime || "image/png" });
+      }
+
+      const imgEl = new window.Image();
+      const objectUrl = URL.createObjectURL(blob);
+      imgEl.src = objectUrl;
+
+      await new Promise((resolve, reject) => {
+        imgEl.onload = resolve;
+        imgEl.onerror = () => reject(new Error("Failed to load image element"));
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = imgEl.naturalWidth || imgEl.width;
+      canvas.height = imgEl.naturalHeight || imgEl.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        URL.revokeObjectURL(objectUrl);
+        throw new Error("Could not get canvas context");
+      }
+      ctx.drawImage(imgEl, 0, 0);
+      URL.revokeObjectURL(objectUrl);
+
+      const pngBlob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), "image/png");
+      });
+      if (!pngBlob) throw new Error("Failed to convert image to PNG");
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "image/png": pngBlob,
+        }),
+      ]);
+
+      setCopiedImage(true);
+      setTimeout(() => setCopiedImage(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy image:", err);
+      alert("Failed to copy image to clipboard. Try downloading it instead.");
+    } finally {
+      setIsCopyingImage(false);
+    }
+  };
 
   const formatText = useMemo(() => {
     switch (format) {
@@ -938,13 +1018,30 @@ function StashedImageModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <button
-              onClick={handleCopy}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copied!" : format === "url" ? "Copy URL" : "Copy Wikitext"}
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={handleCopy}
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied!" : format === "url" ? "Copy URL" : "Copy Wikitext"}
+              </button>
+              <button
+                onClick={handleCopyImage}
+                disabled={isCopyingImage}
+                className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-sm font-semibold text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)] active:scale-[0.98] disabled:opacity-50"
+                title="Copy Image to Clipboard"
+              >
+                {isCopyingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : copiedImage ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <ImageIcon className="h-4 w-4" />
+                )}
+                {copiedImage ? "Copied!" : "Image"}
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <button

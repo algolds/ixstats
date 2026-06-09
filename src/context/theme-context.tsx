@@ -25,6 +25,9 @@ interface ThemeContextType {
   interactiveHover: boolean;
   setInteractiveHover: (hover: boolean) => void;
   toggleInteractiveHover: () => void;
+  showNsImporter: boolean;
+  setShowNsImporter: (show: boolean) => void;
+  toggleShowNsImporter: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -47,6 +50,7 @@ export function ThemeProvider({
   const [lowFidelityMode, setLowFidelityModeState] = useState<boolean>(false);
   const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
   const [interactiveHover, setInteractiveHoverState] = useState<boolean>(true);
+  const [showNsImporter, setShowNsImporterState] = useState<boolean>(false);
 
   // Initialize theme and compact mode from localStorage
   useEffect(() => {
@@ -79,6 +83,11 @@ export function ThemeProvider({
       const storedInteractiveHover = localStorage.getItem("ixstats-interactive-hover");
       if (storedInteractiveHover !== null) {
         setInteractiveHoverState(storedInteractiveHover === "true");
+      }
+
+      const storedShowNsImporter = localStorage.getItem("ixstats-show-ns-importer");
+      if (storedShowNsImporter !== null) {
+        setShowNsImporterState(storedShowNsImporter === "true");
       }
     } catch (error) {
       console.warn("Failed to load theme settings from localStorage:", error);
@@ -262,6 +271,20 @@ export function ThemeProvider({
     setInteractiveHover(!interactiveHover);
   }, [interactiveHover, setInteractiveHover]);
 
+  const setShowNsImporter = useCallback((show: boolean) => {
+    try {
+      localStorage.setItem("ixstats-show-ns-importer", show.toString());
+      setShowNsImporterState(show);
+    } catch (error) {
+      console.warn("Failed to save show NS importer to localStorage:", error);
+      setShowNsImporterState(show);
+    }
+  }, []);
+
+  const toggleShowNsImporter = useCallback(() => {
+    setShowNsImporter(!showNsImporter);
+  }, [showNsImporter, setShowNsImporter]);
+
   // Memoize context value to prevent unnecessary re-renders
   const value: ThemeContextType = useMemo(
     () => ({
@@ -284,6 +307,9 @@ export function ThemeProvider({
       interactiveHover,
       setInteractiveHover,
       toggleInteractiveHover,
+      showNsImporter,
+      setShowNsImporter,
+      toggleShowNsImporter,
     }),
     [
       theme,
@@ -305,6 +331,9 @@ export function ThemeProvider({
       interactiveHover,
       setInteractiveHover,
       toggleInteractiveHover,
+      showNsImporter,
+      setShowNsImporter,
+      toggleShowNsImporter,
     ]
   );
 

@@ -9,6 +9,7 @@ import {
   Sparkles,
   Layers,
   Minimize2,
+  Download,
 } from "lucide-react";
 import { AnimatedThemeToggler } from "~/components/magicui/animated-theme-toggler";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -42,6 +43,8 @@ export function UserPreferencesCard({
     setEnableTextures,
     interactiveHover,
     setInteractiveHover,
+    showNsImporter,
+    setShowNsImporter,
   } = context;
 
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -137,6 +140,32 @@ export function UserPreferencesCard({
                 checked={compactMode}
                 onCheckedChange={setCompactMode}
                 className="data-[state=checked]:bg-indigo-600"
+              />
+            </div>
+
+            {/* NS Importer Toggle */}
+            <div className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+              <div className="flex gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                  <Download className="h-5 w-5" />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="show-ns-importer"
+                    className="text-sm font-bold text-slate-900 dark:text-white"
+                  >
+                    Show NS Importer in Sidebar
+                  </Label>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Displays the NationStates importer link in the Vault sidebar.
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="show-ns-importer"
+                checked={showNsImporter}
+                onCheckedChange={setShowNsImporter}
+                className="data-[state=checked]:bg-rose-500"
               />
             </div>
           </div>

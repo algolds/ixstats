@@ -1,4 +1,5 @@
 import * as React from "react";
+import { use } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/lib/utils";
 import { fetchDiscordServer, formatMemberCount, type DiscordServerData } from "~/lib/discord";
@@ -238,7 +239,7 @@ function CardLayout({
   );
 }
 
-async function DiscordBadge(props: DiscordBadgeProps) {
+function DiscordBadge(props: DiscordBadgeProps) {
   const {
     serverId,
     layout = "inline",
@@ -248,7 +249,7 @@ async function DiscordBadge(props: DiscordBadgeProps) {
     className,
   } = props;
 
-  const server = dataProp ?? (await fetchDiscordServer(serverId));
+  const server = dataProp || use(fetchDiscordServer(serverId));
   if (!server) return null;
 
   const resolvedInvite = inviteUrl ?? null;

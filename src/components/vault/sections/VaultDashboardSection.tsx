@@ -20,6 +20,7 @@ import {
   Wallet,
   History,
   Trophy,
+  X,
 } from "lucide-react";
 import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
@@ -128,6 +129,25 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
   const [claimedBonusAmount, setClaimedBonusAmount] = useState(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "feed" | "showcase">("overview");
+
+  const { data: hasImported } = api.nsImport.hasImported.useQuery(undefined, {
+    enabled: !!user,
+    refetchOnWindowFocus: false,
+  });
+
+  const [isNoticeDismissed, setIsNoticeDismissed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ns-import-notice-dismissed") === "true";
+    }
+    return false;
+  });
+
+  const handleDismissNotice = () => {
+    setIsNoticeDismissed(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ns-import-notice-dismissed", "true");
+    }
+  };
 
   const { data: earningsData, isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(
     undefined,
@@ -364,7 +384,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
                   <span className="text-foreground text-xs tracking-wider uppercase">
-                    Passive Income & Yields
+                    Treasury Revenue & Yields
                   </span>
                 </div>
                 {balanceData?.canClaimDailyBonus && (
@@ -389,25 +409,25 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                     {/* Projections */}
                     <div className="space-y-3">
                       <span className="text-muted-foreground block text-[10px] font-bold tracking-widest uppercase">
-                        Passive Dividend Projections
+                        Treasury Revenue Forecasts
                       </span>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Daily Passive Yield</span>
+                          <span className="text-muted-foreground">Daily Treasury Yield</span>
                           <span className="flex items-center gap-0.5 font-mono font-bold text-blue-600 dark:text-blue-400">
                             +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {passiveIncomeData?.dailyDividend?.toFixed(2) ?? "0.00"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Weekly Dividend Yield</span>
+                          <span className="text-muted-foreground">Weekly Treasury Yield</span>
                           <span className="flex items-center gap-0.5 font-mono font-bold text-slate-700 dark:text-slate-300">
                             ~<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {passiveIncomeData?.weeklyDividend?.toFixed(2) ?? "0.00"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Monthly Dividend Yield</span>
+                          <span className="text-muted-foreground">Monthly Treasury Yield</span>
                           <span className="flex items-center gap-0.5 font-mono font-bold text-slate-700 dark:text-slate-300">
                             ~<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {passiveIncomeData?.monthlyDividend?.toFixed(2) ?? "0.00"}
@@ -601,6 +621,37 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
 
         {/* Right Column (Asset Portfolio & Account Status) */}
         <div className="space-y-6">
+          {hasImported === false && !isNoticeDismissed && (
+            <div className="relative overflow-hidden rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-sm backdrop-blur-md dark:border-rose-500/15">
+              {/* Close Button */}
+              <button
+                onClick={handleDismissNotice}
+                className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground rounded-full p-1 transition-all hover:bg-white/10"
+                aria-label="Dismiss notice"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400">
+                  <Download className="h-4 w-4 animate-bounce" />
+                </div>
+                <div className="pr-4 space-y-1">
+                  <h4 className="text-xs font-bold text-foreground tracking-tight">Import NationStates Cards!</h4>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    You haven't imported your NationStates deck yet. Verify your nation and import your collection to earn bonus IxCredits!
+                  </p>
+                  <button
+                    onClick={() => onNavigate?.("import")}
+                    className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
+                  >
+                    Go to Importer <ArrowRight className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Card Assets Portfolio Shelf */}
           <CutoutCard
             className={cn(

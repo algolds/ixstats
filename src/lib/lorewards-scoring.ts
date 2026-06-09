@@ -7,6 +7,7 @@
  */
 
 import * as mysql from "mysql2/promise";
+import { getWikiDbPool } from "~/lib/wiki-bridge";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -71,20 +72,8 @@ export interface WikiOSScoringResult {
 // MySQL Pool (reuse pattern from lorewards-sync.ts)
 // ---------------------------------------------------------------------------
 
-let pool: mysql.Pool | null = null;
 function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool({
-      host: process.env.IXWIKI_DB_HOST || "localhost",
-      port: Number(process.env.IXWIKI_DB_PORT) || 3306,
-      user: process.env.IXWIKI_DB_USER || "ixwiki",
-      password: process.env.IXWIKI_DB_PASSWORD || "",
-      database: process.env.IXWIKI_DB_NAME || "ixwiki",
-      waitForConnections: true,
-      connectionLimit: 3,
-    });
-  }
-  return pool;
+  return getWikiDbPool() as mysql.Pool;
 }
 
 // Home country cache: username → most-edited country category

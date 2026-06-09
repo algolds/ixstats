@@ -68,7 +68,7 @@ export interface WikiRecentChange {
 
 let ixwikiPool: Pool | null = null;
 
-function getIxWikiPool(): Pool {
+export function getIxWikiPool(): Pool {
   if (!ixwikiPool) {
     ixwikiPool = mysql.createPool({
       host: process.env.IXWIKI_DB_HOST || "localhost",
@@ -84,6 +84,10 @@ function getIxWikiPool(): Pool {
     });
   }
   return ixwikiPool;
+}
+
+export function getWikiDbPool(): Pool {
+  return getIxWikiPool();
 }
 
 // ──────────────────────────────────────────────

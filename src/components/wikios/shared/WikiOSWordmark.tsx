@@ -15,7 +15,7 @@ export function WikiOSWordmark({ className }: WikiOSWordmarkProps) {
           fontFamily: "var(--font-playfair)",
           fontWeight: 600,
           letterSpacing: "0.15em",
-          marginLeft: "-0.03em",
+          marginLeft: "0.08em",
         }}
       >
         WIKI

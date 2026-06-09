@@ -33,6 +33,8 @@ interface DashboardSidebarLayoutProps {
   defaultCollapsed?: boolean;
   disableCollapse?: boolean;
   variant?: "default" | "rail";
+  expandedWidthClassName?: string;
+  expandedWidthStyle?: string;
 }
 
 export function DashboardSidebarLayout({
@@ -47,6 +49,8 @@ export function DashboardSidebarLayout({
   defaultCollapsed = false,
   disableCollapse = true,
   variant = "default",
+  expandedWidthClassName,
+  expandedWidthStyle,
 }: DashboardSidebarLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(defaultCollapsed);
   const [isMounted, setIsMounted] = useState(false);
@@ -75,6 +79,12 @@ export function DashboardSidebarLayout({
 
   const isCollapsedNow = !disableCollapse && isSidebarCollapsed && isMounted;
 
+  const defaultExpandedWidthClass = variant === "rail" ? "w-64" : "w-48";
+  const defaultExpandedWidthStyle = variant === "rail" ? "16rem" : "12rem";
+
+  const resolvedExpandedWidthClass = expandedWidthClassName ?? defaultExpandedWidthClass;
+  const resolvedExpandedWidthStyle = expandedWidthStyle ?? defaultExpandedWidthStyle;
+
   return (
     <SidebarContext.Provider
       value={{ isCollapsed: isCollapsedNow, toggleCollapsed: handleToggleSidebar }}
@@ -82,10 +92,24 @@ export function DashboardSidebarLayout({
       <div className="relative min-h-screen space-y-0">
         {/* Hero Section */}
         {heroSection && (
-          <div className="relative z-10 container mx-auto px-4 pt-4 sm:pt-6">{heroSection}</div>
+          <div
+            className={cn(
+              "relative z-10 mx-auto px-4 pt-4 sm:pt-6",
+              variant === "rail" ? "w-full max-w-[1800px] lg:px-8 xl:px-12" : "container"
+            )}
+          >
+            {heroSection}
+          </div>
         )}
 
-        <div className="relative z-10 container mx-auto px-4 py-4 sm:py-6 md:py-8">
+        <div
+          className={cn(
+            "relative z-10 mx-auto py-4 sm:py-6 md:py-8",
+            variant === "rail"
+              ? "w-full max-w-[1800px] px-4 sm:px-6 lg:px-8 xl:px-12"
+              : "container px-4"
+          )}
+        >
           {/* Alerts */}
           {alerts && <div className="mb-4 space-y-3 sm:mb-6">{alerts}</div>}
 
@@ -98,7 +122,7 @@ export function DashboardSidebarLayout({
                 variant === "rail"
                   ? isCollapsedNow
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
-                    : "-left-6 w-64 opacity-100 xl:-left-12"
+                    : cn("-left-6 opacity-100 xl:-left-12", resolvedExpandedWidthClass)
                   : isCollapsedNow
                     ? "pointer-events-none mr-[-24px] w-0 opacity-0"
                     : "w-48 opacity-100"
@@ -108,7 +132,7 @@ export function DashboardSidebarLayout({
                   variant === "rail"
                     ? isCollapsedNow
                       ? "3.5rem"
-                      : "16rem"
+                      : resolvedExpandedWidthStyle
                     : isCollapsedNow
                       ? "0px"
                       : "12rem",
