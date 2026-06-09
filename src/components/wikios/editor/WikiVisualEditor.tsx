@@ -185,9 +185,27 @@ export function WikiVisualEditor({
     // The `typeof="mw:Transclusion"` may be on a <style> tag while the visible <table> shares the same `about`.
     const protectedAbouts = new Set<string>();
     el.querySelectorAll('[typeof*="mw:Transclusion"]').forEach((tmpl) => {
-      const about = tmpl.getAttribute("about");
+      const htmlEl = tmpl as HTMLElement;
+      htmlEl.contentEditable = "false";
+
+      try {
+        const dataMw = JSON.parse(htmlEl.getAttribute("data-mw") ?? "{}");
+        const wtName = dataMw.parts?.[0]?.template?.target?.wt ?? "";
+        if (
+          wtName.startsWith("MyCountry:") ||
+          wtName.startsWith("CountryData:") ||
+          wtName.startsWith("BusinessData:")
+        ) {
+          htmlEl.className = getChipClassName(wtName);
+          htmlEl.innerHTML = getChipInnerHTML(wtName);
+          return;
+        }
+      } catch (err) {
+        // ignore
+      }
+
+      const about = htmlEl.getAttribute("about");
       if (about) protectedAbouts.add(about);
-      (tmpl as HTMLElement).contentEditable = "false";
     });
 
     // Protect all elements in the same transclusion group
@@ -210,8 +228,35 @@ export function WikiVisualEditor({
 
     // Protect standalone templates not using about groups
     el.querySelectorAll('[typeof*="mw:Transclusion"]:not([about])').forEach((tmpl) => {
-      (tmpl as HTMLElement).contentEditable = "false";
-      tmpl.classList.add("wikios-ve-template");
+      const htmlEl = tmpl as HTMLElement;
+      if (htmlEl.classList.contains("wikios-ve-custom-chip")) return;
+      htmlEl.contentEditable = "false";
+      htmlEl.classList.add("wikios-ve-template");
+    });
+
+    // Protect and format Coordinates and MapEmbed links
+    el.querySelectorAll("a").forEach((anchor) => {
+      const href = anchor.getAttribute("href") || "";
+      const titleAttr = anchor.getAttribute("title") || "";
+      const decodedHref = decodeURIComponent(href);
+      const decodedTitle = decodeURIComponent(titleAttr);
+
+      if (decodedHref.includes("Coords:") || decodedTitle.includes("Coords:")) {
+        const coordsMatch = decodedHref.match(/Coords:([^?#&]+)/i) || decodedTitle.match(/Coords:([^?#&]+)/i);
+        if (coordsMatch && coordsMatch[1]) {
+          anchor.contentEditable = "false";
+          anchor.className = "wikios-ve-custom-chip chip-coords";
+          const label = anchor.innerText.trim() || "Location";
+          anchor.innerHTML = `<span class="opacity-70">📍</span> ${label}`;
+        }
+      } else if (decodedHref.includes("MapEmbed:") || decodedTitle.includes("MapEmbed:")) {
+        const embedMatch = decodedHref.match(/MapEmbed:([^?#&]+)/i) || decodedTitle.match(/MapEmbed:([^?#&]+)/i);
+        if (embedMatch && embedMatch[1]) {
+          anchor.contentEditable = "false";
+          anchor.className = "wikios-ve-custom-chip chip-mapembed";
+          anchor.innerHTML = `<span class="opacity-70">🗺️</span> Map Embed`;
+        }
+      }
     });
 
     // Protect images/files
@@ -507,6 +552,34 @@ export function WikiVisualEditor({
   // ---------------------------------------------------------------------------
   const handleInsertTemplate = useCallback(
     async (templateName: string, params: Record<string, string>) => {
+      if (
+        templateName.startsWith("MyCountry:") ||
+        templateName.startsWith("CountryData:") ||
+        templateName.startsWith("BusinessData:")
+      ) {
+        const dataMw = JSON.stringify({
+          parts: [
+            {
+              template: {
+                target: { wt: templateName },
+                params: Object.fromEntries(
+                  Object.entries(params).map(([k, v]) => [k, { wt: v }])
+                ),
+              },
+            },
+          ],
+        });
+        const wrapper = document.createElement("span");
+        wrapper.setAttribute("typeof", "mw:Transclusion");
+        wrapper.setAttribute("data-mw", dataMw);
+        wrapper.contentEditable = "false";
+        wrapper.className = getChipClassName(templateName);
+        wrapper.innerHTML = getChipInnerHTML(templateName);
+        insertNodeAtCursor(wrapper);
+        setIsDirty(true);
+        return;
+      }
+
       const paramParts = Object.entries(params)
         .filter(([, v]) => v.trim())
         .map(([k, v]) => `|${k}=${v}`);
@@ -566,6 +639,31 @@ export function WikiVisualEditor({
     async (newParams: Record<string, string>) => {
       if (!editingTemplate) return;
       const { element, name } = editingTemplate;
+
+      if (
+        name.startsWith("MyCountry:") ||
+        name.startsWith("CountryData:") ||
+        name.startsWith("BusinessData:")
+      ) {
+        const dataMw = JSON.stringify({
+          parts: [
+            {
+              template: {
+                target: { wt: name },
+                params: Object.fromEntries(
+                  Object.entries(newParams).map(([k, v]) => [k, { wt: v }])
+                ),
+              },
+            },
+          ],
+        });
+        element.setAttribute("data-mw", dataMw);
+        element.innerHTML = getChipInnerHTML(name);
+        setEditingTemplate(null);
+        setIsDirty(true);
+        return;
+      }
+
       const paramParts = Object.entries(newParams)
         .filter(([, v]) => v.trim())
         .map(([k, v]) => `|${k}=${v}`);
@@ -1106,7 +1204,7 @@ export function WikiVisualEditor({
                     checked={writerMode}
                     onCheckedChange={handleToggleWriterMode}
                     size="sm"
-                    tone="accent"
+                    tone="neutral"
                   />
                 </div>
 
@@ -1117,7 +1215,7 @@ export function WikiVisualEditor({
                     checked={enableAutocomplete}
                     onCheckedChange={handleToggleAutocomplete}
                     size="sm"
-                    tone="accent"
+                    tone="neutral"
                   />
                 </div>
               </div>
@@ -1197,7 +1295,25 @@ export function WikiVisualEditor({
         onClose={() => setShowMapCoordsModal(false)}
         onInsert={(wikitext) => {
           restoreSelection();
-          insertHtmlAtCursor(wikitext);
+          try {
+            const { type, values, optionOrLabel } = parseCoordsOrMapEmbed(wikitext);
+            const anchor = document.createElement("a");
+            anchor.setAttribute("href", `./${type}:${values}`);
+            anchor.setAttribute("title", `${type}:${values}`);
+            anchor.contentEditable = "false";
+            if (type === "Coords") {
+              anchor.className = "wikios-ve-custom-chip chip-coords";
+              const cleanLabel = optionOrLabel || "Location";
+              anchor.innerHTML = `<span class="opacity-70">📍</span> ${cleanLabel}`;
+            } else {
+              anchor.className = "wikios-ve-custom-chip chip-mapembed";
+              anchor.innerHTML = `<span class="opacity-70">🗺️</span> Map Embed`;
+            }
+            insertNodeAtCursor(anchor);
+            setIsDirty(true);
+          } catch (err) {
+            console.error("Failed to parse and insert coords/map embed:", err);
+          }
         }}
       />
 
@@ -1428,6 +1544,37 @@ function parseWikitextTemplate(wikitext: string) {
     }
   }
   return { templateName, params };
+}
+
+function getChipClassName(name: string): string {
+  let type = "mycountry";
+  if (name.startsWith("CountryData:")) {
+    type = "countrydata";
+  } else if (name.startsWith("BusinessData:")) {
+    type = "businessdata";
+  }
+  return `wikios-ve-custom-chip chip-${type} wikios-ve-template`;
+}
+
+function getChipInnerHTML(name: string): string {
+  let icon = "📊";
+  if (name.startsWith("CountryData:")) {
+    icon = "📈";
+  } else if (name.startsWith("BusinessData:")) {
+    icon = "💼";
+  }
+  return `<span class="opacity-70">${icon}</span> ${name}`;
+}
+
+function parseCoordsOrMapEmbed(wikitext: string) {
+  const clean = wikitext.trim().replace(/^\[\[/, "").replace(/\]\]$/, "");
+  const parts = clean.split("|");
+  const head = parts[0] || "";
+  const optionOrLabel = parts[1] || "";
+  const colonIdx = head.indexOf(":");
+  const type = colonIdx !== -1 ? head.slice(0, colonIdx) : head;
+  const values = colonIdx !== -1 ? head.slice(colonIdx + 1) : "";
+  return { type, values, optionOrLabel };
 }
 
 // Tiny MyCountry Logo representation for Popovers

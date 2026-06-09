@@ -493,7 +493,7 @@ export function ArticleRenderer({
     while ((match = regex.exec(contentHtml)) !== null) {
       if (match[1]) keys.add(match[1]);
     }
-    const linkRegex = /Template:((?:MyCountry|CountryData|BusinessData):[^"|?#&]+)/gi;
+    const linkRegex = /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
     while ((match = linkRegex.exec(contentHtml)) !== null) {
       if (match[1]) keys.add(decodeURIComponent(match[1]));
     }
@@ -1016,11 +1016,15 @@ function injectPlaceholderElements(html: string): string {
 
   // 1. Process Coords anchors e.g. <a href="...Coords:lat,lng,zoom...">Label</a>
   processed = processed.replace(
-    /<a[^>]*href="[^"]*Coords:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    /<a[^>]*href="[^"]*Coords(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, coordsStr, label) => {
       const decoded = decodeURIComponent(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
-      return `<span class="wikios-coords-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-label="${label || "Location"}">${label || "Location"}</span>`;
+      const safeLat = (lat || "0").replace(/"/g, "&quot;");
+      const safeLng = (lng || "0").replace(/"/g, "&quot;");
+      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
+      const safeLabel = (label || "Location").replace(/"/g, "&quot;");
+      return `<span class="wikios-coords-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-label="${safeLabel}">${label || "Location"}</span>`;
     }
   );
 
@@ -1030,18 +1034,25 @@ function injectPlaceholderElements(html: string): string {
     (match, coordsStr, label) => {
       const decoded = decodeURIComponent(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
-      const cleanLabel = label || "Location";
-      return `<span class="wikios-coords-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-label="${cleanLabel}">${cleanLabel}</span>`;
+      const safeLat = (lat || "0").replace(/"/g, "&quot;");
+      const safeLng = (lng || "0").replace(/"/g, "&quot;");
+      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
+      const safeLabel = (label || "Location").replace(/"/g, "&quot;");
+      return `<span class="wikios-coords-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-label="${safeLabel}">${label || "Location"}</span>`;
     }
   );
 
   // 3. Process MapEmbed anchors e.g. <a href="...MapEmbed:lat,lng,zoom...">options</a>
   processed = processed.replace(
-    /<a[^>]*href="[^"]*MapEmbed:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    /<a[^>]*href="[^"]*MapEmbed(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, coordsStr, options) => {
       const decoded = decodeURIComponent(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
-      return `<div class="wikios-map-embed-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-options="${options || ""}"></div>`;
+      const safeLat = (lat || "0").replace(/"/g, "&quot;");
+      const safeLng = (lng || "0").replace(/"/g, "&quot;");
+      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
+      const safeOptions = (options || "").replace(/"/g, "&quot;");
+      return `<div class="wikios-map-embed-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-options="${safeOptions}"></div>`;
     }
   );
 
@@ -1051,17 +1062,22 @@ function injectPlaceholderElements(html: string): string {
     (match, coordsStr, options) => {
       const decoded = decodeURIComponent(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
-      return `<div class="wikios-map-embed-placeholder" data-lat="${lat || "0"}" data-lng="${lng || "0"}" data-zoom="${zoom || "4"}" data-options="${options || ""}"></div>`;
+      const safeLat = (lat || "0").replace(/"/g, "&quot;");
+      const safeLng = (lng || "0").replace(/"/g, "&quot;");
+      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
+      const safeOptions = (options || "").replace(/"/g, "&quot;");
+      return `<div class="wikios-map-embed-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-options="${safeOptions}"></div>`;
     }
   );
 
   // 5. Process Template stats anchors e.g. <a href="...Template:MyCountry:field...">
   processed = processed.replace(
-    /<a[^>]*href="[^"]*Template:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    /<a[^>]*href="[^"]*Template(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, templateName, label) => {
       const decoded = decodeURIComponent(templateName);
       if (decoded.startsWith("MyCountry:") || decoded.startsWith("CountryData:") || decoded.startsWith("BusinessData:")) {
-        return `<span class="wikios-stat-placeholder" data-key="${decoded}"></span>`;
+        const safeKey = decoded.replace(/"/g, "&quot;");
+        return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;
       }
       return match;
     }
@@ -1071,7 +1087,8 @@ function injectPlaceholderElements(html: string): string {
   processed = processed.replace(
     /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi,
     (match, key) => {
-      return `<span class="wikios-stat-placeholder" data-key="${key}"></span>`;
+      const safeKey = key.replace(/"/g, "&quot;");
+      return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;
     }
   );
 

@@ -49,6 +49,7 @@ import {
   categorizeTemplate,
 } from "~/lib/wikios/template-registry";
 import { db } from "~/server/db";
+import { resolveWikiPlaceholdersInternal } from "./wiki";
 
 export const wikiosRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -516,7 +517,8 @@ export const wikiosRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { wikitext } = await htmlToWikitext(input.html, input.title);
+      const cleanedHtml = cleanHtmlForParsoid(input.html);
+      const { wikitext } = await htmlToWikitext(cleanedHtml, input.title);
       return saveToMediaWiki(
         input.title,
         wikitext,
@@ -1577,7 +1579,8 @@ async function saveToMediaWiki(
   summary: string,
   minor: boolean,
   ctx: any,
-  basetimestamp?: string
+  basetimestamp?: string,
+  isTemplateSync = false
 ): Promise<{ success: boolean; revisionId: number | null; editConflict?: boolean }> {
   const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
 
@@ -1631,6 +1634,13 @@ async function saveToMediaWiki(
       console.error("[WikiOS] Background op failed:", (err as Error).message);
     }
   );
+
+  // Trigger template sync if this is a user edit, not a template sync itself
+  if (!isTemplateSync && editData.edit?.result === "Success") {
+    syncCustomTemplates(wikitext, ctx).catch((err) => {
+      console.error("[WikiOS] Background template sync failed:", err);
+    });
+  }
 
   return {
     success: editData.edit?.result === "Success",
@@ -1689,4 +1699,109 @@ async function notifyStashOwners(
       metadata: JSON.stringify({ pageTitle, revisionId }),
     })),
   });
+}
+
+/**
+ * Background worker to parse templates in saved wikitext,
+ * resolve their current DB values, and update corresponding
+ * Template: pages on headless MediaWiki so they render correctly on traditional pages.
+ */
+async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
+  // 1. Extract all MyCountry:, CountryData:, and BusinessData: templates
+  const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi;
+  const placeholders = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(wikitext)) !== null) {
+    if (match[1]) {
+      placeholders.add(match[1]);
+    }
+  }
+
+  if (placeholders.size === 0) return;
+
+  const keys = Array.from(placeholders);
+  console.log(`[WikiOS] Syncing ${keys.length} custom templates:`, keys);
+
+  // 2. Resolve the dynamic database values
+  let activeCountryId: string | undefined;
+  if (ctx.auth?.userId) {
+    const user = await ctx.db.user.findFirst({
+      where: { clerkUserId: ctx.auth.userId },
+      select: { countryId: true },
+    });
+    if (user?.countryId) {
+      activeCountryId = user.countryId;
+    }
+  }
+
+  const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, activeCountryId);
+
+  // 3. For each template, save its resolved HTML template tag to MediaWiki
+  for (const key of keys) {
+    const data = resolved[key];
+    const valStr = data ? data.value : "N/A";
+    
+    // Normalize template key for page title (MediaWiki converts spaces to underscores)
+    const normalizedKey = key.replace(/ /g, "_");
+    const templateTitle = `Template:${normalizedKey}`;
+
+    // Template wikitext: static span element that traditional MediaWiki renders.
+    const templateWikitext = `<span class="wikios-stat-placeholder" data-key="${normalizedKey}">${valStr}</span>`;
+
+    try {
+      // Fetch the current template content if it exists, to avoid redundant writes
+      let currentContent = "";
+      try {
+        const article = await getArticleWikitext(templateTitle, "ixwiki");
+        if (article) {
+          currentContent = article.wikitext;
+        }
+      } catch (_err) {
+        // template does not exist
+      }
+
+      if (currentContent.trim() !== templateWikitext.trim()) {
+        console.log(`[WikiOS] Updating template ${templateTitle} -> "${valStr}"`);
+        await saveToMediaWiki(
+          templateTitle,
+          templateWikitext,
+          "Update dynamic stat template value",
+          true, // minor
+          ctx,
+          undefined, // no basetimestamp
+          true // isTemplateSync = true (prevents recursion!)
+        );
+      }
+    } catch (err: any) {
+      console.error(`[WikiOS] Failed to sync template ${templateTitle}:`, err.message);
+    }
+  }
+}
+
+/**
+ * Clean up visual editor HTML before passing to Parsoid for wikitext transformation.
+ * Strips formatting emoji and temporary visual decoration from custom chips.
+ */
+function cleanHtmlForParsoid(html: string): string {
+  let cleaned = html;
+  
+  // Clean Coords anchors: remove emoji and wrapper spans, restore standard link format
+  cleaned = cleaned.replace(
+    /<a[^>]*href="([^"]*Coords[^"]*)"[^>]*>(?:<span[^>]*>📍<\/span>)?\s*(.*?)<\/a>/gi,
+    (match: string, href: string, label: string) => {
+      const cleanLabel = label.replace(/📍/g, "").trim();
+      return `<a href="${href}">${cleanLabel}</a>`;
+    }
+  );
+
+  // Clean MapEmbed anchors: remove emoji and wrapper spans
+  cleaned = cleaned.replace(
+    /<a[^>]*href="([^"]*MapEmbed[^"]*)"[^>]*>(?:<span[^>]*>🗺️<\/span>)?\s*(.*?)<\/a>/gi,
+    (match: string, href: string, label: string) => {
+      const cleanLabel = label.replace(/🗺️/g, "").trim();
+      return `<a href="${href}">${cleanLabel}</a>`;
+    }
+  );
+
+  return cleaned;
 }

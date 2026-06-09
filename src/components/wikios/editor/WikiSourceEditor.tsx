@@ -1091,7 +1091,7 @@ export function WikiSourceEditor({
                     checked={writerMode}
                     onCheckedChange={handleToggleWriterMode}
                     size="sm"
-                    tone="accent"
+                    tone="neutral"
                   />
                 </div>
 
@@ -1102,7 +1102,7 @@ export function WikiSourceEditor({
                     checked={showLineNumbers}
                     onCheckedChange={handleToggleLineNumbers}
                     size="sm"
-                    tone="accent"
+                    tone="neutral"
                   />
                 </div>
 
@@ -1113,7 +1113,7 @@ export function WikiSourceEditor({
                     checked={enableWordWrap}
                     onCheckedChange={handleToggleWordWrap}
                     size="sm"
-                    tone="accent"
+                    tone="neutral"
                   />
                 </div>
 
@@ -1124,7 +1124,7 @@ export function WikiSourceEditor({
                     checked={enableAutocomplete}
                     onCheckedChange={handleToggleAutocomplete}
                     size="sm"
-                    tone="accent"
+                    tone="neutral"
                   />
                 </div>
               </div>

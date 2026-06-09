@@ -584,7 +584,9 @@ html:not([data-theme="dark"]) .wikios-search-match {
   background: rgba(245, 158, 11, 0.5) !important;
   color: #ffffff !important;
   border-bottom: 2px solid #ffffff !important;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 0 1px #f59e0b !important;
+  box-shadow:
+    0 0 10px rgba(245, 158, 11, 0.6),
+    0 0 0 1px #f59e0b !important;
 }
 
 [data-theme="light"] .wikios-search-match--active,
@@ -592,7 +594,9 @@ html:not([data-theme="dark"]) .wikios-search-match--active {
   background: rgba(245, 158, 11, 0.4) !important;
   color: #000000 !important;
   border-bottom-color: #000000 !important;
-  box-shadow: 0 0 8px rgba(217, 119, 6, 0.5), 0 0 0 1px #d97706 !important;
+  box-shadow:
+    0 0 8px rgba(217, 119, 6, 0.5),
+    0 0 0 1px #d97706 !important;
 }
 
 .wikios-sticky-toc-toggle {
@@ -4122,7 +4126,7 @@ button.wikios-rc-expand-btn:hover {
 html:not([data-theme="dark"]) .wikios-brand-logo-container {
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.01) 100%) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
     0 8px 24px rgba(0, 0, 0, 0.04) !important;
 }
@@ -4169,10 +4173,9 @@ html:not([data-theme="dark"]) .wikios-brand-logo {
 
 [data-theme="light"] .wikios-brand-lockup:hover .wikios-brand-logo,
 html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
-  filter: grayscale(1) brightness(0.1) contrast(1.2) opacity(1) drop-shadow(0 0 8px rgba(0, 0, 0, 0.08));
+  filter: grayscale(1) brightness(0.1) contrast(1.2) opacity(1)
+    drop-shadow(0 0 8px rgba(0, 0, 0, 0.08));
 }
-
-
 
 .wikios-brand-text {
   display: flex;
@@ -4197,12 +4200,7 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
   pointer-events: none;
 
   /* Shimmer sweep on text matching font color */
-  background: linear-gradient(
-    135deg,
-    var(--wikios-text) 35%,
-    #ffffff 50%,
-    var(--wikios-text) 65%
-  );
+  background: linear-gradient(135deg, var(--wikios-text) 35%, #ffffff 50%, var(--wikios-text) 65%);
   background-size: 200% 100%;
   background-position: 150% 0;
   -webkit-background-clip: text;
@@ -4213,12 +4211,7 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-logo {
 
 [data-theme="light"] .wikios-brand-title,
 html:not([data-theme="dark"]) .wikios-brand-title {
-  background: linear-gradient(
-    135deg,
-    var(--wikios-text) 35%,
-    #a1a1aa 50%,
-    var(--wikios-text) 65%
-  );
+  background: linear-gradient(135deg, var(--wikios-text) 35%, #a1a1aa 50%, var(--wikios-text) 65%);
   background-size: 200% 100%;
   background-position: 150% 0;
   -webkit-background-clip: text;
@@ -4254,7 +4247,6 @@ html:not([data-theme="dark"]) .wikios-brand-title-ix {
 html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix {
   filter: invert(0.2);
 }
-
 
 .wikios-brand-subtitle {
   font-family: var(--wikios-font-ui);
@@ -9458,7 +9450,9 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 1px rgba(255, 255, 255, 0.2);
   cursor: default;
 }
 
@@ -9852,6 +9846,7 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
 
 /* Ensure neutral left alignment for visual editor canvas elements */
 .wikios-ve-editable p,
+.wikios-ve-editable > div,
 .wikios-ve-editable h1,
 .wikios-ve-editable h2,
 .wikios-ve-editable h3,
@@ -9861,8 +9856,83 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
 .wikios-ve-editable ul,
 .wikios-ve-editable ol,
 .wikios-ve-editable li,
-.wikios-ve-editable blockquote {
+.wikios-ve-editable blockquote,
+.wikios-ve-editable pre,
+.wikios-ve-editable dl {
   text-align: left !important;
+}
+
+/* Custom visual editor template/coords chips */
+.wikios-ve-custom-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 2.5px 8px !important;
+  border-radius: 6px !important;
+  font-family: var(--wikios-font-mono), monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  user-select: none !important;
+  margin: 2px 4px !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+/* MyCountry Stat - Amber Theme */
+.wikios-ve-custom-chip.chip-mycountry {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  color: #f59e0b !important;
+}
+.wikios-ve-custom-chip.chip-mycountry:hover {
+  background: rgba(245, 158, 11, 0.18) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* CountryData Stat - Blue Theme */
+.wikios-ve-custom-chip.chip-countrydata {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  color: #3b82f6 !important;
+}
+.wikios-ve-custom-chip.chip-countrydata:hover {
+  background: rgba(59, 130, 246, 0.18) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* BusinessData Stat - Teal Theme */
+.wikios-ve-custom-chip.chip-businessdata {
+  background: rgba(20, 184, 166, 0.1) !important;
+  border: 1px solid rgba(20, 184, 166, 0.25) !important;
+  color: #14b8a6 !important;
+}
+.wikios-ve-custom-chip.chip-businessdata:hover {
+  background: rgba(20, 184, 166, 0.18) !important;
+  border-color: rgba(20, 184, 166, 0.4) !important;
+}
+
+/* Coords - Emerald Theme */
+.wikios-ve-custom-chip.chip-coords {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+  color: #10b981 !important;
+}
+.wikios-ve-custom-chip.chip-coords:hover {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* MapEmbed - Indigo Theme */
+.wikios-ve-custom-chip.chip-mapembed {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+  color: #6366f1 !important;
+}
+.wikios-ve-custom-chip.chip-mapembed:hover {
+  background: rgba(99, 102, 241, 0.18) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
 }
 
 /* Ensure infobox templates float to the right in the editor to match rendered output */
@@ -10903,6 +10973,7 @@ html.wikios-writer-mode body {
   overflow: hidden !important;
 }
 
+html.wikios-writer-mode .navigation-bar,
 html.wikios-writer-mode .dashboard-sidebar-rail,
 html.wikios-writer-mode .dashboard-header,
 html.wikios-writer-mode .wikios-icon-rail,

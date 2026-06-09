@@ -320,6 +320,8 @@ export function GlassNumberInput({
   );
 }
 
+import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+
 // Glass Toggle Switch Component
 interface GlassToggleProps extends BaseGlassInputProps {
   checked: boolean;
@@ -337,49 +339,14 @@ export function GlassToggle({
   disabled = false,
   className,
 }: GlassToggleProps) {
-  const sizes = {
-    sm: { track: "w-8 h-4", thumb: "w-3 h-3", translate: "translate-x-4" },
-    md: { track: "w-10 h-5", thumb: "w-4 h-4", translate: "translate-x-5" },
-    lg: { track: "w-12 h-6", thumb: "w-5 h-5", translate: "translate-x-6" },
-  };
-
-  const themeStyles = {
-    gold: checked ? "bg-gradient-to-r from-amber-400 to-amber-600" : "bg-white/20",
-    blue: checked ? "bg-gradient-to-r from-blue-400 to-blue-600" : "bg-white/20",
-    indigo: checked ? "bg-gradient-to-r from-indigo-400 to-indigo-600" : "bg-white/20",
-    red: checked ? "bg-gradient-to-r from-red-400 to-red-600" : "bg-white/20",
-    emerald: checked ? "bg-gradient-to-r from-emerald-400 to-emerald-600" : "bg-white/20",
-    teal: checked ? "bg-gradient-to-r from-teal-400 to-teal-600" : "bg-white/20",
-    neutral: checked ? "bg-gradient-to-r from-slate-400 to-slate-600" : "bg-white/20",
-  };
-
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => !disabled && onChange(!checked)}
+      <AppleSwitch
+        checked={checked}
+        onCheckedChange={onChange}
+        size={size}
         disabled={disabled}
-        className={cn(
-          "relative inline-flex items-center rounded-full border border-white/30 transition-all duration-200",
-          "focus:ring-2 focus:ring-white/20 focus:outline-none",
-          sizes[size].track,
-          themeStyles[theme],
-          disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:scale-105"
-        )}
-      >
-        <motion.span
-          className={cn(
-            "inline-block rounded-full bg-white shadow-sm transition-transform",
-            sizes[size].thumb
-          )}
-          animate={{
-            x: checked ? sizes[size].translate.replace("translate-x-", "") + "px" : "2px",
-          }}
-          transition={{ duration: 0.2, ease: "easeInOut" }}
-        />
-      </button>
+      />
 
       {label && (
         <label
