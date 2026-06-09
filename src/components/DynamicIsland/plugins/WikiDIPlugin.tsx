@@ -32,7 +32,8 @@ function getRgbaColor(colorStr: string, opacity: number): string {
 }
 
 function WikiBreadcrumb() {
-  const { articleTitle, activeSectionId, tocEntries, navigateToSection, themeColors } = useWikiContext();
+  const { articleTitle, activeSectionId, tocEntries, navigateToSection, themeColors } =
+    useWikiContext();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const activeSectionName = activeSectionId

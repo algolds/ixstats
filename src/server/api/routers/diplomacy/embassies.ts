@@ -1288,7 +1288,6 @@ export const diplomaticEmbassiesRouter = createTRPCRouter({
       };
     }),
 
-
   // Get cultural compatibility scores for a country with all other countries
 
   // Get recommended diplomatic partners based on cultural compatibility

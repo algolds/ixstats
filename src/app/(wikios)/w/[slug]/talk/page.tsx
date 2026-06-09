@@ -53,7 +53,7 @@ function CommentCard({
   const roleBadge = authorData?.role ? (
     <span
       className={cn(
-        "px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase border leading-none shrink-0",
+        "shrink-0 rounded border px-1.5 py-0.5 text-[9px] leading-none font-extrabold tracking-wider uppercase",
         authorData.role.name === "system-owner" || authorData.role.name === "admin"
           ? "border-amber-500/20 bg-amber-500/10 text-amber-400"
           : "border-indigo-500/20 bg-indigo-500/10 text-indigo-400"
@@ -66,13 +66,13 @@ function CommentCard({
   const countryBadge = authorData?.country ? (
     <Link
       href={withBasePath(`/countries/${authorData.country.id}`)}
-      className="inline-flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-white transition-colors bg-white/5 border border-white/5 px-2 py-0.5 rounded-lg shrink-0"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/5 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-400 transition-colors hover:text-white"
     >
       {authorData.country.flag && (
         <img
           src={authorData.country.flag}
           alt=""
-          className="h-2.5 w-3.5 object-cover rounded-sm"
+          className="h-2.5 w-3.5 rounded-sm object-cover"
           referrerPolicy="no-referrer"
         />
       )}
@@ -83,12 +83,12 @@ function CommentCard({
   return (
     <div
       style={indentStyle}
-      className="relative pl-4 mb-4 border-l border-white/5 hover:border-blue-500/20 transition-all duration-300"
+      className="relative mb-4 border-l border-white/5 pl-4 transition-all duration-300 hover:border-blue-500/20"
     >
       {/* Visual Thread Nesting Connector */}
-      <div className="absolute left-0 top-0 bottom-0 w-px bg-white/5" />
+      <div className="absolute top-0 bottom-0 left-0 w-px bg-white/5" />
 
-      <div className="glass-surface glass-refraction p-4 rounded-2xl border border-white/5 bg-white/[0.01] shadow-lg flex flex-col gap-2.5">
+      <div className="glass-surface glass-refraction flex flex-col gap-2.5 rounded-2xl border border-white/5 bg-white/[0.01] p-4 shadow-lg">
         {/* Header: Author, Role, Country, Timestamp */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
@@ -96,27 +96,27 @@ function CommentCard({
             {roleBadge}
             {countryBadge}
           </div>
-          <div className="text-zinc-500 text-[10px] font-medium">{comment.timestamp}</div>
+          <div className="text-[10px] font-medium text-zinc-500">{comment.timestamp}</div>
         </div>
 
         {/* Comment Body */}
         <div
-          className="text-sm text-zinc-300 leading-relaxed font-sans wikios-comment-body"
+          className="wikios-comment-body font-sans text-sm leading-relaxed text-zinc-300"
           dangerouslySetInnerHTML={{ __html: comment.content }}
         />
 
         {/* Actions: Quote, Reply */}
-        <div className="flex items-center justify-end gap-4 mt-1 text-[10px] font-bold text-zinc-500">
+        <div className="mt-1 flex items-center justify-end gap-4 text-[10px] font-bold text-zinc-500">
           <button
             onClick={() => onQuote(comment.content)}
-            className="hover:text-blue-400 transition-colors cursor-pointer select-none"
+            className="cursor-pointer transition-colors select-none hover:text-blue-400"
             type="button"
           >
             Quote
           </button>
           <button
             onClick={onReply}
-            className="hover:text-emerald-400 transition-colors cursor-pointer select-none"
+            className="cursor-pointer transition-colors select-none hover:text-emerald-400"
             type="button"
           >
             Reply
@@ -140,14 +140,18 @@ function parseTalkHtml(html: string): { sections: Section[] } {
   let currentSection: Section | null = null;
   let sectionIndex = 0;
 
-  function extractSignature(element: HTMLElement): { author: string; date: string; contentHtml: string } {
+  function extractSignature(element: HTMLElement): {
+    author: string;
+    date: string;
+    contentHtml: string;
+  } {
     let author = "Anonymous";
     let date = "";
     let contentHtml = element.innerHTML;
 
     // Try to find User links
     const links = Array.from(element.querySelectorAll("a"));
-    const userLink = links.find(l => {
+    const userLink = links.find((l) => {
       const href = l.getAttribute("href") || "";
       return href.includes("User:") || href.includes("User_talk:") || href.includes("User%3A");
     });
@@ -155,7 +159,9 @@ function parseTalkHtml(html: string): { sections: Section[] } {
     if (userLink) {
       const href = userLink.getAttribute("href") || "";
       const match = href.match(/User:(.+)$/) || href.match(/User%3A(.+?)(?:[&#]|$)/);
-      author = match ? decodeURIComponent(match[1]!).replace(/_/g, " ") : userLink.textContent || "Anonymous";
+      author = match
+        ? decodeURIComponent(match[1]!).replace(/_/g, " ")
+        : userLink.textContent || "Anonymous";
       author = author.split("/")[0]!;
     }
 
@@ -163,19 +169,20 @@ function parseTalkHtml(html: string): { sections: Section[] } {
     const text = element.textContent || "";
     const dateRegex = /(\d{2}:\d{2},\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+\(UTC\))/;
     const dateMatch = text.match(dateRegex);
-    
+
     if (dateMatch) {
       date = dateMatch[1]!;
       contentHtml = contentHtml.replace(date, "");
-      
+
       if (userLink) {
         contentHtml = contentHtml.replace(userLink.outerHTML, "");
       }
-      
-      contentHtml = contentHtml.replace(/\s*\(talk\)\s*$/, "")
-                               .replace(/\s*-\s*$/, "")
-                               .replace(/--\s*$/, "")
-                               .trim();
+
+      contentHtml = contentHtml
+        .replace(/\s*\(talk\)\s*$/, "")
+        .replace(/\s*-\s*$/, "")
+        .replace(/--\s*$/, "")
+        .trim();
     }
 
     return { author, date, contentHtml };
@@ -187,12 +194,13 @@ function parseTalkHtml(html: string): { sections: Section[] } {
       const tagName = el.tagName.toLowerCase();
 
       if (tagName === "h2") {
-        const headingText = el.textContent?.replace(/\[edit\]/i, "").trim() || `Section ${sectionIndex + 1}`;
+        const headingText =
+          el.textContent?.replace(/\[edit\]/i, "").trim() || `Section ${sectionIndex + 1}`;
         currentSection = {
           index: sectionIndex++,
           title: headingText,
           id: `section-${sectionIndex}`,
-          comments: []
+          comments: [],
         };
         parsedSections.push(currentSection);
         return;
@@ -201,14 +209,14 @@ function parseTalkHtml(html: string): { sections: Section[] } {
       if (tagName === "p" || tagName === "dd" || tagName === "li") {
         const text = el.textContent || "";
         const hasSig = text.includes("(UTC)") || text.match(/\d{2}:\d{2}/);
-        
+
         if (hasSig && text.trim().length > 5) {
           if (!currentSection) {
             currentSection = {
               index: sectionIndex++,
               title: "General Discussion",
               id: `section-${sectionIndex}`,
-              comments: []
+              comments: [],
             };
             parsedSections.push(currentSection);
           }
@@ -219,7 +227,7 @@ function parseTalkHtml(html: string): { sections: Section[] } {
             timestamp: sig.date,
             content: sig.contentHtml,
             level: Math.max(0, depth - 1),
-            sectionIndex: currentSection.index
+            sectionIndex: currentSection.index,
           });
           return;
         }
@@ -317,25 +325,27 @@ export default function TalkPage() {
     <WikiOSLayout title={talkTitle} sections={tocEntries}>
       <div className="wikios-special-page mx-auto max-w-4xl py-6">
         {/* Navigation & Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div className="flex items-center gap-3">
             <Link
               href={withBasePath(talkUrl)}
-              className="wikios-action-btn flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3"
+              className="wikios-action-btn flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
             >
               <ArrowLeft size={14} />
               <span>Back to Article</span>
             </Link>
             <Link
-              href={withBasePath(`/w/special/history/${encodeURIComponent(talkTitle.replace(/ /g, "_"))}`)}
-              className="wikios-action-btn flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3"
+              href={withBasePath(
+                `/w/special/history/${encodeURIComponent(talkTitle.replace(/ /g, "_"))}`
+              )}
+              className="wikios-action-btn flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
             >
               <Clock size={14} />
               <span>Talk History</span>
             </Link>
           </div>
           <button
-            className="wikios-editor-btn-primary flex items-center gap-1.5 text-xs font-bold py-1.5 px-3"
+            className="wikios-editor-btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold"
             onClick={() => {
               setReplyTarget(null);
               setShowNewSection(true);
@@ -348,26 +358,28 @@ export default function TalkPage() {
 
         {/* New section form */}
         {showNewSection && (
-          <div className="mb-6 p-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-md">
-            <h3 className="text-sm font-bold text-blue-400 mb-3">New Discussion Section</h3>
+          <div className="mb-6 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 backdrop-blur-md">
+            <h3 className="mb-3 text-sm font-bold text-blue-400">New Discussion Section</h3>
             <input
               type="text"
               placeholder="Section title"
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl mb-3 bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-blue-500/40"
+              className="mb-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-blue-500/40"
             />
             <textarea
               placeholder="Your message (wikitext supported)..."
               value={sectionContent}
               onChange={(e) => setSectionContent(e.target.value)}
               rows={5}
-              className="w-full px-3 py-2 rounded-xl mb-3 bg-white/5 border border-white/10 text-white text-sm font-mono outline-none resize-vertical focus:border-blue-500/40"
+              className="resize-vertical mb-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white outline-none focus:border-blue-500/40"
             />
             <div className="flex gap-2">
               <button
                 className="wikios-editor-btn-primary text-xs"
-                disabled={!sectionTitle.trim() || !sectionContent.trim() || addSectionMutation.isPending}
+                disabled={
+                  !sectionTitle.trim() || !sectionContent.trim() || addSectionMutation.isPending
+                }
                 onClick={() =>
                   addSectionMutation.mutate({ title, sectionTitle, content: sectionContent })
                 }
@@ -382,7 +394,7 @@ export default function TalkPage() {
               </button>
             </div>
             {addSectionMutation.isError && (
-              <p className="text-rose-400 text-xs mt-3">
+              <p className="mt-3 text-xs text-rose-400">
                 Error: {addSectionMutation.error.message}
               </p>
             )}
@@ -391,18 +403,20 @@ export default function TalkPage() {
 
         {/* Reply form */}
         {replyTarget && (
-          <div className="mb-6 p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md">
-            <h3 className="text-sm font-bold text-emerald-400 mb-3">Replying to: {replyTarget.title}</h3>
+          <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 backdrop-blur-md">
+            <h3 className="mb-3 text-sm font-bold text-emerald-400">
+              Replying to: {replyTarget.title}
+            </h3>
             <textarea
               placeholder="Your reply (wikitext supported)..."
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 rounded-xl mb-3 bg-white/5 border border-white/10 text-white text-sm font-mono outline-none resize-vertical focus:border-emerald-500/40"
+              className="resize-vertical mb-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white outline-none focus:border-emerald-500/40"
             />
             <div className="flex gap-2">
               <button
-                className="wikios-editor-btn-primary text-xs bg-emerald-600 hover:bg-emerald-700"
+                className="wikios-editor-btn-primary bg-emerald-600 text-xs hover:bg-emerald-700"
                 disabled={!replyContent.trim() || replyMutation.isPending}
                 onClick={() =>
                   replyMutation.mutate({
@@ -414,17 +428,12 @@ export default function TalkPage() {
               >
                 {replyMutation.isPending ? "Posting..." : "Post Reply"}
               </button>
-              <button
-                className="wikios-action-btn text-xs"
-                onClick={() => setReplyTarget(null)}
-              >
+              <button className="wikios-action-btn text-xs" onClick={() => setReplyTarget(null)}>
                 Cancel
               </button>
             </div>
             {replyMutation.isError && (
-              <p className="text-rose-400 text-xs mt-3">
-                Error: {replyMutation.error.message}
-              </p>
+              <p className="mt-3 text-xs text-rose-400">Error: {replyMutation.error.message}</p>
             )}
           </div>
         )}
@@ -442,13 +451,13 @@ export default function TalkPage() {
             {parsedData.sections.map((sec) => (
               <div key={sec.id} id={sec.id} className="scroll-mt-20">
                 {/* Section Header */}
-                <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-4">
-                  <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                <div className="mb-4 flex items-center justify-between border-b border-white/5 pb-2">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-zinc-100">
                     <MessageSquare size={16} className="text-purple-400" />
                     <span>{sec.title}</span>
                   </h2>
                   <button
-                    className="wikios-action-btn text-[11px] font-bold py-1 px-2.5 rounded-lg border border-white/5 bg-white/5 text-zinc-300 hover:text-white"
+                    className="wikios-action-btn rounded-lg border border-white/5 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-zinc-300 hover:text-white"
                     onClick={() => setReplyTarget({ index: sec.index, title: sec.title })}
                   >
                     Reply Section
@@ -469,7 +478,7 @@ export default function TalkPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-zinc-500 italic pl-6 mb-4">
+                  <p className="mb-4 pl-6 text-xs text-zinc-500 italic">
                     No comments in this section yet.
                   </p>
                 )}
@@ -488,10 +497,12 @@ export default function TalkPage() {
 
         {/* Empty talk page */}
         {!isLoading && data && !data.exists && (
-          <div className="text-center py-16 text-zinc-500">
-            <MessageSquare size={36} className="mx-auto text-zinc-600 mb-3" />
-            <p className="text-sm font-semibold mb-1">No discussion yet for this article</p>
-            <p className="text-xs">Click &ldquo;New Section&rdquo; above to start the discussion.</p>
+          <div className="py-16 text-center text-zinc-500">
+            <MessageSquare size={36} className="mx-auto mb-3 text-zinc-600" />
+            <p className="mb-1 text-sm font-semibold">No discussion yet for this article</p>
+            <p className="text-xs">
+              Click &ldquo;New Section&rdquo; above to start the discussion.
+            </p>
           </div>
         )}
       </div>

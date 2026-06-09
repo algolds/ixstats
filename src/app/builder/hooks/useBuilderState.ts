@@ -1338,8 +1338,11 @@ export function useBuilderState(
       if (nextState.economyBuilderState) {
         const totalPopulation = sanitized.coreIndicators?.totalPopulation;
         if (totalPopulation !== undefined) {
-          const participationRate = nextState.economyBuilderState.laborMarket?.laborForceParticipationRate ?? 65;
-          const totalWorkforce = sanitized.laborEmployment?.totalWorkforce || Math.round(totalPopulation * (participationRate / 100));
+          const participationRate =
+            nextState.economyBuilderState.laborMarket?.laborForceParticipationRate ?? 65;
+          const totalWorkforce =
+            sanitized.laborEmployment?.totalWorkforce ||
+            Math.round(totalPopulation * (participationRate / 100));
           nextState.economyBuilderState = {
             ...nextState.economyBuilderState,
             demographics: {

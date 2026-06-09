@@ -334,39 +334,41 @@ export function VaultWidget() {
                   activeGlow: "shadow-amber-500/10",
                   activeText: "text-amber-600 dark:text-amber-400",
                 },
-              ].filter((item) => {
-                if (item.id === "import") return isImportActive || showNsImporter;
-                return true;
-              }).map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold backdrop-blur-sm transition-all duration-205",
-                      item.isActive
-                        ? cn(
-                            "bg-gradient-to-r",
-                            item.gradient,
-                            item.activeBorder,
-                            item.activeGlow,
-                            item.activeText
-                          )
-                        : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" />
-                    <PreText
-                      font="12px Inter, sans-serif"
-                      lineHeight={14}
-                      className="flex-1 truncate text-[11px] leading-tight font-semibold select-none"
+              ]
+                .filter((item) => {
+                  if (item.id === "import") return isImportActive || showNsImporter;
+                  return true;
+                })
+                .map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold backdrop-blur-sm transition-all duration-205",
+                        item.isActive
+                          ? cn(
+                              "bg-gradient-to-r",
+                              item.gradient,
+                              item.activeBorder,
+                              item.activeGlow,
+                              item.activeText
+                            )
+                          : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
+                      )}
                     >
-                      {item.title}
-                    </PreText>
-                  </Link>
-                );
-              })}
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <PreText
+                        font="12px Inter, sans-serif"
+                        lineHeight={14}
+                        className="flex-1 truncate text-[11px] leading-tight font-semibold select-none"
+                      >
+                        {item.title}
+                      </PreText>
+                    </Link>
+                  );
+                })}
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">

@@ -5,6 +5,8 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import { motion } from "motion/react";
+import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import {
   Bold,
   Italic,
@@ -49,6 +51,13 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { CANVAS_VERSION } from "~/lib/buildVersion";
+import {
+  DynamicIslandEffects,
+  DYNAMIC_ISLAND_STYLE,
+  DYNAMIC_ISLAND_BORDER_CLASS,
+} from "~/app/builder/components/glass";
+
 import { TemplateInserter } from "~/components/wikios/editor/TemplateInserter";
 import { ImageSearchModal } from "~/components/wikios/editor/ImageSearchModal";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -71,7 +80,7 @@ interface WikiVisualEditorProps {
     keepEditing?: boolean
   ) => Promise<void> | void;
   onCancel: () => void;
-  onSwitchToSource: (dirty: boolean) => void;
+  onSwitchToSource: (dirty: boolean, currentHtml: string) => void;
 }
 
 export function WikiVisualEditor({
@@ -105,6 +114,8 @@ export function WikiVisualEditor({
   const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
   const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
   const [writerMode, setWriterMode] = useState(false);
+  const { scrollY } = useNavigationScroll();
+  const repulsionProgress = writerMode ? 1 : Math.min(1, Math.max(0, scrollY / 56));
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [enableAutocomplete, setEnableAutocomplete] = useState(() => {
@@ -242,7 +253,8 @@ export function WikiVisualEditor({
       const decodedTitle = decodeURIComponent(titleAttr);
 
       if (decodedHref.includes("Coords:") || decodedTitle.includes("Coords:")) {
-        const coordsMatch = decodedHref.match(/Coords:([^?#&]+)/i) || decodedTitle.match(/Coords:([^?#&]+)/i);
+        const coordsMatch =
+          decodedHref.match(/Coords:([^?#&]+)/i) || decodedTitle.match(/Coords:([^?#&]+)/i);
         if (coordsMatch && coordsMatch[1]) {
           anchor.contentEditable = "false";
           anchor.className = "wikios-ve-custom-chip chip-coords";
@@ -250,7 +262,8 @@ export function WikiVisualEditor({
           anchor.innerHTML = `<span class="opacity-70">📍</span> ${label}`;
         }
       } else if (decodedHref.includes("MapEmbed:") || decodedTitle.includes("MapEmbed:")) {
-        const embedMatch = decodedHref.match(/MapEmbed:([^?#&]+)/i) || decodedTitle.match(/MapEmbed:([^?#&]+)/i);
+        const embedMatch =
+          decodedHref.match(/MapEmbed:([^?#&]+)/i) || decodedTitle.match(/MapEmbed:([^?#&]+)/i);
         if (embedMatch && embedMatch[1]) {
           anchor.contentEditable = "false";
           anchor.className = "wikios-ve-custom-chip chip-mapembed";
@@ -562,9 +575,7 @@ export function WikiVisualEditor({
             {
               template: {
                 target: { wt: templateName },
-                params: Object.fromEntries(
-                  Object.entries(params).map(([k, v]) => [k, { wt: v }])
-                ),
+                params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, { wt: v }])),
               },
             },
           ],
@@ -746,53 +757,135 @@ export function WikiVisualEditor({
   return (
     <div className="wikios-ve-container">
       {/* Title bar */}
-      <div className="wikios-ve-titlebar">
-        <div className="wikios-ve-titlebar-left">
-          <FileText className="h-4 w-4 text-blue-400" />
-          <span className="wikios-ve-titlebar-name">{title}</span>
+      <motion.div
+        className="wikios-ve-titlebar"
+        animate={{
+          height: 48 + repulsionProgress * 34,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 30,
+          mass: 1,
+        }}
+      >
+        <motion.div
+          className="wikios-ve-titlebar-left"
+          animate={{
+            y: repulsionProgress * 8,
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30,
+            mass: 1,
+          }}
+        >
+          <span className="wikios-ve-titlebar-name">
+            <span className="mr-1 font-medium opacity-50">Editing</span>
+            <span className="mr-1.5 opacity-30">:</span>
+            {title}
+          </span>
           {isDirty && (
-            <span className="wikios-ve-dirty ml-1.5 opacity-60 text-[10px] text-blue-400 uppercase font-semibold">
+            <span className="wikios-ve-dirty ml-1.5 text-[10px] font-semibold text-[var(--wikios-accent)] uppercase opacity-80">
               Unsaved
             </span>
           )}
-        </div>
+        </motion.div>
 
         {/* Center: Apple-style switch toggle */}
         <div className="wikios-ve-titlebar-center">
-          <div className="flex items-center gap-2.5 text-xs font-semibold select-none">
-            <span style={{ color: "var(--wikios-text-dim)" }} className="transition-colors duration-150">Source</span>
-            <AppleSwitch
-              checked={true}
-              onCheckedChange={(checked) => {
-                if (!checked) onSwitchToSource(isDirty);
+          <motion.div
+            className={cn(
+              "relative z-10 flex cursor-pointer items-center overflow-hidden rounded-full px-5 py-1.5 text-xs font-semibold select-none",
+              DYNAMIC_ISLAND_BORDER_CLASS
+            )}
+            animate={{
+              y: repulsionProgress * 20,
+              scale: 1 - repulsionProgress * 0.1,
+              gap: 10 - repulsionProgress * 2,
+              boxShadow:
+                repulsionProgress > 0
+                  ? `0 0 ${repulsionProgress * 12}px rgba(59, 130, 246, ${repulsionProgress * 0.4})`
+                  : "none",
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 30,
+              mass: 1,
+            }}
+            style={DYNAMIC_ISLAND_STYLE}
+            title="Toggle Editing Mode (Source / Canvas)"
+          >
+            <DynamicIslandEffects glowOpacity={0.5} showGlow={true} showShimmer={true} />
+            <span
+              style={{
+                color: "var(--wikios-text-dim)",
+                opacity: 1 - repulsionProgress * 0.25,
               }}
-              size="sm"
-              tone="accent"
-            />
-            <span style={{ color: "var(--wikios-text)" }} className="transition-colors duration-150">Canvas</span>
-          </div>
+              className="relative z-10 transition-colors duration-150"
+            >
+              Source
+            </span>
+            <div className="relative z-10">
+              <AppleSwitch
+                checked={true}
+                onCheckedChange={(checked) => {
+                  if (!checked) {
+                    const currentHtml = editableRef.current?.innerHTML ?? "";
+                    onSwitchToSource(isDirty, currentHtml);
+                  }
+                }}
+                size="sm"
+                tone="accent"
+              />
+            </div>
+            <span
+              style={{
+                color: "var(--wikios-text)",
+                opacity: 1 - repulsionProgress * 0.25,
+              }}
+              className="relative z-10 transition-colors duration-150"
+            >
+              Canvas
+            </span>
+          </motion.div>
         </div>
 
-        <div className="wikios-ve-titlebar-actions">
-          <button className="wikios-editor-btn-secondary" onClick={onCancel} type="button">
-            <X className="h-3.5 w-3.5" />
-            Cancel
+        <motion.div
+          className="wikios-ve-titlebar-actions"
+          animate={{
+            y: repulsionProgress * 8,
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30,
+            mass: 1,
+          }}
+        >
+          <button
+            className="wikios-editor-btn-cancel"
+            onClick={onCancel}
+            type="button"
+            title="Cancel"
+          >
+            <X className="h-4 w-4" />
           </button>
 
           <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
             <PopoverTrigger
-              className="wikios-editor-btn-primary flex items-center gap-1.5"
+              className="wikios-editor-btn-save"
               disabled={saving}
+              title="Save options"
             >
-              {saving ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Save className="h-3.5 w-3.5" />
-              )}
-              <span>Save</span>
-              <ChevronDown className="h-3 w-3 opacity-60" />
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-52 p-1 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+            <PopoverContent
+              align="end"
+              className="glass-none z-[10001] w-52 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
+            >
               <div className="flex flex-col gap-0.5 text-xs">
                 <button
                   type="button"
@@ -801,7 +894,7 @@ export function WikiVisualEditor({
                     setSaveActionType("publish");
                     setShowSavePanel(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <Save className="h-3.5 w-3.5 text-emerald-400" />
                   <span>Save and Publish</span>
@@ -812,7 +905,7 @@ export function WikiVisualEditor({
                     setSaveDropdownOpen(false);
                     handleSaveDraft();
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <FileText className="h-3.5 w-3.5 text-blue-400" />
                   <span>Save as Draft</span>
@@ -825,7 +918,7 @@ export function WikiVisualEditor({
                     if (!summary) setSummary("Session save");
                     setShowSavePanel(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <Bookmark className="h-3.5 w-3.5 text-amber-400" />
                   <span>Save Session</span>
@@ -833,8 +926,8 @@ export function WikiVisualEditor({
               </div>
             </PopoverContent>
           </Popover>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Save panel */}
       {showSavePanel && (
@@ -862,7 +955,7 @@ export function WikiVisualEditor({
           >
             {saving ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 Saving...
               </>
             ) : saveActionType === "publish" ? (
@@ -1025,21 +1118,28 @@ export function WikiVisualEditor({
             >
               <Bookmark className="h-3.5 w-3.5" />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-3 glass-surface glass-refraction bg-[#0c1524]/95 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2 text-white">
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+            <PopoverContent
+              align="end"
+              className="glass-none z-[10001] flex w-80 flex-col gap-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-3 text-[var(--wikios-text)] shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-2">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--wikios-text-muted)]">
                   <Bookmark className="h-3.5 w-3.5 text-rose-500" />
                   <span>Stashed Images</span>
                 </span>
-                
+
                 {stashes.length > 1 && (
                   <select
                     value={activeStashId}
                     onChange={(e) => setSelectedStashId(e.target.value)}
-                    className="text-[10px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-zinc-300 focus:outline-none focus:border-white/20 cursor-pointer"
+                    className="cursor-pointer rounded border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-1.5 py-0.5 text-[10px] text-[var(--wikios-text)] focus:outline-none"
                   >
                     {stashes.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-zinc-950 text-zinc-300">
+                      <option
+                        key={s.id}
+                        value={s.id}
+                        className="bg-[var(--wikios-surface)] text-[var(--wikios-text)]"
+                      >
                         {s.name} ({s.itemCount})
                       </option>
                     ))}
@@ -1052,12 +1152,14 @@ export function WikiVisualEditor({
                   <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
                 </div>
               ) : imageItems.length === 0 ? (
-                <div className="text-center py-6 px-4">
+                <div className="px-4 py-6 text-center">
                   <p className="text-[11px] text-zinc-400">No stashed images found.</p>
-                  <p className="text-[9px] text-zinc-500 mt-1">Stash images from the Category Browser to insert them here.</p>
+                  <p className="mt-1 text-[9px] text-zinc-500">
+                    Stash images from the Category Browser to insert them here.
+                  </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1 wikios-custom-scrollbar">
+                <div className="wikios-custom-scrollbar grid max-h-60 grid-cols-3 gap-2 overflow-y-auto pr-1">
                   {imageItems.map((item) => {
                     const imgInfo = imagesMap.get(item.pageTitle);
                     const filename = item.pageTitle.replace(/^commons:File:/, "");
@@ -1086,7 +1188,7 @@ export function WikiVisualEditor({
 
           <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
             <PopoverTrigger
-              className="wikios-editor-format-btn !w-auto flex items-center gap-1.5 px-2.5 rounded text-zinc-300 hover:text-white"
+              className="wikios-editor-format-btn flex !w-auto items-center gap-1.5 rounded px-2.5 text-zinc-300 hover:text-white"
               title="Insert Templates & Widgets"
               onClick={saveSelection}
             >
@@ -1094,7 +1196,10 @@ export function WikiVisualEditor({
               <span className="text-xs font-semibold">Templates</span>
               <ChevronDown className="h-3 w-3 opacity-60" />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-1 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
+            <PopoverContent
+              align="end"
+              className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
+            >
               <div className="flex flex-col gap-0.5 text-xs">
                 <button
                   type="button"
@@ -1103,7 +1208,7 @@ export function WikiVisualEditor({
                     restoreSelection();
                     setShowInfoboxModal(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <FileText className="h-3.5 w-3.5 text-amber-400" />
                   <span>Infobox Country</span>
@@ -1115,7 +1220,7 @@ export function WikiVisualEditor({
                     restoreSelection();
                     setShowCountryStatsModal(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <MyCountryTinyIcon />
                   <span>Country Stats</span>
@@ -1127,7 +1232,7 @@ export function WikiVisualEditor({
                     restoreSelection();
                     setShowBusinessStatsModal(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-teal-400" />
                   <span>Business Stats</span>
@@ -1139,12 +1244,12 @@ export function WikiVisualEditor({
                     restoreSelection();
                     setShowMapCoordsModal(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
                   <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
                   <span>Map Coords &amp; Embeds</span>
                 </button>
-                <div className="border-t border-[var(--wikios-border)] my-0.5" />
+                <div className="my-0.5 border-t border-[var(--wikios-border)]" />
                 <button
                   type="button"
                   onClick={() => {
@@ -1152,7 +1257,7 @@ export function WikiVisualEditor({
                     restoreSelection();
                     setShowTemplateInserter(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[var(--wikios-border)] rounded-lg flex items-center gap-2 cursor-pointer transition-colors text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[var(--wikios-text-muted)] transition-colors hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)]"
                 >
                   <Puzzle className="h-3.5 w-3.5" />
                   <span>Generic Template...</span>
@@ -1185,18 +1290,18 @@ export function WikiVisualEditor({
         {/* Far right: Editor Settings */}
         <div className="ml-auto flex items-center">
           <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <PopoverTrigger
-              className="wikios-editor-format-btn"
-              title="Editor Settings"
-            >
+            <PopoverTrigger className="wikios-editor-format-btn" title="Editor Settings">
               <Settings className="h-3.5 w-3.5" />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-2 glass-none bg-[var(--wikios-surface)] border border-[var(--wikios-border)] rounded-xl z-[10001] shadow-2xl text-[var(--wikios-text)]">
-              <div className="flex flex-col gap-2.5 text-xs p-1">
-                <div className="font-semibold border-b border-[var(--wikios-border)] pb-1.5 mb-1 text-[var(--wikios-text-dim)]">
+            <PopoverContent
+              align="end"
+              className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2 text-[var(--wikios-text)] shadow-2xl"
+            >
+              <div className="flex flex-col gap-2.5 p-1 text-xs">
+                <div className="mb-1 border-b border-[var(--wikios-border)] pb-1.5 font-semibold text-[var(--wikios-text-dim)]">
                   Editor Settings
                 </div>
-                
+
                 {/* Writer Mode */}
                 <div className="flex items-center justify-between select-none">
                   <span className="font-medium">Writer Mode</span>
@@ -1248,7 +1353,7 @@ export function WikiVisualEditor({
       {/* Status bar */}
       <div className="wikios-ve-statusbar">
         <span>{wordCount.toLocaleString()} words</span>
-        <span>Visual Editor</span>
+        <span>Canvas Editor v{CANVAS_VERSION}</span>
         {isDirty && <span className="wikios-ve-dirty-indicator">Modified</span>}
       </div>
 
@@ -1493,33 +1598,33 @@ function StashImageCard({
   return (
     <div
       onClick={onInsert}
-      className="group relative aspect-square bg-white/5 border border-white/5 rounded-lg overflow-hidden cursor-pointer hover:border-white/10 hover:bg-white/10 transition-all text-white"
+      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/5 bg-white/5 text-white transition-all hover:border-white/10 hover:bg-white/10"
       title={`Click to insert [[File:${filename}]]`}
     >
       {imgInfo?.thumbUrl ? (
         <img
           src={imgInfo.thumbUrl}
           alt={cleanTitle}
-          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">
-          <div className="h-3 w-3 rounded-full border border-zinc-700 border-t-zinc-400 animate-spin" />
+          <div className="h-3 w-3 animate-spin rounded-full border border-zinc-700 border-t-zinc-400" />
         </div>
       )}
-      
-      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+
+      <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
           onClick={handleCopy}
-          className="p-1 bg-zinc-950/80 border border-white/10 rounded-md text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
+          className="rounded-md border border-white/10 bg-zinc-950/80 p-1 text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white"
           title="Copy Wikitext Link"
         >
           {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
         </button>
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 to-transparent p-1 truncate text-[8px] text-zinc-300 group-hover:text-white">
+      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent p-1 text-[8px] text-zinc-300 group-hover:text-white">
         {cleanTitle}
       </div>
     </div>
@@ -1580,12 +1685,12 @@ function parseCoordsOrMapEmbed(wikitext: string) {
 // Tiny MyCountry Logo representation for Popovers
 function MyCountryTinyIcon() {
   return (
-    <div className="relative flex items-center justify-center h-4 w-4 shrink-0">
-      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 border border-amber-300/50 flex items-center justify-center shadow-sm">
+    <div className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+      <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-amber-300/50 bg-gradient-to-br from-amber-200 to-amber-400 shadow-sm">
         <Globe className="h-2 w-2 text-amber-950" />
       </div>
-      <div className="absolute -top-0.5 -right-0.5 rounded-full border border-amber-300 bg-amber-400 p-[0.5px] flex items-center justify-center shadow-sm">
-        <Crown className="text-amber-950 h-1.5 w-1.5" />
+      <div className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full border border-amber-300 bg-amber-400 p-[0.5px] shadow-sm">
+        <Crown className="h-1.5 w-1.5 text-amber-950" />
       </div>
     </div>
   );

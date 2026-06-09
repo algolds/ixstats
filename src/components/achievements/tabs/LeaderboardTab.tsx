@@ -7,13 +7,15 @@ import { Star } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 interface LeaderboardTabProps {
-  leaderboard: Array<{
-    countryId: string;
-    countryName: string;
-    achievementCount: number;
-    rareAchievements: number;
-    totalPoints: number;
-  }> | undefined;
+  leaderboard:
+    | Array<{
+        countryId: string;
+        countryName: string;
+        achievementCount: number;
+        rareAchievements: number;
+        totalPoints: number;
+      }>
+    | undefined;
 }
 
 export function LeaderboardTab({ leaderboard }: LeaderboardTabProps) {

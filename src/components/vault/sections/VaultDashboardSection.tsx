@@ -626,7 +626,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
               {/* Close Button */}
               <button
                 onClick={handleDismissNotice}
-                className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground rounded-full p-1 transition-all hover:bg-white/10"
+                className="text-muted-foreground hover:text-foreground absolute top-2.5 right-2.5 rounded-full p-1 transition-all hover:bg-white/10"
                 aria-label="Dismiss notice"
               >
                 <X className="h-3.5 w-3.5" />
@@ -636,10 +636,13 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400">
                   <Download className="h-4 w-4 animate-bounce" />
                 </div>
-                <div className="pr-4 space-y-1">
-                  <h4 className="text-xs font-bold text-foreground tracking-tight">Import NationStates Cards!</h4>
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    You haven't imported your NationStates deck yet. Verify your nation and import your collection to earn bonus IxCredits!
+                <div className="space-y-1 pr-4">
+                  <h4 className="text-foreground text-xs font-bold tracking-tight">
+                    Import NationStates Cards!
+                  </h4>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    You haven't imported your NationStates deck yet. Verify your nation and import
+                    your collection to earn bonus IxCredits!
                   </p>
                   <button
                     onClick={() => onNavigate?.("import")}

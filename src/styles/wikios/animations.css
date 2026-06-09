@@ -1,0 +1,443 @@
+/* ===========================================================================
+   WikiOS Left Rail Custom Animations & Hover Glows
+   =========================================================================== */
+
+/* Centralized spring transition for rail icons */
+.wikios-sidebar-icon-box {
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Apple Depth Lift & Glow Animation: scale up to 1.12, shift right 3px */
+.group:hover .wikios-sidebar-icon-box {
+  transform: scale(1.12) translateX(3px) !important;
+}
+
+/* Slide-right text animation synced with icon box hover shift */
+.wikios-sidebar span {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.group:hover .wikios-sidebar span {
+  transform: translateX(3px);
+}
+
+@keyframes rail-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes rail-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
+  25% {
+    transform: rotate(-8deg) translateX(-1px);
+  }
+  75% {
+    transform: rotate(8deg) translateX(1px);
+  }
+}
+
+@keyframes rail-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rail-animate-rotate svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group:hover .rail-animate-rotate svg,
+.rail-animate-rotate:hover svg {
+  transform: rotate(90deg);
+}
+
+.group:hover .rail-animate-bounce svg,
+.rail-animate-bounce:hover svg {
+  animation: rail-bounce 0.4s ease-in-out;
+}
+
+.group:hover .rail-animate-wiggle svg,
+.rail-animate-wiggle:hover svg {
+  animation: rail-wiggle 0.3s ease-in-out;
+}
+
+.group:hover .rail-animate-spin svg,
+.rail-animate-spin:hover svg {
+  animation: rail-spin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes rail-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.group:hover .rail-animate-pulse svg,
+.rail-animate-pulse:hover svg {
+  animation: rail-pulse 0.6s infinite ease-in-out;
+}
+
+/* Custom glows */
+.rail-glow-teal:hover,
+.group:hover .rail-glow-teal {
+  border-color: rgba(20, 184, 166, 0.45) !important;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.25) !important;
+  background-color: rgba(20, 184, 166, 0.08) !important;
+  color: rgb(45, 212, 191) !important;
+}
+
+.rail-glow-blue:hover,
+.group:hover .rail-glow-blue {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25) !important;
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  color: rgb(96, 165, 250) !important;
+}
+
+.rail-glow-amber:hover,
+.group:hover .rail-glow-amber {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  color: rgb(251, 191, 36) !important;
+}
+
+.rail-glow-green:hover,
+.group:hover .rail-glow-green {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  color: rgb(52, 211, 153) !important;
+}
+
+.rail-glow-purple:hover,
+.group:hover .rail-glow-purple {
+  border-color: rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.25) !important;
+  background-color: rgba(168, 85, 247, 0.08) !important;
+  color: rgb(192, 132, 252) !important;
+}
+
+.rail-glow-gold:hover,
+.group:hover .rail-glow-gold {
+  border-color: rgba(212, 175, 55, 0.5) !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.25) !important;
+  background-color: rgba(212, 175, 55, 0.08) !important;
+}
+
+.rail-glow-gray:hover,
+.group:hover .rail-glow-gray {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--wikios-text) !important;
+}
+
+[data-theme="light"] .rail-glow-gray:hover,
+[data-theme="light"] .group:hover .rail-glow-gray,
+html:not([data-theme="dark"]) .rail-glow-gray:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-gray {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: var(--wikios-text) !important;
+}
+
+.rail-glow-pink:hover,
+.group:hover .rail-glow-pink {
+  border-color: rgba(236, 72, 153, 0.45) !important;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.25) !important;
+  background-color: rgba(236, 72, 153, 0.08) !important;
+  color: rgb(244, 114, 182) !important;
+}
+
+.rail-glow-indigo:hover,
+.group:hover .rail-glow-indigo {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  color: rgb(129, 140, 248) !important;
+}
+
+.rail-glow-di:hover,
+.group:hover .rail-glow-di {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(168, 85, 247, 0.1),
+    rgba(6, 182, 212, 0.05)
+  ) !important;
+  box-shadow:
+    0 0 12px rgba(6, 182, 212, 0.3),
+    0 0 20px rgba(139, 92, 246, 0.2) !important;
+  color: #a78bfa !important;
+}
+
+[data-theme="light"] .rail-glow-di:hover,
+[data-theme="light"] .group:hover .rail-glow-di,
+html:not([data-theme="dark"]) .rail-glow-di:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-di {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.08),
+    rgba(168, 85, 247, 0.08)
+  ) !important;
+  box-shadow:
+    0 0 10px rgba(6, 182, 212, 0.15),
+    0 0 16px rgba(139, 92, 246, 0.1) !important;
+  color: #7c3aed !important;
+}
+
+.rail-glow-rose:hover,
+.group:hover .rail-glow-rose {
+  border-color: rgba(244, 63, 94, 0.45) !important;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.25) !important;
+  background-color: rgba(244, 63, 94, 0.08) !important;
+  color: rgb(251, 113, 133) !important;
+}
+
+[data-theme="light"] .rail-glow-rose:hover,
+[data-theme="light"] .group:hover .rail-glow-rose,
+html:not([data-theme="dark"]) .rail-glow-rose:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-rose {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.15) !important;
+  background-color: rgba(244, 63, 94, 0.05) !important;
+  color: rgb(225, 29, 72) !important;
+}
+
+/* Light mode overrides for existing rail glows */
+[data-theme="light"] .rail-glow-teal:hover,
+[data-theme="light"] .group:hover .rail-glow-teal,
+html:not([data-theme="dark"]) .rail-glow-teal:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-teal {
+  border-color: rgba(13, 148, 136, 0.3) !important;
+  box-shadow: 0 0 10px rgba(13, 148, 136, 0.15) !important;
+  background-color: rgba(13, 148, 136, 0.05) !important;
+  color: rgb(13, 148, 136) !important;
+}
+
+[data-theme="light"] .rail-glow-blue:hover,
+[data-theme="light"] .group:hover .rail-glow-blue,
+html:not([data-theme="dark"]) .rail-glow-blue:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-blue {
+  border-color: rgba(37, 99, 235, 0.3) !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.15) !important;
+  background-color: rgba(37, 99, 235, 0.05) !important;
+  color: rgb(37, 99, 235) !important;
+}
+
+[data-theme="light"] .rail-glow-amber:hover,
+[data-theme="light"] .group:hover .rail-glow-amber,
+html:not([data-theme="dark"]) .rail-glow-amber:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-amber {
+  border-color: rgba(217, 119, 6, 0.3) !important;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.15) !important;
+  background-color: rgba(217, 119, 6, 0.05) !important;
+  color: rgb(217, 119, 6) !important;
+}
+
+[data-theme="light"] .rail-glow-green:hover,
+[data-theme="light"] .group:hover .rail-glow-green,
+html:not([data-theme="dark"]) .rail-glow-green:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-green {
+  border-color: rgba(22, 163, 74, 0.3) !important;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.15) !important;
+  background-color: rgba(22, 163, 74, 0.05) !important;
+  color: rgb(22, 163, 74) !important;
+}
+
+[data-theme="light"] .rail-glow-purple:hover,
+[data-theme="light"] .group:hover .rail-glow-purple,
+html:not([data-theme="dark"]) .rail-glow-purple:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-purple {
+  border-color: rgba(147, 51, 234, 0.3) !important;
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.15) !important;
+  background-color: rgba(147, 51, 234, 0.05) !important;
+  color: rgb(147, 51, 234) !important;
+}
+
+[data-theme="light"] .rail-glow-pink:hover,
+[data-theme="light"] .group:hover .rail-glow-pink,
+html:not([data-theme="dark"]) .rail-glow-pink:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-pink {
+  border-color: rgba(219, 39, 119, 0.3) !important;
+  box-shadow: 0 0 10px rgba(219, 39, 119, 0.15) !important;
+  background-color: rgba(219, 39, 119, 0.05) !important;
+  color: rgb(219, 39, 119) !important;
+}
+
+[data-theme="light"] .rail-glow-indigo:hover,
+[data-theme="light"] .group:hover .rail-glow-indigo,
+html:not([data-theme="dark"]) .rail-glow-indigo:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-indigo {
+  border-color: rgba(79, 70, 229, 0.3) !important;
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.15) !important;
+  background-color: rgba(79, 70, 229, 0.05) !important;
+  color: rgb(79, 70, 229) !important;
+}
+
+/* ===========================================================================
+   Loreward Badge Celebration Particles & Animations
+   =========================================================================== */
+.loreward-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #f59e0b; /* amber-500 */
+  box-shadow:
+    0 0 6px #f59e0b,
+    0 0 12px #fbbf24;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  top: 50%;
+  left: 50%;
+}
+
+@keyframes loreward-particle-1 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-30px, -25px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-2 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(30px, -20px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-3 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-15px, -35px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-4 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(15px, -30px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-5 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-35px, 10px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-6 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(35px, 15px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-7 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10px, 35px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-8 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(10px, -40px) scale(0);
+    opacity: 0;
+  }
+}
+
+.loreward-particle-1 {
+  animation: loreward-particle-1 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-2 {
+  animation: loreward-particle-2 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-3 {
+  animation: loreward-particle-3 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-4 {
+  animation: loreward-particle-4 1.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-5 {
+  animation: loreward-particle-5 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-6 {
+  animation: loreward-particle-6 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-7 {
+  animation: loreward-particle-7 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-8 {
+  animation: loreward-particle-8 1.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes loreward-badge-celebrate {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.45);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+  }
+}
+
+.loreward-badge-celebrate {
+  animation: loreward-badge-celebrate 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+

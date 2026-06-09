@@ -76,25 +76,28 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setWikiPage = useCallback((title: string | null, toc: TocEntry[], colors: WikiThemeColors | null = null) => {
-    setArticleTitle(title);
-    setTocEntries(toc);
-    setThemeColors(colors);
+  const setWikiPage = useCallback(
+    (title: string | null, toc: TocEntry[], colors: WikiThemeColors | null = null) => {
+      setArticleTitle(title);
+      setTocEntries(toc);
+      setThemeColors(colors);
 
-    // Track recent articles in sessionStorage (last 5, no duplicates)
-    if (title && title !== "Main Page") {
-      try {
-        setRecentArticles((prev) => {
-          const filtered = prev.filter((t) => t !== title);
-          const next = [title, ...filtered].slice(0, 5);
-          sessionStorage.setItem("wikios:recentArticles", JSON.stringify(next));
-          return next;
-        });
-      } catch {
-        /* ignore */
+      // Track recent articles in sessionStorage (last 5, no duplicates)
+      if (title && title !== "Main Page") {
+        try {
+          setRecentArticles((prev) => {
+            const filtered = prev.filter((t) => t !== title);
+            const next = [title, ...filtered].slice(0, 5);
+            sessionStorage.setItem("wikios:recentArticles", JSON.stringify(next));
+            return next;
+          });
+        } catch {
+          /* ignore */
+        }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
   const navigateToSection = useCallback((id: string) => {
     const el = document.getElementById(id);

@@ -63,6 +63,21 @@ function CommandPaletteContent({
   const [pillBounce, setPillBounce] = useState(false);
   const [isNavLoading, setIsNavLoading] = useState(false);
 
+  const [isWriterMode, setIsWriterMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const checkWriterMode = () => {
+      setIsWriterMode(document.documentElement.classList.contains("wikios-writer-mode"));
+    };
+    checkWriterMode();
+    const observer = new MutationObserver(checkWriterMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const activeIsSticky = isSticky || isWriterMode;
+
   useEffect(() => {
     const handleStart = () => setIsNavLoading(true);
     const handleEnd = () => setIsNavLoading(false);
@@ -133,9 +148,9 @@ function CommandPaletteContent({
       }
     } else {
       if (isWikiActive) {
-        if (isSticky && isCollapsed) {
+        if (activeIsSticky && isCollapsed) {
           newSize = hasActiveSection ? SIZE_PRESETS.COMPACT : SIZE_PRESETS.WIKI_COMPACT; // 170x32 -> 200x36
-        } else if (isSticky) {
+        } else if (activeIsSticky) {
           newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.COMPACT; // 200x36 -> 300x44
         } else {
           newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE; // 280x38 -> 300x44
@@ -147,9 +162,9 @@ function CommandPaletteContent({
           newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40 — hover state/expanded full text
         }
       } else {
-        if (isSticky && isCollapsed) {
+        if (activeIsSticky && isCollapsed) {
           newSize = SIZE_PRESETS.COMPACT; // 200x36 pill
-        } else if (isSticky && !isCollapsed) {
+        } else if (activeIsSticky && !isCollapsed) {
           newSize = SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
         } else {
           newSize = SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
@@ -159,7 +174,7 @@ function CommandPaletteContent({
     setSize(newSize);
   }, [
     setSize,
-    isSticky,
+    activeIsSticky,
     isCollapsed,
     isWikiActive,
     activePlugin?.id,
@@ -217,9 +232,9 @@ function CommandPaletteContent({
 
     const isForumActive = activePlugin?.id === "forum";
 
-    if ((isSticky || isForumActive) && !isUserInteracting && !isCollapsed) {
+    if ((activeIsSticky || isForumActive) && !isUserInteracting && !isCollapsed) {
       collapseTimeoutRef.current = setTimeout(() => setIsCollapsed(true), 1200);
-    } else if (!(isSticky || isForumActive) && isCollapsed) {
+    } else if (!(activeIsSticky || isForumActive) && isCollapsed) {
       // Immediately expand when not sticky and not forum
       setIsCollapsed(false);
     }
@@ -229,7 +244,7 @@ function CommandPaletteContent({
         clearTimeout(collapseTimeoutRef.current);
       }
     };
-  }, [isSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
+  }, [activeIsSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
 
   // Track manual close state to prevent unwanted auto-expansion
   const wasManuallyClosedRef = useRef(true); // Start compact on mount
@@ -268,19 +283,19 @@ function CommandPaletteContent({
   }, [mode, activePlugin]);
 
   // Scroll-based collapse/expand for the builder hero DI
-  const prevIsStickyRef = useRef(isSticky);
+  const prevIsStickyRef = useRef(activeIsSticky);
   useEffect(() => {
     if (activePlugin?.id === "builder") {
-      if (isSticky && !prevIsStickyRef.current && isExpanded) {
+      if (activeIsSticky && !prevIsStickyRef.current && isExpanded) {
         switchMode("compact");
-      } else if (!isSticky && prevIsStickyRef.current && !isExpanded) {
+      } else if (!activeIsSticky && prevIsStickyRef.current && !isExpanded) {
         if (!wasManuallyClosedRef.current && !activePlugin?.filter?.selectedTemplate) {
           switchMode("plugin:builder");
         }
       }
     }
-    prevIsStickyRef.current = isSticky;
-  }, [isSticky, activePlugin, isExpanded, switchMode]);
+    prevIsStickyRef.current = activeIsSticky;
+  }, [activeIsSticky, activePlugin, isExpanded, switchMode]);
 
   // Trigger-based expansion (e.g. on country select, or welcome modal close)
   const lastProcessedTriggerRef = useRef(0);
@@ -313,7 +328,7 @@ function CommandPaletteContent({
     setRingActive(true);
 
     // Briefly uncollapse sticky DI so the user sees the notification peek
-    if (isSticky && isCollapsed) {
+    if (activeIsSticky && isCollapsed) {
       setIsCollapsed(false);
       setIsUserInteracting(true);
       // Let the auto-collapse timer re-engage after 3s
@@ -328,7 +343,7 @@ function CommandPaletteContent({
 
     const timer = setTimeout(() => setRingActive(false), 600);
     return () => clearTimeout(timer);
-  }, [toastQueue, isSticky, isCollapsed, setIsUserInteracting]);
+  }, [toastQueue, activeIsSticky, isCollapsed, setIsUserInteracting]);
 
   if (!mounted) return null;
 
@@ -379,7 +394,7 @@ function CommandPaletteContent({
               <div key="compact" className="h-full w-full">
                 <CompactView
                   mode={mode}
-                  isSticky={isSticky}
+                  isSticky={activeIsSticky}
                   isCollapsed={isCollapsed}
                   setIsCollapsed={setIsCollapsed}
                   setIsUserInteracting={setIsUserInteracting}
@@ -413,7 +428,7 @@ function CommandPaletteContent({
           </DynamicIsland>
 
           {/* Section accent line — visible when sticky */}
-          {isSticky && (
+          {activeIsSticky && (
             <motion.div
               className="pointer-events-none absolute right-1/4 -bottom-0.5 left-1/4 h-[2px] rounded-full"
               initial={{ opacity: 0, scaleX: 0 }}

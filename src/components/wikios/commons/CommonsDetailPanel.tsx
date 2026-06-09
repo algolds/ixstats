@@ -79,7 +79,6 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
     stashMutation.mutate({ pageTitle: title });
   };
 
-
   return (
     <div className="wikios-commons-detail relative overflow-hidden">
       <TextureOverlay texture="paperGrain" opacity={0.06} className="mix-blend-overlay" />

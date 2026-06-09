@@ -296,7 +296,13 @@ export function PoliticsOverview({
           const refSummary = partySummary.find((ps) => ps.party.id === seat.partyId);
           const partyObj = refSummary
             ? refSummary.party
-            : { id: seat.partyId, name: seat.partyName, shortName: null, color: seat.partyColor, ideology: "center" };
+            : {
+                id: seat.partyId,
+                name: seat.partyName,
+                shortName: null,
+                color: seat.partyColor,
+                ideology: "center",
+              };
           counts.set(seat.partyId, {
             party: partyObj,
             seats: 1,
@@ -384,7 +390,7 @@ export function PoliticsOverview({
                       <TabsTrigger
                         key={chamber.name}
                         value={chamber.name}
-                        className="h-7 text-[10px] px-2.5 py-1 bg-slate-900 border border-slate-800 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:border-indigo-600 animate-in fade-in zoom-in duration-200"
+                        className="animate-in fade-in zoom-in h-7 border border-slate-800 bg-slate-900 px-2.5 py-1 text-[10px] duration-200 data-[state=active]:border-indigo-600 data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
                       >
                         {chamber.name}
                       </TabsTrigger>

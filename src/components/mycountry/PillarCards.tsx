@@ -347,11 +347,13 @@ export function AgendaBar({
       ?.flatMap((m) => m.actionItems ?? [])
       .filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
 
-  const activePolicies = policies?.filter((p: any) => p.status?.toLowerCase() === "active").length ?? 0;
-  const totalPolicies = policies?.filter((p: any) => {
-    const status = p.status?.toLowerCase();
-    return status && status !== "archived" && status !== "draft";
-  }).length ?? 0;
+  const activePolicies =
+    policies?.filter((p: any) => p.status?.toLowerCase() === "active").length ?? 0;
+  const totalPolicies =
+    policies?.filter((p: any) => {
+      const status = p.status?.toLowerCase();
+      return status && status !== "archived" && status !== "draft";
+    }).length ?? 0;
 
   const activeThreatCount = securityAssessment?.activeThreatCount ?? 0;
   const securityScore = securityAssessment?.overallSecurityScore ?? 100;

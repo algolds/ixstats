@@ -130,7 +130,7 @@ export function DashboardSidebarLayout({
               className={cn(
                 "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
                 variant === "rail"
-                  ? (isCollapsedNow && !isHoverActive)
+                  ? isCollapsedNow && !isHoverActive
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
                     : cn("-left-6 opacity-100 xl:-left-12", resolvedExpandedWidthClass)
                   : isCollapsedNow
@@ -140,7 +140,7 @@ export function DashboardSidebarLayout({
               style={{
                 width:
                   variant === "rail"
-                    ? (isCollapsedNow && !isHoverActive)
+                    ? isCollapsedNow && !isHoverActive
                       ? "3.5rem"
                       : resolvedExpandedWidthStyle
                     : isCollapsedNow

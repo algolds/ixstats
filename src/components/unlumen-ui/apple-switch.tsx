@@ -54,11 +54,10 @@ const grabSpring = {
   damping: 25,
 };
 
-interface AppleSwitchProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    "onChange" | "role"
-  > {
+interface AppleSwitchProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "onChange" | "role"
+> {
   checked?: boolean;
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -100,13 +99,11 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
       onPointerUp,
       ...props
     },
-    ref,
+    ref
   ) => {
     const generatedId = useId();
     const switchId = id ?? generatedId;
-    const [uncontrolledChecked, setUncontrolledChecked] = useState(
-      Boolean(defaultChecked),
-    );
+    const [uncontrolledChecked, setUncontrolledChecked] = useState(Boolean(defaultChecked));
     const currentChecked = checked ?? uncontrolledChecked;
     const metrics = switchSizes[size];
     const colors = switchTones[tone];
@@ -118,16 +115,14 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
     const thumbWidth = useTransform(
       grabProgress,
       [0, 1],
-      [metrics.thumbX, metrics.thumbX + metrics.padding * 4.5],
+      [metrics.thumbX, metrics.thumbX + metrics.padding * 4.5]
     );
     const thumbHeight = useTransform(
       grabProgress,
       [0, 1],
-      [metrics.thumbY, metrics.thumbY + metrics.padding * 2.3],
+      [metrics.thumbY, metrics.thumbY + metrics.padding * 2.3]
     );
-    const thumbOffsetX = useTransform(
-      () => thumbX.get() - (thumbWidth.get() - metrics.thumbX) / 2,
-    );
+    const thumbOffsetX = useTransform(() => thumbX.get() - (thumbWidth.get() - metrics.thumbX) / 2);
     const liquidOpacity = useTransform(grabProgress, [0, 1], [0, 0.76]);
     const liquidScale = useTransform(grabProgress, [0, 1], [0.82, 1.08]);
     const thumbOpacity = useTransform(grabProgress, [0, 1], [1, 0.2]);
@@ -138,11 +133,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
     const suppressNextClick = useRef(false);
     const activeProgress = useTransform(thumbX, [0, thumbTravel], [0, 1]);
     const fillOpacity = useTransform(activeProgress, [0, 1], [0, 1]);
-    const glowOpacity = useTransform(
-      activeProgress,
-      [0, 0.7, 1],
-      [0, 0.18, 0.2],
-    );
+    const glowOpacity = useTransform(activeProgress, [0, 0.7, 1], [0, 0.18, 0.2]);
     const glowScale = useTransform(activeProgress, [0, 1], [0.82, 1]);
 
     useEffect(() => {
@@ -164,9 +155,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
       onCheckedChange?.(next);
     };
 
-    const handlePointerDown = (
-      event: React.PointerEvent<HTMLButtonElement>,
-    ) => {
+    const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
       onPointerDown?.(event);
       if (event.defaultPrevented || disabled) return;
       if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -179,15 +168,10 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
       isDragging.current = false;
     };
 
-    const handlePointerMove = (
-      event: React.PointerEvent<HTMLButtonElement>,
-    ) => {
+    const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
       onPointerMove?.(event);
       if (event.defaultPrevented || disabled) return;
-      if (
-        activePointerId.current !== null &&
-        event.pointerId !== activePointerId.current
-      ) {
+      if (activePointerId.current !== null && event.pointerId !== activePointerId.current) {
         return;
       }
       if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
@@ -207,10 +191,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
 
     const handlePointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
       onPointerUp?.(event);
-      if (
-        activePointerId.current !== null &&
-        event.pointerId !== activePointerId.current
-      ) {
+      if (activePointerId.current !== null && event.pointerId !== activePointerId.current) {
         return;
       }
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -227,9 +208,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
       setChecked(targetX.get() >= thumbTravel / 2);
     };
 
-    const handlePointerCancel = (
-      event: React.PointerEvent<HTMLButtonElement>,
-    ) => {
+    const handlePointerCancel = (event: React.PointerEvent<HTMLButtonElement>) => {
       onPointerCancel?.(event);
       activePointerId.current = null;
       isDragging.current = false;
@@ -293,9 +272,9 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full active:cursor-grabbing",
           "border border-white/35 bg-white/10 shadow-inner backdrop-blur-md",
-          "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "focus-visible:ring-ring focus-visible:ring-offset-background outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-45",
-          className,
+          className
         )}
         style={{
           width: metrics.trackX,
@@ -342,8 +321,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
             top: "50%",
             y: "-50%",
             marginLeft: metrics.padding,
-            background:
-              "color-mix(in srgb, var(--background) 82%, transparent)",
+            background: "color-mix(in srgb, var(--background) 82%, transparent)",
             opacity: liquidOpacity,
             scale: liquidScale,
             filter: "blur(9px)",
@@ -376,34 +354,26 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
       <label
         htmlFor={switchId}
         className={cn(
-          "inline-flex cursor-pointer select-none items-center gap-3",
-          disabled && "cursor-not-allowed opacity-50",
+          "inline-flex cursor-pointer items-center gap-3 select-none",
+          disabled && "cursor-not-allowed opacity-50"
         )}
       >
         {labelSide === "left" && (
           <span className="flex flex-col gap-0.5 text-right">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            {description && (
-              <span className="text-xs text-muted-foreground">
-                {description}
-              </span>
-            )}
+            <span className="text-foreground text-sm font-medium">{label}</span>
+            {description && <span className="text-muted-foreground text-xs">{description}</span>}
           </span>
         )}
         {switchEl}
         {labelSide === "right" && (
           <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            {description && (
-              <span className="text-xs text-muted-foreground">
-                {description}
-              </span>
-            )}
+            <span className="text-foreground text-sm font-medium">{label}</span>
+            {description && <span className="text-muted-foreground text-xs">{description}</span>}
           </span>
         )}
       </label>
     );
-  },
+  }
 );
 
 AppleSwitch.displayName = "AppleSwitch";

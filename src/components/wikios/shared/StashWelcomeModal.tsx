@@ -222,9 +222,7 @@ export function StashWelcomeModal({
                       <Bookmark className="h-5 w-5" />
                     </div>
                     <div>
-                      <h2 className="text-foreground text-base font-semibold">
-                         Stash Guide
-                      </h2>
+                      <h2 className="text-foreground text-base font-semibold">Stash Guide</h2>
                       <p className="text-muted-foreground text-xs">
                         Save articles, media assets, and forum threads.
                       </p>
@@ -245,7 +243,7 @@ export function StashWelcomeModal({
                     className={cn(
                       "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
                       activeTab === i
-                        ? "text-rose-500 border-rose-500 font-bold dark:text-rose-400"
+                        ? "border-rose-500 font-bold text-rose-500 dark:text-rose-400"
                         : "text-muted-foreground hover:text-foreground border-transparent"
                     )}
                   >
@@ -271,11 +269,12 @@ export function StashWelcomeModal({
                           Welcome to your Stash!
                         </h3>
                         <p className="text-muted-foreground text-xs leading-relaxed">
-                          Stashes help you organize your research notes. Keep wiki pages, save media, and forum threads cataloged together.
+                          Stashes help you organize your research notes. Keep wiki pages, save
+                          media, and forum threads cataloged together.
                         </p>
                         <p className="text-muted-foreground text-xs leading-relaxed">
-                          Create color-coded folders to organize your Stashes into
-                          distinct themes like <em>Characters</em>, <em>Locations</em>, or <em>Read later</em>.
+                          Create color-coded folders to organize your Stashes into distinct themes
+                          like <em>Characters</em>, <em>Locations</em>, or <em>Read later</em>.
                         </p>
                       </div>
 
@@ -311,9 +310,10 @@ export function StashWelcomeModal({
                             </span>
                           </div>
                           <p className="text-muted-foreground text-[11px] leading-relaxed">
-                            No more bookmarking raw browser links or copying text to external notebooks.
-                            Stashed articles feature inline markup capabilities, letting you overlay highlights
-                            and personal notes directly onto live wiki content.
+                            No more bookmarking raw browser links or copying text to external
+                            notebooks. Stashed articles feature inline markup capabilities, letting
+                            you overlay highlights and personal notes directly onto live wiki
+                            content.
                           </p>
                         </div>
                       </div>

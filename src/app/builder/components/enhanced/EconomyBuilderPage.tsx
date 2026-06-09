@@ -390,7 +390,10 @@ export function EconomyBuilderPage({
   // Synchronize population changes from Core Indicators step into the economy builder's internal state
   useEffect(() => {
     const totalPopulation = economicInputs.coreIndicators?.totalPopulation;
-    if (totalPopulation !== undefined && totalPopulation !== economyBuilder.demographics?.totalPopulation) {
+    if (
+      totalPopulation !== undefined &&
+      totalPopulation !== economyBuilder.demographics?.totalPopulation
+    ) {
       setEconomyBuilder((prev) => {
         const participationRate = prev.laborMarket?.laborForceParticipationRate ?? 65;
         const totalWorkforce = Math.round(totalPopulation * (participationRate / 100));
@@ -407,7 +410,11 @@ export function EconomyBuilderPage({
         };
       });
     }
-  }, [economicInputs.coreIndicators?.totalPopulation, economyBuilder.demographics?.totalPopulation, setEconomyBuilder]);
+  }, [
+    economicInputs.coreIndicators?.totalPopulation,
+    economyBuilder.demographics?.totalPopulation,
+    setEconomyBuilder,
+  ]);
 
   // Get builder context if available (returns null if used standalone, not within BuilderStateProvider)
   const builderContext = useBuilderContextOptional();

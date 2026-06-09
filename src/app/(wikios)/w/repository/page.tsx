@@ -131,15 +131,28 @@ export default function RepositoryPage() {
     if (cat.includes("flag")) return "Flags";
     if (cat.includes("map")) return "Maps";
     if (cat.includes("castle")) return "Castles";
-    if (cat.includes("cathedral") || cat.includes("church") || cat.includes("mosque") || cat.includes("monastery") || cat.includes("religious building")) return "Churches";
+    if (
+      cat.includes("cathedral") ||
+      cat.includes("church") ||
+      cat.includes("mosque") ||
+      cat.includes("monastery") ||
+      cat.includes("religious building")
+    )
+      return "Churches";
     if (cat.includes("coat of arm") || cat.includes("heraldry")) return "Coats of arms";
-    if (cat.includes("palace") || cat.includes("royal residence") || cat.includes("government building")) return "Buildings";
+    if (
+      cat.includes("palace") ||
+      cat.includes("royal residence") ||
+      cat.includes("government building")
+    )
+      return "Buildings";
     if (cat.includes("uniform") || cat.includes("military")) return "Military";
     if (cat.includes("portrait") || cat.includes("painting")) return "Images";
     return browsingCategory;
   }, [browsingCategory]);
 
-  const localIsBrowseMode = (tab === "ixwiki" || tab === "iiwiki") && !debouncedQuery && !!localCategoryName;
+  const localIsBrowseMode =
+    (tab === "ixwiki" || tab === "iiwiki") && !debouncedQuery && !!localCategoryName;
 
   // Search local or external wiki files query
   const { data: wikiFileData, isFetching: wikiFileFetching } = api.wiki.searchFiles.useQuery(
@@ -147,9 +160,13 @@ export default function RepositoryPage() {
       query: debouncedQuery || undefined,
       category: localIsBrowseMode ? (localCategoryName ?? undefined) : undefined,
       limit: 50,
-      wiki: tab === "iiwiki" ? "iiwiki" : "ixwiki"
+      wiki: tab === "iiwiki" ? "iiwiki" : "ixwiki",
     },
-    { enabled: (tab === "ixwiki" || tab === "iiwiki") && (debouncedQuery.length >= 2 || localIsBrowseMode), staleTime: 60_000 }
+    {
+      enabled:
+        (tab === "ixwiki" || tab === "iiwiki") && (debouncedQuery.length >= 2 || localIsBrowseMode),
+      staleTime: 60_000,
+    }
   );
 
   // Merge incoming data into allImages
@@ -181,23 +198,35 @@ export default function RepositoryPage() {
       if (wikiFileData) {
         const isIiwiki = tab === "iiwiki";
         const offset = isIiwiki ? 2000000 : 1000000;
-        const mapped = wikiFileData.map((img: { name: string; size: number; width: number; height: number; mime?: string; url?: string }, index: number) => ({
-          pageid: index + offset,
-          title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
-          thumbUrl: img.url,
-          url: img.url,
-          descriptionUrl: isIiwiki
-            ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
-            : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
-          width: img.width || 0,
-          height: img.height || 0,
-          mime: img.mime || "image/png",
-          description: isIiwiki
-            ? `External upload on IIWiki. Size: ${(img.size / 1024).toFixed(1)} KB`
-            : `Local upload on IxWiki. Size: ${(img.size / 1024).toFixed(1)} KB`,
-          artist: isIiwiki ? "IIWiki Contributor" : "IxWiki Contributor",
-          license: "CC BY-SA 3.0",
-        }));
+        const mapped = wikiFileData.map(
+          (
+            img: {
+              name: string;
+              size: number;
+              width: number;
+              height: number;
+              mime?: string;
+              url?: string;
+            },
+            index: number
+          ) => ({
+            pageid: index + offset,
+            title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
+            thumbUrl: img.url,
+            url: img.url,
+            descriptionUrl: isIiwiki
+              ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
+              : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
+            width: img.width || 0,
+            height: img.height || 0,
+            mime: img.mime || "image/png",
+            description: isIiwiki
+              ? `External upload on IIWiki. Size: ${(img.size / 1024).toFixed(1)} KB`
+              : `Local upload on IxWiki. Size: ${(img.size / 1024).toFixed(1)} KB`,
+            artist: isIiwiki ? "IIWiki Contributor" : "IxWiki Contributor",
+            license: "CC BY-SA 3.0",
+          })
+        );
         setAllImages(mapped);
       }
     }
@@ -213,13 +242,14 @@ export default function RepositoryPage() {
     }
   };
 
-  const hasMore = tab === "commons"
-    ? (isSearchMode
-      ? searchData?.nextOffset != null
-      : isBrowseMode
-        ? catData?.nextOffset != null
-        : false)
-    : false;
+  const hasMore =
+    tab === "commons"
+      ? isSearchMode
+        ? searchData?.nextOffset != null
+        : isBrowseMode
+          ? catData?.nextOffset != null
+          : false
+      : false;
 
   const handleToggleCategory = (cat: string) => {
     setActiveCategories((prev) =>
@@ -425,10 +455,7 @@ export default function RepositoryPage() {
 
         {/* Main panels */}
         <div
-          className={cn(
-            "wikios-commons-panels",
-            selectedImage && "wikios-commons-panels--detail"
-          )}
+          className={cn("wikios-commons-panels", selectedImage && "wikios-commons-panels--detail")}
         >
           <CommonsCategoryBrowser
             activeCategories={activeCategories}
@@ -444,7 +471,7 @@ export default function RepositoryPage() {
             onSelect={setSelectedImage}
             onLoadMore={handleLoadMore}
             hasMore={hasMore}
-            isLoading={tab === "commons" ? (searchFetching || catFetching) : wikiFileFetching}
+            isLoading={tab === "commons" ? searchFetching || catFetching : wikiFileFetching}
             totalHits={tab === "commons" ? searchData?.totalHits : wikiFileData?.length}
           />
 

@@ -290,27 +290,26 @@ export const achievementsRouter = createTRPCRouter({
         const wikiUsernames = registeredUsersWithWiki
           .map((u) => u.wikiUsername)
           .filter(Boolean) as string[];
-        const registeredUsernamesSet = new Set(
-          wikiUsernames.map((name) => name.toLowerCase())
-        );
+        const registeredUsernamesSet = new Set(wikiUsernames.map((name) => name.toLowerCase()));
 
-        const activeUserStats = wikiUsernames.length > 0
-          ? await ctx.db.lorewardUserStats.findMany({
-              where: {
-                username: {
-                  in: wikiUsernames,
-                  mode: "insensitive",
+        const activeUserStats =
+          wikiUsernames.length > 0
+            ? await ctx.db.lorewardUserStats.findMany({
+                where: {
+                  username: {
+                    in: wikiUsernames,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              select: {
-                username: true,
-                dailyWins: true,
-                weeklyWins: true,
-                monthlyWins: true,
-                totalScore: true,
-              },
-            })
-          : [];
+                select: {
+                  username: true,
+                  dailyWins: true,
+                  weeklyWins: true,
+                  monthlyWins: true,
+                  totalScore: true,
+                },
+              })
+            : [];
 
         // Query 50k edits for all registered wiki users
         const fiftyKEditsMap = new Map<string, number>();
@@ -384,10 +383,22 @@ export const achievementsRouter = createTRPCRouter({
           if (burgEver > 0) burgEarnersCount++;
         }
 
-        const bronzeUnlockPercent = Math.min(100.0, parseFloat(((bronzeEarnersCount / totalUsersCount) * 100).toFixed(1)));
-        const silverUnlockPercent = Math.min(100.0, parseFloat(((silverEarnersCount / totalUsersCount) * 100).toFixed(1)));
-        const goldUnlockPercent = Math.min(100.0, parseFloat(((goldEarnersCount / totalUsersCount) * 100).toFixed(1)));
-        const burgUnlockPercent = Math.min(100.0, parseFloat(((burgEarnersCount / totalUsersCount) * 100).toFixed(1)));
+        const bronzeUnlockPercent = Math.min(
+          100.0,
+          parseFloat(((bronzeEarnersCount / totalUsersCount) * 100).toFixed(1))
+        );
+        const silverUnlockPercent = Math.min(
+          100.0,
+          parseFloat(((silverEarnersCount / totalUsersCount) * 100).toFixed(1))
+        );
+        const goldUnlockPercent = Math.min(
+          100.0,
+          parseFloat(((goldEarnersCount / totalUsersCount) * 100).toFixed(1))
+        );
+        const burgUnlockPercent = Math.min(
+          100.0,
+          parseFloat(((burgEarnersCount / totalUsersCount) * 100).toFixed(1))
+        );
 
         // Target user specifics
         const targetLower = wikiUsername ? wikiUsername.toLowerCase() : "";
@@ -406,20 +417,25 @@ export const achievementsRouter = createTRPCRouter({
 
         const targetBronzeOwned = targetBronzeEver - targetSilverFromBronze * 10;
         const targetSilverOwned = targetSilverEver - Math.floor(targetSilverEver / 5) * 5;
-        const targetGoldOwned = Math.floor(targetSilverEver / 5) - Math.floor(Math.floor(targetSilverEver / 5) / 5) * 5;
+        const targetGoldOwned =
+          Math.floor(targetSilverEver / 5) - Math.floor(Math.floor(targetSilverEver / 5) / 5) * 5;
         const targetBurgOwned = targetBurgEver;
 
-        const targetUnlockedAtStr = oolStats ? oolStats.updatedAt.toISOString() : new Date().toISOString();
+        const targetUnlockedAtStr = oolStats
+          ? oolStats.updatedAt.toISOString()
+          : new Date().toISOString();
 
         const oolMedals = [
           {
             key: "ool-bronze",
             title: "Bronze Lore Medal",
-            description: "Daily Lore Award winner or 50k edit contributor. A daily win or a 50k edit conveys a bronze medal.",
+            description:
+              "Daily Lore Award winner or 50k edit contributor. A daily win or a 50k edit conveys a bronze medal.",
             category: "Order of the Lore",
             rarity: "Common",
             points: 1,
-            iconUrl: "https://upload.wikimedia.org/wikipedia/commons/5/54/%D0%91%D1%80%D0%BE%D0%BD%D0%B7%D0%B0%D0%B2%D1%8B_%D0%BC%D1%8D%D0%B4%D0%B0%D0%BB%D1%8C.svg",
+            iconUrl:
+              "https://upload.wikimedia.org/wikipedia/commons/5/54/%D0%91%D1%80%D0%BE%D0%BD%D0%B7%D0%B0%D0%B2%D1%8B_%D0%BC%D1%8D%D0%B4%D0%B0%D0%BB%D1%8C.svg",
             triggerType: "OOL_MEDAL",
             conditionJson: null,
             isUnlocked: targetBronzeEver > 0,
@@ -431,7 +447,8 @@ export const achievementsRouter = createTRPCRouter({
           {
             key: "ool-silver",
             title: "Silver Lore Medal",
-            description: "Weekly or Monthly Lore Award winner, or upgraded from 10 Bronze medals. A weekly win conveys a silver medal; a monthly win awards three.",
+            description:
+              "Weekly or Monthly Lore Award winner, or upgraded from 10 Bronze medals. A weekly win conveys a silver medal; a monthly win awards three.",
             category: "Order of the Lore",
             rarity: "Rare",
             points: 10,
@@ -447,7 +464,8 @@ export const achievementsRouter = createTRPCRouter({
           {
             key: "ool-gold",
             title: "Gold Lore Medal",
-            description: "Upgraded from 5 Silver medals. Represents a significant accumulation of lore contributions.",
+            description:
+              "Upgraded from 5 Silver medals. Represents a significant accumulation of lore contributions.",
             category: "Order of the Lore",
             rarity: "Epic",
             points: 50,
@@ -463,7 +481,8 @@ export const achievementsRouter = createTRPCRouter({
           {
             key: "ool-burg-cross",
             title: "Burg Cross Lore Medal",
-            description: "Annual Lore Award winner, or upgraded from 5 Gold medals. An annual win or 5 Gold medals awards a platinum Burg cross medal.",
+            description:
+              "Annual Lore Award winner, or upgraded from 5 Gold medals. An annual win or 5 Gold medals awards a platinum Burg cross medal.",
             category: "Order of the Lore",
             rarity: "Legendary",
             points: 250,

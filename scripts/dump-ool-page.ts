@@ -26,7 +26,10 @@ async function main() {
 
   if (rows && rows.length > 0) {
     console.log("--- WIKITEXT OF IXWIKI:OOL ---");
-    const text = rows[0]!.old_text instanceof Buffer ? rows[0]!.old_text.toString("utf-8") : String(rows[0]!.old_text);
+    const text =
+      rows[0]!.old_text instanceof Buffer
+        ? rows[0]!.old_text.toString("utf-8")
+        : String(rows[0]!.old_text);
     console.log(text);
     console.log("-----------------------------");
   } else {

@@ -28,7 +28,9 @@ export const lorewardsRouter = createTRPCRouter({
         const today = new Date();
         const day = today.getUTCDay();
         const diff = today.getUTCDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
-        const monday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), diff, 0, 0, 0, 0));
+        const monday = new Date(
+          Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), diff, 0, 0, 0, 0)
+        );
 
         const formatDate = (d: Date) => {
           const y = d.getUTCFullYear();
@@ -61,25 +63,40 @@ export const lorewardsRouter = createTRPCRouter({
           });
         }
 
-        const userMap = new Map<string, {
-          username: string;
-          dailyWins: number;
-          dailyRunnerUps: number;
-          totalBytes: number;
-          totalScore: number;
-        }>();
+        const userMap = new Map<
+          string,
+          {
+            username: string;
+            dailyWins: number;
+            dailyRunnerUps: number;
+            totalBytes: number;
+            totalScore: number;
+          }
+        >();
 
         for (const entry of entries) {
           // Track winner/runner-up flags
           if (entry.winnerUser) {
             const u = entry.winnerUser;
-            const current = userMap.get(u) || { username: u, dailyWins: 0, dailyRunnerUps: 0, totalBytes: 0, totalScore: 0 };
+            const current = userMap.get(u) || {
+              username: u,
+              dailyWins: 0,
+              dailyRunnerUps: 0,
+              totalBytes: 0,
+              totalScore: 0,
+            };
             current.dailyWins += 1;
             userMap.set(u, current);
           }
           if (entry.runnerUpUser) {
             const u = entry.runnerUpUser;
-            const current = userMap.get(u) || { username: u, dailyWins: 0, dailyRunnerUps: 0, totalBytes: 0, totalScore: 0 };
+            const current = userMap.get(u) || {
+              username: u,
+              dailyWins: 0,
+              dailyRunnerUps: 0,
+              totalBytes: 0,
+              totalScore: 0,
+            };
             current.dailyRunnerUps += 1;
             userMap.set(u, current);
           }
@@ -96,7 +113,13 @@ export const lorewardsRouter = createTRPCRouter({
                 for (const cand of candidates) {
                   if (cand.user) {
                     const u = cand.user;
-                    const current = userMap.get(u) || { username: u, dailyWins: 0, dailyRunnerUps: 0, totalBytes: 0, totalScore: 0 };
+                    const current = userMap.get(u) || {
+                      username: u,
+                      dailyWins: 0,
+                      dailyRunnerUps: 0,
+                      totalBytes: 0,
+                      totalScore: 0,
+                    };
                     current.totalBytes += cand.bytesAdded || 0;
                     current.totalScore += cand.score || 0;
                     userMap.set(u, current);
@@ -110,14 +133,26 @@ export const lorewardsRouter = createTRPCRouter({
             // Fallback if metadata is null but we have winner/runner-up info
             if (entry.winnerUser) {
               const u = entry.winnerUser;
-              const current = userMap.get(u) || { username: u, dailyWins: 0, dailyRunnerUps: 0, totalBytes: 0, totalScore: 0 };
+              const current = userMap.get(u) || {
+                username: u,
+                dailyWins: 0,
+                dailyRunnerUps: 0,
+                totalBytes: 0,
+                totalScore: 0,
+              };
               current.totalBytes += entry.winnerBytes || 0;
               current.totalScore += entry.winnerScore || 0;
               userMap.set(u, current);
             }
             if (entry.runnerUpUser) {
               const u = entry.runnerUpUser;
-              const current = userMap.get(u) || { username: u, dailyWins: 0, dailyRunnerUps: 0, totalBytes: 0, totalScore: 0 };
+              const current = userMap.get(u) || {
+                username: u,
+                dailyWins: 0,
+                dailyRunnerUps: 0,
+                totalBytes: 0,
+                totalScore: 0,
+              };
               current.totalBytes += entry.runnerUpBytes || 0;
               current.totalScore += entry.runnerUpScore || 0;
               userMap.set(u, current);
@@ -134,13 +169,13 @@ export const lorewardsRouter = createTRPCRouter({
         });
 
         const result = aggregated.slice(0, input.limit);
-        const usernames = result.map(r => r.username);
+        const usernames = result.map((r) => r.username);
         const userStats = await db.lorewardUserStats.findMany({
           where: { username: { in: usernames } },
         });
 
         return result.map((r, i) => {
-          const stats = userStats.find(s => s.username === r.username);
+          const stats = userStats.find((s) => s.username === r.username);
           return {
             rank: i + 1,
             username: r.username,
@@ -702,7 +737,10 @@ export const lorewardsRouter = createTRPCRouter({
         orderBy: { date: "asc" },
       });
 
-      const days: Record<string, { role: "winner" | "runner-up"; page: string | null; score: number }> = {};
+      const days: Record<
+        string,
+        { role: "winner" | "runner-up"; page: string | null; score: number }
+      > = {};
       for (const e of entries) {
         if (e.winnerUser === input.username) {
           days[e.date] = {
@@ -725,12 +763,11 @@ export const lorewardsRouter = createTRPCRouter({
   /** UFC-Style Top 15 Leaderboard */
   getUfcLeaderboard: publicProcedure.query(async () => {
     const stats = await db.lorewardUserStats.findMany();
-    const usernames = stats.map(s => s.username);
+    const usernames = stats.map((s) => s.username);
     if (usernames.length === 0) return [];
 
     const oolPool = getWikiDbPool();
     try {
-
       const [careerRows] = await oolPool.execute<mysql.RowDataPacket[]>(
         `SELECT a.actor_name,
                 COUNT(r.rev_id) as total_edits,
@@ -748,12 +785,15 @@ export const lorewardsRouter = createTRPCRouter({
         usernames
       );
 
-      const careerMap = new Map<string, {
-        totalEdits: number;
-        largestEdit: number;
-        totalBytes: number;
-        majorEdits: number;
-      }>();
+      const careerMap = new Map<
+        string,
+        {
+          totalEdits: number;
+          largestEdit: number;
+          totalBytes: number;
+          majorEdits: number;
+        }
+      >();
 
       for (const row of careerRows) {
         const u = row.actor_name.toString();
@@ -835,7 +875,7 @@ export const lorewardsRouter = createTRPCRouter({
         }
       }
 
-      const cleanNames = usernames.map(u => u.replace(/_/g, " "));
+      const cleanNames = usernames.map((u) => u.replace(/_/g, " "));
       const directCountries = await db.country.findMany({
         where: {
           name: {
@@ -849,19 +889,31 @@ export const lorewardsRouter = createTRPCRouter({
 
       for (const c of directCountries) {
         const matchedUser = usernames.find(
-          u => u.toLowerCase() === c.name.toLowerCase() || u.replace(/_/g, " ").toLowerCase() === c.name.toLowerCase()
+          (u) =>
+            u.toLowerCase() === c.name.toLowerCase() ||
+            u.replace(/_/g, " ").toLowerCase() === c.name.toLowerCase()
         );
         if (matchedUser && !countryMap.has(matchedUser.toLowerCase())) {
           countryMap.set(matchedUser.toLowerCase(), c.name);
         }
       }
 
-      const scoredUsers = stats.map(s => {
-        const career = careerMap.get(s.username) || { totalEdits: 0, largestEdit: 0, totalBytes: 0, majorEdits: 0 };
+      const scoredUsers = stats.map((s) => {
+        const career = careerMap.get(s.username) || {
+          totalEdits: 0,
+          largestEdit: 0,
+          totalBytes: 0,
+          majorEdits: 0,
+        };
         const specialty = specialtyMap.get(s.username) || "General Contributor";
         const lastEdit = lastEdits.get(s.username) || { page: "None", date: "—" };
 
-        const rankScore = (s.dailyWins * 100) + (s.dailyRunnerUps * 40) + (s.currentStreak * 15) + (career.totalBytes * 0.01) + (career.largestEdit * 0.05);
+        const rankScore =
+          s.dailyWins * 100 +
+          s.dailyRunnerUps * 40 +
+          s.currentStreak * 15 +
+          career.totalBytes * 0.01 +
+          career.largestEdit * 0.05;
 
         return {
           username: s.username,
@@ -876,8 +928,9 @@ export const lorewardsRouter = createTRPCRouter({
           totalBytes: career.totalBytes,
           largestEdit: career.largestEdit,
           majorEdits: career.majorEdits,
-          majorEditRate: career.totalEdits > 0 ? (career.majorEdits / career.totalEdits) : 0,
-          avgBytesPerEdit: career.totalEdits > 0 ? Math.round(career.totalBytes / career.totalEdits) : 0,
+          majorEditRate: career.totalEdits > 0 ? career.majorEdits / career.totalEdits : 0,
+          avgBytesPerEdit:
+            career.totalEdits > 0 ? Math.round(career.totalBytes / career.totalEdits) : 0,
           lastEditPage: lastEdit.page,
           lastEditDate: lastEdit.date,
           rankScore,
@@ -994,7 +1047,7 @@ export const lorewardsRouter = createTRPCRouter({
           }
         }
 
-        const cleanNames = usernames.map(u => u.replace(/_/g, " "));
+        const cleanNames = usernames.map((u) => u.replace(/_/g, " "));
         const directCountries = await db.country.findMany({
           where: {
             name: {
@@ -1008,7 +1061,9 @@ export const lorewardsRouter = createTRPCRouter({
 
         for (const c of directCountries) {
           const matchedUser = usernames.find(
-            u => u.toLowerCase() === c.name.toLowerCase() || u.replace(/_/g, " ").toLowerCase() === c.name.toLowerCase()
+            (u) =>
+              u.toLowerCase() === c.name.toLowerCase() ||
+              u.replace(/_/g, " ").toLowerCase() === c.name.toLowerCase()
           );
           if (matchedUser && !countryMap.has(matchedUser.toLowerCase())) {
             countryMap.set(matchedUser.toLowerCase(), c.name);
@@ -1016,19 +1071,22 @@ export const lorewardsRouter = createTRPCRouter({
         }
       }
 
-      const calendar: Record<number, {
-        winnerUser: string | null;
-        winnerCountryName: string | null;
-        winnerPage: string | null;
-        winnerScore: number | null;
-        winnerBytes: number | null;
-        runnerUpUser: string | null;
-        runnerUpCountryName: string | null;
-        runnerUpPage: string | null;
-        runnerUpScore: number | null;
-        runnerUpBytes: number | null;
-        candidates: any[];
-      }> = {};
+      const calendar: Record<
+        number,
+        {
+          winnerUser: string | null;
+          winnerCountryName: string | null;
+          winnerPage: string | null;
+          winnerScore: number | null;
+          winnerBytes: number | null;
+          runnerUpUser: string | null;
+          runnerUpCountryName: string | null;
+          runnerUpPage: string | null;
+          runnerUpScore: number | null;
+          runnerUpBytes: number | null;
+          candidates: any[];
+        }
+      > = {};
 
       for (const e of entries) {
         const day = parseInt(e.date.slice(8, 10), 10);
@@ -1040,12 +1098,16 @@ export const lorewardsRouter = createTRPCRouter({
         }
         calendar[day] = {
           winnerUser: e.winnerUser,
-          winnerCountryName: e.winnerUser ? (countryMap.get(e.winnerUser.toLowerCase()) || null) : null,
+          winnerCountryName: e.winnerUser
+            ? countryMap.get(e.winnerUser.toLowerCase()) || null
+            : null,
           winnerPage: e.winnerPage,
           winnerScore: e.winnerScore,
           winnerBytes: e.winnerBytes,
           runnerUpUser: e.runnerUpUser,
-          runnerUpCountryName: e.runnerUpUser ? (countryMap.get(e.runnerUpUser.toLowerCase()) || null) : null,
+          runnerUpCountryName: e.runnerUpUser
+            ? countryMap.get(e.runnerUpUser.toLowerCase()) || null
+            : null,
           runnerUpPage: e.runnerUpPage,
           runnerUpScore: e.runnerUpScore,
           runnerUpBytes: e.runnerUpBytes,

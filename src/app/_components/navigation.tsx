@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
@@ -32,6 +32,22 @@ export function Navigation() {
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const { scrollY, isSticky } = useNavigationScroll();
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
+
+  const [isWriterMode, setIsWriterMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const checkWriterMode = () => {
+      setIsWriterMode(document.documentElement.classList.contains("wikios-writer-mode"));
+    };
+    checkWriterMode();
+    const observer = new MutationObserver(checkWriterMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const activeIsSticky = isSticky || isWriterMode;
+  const activeScrollY = isWriterMode ? 56 : scrollY;
 
   // Use new role management system
   const isAdmin = useHasRoleLevel(10); // Admin level or higher
@@ -198,7 +214,7 @@ export function Navigation() {
           className="pointer-events-none fixed top-0 left-1/2 z-[var(--z-command)] flex justify-center"
           animate={{
             x: "-50%",
-            y: isSticky ? 8 : Math.max(-100, 10 - scrollY),
+            y: activeIsSticky ? 8 : Math.max(-100, 10 - activeScrollY),
           }}
           transition={{
             type: "spring",
@@ -218,7 +234,7 @@ export function Navigation() {
               opacity: 0.6 * Math.max(0.2, 1 - morphProgress),
             }}
           />
-          <CommandPalette isSticky={isSticky} scrollY={scrollY} />
+          <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />
         </motion.div>
       )}
     </>

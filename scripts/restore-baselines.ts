@@ -110,10 +110,18 @@ async function main() {
     if (popDiff > 1 || gdpDiff > 0.01 || popGrowthDiff > 0.0001 || gdpGrowthDiff > 0.0001) {
       mismatchCount++;
       console.log(`[MISMATCH] "${country.name}"`);
-      console.log(`  Population Baseline: DB = ${country.baselinePopulation.toLocaleString()} | Excel = ${expectedPop.toLocaleString()}`);
-      console.log(`  GDP/Capita Baseline: DB = $${country.baselineGdpPerCapita.toFixed(2)} | Excel = $${expectedGdpPc.toFixed(2)}`);
-      console.log(`  Pop Growth Rate:     DB = ${(country.populationGrowthRate * 100).toFixed(4)}% | Excel = ${(expectedPopGrowth * 100).toFixed(4)}%`);
-      console.log(`  GDP Growth Rate:     DB = ${(country.adjustedGdpGrowth * 100).toFixed(4)}% | Excel = ${(expectedGdpGrowth * 100).toFixed(4)}%`);
+      console.log(
+        `  Population Baseline: DB = ${country.baselinePopulation.toLocaleString()} | Excel = ${expectedPop.toLocaleString()}`
+      );
+      console.log(
+        `  GDP/Capita Baseline: DB = $${country.baselineGdpPerCapita.toFixed(2)} | Excel = $${expectedGdpPc.toFixed(2)}`
+      );
+      console.log(
+        `  Pop Growth Rate:     DB = ${(country.populationGrowthRate * 100).toFixed(4)}% | Excel = ${(expectedPopGrowth * 100).toFixed(4)}%`
+      );
+      console.log(
+        `  GDP Growth Rate:     DB = ${(country.adjustedGdpGrowth * 100).toFixed(4)}% | Excel = ${(expectedGdpGrowth * 100).toFixed(4)}%`
+      );
 
       if (!dryRun) {
         const correctProjected2040Gdp = expectedPop * expectedGdpPc;
@@ -133,9 +141,13 @@ async function main() {
             inflationRate: 0.02, // default 2%
           },
         });
-        console.log(`  ✓ Restored all baselines, projections, and growth rates for ${country.name} in DB.`);
+        console.log(
+          `  ✓ Restored all baselines, projections, and growth rates for ${country.name} in DB.`
+        );
       } else {
-        console.log(`  [DRY RUN] Would restore all baselines, projections, and growth rates for ${country.name}.`);
+        console.log(
+          `  [DRY RUN] Would restore all baselines, projections, and growth rates for ${country.name}.`
+        );
       }
       console.log("");
     }

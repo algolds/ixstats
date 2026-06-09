@@ -676,7 +676,8 @@ export const electionsRouter = createTRPCRouter({
 
       // Step 6: Calculate margin of victory
       const sortedResults = [...results].sort(
-        (a, b) => (totalSeatsWonPerParty.get(b.partyId) ?? 0) - (totalSeatsWonPerParty.get(a.partyId) ?? 0)
+        (a, b) =>
+          (totalSeatsWonPerParty.get(b.partyId) ?? 0) - (totalSeatsWonPerParty.get(a.partyId) ?? 0)
       );
       const marginOfVictory =
         sortedResults.length >= 2

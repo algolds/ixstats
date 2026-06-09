@@ -370,7 +370,7 @@ export function EmbassyDetailSheet({
                   <Button
                     size="sm"
                     variant="default"
-                    className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                    className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
                     onClick={() => reopenMutation.mutate({ embassyId: embassy.id })}
                     disabled={reopenMutation.isPending}
                   >

@@ -57,9 +57,7 @@ export default function AchievementsPage() {
       const tabParam = params.get("tab");
       if (
         tabParam &&
-        ["quest-trees", "all-achievements", "wiki-lore", "leaderboard"].includes(
-          tabParam
-        )
+        ["quest-trees", "all-achievements", "wiki-lore", "leaderboard"].includes(tabParam)
       ) {
         setActiveTab(tabParam);
       }
@@ -130,14 +128,17 @@ export default function AchievementsPage() {
           >
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:32px_32px] opacity-20 dark:bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] dark:opacity-25" />
             <CutoutCardContent className="relative z-10 p-6">
-              <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-foreground text-lg font-bold">Your Achievement Profile</h2>
                   <p className="text-muted-foreground text-xs">{userProfile.country?.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="cabinet-toggle" className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase cursor-pointer select-none">
+                    <Label
+                      htmlFor="cabinet-toggle"
+                      className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+                    >
                       Showcase Cabinet
                     </Label>
                     <Switch

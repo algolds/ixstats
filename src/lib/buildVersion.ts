@@ -7,3 +7,4 @@ export const IXWORLD_VERSION = "2.3.0";
 export const IXFORUM_VERSION = "1.0-preview";
 export const THINKPAGES_VERSION = "1.0";
 export const BUILDER_VERSION = "3.1-preview";
+export const CANVAS_VERSION = "1.0";

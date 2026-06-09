@@ -49,7 +49,11 @@ function injectPlaceholderElements(html: string): string {
     /<a[^>]*href="[^"]*Template:([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, templateName, label) => {
       const decoded = decodeURIComponent(templateName);
-      if (decoded.startsWith("MyCountry:") || decoded.startsWith("CountryData:") || decoded.startsWith("BusinessData:")) {
+      if (
+        decoded.startsWith("MyCountry:") ||
+        decoded.startsWith("CountryData:") ||
+        decoded.startsWith("BusinessData:")
+      ) {
         return `<span class="wikios-stat-placeholder" data-key="${decoded}"></span>`;
       }
       return match;

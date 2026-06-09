@@ -493,7 +493,8 @@ export function ArticleRenderer({
     while ((match = regex.exec(contentHtml)) !== null) {
       if (match[1]) keys.add(match[1]);
     }
-    const linkRegex = /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
+    const linkRegex =
+      /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
     while ((match = linkRegex.exec(contentHtml)) !== null) {
       if (match[1]) keys.add(decodeURIComponent(match[1]));
     }
@@ -800,7 +801,7 @@ export function ArticleRenderer({
           <div className="wikios-article-body wikios-article-content">
             {infoboxHtml && <InfoboxWithMap infoboxHtml={infoboxHtml} articleTitle={title} />}
             <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
-            
+
             {/* Render portals into injected placeholder nodes */}
             {portalTargets.map((target, idx) => {
               if (target.type === "coords") {
@@ -843,9 +844,7 @@ export function ArticleRenderer({
           <ArticleFooter title={title} lastModified={lastModified} />
         </div>
 
-        {showWikiToc && toc.length > 3 && (
-          <StickyToc entries={toc} contentRef={contentRef} />
-        )}
+        {showWikiToc && toc.length > 3 && <StickyToc entries={toc} contentRef={contentRef} />}
       </div>
 
       {lightboxPortal}
@@ -1075,7 +1074,11 @@ function injectPlaceholderElements(html: string): string {
     /<a[^>]*href="[^"]*Template(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, templateName, label) => {
       const decoded = decodeURIComponent(templateName);
-      if (decoded.startsWith("MyCountry:") || decoded.startsWith("CountryData:") || decoded.startsWith("BusinessData:")) {
+      if (
+        decoded.startsWith("MyCountry:") ||
+        decoded.startsWith("CountryData:") ||
+        decoded.startsWith("BusinessData:")
+      ) {
         const safeKey = decoded.replace(/"/g, "&quot;");
         return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;
       }
@@ -1119,9 +1122,7 @@ function calculateDistanceAndBearing(
   const y = Math.sin(dLng) * Math.cos((lat2 * Math.PI) / 180);
   const x =
     Math.cos((lat1 * Math.PI) / 180) * Math.sin((lat2 * Math.PI) / 180) -
-    Math.sin((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.cos(dLng);
+    Math.sin((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.cos(dLng);
   let brng = (Math.atan2(y, x) * 180) / Math.PI;
   brng = (brng + 360) % 360;
 
@@ -1165,9 +1166,7 @@ const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: num
 
       map.on("load", () => {
         if (!active) return;
-        new maplibregl.Marker({ color: "#f43f5e" })
-          .setLngLat([lng, lat])
-          .addTo(map);
+        new maplibregl.Marker({ color: "#f43f5e" }).setLngLat([lng, lat]).addTo(map);
       });
     };
 
@@ -1182,7 +1181,13 @@ const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: num
     };
   }, [lat, lng, zoom]);
 
-  return <div ref={mapContainerRef} className="w-full h-32 rounded-lg overflow-hidden bg-white/5 border border-white/10" style={{ height: 130 }} />;
+  return (
+    <div
+      ref={mapContainerRef}
+      className="h-32 w-full overflow-hidden rounded-lg border border-white/10 bg-white/5"
+      style={{ height: 130 }}
+    />
+  );
 };
 
 // ---------------------------------------------------------------------------
@@ -1209,25 +1214,31 @@ function CoordsPill({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-coords-pill inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer select-none text-blue-400">
-          <MapPin size={11} className="text-blue-400 animate-pulse" />
+        <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-all select-none hover:border-white/20 hover:bg-white/10">
+          <MapPin size={11} className="animate-pulse text-blue-400" />
           <span>{label}</span>
-          <span className="text-[10px] opacity-65 font-mono">({lat.toFixed(2)}, {lng.toFixed(2)})</span>
+          <span className="font-mono text-[10px] opacity-65">
+            ({lat.toFixed(2)}, {lng.toFixed(2)})
+          </span>
         </span>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2">
+      <PopoverContent className="z-[10001] flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-zinc-200">{label}</span>
-          <span className="text-[10px] text-zinc-400 font-mono">Zoom {zoom}</span>
+          <span className="font-mono text-[10px] text-zinc-400">Zoom {zoom}</span>
         </div>
-        
+
         <CoordsMiniMap lat={lat} lng={lng} zoom={zoom} />
-        
-        <div className="flex flex-col gap-0.5 text-[10px] text-zinc-400 font-medium">
-          <div>Latitude: <span className="text-zinc-200 font-mono">{lat.toFixed(4)}</span></div>
-          <div>Longitude: <span className="text-zinc-200 font-mono">{lng.toFixed(4)}</span></div>
+
+        <div className="flex flex-col gap-0.5 text-[10px] font-medium text-zinc-400">
+          <div>
+            Latitude: <span className="font-mono text-zinc-200">{lat.toFixed(4)}</span>
+          </div>
+          <div>
+            Longitude: <span className="font-mono text-zinc-200">{lng.toFixed(4)}</span>
+          </div>
           {calc && (
-            <div className="text-blue-400 font-semibold mt-1">
+            <div className="mt-1 font-semibold text-blue-400">
               Distance: {calc.distanceKm.toLocaleString()} km {calc.bearing} of home
             </div>
           )}
@@ -1248,7 +1259,7 @@ function DynamicStatSpan({
   data?: { value: string; rawVal: any; metadata?: any } | null;
 }) {
   if (!data) {
-    return <span className="text-zinc-500 font-mono text-xs">Loading...</span>;
+    return <span className="font-mono text-xs text-zinc-500">Loading...</span>;
   }
 
   const metadata = data.metadata;
@@ -1256,20 +1267,20 @@ function DynamicStatSpan({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-stat-span font-semibold text-zinc-200 border-b border-dotted border-white/40 hover:border-white/90 hover:text-white transition-all cursor-pointer select-none">
+        <span className="wikios-stat-span cursor-pointer border-b border-dotted border-white/40 font-semibold text-zinc-200 transition-all select-none hover:border-white/90 hover:text-white">
           {data.value}
         </span>
       </PopoverTrigger>
-      <PopoverContent className="w-60 p-4 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-2xl z-[10001] shadow-2xl flex flex-col gap-3">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+      <PopoverContent className="z-[10001] flex w-60 flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl">
+        <div className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
           Simulation Metrics
         </div>
 
         <div className="flex flex-col text-left">
-          <span className="text-xs text-zinc-400 font-medium">{metadata?.label || "Value"}</span>
-          <span className="text-xl font-bold text-white leading-tight mt-0.5">{data.value}</span>
+          <span className="text-xs font-medium text-zinc-400">{metadata?.label || "Value"}</span>
+          <span className="mt-0.5 text-xl leading-tight font-bold text-white">{data.value}</span>
           {metadata?.comparisonRank && (
-            <span className="text-[10px] text-blue-400 font-semibold mt-1">
+            <span className="mt-1 text-[10px] font-semibold text-blue-400">
               {metadata.comparisonRank}
             </span>
           )}
@@ -1279,20 +1290,23 @@ function DynamicStatSpan({
           {metadata?.countryName && (
             <div className="flex justify-between">
               <span>Country</span>
-              <span className="text-zinc-200 font-medium">{metadata.countryName}</span>
+              <span className="font-medium text-zinc-200">{metadata.countryName}</span>
             </div>
           )}
           {metadata?.companyName && (
             <div className="flex justify-between">
               <span>Enterprise</span>
-              <span className="text-zinc-200 font-medium">{metadata.companyName}</span>
+              <span className="font-medium text-zinc-200">{metadata.companyName}</span>
             </div>
           )}
           {metadata?.lastCalculated && (
             <div className="flex justify-between">
               <span>Updated</span>
-              <span className="text-zinc-200 font-mono">
-                {new Date(metadata.lastCalculated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <span className="font-mono text-zinc-200">
+                {new Date(metadata.lastCalculated).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
           )}
@@ -1301,7 +1315,7 @@ function DynamicStatSpan({
         {metadata?.detailsUrl && (
           <Link
             href={withBasePath(metadata.detailsUrl)}
-            className="text-[10px] font-bold text-center text-blue-400 hover:text-blue-300 transition-colors border-t border-white/5 pt-2"
+            className="border-t border-white/5 pt-2 text-center text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
           >
             Analyze Dashboard &rarr;
           </Link>
@@ -1354,10 +1368,9 @@ function MapEmbedComponent({
     { staleTime: 30 * 60 * 1000 }
   );
 
-  const { data: featuresData } = api.geoCore.getAllMapFeatures.useQuery(
-    undefined,
-    { staleTime: 30 * 60 * 1000 }
-  );
+  const { data: featuresData } = api.geoCore.getAllMapFeatures.useQuery(undefined, {
+    staleTime: 30 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -1428,10 +1441,8 @@ function MapEmbedComponent({
 
             const markerEl = document.createElement("div");
             markerEl.className = "wikios-map-poi-marker-container";
-            
-            new maplibregl.Marker({ element: markerEl })
-              .setLngLat([poiLng, poiLat])
-              .addTo(map);
+
+            new maplibregl.Marker({ element: markerEl }).setLngLat([poiLng, poiLat]).addTo(map);
 
             newPoiTargets.push({
               element: markerEl,
@@ -1454,9 +1465,7 @@ function MapEmbedComponent({
             const markerEl = document.createElement("div");
             markerEl.className = "wikios-map-city-marker-container";
 
-            new maplibregl.Marker({ element: markerEl })
-              .setLngLat([cityLng, cityLat])
-              .addTo(map);
+            new maplibregl.Marker({ element: markerEl }).setLngLat([cityLng, cityLat]).addTo(map);
 
             newCityTargets.push({
               element: markerEl,
@@ -1484,34 +1493,48 @@ function MapEmbedComponent({
 
   return (
     <div
-      className="wikios-ixworld-embed glass-hierarchy-child my-6 rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative"
+      className="wikios-ixworld-embed glass-hierarchy-child relative my-6 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
       style={{ height: parsedOptions.height }}
     >
-      <div ref={mapContainerRef} className="w-full h-full" style={{ height: "100%", minHeight: 200 }} />
+      <div
+        ref={mapContainerRef}
+        className="h-full w-full"
+        style={{ height: "100%", minHeight: 200 }}
+      />
       {!mapReady && (
-        <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md flex items-center justify-center text-xs text-zinc-400">
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 text-xs text-zinc-400 backdrop-blur-md">
           <div className="wikios-loading-spinner mr-2" style={{ width: 16, height: 16 }} />
           Loading map graphics...
         </div>
       )}
 
       {/* Render POI markers inside portals */}
-      {mapReady && poiTargets.map((target, idx) => 
-        createPortal(
-          <PoiMarker key={`poi-${idx}`} properties={target.properties} coordinates={target.coordinates} />,
-          target.element
-        )
-      )}
+      {mapReady &&
+        poiTargets.map((target, idx) =>
+          createPortal(
+            <PoiMarker
+              key={`poi-${idx}`}
+              properties={target.properties}
+              coordinates={target.coordinates}
+            />,
+            target.element
+          )
+        )}
 
       {/* Render City markers inside portals */}
-      {mapReady && cityTargets.map((target, idx) => 
-        createPortal(
-          <CityMarker key={`city-${idx}`} properties={target.properties} coordinates={target.coordinates} />,
-          target.element
-        )
-      )}
+      {mapReady &&
+        cityTargets.map((target, idx) =>
+          createPortal(
+            <CityMarker
+              key={`city-${idx}`}
+              properties={target.properties}
+              coordinates={target.coordinates}
+            />,
+            target.element
+          )
+        )}
 
-      <div className="absolute bottom-3 left-3 bg-zinc-950/80 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 select-none">
+      <div className="absolute bottom-3 left-3 rounded-lg border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-zinc-400 uppercase backdrop-blur-md select-none">
         IxWorld embed
       </div>
     </div>
@@ -1521,14 +1544,22 @@ function MapEmbedComponent({
 // ---------------------------------------------------------------------------
 // PoiMarker Component
 // ---------------------------------------------------------------------------
-function PoiMarker({ properties, coordinates }: { properties: any; coordinates: [number, number] }) {
+function PoiMarker({
+  properties,
+  coordinates,
+}: {
+  properties: any;
+  coordinates: [number, number];
+}) {
   const Icon = useMemo(() => {
     const cat = String(properties.category).toLowerCase();
     if (cat.includes("industrial") || cat.includes("factory")) return Cog;
     if (cat.includes("port") || cat.includes("naval")) return Anchor;
     if (cat.includes("fortress") || cat.includes("military")) return Shield;
-    if (cat.includes("palace") || cat.includes("parliament") || cat.includes("government")) return Building;
-    if (cat.includes("landmark") || cat.includes("founding") || cat.includes("monument")) return Flag;
+    if (cat.includes("palace") || cat.includes("parliament") || cat.includes("government"))
+      return Building;
+    if (cat.includes("landmark") || cat.includes("founding") || cat.includes("monument"))
+      return Flag;
     return MapPin;
   }, [properties.category]);
 
@@ -1537,22 +1568,26 @@ function PoiMarker({ properties, coordinates }: { properties: any; coordinates: 
       <PopoverTrigger>
         <button
           type="button"
-          className="glass-surface glass-refraction h-6 w-6 rounded-full flex items-center justify-center border border-white/20 bg-zinc-950/80 shadow-md cursor-pointer hover:scale-125 transition-all text-white hover:border-rose-400"
+          className="glass-surface glass-refraction flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-zinc-950/80 text-white shadow-md transition-all hover:scale-125 hover:border-rose-400"
         >
           <Icon size={11} className="text-zinc-200" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-3 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-2">
+      <PopoverContent className="z-[10001] flex w-56 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
         <div className="text-xs font-bold text-zinc-200">{properties.name}</div>
         {properties.description && (
-          <div className="text-[10px] text-zinc-400 leading-normal">{properties.description}</div>
+          <div className="text-[10px] leading-normal text-zinc-400">{properties.description}</div>
         )}
-        <div className="flex justify-between items-center border-t border-white/5 pt-1.5 mt-1 text-[9px] text-zinc-500 font-mono">
-          <span>{coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}</span>
+        <div className="mt-1 flex items-center justify-between border-t border-white/5 pt-1.5 font-mono text-[9px] text-zinc-500">
+          <span>
+            {coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}
+          </span>
           {properties.wikiPageTitle && (
             <Link
-              href={withBasePath(`/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`)}
-              className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+              href={withBasePath(
+                `/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`
+              )}
+              className="text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
             >
               Read Article &rarr;
             </Link>
@@ -1566,40 +1601,53 @@ function PoiMarker({ properties, coordinates }: { properties: any; coordinates: 
 // ---------------------------------------------------------------------------
 // CityMarker Component
 // ---------------------------------------------------------------------------
-function CityMarker({ properties, coordinates }: { properties: any; coordinates: [number, number] }) {
+function CityMarker({
+  properties,
+  coordinates,
+}: {
+  properties: any;
+  coordinates: [number, number];
+}) {
   return (
     <Popover>
       <PopoverTrigger>
         <button
           type="button"
-          className="relative flex items-center justify-center h-4 w-4 cursor-pointer group"
+          className="group relative flex h-4 w-4 cursor-pointer items-center justify-center"
         >
-          <span className="absolute h-2 w-2 bg-white rounded-full border border-zinc-800 shadow group-hover:scale-130 transition-all" />
+          <span className="absolute h-2 w-2 rounded-full border border-zinc-800 bg-white shadow transition-all group-hover:scale-130" />
           {properties.isCapital && (
-            <span className="absolute h-3 w-3 border border-amber-400 rounded-full animate-ping opacity-60" />
+            <span className="absolute h-3 w-3 animate-ping rounded-full border border-amber-400 opacity-60" />
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-2.5 bg-zinc-950/90 border border-white/10 backdrop-blur-xl rounded-xl z-[10001] shadow-2xl flex flex-col gap-1.5">
-        <div className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+      <PopoverContent className="z-[10001] flex w-48 flex-col gap-1.5 rounded-xl border border-white/10 bg-zinc-950/90 p-2.5 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-200">
           <span>{properties.name}</span>
           {properties.isCapital && (
-            <span className="text-[8px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1 rounded uppercase font-extrabold leading-none">
+            <span className="rounded border border-amber-500/30 bg-amber-500/20 px-1 text-[8px] leading-none font-extrabold text-amber-400 uppercase">
               Capital
             </span>
           )}
         </div>
         {properties.population && (
           <div className="text-[10px] text-zinc-400">
-            Population: <span className="font-semibold text-zinc-300">{properties.population.toLocaleString()}</span>
+            Population:{" "}
+            <span className="font-semibold text-zinc-300">
+              {properties.population.toLocaleString()}
+            </span>
           </div>
         )}
-        <div className="flex justify-between items-center border-t border-white/5 pt-1.5 text-[9px] text-zinc-500 font-mono">
-          <span>{coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}</span>
+        <div className="flex items-center justify-between border-t border-white/5 pt-1.5 font-mono text-[9px] text-zinc-500">
+          <span>
+            {coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}
+          </span>
           {properties.wikiPageTitle && (
             <Link
-              href={withBasePath(`/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`)}
-              className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+              href={withBasePath(
+                `/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`
+              )}
+              className="text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
             >
               Read Article &rarr;
             </Link>

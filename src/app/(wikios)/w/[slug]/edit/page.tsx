@@ -4,7 +4,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
@@ -20,11 +20,11 @@ const WikiSourceEditor = dynamic(
   { loading: () => <EditorLoading />, ssr: false }
 );
 
-function EditorLoading() {
+function EditorLoading({ text = "Loading editor..." }: { text?: string }) {
   return (
     <div className="wikios-loading" style={{ minHeight: 400 }}>
       <div className="wikios-loading-spinner" />
-      <p className="mt-4 text-sm text-zinc-400">Loading editor...</p>
+      <p className="mt-4 text-sm text-zinc-400">{text}</p>
     </div>
   );
 }
@@ -53,24 +53,18 @@ export default function WikiOSEditPage() {
     return "source";
   });
   const [saving, setSaving] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [editConflict, setEditConflict] = useState(false);
 
-  const switchMode = useCallback(
-    (newMode: EditorMode, dirty: boolean) => {
-      if (newMode === mode) return;
-      if (dirty) {
-        const confirmed = window.confirm(
-          "Switching editor mode will discard any unsaved changes. Continue?"
-        );
-        if (!confirmed) return;
-      }
-      setMode(newMode);
-    },
-    [mode]
-  );
+  const [activeHtml, setActiveHtml] = useState<string | null>(null);
+  const [activeWikitext, setActiveWikitext] = useState<string | null>(null);
 
   // Fetch Parsoid HTML for visual editor (raw, with data-mw attributes)
-  const { data: editorHtml, isLoading: editorLoading, refetch: refetchEditorHtml } = api.wikios.getEditorHtml.useQuery(
+  const {
+    data: editorHtml,
+    isLoading: editorLoading,
+    refetch: refetchEditorHtml,
+  } = api.wikios.getEditorHtml.useQuery(
     { title },
     { enabled: !!title && mode === "visual", staleTime: 5 * 60 * 1000 }
   );
@@ -83,6 +77,64 @@ export default function WikiOSEditPage() {
   } = api.wikios.getWikitext.useQuery(
     { title },
     { enabled: !!title && mode === "source", staleTime: 5 * 60 * 1000 }
+  );
+
+  useEffect(() => {
+    if (editorHtml?.html && activeHtml === null) {
+      setActiveHtml(editorHtml.html);
+    }
+  }, [editorHtml, activeHtml]);
+
+  useEffect(() => {
+    if (wikitextData?.wikitext && activeWikitext === null) {
+      setActiveWikitext(wikitextData.wikitext);
+    }
+  }, [wikitextData, activeWikitext]);
+
+  const convertWikitextToHtml = api.wikios.convertWikitextToHtml.useMutation();
+  const convertHtmlToWikitext = api.wikios.htmlToWikitext.useMutation();
+
+  const switchMode = useCallback(
+    async (newMode: EditorMode, dirty: boolean, currentContent: string) => {
+      if (newMode === mode) return;
+
+      if (dirty) {
+        setConverting(true);
+        try {
+          if (newMode === "visual") {
+            const res = await convertWikitextToHtml.mutateAsync({
+              wikitext: currentContent,
+              title,
+            });
+            setActiveHtml(res.html);
+            localStorage.setItem(`wikios-draft-html-${title}`, res.html);
+            localStorage.removeItem(`wikios-draft-${title}`);
+          } else {
+            const res = await convertHtmlToWikitext.mutateAsync({
+              html: currentContent,
+              title,
+            });
+            setActiveWikitext(res.wikitext);
+            localStorage.setItem(`wikios-draft-${title}`, res.wikitext);
+            localStorage.removeItem(`wikios-draft-html-${title}`);
+          }
+          setMode(newMode);
+        } catch (err) {
+          console.error("Seamless mode switch failed:", err);
+          alert("Failed to convert layout automatically. Switching will discard changes.");
+        } finally {
+          setConverting(false);
+        }
+      } else {
+        if (newMode === "visual") {
+          setActiveHtml(null);
+        } else {
+          setActiveWikitext(null);
+        }
+        setMode(newMode);
+      }
+    },
+    [mode, title, convertWikitextToHtml, convertHtmlToWikitext]
   );
 
   const saveArticle = api.wikios.saveArticle.useMutation();
@@ -111,7 +163,10 @@ export default function WikiOSEditPage() {
           return;
         }
         if (keepEditing) {
-          await refetchEditorHtml();
+          const res = await refetchEditorHtml();
+          if (res.data) {
+            setActiveHtml(res.data.html);
+          }
         } else {
           router.push(articleUrl);
         }
@@ -142,7 +197,10 @@ export default function WikiOSEditPage() {
           return;
         }
         if (keepEditing) {
-          await refetchWikitext();
+          const res = await refetchWikitext();
+          if (res.data) {
+            setActiveWikitext(res.data.wikitext);
+          }
         } else {
           router.push(articleUrl);
         }
@@ -232,6 +290,16 @@ export default function WikiOSEditPage() {
     </div>
   );
 
+  if (converting) {
+    return (
+      <WikiOSLayout title={title} hideTitleHeading={true}>
+        <div className="wikios-editor-page w-full">
+          <EditorLoading text="Converting document layout..." />
+        </div>
+      </WikiOSLayout>
+    );
+  }
+
   // Visual editor mode wrapped in WikiOSLayout
   if (mode === "visual") {
     return (
@@ -247,11 +315,11 @@ export default function WikiOSEditPage() {
           {isLoading && <EditorLoading />}
           {!isLoading && editorHtml && (
             <WikiVisualEditor
-              initialHtml={editorHtml.html}
+              initialHtml={activeHtml ?? editorHtml.html}
               title={title}
               onSave={handleVisualSave}
               onCancel={handleCancel}
-              onSwitchToSource={(dirty) => switchMode("source", dirty)}
+              onSwitchToSource={(dirty, currentHtml) => switchMode("source", dirty, currentHtml)}
             />
           )}
         </div>
@@ -273,11 +341,13 @@ export default function WikiOSEditPage() {
         {isLoading && <EditorLoading />}
         {!isLoading && wikitextData && (
           <WikiSourceEditor
-            initialWikitext={wikitextData.wikitext}
+            initialWikitext={activeWikitext ?? wikitextData.wikitext}
             title={title}
             onSave={handleSourceSave}
             onCancel={handleCancel}
-            onSwitchToVisual={(dirty) => switchMode("visual", dirty)}
+            onSwitchToVisual={(dirty, currentWikitext) =>
+              switchMode("visual", dirty, currentWikitext)
+            }
           />
         )}
       </div>

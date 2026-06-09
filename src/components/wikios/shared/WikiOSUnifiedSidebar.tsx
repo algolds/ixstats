@@ -141,9 +141,7 @@ export function WikiOSUnifiedSidebar({
             <Icon className="h-4 w-4 shrink-0" />
           </div>
         ) : (
-          isExpanded && (
-            <div className="w-9 shrink-0 flex items-center justify-center" />
-          )
+          isExpanded && <div className="flex w-9 shrink-0 items-center justify-center" />
         )}
         <span
           className={cn(
@@ -316,8 +314,8 @@ export function WikiOSUnifiedSidebar({
             {isExpanded && sections && sections.length > 0 && (
               <>
                 <div className="my-0.5 w-full border-t border-[var(--wikios-border)] opacity-30" />
-                <div className="max-h-48 overflow-y-auto scrollbar-thin flex flex-col gap-1 px-3 py-1 text-left">
-                  <div className="text-[10px] font-bold tracking-wider uppercase text-[var(--wikios-text-muted)] opacity-60 mb-1">
+                <div className="flex max-h-48 scrollbar-thin flex-col gap-1 overflow-y-auto px-3 py-1 text-left">
+                  <div className="mb-1 text-[10px] font-bold tracking-wider text-[var(--wikios-text-muted)] uppercase opacity-60">
                     Sections
                   </div>
                   {sections.map((sec) => (
@@ -328,8 +326,12 @@ export function WikiOSUnifiedSidebar({
                         if (el) el.scrollIntoView({ behavior: "smooth" });
                       }}
                       className={cn(
-                        "block text-left text-[11px] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] transition-colors py-0.5 truncate outline-none cursor-pointer",
-                        sec.level === 3 ? "pl-2.5 opacity-80" : sec.level === 4 ? "pl-5 opacity-60" : "font-medium pl-0.5"
+                        "block cursor-pointer truncate py-0.5 text-left text-[11px] text-[var(--wikios-text-muted)] transition-colors outline-none hover:text-[var(--wikios-text)]",
+                        sec.level === 3
+                          ? "pl-2.5 opacity-80"
+                          : sec.level === 4
+                            ? "pl-5 opacity-60"
+                            : "pl-0.5 font-medium"
                       )}
                       type="button"
                     >
@@ -362,14 +364,15 @@ export function WikiOSUnifiedSidebar({
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
         {/* Toggle Lock Button (stays still, only visible when expanded/opening) */}
-        {isExpanded && renderRow({
-          id: "toggle-more",
-          onClick: handleToggleClick,
-          title: getToggleTitle(),
-          glowClass:
-            "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
-          isActive: false,
-        })}
+        {isExpanded &&
+          renderRow({
+            id: "toggle-more",
+            onClick: handleToggleClick,
+            title: getToggleTitle(),
+            glowClass:
+              "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
+            isActive: false,
+          })}
 
         {/* Extra Items (always visible when expanded/opening on article page) */}
         {isExpanded && isArticlePage && (

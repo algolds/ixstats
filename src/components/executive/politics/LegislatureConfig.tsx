@@ -155,7 +155,11 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     } else if (type === "tetracameral") {
       const seatPart = Math.max(10, Math.floor(currentSeats / 4));
       newChambers = [
-        { name: "Congress of the Commons", seats: currentSeats - seatPart * 3, electoralSystem: currentSys },
+        {
+          name: "Congress of the Commons",
+          seats: currentSeats - seatPart * 3,
+          electoralSystem: currentSys,
+        },
         { name: "Senate", seats: seatPart, electoralSystem: currentSys },
         { name: "Chamber of Regions", seats: seatPart, electoralSystem: currentSys },
         { name: "Council of State", seats: seatPart, electoralSystem: currentSys },
@@ -235,10 +239,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
             </div>
             <div>
               <Label>Chamber Type</Label>
-              <Select
-                value={formData.chamberType}
-                onValueChange={handleChamberTypeChange}
-              >
+              <Select value={formData.chamberType} onValueChange={handleChamberTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -261,11 +262,13 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 max={isMultiChamber ? 10000 : 5000}
                 value={formData.totalSeats}
                 disabled={isMultiChamber}
-                onChange={(e) => setFormData({ ...formData, totalSeats: Number(e.target.value) || 10 })}
+                onChange={(e) =>
+                  setFormData({ ...formData, totalSeats: Number(e.target.value) || 10 })
+                }
               />
               <p className="text-muted-foreground mt-1 text-[10px]">
-                {isMultiChamber 
-                  ? "Calculated as sum of all chambers (up to 10,000)" 
+                {isMultiChamber
+                  ? "Calculated as sum of all chambers (up to 10,000)"
                   : "10-5,000 seats"}
               </p>
             </div>
@@ -324,19 +327,22 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
           {/* Chamber Layout & Customizations */}
           {isMultiChamber && chambers.length > 0 && (
             <div className="space-y-3 rounded-lg border border-slate-700/50 bg-slate-900/40 p-3">
-              <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <h4 className="text-xs font-semibold tracking-wider text-slate-300 uppercase">
                 Chamber Layout & Settings
               </h4>
               <div className="space-y-3">
                 {chambers.map((chamber, index) => (
-                  <div key={index} className="grid grid-cols-1 gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-3">
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-3"
+                  >
                     <div className="space-y-1">
                       <Label className="text-[10px] text-slate-400">Chamber {index + 1} Name</Label>
                       <Input
                         value={chamber.name}
                         onChange={(e) => updateChamber(index, "name", e.target.value)}
                         placeholder={`Chamber ${index + 1}`}
-                        className="h-8 text-xs bg-slate-900"
+                        className="h-8 bg-slate-900 text-xs"
                       />
                     </div>
                     <div className="space-y-1">
@@ -347,7 +353,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         max={5000}
                         value={chamber.seats}
                         onChange={(e) => updateChamber(index, "seats", e.target.value)}
-                        className="h-8 text-xs bg-slate-900"
+                        className="h-8 bg-slate-900 text-xs"
                       />
                     </div>
                     <div className="space-y-1">
@@ -356,7 +362,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         value={chamber.electoralSystem}
                         onValueChange={(v) => updateChamber(index, "electoralSystem", v)}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-slate-900">
+                        <SelectTrigger className="h-8 bg-slate-900 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

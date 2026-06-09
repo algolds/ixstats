@@ -11,4 +11,3 @@ const Switch = React.forwardRef<HTMLButtonElement, AppleSwitchProps>(
 Switch.displayName = "Switch";
 
 export { Switch, type AppleSwitchProps as SwitchProps };
-

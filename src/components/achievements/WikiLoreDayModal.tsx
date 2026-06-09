@@ -17,22 +17,25 @@ interface WikiLoreDayModalProps {
   isOpen: boolean;
   onClose: () => void;
   dateStr: string;
-  entry: {
-    winnerUser?: string | null;
-    winnerPage?: string | null;
-    winnerScore?: number | null;
-    winnerBytes?: number | null;
-    runnerUpUser?: string | null;
-    runnerUpPage?: string | null;
-    runnerUpScore?: number | null;
-    runnerUpBytes?: number | null;
-    candidates?: Array<{
-      user: string;
-      page?: string | null;
-      bytesAdded?: number;
-      score?: number;
-    }>;
-  } | null | undefined;
+  entry:
+    | {
+        winnerUser?: string | null;
+        winnerPage?: string | null;
+        winnerScore?: number | null;
+        winnerBytes?: number | null;
+        runnerUpUser?: string | null;
+        runnerUpPage?: string | null;
+        runnerUpScore?: number | null;
+        runnerUpBytes?: number | null;
+        candidates?: Array<{
+          user: string;
+          page?: string | null;
+          bytesAdded?: number;
+          score?: number;
+        }>;
+      }
+    | null
+    | undefined;
   isAdmin: boolean;
 }
 
@@ -45,13 +48,13 @@ export function WikiLoreDayModal({
 }: WikiLoreDayModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl border-border/40 bg-card/90 rounded-2xl shadow-2xl p-6 backdrop-blur-md overflow-hidden max-h-[85vh] flex flex-col text-left">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+      <DialogContent className="border-border/40 bg-card/90 flex max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-2xl p-6 text-left shadow-2xl backdrop-blur-md">
+        <div className="pointer-events-none absolute top-0 right-0 h-48 w-48 rounded-full bg-amber-500/5 blur-3xl" />
 
         {/* Modal Header */}
-        <DialogHeader className="border-b border-border/20 pb-4 mb-4 text-left sm:text-left">
-          <DialogTitle className="text-foreground text-base font-black flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-amber-500" />
+        <DialogHeader className="border-border/20 mb-4 border-b pb-4 text-left sm:text-left">
+          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-black">
+            <Calendar className="h-5 w-5 text-amber-500" />
             Edit Candidates — {dateStr}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-xs">
@@ -60,23 +63,23 @@ export function WikiLoreDayModal({
         </DialogHeader>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+        <div className="flex-1 space-y-6 overflow-y-auto pr-1">
           {!entry ? (
-            <div className="p-8 text-center text-muted-foreground italic text-sm">
+            <div className="text-muted-foreground p-8 text-center text-sm italic">
               No scanning data or entries recorded for this date.
             </div>
           ) : (
             <>
               {/* Podium View */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Winner */}
-                <div className="border border-amber-500/25 bg-amber-500/5 rounded-xl p-4 flex flex-col justify-between h-32">
+                <div className="flex h-32 flex-col justify-between rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black bg-amber-500 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-black tracking-wider text-black uppercase">
                       Winner
                     </span>
                     {entry.winnerScore !== null && entry.winnerScore !== undefined && (
-                      <span className="text-xs font-mono font-bold text-amber-500">
+                      <span className="font-mono text-xs font-bold text-amber-500">
                         {entry.winnerScore} pts
                       </span>
                     )}
@@ -89,35 +92,35 @@ export function WikiLoreDayModal({
                           size="xs"
                           showTooltip={false}
                         />
-                        <h5 className="font-bold text-foreground text-sm">{entry.winnerUser}</h5>
+                        <h5 className="text-foreground text-sm font-bold">{entry.winnerUser}</h5>
                       </div>
                       {entry.winnerPage && (
                         <Link
                           href={`/w/${encodeURIComponent(entry.winnerPage)}`}
-                          className="text-xs text-amber-500 hover:underline block truncate"
+                          className="block truncate text-xs text-amber-500 hover:underline"
                         >
                           {entry.winnerPage}
                         </Link>
                       )}
                       {entry.winnerBytes !== null && entry.winnerBytes !== undefined && (
-                        <span className="text-[10px] text-muted-foreground block font-mono">
+                        <span className="text-muted-foreground block font-mono text-[10px]">
                           +{entry.winnerBytes.toLocaleString()} bytes
                         </span>
                       )}
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground italic">No Winner Assigned</span>
+                    <span className="text-muted-foreground text-xs italic">No Winner Assigned</span>
                   )}
                 </div>
 
                 {/* Runner-up */}
-                <div className="border border-border/40 bg-card/45 rounded-xl p-4 flex flex-col justify-between h-32">
+                <div className="border-border/40 bg-card/45 flex h-32 flex-col justify-between rounded-xl border p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black bg-muted text-muted-foreground px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider uppercase">
                       Runner-up
                     </span>
                     {entry.runnerUpScore !== null && entry.runnerUpScore !== undefined && (
-                      <span className="text-xs font-mono font-bold text-foreground/80">
+                      <span className="text-foreground/80 font-mono text-xs font-bold">
                         {entry.runnerUpScore} pts
                       </span>
                     )}
@@ -130,26 +133,26 @@ export function WikiLoreDayModal({
                           size="xs"
                           showTooltip={false}
                         />
-                        <h5 className="font-bold text-foreground text-sm text-foreground/90">
+                        <h5 className="text-foreground text-foreground/90 text-sm font-bold">
                           {entry.runnerUpUser}
                         </h5>
                       </div>
                       {entry.runnerUpPage && (
                         <Link
                           href={`/w/${encodeURIComponent(entry.runnerUpPage)}`}
-                          className="text-xs text-muted-foreground hover:underline block truncate"
+                          className="text-muted-foreground block truncate text-xs hover:underline"
                         >
                           {entry.runnerUpPage}
                         </Link>
                       )}
                       {entry.runnerUpBytes !== null && entry.runnerUpBytes !== undefined && (
-                        <span className="text-[10px] text-muted-foreground block font-mono">
+                        <span className="text-muted-foreground block font-mono text-[10px]">
                           +{entry.runnerUpBytes.toLocaleString()} bytes
                         </span>
                       )}
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground italic">
+                    <span className="text-muted-foreground text-xs italic">
                       No Runner-up Assigned
                     </span>
                   )}
@@ -158,28 +161,32 @@ export function WikiLoreDayModal({
 
               {/* Candidates list table */}
               <div className="space-y-2">
-                <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <List className="w-4 h-4 text-amber-500" />
+                <h5 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                  <List className="h-4 w-4 text-amber-500" />
                   Scanned Candidates
                 </h5>
-                <div className="border border-border/30 rounded-xl overflow-hidden bg-muted/20 dark:bg-black/15 backdrop-blur-xs">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-muted/40 dark:bg-black/30 text-muted-foreground text-[10px] font-black uppercase tracking-wider border-b border-border/20">
+                <div className="border-border/30 bg-muted/20 overflow-hidden rounded-xl border backdrop-blur-xs dark:bg-black/15">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted/40 text-muted-foreground border-border/20 border-b text-[10px] font-black tracking-wider uppercase dark:bg-black/30">
                       <tr>
-                        <th className="p-3 font-semibold text-muted-foreground">User</th>
-                        <th className="p-3 font-semibold text-muted-foreground">Page / Edit</th>
-                        <th className="p-3 text-right font-semibold text-muted-foreground">Bytes</th>
-                        <th className="p-3 text-right font-semibold text-muted-foreground">Score</th>
+                        <th className="text-muted-foreground p-3 font-semibold">User</th>
+                        <th className="text-muted-foreground p-3 font-semibold">Page / Edit</th>
+                        <th className="text-muted-foreground p-3 text-right font-semibold">
+                          Bytes
+                        </th>
+                        <th className="text-muted-foreground p-3 text-right font-semibold">
+                          Score
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/10 dark:divide-border/20">
+                    <tbody className="divide-border/10 dark:divide-border/20 divide-y">
                       {entry.candidates && entry.candidates.length > 0 ? (
                         entry.candidates.map((cand) => (
                           <tr
                             key={`${cand.user}-${cand.page}`}
-                            className="hover:bg-muted/30 dark:hover:bg-white/5 transition-colors"
+                            className="hover:bg-muted/30 transition-colors dark:hover:bg-white/5"
                           >
-                            <td className="p-3 font-bold flex items-center gap-2 text-foreground">
+                            <td className="text-foreground flex items-center gap-2 p-3 font-bold">
                               <UnifiedCountryFlag
                                 countryName={cand.user}
                                 size="xs"
@@ -187,11 +194,11 @@ export function WikiLoreDayModal({
                               />
                               {cand.user}
                             </td>
-                            <td className="p-3 truncate max-w-[200px] text-muted-foreground">
+                            <td className="text-muted-foreground max-w-[200px] truncate p-3">
                               {cand.page ? (
                                 <Link
                                   href={`/w/${encodeURIComponent(cand.page)}`}
-                                  className="text-amber-600 dark:text-amber-500/80 hover:underline hover:text-amber-500 font-medium"
+                                  className="font-medium text-amber-600 hover:text-amber-500 hover:underline dark:text-amber-500/80"
                                 >
                                   {cand.page}
                                 </Link>
@@ -199,19 +206,19 @@ export function WikiLoreDayModal({
                                 <span className="text-muted-foreground italic">No page</span>
                               )}
                             </td>
-                            <td className="p-3 text-right font-mono text-muted-foreground dark:text-muted-foreground/95">
+                            <td className="text-muted-foreground dark:text-muted-foreground/95 p-3 text-right font-mono">
                               {cand.bytesAdded !== undefined
                                 ? `+${cand.bytesAdded.toLocaleString()}`
                                 : "—"}
                             </td>
-                            <td className="p-3 text-right font-mono font-bold text-foreground">
+                            <td className="text-foreground p-3 text-right font-mono font-bold">
                               {cand.score !== undefined ? Math.round(cand.score) : "—"}
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="p-4 text-center text-muted-foreground italic">
+                          <td colSpan={4} className="text-muted-foreground p-4 text-center italic">
                             No candidates found for this date.
                           </td>
                         </tr>
@@ -223,15 +230,15 @@ export function WikiLoreDayModal({
 
               {/* Admin Actions */}
               {isAdmin && (
-                <div className="border-t border-border/20 pt-4 flex justify-between items-center gap-2">
-                  <div className="text-xs text-muted-foreground">Admin quick controls:</div>
+                <div className="border-border/20 flex items-center justify-between gap-2 border-t pt-4">
+                  <div className="text-muted-foreground text-xs">Admin quick controls:</div>
                   <Link href="/admin/wiki?tab=lorewards">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-amber-500/35 hover:bg-amber-500/10 text-amber-500"
+                      className="border-amber-500/35 text-amber-500 hover:bg-amber-500/10"
                     >
-                      <Sliders className="w-3.5 h-3.5 mr-1.5" />
+                      <Sliders className="mr-1.5 h-3.5 w-3.5" />
                       Manage in Admin Panel
                     </Button>
                   </Link>

@@ -50,7 +50,9 @@ const MEDAL_TEMPLATE = `{{Lore medal|type=silver|user=YourUsername|date=2026-06-
 const formatSlashRate = (rate: number | null | undefined) => {
   const r = rate || 0;
   if (r >= 1) return "1.000";
-  return `.${Math.round(r * 1000).toString().padStart(3, "0")}`;
+  return `.${Math.round(r * 1000)
+    .toString()
+    .padStart(3, "0")}`;
 };
 
 const getCategoryStyles = (cat: string) => {
@@ -115,14 +117,22 @@ const getIconComponent = (iconName?: string) => {
 
 const getColorClass = (colorName?: string) => {
   switch (colorName) {
-    case "amber": return "text-amber-500";
-    case "slate": return "text-slate-400";
-    case "cyan": return "text-cyan-500";
-    case "green": return "text-emerald-500";
-    case "purple": return "text-purple-500";
-    case "pink": return "text-pink-500";
-    case "red": return "text-red-500";
-    default: return "text-amber-500";
+    case "amber":
+      return "text-amber-500";
+    case "slate":
+      return "text-slate-400";
+    case "cyan":
+      return "text-cyan-500";
+    case "green":
+      return "text-emerald-500";
+    case "purple":
+      return "text-purple-500";
+    case "pink":
+      return "text-pink-500";
+    case "red":
+      return "text-red-500";
+    default:
+      return "text-amber-500";
   }
 };
 
@@ -160,7 +170,9 @@ export function WikiLoreTab({
   isAdmin,
 }: WikiLoreTabProps) {
   const notify = useNotify();
-  const [subTab, setSubTab] = useState<"standings" | "calendar" | "awards" | "resources">("standings");
+  const [subTab, setSubTab] = useState<"standings" | "calendar" | "awards" | "resources">(
+    "standings"
+  );
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [calendarModalOpen, setCalendarModalOpen] = useState<boolean>(false);
 
@@ -169,19 +181,23 @@ export function WikiLoreTab({
   const [awardsCategory, setAwardsCategory] = useState("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { data: allAwards, isLoading: isAwardsLoading } = api.lorewards.getAllArticleAwards.useQuery({
-    limit: 100,
-    category: awardsCategory === "ALL" ? undefined : awardsCategory,
-  });
+  const { data: allAwards, isLoading: isAwardsLoading } =
+    api.lorewards.getAllArticleAwards.useQuery({
+      limit: 100,
+      category: awardsCategory === "ALL" ? undefined : awardsCategory,
+    });
 
   const handleCopyText = (text: string, id: string, label: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(id);
-      notify.success("Copied to Clipboard", `${label} template copied successfully.`);
-      setTimeout(() => setCopiedId(null), 2000);
-    }).catch((err) => {
-      console.error("Failed to copy:", err);
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedId(id);
+        notify.success("Copied to Clipboard", `${label} template copied successfully.`);
+        setTimeout(() => setCopiedId(null), 2000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy:", err);
+      });
   };
 
   const handlePrevMonth = () => {
@@ -202,26 +218,27 @@ export function WikiLoreTab({
     }
   };
 
-  const selectedDayEntry = selectedDay !== null && winnersCalendar ? winnersCalendar[selectedDay] : null;
-  const selectedDateStr = selectedDay !== null
-    ? `${calendarYear}-${String(calendarMonth).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`
-    : "";
+  const selectedDayEntry =
+    selectedDay !== null && winnersCalendar ? winnersCalendar[selectedDay] : null;
+  const selectedDateStr =
+    selectedDay !== null
+      ? `${calendarYear}-${String(calendarMonth).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`
+      : "";
 
-  const filteredAwards = (allAwards || [])
-    .filter((a: WikiArticleAward) => {
-      const matchSearch =
-        a.pageTitle.toLowerCase().includes(awardsSearch.toLowerCase()) ||
-        a.name.toLowerCase().includes(awardsSearch.toLowerCase()) ||
-        a.recipientUsers.some((u: string) => u.toLowerCase().includes(awardsSearch.toLowerCase()));
-      const matchCategory = awardsCategory === "ALL" || a.category === awardsCategory;
-      return matchSearch && matchCategory;
-    });
+  const filteredAwards = (allAwards || []).filter((a: WikiArticleAward) => {
+    const matchSearch =
+      a.pageTitle.toLowerCase().includes(awardsSearch.toLowerCase()) ||
+      a.name.toLowerCase().includes(awardsSearch.toLowerCase()) ||
+      a.recipientUsers.some((u: string) => u.toLowerCase().includes(awardsSearch.toLowerCase()));
+    const matchCategory = awardsCategory === "ALL" || a.category === awardsCategory;
+    return matchSearch && matchCategory;
+  });
 
   return (
     <TabsContent value="wiki-lore" className="space-y-6 outline-none">
       {/* Sub-tabs Navigation */}
-      <div className="flex justify-center border-b border-border/40 pb-px dark:border-white/5">
-        <div className="flex flex-wrap gap-2 md:gap-4 justify-center">
+      <div className="border-border/40 flex justify-center border-b pb-px dark:border-white/5">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-4">
           {[
             { id: "standings" as const, label: "Standings", icon: Trophy },
             { id: "calendar" as const, label: "Calendar", icon: Calendar },
@@ -238,7 +255,7 @@ export function WikiLoreTab({
                   "flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-all outline-none",
                   isActive
                     ? "border-amber-500 text-amber-600 dark:text-amber-400"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground border-transparent"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -252,13 +269,14 @@ export function WikiLoreTab({
       {/* ── SUBTAB: STANDINGS ── */}
       {subTab === "standings" && (
         <div className="space-y-4">
-          <div className="text-center max-w-xl mx-auto space-y-1">
-            <h3 className="text-foreground text-lg font-black tracking-tight flex items-center justify-center gap-2">
+          <div className="mx-auto max-w-xl space-y-1 text-center">
+            <h3 className="text-foreground flex items-center justify-center gap-2 text-lg font-black tracking-tight">
               <Trophy className="h-5 w-5 text-amber-500" />
               Top 15 Loremasters
             </h3>
             <p className="text-muted-foreground text-xs">
-              The elite ranking of active wiki contributors, evaluated via Daily Wins, Career Bytes, and Total Edits.
+              The elite ranking of active wiki contributors, evaluated via Daily Wins, Career Bytes,
+              and Total Edits.
             </p>
           </div>
 
@@ -267,38 +285,38 @@ export function WikiLoreTab({
               <Loader2 className="text-amber-555 h-6 w-6 animate-spin" />
             </div>
           ) : ufcLeaderboard && ufcLeaderboard.length > 0 ? (
-            <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="mx-auto max-w-5xl space-y-6">
               {/* Undisputed Champion Card */}
               {(() => {
                 const champ = ufcLeaderboard[0];
                 if (!champ) return null;
                 const champRankScore = Math.round(champ.rankScore);
                 return (
-                  <div className="relative border border-amber-500/35 bg-gradient-to-br from-amber-500/15 via-card/50 to-background/40 rounded-2xl p-6 shadow-[0_0_25px_rgba(245,158,11,0.08)] backdrop-blur-md overflow-hidden group">
+                  <div className="via-card/50 to-background/40 group relative overflow-hidden rounded-2xl border border-amber-500/35 bg-gradient-to-br from-amber-500/15 p-6 shadow-[0_0_25px_rgba(245,158,11,0.08)] backdrop-blur-md">
                     {/* Background flag watermark */}
                     {(champ.countryName || champ.username) && (
-                      <div className="absolute inset-0 z-0 h-full w-full overflow-hidden pointer-events-none rounded-2xl">
+                      <div className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-hidden rounded-2xl">
                         <UnifiedCountryFlag
                           countryName={champ.countryName || champ.username}
                           fitContainer={true}
                           showTooltip={false}
                           rounded={false}
-                          className="h-full w-full object-cover opacity-12 dark:opacity-[0.08] brightness-[0.6] transition-all duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover opacity-12 brightness-[0.6] transition-all duration-500 group-hover:scale-105 dark:opacity-[0.08]"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
+                        <div className="from-background/40 to-background/40 absolute inset-0 bg-gradient-to-r via-transparent" />
                       </div>
                     )}
                     {/* Decorative background glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-500" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-600/5 rounded-full blur-2xl pointer-events-none" />
+                    <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-amber-500/5 blur-3xl transition-colors duration-500 group-hover:bg-amber-500/10" />
+                    <div className="pointer-events-none absolute bottom-0 left-0 h-48 w-48 rounded-full bg-amber-600/5 blur-2xl" />
 
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                       <div className="flex items-center gap-5">
                         <div className="relative">
-                          <div className="w-16 h-16 rounded-full border-2 border-amber-500 bg-amber-500/10 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                            <Crown className="w-8 h-8 text-amber-500 animate-pulse" />
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/20">
+                            <Crown className="h-8 w-8 animate-pulse text-amber-500" />
                           </div>
-                          <span className="absolute -top-1 -left-1 bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md">
+                          <span className="absolute -top-1 -left-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black tracking-wider text-black uppercase shadow-md">
                             Champ
                           </span>
                         </div>
@@ -310,70 +328,88 @@ export function WikiLoreTab({
                               size="sm"
                               showTooltip={false}
                             />
-                            <h4 className="text-xl font-black text-foreground tracking-tight">
+                            <h4 className="text-foreground text-xl font-black tracking-tight">
                               {champ.username}
                             </h4>
                           </div>
-                          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            Specialty: <span className="text-amber-400 font-bold">{champ.specialty}</span>
+                          <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+                            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                            Specialty:{" "}
+                            <span className="font-bold text-amber-400">{champ.specialty}</span>
                           </p>
-                          <div className="text-xs font-mono font-bold text-muted-foreground/80 flex flex-wrap gap-x-3 gap-y-1 mt-1.5 items-center">
+                          <div className="text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs font-bold">
                             <span>
                               Record:{" "}
-                              <span className="text-foreground font-black" title="Wins - Runner-ups - Major Edits (Edits >= 5KB)">
+                              <span
+                                className="text-foreground font-black"
+                                title="Wins - Runner-ups - Major Edits (Edits >= 5KB)"
+                              >
                                 {champ.dailyWins}-{champ.dailyRunnerUps}-{champ.majorEdits || 0}
                               </span>
                             </span>
                             <span>•</span>
                             <span className="flex items-center gap-1">
                               Stats:{" "}
-                              <span className="text-amber-500 font-extrabold" title="Major Edit Rate (Edits >= 5KB / Total Edits)">
+                              <span
+                                className="font-extrabold text-amber-500"
+                                title="Major Edit Rate (Edits >= 5KB / Total Edits)"
+                              >
                                 {formatSlashRate(champ.majorEditRate)}
                               </span>
                               <span className="text-muted-foreground/40">/</span>
                               <span className="text-foreground" title="Average Bytes per Edit">
-                                {champ.avgBytesPerEdit ? (champ.avgBytesPerEdit >= 1000 ? `${(champ.avgBytesPerEdit / 1000).toFixed(1)}K` : `${champ.avgBytesPerEdit}B`) : "0B"}
+                                {champ.avgBytesPerEdit
+                                  ? champ.avgBytesPerEdit >= 1000
+                                    ? `${(champ.avgBytesPerEdit / 1000).toFixed(1)}K`
+                                    : `${champ.avgBytesPerEdit}B`
+                                  : "0B"}
                               </span>
                               <span className="text-muted-foreground/40">/</span>
-                              <span className="text-red-500 font-extrabold" title="Peak Contribution (Largest Edit)">
-                                {champ.largestEdit ? (champ.largestEdit >= 1000 ? `${(champ.largestEdit / 1000).toFixed(0)}K` : `${champ.largestEdit}B`) : "0B"}
+                              <span
+                                className="font-extrabold text-red-500"
+                                title="Peak Contribution (Largest Edit)"
+                              >
+                                {champ.largestEdit
+                                  ? champ.largestEdit >= 1000
+                                    ? `${(champ.largestEdit / 1000).toFixed(0)}K`
+                                    : `${champ.largestEdit}B`
+                                  : "0B"}
                               </span>
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/60 dark:bg-black/40 p-4 rounded-xl border border-white/40 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.05)] backdrop-blur-md relative z-10">
+                      <div className="relative z-10 grid grid-cols-2 gap-4 rounded-xl border border-white/40 bg-white/60 p-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)] backdrop-blur-md sm:grid-cols-4 dark:border-white/10 dark:bg-black/40">
                         <div className="text-center sm:text-left">
-                          <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/80 font-black uppercase tracking-wider block">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
                             Rank Score
                           </span>
-                          <span className="text-lg font-black text-amber-500 font-mono">
+                          <span className="font-mono text-lg font-black text-amber-500">
                             <NumberFlowDisplay value={champRankScore} decimalPlaces={0} /> pts
                           </span>
                         </div>
                         <div className="text-center sm:text-left">
-                          <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/80 font-black uppercase tracking-wider block">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
                             Career Edits
                           </span>
-                          <span className="text-lg font-black text-foreground font-mono">
+                          <span className="text-foreground font-mono text-lg font-black">
                             <NumberFlowDisplay value={champ.totalEdits} decimalPlaces={0} />
                           </span>
                         </div>
                         <div className="text-center sm:text-left">
-                          <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/80 font-black uppercase tracking-wider block">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
                             Career Bytes
                           </span>
-                          <span className="text-lg font-black text-foreground font-mono">
+                          <span className="text-foreground font-mono text-lg font-black">
                             <NumberFlowDisplay value={champ.totalBytes || 0} format="compact" />
                           </span>
                         </div>
                         <div className="text-center sm:text-left">
-                          <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/80 font-black uppercase tracking-wider block">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
                             Peak Edit
                           </span>
-                          <span className="text-lg font-black text-foreground font-mono">
+                          <span className="text-foreground font-mono text-lg font-black">
                             <NumberFlowDisplay value={champ.largestEdit || 0} format="compact" />
                           </span>
                         </div>
@@ -381,12 +417,12 @@ export function WikiLoreTab({
                     </div>
 
                     {champ.lastEditPage && champ.lastEditPage !== "None" && (
-                      <div className="mt-4 pt-4 border-t border-border/20 relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs gap-2">
+                      <div className="border-border/20 relative z-10 mt-4 flex flex-col gap-2 border-t pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
                         <div className="text-muted-foreground">
                           Last active in:{" "}
                           <Link
                             href={`/w/${encodeURIComponent(champ.lastEditPage)}`}
-                            className="text-amber-400 font-bold hover:underline"
+                            className="font-bold text-amber-400 hover:underline"
                           >
                             {champ.lastEditPage}
                           </Link>
@@ -401,7 +437,7 @@ export function WikiLoreTab({
               })()}
 
               {/* Contenders list */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {ufcLeaderboard.slice(1).map((user, idx) => {
                   const rank = idx + 2;
                   const rankScore = Math.round(user.rankScore);
@@ -412,103 +448,126 @@ export function WikiLoreTab({
                       key={user.username}
                       className={cn(
                         cutoutCardSurfaceClassName,
-                        "border-border/50 bg-card/45 rounded-xl p-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/20 hover:shadow-lg flex items-center justify-between group"
+                        "border-border/50 bg-card/45 group flex items-center justify-between rounded-xl p-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/20 hover:shadow-lg"
                       )}
                       texture="none"
                       trackPointerHover={false}
                     >
                       {/* Background flag watermark */}
                       {(user.countryName || user.username) && (
-                        <div className="absolute inset-0 z-0 h-full w-full overflow-hidden pointer-events-none rounded-xl">
+                        <div className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-hidden rounded-xl">
                           <UnifiedCountryFlag
                             countryName={user.countryName || user.username}
                             fitContainer={true}
                             showTooltip={false}
                             rounded={false}
-                            className="h-full w-full object-cover opacity-[0.06] dark:opacity-[0.04] brightness-[0.75] transition-all duration-500 group-hover:scale-105"
+                            className="h-full w-full object-cover opacity-[0.06] brightness-[0.75] transition-all duration-500 group-hover:scale-105 dark:opacity-[0.04]"
                           />
                         </div>
                       )}
-                      <div className="flex items-center gap-4 w-full relative z-10">
+                      <div className="relative z-10 flex w-full items-center gap-4">
                         {/* Rank + movement */}
-                        <div className="flex flex-col items-center justify-center w-10 shrink-0">
-                          <span className="text-2xl font-black text-muted-foreground/60 tracking-tight">
+                        <div className="flex w-10 shrink-0 flex-col items-center justify-center">
+                          <span className="text-muted-foreground/60 text-2xl font-black tracking-tight">
                             #{rank}
                           </span>
-                          <div className="flex items-center gap-0.5 mt-0.5">
+                          <div className="mt-0.5 flex items-center gap-0.5">
                             {movement === "new" ? (
-                              <span className="text-[9px] font-black bg-emerald-500/10 text-emerald-500 px-1 py-0.2 rounded uppercase">
+                              <span className="py-0.2 rounded bg-emerald-500/10 px-1 text-[9px] font-black text-emerald-500 uppercase">
                                 NEW
                               </span>
                             ) : typeof movement === "number" && movement > 0 ? (
-                              <span className="text-emerald-500 text-xs font-bold flex items-center">
-                                <ArrowUp className="w-3 h-3" />
+                              <span className="flex items-center text-xs font-bold text-emerald-500">
+                                <ArrowUp className="h-3 w-3" />
                                 {movement}
                               </span>
                             ) : typeof movement === "number" && movement < 0 ? (
-                              <span className="text-red-500 text-xs font-bold flex items-center">
-                                <ArrowDown className="w-3 h-3" />
+                              <span className="flex items-center text-xs font-bold text-red-500">
+                                <ArrowDown className="h-3 w-3" />
                                 {Math.abs(movement)}
                               </span>
                             ) : (
                               <span className="text-muted-foreground/40 text-xs">
-                                <Minus className="w-3.5 h-3.5" />
+                                <Minus className="h-3.5 w-3.5" />
                               </span>
                             )}
                           </div>
                         </div>
 
                         {/* User details */}
-                        <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="min-w-0 flex-1 space-y-1.5">
                           <div className="flex items-center gap-2">
                             <UnifiedCountryFlag
                               countryName={user.countryName || user.username}
                               size="xs"
                               showTooltip={false}
                             />
-                            <h5 className="font-bold text-foreground truncate text-sm">
+                            <h5 className="text-foreground truncate text-sm font-bold">
                               {user.username}
                             </h5>
                           </div>
 
-                          <p className="text-[11px] text-muted-foreground truncate">
+                          <p className="text-muted-foreground truncate text-[11px]">
                             {user.specialty}
                           </p>
 
-                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] font-mono text-muted-foreground/70">
+                          <div className="text-muted-foreground/70 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[10px]">
                             <span>
                               Rec:{" "}
-                              <strong className="text-foreground/90" title="Wins - Runner-ups - Major Edits (Edits >= 5KB)">
+                              <strong
+                                className="text-foreground/90"
+                                title="Wins - Runner-ups - Major Edits (Edits >= 5KB)"
+                              >
                                 {user.dailyWins}-{user.dailyRunnerUps}-{user.majorEdits || 0}
                               </strong>
                             </span>
                             <span>•</span>
                             <span className="flex items-center gap-0.5">
                               Stats:{" "}
-                              <strong className="text-amber-500/90 font-extrabold" title="Major Edit Rate">
+                              <strong
+                                className="font-extrabold text-amber-500/90"
+                                title="Major Edit Rate"
+                              >
                                 {formatSlashRate(user.majorEditRate)}
                               </strong>
                               <span className="opacity-40">/</span>
-                              <strong className="text-foreground/90 font-bold" title="Avg Bytes per Edit">
-                                {user.avgBytesPerEdit ? (user.avgBytesPerEdit >= 1000 ? `${(user.avgBytesPerEdit / 1000).toFixed(1)}K` : `${user.avgBytesPerEdit}B`) : "0B"}
+                              <strong
+                                className="text-foreground/90 font-bold"
+                                title="Avg Bytes per Edit"
+                              >
+                                {user.avgBytesPerEdit
+                                  ? user.avgBytesPerEdit >= 1000
+                                    ? `${(user.avgBytesPerEdit / 1000).toFixed(1)}K`
+                                    : `${user.avgBytesPerEdit}B`
+                                  : "0B"}
                               </strong>
                               <span className="opacity-40">/</span>
-                              <strong className="text-red-500 font-extrabold" title="Peak Contribution (Largest Edit)">
-                                {user.largestEdit ? (user.largestEdit >= 1000 ? `${(user.largestEdit / 1000).toFixed(0)}K` : `${user.largestEdit}B`) : "0B"}
+                              <strong
+                                className="font-extrabold text-red-500"
+                                title="Peak Contribution (Largest Edit)"
+                              >
+                                {user.largestEdit
+                                  ? user.largestEdit >= 1000
+                                    ? `${(user.largestEdit / 1000).toFixed(0)}K`
+                                    : `${user.largestEdit}B`
+                                  : "0B"}
                               </strong>
                             </span>
                             <span>•</span>
                             <span>
-                              Score: <strong className="text-amber-500 font-bold"><NumberFlowDisplay value={rankScore} decimalPlaces={0} /></strong>
+                              Score:{" "}
+                              <strong className="font-bold text-amber-500">
+                                <NumberFlowDisplay value={rankScore} decimalPlaces={0} />
+                              </strong>
                             </span>
                           </div>
 
                           {user.lastEditPage && user.lastEditPage !== "None" && (
-                            <div className="text-[10px] text-muted-foreground/60 truncate max-w-full">
+                            <div className="text-muted-foreground/60 max-w-full truncate text-[10px]">
                               Last active in:{" "}
                               <Link
                                 href={`/w/${encodeURIComponent(user.lastEditPage)}`}
-                                className="text-amber-500/80 hover:underline hover:text-amber-500"
+                                className="text-amber-500/80 hover:text-amber-500 hover:underline"
                               >
                                 {user.lastEditPage}
                               </Link>
@@ -522,7 +581,7 @@ export function WikiLoreTab({
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground text-xs">
+            <div className="text-muted-foreground py-8 text-center text-xs">
               No contenders standings available. Make wiki edits to get listed!
             </div>
           )}
@@ -531,13 +590,13 @@ export function WikiLoreTab({
 
       {/* ── SUBTAB: CALENDAR ── */}
       {subTab === "calendar" && (
-        <div className="max-w-5xl mx-auto space-y-4">
+        <div className="mx-auto max-w-5xl space-y-4">
           <TextureCard className="border-border/50 bg-black/5 dark:bg-black/25">
-            <TextureCardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-border/40 pb-4 dark:border-white/5">
+            <TextureCardContent className="space-y-4 p-6">
+              <div className="border-border/40 flex items-center justify-between border-b pb-4 dark:border-white/5">
                 <div>
-                  <h4 className="text-foreground text-sm font-black uppercase tracking-wider flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-amber-500" />
+                  <h4 className="text-foreground flex items-center gap-2 text-sm font-black tracking-wider uppercase">
+                    <Calendar className="h-4 w-4 text-amber-500" />
                     Calendar
                   </h4>
                   <p className="text-muted-foreground text-xs">
@@ -567,11 +626,11 @@ export function WikiLoreTab({
                     variant="outline"
                     size="icon"
                     onClick={handlePrevMonth}
-                    className="h-8 w-8 border-border/50"
+                    className="border-border/50 h-8 w-8"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="text-xs font-bold min-w-[100px] text-center">
+                  <span className="min-w-[100px] text-center text-xs font-bold">
                     {(() => {
                       const MONTH_NAMES = [
                         "January",
@@ -595,7 +654,7 @@ export function WikiLoreTab({
                     variant="outline"
                     size="icon"
                     onClick={handleNextMonth}
-                    className="h-8 w-8 border-border/50"
+                    className="border-border/50 h-8 w-8"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -626,7 +685,7 @@ export function WikiLoreTab({
 
                 return (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                    <div className="text-muted-foreground grid grid-cols-7 gap-2 text-center text-[10px] font-black tracking-wider uppercase">
                       {weekDays.map((wd) => (
                         <div key={wd} className="py-1">
                           {wd}
@@ -640,7 +699,7 @@ export function WikiLoreTab({
                           return (
                             <div
                               key={cell.key}
-                              className="h-24 rounded-lg bg-black/5 dark:bg-black/15 opacity-30 border border-transparent"
+                              className="h-24 rounded-lg border border-transparent bg-black/5 opacity-30 dark:bg-black/15"
                             />
                           );
                         }
@@ -657,28 +716,28 @@ export function WikiLoreTab({
                               setCalendarModalOpen(true);
                             }}
                             className={cn(
-                              "h-24 rounded-xl p-2 text-left flex flex-col justify-between border transition-all duration-200 select-none relative overflow-hidden group",
+                              "group relative flex h-24 flex-col justify-between overflow-hidden rounded-xl border p-2 text-left transition-all duration-200 select-none",
                               isWinner
-                                ? "border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 hover:shadow-md hover:-translate-y-0.5"
+                                ? "border-amber-500/25 bg-amber-500/5 hover:-translate-y-0.5 hover:border-amber-500/40 hover:bg-amber-500/10 hover:shadow-md"
                                 : "border-border/40 bg-card/30 hover:border-border/80 hover:bg-card/50"
                             )}
                           >
                             {/* Background flag watermark */}
                             {isWinner && (entry.winnerCountryName || entry.winnerUser) && (
-                              <div className="absolute inset-0 z-0 h-full w-full overflow-hidden pointer-events-none rounded-xl">
+                              <div className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-hidden rounded-xl">
                                 <UnifiedCountryFlag
                                   countryName={entry.winnerCountryName || entry.winnerUser}
                                   fitContainer={true}
                                   showTooltip={false}
                                   rounded={false}
-                                  className="h-full w-full object-cover opacity-[0.06] dark:opacity-[0.04] brightness-[0.75] transition-all duration-500 group-hover:scale-105"
+                                  className="h-full w-full object-cover opacity-[0.06] brightness-[0.75] transition-all duration-500 group-hover:scale-105 dark:opacity-[0.04]"
                                 />
                               </div>
                             )}
 
                             <span
                               className={cn(
-                                "text-xs font-black font-mono relative z-10",
+                                "relative z-10 font-mono text-xs font-black",
                                 isWinner ? "text-amber-500" : "text-muted-foreground"
                               )}
                             >
@@ -686,30 +745,30 @@ export function WikiLoreTab({
                             </span>
 
                             {isWinner ? (
-                              <div className="space-y-1 w-full min-w-0 relative z-10">
-                                <div className="flex items-center gap-1 min-w-0">
+                              <div className="relative z-10 w-full min-w-0 space-y-1">
+                                <div className="flex min-w-0 items-center gap-1">
                                   <UnifiedCountryFlag
                                     countryName={entry.winnerCountryName || entry.winnerUser!}
                                     size="xs"
                                     showTooltip={false}
                                   />
-                                  <span className="text-[10px] font-bold text-foreground truncate block flex-1">
+                                  <span className="text-foreground block flex-1 truncate text-[10px] font-bold">
                                     {entry.winnerUser}
                                   </span>
                                 </div>
                                 {entry.winnerPage && (
-                                  <span className="text-[9px] text-amber-500/80 font-medium truncate block leading-none">
+                                  <span className="block truncate text-[9px] leading-none font-medium text-amber-500/80">
                                     {entry.winnerPage}
                                   </span>
                                 )}
                                 {entry.winnerScore !== null && (
-                                  <span className="text-[8px] font-mono text-muted-foreground block">
+                                  <span className="text-muted-foreground block font-mono text-[8px]">
                                     Score: {entry.winnerScore}
                                   </span>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-[9px] text-muted-foreground/40 italic relative z-10">
+                              <span className="text-muted-foreground/40 relative z-10 text-[9px] italic">
                                 No winner
                               </span>
                             )}
@@ -727,11 +786,11 @@ export function WikiLoreTab({
 
       {/* ── SUBTAB: ARTICLE AWARDS ── */}
       {subTab === "awards" && (
-        <div className="space-y-6 max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4 dark:border-white/5">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 md:flex-row md:items-center dark:border-white/5">
             <div>
-              <h4 className="text-foreground text-sm font-black uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-500" />
+              <h4 className="text-foreground flex items-center gap-2 text-sm font-black tracking-wider uppercase">
+                <Sparkles className="h-4 w-4 text-amber-500" />
                 Article Awards & Milestones
               </h4>
               <p className="text-muted-foreground text-xs">
@@ -741,22 +800,29 @@ export function WikiLoreTab({
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-3.5 w-3.5" />
                 <input
                   type="text"
                   placeholder="Search articles..."
                   value={awardsSearch}
                   onChange={(e) => setAwardsSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs bg-black/10 dark:bg-black/35 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-500/50 w-48"
+                  className="border-border/50 text-foreground placeholder:text-muted-foreground w-48 rounded-lg border bg-black/10 py-1.5 pr-3 pl-8 text-xs focus:ring-1 focus:ring-amber-500/50 focus:outline-none dark:bg-black/35"
                 />
               </div>
-              <div className="flex flex-wrap rounded-lg border border-border/50 bg-black/10 p-0.5 dark:bg-black/35">
-                {["ALL", "FEATURED", "COLLABORATION", "PEER_REVIEW", "SPECIAL", "EDITOR_MILESTONE"].map((cat) => (
+              <div className="border-border/50 flex flex-wrap rounded-lg border bg-black/10 p-0.5 dark:bg-black/35">
+                {[
+                  "ALL",
+                  "FEATURED",
+                  "COLLABORATION",
+                  "PEER_REVIEW",
+                  "SPECIAL",
+                  "EDITOR_MILESTONE",
+                ].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setAwardsCategory(cat)}
                     className={cn(
-                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all",
+                      "rounded-md px-2.5 py-1 text-[10px] font-bold transition-all",
                       awardsCategory === cat
                         ? "bg-amber-500 text-black shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -774,23 +840,28 @@ export function WikiLoreTab({
               <Loader2 className="text-amber-555 h-6 w-6 animate-spin" />
             </div>
           ) : filteredAwards.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {filteredAwards.map((a: WikiArticleAward) => (
                 <CutoutCard
                   key={a.id}
                   className={cn(
                     cutoutCardSurfaceClassName,
-                    "border-border/50 bg-card/45 rounded-xl p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/20 hover:shadow-lg flex flex-col justify-between"
+                    "border-border/50 bg-card/45 flex flex-col justify-between rounded-xl p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/20 hover:shadow-lg"
                   )}
                   texture="none"
                   trackPointerHover={false}
                 >
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className={cn("px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-wider", getCategoryStyles(a.category))}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider uppercase",
+                          getCategoryStyles(a.category)
+                        )}
+                      >
                         {getCategoryLabel(a.category)}
                       </span>
-                      <span className="text-[10px] text-muted-foreground font-mono">
+                      <span className="text-muted-foreground font-mono text-[10px]">
                         {new Date(a.awardedAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -841,9 +912,12 @@ export function WikiLoreTab({
                         const IconComp = getIconComponent(iconName);
 
                         return (
-                          <h5 className="font-extrabold text-foreground text-sm tracking-tight flex items-center gap-2">
+                          <h5 className="text-foreground flex items-center gap-2 text-sm font-extrabold tracking-tight">
                             <IconComp
-                              className={cn("w-4.5 h-4.5 shrink-0", !isCustomHex && getColorClass(colorVal))}
+                              className={cn(
+                                "h-4.5 w-4.5 shrink-0",
+                                !isCustomHex && getColorClass(colorVal)
+                              )}
                               style={customStyle}
                             />
                             {a.name}
@@ -852,27 +926,30 @@ export function WikiLoreTab({
                       })()}
                       <Link
                         href={`/w/${a.pageSlug}`}
-                        className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1 group w-fit"
+                        className="group flex w-fit items-center gap-1 text-xs font-bold text-amber-500 hover:underline"
                       >
                         {a.pageTitle}
-                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ExternalLink className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
                       </Link>
                     </div>
 
                     {a.description && (
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-muted-foreground text-xs leading-relaxed">
                         {a.description}
                       </p>
                     )}
                   </div>
 
                   {a.recipientUsers && a.recipientUsers.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-border/20 dark:border-white/5 flex flex-wrap gap-1.5 items-center">
-                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                    <div className="border-border/20 mt-4 flex flex-wrap items-center gap-1.5 border-t pt-3 dark:border-white/5">
+                      <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                         Contributors:
                       </span>
                       {a.recipientUsers.map((u: string) => (
-                        <span key={u} className="px-2 py-0.5 rounded bg-muted/30 text-foreground text-[10px] font-semibold border border-border/10">
+                        <span
+                          key={u}
+                          className="bg-muted/30 text-foreground border-border/10 rounded border px-2 py-0.5 text-[10px] font-semibold"
+                        >
                           {u}
                         </span>
                       ))}
@@ -882,7 +959,7 @@ export function WikiLoreTab({
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground text-xs">
+            <div className="text-muted-foreground py-12 text-center text-xs">
               No matching article awards found.
             </div>
           )}
@@ -891,73 +968,90 @@ export function WikiLoreTab({
 
       {/* ── SUBTAB: EDITOR RESOURCES ── */}
       {subTab === "resources" && (
-        <div className="space-y-6 max-w-5xl mx-auto">
-          <div className="border-b border-border/40 pb-4 dark:border-white/5">
-            <h4 className="text-foreground text-sm font-black uppercase tracking-wider flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-amber-500" />
+        <div className="mx-auto max-w-5xl space-y-6">
+          <div className="border-border/40 border-b pb-4 dark:border-white/5">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-black tracking-wider uppercase">
+              <BookOpen className="h-4 w-4 text-amber-500" />
               Editor Resources & Scoring Guide
             </h4>
             <p className="text-muted-foreground text-xs">
-              Cheatsheets, guidelines, templates, and formulas to help you write high-quality lore edits.
+              Cheatsheets, guidelines, templates, and formulas to help you write high-quality lore
+              edits.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Left Column: Quick Links & Scoring Guide */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6 lg:col-span-2">
               {/* Scoring Guide Card */}
               <TextureCard className="border-border/40 bg-card/40 backdrop-blur-md">
-                <TextureCardContent className="p-5 space-y-4">
-                  <h5 className="font-extrabold text-foreground text-sm flex items-center gap-2">
+                <TextureCardContent className="space-y-4 p-5">
+                  <h5 className="text-foreground flex items-center gap-2 text-sm font-extrabold">
                     <Trophy className="h-4 w-4 text-amber-500" />
                     How Wiki Contributions Are Scored
                   </h5>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Lore points and rankings are calculated using database records from MediaWiki. The scoring system incentivizes both high frequency and structural depth (large edits).
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Lore points and rankings are calculated using database records from MediaWiki.
+                    The scoring system incentivizes both high frequency and structural depth (large
+                    edits).
                   </p>
 
-                  <div className="space-y-3 bg-card/40 border border-border/30 rounded-xl p-4">
+                  <div className="bg-card/40 border-border/30 space-y-3 rounded-xl border p-4">
                     <div className="space-y-1">
-                      <span className="text-[10px] text-muted-foreground font-black uppercase tracking-wider">
+                      <span className="text-muted-foreground text-[10px] font-black tracking-wider uppercase">
                         Rank Score Formula
                       </span>
-                      <div className="font-mono text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/5 dark:bg-amber-500/10 p-3.5 rounded-xl border border-amber-500/20 leading-relaxed overflow-x-auto whitespace-pre shadow-[inset_0_1px_1px_rgba(245,158,11,0.05)]">
-{`Rank Score = (Wins * 100) + (Runner-Ups * 40) + (Current Streak * 15) 
+                      <div className="overflow-x-auto rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 font-mono text-[11px] leading-relaxed whitespace-pre text-amber-600 shadow-[inset_0_1px_1px_rgba(245,158,11,0.05)] dark:bg-amber-500/10 dark:text-amber-400">
+                        {`Rank Score = (Wins * 100) + (Runner-Ups * 40) + (Current Streak * 15) 
              + (Total Bytes * 0.01) + (Largest Edit * 0.05)`}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                      <div className="text-xs space-y-1">
-                        <strong className="text-foreground block font-bold">Daily Wins (+100 pts)</strong>
-                        <span className="text-muted-foreground leading-snug block">
-                          Awarded to the top edit of the day. Evaluated dynamically by the scoring cron.
+                    <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+                      <div className="space-y-1 text-xs">
+                        <strong className="text-foreground block font-bold">
+                          Daily Wins (+100 pts)
+                        </strong>
+                        <span className="text-muted-foreground block leading-snug">
+                          Awarded to the top edit of the day. Evaluated dynamically by the scoring
+                          cron.
                         </span>
                       </div>
-                      <div className="text-xs space-y-1">
-                        <strong className="text-foreground block font-bold">Major Edit Rate (MER)</strong>
-                        <span className="text-muted-foreground leading-snug block">
-                          Percentage of edits exceeding 5,000 bytes. Displayed as a batting average (e.g. <code className="bg-muted-foreground/10 px-1.5 py-0.5 rounded font-mono text-[10.5px] text-amber-600 dark:text-amber-400 border border-border/20">.125</code>).
+                      <div className="space-y-1 text-xs">
+                        <strong className="text-foreground block font-bold">
+                          Major Edit Rate (MER)
+                        </strong>
+                        <span className="text-muted-foreground block leading-snug">
+                          Percentage of edits exceeding 5,000 bytes. Displayed as a batting average
+                          (e.g.{" "}
+                          <code className="bg-muted-foreground/10 border-border/20 rounded border px-1.5 py-0.5 font-mono text-[10.5px] text-amber-600 dark:text-amber-400">
+                            .125
+                          </code>
+                          ).
                         </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <h6 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                    <h6 className="text-foreground text-xs font-bold tracking-wider uppercase">
                       Lore Medal Upgrades
                     </h6>
                     <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="bg-slate-500/5 border border-slate-500/20 rounded-lg p-2.5 text-xs">
-                        <span className="text-slate-500 dark:text-slate-400 font-extrabold block">Silver Medal</span>
+                      <div className="rounded-lg border border-slate-500/20 bg-slate-500/5 p-2.5 text-xs">
+                        <span className="block font-extrabold text-slate-500 dark:text-slate-400">
+                          Silver Medal
+                        </span>
                         <span className="text-muted-foreground text-[10px]">10 Bronze Medals</span>
                       </div>
-                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5 text-xs">
-                        <span className="text-amber-500 font-extrabold block">Gold Medal</span>
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs">
+                        <span className="block font-extrabold text-amber-500">Gold Medal</span>
                         <span className="text-muted-foreground text-[10px]">5 Silver Medals</span>
                       </div>
-                      <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-2.5 text-xs">
-                        <span className="text-purple-500 dark:text-purple-400 font-extrabold block">Burg Cross</span>
+                      <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5 text-xs">
+                        <span className="block font-extrabold text-purple-500 dark:text-purple-400">
+                          Burg Cross
+                        </span>
                         <span className="text-muted-foreground text-[10px]">5 Gold Medals</span>
                       </div>
                     </div>
@@ -967,33 +1061,37 @@ export function WikiLoreTab({
 
               {/* Template Cheatsheet */}
               <TextureCard className="border-border/40 bg-card/40 backdrop-blur-md">
-                <TextureCardContent className="p-5 space-y-4">
-                  <h5 className="font-extrabold text-foreground text-sm flex items-center gap-2">
+                <TextureCardContent className="space-y-4 p-5">
+                  <h5 className="text-foreground flex items-center gap-2 text-sm font-extrabold">
                     <Code className="h-4 w-4 text-amber-500" />
                     Common Wiki Templates
                   </h5>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Copy-paste markdown/wikitext markup for standard infoboxes and indicators.
                   </p>
 
                   <div className="space-y-4">
-                    <div className="space-y-1.5 relative group/code">
+                    <div className="group/code relative space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-foreground font-bold">1. Infobox Nation</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">Wikitext</span>
+                        <span className="text-muted-foreground font-mono text-[10px]">
+                          Wikitext
+                        </span>
                       </div>
                       <div className="relative">
-                        <pre className="text-[11px] font-mono bg-muted/30 dark:bg-black/40 text-foreground/90 p-3.5 rounded-xl border border-border/45 overflow-x-auto pr-12 leading-relaxed shadow-inner">
-{INFOBOX_TEMPLATE}
+                        <pre className="bg-muted/30 text-foreground/90 border-border/45 overflow-x-auto rounded-xl border p-3.5 pr-12 font-mono text-[11px] leading-relaxed shadow-inner dark:bg-black/40">
+                          {INFOBOX_TEMPLATE}
                         </pre>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute right-2 top-2 h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all"
-                          onClick={() => handleCopyText(INFOBOX_TEMPLATE, "infobox", "Infobox Nation")}
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted/50 absolute top-2 right-2 h-7 w-7 rounded-lg transition-all"
+                          onClick={() =>
+                            handleCopyText(INFOBOX_TEMPLATE, "infobox", "Infobox Nation")
+                          }
                         >
                           {copiedId === "infobox" ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+                            <Check className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
                           ) : (
                             <Copy className="h-3.5 w-3.5" />
                           )}
@@ -1001,23 +1099,25 @@ export function WikiLoreTab({
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 relative group/code">
+                    <div className="group/code relative space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-foreground font-bold">2. Lore Medal Ribbon</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">Wikitext</span>
+                        <span className="text-muted-foreground font-mono text-[10px]">
+                          Wikitext
+                        </span>
                       </div>
                       <div className="relative">
-                        <pre className="text-[11px] font-mono bg-muted/30 dark:bg-black/40 text-foreground/90 p-3.5 rounded-xl border border-border/45 overflow-x-auto pr-12 leading-relaxed shadow-inner">
-{MEDAL_TEMPLATE}
+                        <pre className="bg-muted/30 text-foreground/90 border-border/45 overflow-x-auto rounded-xl border p-3.5 pr-12 font-mono text-[11px] leading-relaxed shadow-inner dark:bg-black/40">
+                          {MEDAL_TEMPLATE}
                         </pre>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute right-2 top-2 h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all"
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted/50 absolute top-2 right-2 h-7 w-7 rounded-lg transition-all"
                           onClick={() => handleCopyText(MEDAL_TEMPLATE, "medal", "Lore Medal")}
                         >
                           {copiedId === "medal" ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+                            <Check className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
                           ) : (
                             <Copy className="h-3.5 w-3.5" />
                           )}
@@ -1040,7 +1140,7 @@ export function WikiLoreTab({
                 texture="none"
                 trackPointerHover={false}
               >
-                <h5 className="font-extrabold text-foreground text-sm mb-4 flex items-center gap-2">
+                <h5 className="text-foreground mb-4 flex items-center gap-2 text-sm font-extrabold">
                   <ExternalLink className="h-4 w-4 text-amber-500" />
                   Quick Wiki Links
                 </h5>
@@ -1055,10 +1155,10 @@ export function WikiLoreTab({
                     <Link
                       key={link.title}
                       href={link.href}
-                      className="flex items-center justify-between p-2.5 rounded-lg border border-border/20 bg-muted/30 hover:bg-amber-500/10 hover:border-amber-500/30 transition-all font-bold group"
+                      className="border-border/20 bg-muted/30 group flex items-center justify-between rounded-lg border p-2.5 font-bold transition-all hover:border-amber-500/30 hover:bg-amber-500/10"
                     >
                       {link.title}
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                      <ChevronRight className="text-muted-foreground h-4 w-4 transition-colors group-hover:text-amber-500" />
                     </Link>
                   ))}
                 </div>
@@ -1073,22 +1173,30 @@ export function WikiLoreTab({
                 texture="none"
                 trackPointerHover={false}
               >
-                <h5 className="font-extrabold text-foreground text-sm mb-4 flex items-center gap-2">
+                <h5 className="text-foreground mb-4 flex items-center gap-2 text-sm font-extrabold">
                   <Sparkles className="h-4 w-4 text-amber-500" />
                   Lore Quality Rules
                 </h5>
-                <ul className="text-xs text-muted-foreground space-y-3 list-disc pl-4 leading-relaxed">
+                <ul className="text-muted-foreground list-disc space-y-3 pl-4 text-xs leading-relaxed">
                   <li>
-                    <strong className="text-foreground">Neutral Point of View:</strong> Always write from a neutral third-person perspective.
+                    <strong className="text-foreground">Neutral Point of View:</strong> Always write
+                    from a neutral third-person perspective.
                   </li>
                   <li>
-                    <strong className="text-foreground">Citations & Verification:</strong> Cite relevant nation builder decisions, diplomacy events, or intelligence briefs.
+                    <strong className="text-foreground">Citations & Verification:</strong> Cite
+                    relevant nation builder decisions, diplomacy events, or intelligence briefs.
                   </li>
                   <li>
-                    <strong className="text-foreground">Formatting:</strong> Use standard header hierarchies (<code className="bg-muted-foreground/10 px-1.5 py-0.5 rounded font-mono text-[10.5px] text-amber-600 dark:text-amber-400 border border-border/20">== Header ==</code>) and infoboxes.
+                    <strong className="text-foreground">Formatting:</strong> Use standard header
+                    hierarchies (
+                    <code className="bg-muted-foreground/10 border-border/20 rounded border px-1.5 py-0.5 font-mono text-[10.5px] text-amber-600 dark:text-amber-400">
+                      == Header ==
+                    </code>
+                    ) and infoboxes.
                   </li>
                   <li>
-                    <strong className="text-foreground">Anti-Plagiarism:</strong> Do not copy paste massive chunks of unedited external text. Original nation-building details only.
+                    <strong className="text-foreground">Anti-Plagiarism:</strong> Do not copy paste
+                    massive chunks of unedited external text. Original nation-building details only.
                   </li>
                 </ul>
               </CutoutCard>

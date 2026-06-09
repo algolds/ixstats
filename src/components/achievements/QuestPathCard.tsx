@@ -116,7 +116,10 @@ export function QuestPathCard({
               let count = 0;
               if (achievement.metadata) {
                 try {
-                  const parsed = typeof achievement.metadata === "string" ? JSON.parse(achievement.metadata) : achievement.metadata;
+                  const parsed =
+                    typeof achievement.metadata === "string"
+                      ? JSON.parse(achievement.metadata)
+                      : achievement.metadata;
                   count = parsed.count || 0;
                 } catch (e) {
                   // ignore
@@ -141,9 +144,14 @@ export function QuestPathCard({
                           )}
                         >
                           {isUnlocked ? (
-                            achievement.iconUrl?.startsWith("http") || achievement.iconUrl?.startsWith("/") ? (
+                            achievement.iconUrl?.startsWith("http") ||
+                            achievement.iconUrl?.startsWith("/") ? (
                               <img
-                                src={achievement.iconUrl?.startsWith("/") ? createUrl(achievement.iconUrl) : achievement.iconUrl}
+                                src={
+                                  achievement.iconUrl?.startsWith("/")
+                                    ? createUrl(achievement.iconUrl)
+                                    : achievement.iconUrl
+                                }
                                 alt={achievement.title}
                                 className="h-10 w-10 object-contain transition duration-300 group-hover:scale-110"
                               />
@@ -157,7 +165,7 @@ export function QuestPathCard({
                           )}
 
                           {isUnlocked && count > 1 && (
-                            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-black border border-background shadow-md z-20">
+                            <span className="border-background absolute -top-1 -right-1 z-20 flex h-5 min-w-[20px] items-center justify-center rounded-full border bg-amber-500 px-1 text-[10px] font-black text-black shadow-md">
                               {count}
                             </span>
                           )}
@@ -189,9 +197,15 @@ export function QuestPathCard({
                       >
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            {isUnlocked && (achievement.iconUrl?.startsWith("http") || achievement.iconUrl?.startsWith("/")) ? (
+                            {isUnlocked &&
+                            (achievement.iconUrl?.startsWith("http") ||
+                              achievement.iconUrl?.startsWith("/")) ? (
                               <img
-                                src={achievement.iconUrl?.startsWith("/") ? createUrl(achievement.iconUrl) : achievement.iconUrl}
+                                src={
+                                  achievement.iconUrl?.startsWith("/")
+                                    ? createUrl(achievement.iconUrl)
+                                    : achievement.iconUrl
+                                }
                                 alt={achievement.title}
                                 className="h-5 w-5 object-contain"
                               />
@@ -268,9 +282,14 @@ export function QuestPathCard({
             <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
               <div className="flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  {selectedNode.iconUrl?.startsWith("http") || selectedNode.iconUrl?.startsWith("/") ? (
+                  {selectedNode.iconUrl?.startsWith("http") ||
+                  selectedNode.iconUrl?.startsWith("/") ? (
                     <img
-                      src={selectedNode.iconUrl?.startsWith("/") ? createUrl(selectedNode.iconUrl) : selectedNode.iconUrl}
+                      src={
+                        selectedNode.iconUrl?.startsWith("/")
+                          ? createUrl(selectedNode.iconUrl)
+                          : selectedNode.iconUrl
+                      }
                       alt={selectedNode.title}
                       className="h-8 w-8 object-contain"
                     />

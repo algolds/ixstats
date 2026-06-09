@@ -296,9 +296,10 @@ export const wikiRouter = createTRPCRouter({
           mediaType: "",
           mime: img.mime ?? "",
           url: img.url ?? "",
-          pageUrl: input.wiki === "iiwiki"
-            ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name ?? "")}`
-            : `/w/File:${encodeURIComponent(img.name ?? "")}`,
+          pageUrl:
+            input.wiki === "iiwiki"
+              ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name ?? "")}`
+              : `/w/File:${encodeURIComponent(img.name ?? "")}`,
         }));
     }),
 
@@ -640,7 +641,7 @@ export const wikiRouter = createTRPCRouter({
         if (!res.ok) return {};
         const data = (await res.json()) as any;
         const pages = data?.query?.pages ?? {};
-        
+
         for (const page of Object.values(pages) as any[]) {
           const catName = page.title?.replace(/^Category:/, "") ?? "";
           results[catName] = page.categoryinfo?.files ?? 0;
@@ -880,15 +881,18 @@ export async function resolveWikiPlaceholdersInternal(
   const userCountry = userCountryId ? countries.find((c: any) => c.id === userCountryId) : null;
 
   // Fetch all POIs for businesses
-  const pois = companyNames.size > 0 ? await ctx.db.pointOfInterest.findMany({
-    where: {
-      name: { in: Array.from(companyNames) },
-      status: "approved",
-    },
-    include: {
-      country: true,
-    },
-  }) : [];
+  const pois =
+    companyNames.size > 0
+      ? await ctx.db.pointOfInterest.findMany({
+          where: {
+            name: { in: Array.from(companyNames) },
+            status: "approved",
+          },
+          include: {
+            country: true,
+          },
+        })
+      : [];
 
   // Fetch all countries sorted to calculate rank
   const allCountriesSortedGdp = await ctx.db.country.findMany({
@@ -952,7 +956,7 @@ export async function resolveWikiPlaceholdersInternal(
       const companyName = parts[1]?.replace(/_/g, " ");
       const field = parts[2];
       if (!companyName || !field) continue;
-      
+
       const poi = pois.find((poi: any) => poi.name.toLowerCase() === companyName.toLowerCase());
       if (!poi) {
         results[p] = { value: "Unknown Company", rawVal: null };
@@ -971,7 +975,15 @@ export async function resolveWikiPlaceholdersInternal(
       const baseRevenue = 50_000_000 + (hash % 95) * 50_000_000;
       const revenueVal = baseRevenue * tierScale;
       const employeesVal = Math.round((200 + (hash % 48) * 100) * tierScale);
-      const sectors = ["Manufacturing", "Technology", "Finance", "Energy", "Logistics", "Consumer Goods", "Heavy Industry"];
+      const sectors = [
+        "Manufacturing",
+        "Technology",
+        "Finance",
+        "Energy",
+        "Logistics",
+        "Consumer Goods",
+        "Heavy Industry",
+      ];
       const sectorVal = sectors[hash % sectors.length]!;
       const foundedVal = 1950 + (hash % 76);
 
@@ -1109,8 +1121,16 @@ export async function resolveWikiPlaceholdersInternal(
       metadata: {
         label,
         countryName: country.name,
-        growthTrend: field.includes("Growth") && val < 0 ? "down" : field.includes("Growth") && val > 0 ? "up" : "flat",
-        growthRate: field === "gdp" || field === "currentTotalGdp" ? `${(country.adjustedGdpGrowth * 100).toFixed(1)}%` : undefined,
+        growthTrend:
+          field.includes("Growth") && val < 0
+            ? "down"
+            : field.includes("Growth") && val > 0
+              ? "up"
+              : "flat",
+        growthRate:
+          field === "gdp" || field === "currentTotalGdp"
+            ? `${(country.adjustedGdpGrowth * 100).toFixed(1)}%`
+            : undefined,
         lastCalculated: country.lastCalculated.toISOString(),
         detailsUrl: `/countries/${country.id}`,
         comparisonRank: rank,

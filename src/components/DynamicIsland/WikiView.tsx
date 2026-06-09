@@ -48,7 +48,8 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { articleTitle, tocEntries, themeColors, activeSectionId, navigateToSection } = useWikiContext();
+  const { articleTitle, tocEntries, themeColors, activeSectionId, navigateToSection } =
+    useWikiContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -401,7 +402,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             {/* Active Progress Fill Line */}
             <div
               className="absolute left-0 h-1 rounded-full bg-blue-500"
-              style={{ 
+              style={{
                 width: `${scrollPercent}%`,
                 backgroundColor: themeColors?.primary ?? undefined,
               }}
@@ -430,11 +431,15 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                           ? "scale-125"
                           : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
                     )}
-                    style={isActive && themeColors ? {
-                      borderColor: themeColors.secondary,
-                      backgroundColor: themeColors.primary,
-                      boxShadow: `0 0 8px ${themeColors.primary}`,
-                    } : undefined}
+                    style={
+                      isActive && themeColors
+                        ? {
+                            borderColor: themeColors.secondary,
+                            backgroundColor: themeColors.primary,
+                            boxShadow: `0 0 8px ${themeColors.primary}`,
+                          }
+                        : undefined
+                    }
                   />
                   {/* Tooltip */}
                   <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded border border-white/10 bg-zinc-950/95 px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover/tick:opacity-100">
@@ -447,7 +452,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             {/* Glowing Scrubber Playhead Handle */}
             <div
               className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
-              style={{ 
+              style={{
                 left: `${scrollPercent}%`,
                 borderColor: themeColors?.primary ?? undefined,
                 boxShadow: themeColors ? `0 0 8px ${themeColors.primary}` : undefined,
@@ -538,25 +543,35 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               open={draftsOpen}
               onToggle={() => setDraftsOpen(!draftsOpen)}
             >
-              <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
                 {localDrafts.map((draft, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
                       onClose();
-                      navigateWithBasePath(`/w/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`, router);
+                      navigateWithBasePath(
+                        `/w/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
+                        router
+                      );
                     }}
                     className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
                   >
-                    <div className="flex flex-col min-w-0 flex-1 pr-2">
-                      <PreText className="truncate text-[13px] text-inherit font-medium" whiteSpace="nowrap">
+                    <div className="flex min-w-0 flex-1 flex-col pr-2">
+                      <PreText
+                        className="truncate text-[13px] font-medium text-inherit"
+                        whiteSpace="nowrap"
+                      >
                         {draft.title}
                       </PreText>
                       <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
-                        {draft.type === "visual" ? "Visual Editor (Canvas) Draft" : "Source Editor Draft"}
+                        {draft.type === "visual"
+                          ? "Visual Editor (Canvas) Draft"
+                          : "Source Editor Draft"}
                       </PreText>
                     </div>
-                    <span className="text-[10px] text-blue-400 font-semibold shrink-0">Resume ›</span>
+                    <span className="shrink-0 text-[10px] font-semibold text-blue-400">
+                      Resume ›
+                    </span>
                   </button>
                 ))}
               </div>
@@ -572,22 +587,25 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               open={sessionsOpen}
               onToggle={() => setSessionsOpen(!sessionsOpen)}
             >
-              <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
                 {pausedSessions.map((session, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleNavigateToArticle(session.title)}
                     className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
                   >
-                    <div className="flex flex-col min-w-0 flex-1 pr-2">
-                      <PreText className="truncate text-[13px] text-inherit font-medium" whiteSpace="nowrap">
+                    <div className="flex min-w-0 flex-1 flex-col pr-2">
+                      <PreText
+                        className="truncate text-[13px] font-medium text-inherit"
+                        whiteSpace="nowrap"
+                      >
                         {session.title}
                       </PreText>
                       <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
                         {`Last read ${formatTimeAgo(session.updatedAt)}`}
                       </PreText>
                     </div>
-                    <span className="text-muted-foreground text-[10px] tabular-nums font-semibold bg-white/5 border border-white/5 rounded px-1.5 py-0.5 shrink-0">
+                    <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
                       {session.scrollPercent}%
                     </span>
                   </button>
@@ -714,7 +732,7 @@ function CollapsibleSection({
     <div className="border-border mb-3 border-b pb-3">
       <button
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full items-center justify-between text-[10px] font-semibold tracking-wider uppercase cursor-pointer"
+        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-[10px] font-semibold tracking-wider uppercase"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}

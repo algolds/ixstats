@@ -27,7 +27,6 @@ import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 
-
 import type { TocEntry } from "~/lib/wikios/html-transformer";
 
 export function WikiOSLayout({
@@ -78,7 +77,16 @@ export function WikiOSLayout({
         activeTitle.trim() !== "" &&
         !isMainPage &&
         !activeTitle.includes(":") &&
-        !["Stashes", "Blurbs", "Repository", "Lorewards", "Wiki & Lore", "Recent Changes", "Search", "Random"].includes(activeTitle),
+        ![
+          "Stashes",
+          "Blurbs",
+          "Repository",
+          "Lorewards",
+          "Wiki & Lore",
+          "Recent Changes",
+          "Search",
+          "Random",
+        ].includes(activeTitle),
       retry: false,
     }
   );
@@ -133,7 +141,9 @@ export function WikiOSLayout({
         expandedWidthClassName="w-48"
         expandedWidthStyle="12rem"
       >
-        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>{children}</WikiOSContentWrapper>
+        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
+          {children}
+        </WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
       <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3 border-t border-white/5 pt-6 pb-8 text-center text-xs">

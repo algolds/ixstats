@@ -488,6 +488,23 @@ export const wikiosRouter = createTRPCRouter({
     }),
 
   /**
+   * Convert wikitext directly to editor-ready Parsoid HTML.
+   */
+  convertWikitextToHtml: protectedProcedure
+    .input(
+      z.object({
+        wikitext: z.string(),
+        title: z.string().min(1).max(500),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const html = await wikitextToHtml(input.wikitext, input.title);
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      const bodyHtml = bodyMatch ? bodyMatch[1]! : html;
+      return { html: bodyHtml };
+    }),
+
+  /**
    * Convert HTML (from PlateJS editor) back to wikitext via Parsoid.
    */
   htmlToWikitext: protectedProcedure
@@ -1740,7 +1757,7 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
   for (const key of keys) {
     const data = resolved[key];
     const valStr = data ? data.value : "N/A";
-    
+
     // Normalize template key for page title (MediaWiki converts spaces to underscores)
     const normalizedKey = key.replace(/ /g, "_");
     const templateTitle = `Template:${normalizedKey}`;
@@ -1784,7 +1801,7 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
  */
 function cleanHtmlForParsoid(html: string): string {
   let cleaned = html;
-  
+
   // Clean Coords anchors: remove emoji and wrapper spans, restore standard link format
   cleaned = cleaned.replace(
     /<a[^>]*href="([^"]*Coords[^"]*)"[^>]*>(?:<span[^>]*>📍<\/span>)?\s*(.*?)<\/a>/gi,

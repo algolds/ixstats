@@ -341,12 +341,7 @@ export function GlassToggle({
 }: GlassToggleProps) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <AppleSwitch
-        checked={checked}
-        onCheckedChange={onChange}
-        size={size}
-        disabled={disabled}
-      />
+      <AppleSwitch checked={checked} onCheckedChange={onChange} size={size} disabled={disabled} />
 
       {label && (
         <label

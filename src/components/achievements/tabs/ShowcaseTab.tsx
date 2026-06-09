@@ -22,8 +22,6 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
   return (
     <div className="space-y-6">
-
-
       {rarestShowcase && rarestShowcase.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {rarestShowcase.map((achievement) => {
@@ -32,7 +30,10 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
             let count = 0;
             if (achievement.metadata) {
               try {
-                const parsed = typeof achievement.metadata === "string" ? JSON.parse(achievement.metadata) : achievement.metadata;
+                const parsed =
+                  typeof achievement.metadata === "string"
+                    ? JSON.parse(achievement.metadata)
+                    : achievement.metadata;
                 count = parsed.count || 0;
               } catch (e) {
                 // ignore
@@ -77,9 +78,14 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
                 <div className="relative z-10 mb-4 flex flex-col items-center space-y-3 text-center">
                   <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-3xl shadow-inner transition duration-300 select-none group-hover:scale-110">
-                    {achievement.iconUrl?.startsWith("http") || achievement.iconUrl?.startsWith("/") ? (
+                    {achievement.iconUrl?.startsWith("http") ||
+                    achievement.iconUrl?.startsWith("/") ? (
                       <img
-                        src={achievement.iconUrl?.startsWith("/") ? createUrl(achievement.iconUrl) : achievement.iconUrl}
+                        src={
+                          achievement.iconUrl?.startsWith("/")
+                            ? createUrl(achievement.iconUrl)
+                            : achievement.iconUrl
+                        }
                         alt={achievement.title}
                         className="h-10 w-10 object-contain"
                       />
@@ -87,7 +93,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                       achievement.iconUrl
                     )}
                     {isUnlocked && count > 1 && (
-                      <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-black border border-background shadow-md">
+                      <span className="border-background absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border bg-amber-500 px-1.5 text-[10px] font-black text-black shadow-md">
                         {count}
                       </span>
                     )}

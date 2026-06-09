@@ -99,21 +99,11 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
 const LOCAL_CATEGORY_GROUPS: CategoryGroup[] = [
   {
     label: "Core Media",
-    categories: [
-      "Flags",
-      "Maps",
-      "Images",
-    ],
+    categories: ["Flags", "Maps", "Images"],
   },
   {
     label: "Society & Culture",
-    categories: [
-      "Coats of arms",
-      "Buildings",
-      "Churches",
-      "Castles",
-      "Military",
-    ],
+    categories: ["Coats of arms", "Buildings", "Churches", "Castles", "Military"],
   },
 ];
 

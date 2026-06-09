@@ -1,0 +1,64 @@
+/* ===================================
+   WIKIOS DESIGN SYSTEM
+   Vector skin spirit + IxStats glass physics
+   =================================== */
+
+/* ---------------------------------------------------------------------------
+   CSS Custom Properties
+   --------------------------------------------------------------------------- */
+:root {
+  /* WikiOS color palette — scholarly, neutral base */
+  --wikios-bg: #0f1114;
+  --wikios-surface: #16181d;
+  --wikios-border: rgba(255, 255, 255, 0.08);
+  --wikios-text: #e4e4e7;
+  --wikios-text-muted: #a1a1aa;
+  --wikios-text-dim: #71717a;
+  --wikios-accent: #3b82f6;
+  --wikios-accent-hover: #60a5fa;
+  --wikios-link: #6890f0;
+  --wikios-link-visited: #a37cf0;
+  --wikios-link-hover: #8ab4f8;
+  --wikios-red: #ef4444;
+  --wikios-green: #22c55e;
+
+
+  /* Traditional Wikipedia body link colors (Dark Mode accessible) */
+  --wikios-body-link: #6890f0;
+  --wikios-body-link-visited: #a37cf0;
+  --wikios-body-link-hover: #8ab4f8;
+
+  /* Layout dimensions */
+  --wikios-content-max-width: 960px;
+  --wikios-infobox-width: 320px;
+  --wikios-toc-width: 200px;
+
+  /* Typography */
+  --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --wikios-font-ui: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --wikios-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+
+/* Light mode overrides */
+[data-theme="light"] {
+  --wikios-bg: #fafafa;
+  --wikios-surface: #ffffff;
+  --wikios-border: rgba(0, 0, 0, 0.1);
+  --wikios-text: #18181b;
+  --wikios-text-muted: #52525b;
+  --wikios-text-dim: #a1a1aa;
+  --wikios-accent: #2563eb;
+  --wikios-accent-hover: #3b82f6;
+  --wikios-link: #36c;
+  --wikios-link-visited: #5a3696;
+  --wikios-link-hover: #447ff5;
+  --wikios-red: #dc2626;
+  --wikios-green: #16a34a;
+
+
+  /* Traditional Wikipedia body link colors (Light Mode) */
+  --wikios-body-link: #36c;
+  --wikios-body-link-visited: #5a3696;
+  --wikios-body-link-hover: #447ff5;
+}
+

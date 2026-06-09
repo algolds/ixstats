@@ -74,7 +74,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           {/* Discord badge — server-rendered, passed through props */}
           {discordBadge}
 
-           {EXTERNAL_LINKS.map((link) => {
+          {EXTERNAL_LINKS.map((link) => {
             if (link.label === "Stashes" && !isSignedIn) {
               return null;
             }

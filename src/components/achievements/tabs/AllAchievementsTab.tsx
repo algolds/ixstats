@@ -95,7 +95,10 @@ export function AllAchievementsTab({
             let count = 0;
             if (achievement.metadata) {
               try {
-                const parsed = typeof achievement.metadata === "string" ? JSON.parse(achievement.metadata) : achievement.metadata;
+                const parsed =
+                  typeof achievement.metadata === "string"
+                    ? JSON.parse(achievement.metadata)
+                    : achievement.metadata;
                 count = parsed.count || 0;
               } catch (e) {
                 // ignore
@@ -124,9 +127,14 @@ export function AllAchievementsTab({
                     )}
                   >
                     {isUnlocked ? (
-                      achievement.iconUrl?.startsWith("http") || achievement.iconUrl?.startsWith("/") ? (
+                      achievement.iconUrl?.startsWith("http") ||
+                      achievement.iconUrl?.startsWith("/") ? (
                         <img
-                          src={achievement.iconUrl?.startsWith("/") ? createUrl(achievement.iconUrl) : achievement.iconUrl}
+                          src={
+                            achievement.iconUrl?.startsWith("/")
+                              ? createUrl(achievement.iconUrl)
+                              : achievement.iconUrl
+                          }
                           alt={achievement.title}
                           className="h-8 w-8 object-contain"
                         />
@@ -137,7 +145,7 @@ export function AllAchievementsTab({
                       <Lock className="text-muted-foreground/45 h-5 w-5" />
                     )}
                     {isUnlocked && count > 1 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-black border border-background shadow-md">
+                      <span className="border-background absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border bg-amber-500 px-1 text-[9px] font-black text-black shadow-md">
                         {count}
                       </span>
                     )}

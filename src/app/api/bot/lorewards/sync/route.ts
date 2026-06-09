@@ -54,10 +54,7 @@ export async function POST(request: Request) {
     } = payload;
 
     if (!date || !type) {
-      return NextResponse.json(
-        { error: "Missing required fields: date, type" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields: date, type" }, { status: 400 });
     }
 
     // 3. Upsert LorewardEntry

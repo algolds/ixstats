@@ -192,7 +192,7 @@ export default function StashesPage() {
                     <Bookmark size={22} /> My Stash
                     <button
                       onClick={() => setWelcomeOpen(true)}
-                      className="text-muted-foreground hover:text-rose-500 transition-colors ml-1 p-0.5 rounded hover:bg-white/5 cursor-pointer"
+                      className="text-muted-foreground ml-1 cursor-pointer rounded p-0.5 transition-colors hover:bg-white/5 hover:text-rose-500"
                       title="Open Help Guide"
                     >
                       <HelpCircle size={16} />
@@ -328,9 +328,9 @@ export default function StashesPage() {
 
               {/* Main layout */}
               {stashes.length > 0 && (
-                <div className="flex flex-col md:flex-row gap-6 mt-6">
+                <div className="mt-6 flex flex-col gap-6 md:flex-row">
                   {/* Sidebar */}
-                  <div className="w-full md:w-60 shrink-0 wikios-stashes-sidebar">
+                  <div className="wikios-stashes-sidebar w-full shrink-0 md:w-60">
                     <div className="wikios-stashes-sidebar-label">Your Stashes</div>
                     {stashes.map((s) => (
                       <div key={s.id} className="wikios-stash-sidebar-item-wrapper">
@@ -466,7 +466,7 @@ export default function StashesPage() {
                   </div>
 
                   {/* Main content */}
-                  <div className="flex-1 min-w-0 wikios-stashes-main">
+                  <div className="wikios-stashes-main min-w-0 flex-1">
                     {activeStash && (
                       <div className="wikios-stashes-content-header flex flex-wrap items-center justify-between gap-4">
                         <div>
