@@ -294,11 +294,11 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
 
 export function AgendaBar({
   countryId,
-  onNavigate,
+  onNavigateAction,
   activeSection,
 }: {
   countryId: string;
-  onNavigate: (section: MyCountrySection) => void;
+  onNavigateAction: (section: MyCountrySection) => void;
   activeSection?: MyCountrySection;
 }) {
   const { total: issueCount, urgent: urgentIssueCount } = useIssueCount(countryId);
@@ -347,8 +347,11 @@ export function AgendaBar({
       ?.flatMap((m) => m.actionItems ?? [])
       .filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
 
-  const activePolicies = policies?.filter((p: any) => p.status === "active").length ?? 0;
-  const totalPolicies = policies?.length ?? 0;
+  const activePolicies = policies?.filter((p: any) => p.status?.toLowerCase() === "active").length ?? 0;
+  const totalPolicies = policies?.filter((p: any) => {
+    const status = p.status?.toLowerCase();
+    return status && status !== "archived" && status !== "draft";
+  }).length ?? 0;
 
   const activeThreatCount = securityAssessment?.activeThreatCount ?? 0;
   const securityScore = securityAssessment?.overallSecurityScore ?? 100;
@@ -601,7 +604,7 @@ export function AgendaBar({
                 key={item.id}
                 onClick={() => {
                   setAgendaOpen(false);
-                  onNavigate(item.section);
+                  onNavigateAction(item.section);
                 }}
                 className={cn(
                   "group relative z-10 flex cursor-pointer items-center justify-between rounded-lg border p-3 text-left transition-all duration-200",

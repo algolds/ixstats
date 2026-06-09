@@ -135,6 +135,9 @@ function formatCustomCurrency(
   currency: string,
   forceDecimals: boolean = false
 ): string {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) {
+    return "N/A";
+  }
   const customCurrency = getCustomCurrency(currency);
   if (!customCurrency) {
     // Fallback to generic custom currency
@@ -185,6 +188,9 @@ export function formatCurrency(
   currency: string = "USD",
   forceDecimals: boolean = false
 ): string {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) {
+    return "N/A";
+  }
   // Handle custom currencies
   if (!isISOCurrency(currency)) {
     return formatCustomCurrency(amount, currency, forceDecimals);
@@ -374,6 +380,9 @@ export function formatExactNumber(num: number): string {
  * formatExactCurrency(1234567890) → "$1,234,567,890"
  */
 export function formatExactCurrency(amount: number, currency: string = "USD"): string {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) {
+    return "N/A";
+  }
   // Handle custom currencies
   if (!isISOCurrency(currency)) {
     const customCurrency = getCustomCurrency(currency);

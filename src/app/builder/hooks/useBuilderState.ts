@@ -1314,6 +1314,25 @@ export function useBuilderState(
       const sanitized = sanitizeEconomicInputs(inputs);
       const nextState = { ...prev, economicInputs: sanitized };
 
+      if (nextState.economyBuilderState) {
+        const totalPopulation = sanitized.coreIndicators?.totalPopulation;
+        if (totalPopulation !== undefined) {
+          const participationRate = nextState.economyBuilderState.laborMarket?.laborForceParticipationRate ?? 65;
+          const totalWorkforce = sanitized.laborEmployment?.totalWorkforce || Math.round(totalPopulation * (participationRate / 100));
+          nextState.economyBuilderState = {
+            ...nextState.economyBuilderState,
+            demographics: {
+              ...nextState.economyBuilderState.demographics,
+              totalPopulation,
+            },
+            laborMarket: {
+              ...nextState.economyBuilderState.laborMarket,
+              totalWorkforce,
+            },
+          };
+        }
+      }
+
       const currency = sanitized.nationalIdentity?.currency;
       if (currency) {
         const symbol = sanitized.nationalIdentity?.currencySymbol || "$";
@@ -1365,6 +1384,7 @@ export function useBuilderState(
         switch (step) {
           case "foundation":
             newState.selectedCountry = data;
+            newState.economyBuilderState = null;
             if (data) {
               newState.economicInputs = sanitizeEconomicInputs(createDefaultEconomicInputs(data));
 

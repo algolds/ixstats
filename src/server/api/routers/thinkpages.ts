@@ -157,6 +157,7 @@ const CreatePostSchema = z.object({
     )
     .optional(), // Data visualizations embedded in post
   mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
+  postToDiscord: z.boolean().optional().default(true),
 });
 
 const AddReactionSchema = z.object({
@@ -805,6 +806,16 @@ export const thinkpagesRouter = createTRPCRouter({
             displayName: true,
             profileImageUrl: true,
             clerkUserId: true,
+            accountType: true,
+            verified: true,
+            countryId: true,
+            country: {
+              select: {
+                id: true,
+                name: true,
+                flag: true,
+              },
+            },
           },
         },
         parentPost: {
@@ -816,6 +827,16 @@ export const thinkpagesRouter = createTRPCRouter({
                 displayName: true,
                 profileImageUrl: true,
                 clerkUserId: true,
+                accountType: true,
+                verified: true,
+                countryId: true,
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                    flag: true,
+                  },
+                },
               },
             },
           },
@@ -829,6 +850,16 @@ export const thinkpagesRouter = createTRPCRouter({
                 displayName: true,
                 profileImageUrl: true,
                 clerkUserId: true,
+                accountType: true,
+                verified: true,
+                countryId: true,
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                    flag: true,
+                  },
+                },
               },
             },
           },
@@ -968,7 +999,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }
 
     // 📣 Autopost public, non-repost posts to Discord IxTwitter channel
-    if (post.visibility === "public" && post.postType !== "repost") {
+    if (input.postToDiscord && post.visibility === "public" && post.postType !== "repost") {
       try {
         const { postThinkPagesToDiscord } = await import("~/lib/discord-ixtwitter-sync");
         // Run asynchronously without awaiting to keep createPost response fast
@@ -1577,6 +1608,7 @@ export const thinkpagesRouter = createTRPCRouter({
               accountType: true,
               verified: true,
               clerkUserId: true,
+              countryId: true,
               country: {
                 select: {
                   id: true,
@@ -1597,6 +1629,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
             },
@@ -1612,6 +1652,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
             },
@@ -1761,6 +1809,7 @@ export const thinkpagesRouter = createTRPCRouter({
               accountType: true,
               verified: true,
               clerkUserId: true,
+              countryId: true,
               country: {
                 select: {
                   id: true,
@@ -1781,6 +1830,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
             },
@@ -1796,6 +1853,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
             },
@@ -1811,6 +1876,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
               reactions: true,
@@ -1889,6 +1962,14 @@ export const thinkpagesRouter = createTRPCRouter({
               accountType: true,
               verified: true,
               clerkUserId: true,
+              countryId: true,
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  flag: true,
+                },
+              },
             },
           },
           parentPost: {
@@ -1902,6 +1983,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
             },
@@ -1917,6 +2006,14 @@ export const thinkpagesRouter = createTRPCRouter({
                   accountType: true,
                   verified: true,
                   clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
                 },
               },
             },

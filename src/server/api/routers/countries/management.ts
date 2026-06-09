@@ -67,6 +67,23 @@ export const managementProcedures = {
         await invalidateCache(["countries."]);
         clearLayerCache("political");
 
+        let targetUserId = userProfile?.id;
+        if (!targetUserId) {
+          const countryOwner = await ctx.db.user.findFirst({
+            where: { countryId: id },
+          });
+          targetUserId = countryOwner?.id;
+        }
+
+        if (targetUserId) {
+          try {
+            const { evaluateThresholds } = await import("../intelligence/alerts");
+            await evaluateThresholds(ctx.db, id, targetUserId);
+          } catch (e) {
+            console.error("[Countries API] Error evaluating thresholds on country update:", e);
+          }
+        }
+
         return updatedCountry;
       } catch (error) {
         console.error("[Countries API] Failed to update country:", error);
@@ -576,15 +593,30 @@ export const managementProcedures = {
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,
               maxGdpGrowthRate: 0.05,
-              adjustedGdpGrowth: coreIndicators.realGDPGrowthRate || 0.03,
-              populationGrowthRate: demographics.populationGrowthRate || 0.01,
-              actualGdpGrowth: coreIndicators.realGDPGrowthRate || 0.03,
+              adjustedGdpGrowth:
+                coreIndicators.realGDPGrowthRate !== undefined
+                  ? coreIndicators.realGDPGrowthRate / 100
+                  : 0.03,
+              populationGrowthRate:
+                demographics.populationGrowthRate !== undefined
+                  ? demographics.populationGrowthRate / 100
+                  : 0.01,
+              actualGdpGrowth:
+                coreIndicators.realGDPGrowthRate !== undefined
+                  ? coreIndicators.realGDPGrowthRate / 100
+                  : 0.03,
               localGrowthFactor: 1.0,
               economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
               populationTier: getPopulationTierFromPopulation(population),
               nominalGDP: nominalGDP,
-              realGDPGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
-              inflationRate: coreIndicators.inflationRate || 2.0,
+              realGDPGrowthRate:
+                coreIndicators.realGDPGrowthRate !== undefined
+                  ? coreIndicators.realGDPGrowthRate / 100
+                  : 0.03,
+              inflationRate:
+                coreIndicators.inflationRate !== undefined
+                  ? coreIndicators.inflationRate / 100
+                  : 0.02,
               currencyExchangeRate: coreIndicators.currencyExchangeRate || 1.0,
               laborForceParticipationRate: laborEmployment.laborForceParticipationRate || 65,
               employmentRate: laborEmployment.employmentRate || 95,
@@ -1201,33 +1233,33 @@ export const managementProcedures = {
               leader: nationalIdentity.leader || existingCountry.leader,
               flag: econ.flagUrl || existingCountry.flag || undefined,
               coatOfArms: econ.coatOfArmsUrl || existingCountry.coatOfArms || undefined,
-              baselinePopulation: population,
-              baselineGdpPerCapita: gdpPerCapita,
+              baselinePopulation: existingCountry.baselinePopulation,
+              baselineGdpPerCapita: existingCountry.baselineGdpPerCapita,
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,
               adjustedGdpGrowth:
                 coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate
+                  ? coreIndicators.realGDPGrowthRate / 100
                   : existingCountry.adjustedGdpGrowth,
               populationGrowthRate:
                 demographics.populationGrowthRate !== undefined
-                  ? demographics.populationGrowthRate
+                  ? demographics.populationGrowthRate / 100
                   : existingCountry.populationGrowthRate,
               actualGdpGrowth:
                 coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate
+                  ? coreIndicators.realGDPGrowthRate / 100
                   : existingCountry.actualGdpGrowth,
               economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
               populationTier: getPopulationTierFromPopulation(population),
               nominalGDP: nominalGDP,
               realGDPGrowthRate:
                 coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate
+                  ? coreIndicators.realGDPGrowthRate / 100
                   : existingCountry.realGDPGrowthRate,
               inflationRate:
                 coreIndicators.inflationRate !== undefined
-                  ? coreIndicators.inflationRate
+                  ? coreIndicators.inflationRate / 100
                   : existingCountry.inflationRate,
               currencyExchangeRate:
                 coreIndicators.currencyExchangeRate !== undefined

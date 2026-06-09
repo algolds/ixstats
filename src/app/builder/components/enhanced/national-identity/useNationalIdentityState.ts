@@ -32,7 +32,7 @@ export function useNationalIdentityState(
   // State management
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
-  const [selectedGovernmentType, setSelectedGovernmentType] = useState("republic");
+  const [selectedGovernmentType, setSelectedGovernmentType] = useState("Republic");
   const [customOfficialName, setCustomOfficialName] = useState("");
   const [isEditingCustomName, setIsEditingCustomName] = useState(false);
   const [shouldFetchCustomTypes, setShouldFetchCustomTypes] = useState(false);
@@ -70,7 +70,7 @@ export function useNationalIdentityState(
       ({
         countryName: String(inputs.countryName || ""),
         officialName: "",
-        governmentType: "republic",
+        governmentType: "Republic",
         motto: "",
         mottoNative: "",
         capitalCity: "",

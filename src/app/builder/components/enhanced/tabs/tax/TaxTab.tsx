@@ -32,20 +32,21 @@ export function TaxTab({
   // Memoize taxOpt to avoid recreating it on every render
   const taxOpt = useMemo(() => getTaxOptimization(selectedComponents), [selectedComponents]);
 
-  // Memoize economicData object to prevent rendering loops and unnecessary useEffect triggers
-  const economicData = useMemo(
-    () => ({
-      gdp: economicInputs.coreIndicators?.nominalGDP || 0,
+  const economicData = useMemo(() => {
+    const gdp = economicInputs.coreIndicators?.nominalGDP || 0;
+    const population = economicInputs.coreIndicators?.totalPopulation || 1000000;
+    return {
+      gdp,
       sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
-      population: economicInputs.coreIndicators?.totalPopulation || 1000000,
-    }),
-    [
-      economicInputs.coreIndicators?.nominalGDP,
-      economyBuilder.structure.sectors,
-      economyBuilder.sectors,
-      economicInputs.coreIndicators?.totalPopulation,
-    ]
-  );
+      population,
+      gdpPerCapita: population > 0 ? gdp / population : 0,
+    };
+  }, [
+    economicInputs.coreIndicators?.nominalGDP,
+    economyBuilder.structure.sectors,
+    economyBuilder.sectors,
+    economicInputs.coreIndicators?.totalPopulation,
+  ]);
 
   // Memoize componentOptimization to prevent passing unstable objects
   const componentOptimization = useMemo(() => {

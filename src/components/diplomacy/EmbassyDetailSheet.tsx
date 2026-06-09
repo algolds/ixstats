@@ -108,6 +108,28 @@ export function EmbassyDetailSheet({
     },
   });
 
+  const reopenMutation = api.diplomaticEmbassies.reopenEmbassy.useMutation({
+    onSuccess: () => {
+      notify.success("Embassy reopened.");
+      onEmbassyChanged?.();
+      onClose();
+    },
+    onError: (error) => {
+      notify.error(`Failed to reopen embassy: ${error.message}`);
+    },
+  });
+
+  const severMutation = api.diplomaticEmbassies.deleteEmbassy.useMutation({
+    onSuccess: () => {
+      notify.success("Diplomatic relations severed and embassy deleted.");
+      onEmbassyChanged?.();
+      onClose();
+    },
+    onError: (error) => {
+      notify.error(`Failed to sever relations: ${error.message}`);
+    },
+  });
+
   const getStatusBadge = (status: string | undefined) => {
     const s = status?.toLowerCase() ?? "active";
     if (s === "active")
@@ -340,6 +362,30 @@ export function EmbassyDetailSheet({
                   >
                     <XCircle className="h-3 w-3" />
                     {closeMutation.isPending ? "Closing..." : "Close Embassy"}
+                  </Button>
+                </>
+              )}
+              {embassy.status === "closed" && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                    onClick={() => reopenMutation.mutate({ embassyId: embassy.id })}
+                    disabled={reopenMutation.isPending}
+                  >
+                    <CheckCircle className="h-3 w-3" />
+                    {reopenMutation.isPending ? "Reopening..." : "Reopen Embassy"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="gap-1.5"
+                    onClick={() => severMutation.mutate({ embassyId: embassy.id })}
+                    disabled={severMutation.isPending}
+                  >
+                    <XCircle className="h-3 w-3" />
+                    {severMutation.isPending ? "Severing..." : "Sever Relations"}
                   </Button>
                 </>
               )}

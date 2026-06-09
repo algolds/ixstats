@@ -798,7 +798,7 @@ const ThinkpagesPostComponent = ({
                 <PostVisualizationRenderer
                   key={viz.id || index}
                   viz={viz}
-                  countryId={post.account.countryId}
+                  countryId={post.account.countryId || post.account.country?.id || ""}
                 />
               ))}
             </div>

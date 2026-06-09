@@ -1118,6 +1118,177 @@ export const diplomaticEmbassiesRouter = createTRPCRouter({
       };
     }),
 
+  reopenEmbassy: protectedProcedure
+    .input(
+      z.object({
+        embassyId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be associated with a country to reopen embassies.",
+        });
+      }
+
+      const embassy = await ctx.db.embassy.findUnique({
+        where: { id: input.embassyId },
+        include: {
+          hostCountry: { select: { name: true } },
+          guestCountry: { select: { name: true } },
+        },
+      });
+
+      if (!embassy) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
+      }
+
+      if (embassy.guestCountryId !== ctx.user.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only reopen your own embassies.",
+        });
+      }
+
+      if (embassy.status !== "closed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Embassy is not closed.",
+        });
+      }
+
+      const reopenedEmbassy = await ctx.db.embassy.update({
+        where: { id: input.embassyId },
+        data: {
+          status: "active",
+        },
+      });
+
+      // Create diplomatic event
+      await ctx.db.diplomaticEvent.create({
+        data: {
+          country1Id: embassy.guestCountryId,
+          country2Id: embassy.hostCountryId,
+          eventType: "embassy_reopened",
+          title: "Embassy Reopened",
+          description: `${embassy.name} has been reopened.`,
+          embassyId: embassy.id,
+          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          relationshipImpact: 5,
+          severity: "positive",
+        },
+      });
+
+      // Notify host country
+      try {
+        await notificationAPI.create({
+          title: "🏛️ Embassy Reopened",
+          message: `${embassy.guestCountry?.name || "A country"} has reopened ${embassy.name}`,
+          countryId: embassy.hostCountryId,
+          category: "diplomatic",
+          priority: "medium",
+          href: "/diplomatic",
+          source: "diplomatic-system",
+          actionable: true,
+          metadata: { embassyId: embassy.id, guestCountryId: embassy.guestCountryId },
+        });
+      } catch (error) {
+        console.error("[Diplomatic] Failed to send embassy reopen notification:", error);
+      }
+
+      return {
+        success: true,
+        embassy: reopenedEmbassy,
+      };
+    }),
+
+  deleteEmbassy: protectedProcedure
+    .input(
+      z.object({
+        embassyId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be associated with a country to sever relations.",
+        });
+      }
+
+      const embassy = await ctx.db.embassy.findUnique({
+        where: { id: input.embassyId },
+        include: {
+          hostCountry: { select: { name: true } },
+          guestCountry: { select: { name: true } },
+        },
+      });
+
+      if (!embassy) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
+      }
+
+      if (
+        embassy.guestCountryId !== ctx.user.countryId &&
+        embassy.hostCountryId !== ctx.user.countryId
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only sever relations for your own embassies.",
+        });
+      }
+
+      // Delete the embassy
+      await ctx.db.embassy.delete({
+        where: { id: input.embassyId },
+      });
+
+      // Create diplomatic event
+      await ctx.db.diplomaticEvent.create({
+        data: {
+          country1Id: embassy.guestCountryId,
+          country2Id: embassy.hostCountryId,
+          eventType: "embassy_severed",
+          title: "Diplomatic Relations Severed",
+          description: `${embassy.name} has been permanently dismantled and diplomatic relations severed.`,
+          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          relationshipImpact: -30,
+          severity: "critical",
+        },
+      });
+
+      // Notify the other country
+      const otherCountryId =
+        embassy.guestCountryId === ctx.user.countryId
+          ? embassy.hostCountryId
+          : embassy.guestCountryId;
+      const myCountryName =
+        embassy.guestCountryId === ctx.user.countryId
+          ? embassy.guestCountry?.name
+          : embassy.hostCountry?.name;
+
+      try {
+        await notificationAPI.create({
+          title: "❌ Diplomatic Relations Severed",
+          message: `${myCountryName || "A country"} has permanently dismantled the embassy and severed relations.`,
+          countryId: otherCountryId,
+          category: "diplomatic",
+          priority: "high",
+          href: "/diplomatic",
+          source: "diplomatic-system",
+          actionable: false,
+        });
+      } catch (error) {
+        console.error("[Diplomatic] Failed to send embassy sever notification:", error);
+      }
+
+      return {
+        success: true,
+      };
+    }),
+
+
   // Get cultural compatibility scores for a country with all other countries
 
   // Get recommended diplomatic partners based on cultural compatibility

@@ -81,9 +81,9 @@ export function formatContentEnhanced(content: string): string {
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
   );
 
-  // Replace hashtags - match hashtag at word boundary
+  // Replace hashtags - match hashtag at word boundary, ignoring HTML entities like &#039;
   formattedContent = formattedContent.replace(
-    /\B#([a-zA-Z0-9_]+)/g,
+    /\B(?<!&)#([a-zA-Z0-9_]+)/g,
     '<span class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</span>'
   );
 

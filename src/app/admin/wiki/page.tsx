@@ -47,8 +47,62 @@ import {
   Info,
   Zap,
   Calendar,
+  Medal,
+  Shield,
+  Crown,
+  History,
 } from "lucide-react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+
+const getIconComponent = (iconName?: string) => {
+  switch (iconName) {
+    case "trophy":
+      return Trophy;
+    case "medal":
+      return Medal;
+    case "star":
+      return Star;
+    case "crown":
+      return Crown;
+    case "shield":
+      return Shield;
+    case "award":
+      return Award;
+    case "users":
+      return Users;
+    case "check":
+      return Check;
+    case "sparkles":
+    default:
+      return Sparkles;
+  }
+};
+
+const getColorClass = (colorName?: string) => {
+  switch (colorName) {
+    case "amber": return "text-amber-500";
+    case "slate": return "text-slate-400";
+    case "cyan": return "text-cyan-500";
+    case "green": return "text-emerald-500";
+    case "purple": return "text-purple-500";
+    case "pink": return "text-pink-500";
+    case "red": return "text-red-500";
+    default: return "text-amber-500";
+  }
+};
+
+const getColorHex = (colorName: string) => {
+  switch (colorName) {
+    case "amber": return "#f59e0b";
+    case "slate": return "#94a3b8";
+    case "cyan": return "#06b6d4";
+    case "green": return "#10b981";
+    case "purple": return "#a855f7";
+    case "pink": return "#ec4899";
+    case "red": return "#ef4444";
+    default: return "#f59e0b";
+  }
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1081,18 +1135,18 @@ function LorewardsBotSection() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="scrollbar-thumb-muted-foreground/30 max-h-72 min-h-60 scrollbar-thin overflow-y-auto rounded-xl bg-zinc-950 p-4 font-mono text-xs text-zinc-300">
+          <div className="scrollbar-thumb-muted-foreground/30 max-h-72 min-h-60 scrollbar-thin overflow-y-auto rounded-xl bg-muted/30 dark:bg-black/40 border border-border/40 p-4 font-mono text-xs text-foreground/90">
             {logsData && logsData.length > 0 ? (
               logsData.map((line, idx) => (
-                <div key={idx} className="py-0.5 leading-5 hover:bg-zinc-900/50">
-                  <span className="pr-3 text-zinc-600 select-none">{idx + 1}</span>
-                  <span className={cn(logType === "err" ? "text-red-400" : "text-zinc-300")}>
+                <div key={idx} className="py-0.5 leading-5 hover:bg-muted/40 transition-colors">
+                  <span className="pr-3 text-muted-foreground/60 select-none">{idx + 1}</span>
+                  <span className={cn(logType === "err" ? "text-destructive" : "text-foreground/80 dark:text-zinc-300")}>
                     {line}
                   </span>
                 </div>
               ))
             ) : (
-              <div className="flex min-h-48 items-center justify-center text-zinc-500 italic">
+              <div className="flex min-h-48 items-center justify-center text-muted-foreground/60 italic">
                 No logs recorded yet.
               </div>
             )}
@@ -1236,7 +1290,7 @@ function LorewardsBotSection() {
             <Button
               onClick={() => triggerSyncMutation.mutate()}
               disabled={triggerSyncMutation.isPending}
-              className="bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500/20 text-xs font-bold gap-2"
+              className="bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 text-xs font-bold gap-2"
               size="sm"
             >
               {triggerSyncMutation.isPending ? (
@@ -1262,7 +1316,7 @@ function LorewardsBotSection() {
               <Button
                 onClick={() => crossValidateMutation.mutate({ date: adminDate })}
                 disabled={crossValidateMutation.isPending}
-                className="bg-blue-500/10 border border-blue-500/30 text-blue-550 hover:bg-blue-500/20 text-xs font-bold h-9 gap-2"
+                className="bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 text-xs font-bold h-9 gap-2"
                 size="sm"
               >
                 {crossValidateMutation.isPending ? (
@@ -1276,15 +1330,15 @@ function LorewardsBotSection() {
 
           {/* Validation Result Display */}
           {validationResult && (
-            <div className="border border-blue-500/20 bg-blue-500/5 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
-                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="border border-blue-500/20 dark:border-blue-500/10 bg-blue-500/5 dark:bg-blue-500/10 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-blue-500/20 dark:border-blue-500/10 pb-2">
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Info className="w-4 h-4" />
                   Cross-Validation Report for {validationResult.date}
                 </span>
                 <span className={cn(
                   "text-xs font-black px-2 py-0.5 rounded",
-                  validationResult.winnersAgree ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-550"
+                  validationResult.winnersAgree ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"
                 )}>
                   {validationResult.winnersAgree ? "Winners Agree" : "Winners Disagree"}
                 </span>
@@ -1307,17 +1361,17 @@ function LorewardsBotSection() {
           {/* Recent validation history list */}
           <div className="space-y-2">
             <h6 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Recent Cross-Validation History:</h6>
-            <div className="border border-border/40 rounded-xl overflow-hidden bg-black/10 text-xs divide-y divide-border/20">
+            <div className="border border-border/40 rounded-xl overflow-hidden bg-muted/20 text-xs divide-y divide-border/20">
               {validationHistory?.results && validationHistory.results.length > 0 ? (
                 validationHistory.results.map((r: any) => (
-                  <div key={r.date} className="p-3 flex items-center justify-between hover:bg-white/5">
+                  <div key={r.date} className="p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
                     <span className="font-mono font-semibold">{r.date}</span>
                     <div className="flex items-center gap-3 text-[11px]">
                       <span>Bot: <strong>{r.botWinner || "None"}</strong></span>
                       <span>WikiOS: <strong>{r.wikiosWinner || "None"}</strong></span>
                       <span className={cn(
                         "font-bold px-1.5 py-0.2 rounded text-[10px]",
-                        r.winnersAgree ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-550"
+                        r.winnersAgree ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"
                       )}>
                         {r.winnersAgree ? "MATCH" : "MISMATCH"}
                       </span>
@@ -1384,7 +1438,7 @@ function LorewardsBotSection() {
           <Button
             onClick={handleAddBlacklist}
             disabled={updateBlacklistMutation.isPending}
-            className="w-full sm:w-auto bg-red-650 hover:bg-red-750 text-white font-bold h-9 text-xs"
+            className="w-full sm:w-auto bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold h-9 text-xs"
           >
             Add to Blacklist
           </Button>
@@ -1392,10 +1446,10 @@ function LorewardsBotSection() {
           {/* Active Blacklisted Users List */}
           <div className="space-y-2">
             <h6 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Blacklisted Users:</h6>
-            <div className="border border-border/40 rounded-xl overflow-hidden bg-black/10 max-h-48 overflow-y-auto text-xs divide-y divide-border/20">
+            <div className="border border-border/40 rounded-xl overflow-hidden bg-muted/20 max-h-48 overflow-y-auto text-xs divide-y divide-border/20">
               {blacklist && Object.keys(blacklist).length > 0 ? (
                 Object.entries(blacklist).map(([user, date]: [string, any]) => (
-                  <div key={user} className="p-3 flex items-center justify-between hover:bg-white/5">
+                  <div key={user} className="p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
                     <div className="font-bold flex items-center gap-2">
                       <UnifiedCountryFlag countryName={user} size="xs" showTooltip={false} />
                       {user}
@@ -1407,7 +1461,7 @@ function LorewardsBotSection() {
                       <button
                         onClick={() => updateBlacklistMutation.mutate({ username: user, action: "remove" })}
                         disabled={updateBlacklistMutation.isPending}
-                        className="text-red-550 hover:text-red-650"
+                        className="text-destructive/80 hover:text-destructive transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1557,7 +1611,7 @@ function LorewardsBotSection() {
           <Button
             onClick={handleOverrideSubmit}
             disabled={overrideWinnerMutation.isPending}
-            className="w-full bg-amber-550 hover:bg-amber-600 text-black font-bold h-9 text-xs gap-2"
+            className="w-full bg-amber-500 hover:bg-amber-600 text-primary-foreground dark:text-black font-bold h-9 text-xs gap-2 transition-colors"
           >
             {overrideWinnerMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1588,6 +1642,11 @@ function AwardsManagerSection() {
   const [awardCategory, setAwardCategory] = useState<string>("all");
   const [milestonePages, setMilestonePages] = useState("");
 
+  // Medal Icon Builder States
+  const [iconShape, setIconShape] = useState("trophy");
+  const [iconColor, setIconColor] = useState("amber");
+  const [customHex, setCustomHex] = useState("#ffd700");
+
   const {
     data: awards,
     refetch: refetchAwards,
@@ -1595,6 +1654,15 @@ function AwardsManagerSection() {
   } = api.admin.getWikiArticleAwards.useQuery({
     category: awardCategory === "all" ? undefined : awardCategory,
     search: awardSearch || undefined,
+  });
+
+  // Fetch recent daily/weekly/monthly winners
+  const {
+    data: recentWinners,
+    isLoading: isLoadingWinners,
+    refetch: refetchRecentWinners,
+  } = api.lorewards.getRecentWinners.useQuery({
+    limit: 10,
   });
 
   const createAwardMutation = api.admin.createWikiArticleAwardBatch.useMutation({
@@ -1605,6 +1673,9 @@ function AwardsManagerSection() {
       setName("");
       setRecipientText("");
       setDescription("");
+      setIconShape("trophy");
+      setIconColor("amber");
+      setCustomHex("#ffd700");
     },
     onError: (err) => notify.error("Creation Error", err.message),
   });
@@ -1651,6 +1722,10 @@ function AwardsManagerSection() {
       name,
       description: description || undefined,
       recipientUsers: recipients,
+      metadata: JSON.stringify({
+        icon: iconShape,
+        color: iconColor === "custom" ? customHex : iconColor,
+      }),
     });
   };
 
@@ -1672,20 +1747,55 @@ function AwardsManagerSection() {
     }
   };
 
-  const getCategoryIcon = (cat: string) => {
-    switch (cat) {
-      case "FEATURED":
-        return <Trophy className="h-4 w-4 text-amber-500" />;
-      case "COLLABORATION":
-        return <Users className="h-4 w-4 text-cyan-500" />;
-      case "PEER_REVIEW":
-        return <Check className="h-4 w-4 text-emerald-500" />;
-      case "SPECIAL":
-        return <Star className="h-4 w-4 text-purple-500" />;
-      case "EDITOR_MILESTONE":
-      default:
-        return <Sparkles className="h-4 w-4 text-pink-500" />;
+  const renderAwardBadgeIcon = (award: any) => {
+    let iconName = "sparkles";
+    let colorVal = "amber";
+    let customStyle: React.CSSProperties = {};
+    let isCustomHex = false;
+
+    if (award.metadata) {
+      try {
+        const meta = JSON.parse(award.metadata);
+        if (meta.icon) iconName = meta.icon;
+        if (meta.color) {
+          colorVal = meta.color;
+          if (colorVal.startsWith("#")) {
+            isCustomHex = true;
+            customStyle = { color: colorVal };
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    } else {
+      // Fallback defaults based on category if metadata doesn't exist
+      if (award.category === "FEATURED") {
+        iconName = "trophy";
+        colorVal = "amber";
+      } else if (award.category === "COLLABORATION") {
+        iconName = "users";
+        colorVal = "cyan";
+      } else if (award.category === "PEER_REVIEW") {
+        iconName = "check";
+        colorVal = "green";
+      } else if (award.category === "SPECIAL") {
+        iconName = "star";
+        colorVal = "purple";
+      } else {
+        iconName = "sparkles";
+        colorVal = "pink";
+      }
     }
+
+    const IconComp = getIconComponent(iconName);
+    const colorClass = getColorClass(colorVal);
+
+    return (
+      <IconComp
+        className={cn("w-4.5 h-4.5 shrink-0", !isCustomHex && colorClass)}
+        style={customStyle}
+      />
+    );
   };
 
   return (
@@ -1748,6 +1858,100 @@ function AwardsManagerSection() {
                   value={recipientText}
                   onChange={(e) => setRecipientText(e.target.value)}
                 />
+              </div>
+
+              {/* Medal Icon Builder Section */}
+              <div className="border-t border-border/20 pt-3 space-y-3">
+                <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider">Medal Icon Builder</span>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-foreground text-xs font-medium">Shape</label>
+                    <select
+                      value={iconShape}
+                      onChange={(e) => setIconShape(e.target.value)}
+                      className="bg-background border-border/50 text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="trophy">🏆 Trophy</option>
+                      <option value="medal">🏅 Medal</option>
+                      <option value="star">⭐ Star</option>
+                      <option value="crown">👑 Crown</option>
+                      <option value="shield">🛡️ Shield</option>
+                      <option value="award">🎖️ Award</option>
+                      <option value="users">👥 Users</option>
+                      <option value="check">✔️ Check</option>
+                      <option value="sparkles">✨ Sparkles</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-foreground text-xs font-medium">Color Type</label>
+                    <select
+                      value={iconColor}
+                      onChange={(e) => setIconColor(e.target.value)}
+                      className="bg-background border-border/50 text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="amber">Amber (Gold)</option>
+                      <option value="slate">Slate (Silver)</option>
+                      <option value="cyan">Cyan</option>
+                      <option value="green">Green</option>
+                      <option value="purple">Purple</option>
+                      <option value="pink">Pink</option>
+                      <option value="red">Red</option>
+                      <option value="custom">Custom HEX</option>
+                    </select>
+                  </div>
+                </div>
+
+                {iconColor === "custom" && (
+                  <div className="space-y-1.5">
+                    <label className="text-foreground text-xs font-medium">Custom Color (HEX)</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="#ffd700"
+                        value={customHex}
+                        onChange={(e) => setCustomHex(e.target.value)}
+                        className="h-8 text-xs font-mono"
+                      />
+                      <Input
+                        type="color"
+                        value={customHex.startsWith("#") && customHex.length === 7 ? customHex : "#ffd700"}
+                        onChange={(e) => setCustomHex(e.target.value)}
+                        className="w-10 h-8 p-0 border-0 cursor-pointer rounded-md overflow-hidden bg-transparent"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Ambient Glass Medal Preview */}
+                <div className="flex flex-col items-center justify-center p-3.5 border border-border/40 rounded-xl bg-muted/20 backdrop-blur-md">
+                  <span className="text-[10px] font-bold text-muted-foreground/60 uppercase mb-2 select-none">Live Medal Preview</span>
+                  <div className="relative flex items-center justify-center w-14 h-14 rounded-full border border-border/50 bg-card/65 shadow-inner transition-all duration-300">
+                    {/* Ambient Glow Backdrop */}
+                    <div 
+                      className="absolute inset-0 rounded-full blur-md opacity-25 transition-all duration-500"
+                      style={{
+                        backgroundColor: iconColor === "custom" ? customHex : getColorHex(iconColor)
+                      }}
+                    />
+                    {/* Medal Icon */}
+                    {(() => {
+                      const IconComp = getIconComponent(iconShape);
+                      const isCustom = iconColor === "custom";
+                      const customStyle = isCustom ? { color: customHex } : undefined;
+                      const colorClass = !isCustom ? getColorClass(iconColor) : "";
+                      return (
+                        <IconComp
+                          className={cn("w-7.5 h-7.5 relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300", colorClass)}
+                          style={customStyle}
+                        />
+                      );
+                    })()}
+                  </div>
+                  <span className="text-xs font-black text-foreground mt-2 truncate max-w-[15rem]">{name || "Award Title"}</span>
+                  <span className="text-[9px] font-bold text-muted-foreground/70 tracking-wider uppercase mt-0.5">{category.replace("_", " ")}</span>
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -1829,130 +2033,242 @@ function AwardsManagerSection() {
         </Card>
       </div>
 
-      {/* Active Awards List */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm lg:col-span-2">
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle className="text-lg">Issued Awards</CardTitle>
-              <CardDescription>Chronological list of all manual wiki rewards</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={awardCategory}
-                onChange={(e) => setAwardCategory(e.target.value)}
-                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+      <div className="flex flex-col gap-6 lg:col-span-2">
+        {/* Recent Winners Log */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <History className="h-5 w-5 text-amber-500" />
+                  Recent Winners Log
+                </CardTitle>
+                <CardDescription>
+                  Chronological feed of automatically calculated daily, weekly, and monthly loreward winners
+                </CardDescription>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => refetchRecentWinners()}
+                disabled={isLoadingWinners}
+                className="text-muted-foreground h-8 w-8"
               >
-                <option value="all">All Categories</option>
-                <option value="FEATURED">Featured</option>
-                <option value="COLLABORATION">Collaboration</option>
-                <option value="PEER_REVIEW">Peer Review</option>
-                <option value="SPECIAL">Special</option>
-                <option value="EDITOR_MILESTONE">Milestones</option>
-              </select>
+                <RefreshCw className={cn("h-4 w-4", isLoadingWinners && "animate-spin")} />
+              </Button>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search awards by page title..."
-              value={awardSearch}
-              onChange={(e) => setAwardSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          </CardHeader>
+          <CardContent>
+            {isLoadingWinners ? (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : !recentWinners || recentWinners.length === 0 ? (
+              <div className="text-muted-foreground py-8 text-center text-sm italic">
+                No recent winners recorded in the database.
+              </div>
+            ) : (
+              <div className="border-border/30 max-h-[16rem] overflow-y-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
+                    <tr className="border-border/30 border-b">
+                      <th className="text-muted-foreground px-4 py-2 text-left font-medium text-xs">Date</th>
+                      <th className="text-muted-foreground px-4 py-2 text-left font-medium text-xs">Type</th>
+                      <th className="text-muted-foreground px-4 py-2 text-left font-medium text-xs">Winner</th>
+                      <th className="text-muted-foreground px-4 py-2 text-left font-medium text-xs">Article Page</th>
+                      <th className="text-muted-foreground px-4 py-2 text-right font-medium text-xs">Metrics</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-border/20 divide-y">
+                    {recentWinners.map((winner, idx) => {
+                      const typeColors: Record<string, string> = {
+                        daily: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25",
+                        weekly: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25",
+                        monthly: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25",
+                      };
 
-          {isLoadingAwards ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : !awards || awards.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center text-sm">
-              No awards match your filter criteria.
-            </div>
-          ) : (
-            <div className="border-border/30 max-h-[30rem] overflow-y-auto rounded-lg border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
-                  <tr className="border-border/30 border-b">
-                    <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
-                      Article
-                    </th>
-                    <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
-                      Award & Badge
-                    </th>
-                    <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium sm:table-cell">
-                      Recipients
-                    </th>
-                    <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium md:table-cell">
-                      Awarded At
-                    </th>
-                    <th className="w-12 px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody className="divide-border/20 divide-y">
-                  {awards.map((award) => {
-                    const recipients = Array.isArray(award.recipientUsers)
-                      ? (award.recipientUsers as string[])
-                      : typeof award.recipientUsers === "string"
-                        ? (JSON.parse(award.recipientUsers) as string[])
-                        : [];
-
-                    return (
-                      <tr key={award.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="text-foreground px-4 py-2.5 font-medium">
-                          {award.pageTitle}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-1.5">
-                            {getCategoryIcon(award.category)}
-                            <span className="font-medium">{award.name}</span>
-                          </div>
-                          {award.description && (
-                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
-                              {award.description}
-                            </p>
-                          )}
-                        </td>
-                        <td className="hidden px-4 py-2.5 text-xs sm:table-cell">
-                          {recipients.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {recipients.map((user) => (
-                                <Badge key={user} variant="secondary" className="px-1.5 py-0">
-                                  {user}
-                                </Badge>
-                              ))}
+                      return (
+                        <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-2 text-xs font-mono font-semibold">
+                            {winner.date}
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={cn("px-1.5 py-0.5 rounded border text-[9px] font-black uppercase tracking-wider", typeColors[winner.type] || "bg-muted text-muted-foreground")}>
+                              {winner.type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="font-bold text-xs flex items-center gap-1.5">
+                              {winner.winnerUser && (
+                                <>
+                                  <UnifiedCountryFlag countryName={winner.winnerUser} size="xs" showTooltip={false} />
+                                  {winner.winnerUser}
+                                </>
+                              )}
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground opacity-50">—</span>
-                          )}
-                        </td>
-                        <td className="text-muted-foreground hidden px-4 py-2.5 text-xs md:table-cell">
-                          {new Date(award.awardedAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDeleteAward(award.id)}
-                            className="h-8 w-8 text-red-500 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="px-4 py-2 text-xs">
+                            {winner.winnerPage ? (
+                              <a
+                                href={`/w/${winner.winnerPage}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-amber-500 hover:underline font-semibold flex items-center gap-1"
+                              >
+                                {winner.winnerPage}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground italic text-[11px]">No page</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-right text-xs font-mono">
+                            <span className="text-foreground font-semibold">
+                              {winner.winnerScore ? `${winner.winnerScore} pts` : "—"}
+                            </span>
+                            {winner.winnerBytes ? (
+                              <span className="text-muted-foreground ml-1.5 text-[10px]">
+                                (+{(winner.winnerBytes / 1000).toFixed(1)}k bytes)
+                              </span>
+                            ) : null}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Active Awards List */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Issued Awards</CardTitle>
+                <CardDescription>Chronological list of all manual wiki rewards</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={awardCategory}
+                  onChange={(e) => setAwardCategory(e.target.value)}
+                  className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="FEATURED">Featured</option>
+                  <option value="COLLABORATION">Collaboration</option>
+                  <option value="PEER_REVIEW">Peer Review</option>
+                  <option value="SPECIAL">Special</option>
+                  <option value="EDITOR_MILESTONE">Milestones</option>
+                </select>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Input
+                placeholder="Search awards by page title..."
+                value={awardSearch}
+                onChange={(e) => setAwardSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {isLoadingAwards ? (
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : !awards || awards.length === 0 ? (
+              <div className="text-muted-foreground py-8 text-center text-sm">
+                No awards match your filter criteria.
+              </div>
+            ) : (
+              <div className="border-border/30 max-h-[30rem] overflow-y-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
+                    <tr className="border-border/30 border-b">
+                      <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
+                        Article
+                      </th>
+                      <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
+                        Award & Badge
+                      </th>
+                      <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium sm:table-cell">
+                        Recipients
+                      </th>
+                      <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium md:table-cell">
+                        Awarded At
+                      </th>
+                      <th className="w-12 px-4 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-border/20 divide-y">
+                    {awards.map((award) => {
+                      const recipients = Array.isArray(award.recipientUsers)
+                        ? (award.recipientUsers as string[])
+                        : typeof award.recipientUsers === "string"
+                          ? (JSON.parse(award.recipientUsers) as string[])
+                          : [];
+
+                      return (
+                        <tr key={award.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="text-foreground px-4 py-2.5 font-medium">
+                            {award.pageTitle}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              {renderAwardBadgeIcon(award)}
+                              <span className="font-medium">{award.name}</span>
+                            </div>
+                            {award.description && (
+                              <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+                                {award.description}
+                              </p>
+                            )}
+                          </td>
+                          <td className="hidden px-4 py-2.5 text-xs sm:table-cell">
+                            {recipients.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {recipients.map((user) => (
+                                  <Badge key={user} variant="secondary" className="px-1.5 py-0">
+                                    {user}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground opacity-50">—</span>
+                            )}
+                          </td>
+                          <td className="text-muted-foreground hidden px-4 py-2.5 text-xs md:table-cell">
+                            {new Date(award.awardedAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteAward(award.id)}
+                              className="h-8 w-8 text-red-500 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

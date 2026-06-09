@@ -28,6 +28,11 @@ import {
   Code,
   Copy,
   Check,
+  Medal,
+  Star,
+  Shield,
+  Award,
+  Users,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -81,6 +86,43 @@ const getCategoryLabel = (cat: string) => {
       return "Milestone";
     default:
       return cat.replace("_", " ");
+  }
+};
+
+const getIconComponent = (iconName?: string) => {
+  switch (iconName) {
+    case "trophy":
+      return Trophy;
+    case "medal":
+      return Medal;
+    case "star":
+      return Star;
+    case "crown":
+      return Crown;
+    case "shield":
+      return Shield;
+    case "award":
+      return Award;
+    case "users":
+      return Users;
+    case "check":
+      return Check;
+    case "sparkles":
+    default:
+      return Sparkles;
+  }
+};
+
+const getColorClass = (colorName?: string) => {
+  switch (colorName) {
+    case "amber": return "text-amber-500";
+    case "slate": return "text-slate-400";
+    case "cyan": return "text-cyan-500";
+    case "green": return "text-emerald-500";
+    case "purple": return "text-purple-500";
+    case "pink": return "text-pink-500";
+    case "red": return "text-red-500";
+    default: return "text-amber-500";
   }
 };
 
@@ -754,9 +796,60 @@ export function WikiLoreTab({
                     </div>
 
                     <div className="space-y-1">
-                      <h5 className="font-extrabold text-foreground text-sm tracking-tight">
-                        {a.name}
-                      </h5>
+                      {(() => {
+                        let iconName = "sparkles";
+                        let colorVal = "amber";
+                        let customStyle: React.CSSProperties = {};
+                        let isCustomHex = false;
+
+                        if (a.metadata) {
+                          try {
+                            const meta = JSON.parse(a.metadata);
+                            if (meta.icon) iconName = meta.icon;
+                            if (meta.color) {
+                              colorVal = meta.color;
+                              if (colorVal.startsWith("#")) {
+                                isCustomHex = true;
+                                customStyle = { color: colorVal };
+                              }
+                            }
+                          } catch (e) {
+                            // ignore
+                          }
+                        }
+
+                        // Fallback defaults based on category if metadata doesn't exist
+                        if (!a.metadata) {
+                          if (a.category === "FEATURED") {
+                            iconName = "trophy";
+                            colorVal = "amber";
+                          } else if (a.category === "COLLABORATION") {
+                            iconName = "users";
+                            colorVal = "cyan";
+                          } else if (a.category === "PEER_REVIEW") {
+                            iconName = "check";
+                            colorVal = "green";
+                          } else if (a.category === "SPECIAL") {
+                            iconName = "star";
+                            colorVal = "purple";
+                          } else {
+                            iconName = "sparkles";
+                            colorVal = "pink";
+                          }
+                        }
+
+                        const IconComp = getIconComponent(iconName);
+
+                        return (
+                          <h5 className="font-extrabold text-foreground text-sm tracking-tight flex items-center gap-2">
+                            <IconComp
+                              className={cn("w-4.5 h-4.5 shrink-0", !isCustomHex && getColorClass(colorVal))}
+                              style={customStyle}
+                            />
+                            {a.name}
+                          </h5>
+                        );
+                      })()}
                       <Link
                         href={`/w/${a.pageSlug}`}
                         className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1 group w-fit"
