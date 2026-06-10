@@ -282,7 +282,7 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
           },
           {
             name: "ThinkTanks",
-            href: "/messages/groups",
+            href: "/messages/groups?tab=discover",
             icon: Users,
             description: "Coordinate intelligence networks and diplomatic working groups.",
           },

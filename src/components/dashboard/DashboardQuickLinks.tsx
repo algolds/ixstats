@@ -31,7 +31,7 @@ const EXTERNAL_LINKS = [
   },
   {
     label: "Groups",
-    href: "/messages/groups",
+    href: "/messages/groups?tab=discover",
     icon: Users,
     color: "text-indigo-500",
   },
@@ -117,7 +117,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
         <div className="border-border/40 space-y-1.5 border-t pt-2">
           <StatusIndicator status="operational" label="System Online" size="sm" />
-          <div className="text-muted-foreground/60 text-[9px] tabular-nums">
+          <div className="text-muted-foreground/60 text-[9px] tabular-nums whitespace-nowrap">
             v{IXWORLD_VERSION} · Build {BUILD_VERSION}
           </div>
         </div>

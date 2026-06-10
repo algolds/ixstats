@@ -169,7 +169,7 @@ export function MessagesGroupsListPanel({
                         {group.name}
                       </span>
                       {group.category && (
-                        <span className="shrink-0 rounded border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-bold text-indigo-400">
+                        <span className="shrink-0 rounded border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-bold whitespace-nowrap text-indigo-400">
                           {group.category}
                         </span>
                       )}

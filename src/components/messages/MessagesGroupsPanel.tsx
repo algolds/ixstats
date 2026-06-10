@@ -13,6 +13,7 @@ import {
   ArrowRight,
   ChevronLeft,
   HelpCircle,
+  Plus,
 } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -28,6 +29,15 @@ import {
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const GROUP_CATEGORIES = [
   "All",
@@ -55,9 +65,28 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
   const utils = api.useUtils();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeView, setActiveView] = useState<GroupView>("joined");
+  const [activeView, setActiveView] = useState<GroupView>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "discover" || tab === "created" || tab === "joined") {
+        return tab;
+      }
+    }
+    return "joined";
+  });
   const [activeCategory, setActiveCategory] = useState("All");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const handleViewChange = (view: GroupView) => {
+    setActiveView(view);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", view);
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  };
 
   // Fetch groups
   const { data: groupsData, isLoading } = api.thinkpages.getThinktanks.useQuery(
@@ -105,6 +134,20 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
     },
   });
 
+  const createGroupMutation = api.thinkpages.createThinktank.useMutation({
+    onSuccess: (newGroup) => {
+      notify.success("Group created successfully!");
+      void utils.thinkpages.getThinktanks.invalidate();
+      setShowCreateModal(false);
+      if (newGroup?.conversationId) {
+        onSelectGroup(newGroup.conversationId);
+      }
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to create group");
+    },
+  });
+
   const handleJoin = async (e: React.MouseEvent, groupId: string) => {
     e.stopPropagation();
     joinMutation.mutate({ groupId, userId });
@@ -144,15 +187,25 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
             <h2 className="text-base font-bold text-slate-100">ThinkTank Groups</h2>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsHelpOpen(true)}
-            className="h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white"
-            title="ThinkTank Groups Help"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white shadow-md shadow-indigo-950/20 transition-all hover:bg-indigo-700"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Create Group</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsHelpOpen(true)}
+              className="h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white"
+              title="ThinkTank Groups Help"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Action / View Toggles */}
@@ -168,7 +221,7 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
               <button
                 key={view.id}
                 onClick={() => {
-                  setActiveView(view.id);
+                  handleViewChange(view.id);
                   setSearchQuery("");
                 }}
                 className={cn(
@@ -277,7 +330,7 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
                           <TypeIcon className="h-3.5 w-3.5 text-slate-500" />
                         </span>
                         {group.category && (
-                          <span className="rounded-full border border-indigo-500/20 bg-indigo-500/20 px-2 py-0.5 text-[9px] font-bold text-indigo-300">
+                          <span className="rounded-full border border-indigo-500/20 bg-indigo-500/20 px-2 py-0.5 text-[9px] font-bold whitespace-nowrap text-indigo-300">
                             {group.category}
                           </span>
                         )}
@@ -386,6 +439,163 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreateGroup={(data) => {
+          if (!userId) return;
+          createGroupMutation.mutate({
+            ...data,
+            createdBy: userId,
+          });
+        }}
+      />
     </div>
+  );
+}
+
+interface CreateGroupModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateGroup: (data: {
+    name: string;
+    description?: string;
+    type: "public" | "private" | "invite_only";
+    category?: string;
+    tags?: string[];
+  }) => void;
+}
+
+function CreateGroupModal({ isOpen, onClose, onCreateGroup }: CreateGroupModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<"public" | "private" | "invite_only">("public");
+  const [category, setCategory] = useState("Worldbuilding");
+  const [tagsText, setTagsText] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    const tags = tagsText
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    onCreateGroup({
+      name: name.trim(),
+      description: description.trim() || undefined,
+      type,
+      category,
+      tags: tags.length > 0 ? tags : undefined,
+    });
+
+    // Reset
+    setName("");
+    setDescription("");
+    setType("public");
+    setCategory("Worldbuilding");
+    setTagsText("");
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="z-[100050] max-h-[90vh] overflow-y-auto border-white/10 bg-slate-900 text-white backdrop-blur-xl sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-indigo-400" />
+            <DialogTitle className="font-bold text-slate-100">Create New Group</DialogTitle>
+          </div>
+          <DialogDescription className="text-xs text-slate-400">
+            Start a collaborative discussion group for worldbuilding, economics, or lore.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Group Name</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Caphirian History Society"
+              className="border-white/5 bg-slate-950/50 text-xs text-slate-200"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Description</label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your group's focus..."
+              className="animate-none resize-none border-white/5 bg-slate-950/50 text-xs text-slate-200"
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400">Privacy Mode</label>
+              <Select value={type} onValueChange={(val: any) => setType(val)}>
+                <SelectTrigger className="border-white/5 bg-slate-950/50 text-xs text-slate-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[100060] border-white/10 bg-slate-950 text-xs text-white">
+                  <SelectItem value="public">Public (Anyone)</SelectItem>
+                  <SelectItem value="private">Private (Invite only)</SelectItem>
+                  <SelectItem value="invite_only">Restricted (Approval)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400">Category</label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="border-white/5 bg-slate-950/50 text-xs text-slate-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[100060] max-h-56 border-white/10 bg-slate-950 text-xs text-white">
+                  {GROUP_CATEGORIES.filter((c) => c !== "All").map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Tags (comma-separated)</label>
+            <Input
+              value={tagsText}
+              onChange={(e) => setTagsText(e.target.value)}
+              placeholder="e.g. history, roleplay, caphiria"
+              className="border-white/5 bg-slate-950/50 text-xs text-slate-200"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-white/5 pt-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              className="text-xs text-slate-400 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700"
+            >
+              Create Group
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

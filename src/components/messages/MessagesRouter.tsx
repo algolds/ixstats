@@ -49,7 +49,18 @@ function MessagesRouterInner() {
   const [activeFolder, setActiveFolder] = useState<MessageFolder>(() =>
     getFolderFromPathname(pathname)
   );
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const convId = params.get("conversation");
+      if (convId) return convId;
+    }
+    const folder = getFolderFromPathname(pathname);
+    if (folder === "groups") {
+      return "groups_directory";
+    }
+    return null;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -394,7 +405,7 @@ function MessagesRouterInner() {
     (folder: MessageFolder) => {
       if (folder === activeFolder) return;
       setActiveFolder(folder);
-      setSelectedConversationId(null);
+      setSelectedConversationId(folder === "groups" ? "groups_directory" : null);
       setSearchQuery("");
 
       const href = folder === "conversations" ? "/messages" : `/messages/${folder}`;
@@ -409,7 +420,7 @@ function MessagesRouterInner() {
     const onPopState = () => {
       const newFolder = getFolderFromPathname(window.location.pathname);
       setActiveFolder(newFolder);
-      setSelectedConversationId(null);
+      setSelectedConversationId(newFolder === "groups" ? "groups_directory" : null);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);

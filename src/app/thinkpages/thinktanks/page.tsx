@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function ThinkTanksRedirect() {
-  redirect("/messages/groups");
+  redirect("/messages/groups?tab=discover");
 }
