@@ -1,4 +1,4 @@
-# IxStats Documentation Index (May 2026)
+# IxStates (IxStats) Documentation Index (June 2026)
 
 This index mirrors the new documentation structure. Use it as the canonical map when authoring, reviewing, or discovering guidance.
 
@@ -34,10 +34,17 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | Document | Summary |
 | --- | --- |
 | [`systems/mycountry.md`](systems/mycountry.md) | Executive dashboard, compliance tooling, and analytics orchestration |
+| #### IxVault (Integrated Product)
+| [`systems/cards.md`](systems/cards.md) | IxCards system, card types (Nation, Lore, NS Import, Special), rarity mechanics, and ownership tracking |
+| [`systems/card-packs.md`](systems/card-packs.md) | Card pack types, rarity distribution, pack opening flow, and bonus mechanics |
+| [`systems/myvault.md`](systems/myvault.md) | MyVault economy system, IxCredits currency, earning/spending mechanics, and vault progression |
+| [`systems/ns-integration.md`](systems/ns-integration.md) | NationStates integration, card dump sync, collection import, and rate limiting compliance |
+| #### MyCountry Subsystems (Core System)
 | [`systems/intelligence.md`](systems/intelligence.md) | Live intelligence feeds, diplomatic briefings, and forecasting services |
 | [`systems/diplomacy.md`](systems/diplomacy.md) | Embassy network, mission lifecycle, cultural exchanges, and influence metrics |
 | [`systems/economy.md`](systems/economy.md) | Economic indicators, projections, and builder integration |
 | [`systems/defense.md`](systems/defense.md) | Strategic defense initiative modules, readiness scores, and crisis response |
+| #### Other Systems
 | [`systems/social.md`](systems/social.md) | ThinkPages, ThinkShare, activity feeds, and collaborative research tools |
 | [`systems/achievements.md`](systems/achievements.md) | Achievement unlock logic, leaderboards, notifications, and analytics |
 | [`systems/builder.md`](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
@@ -47,10 +54,6 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/npc-ai.md`](systems/npc-ai.md) | NPC personality traits, archetypes, behavioral prediction |
 | [`systems/crisis-events.md`](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
 | [`systems/diplomatic-ai.md`](systems/diplomatic-ai.md) | Diplomatic AI scenario system |
-| [`systems/myvault.md`](systems/myvault.md) | MyVault economy system, IxCredits currency, earning/spending mechanics, and vault progression |
-| [`systems/cards.md`](systems/cards.md) | IxCards system, card types (Nation, Lore, NS Import, Special), rarity mechanics, and ownership tracking |
-| [`systems/card-packs.md`](systems/card-packs.md) | Card pack types, rarity distribution, pack opening flow, and bonus mechanics |
-| [`systems/ns-integration.md`](systems/ns-integration.md) | NationStates integration, card dump sync, collection import, and rate limiting compliance |
 | [`systems/elections.md`](systems/elections.md) | Elections & political parties, D'Hondt/FPTP seat allocation, legislature configuration |
 | [`systems/national-issues.md`](systems/national-issues.md) | National issues engine, dynamic decisions, consequences system |
 | [`systems/forum.md`](systems/forum.md) | XenForo forum integration, widget embedding, forum-wiki bridge |
@@ -71,6 +74,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | --- | --- |
 | [`reference/api.md`](reference/api.md) | Generated table of routers, procedures, input/output, and auth requirements |
 | [`reference/database.md`](reference/database.md) | Prisma models, relations, derived views, and data ownership |
+| [`reference/branding.md`](reference/branding.md) | Complete brand catalog: Integrated Products, Core Systems, and utilities, icons, colors, symbols, and visual identity tokens |
 | [`reference/events.md`](reference/events.md) | WebSocket channels, notification payloads, cron/scheduled jobs |
 | [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) | Government component synergy system and interaction patterns |
 | [`ADMIN_ENDPOINT_SECURITY_MAP.md`](ADMIN_ENDPOINT_SECURITY_MAP.md) | Admin endpoint security mappings and authentication requirements |

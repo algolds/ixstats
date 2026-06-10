@@ -2,7 +2,9 @@
 
 **Last updated:** February 2026
 
-IxStats provides collaborative storytelling tools through ThinkPages, ThinkShare, activity feeds, and research hubs.
+**Hierarchy:** ThinkPages is the Core System. ThinkShare (messaging/DMs) and IxTwitter (Discord auto-poster) are sub-systems of ThinkPages.
+
+IxStates (IxStats) provides collaborative storytelling tools through ThinkPages, ThinkShare, activity feeds, and research hubs.
 
 ## Router Architecture (February 2026)
 
@@ -11,7 +13,7 @@ ThinkPages uses `ThinkPagesRouter` (`src/components/thinkpages/ThinkPagesRouter.
 - `ThinkPagesSidebarLayout` (`src/components/thinkpages/ThinkPagesSidebarLayout.tsx`) – Grid layout
 - `ThinkPagesHeader` / `ThinkPagesFooter` / `ThinkPagesIcon` – UI components
 - `ThinkPagesStatusWidget` – Status display widget
-- Sections: Feed, ThinkTanks, ThinkShare (messages)
+- Sections: Feed, ThinkTanks, ThinkShare (messages — sub-system of ThinkPages)
 - Dynamically imports heavy components (ThinktankGroups, ThinkshareMessages)
 - Account management modals (AccountCreationModal, AccountSettingsModal)
 

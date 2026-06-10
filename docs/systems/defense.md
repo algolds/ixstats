@@ -1,6 +1,7 @@
 # Defense System
 
 **Last updated:** February 2026
+**Hierarchy:** Part of MyCountry core system — grouped under Military & Security.
 
 Defense capabilities model national readiness, crisis response, military operations, and strategic defense initiative (SDI) modules.
 

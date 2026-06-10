@@ -2,6 +2,7 @@
 
 **Last updated:** February 2026 (v2)
 **Architecture:** Single-page router with sidebar layout and clear separation of concerns
+**Hierarchy:** MyCountry is the flagship Core System within IxStates (IxStats). Its subsystems are organized into 5 groups: Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management.
 
 The MyCountry experience gives nation owners a unified command environment. As of v2, all sections are managed by `MyCountryRouter` for instant SPA-like navigation.
 
@@ -32,6 +33,18 @@ MyCountry follows a **clear separation of concerns** principle:
 - **Social Interaction** (Diplomacy) - Player-to-player relations
 - **Data Analysis** (Intelligence) - Analytics & insights
 - **Security Operations** (Defense) - Military readiness
+
+## Subsystem Groups
+
+MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
+
+| Group | Subsystems | Pages/Routes |
+|-------|-----------|-------------|
+| **Military & Security** | Defense, Security, Small Arms & Manufacturers | `/mycountry/defense` |
+| **Governance & Politics** | Government, Elections, Policies | `/mycountry/executive` (planned: `/mycountry/government`) |
+| **Economy & Resources** | Economy, Tax System, Resources & Transport | (planned: `/mycountry/economy`) |
+| **Intelligence & Diplomacy** | Intelligence, Diplomacy, Diplomatic WebSocket | `/mycountry/intelligence`, `/mycountry/diplomacy` |
+| **National Management** | National Issues, Crisis Events, National Identity, Meetings | Executive command suite |
 
 ## Key Pages & Their Purposes
 

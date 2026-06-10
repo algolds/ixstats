@@ -2,6 +2,8 @@
 
 ## Overview
 
+**Hierarchy:** IxWorld is the integrated maps product. IxMaps (maps.ixwiki.com) is the standalone deployment. Forge Mode is an admin sub-feature of IxWorld.
+
 The IxWorld map system provides interactive visualization of IxEarth, a fictional planet with six continents, four oceans, and 60+ countries. Built with MapLibre GL JS, it replaces the v1 Leaflet-based IxMaps system (deprecated November 2025, rebuilt January–May 2026).
 
 **Deployed at:**

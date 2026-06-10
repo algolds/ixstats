@@ -2,7 +2,9 @@
 
 **Last updated:** May 2026
 
-IxStats integrates a native XenForo forum experience via server-side API proxying. The forum is hosted at `forum.ixwiki.com` and rendered within the IxStats UI at `/forum`. BBCode content is transformed server-side, internal links are rewritten to IxStats routes, and user accounts are linked between Clerk and XenForo.
+**Hierarchy:** IxForum is the integrated product wrapping the XenForo forum bridge.
+
+IxStates (IxStats) integrates a native XenForo forum experience via server-side API proxying. The forum is hosted at `forum.ixwiki.com` and rendered within the IxStats UI at `/forum`. BBCode content is transformed server-side, internal links are rewritten to IxStats routes, and user accounts are linked between Clerk and XenForo.
 
 ## Overview
 

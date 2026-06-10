@@ -2,7 +2,7 @@
 
 **Last updated:** May 2026
 
-Comprehensive guide to edge cases, error handling, and unusual scenarios across all IxStats systems.
+Comprehensive guide to edge cases, error handling, and unusual scenarios across all IxStates (IxStats) systems.
 
 ## Table of Contents
 1. [Economic Calculations](#economic-calculations)

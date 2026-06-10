@@ -1,4 +1,4 @@
-# IxCredits (IxC) - Virtual Currency System
+# IxCredits (IxC) - Virtual Currency System (part of IxVault)
 
 IxCredits are the virtual currency powering the IxStats platform economy. Players earn IxC through gameplay — managing their nation, engaging in diplomacy, responding to crises, and participating socially — and spend them on card packs, crafting, trading, and marketplace auctions.
 

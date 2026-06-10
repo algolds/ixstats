@@ -1,6 +1,7 @@
 # Economy System
 
 **Last updated:** May 2026
+**Hierarchy:** Part of MyCountry core system — grouped under Economy & Resources.
 
 The economy pillar models GDP, income, labor, trade, projections, and economic tiers. It is consumed across MyCountry, dashboard cards, builder flows, and analytics widgets.
 

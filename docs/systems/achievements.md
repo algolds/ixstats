@@ -1,6 +1,7 @@
-# Achievements & Leaderboards
+# Achievements & Awards
 
 **Last updated:** May 2026
+**Hierarchy:** Achievements & Awards is a Core System within IxStates (IxStats). LoreWards (wiki scoring & medals) is a sub-system of it.
 
 Achievements reward milestone progress across economic, diplomatic, social, and defense domains. Leaderboards surface comparative stats across nations and players.
 

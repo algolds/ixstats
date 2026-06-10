@@ -2,7 +2,7 @@
 
 **Last updated:** May 2026
 
-Comprehensive reference for all 73 tRPC routers with 1205 procedures across the IxStats platform.
+Comprehensive reference for all 73 tRPC routers with 1205 procedures across the IxStates (IxStats) platform.
 
 ## Quick Navigation
 - [Core Systems](#core-systems) (14 routers, 212 procedures)
@@ -11,7 +11,7 @@ Comprehensive reference for all 73 tRPC routers with 1205 procedures across the 
 - [Defense & Security](#defense--security) (6 routers, 112 procedures)
 - [Social & Collaboration](#social--collaboration) (7 routers, 165 procedures)
 - [Operations](#operations) (10 routers, 142 procedures)
-- [Cards & MyVault](#cards--myvault) (10 routers, 147 procedures)
+- [IxVault (Cards & Credits)](#ixvault-cards--credits) (10 routers, 147 procedures)
 - [Maps & Geography](#maps--geography) (active January–May 2026)
 
 ---
@@ -485,7 +485,7 @@ api.mapMonitoring.getErrorRates.useQuery()
 
 ---
 
-## Cards & MyVault
+## IxVault (Cards & Credits)
 
 ### vault Router (7 procedures)
 

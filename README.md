@@ -1,31 +1,59 @@
-# IxStats v2
+# IxStates
 
-IxStats is a nation simulation and worldbuilding platform built with Next.js, tRPC, and Prisma. The codebase combines a React front end with a type-safe API layer, PostgreSQL database, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling.
+### Build a nation. Shape history.
+
+IxStates is a nation simulation and worldbuilding platform — a persistent world where every country's economy, military, diplomacy, and borders are live and interconnected.
+
+[83 routers · 1,329 endpoints · 237 data models · 893 components · v2.1]
+
+---
+
+### IxMaps
+
+A handmade world with full topography, water systems, and climate modeling. Dynamic borders, live-updating territory, story pins that chart history, and a border editor. Every nation mapped with precision.
+
+### MyCountry Suite
+
+Unified command across defense, diplomacy, intelligence, economy, and politics. Includes the step-by-step Nation Builder for creating countries from scratch.
+
+### IxVault
+
+Trading cards, crafting recipes, auctions, and peer-to-peer trading. NationStates collection import. Real-time card marketplace.
+
+### ThinkPages
+
+Feed, direct messaging, group discussions, and lore sharing across all systems. Posts sync to Discord. The social backbone of the platform.
+
+### WikiOS
+
+A living wiki with a visual canvas editor and integrated media repository. Every nation, battle, and treaty documented. Powered by the community.
+
+---
+
+## Under the hood
+
+Next.js 16 · React 19 · TypeScript 5.9 · Prisma 6.19 · tRPC 11.17 Tailwind CSS 4.3 · MapLibre GL · PostgreSQL + PostGIS · Socket.IO · Redis
+
+---
 
 ## Platform Overview
 
-- Next.js 16.2.6 App Router with client and server components under `src/app`
-- React 19.2.6 + TypeScript 5.9.3 with 893+ components in `src/components`
-- tRPC 11.17 API layer (`src/server/api/routers`) with **83 routers** and **1,329 typed procedures**
-- Prisma 6.19.3 ORM with **237 models** on PostgreSQL
-- Custom Node server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
-- In-app help center at `/help` and Markdown docs in `docs/`
+- Next.js 16.2.6 App Router — 187 routes across `src/app`
+- React 19.2.6 + TypeScript 5.9.3 — 893+ components in `src/components`
+- tRPC 11.17 API layer — **83 routers**, **1,329 typed procedures**
+- Prisma 6.19.3 ORM — **237 models** on PostgreSQL
+- Custom server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
+- In-app help center at `/help` and documentation hub in `docs/`
 
 ## Feature Pillars
 
-| Pillar | Description |
-|--------|-------------|
-| **MyCountry Command Suite** | Unified executive dashboard with briefing, compliance, defense, economic, and analytics modules |
-| **Intelligence & Compliance** | Live diplomatic and domestic intelligence feeds with unified intelligence system |
-| **Diplomacy & Foreign Affairs** | Embassy missions, cultural exchanges, NPC personalities with behavioral prediction |
-| **Economic Simulation** | Country builder with tier-based economic calculations, historical tracking, projections |
-| **Social Platform** | ThinkPages, ThinkShare, ThinkTanks for content sharing and collaborative research |
-| **IxCards & MyVault** | Trading card system with 13 card types, pack opening, crafting, P2P trading, marketplace |
-| **Elections & Politics** | D'Hondt/FPTP electoral systems, legislature management, hemicycle visualization |
-| **Crisis Management** | Dynamic natural disasters, economic crises, diplomatic incidents with player responses |
-| **Content Management** | 28 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
-| **IxWorld Maps** | Interactive world globe with MapLibre GL JS, 7 layers, border editor, procedural world generation, deployed at maps.ixwiki.com |
-| **Achievements & Leaderboards** | Global achievement tracking and ranking |
+| Tier | Systems |
+|------|---------|
+| **Integrated Products** | IxWorld (maps + IxMaps standalone deployment), IxForum (community), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import), IxWiki (powered by WikiOS) |
+| **Core Systems** | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), LoreStash, Blurbs, Dynamic Island, Admin CMS (28 interfaces) |
+| **Platform Utilities** | IxTime (game clock), IxnayID (cross-platform identity) |
+| **Infrastructure** | Glass Physics (design system), Notifications, Help, c15t (consent manager), Flag Service, WebSocket, Cron, Cache/RateLimit/Auth |
+| **Navigation Hubs** | Dashboard, Explore/Countries, Feed |
 
 ## Technology Stack
 
@@ -52,8 +80,8 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 
 ```bash
 bun install
-bun run db:generate && bun run db:push:force && bun run db:init   # prisma generate + db push + seed
-bun run dev        # launches Next.js on http://localhost:3000
+bun run db:setup       # prisma generate + db push + seed
+bun run dev            # launches Next.js on http://localhost:3000
 ```
 
 The dev script loads `.env.local.dev` or `.env.local`. At minimum set:
@@ -85,26 +113,55 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ## Project Structure
 
 ```
-├── src/
-│   ├── app/                     # Next.js App Router pages (187 routes)
-│   │   ├── maps/                # World map viewer (IxWorld at maps.ixwiki.com)
-│   │   ├── mycountry/           # Executive command suite
-│   │   ├── dashboard/           # Signed-in dashboards
-│   │   ├── thinkpages/          # Social knowledge sharing
-│   │   ├── vault/               # IxCards & MyVault
-│   │   ├── help/                # In-app help center
-│   │   └── api/                 # API route handlers
-│   ├── components/              # UI and domain components (893+)
-│   │   └── maps/               # Map core, editor, and widget components (75)
-│   ├── hooks/                   # Custom React hooks (107)
-│   ├── server/api/routers/      # tRPC routers (83, including subdirectories)
-│   ├── lib/                     # Utilities, rate limiter, formatting
-│   └── services/                # Domain services and adapters
-├── prisma/                      # Schema (237 models) and migrations
-├── scripts/                     # Operational utilities
-├── docs/                        # Documentation (see docs/README.md)
-└── tests/                       # Test setup and utilities
+├── Integrated Products
+│   ├── src/app/maps/               # IxWorld map viewer (standalone: IxMaps at maps.ixwiki.com)
+│   ├── src/app/(forum)/forum/      # IxForum community (XenForo bridge)
+│   ├── src/app/vault/              # IxVault — cards, collections, marketplace, crafting, packs, NS import
+│   └── src/app/(wikios)/w/         # IxWiki — wiki reader, editor, special pages (powered by WikiOS)
+│
+├── Core Systems
+│   ├── src/app/mycountry/          # MyCountry ★ — executive command suite
+│   ├── src/app/builder/            # MyCountry Builder — nation creation wizard
+│   ├── src/app/thinkpages/         # ThinkPages — feed, ThinkShare messages, ThinkTanks
+│   ├── src/app/achievements/       # Achievements & Awards — quest paths, LoreWards
+│   ├── src/app/stashes/            # LoreStash — save-for-later with annotations
+│   ├── src/app/blurbs/             # Blurbs — community wiki reviews
+│   └── src/app/admin/              # Admin CMS — 28 management interfaces
+│
+├── Infrastructure
+│   ├── src/components/             # UI components (893+ across 44 directories)
+│   ├── src/hooks/                  # Custom React hooks (107)
+│   ├── src/server/api/routers/     # tRPC routers (83, including subdirectories)
+│   ├── src/lib/                    # Utilities, rate limiter, game clock, cron, WebSocket
+│   ├── src/styles/                 # Glass physics design system, themes, forum CSS
+│   ├── prisma/                     # Schema (237 models across 12 files) + migrations
+│   └── server.mjs                  # Custom Node server (Socket.IO + cron)
+│
+└── Navigation Hubs
+    ├── src/app/dashboard/          # Signed-in dashboard
+    ├── src/app/countries/          # Explore / public nation profiles
+    └── src/app/feed/               # Activity feed
 ```
+
+## Experimental Labs
+
+Early-stage prototype systems under the Labs dropdown.
+
+| Lab | Description |
+|-----|-------------|
+| **Vexel** | — |
+| **Onoma** | — |
+| **Strata** | — |
+| **Dynas** | — |
+| **Nomora** | — |
+
+## Design System
+
+The platform is built on **Glass Physics** — a custom glassmorphism design system with depth hierarchy, dynamic refraction, and light/dark theme support. See `src/styles/glass-refraction.css` and `src/styles/themes.css`.
+
+- **Icons**: Lucide React (primary), React Icons (Font Awesome, Game Icons, Remix), 36 custom animated icons (`src/components/ui/icons/`)
+- **Brand colors**: Indigo primary (`#6366f1`), with per-system accent colors mapped in `docs/reference/branding.md`
+- **Tailwind CSS 4.3** with CSS-first `@theme` configuration
 
 ## API & Data Access
 
@@ -123,13 +180,13 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 
 - `docs/README.md` — documentation hub and navigation
 - `docs/reference/api-complete.md` — full tRPC API catalog
-- `docs/systems/` — system-specific guides (MyCountry, Intelligence, Diplomacy, Economy)
-- `IMPLEMENTATION_STATUS.md` — current feature maturity matrix
+- `docs/reference/branding.md` — complete brand catalog: all systems, icons, colors, visual identity tokens
+- `docs/systems/` — system-specific guides (MyCountry, Intelligence, Diplomacy, Economy, etc.)
 - `CHANGELOG.md` — version history
 
 ## Contributing
 
 1. Branch from `v2`
-2. `bun install && bun run db:generate && bun run db:push:force && bun run db:init`
+2. `bun install && bun run db:setup`
 3. Keep linting clean: `bun run lint`
 4. Update relevant docs when adding or changing features

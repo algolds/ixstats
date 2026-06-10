@@ -1,33 +1,75 @@
 # Feature Map & Inventory
 
-**Last updated:** February 2026
+**Last updated:** June 2026
 
 This document inventories the primary code areas. Use it when auditing coverage, mapping dependencies, or planning refactors.
 
 ## App Router (`src/app`)
+
+### IxWiki (Integrated Product)
 | Route | Purpose |
 | --- | --- |
-| `/` | Auth-aware landing (splash page vs command center) |
-| `/achievements` | Achievement explorer and detail views |
-| `/admin` | Administrative dashboards and tooling |
-| `/builder` | Nation creation and editor flows |
-| `/dashboard` | Signed-in overview widgets and cards |
-| `/help` | In-app documentation hub |
-| `/leaderboards` | Global rankings and comparative stats |
-| `/mycountry` | Executive command suite (MyCountryRouter) |
+| `/w` | Wiki integration tools and info |
+
+### IxVault (Integrated Product)
+| Route | Purpose |
+| --- | --- |
+| `/vault` | IxVault — cards, collections, crafting, trading, marketplace, packs, lore cards, NS import |
+
+### MyCountry ★ (Core System)
+| Route | Purpose |
+| --- | --- |
+| `/mycountry` | Executive command suite |
 | `/mycountry/executive` | Executive decision-making |
 | `/mycountry/diplomacy` | Diplomatic operations hub |
 | `/mycountry/intelligence` | Analytics and intelligence feeds |
 | `/mycountry/defense` | Military and security operations |
-| `/vault` | MyVault, IxCards, trading, crafting (VaultRouter) |
+| `/mycountry/map-editor` | Player border and feature editing |
+
+### ThinkPages (Core System)
+| Route | Purpose |
+| --- | --- |
+| `/thinkpages` | Social knowledge sharing (ThinkShare, ThinkTanks, IxTwitter) |
+
+### Achievements & Awards (Core System)
+| Route | Purpose |
+| --- | --- |
+| `/achievements` | Achievement explorer and detail views |
+
+### MyCountry Builder (Core System)
+| Route | Purpose |
+| --- | --- |
+| `/builder` | Nation creation and editor flows |
+
+### Admin CMS (Core System)
+| Route | Purpose |
+| --- | --- |
+| `/admin` | Administrative dashboards and tooling |
+| `/admin/maps` | Admin map management, SVG upload, world generation |
+
+### Navigation Hubs
+| Route | Purpose |
+| --- | --- |
+| `/` | Auth-aware landing (splash page vs command center) |
+| `/dashboard` | Signed-in overview widgets and cards |
 | `/dashboard/diplomacy` | Dashboard diplomacy section |
 | `/dashboard/feed` | Dashboard activity feed |
 | `/dashboard/trends` | Dashboard trends section |
-| `/thinkpages` | Social knowledge sharing (ThinkPagesRouter) |
-| `/maps` | World map viewer (IxWorld standalone at maps.ixwiki.com) |
-| `/admin/maps` | Admin map management, SVG upload, world generation |
-| `/mycountry/map-editor` | Player border and feature editing |
-| `/wiki` | Wiki integration tools and info |
+| `/leaderboards` | Global rankings and comparative stats |
+
+### IxWorld (Integrated Product — standalone at maps.ixwiki.com)
+| Route | Purpose |
+| --- | --- |
+| `/maps` | World map viewer |
+
+### Infrastructure
+| Route | Purpose |
+| --- | --- |
+| `/help` | In-app documentation hub |
+
+### Auth / Onboarding
+| Route | Purpose |
+| --- | --- |
 | `/setup`, `/sign-in`, `/sign-up` | Onboarding and auth surfaces |
 
 > Additional experimental/test routes live under `/test-*` and internal tooling paths.
@@ -36,7 +78,7 @@ This document inventories the primary code areas. Use it when auditing coverage,
 - `achievements/`, `analytics/`, `charts/`, `countries/` – domain dashboards and data viz
 - `diplomatic/`, `defense/`, `economy/`, `tax-system/` – specialised modules for systems guides
 - `mycountry/` – shell, intelligence tabs, compliance dialogs, quick actions
-- `thinkpages/`, `thinkshare/` – social layouts, feeds, collaboration primitives
+- `thinkpages/`, `thinkshare/` – social layouts, feeds, collaboration primitives (ThinkShare, ThinkTanks are ThinkPages sub-systems)
 - `maps/core/`, `maps/editor/`, `maps/widgets/` – MapLibre world map, border editor, embedded widgets (27 components)
 - `ui/`, `shared/`, `magicui/`, `controls/` – base UI elements and utility widgets
 
@@ -45,27 +87,38 @@ This document inventories the primary code areas. Use it when auditing coverage,
 - Services under `src/app/mycountry/services`, `src/services`, and `src/lib` encapsulate data fetches, caching, and job orchestration
 
 ## tRPC Routers (`src/server/api/routers`)
-**61 routers / 927 procedures**. Key files:
+**83 routers / 1,329 procedures**. Key files:
+
+### IxVault (Integrated Product)
 ```
-achievements.ts        activities.ts        admin.ts
-archetypes.ts          atomicEconomic.ts    atomicGovernment.ts
-atomicTax.ts           countries.ts         customTypes.ts
-diplomatic-intelligence.ts  diplomatic.ts   eci.ts
-economics.ts           enhanced-economics.ts  formulas.ts
-government.ts          intelligence.ts      meetings.ts
-mycountry.ts           notifications.ts     optimized-countries.ts
-policies.ts            quickactions.ts      roles.ts
-scheduledChanges.ts    sdi.ts               security.ts
-taxSystem.ts           thinkpages.ts        unifiedAtomic.ts
-unified-intelligence.ts user-logging.ts     users.ts
-vault.ts               wikiCache.ts        wikiImporter.ts
-cards.ts               card-packs.ts       card-market.ts
-card-analytics.ts      cardImages.ts       crafting.ts
-trading.ts             lore-cards.ts       elections.ts
-ns-import.ts           historical.ts       crisis-events.ts
+vault.ts               cards.ts               card-packs.ts
+card-market.ts         card-analytics.ts       cardImages.ts
+crafting.ts            trading.ts              lore-cards.ts
+ns-import.ts
+```
+
+### MyCountry & Subsystems (Core System)
+```
+mycountry.ts           intelligence.ts          unified-intelligence.ts
+diplomatic-intelligence.ts  diplomatic.ts       security.ts
+sdi.ts                 government.ts            elections.ts
+economics.ts           enhanced-economics.ts    eci.ts
+atomicEconomic.ts      atomicGovernment.ts      atomicTax.ts
+unifiedAtomic.ts       taxSystem.ts             resources.ts
+transport.ts           meetings.ts              nationalIssues.ts
+crisis-events.ts       policies.ts              scheduledChanges.ts
+quickactions.ts        historical.ts
+```
+
+### Other Routers
+```
+achievements.ts        activities.ts           admin.ts
+archetypes.ts          countries.ts            optimized-countries.ts
+customTypes.ts         formulas.ts             thinkpages.ts
+notifications.ts       roles.ts                users.ts
+user-logging.ts        wikiCache.ts            wikiImporter.ts
+forum.ts               geo.ts                  demoMode.ts
 autosaveHistory.ts     autosaveMonitoring.ts
-nationalIssues.ts      forum.ts            demoMode.ts
-geo.ts
 ```
 - Auth-aware context lives in `src/server/api/trpc.ts`
 - Middleware: rate limiting (`~/lib/rate-limiter`), user logging (`~/lib/user-logging-middleware`)

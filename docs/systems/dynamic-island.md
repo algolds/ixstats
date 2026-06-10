@@ -1,6 +1,8 @@
 # Dynamic Island Plugin System
 
-The Dynamic Island (DI) is the central, interactive user interface element for the IxStats platform. To support multiple application contexts (such as WikiOS, Forums, and MyCountry) without bloating the core DI codebase with path-specific conditional checks, the system implements a **plugin-driven architecture**.
+**Hierarchy:** Dynamic Island is a Core System within IxStates (IxStats) (global UI overlay with plugin architecture). Note: Rebrand TBD.
+
+The Dynamic Island (DI) is the central, interactive user interface element for the IxStates (IxStats) platform. To support multiple application contexts (such as WikiOS, Forums, and MyCountry) without bloating the core DI codebase with path-specific conditional checks, the system implements a **plugin-driven architecture**.
 
 ---
 

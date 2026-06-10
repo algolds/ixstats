@@ -3,6 +3,8 @@
 **Last updated:** May 2026 (Phase 1)
 **Status:** Development - Phase 1 Implementation
 
+**Hierarchy:** Part of IxVault integrated product (wallet, economy, trading cards).
+
 The IxCards system provides collectible trading cards that integrate deeply with IxStats gameplay. Cards feature nations, historical lore, NationStates imports, and special editions, creating a rich collecting experience with real-time stat tracking and market dynamics.
 
 ## Overview
@@ -815,7 +817,7 @@ enum AcquireMethod {
 
 ## See Also
 
-- [MyVault System](./myvault.md) - IxCredits economy and earning mechanics
+- [MyVault System](./myvault.md) - IxCredits economy and earning mechanics (both part of IxVault)
 - [Card Packs System](./card-packs.md) - Pack types and opening mechanics
 - [NationStates Integration](./ns-integration.md) - NS card import and sync
 - [API Reference](../reference/api-complete.md#cards-router) - Complete endpoint documentation

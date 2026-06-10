@@ -1,6 +1,7 @@
 # Intelligence System
 
 **Last updated:** February 2026
+**Hierarchy:** Part of MyCountry core system — grouped under Intelligence & Diplomacy.
 
 The intelligence stack aggregates diplomatic, economic, and security signals into executive-ready briefings.
 

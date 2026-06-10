@@ -1,6 +1,8 @@
-# Nation Builder System
+# MyCountry Builder
 
 **Last updated:** May 2026
+
+**Hierarchy:** MyCountry Builder is a standalone Core System (separate from MyCountry's executive command suite).
 
 The builder lets new nations establish identity, government, economics, demographics, and fiscal posture. It pulls from wiki sources and atomic component libraries to accelerate onboarding.
 

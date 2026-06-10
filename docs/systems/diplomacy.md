@@ -1,6 +1,7 @@
 # Diplomacy System
 
 **Last updated:** February 2026
+**Hierarchy:** Part of MyCountry core system — grouped under Intelligence & Diplomacy.
 
 The diplomacy domain handles relationships, embassy networks, missions, cultural exchanges, alliances, foreign policy, and strategic intelligence.
 

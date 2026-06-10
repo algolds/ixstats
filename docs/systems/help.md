@@ -16,7 +16,7 @@ The help system delivers contextual documentation directly inside the app at `/h
 4. When archiving content, move Markdown to `docs/archive/...` and remove the matching help route
 
 ## Categories
-- Getting Started, Economy, Government, Defense, Intelligence, Diplomacy, Social, Unified Intelligence, Technical
+- Getting Started, Economy (MyCountry → Economy & Resources), Government (MyCountry → Governance & Politics), Defense (MyCountry → Military & Security), Intelligence (MyCountry → Intelligence & Diplomacy), Diplomacy (MyCountry → Intelligence & Diplomacy), Social, Technical
 - Each category maps to a folder under `src/app/help/` and a section in the hub configuration
 
 ## Tooling & Localization

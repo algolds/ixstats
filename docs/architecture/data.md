@@ -2,7 +2,7 @@
 
 **Last updated:** February 2026
 
-IxStats stores structured gameplay data using Prisma 6.19. The schema models countries, economic indicators, diplomatic relationships, social content, achievements, notifications, cards/vault, elections, and operational logs.
+IxStates (IxStats) stores structured gameplay data using Prisma 6.19. The schema models countries, economic indicators, diplomatic relationships, social content, achievements, notifications, cards/vault, elections, and operational logs.
 
 ## Schema Overview
 - Prisma schema lives at `prisma/schema.prisma`

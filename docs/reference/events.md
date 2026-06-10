@@ -2,7 +2,7 @@
 
 **Last updated:** May 2026
 
-This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStats.
+This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStates (IxStats).
 
 ## WebSocket Channels
 - **Endpoint**: `/ws/intelligence`

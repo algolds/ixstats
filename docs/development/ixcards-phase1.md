@@ -4,7 +4,7 @@
 **Status:** Documentation Complete
 **Date:** November 2025
 
-This document summarizes the Phase 1 implementation of the IxCards trading card system for IxStats.
+This document summarizes the Phase 1 implementation of the IxCards trading card system (part of IxVault) for IxStates (IxStats).
 
 ## Overview
 

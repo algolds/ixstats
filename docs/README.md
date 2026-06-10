@@ -1,4 +1,4 @@
-# IxStats Documentation Hub
+# IxStates (IxStats) Documentation Hub
 
 > **🆕 NEW (November 2025):** The messaging system has been unified! All messaging—personal, diplomatic, and official—now uses **ThinkShare** as the single backbone. See [systems/UNIFIED_MESSAGING_SYSTEM.md](./systems/UNIFIED_MESSAGING_SYSTEM.md) for complete details.
 
@@ -26,10 +26,6 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 
 ### Systems
 - [`systems/mycountry.md`](systems/mycountry.md) – executive command suite, compliance tooling, and analytics
-- [`systems/intelligence.md`](systems/intelligence.md) – live briefing feeds, diplomatic intelligence, and forecasting
-- [`systems/diplomacy.md`](systems/diplomacy.md) – embassies, missions, cultural exchanges, and relationship scoring
-- [`systems/economy.md`](systems/economy.md) – economic indicators, builder integration, and modeling utilities
-- [`systems/defense.md`](systems/defense.md) – defense posture, SDI modules, readiness tracking, and crisis playbooks
 - [`systems/social.md`](systems/social.md) – ThinkPages, ThinkShare, and collaborative research experiences
 - [`systems/achievements.md`](systems/achievements.md) – achievement unlock logic, leaderboards, and notifications
 - [`systems/builder.md`](systems/builder.md) – nation creation flows, atomic components, and data ingestion
@@ -38,16 +34,22 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/calculations.md`](systems/calculations.md) – economic formulas with step-by-step examples
 - [`systems/npc-ai.md`](systems/npc-ai.md) – NPC personality system documentation
 - [`systems/crisis-events.md`](systems/crisis-events.md) – crisis management system guide
+- #### IxVault (Integrated Product)
 - [`systems/cards.md`](systems/cards.md) – IxCards system, card types, ownership
 - [`systems/card-packs.md`](systems/card-packs.md) – card pack types, rarity, opening flow
 - [`systems/myvault.md`](systems/myvault.md) – MyVault economy, IxCredits
 - [`systems/ns-integration.md`](systems/ns-integration.md) – NationStates integration
+- [`systems/ixcredits.md`](systems/ixcredits.md) – IxCredits economy and premium features
+- #### MyCountry Subsystems (Core System)
+- [`systems/intelligence.md`](systems/intelligence.md) – live briefing feeds, diplomatic intelligence, and forecasting
+- [`systems/diplomacy.md`](systems/diplomacy.md) – embassies, missions, cultural exchanges, and relationship scoring
+- [`systems/economy.md`](systems/economy.md) – economic indicators, builder integration, and modeling utilities
+- [`systems/defense.md`](systems/defense.md) – defense posture, SDI modules, readiness tracking, and crisis playbooks
 - [`systems/elections.md`](systems/elections.md) – Elections, political parties, and legislature management
 - [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
 - [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
 - [`systems/maps.md`](systems/maps.md) – IxWorld interactive map, MapLibre GL JS, procedural world generation, border editor
-- [`systems/dynamic-island.md`](systems/dynamic-island.md) – Dynamic Island plugin-driven system architecture, registry, and custom layouts
-- [`systems/ixcredits.md`](systems/ixcredits.md) – IxCredits economy and premium features
+- [`systems/dynamic-island.md`](systems/dynamic-island.md) – Dynamic Island plugin-driven system architecture, registry, and custom layouts (Core System)
 
 ### Operations
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
@@ -64,6 +66,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
 - [`reference/api-examples.md`](reference/api-examples.md) – tRPC API usage examples
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
+- [`reference/branding.md`](reference/branding.md) – complete brand catalog: all systems, icons, colors, and visual identity tokens
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
 - [`reference/edge-cases.md`](reference/edge-cases.md) – edge case handling and error scenarios
 - [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) – government component synergy system and interaction patterns

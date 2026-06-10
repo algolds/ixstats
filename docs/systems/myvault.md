@@ -3,7 +3,9 @@
 **Last updated:** February 2026
 **Status:** Production - VaultRouter Architecture
 
-MyVault is IxStats' personal virtual vault system where players earn, manage, and spend IxCredits (IxC) - the platform's universal currency. It serves as the economic backbone connecting gameplay actions to rewards and unlockables.
+**Hierarchy:** Part of IxVault integrated product alongside IxCards, IxCredits, crafting, trading, marketplace.
+
+MyVault is IxStates' (IxStats') personal virtual vault system where players earn, manage, and spend IxCredits (IxC) - the platform's universal currency. It serves as the economic backbone connecting gameplay actions to rewards and unlockables.
 
 ## Router Architecture (February 2026)
 
@@ -27,7 +29,7 @@ MyVault provides:
 
 ### IxCredits (IxC)
 
-The universal currency of IxStats, used across all platform features:
+The universal currency of IxStates (IxStats), used across all platform features:
 
 **Display Formats:**
 ```typescript
@@ -107,7 +109,7 @@ Total: ~10 IxCredits/day passive
 
 ### 2. Active Gameplay Rewards
 
-Incentivize daily engagement across all IxStats systems:
+Incentivize daily engagement across all IxStates (IxStats) systems:
 
 **Daily Activities:**
 | Activity | IxCredits | Cap | Notes |
@@ -215,7 +217,7 @@ Reward community engagement:
 
 ### 3. Cross-Platform Benefits
 
-Bridge to other IxStats systems:
+Bridge to other IxStates (IxStats) systems:
 
 **Diplomatic Boosts:**
 - Increase mission success (+10%): 25 IxC
