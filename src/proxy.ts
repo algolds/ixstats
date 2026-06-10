@@ -92,9 +92,7 @@ const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
  */
 function isEmbeddablePathFn(pathname: string): boolean {
   return (
-    pathname.startsWith("/maps") ||
-    pathname.startsWith("/w/") ||
-    pathname.startsWith("/countries/")
+    pathname.startsWith("/maps") || pathname.startsWith("/w/") || pathname.startsWith("/countries/")
   );
 }
 
@@ -112,7 +110,7 @@ function enhanceResponse(
 
   // Content Security Policy — select template by hostname, inject nonce
   const isForumWidget = req.nextUrl.pathname.startsWith("/forum/");
-  const isEmbeddablePath = isEmbeddablePathFn(req.nextUrl.pathname);
+  const isEmbeddablePath = isEmbeddablePathFn(req.nextUrl.pathname) || isStandaloneRequest(req.headers);
   const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
   let csp = cspTemplate.replaceAll("__NONCE__", nonce);
   if (isForumWidget) {

@@ -192,6 +192,7 @@ function CompactViewComponent({
             {/* ── IX Logo ──────────────────────────────────────── */}
             {(() => {
               const isWikiActive = activePlugin?.id === "wiki";
+              if (isWikiActive) return null;
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>

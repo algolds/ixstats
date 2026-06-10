@@ -388,10 +388,7 @@ export class ProductionMiddleware {
   /**
    * Security headers for production
    */
-  static addSecurityHeaders(
-    response: NextResponse,
-    opts?: { pathname?: string }
-  ): NextResponse {
+  static addSecurityHeaders(response: NextResponse, opts?: { pathname?: string }): NextResponse {
     response.headers.set("X-Content-Type-Options", "nosniff");
 
     // Skip X-Frame-Options for embeddable paths — frame-ancestors CSP supersedes it

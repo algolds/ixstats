@@ -34,6 +34,12 @@ function calculateRouteCosts(routeType: string, lengthKm: number, terrainDifficu
     case "road":
       baseCostPerKm = 0.01;
       break;
+    case "air_corridor":
+      baseCostPerKm = 0.08;
+      break;
+    case "ferry":
+      baseCostPerKm = 0.02;
+      break;
   }
   const costBillion = lengthKm * baseCostPerKm * (1 + terrainDifficulty * 1.5);
   const maintenanceCost = costBillion * 0.02; // 2% annual maintenance
@@ -314,7 +320,9 @@ export const transportRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         routeTypes: z
-          .array(z.enum(["rail", "highway", "road", "shipping_lane", "canal"]))
+          .array(
+            z.enum(["rail", "highway", "road", "shipping_lane", "canal", "air_corridor", "ferry"])
+          )
           .default(["rail", "highway"]),
         clearExisting: z.boolean().default(false),
       })
@@ -347,16 +355,38 @@ export const transportRouter = createTRPCRouter({
       const bbox = country.boundingBox as [number, number, number, number] | null;
       if (!bbox) throw new Error("Country has no bounding box");
 
+      // Fetch airport POIs for air corridor generation
+      const airportPois = input.routeTypes.includes("air_corridor")
+        ? await ctx.db.pointOfInterest.findMany({
+            where: { countryId: input.countryId, status: "approved", category: "airport" },
+            select: { id: true, coordinates: true },
+          })
+        : [];
+
       // Build city nodes
       let cityNodes: CityNode[] = country.cities
         .filter((c) => Array.isArray(c.coordinates) && (c.coordinates as number[]).length >= 2)
-        .map((c) => ({
-          id: c.id,
-          name: c.name,
-          coordinates: c.coordinates as [number, number],
-          population: c.population ?? 0,
-          isCapital: c.isNationalCapital,
-        }));
+        .map((c) => {
+          const cityCoords = c.coordinates as [number, number];
+          // Check if this city has an airport POI nearby
+          const hasAirport = airportPois.some((poi) => {
+            const poiCoords = poi.coordinates as [number, number] | null;
+            if (!poiCoords || !Array.isArray(poiCoords)) return false;
+            // Airport within ~50km of city center
+            const dist = Math.sqrt(
+              (poiCoords[0] - cityCoords[0]) ** 2 + (poiCoords[1] - cityCoords[1]) ** 2
+            );
+            return dist < 0.5; // ~50km at mid-latitudes
+          });
+          return {
+            id: c.id,
+            name: c.name,
+            coordinates: cityCoords,
+            population: c.population ?? 0,
+            isCapital: c.isNationalCapital,
+            hasAirport,
+          };
+        });
 
       // Mark coastal cities if country has coastline
       if ((country.coastlineKm ?? 0) > 0) {

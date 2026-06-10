@@ -443,6 +443,12 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                   labels: layerStates.labels?.visible ?? true,
                   routes: layerStates.routes?.visible ?? true,
                 }}
+                routeWaypoints={editor.routeWaypoints}
+                editingRouteId={editor.editingRouteId}
+                editingRouteVertices={editor.editingRouteVertices}
+                onRouteVerticesUpdate={editor.setEditingRouteVertices}
+                onRouteEditCommit={editor.commitRouteEdit}
+                onRouteEditCancel={editor.cancelRouteEdit}
               />
 
               {/* Province preview layer */}

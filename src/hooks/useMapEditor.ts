@@ -41,9 +41,10 @@ export type EditorMode =
   | "edit-label"
   | "import-provinces"
   | "add-route"
+  | "edit-route"
   | "paint";
 
-export type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel";
+export type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route";
 
 export interface EditorFeature {
   id: string;
@@ -180,6 +181,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     utils.geoCore.getCapitalCities.invalidate();
     utils.geoCore.getCountryGeometry.invalidate();
     utils.geoCore.getCountryLinkage.invalidate();
+    utils.transport.getCountryRoutes.invalidate();
+    utils.transport.getAllRoutesGeoJSON.invalidate();
+    utils.transport.getTransportStats.invalidate();
   }, [utils]);
 
   const [mode, setModeRaw] = useState<EditorMode>("view");
@@ -201,6 +205,16 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   // ── Route Drawing State ──
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
+  const [routeDrawingHistory, setRouteDrawingHistory] = useState<[number, number][][]>([]);
+  const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
+  const [editingRouteVertices, setEditingRouteVertices] = useState<[number, number][]>([]);
+  const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
+  const [snapTarget, setSnapTarget] = useState<{
+    type: "city" | "hub" | "border_crossing";
+    id: string;
+    coordinates: [number, number];
+    name: string;
+  } | null>(null);
 
   // ── Multi-Select ──
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -260,6 +274,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             case "mapLabel":
               await m.deleteMapLabel?.mutateAsync({ countryId, labelId: action.featureId });
               break;
+            case "route":
+              await m.deleteRoute?.mutateAsync({ countryId, id: action.featureId });
+              break;
           }
           break;
         case "delete":
@@ -315,6 +332,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   color: p?.color ?? "#374151",
                 });
                 break;
+              case "route":
+                await m.createRoute?.mutateAsync({
+                  countryId,
+                  routeType: d.routeType,
+                  name: d.name,
+                  geometry: d.geometry,
+                  properties: d.properties,
+                });
+                break;
             }
           }
           break;
@@ -371,6 +397,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   color: p?.color,
                 });
                 break;
+              case "route":
+                await m.updateRouteGeometry?.mutateAsync({
+                  countryId,
+                  id: action.featureId,
+                  geometry: d.geometry,
+                });
+                break;
             }
           }
           break;
@@ -409,6 +442,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               case "mapLabel":
                 await m.createMapLabel?.mutateAsync({ countryId, ...d });
                 break;
+              case "route":
+                await m.createRoute?.mutateAsync({
+                  countryId,
+                  routeType: d.routeType,
+                  name: d.name,
+                  geometry: d.geometry,
+                  properties: d.properties,
+                } as any);
+                break;
             }
           }
           break;
@@ -431,6 +473,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               break;
             case "mapLabel":
               await m.deleteMapLabel?.mutateAsync({ countryId, labelId: action.featureId });
+              break;
+            case "route":
+              await m.deleteRoute?.mutateAsync({ countryId, id: action.featureId });
               break;
           }
           break;
@@ -487,6 +532,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   color: p?.color,
                 });
                 break;
+              case "route":
+                await m.updateRouteGeometry?.mutateAsync({
+                  countryId,
+                  id: action.featureId,
+                  geometry: d.geometry,
+                });
+                break;
             }
           }
           break;
@@ -522,6 +574,16 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     { enabled: !!countryId, staleTime: 60_000 }
   );
 
+  // Fetch country routes
+  const {
+    data: countryRoutes,
+    isLoading: routesLoading,
+    refetch: refetchRoutes,
+  } = api.transport.getCountryRoutes.useQuery(
+    { countryId: countryId ?? "" },
+    { enabled: !!countryId, staleTime: 60_000 }
+  );
+
   // Check if country is linked to a map feature (non-throwing)
   const { data: linkage, isLoading: linkageLoading } = api.geoCore.getCountryLinkage.useQuery(
     { countryId: countryId ?? "" },
@@ -550,9 +612,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (pendingRefetchRef.current) clearTimeout(pendingRefetchRef.current);
     pendingRefetchRef.current = setTimeout(() => {
       refetchFeatures();
+      refetchRoutes();
       pendingRefetchRef.current = null;
     }, 100);
-  }, [refetchFeatures]);
+  }, [refetchFeatures, refetchRoutes]);
 
   // Mutations
   const createCity = api.countryGeo.upsertCity.useMutation({
@@ -673,13 +736,44 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
-  // Route mutation
+  // Route mutations
   const createRoute = api.transport.createRoute.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setRouteWaypoints([]);
       void utils.transport.getCountryRoutes.invalidate();
       void utils.transport.getAllRoutesGeoJSON.invalidate();
       void utils.transport.getTransportStats.invalidate();
+      invalidateAllMapData();
+
+      pushAction({
+        type: "create",
+        featureType: "route",
+        featureId: data.id,
+        newData: {
+          routeType: data.routeType,
+          name: data.name,
+          geometry: data.geometry,
+          properties: data.properties,
+        },
+      });
+    },
+  });
+
+  const updateRouteGeometry = api.transport.updateRouteGeometry.useMutation({
+    onSuccess: () => {
+      void utils.transport.getCountryRoutes.invalidate();
+      void utils.transport.getAllRoutesGeoJSON.invalidate();
+      void utils.transport.getTransportStats.invalidate();
+      invalidateAllMapData();
+    },
+  });
+
+  const deleteRoute = api.transport.deleteRoute.useMutation({
+    onSuccess: () => {
+      void utils.transport.getCountryRoutes.invalidate();
+      void utils.transport.getAllRoutesGeoJSON.invalidate();
+      void utils.transport.getTransportStats.invalidate();
+      invalidateAllMapData();
     },
   });
 
@@ -700,6 +794,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     createMapLabel,
     updateMapLabel,
     deleteMapLabel,
+    createRoute,
+    deleteRoute,
+    updateRouteGeometry,
     refetchFeatures: debouncedRefetch,
   };
 
@@ -717,17 +814,130 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         name,
         geometry,
       });
+      setRouteWaypoints([]);
+      setRouteDrawingHistory([]);
+      setSnapTarget(null);
     },
     [countryId, routeWaypoints, createRoute]
   );
 
   const undoLastWaypoint = useCallback(() => {
-    setRouteWaypoints((prev) => prev.slice(0, -1));
-  }, []);
+    setRouteWaypoints((prev) => {
+      if (routeDrawingHistory.length === 0) return prev;
+      const prevWaypoints = routeDrawingHistory[routeDrawingHistory.length - 1]!;
+      setRouteDrawingHistory((history) => history.slice(0, -1));
+      return prevWaypoints;
+    });
+  }, [routeDrawingHistory]);
 
   const clearRouteWaypoints = useCallback(() => {
     setRouteWaypoints([]);
+    setRouteDrawingHistory([]);
+    setSnapTarget(null);
   }, []);
+
+  const startRouteEdit = useCallback(
+    (routeId: string, geometry: any) => {
+      setEditingRouteId(routeId);
+      setEditingRouteVertices(geometry?.coordinates ? [...geometry.coordinates] : []);
+      setMode("edit-route");
+      setSelectedFeature({
+        id: routeId,
+        type: "route",
+        name: "Route",
+        geometry: geometry,
+        properties: {},
+      });
+    },
+    [setMode]
+  );
+
+  const commitRouteEdit = useCallback(async () => {
+    if (!countryId || !editingRouteId || editingRouteVertices.length < 2) return;
+    const geometry = {
+      type: "LineString" as const,
+      coordinates: editingRouteVertices,
+    };
+
+    pushAction({
+      type: "update",
+      featureType: "route",
+      featureId: editingRouteId,
+      previousData: {
+        geometry: selectedFeature?.geometry,
+      },
+      newData: {
+        geometry,
+      },
+    });
+
+    await updateRouteGeometry.mutateAsync({
+      countryId,
+      id: editingRouteId,
+      geometry,
+    });
+
+    setEditingRouteId(null);
+    setEditingRouteVertices([]);
+    setMode("view");
+    setSelectedFeature(null);
+  }, [
+    countryId,
+    editingRouteId,
+    editingRouteVertices,
+    selectedFeature,
+    updateRouteGeometry,
+    pushAction,
+    setMode,
+  ]);
+
+  const cancelRouteEdit = useCallback(() => {
+    setEditingRouteId(null);
+    setEditingRouteVertices([]);
+    setMode("view");
+    setSelectedFeature(null);
+  }, [setMode]);
+
+  const addRouteWaypointWithSnap = useCallback(
+    (coords: [number, number], nearbyFeatures?: any[]) => {
+      let targetCoords = coords;
+      let newSnap: typeof snapTarget = null;
+
+      if (nearbyFeatures && nearbyFeatures.length > 0) {
+        let minDistance = Infinity;
+        let closestFeature: any = null;
+
+        for (const feature of nearbyFeatures) {
+          if (!feature.geometry || !feature.geometry.coordinates) continue;
+          const [lng, lat] = feature.geometry.coordinates;
+          const dist = Math.sqrt(Math.pow(lng - coords[0], 2) + Math.pow(lat - coords[1], 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestFeature = feature;
+          }
+        }
+
+        // Proximity threshold of ~0.03 degrees (~3km)
+        if (closestFeature && minDistance < 0.03) {
+          targetCoords = closestFeature.geometry.coordinates;
+          newSnap = {
+            type: closestFeature.properties?.type === "hub" ? "hub" : "city",
+            id: closestFeature.id || closestFeature.properties?.id,
+            coordinates: targetCoords,
+            name: closestFeature.properties?.name || "City",
+          };
+        }
+      }
+
+      setSnapTarget(newSnap);
+      setRouteWaypoints((prev) => {
+        const next = [...prev, targetCoords];
+        setRouteDrawingHistory((history) => [...history, prev]);
+        return next;
+      });
+    },
+    [snapTarget]
+  );
 
   const resetForm = useCallback(() => {
     setMode("view");
@@ -740,9 +950,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setStoryPinForm(DEFAULT_STORY_PIN);
     setMapLabelForm(DEFAULT_MAP_LABEL);
     setRouteWaypoints([]);
+    setRouteDrawingHistory([]);
+    setEditingRouteId(null);
+    setEditingRouteVertices([]);
+    setSnapTarget(null);
     setLastSavedAt(null);
     setValidationErrors({});
-  }, []);
+  }, [setMode]);
 
   /** Validate feature data before submit. Returns errors record (empty = valid). */
   const validateFeature = useCallback(
@@ -1187,6 +1401,20 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         case "mapLabel":
           await deleteMapLabel.mutateAsync({ countryId, labelId: feature.id });
           break;
+        case "route":
+          pushAction({
+            type: "delete",
+            featureType: "route",
+            featureId: feature.id,
+            previousData: {
+              name: feature.name,
+              routeType: feature.properties?.routeType || "road",
+              geometry: feature.geometry,
+              properties: feature.properties,
+            },
+          });
+          await deleteRoute.mutateAsync({ countryId, id: feature.id });
+          break;
       }
     },
     [
@@ -1292,8 +1520,26 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       });
     }
 
+    for (const r of countryRoutes?.features ?? []) {
+      const props = r.properties ?? {};
+      list.push({
+        id: props.id,
+        type: "route",
+        name: props.name || `${props.routeType?.toUpperCase() || "ROAD"} Route`,
+        geometry: r.geometry as object | undefined,
+        properties: {
+          routeType: props.routeType,
+          lengthKm: props.lengthKm,
+          status: props.status,
+          builtYear: props.builtYear,
+          capacity: props.capacity,
+          properties: props,
+        },
+      });
+    }
+
     return list;
-  }, [features]);
+  }, [features, countryRoutes]);
 
   // Bulk delete selected features
   const bulkDeleteSelected = useCallback(async () => {
@@ -1369,7 +1615,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     geometryLoading,
     linkage,
     linkageLoading,
-    featuresLoading,
+    featuresLoading: featuresLoading || routesLoading,
     pendingPointInfo,
     isPendingPointInfoLoading,
 
@@ -1408,11 +1654,23 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     undo,
     redo,
 
-    // Route Drawing
+    // Route Drawing & Editing
     routeWaypoints,
+    routeDrawingHistory,
+    editingRouteId,
+    editingRouteVertices,
+    setEditingRouteVertices,
+    draggingVertexIndex,
+    setDraggingVertexIndex,
+    snapTarget,
+    setSnapTarget,
     finishRoute,
     undoLastWaypoint,
     clearRouteWaypoints,
+    startRouteEdit,
+    commitRouteEdit,
+    cancelRouteEdit,
+    addRouteWaypointWithSnap,
 
     // Multi-Select
     selectedIds,

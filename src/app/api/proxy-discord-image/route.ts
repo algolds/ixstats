@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Cross-Origin-Resource-Policy": "cross-origin",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 const CACHE_DURATION = 86400;
 const ALLOWED_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -41,7 +55,11 @@ function getFilename(parsedUrl: URL): string {
 function placeholderResponse() {
   return new NextResponse(PLACEHOLDER_BYTES, {
     status: 200,
-    headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600" },
+    headers: {
+      "Content-Type": "image/svg+xml",
+      "Cache-Control": "public, max-age=3600",
+      ...corsHeaders,
+    },
   });
 }
 
@@ -69,6 +87,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": imageData.contentType,
         "Cache-Control": `public, max-age=${CACHE_DURATION}, immutable`,
+        ...corsHeaders,
       },
     });
   } catch {

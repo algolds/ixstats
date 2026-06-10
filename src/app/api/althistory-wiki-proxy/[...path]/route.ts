@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { externalApiCache } from "../../../../lib/external-api-cache";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Cross-Origin-Resource-Policy": "cross-origin",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -136,6 +150,7 @@ export async function GET(
               headers: {
                 "Content-Type": contentType,
                 "Cache-Control": "public, max-age=86400",
+                ...corsHeaders,
               },
             });
           } else {
@@ -156,15 +171,16 @@ export async function GET(
                 headers: {
                   "Content-Type": contentType,
                   "Cache-Control": "public, max-age=86400",
+                  ...corsHeaders,
                 },
               });
             }
 
-            return new NextResponse(null, { status: 502 });
+            return new NextResponse(null, { status: 502, headers: corsHeaders });
           }
         } catch (imgErr) {
           console.error("[AltHistory Proxy] Error fetching resolved image path:", imgErr);
-          return new NextResponse(null, { status: 502 });
+          return new NextResponse(null, { status: 502, headers: corsHeaders });
         }
       }
     }
@@ -191,13 +207,14 @@ export async function GET(
         console.warn(
           `[AltHistory Proxy] Target returned status ${response.status}. Cannot redirect due to CORP policy.`
         );
-        return new NextResponse(null, { status: 502 });
+        return new NextResponse(null, { status: 502, headers: corsHeaders });
       }
 
       return new NextResponse(response.body, {
         status: response.status,
         headers: {
           "Content-Type": response.headers.get("Content-Type") || "text/plain",
+          ...corsHeaders,
         },
       });
     }
@@ -210,10 +227,11 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400", // Cache images/files for 1 day
+        ...corsHeaders,
       },
     });
   } catch (error) {
     console.error("[AltHistory Proxy] Catch-all error:", error);
-    return new NextResponse("Proxy Error", { status: 500 });
+    return new NextResponse("Proxy Error", { status: 500, headers: corsHeaders });
   }
 }

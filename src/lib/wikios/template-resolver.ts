@@ -38,8 +38,7 @@ export interface ResolvedTemplate {
 /** Extract template keys from rendered HTML (Template: anchor patterns). */
 export function extractTemplateKeys(html: string): TemplateKey[] {
   const keys = new Map<string, TemplateKey>();
-  const linkRegex =
-    /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
+  const linkRegex = /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
   let match: RegExpExecArray | null;
 
   while ((match = linkRegex.exec(html)) !== null) {
@@ -198,20 +197,15 @@ function resolveCountryField(country: any, field: string): string {
     return country.leaderName ?? country.nationalIdentity?.leaderName ?? "N/A";
   if (f === "government" || f === "governmenttype")
     return country.governmentType ?? country.nationalIdentity?.governmentType ?? "N/A";
-  if (f === "motto")
-    return country.motto ?? country.nationalIdentity?.motto ?? "N/A";
+  if (f === "motto") return country.motto ?? country.nationalIdentity?.motto ?? "N/A";
   if (f === "capital" || f === "capitalcity")
     return country.capitalCity ?? country.nationalIdentity?.capitalCity ?? "N/A";
-  if (f === "currency")
-    return country.currency ?? country.nationalIdentity?.currency ?? "N/A";
+  if (f === "currency") return country.currency ?? country.nationalIdentity?.currency ?? "N/A";
   if (f === "currencysymbol")
     return country.currencySymbol ?? country.nationalIdentity?.currencySymbol ?? "N/A";
-  if (f === "land_area" || f === "landarea")
-    return fmtNum(country.landArea ?? 0) + " km\u00B2";
-  if (f === "name")
-    return country.name ?? "N/A";
-  if (f === "flag_url" || f === "flagurl")
-    return country.flagUrl ?? "";
+  if (f === "land_area" || f === "landarea") return fmtNum(country.landArea ?? 0) + " km\u00B2";
+  if (f === "name") return country.name ?? "N/A";
+  if (f === "flag_url" || f === "flagurl") return country.flagUrl ?? "";
 
   // Try direct property access as fallback
   if (country[f] != null) {

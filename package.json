@@ -206,6 +206,8 @@
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
+    "@turf/bearing": "^7.3.5",
+    "@turf/great-circle": "^7.3.5",
     "@turf/turf": "^7.3.5",
     "@types/node-schedule": "^2.1.8",
     "@types/papaparse": "^5.5.2",

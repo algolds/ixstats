@@ -41,7 +41,11 @@ import {
 } from "~/lib/wiki-bridge";
 import { transformWikiLinks } from "~/lib/wikios/url-compat";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wikios/html-transformer";
-import { extractTemplateKeys, resolveTemplates, applyResolvedTemplates } from "~/lib/wikios/template-resolver";
+import {
+  extractTemplateKeys,
+  resolveTemplates,
+  applyResolvedTemplates,
+} from "~/lib/wikios/template-resolver";
 import { computeWikitextDiff } from "~/lib/wikios/wikitext-diff";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wikios/csrf-cache";
 import {
@@ -145,12 +149,12 @@ export const wikiosRouter = createTRPCRouter({
       let resolvedMap: Map<string, any> | undefined;
       try {
         const myCountryId = (ctx as any).auth?.userId
-          ? (
+          ? ((
               await (ctx as any).db.user.findFirst({
                 where: { clerkUserId: (ctx as any).auth.userId },
                 select: { countryId: true },
               })
-            )?.countryId ?? null
+            )?.countryId ?? null)
           : null;
         resolvedMap = await resolveTemplates(templateKeys, {
           activeCountryId: myCountryId,

@@ -10,6 +10,20 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Cross-Origin-Resource-Policy": "cross-origin",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 // Cache successful image fetches for 24 hours
 const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 
@@ -23,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Validate URL parameter
     if (!imageUrl) {
-      return NextResponse.json({ error: "Missing 'url' parameter" }, { status: 400 });
+      return NextResponse.json({ error: "Missing 'url' parameter" }, { status: 400, headers: corsHeaders });
     }
 
     // Security: Only allow NationStates domains
@@ -33,13 +47,13 @@ export async function GET(request: NextRequest) {
     try {
       parsedUrl = new URL(imageUrl);
     } catch {
-      return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid URL format" }, { status: 400, headers: corsHeaders });
     }
 
     if (!allowedDomains.includes(parsedUrl.hostname)) {
       return NextResponse.json(
         { error: "URL must be from nationstates.net domain" },
-        { status: 403 }
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -66,12 +80,12 @@ export async function GET(request: NextRequest) {
 
       // Return appropriate error
       if (nsResponse.status === 404) {
-        return NextResponse.json({ error: "Image not found" }, { status: 404 });
+        return NextResponse.json({ error: "Image not found" }, { status: 404, headers: corsHeaders });
       }
 
       return NextResponse.json(
         { error: "Failed to fetch image from NationStates" },
-        { status: nsResponse.status }
+        { status: nsResponse.status, headers: corsHeaders }
       );
     }
 
@@ -86,10 +100,11 @@ export async function GET(request: NextRequest) {
         "Content-Type": contentType,
         "Cache-Control": `public, max-age=${CACHE_DURATION}, immutable`,
         "X-Proxied-From": "nationstates.net",
+        ...corsHeaders,
       },
     });
   } catch (error) {
     console.error("[NS-PROXY] Unexpected error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders });
   }
 }

@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * EditorPanel — Sidebar panel supporting left or right orientation with tabbed navigation.
+ * EditorPanel — Sidebar/Bottom panel supporting left, right, and bottom orientation with tabbed navigation.
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronRight,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   Settings2,
   Layers,
   List,
@@ -15,6 +17,7 @@ import {
   Search,
   Globe,
   Link as LinkIcon,
+  Layout,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
@@ -22,23 +25,33 @@ import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
 const PANEL_MIN_W = 256;
 const PANEL_MAX_W = 480;
 const PANEL_DEFAULT_W = 320;
-const PANEL_STORAGE_KEY = "ixworld-editor-panel-width";
+const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 
 export type TabId = "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty";
 
-const LEFT_TABS = [
-  { id: "layers" as const, label: "Layers", Icon: Layers },
-  { id: "features" as const, label: "Features", Icon: List },
-];
-
-const RIGHT_TABS = [{ id: "properties" as const, label: "Properties", Icon: Settings2 }];
+const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
+  layers: { label: "Layers", Icon: Layers },
+  features: { label: "Features", Icon: List },
+  properties: { label: "Properties", Icon: Settings2 },
+  linkages: { label: "Links", Icon: LinkIcon },
+  sovereignty: { label: "Sovereign", Icon: Globe },
+  wiki: { label: "Wiki", Icon: BookOpen },
+};
 
 interface EditorPanelProps {
   /** Current editor mode — controls which tab auto-activates */
   mode: EditorMode;
-  /** Whether the panel is collapsed (0-width) */
+  /** Whether the panel is collapsed */
   collapsed: boolean;
   onToggleCollapse: () => void;
+  /** Tabs to show in this panel */
+  tabs: TabId[];
+  /** Callback when a tab is dragged and dropped onto this panel */
+  onTabDrop?: (tabId: TabId) => void;
+  /** Placement: left sidebar, right sidebar, or bottom horizontal pane */
+  placement?: "left" | "right" | "bottom";
+  /** Callback to change docking placement */
+  onChangePlacement?: (placement: "left" | "right" | "bottom") => void;
   /** Content for each section */
   propertiesContent?: React.ReactNode;
   featureListContent?: React.ReactNode;
@@ -52,18 +65,21 @@ interface EditorPanelProps {
   importWizardContent?: React.ReactNode;
   /** Whether features are still loading */
   featuresLoading?: boolean;
-  /** Which side the panel resides on: "left" | "right" */
-  side?: "left" | "right";
   /** Override active tab */
   activeTabOverride?: TabId;
   onTabChange?: (tab: TabId) => void;
   isWorldMode?: boolean;
+  isStacked?: boolean;
 }
 
 export function EditorPanel({
   mode,
   collapsed,
   onToggleCollapse,
+  tabs,
+  onTabDrop,
+  placement = "right",
+  onChangePlacement,
   propertiesContent,
   featureListContent,
   layersContent,
@@ -73,13 +89,17 @@ export function EditorPanel({
   featureCount,
   importWizardContent,
   featuresLoading,
-  side = "right",
   activeTabOverride,
   onTabChange,
   isWorldMode = false,
+  isStacked = false,
 }: EditorPanelProps) {
-  const defaultTab = side === "left" ? (isWorldMode ? "linkages" : "features") : "properties";
-  const [activeTab, setActiveTab] = useState<TabId>(activeTabOverride || defaultTab);
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (activeTabOverride) return activeTabOverride;
+    if (tabs.length > 0) return tabs[0];
+    return placement === "left" ? (isWorldMode ? "linkages" : "features") : "properties";
+  });
+
   const userOverrideRef = useRef(false);
 
   // Sync tab if overridden
@@ -89,14 +109,38 @@ export function EditorPanel({
     }
   }, [activeTabOverride]);
 
-  // Panel resize
+  // Keep activeTab in sync with available tabs in this panel
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [tabs, activeTab]);
+
+  // Panel size states
   const [panelWidth, setPanelWidth] = useState(() => {
     if (typeof window === "undefined") return PANEL_DEFAULT_W;
-    const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-${side}`);
+    const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-width`);
     return stored
       ? Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, parseInt(stored)))
       : PANEL_DEFAULT_W;
   });
+
+  const [panelHeight, setPanelHeight] = useState(() => {
+    if (typeof window === "undefined") return 240;
+    const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-height`);
+    return stored
+      ? Math.min(500, Math.max(120, parseInt(stored)))
+      : 240;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`${PANEL_STORAGE_KEY}-width`, String(panelWidth));
+  }, [panelWidth]);
+
+  useEffect(() => {
+    localStorage.setItem(`${PANEL_STORAGE_KEY}-height`, String(panelHeight));
+  }, [panelHeight]);
+
   const isDragging = useRef(false);
 
   const handleResizeStart = useCallback(
@@ -104,39 +148,44 @@ export function EditorPanel({
       e.preventDefault();
       isDragging.current = true;
       const startX = e.clientX;
+      const startY = e.clientY;
       const startW = panelWidth;
+      const startH = panelHeight;
+
       const onMove = (me: MouseEvent) => {
         if (!isDragging.current) return;
-        // Dragging right makes left panel wider; dragging left makes right panel wider
-        const delta = side === "left" ? me.clientX - startX : startX - me.clientX;
-        const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
-        setPanelWidth(newW);
+        if (placement === "bottom") {
+          const delta = startY - me.clientY;
+          const newH = Math.min(500, Math.max(120, startH + delta));
+          setPanelHeight(newH);
+        } else {
+          const delta = placement === "left" ? me.clientX - startX : startX - me.clientX;
+          const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
+          setPanelWidth(newW);
+        }
       };
+
       const onUp = () => {
         isDragging.current = false;
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
-        localStorage.setItem(`${PANEL_STORAGE_KEY}-${side}`, String(panelWidth));
       };
+
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     },
-    [panelWidth, side]
+    [panelWidth, panelHeight, placement]
   );
 
-  // Auto-switch tabs based on mode (for right properties panel, unless user manually overrode)
+  // Auto-switch tabs based on mode (for properties tab)
   useEffect(() => {
-    if (side === "left") {
-      // Keep left panel on features/layers as set by user, don't auto-switch to properties
-      return;
-    }
-    userOverrideRef.current = false;
+    if (userOverrideRef.current) return;
     if (mode.startsWith("add-") || mode.startsWith("edit-") || mode === "paint") {
-      setActiveTab("properties");
-    } else {
-      setActiveTab("properties");
+      if (tabs.includes("properties")) {
+        setActiveTab("properties");
+      }
     }
-  }, [mode, side]);
+  }, [mode, tabs]);
 
   const handleTabClick = (tab: TabId) => {
     userOverrideRef.current = true;
@@ -144,106 +193,254 @@ export function EditorPanel({
     onTabChange?.(tab);
   };
 
-  const tabs: { id: TabId; label: string; Icon: React.ComponentType<any> }[] = useMemo(() => {
-    if (side === "left") {
-      if (isWorldMode) {
-        return [
-          { id: "linkages" as const, label: "Links", Icon: LinkIcon },
-          { id: "sovereignty" as const, label: "Sovereign", Icon: Globe },
-          { id: "features" as const, label: "Features", Icon: List },
-        ];
-      }
-      return LEFT_TABS;
-    }
-    return RIGHT_TABS;
-  }, [side, isWorldMode]);
+  if (collapsed && isStacked) {
+    return (
+      <div
+        className={`border-border bg-card/75 flex shrink-0 items-center justify-between px-2 py-1.5 backdrop-blur-md ${
+          placement === "bottom"
+            ? "h-9 w-32 border rounded-md"
+            : "h-9 w-full border-b border-t"
+        }`}
+      >
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          {tabs.map((tabId) => {
+            const tabDef = TAB_DEFS[tabId];
+            if (!tabDef) return null;
+            return (
+              <tabDef.Icon
+                key={tabId}
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                title={tabDef.label}
+              />
+            );
+          })}
+        </div>
+        <button
+          onClick={onToggleCollapse}
+          className="text-muted-foreground hover:text-foreground rounded p-0.5 hover:bg-accent/40 transition-colors shrink-0"
+          title="Expand Panel"
+        >
+          {placement === "bottom" ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+    );
+  }
 
-  // Import mode takes over the entire panel (only applicable to left feature panel in unified layout)
-  if (side === "left" && mode === "import-provinces" && importWizardContent) {
+  // Import mode takes over the entire panel (only if features tab exists here)
+  if (mode === "import-provinces" && importWizardContent && tabs.includes("features")) {
     return (
       <div className="relative flex h-full">
         {!collapsed && (
           <div
-            className="border-border bg-card/75 relative flex h-full flex-col border-r shadow-lg backdrop-blur-md"
-            style={{ width: panelWidth }}
+            className="border-border bg-card/75 relative flex flex-col border-r shadow-lg backdrop-blur-md"
+            style={{
+              width: placement === "bottom" ? "100%" : panelWidth,
+              height: placement === "bottom" ? panelHeight : "100%",
+            }}
           >
             {/* Resize handle */}
             <div
-              className="hover:bg-primary/30 active:bg-primary/50 absolute top-0 right-0 z-20 h-full w-1 cursor-col-resize transition-colors"
+              className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
+                placement === "bottom"
+                  ? "top-0 left-0 w-full h-1 cursor-row-resize"
+                  : placement === "left"
+                    ? "top-0 right-0 h-full w-1 cursor-col-resize"
+                    : "top-0 left-0 h-full w-1 cursor-col-resize"
+              }`}
               onMouseDown={handleResizeStart}
             />
             {importWizardContent}
           </div>
         )}
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} side={side} />
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
+      </div>
+    );
+  }
+
+  // Render empty slot placeholder if no tabs are here
+  if (tabs.length === 0) {
+    return (
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          const tabId = e.dataTransfer.getData("tabId") as TabId;
+          if (tabId && onTabDrop) {
+            onTabDrop(tabId);
+          }
+        }}
+        className={`border-dashed border-2 border-border/40 bg-card/20 flex flex-col items-center justify-center p-4 text-[11px] text-muted-foreground rounded-lg m-2 backdrop-blur-sm transition-colors hover:border-primary/40`}
+        style={{
+          width: placement === "bottom" ? "100%" : 140,
+          height: placement === "bottom" ? 80 : "100%",
+        }}
+      >
+        <Layout className="h-4 w-4 mb-1 text-muted-foreground/60" />
+        <span>Drag tab here</span>
+        {onChangePlacement && (
+          <div className="flex gap-1 mt-2">
+            <button
+              onClick={() => onChangePlacement("left")}
+              className={`p-0.5 rounded ${placement === "left" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
+              title="Dock Left"
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => onChangePlacement("bottom")}
+              className={`p-0.5 rounded ${placement === "bottom" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
+              title="Dock Bottom"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => onChangePlacement("right")}
+              className={`p-0.5 rounded ${placement === "right" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
+              title="Dock Right"
+            >
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="relative flex h-full">
-      {side === "right" && (
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} side={side} />
+    <div className={`relative flex ${placement === "bottom" ? "w-full flex-col" : "h-full"}`}>
+      {placement === "right" && (
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
       )}
 
       {!collapsed && (
         <div
-          className={`border-border bg-card/75 relative flex h-full flex-col shadow-lg backdrop-blur-md ${
-            side === "left" ? "border-r" : "border-l"
+          className={`border-border bg-card/75 relative flex flex-col shadow-lg backdrop-blur-md ${
+            placement === "bottom"
+              ? "border-t w-full"
+              : placement === "left"
+                ? "border-r h-full"
+                : "border-l h-full"
           }`}
-          style={{ width: panelWidth }}
+          style={{
+            width: placement === "bottom" ? "100%" : panelWidth,
+            height: placement === "bottom" ? panelHeight : "100%",
+          }}
         >
           {/* Resize handle */}
           <div
-            className={`hover:bg-primary/30 active:bg-primary/50 absolute top-0 z-20 h-full w-1 cursor-col-resize transition-colors ${
-              side === "left" ? "right-0" : "left-0"
+            className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
+              placement === "bottom"
+                ? "top-0 left-0 w-full h-1 cursor-row-resize"
+                : placement === "left"
+                  ? "top-0 right-0 h-full w-1 cursor-col-resize"
+                  : "top-0 left-0 h-full w-1 cursor-col-resize"
             }`}
             onMouseDown={handleResizeStart}
           />
-          {/* Tab bar — compact 36px height, scrollable horizontally if crammed */}
-          <div className="border-border bg-muted/20 flex h-9 w-full shrink-0 scrollbar-none overflow-x-auto border-b">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
+          
+          {/* Tab bar */}
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              const droppedTabId = e.dataTransfer.getData("tabId") as TabId;
+              if (droppedTabId && !tabs.includes(droppedTabId) && onTabDrop) {
+                onTabDrop(droppedTabId);
+              }
+            }}
+            className="border-border bg-muted/20 flex h-9 w-full shrink-0 items-center justify-between border-b"
+          >
+            <div className="flex h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
+              {tabs.map((tabId) => {
+                const tabDef = TAB_DEFS[tabId];
+                if (!tabDef) return null;
+                const isActive = activeTab === tabId;
+                return (
+                  <button
+                    key={tabId}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("tabId", tabId);
+                    }}
+                    onClick={() => handleTabClick(tabId)}
+                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-[10px] font-medium transition-colors sm:text-[11px] ${
+                      isActive
+                        ? "border-primary bg-card/40 text-foreground border-b-2"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                    }`}
+                  >
+                    <tabDef.Icon className="h-3 w-3" />
+                    <span className="hidden sm:inline">{tabDef.label}</span>
+                    {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
+                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-[9px] tabular-nums">
+                        {featureCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Dock selector buttons */}
+            {onChangePlacement && (
+              <div className="flex items-center gap-1 border-l border-border px-2 ml-auto shrink-0 py-1 bg-muted/5">
                 <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab.id)}
-                  className={`flex h-full min-w-[60px] flex-1 flex-shrink-0 items-center justify-center gap-1 px-2 text-[10px] font-medium transition-colors sm:text-[11px] ${
-                    isActive
-                      ? "border-primary bg-card/40 text-foreground border-b-2"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                  onClick={() => onChangePlacement("left")}
+                  className={`p-1 rounded transition-colors ${
+                    placement === "left"
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                   }`}
+                  title="Dock Left"
                 >
-                  <tab.Icon className="h-3 w-3" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  {tab.id === "features" && featureCount !== undefined && featureCount > 0 && (
-                    <span className="bg-muted text-muted-foreground rounded-full px-1 text-[9px] tabular-nums">
-                      {featureCount}
-                    </span>
-                  )}
+                  <ChevronLeft className="h-3 w-3" />
                 </button>
-              );
-            })}
+                <button
+                  onClick={() => onChangePlacement("bottom")}
+                  className={`p-1 rounded transition-colors ${
+                    placement === "bottom"
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                  }`}
+                  title="Dock Bottom"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => onChangePlacement("right")}
+                  className={`p-1 rounded transition-colors ${
+                    placement === "right"
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                  }`}
+                  title="Dock Right"
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Tab content — fills remaining space with crossfade */}
+          {/* Tab content */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <div
               key={activeTab}
-              className="h-full"
+              className="h-full flex flex-col min-h-0"
               style={{ animation: "editorTabFadeIn 150ms ease" }}
             >
               {activeTab === "properties" && propertiesContent && (
-                <div className="h-full px-3 py-3">{propertiesContent}</div>
+                <div className="h-full px-3 py-3 overflow-y-auto">{propertiesContent}</div>
               )}
               {activeTab === "linkages" && linkagesContent && (
-                <div className="h-full">{linkagesContent}</div>
+                <div className="h-full overflow-y-auto">{linkagesContent}</div>
               )}
               {activeTab === "sovereignty" && sovereigntyContent && (
-                <div className="h-full">{sovereigntyContent}</div>
+                <div className="h-full overflow-y-auto">{sovereigntyContent}</div>
               )}
               {activeTab === "layers" && (
-                <div className="flex h-full min-h-0 flex-1 flex-col">
+                <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
                   {layersContent ?? (
                     <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
                       Layers panel coming soon
@@ -252,7 +449,7 @@ export function EditorPanel({
                 </div>
               )}
               {activeTab === "features" && featureListContent && (
-                <div className="flex h-full min-h-0 flex-1 flex-col px-3 py-3">
+                <div className="flex h-full min-h-0 flex-1 flex-col px-3 py-3 overflow-y-auto">
                   {featuresLoading ? <FeatureListSkeleton /> : featureListContent}
                 </div>
               )}
@@ -281,8 +478,8 @@ export function EditorPanel({
         </div>
       )}
 
-      {side === "left" && (
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} side={side} />
+      {(placement === "left" || placement === "bottom") && (
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
       )}
     </div>
   );
@@ -293,21 +490,34 @@ export function EditorPanel({
 function CollapseToggle({
   collapsed,
   onToggle,
-  side = "right",
+  placement = "right",
 }: {
   collapsed: boolean;
   onToggle: () => void;
-  side?: "left" | "right";
+  placement?: "left" | "right" | "bottom";
 }) {
-  const positionClass =
-    side === "left" ? "-right-3 rounded-r-md border-l-0" : "-left-3 rounded-l-md border-r-0";
+  let positionClass = "";
+  if (placement === "bottom") {
+    positionClass = "-top-3 left-1/2 -translate-x-1/2 rounded-t-md border-b-0 w-6 h-3";
+  } else if (placement === "left") {
+    positionClass = "-right-3 rounded-r-md border-l-0 w-3 h-6 top-1/2 -translate-y-1/2";
+  } else {
+    positionClass = "-left-3 rounded-l-md border-r-0 w-3 h-6 top-1/2 -translate-y-1/2";
+  }
+
   return (
     <button
       onClick={onToggle}
-      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute top-1/2 z-10 flex h-6 w-3 -translate-y-1/2 items-center justify-center border transition-colors ${positionClass} shadow-md backdrop-blur-sm`}
+      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute z-10 flex items-center justify-center border transition-colors ${positionClass} shadow-md backdrop-blur-sm`}
       title={collapsed ? "Show panel" : "Hide panel"}
     >
-      {side === "left" ? (
+      {placement === "bottom" ? (
+        collapsed ? (
+          <ChevronUp className="h-3 w-3" />
+        ) : (
+          <ChevronDown className="h-3 w-3" />
+        )
+      ) : placement === "left" ? (
         collapsed ? (
           <ChevronRight className="h-3 w-3" />
         ) : (
@@ -322,10 +532,6 @@ function CollapseToggle({
   );
 }
 
-/**
- * SearchableFeatureList — wraps FeatureList with a search filter input.
- * Used as the content for the Features section.
- */
 export function FeatureSearchFilter({
   value,
   onChangeAction,

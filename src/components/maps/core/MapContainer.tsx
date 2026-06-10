@@ -5,11 +5,9 @@
  * for the IxWorldMap component. Fetches GeoJSON data via tRPC.
  */
 
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";
-import { useMapDataBatched } from "~/hooks/useMapDataBatched";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
@@ -25,29 +23,21 @@ import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
-// ProjectionToggle moved into MapSearchOverlay settings panel
-import type { MapLayerType, ProjectionMode } from "~/lib/map-config";
-import type {
-  SelectedCountry,
-  SelectedFeature,
-  HoveredCountry,
-  IxWorldMapRef,
-  OverlayVisibility,
-} from "./IxWorldMap";
-import type { FeatureCollection } from "geojson";
-import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/overlay-registry";
+import type { MapLayerType } from "~/lib/map-config";
+import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
 
-// MapLibre CSS - imported here (not in dynamically-loaded IxWorldMap) so it's in the main bundle
+// MapLibre CSS - imported here so it's in the main bundle
 import "maplibre-gl/dist/maplibre-gl.css";
 
-// Dynamic import to avoid SSR issues with MapLibre
-// Loading state handled by MapLoadingScreen overlay
+// Extracted hooks
+import { useMapState } from "./hooks/useMapState";
+import { useMapDataQueries } from "./hooks/useMapDataQueries";
+
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-[#0a1628]" />,
 });
 
-// Editor overlay — dynamically loaded only when user enters edit mode
 const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
   ssr: false,
 });
@@ -55,17 +45,13 @@ const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEdito
 export interface MapContainerProps {
   className?: string;
   showControls?: boolean;
-  showTools?: boolean; // Search + measure tools (defaults to showControls)
+  showTools?: boolean; // Search + measure tools
   showPopup?: boolean;
-  showLoading?: boolean; // Full-screen loading overlay (default true; false for embeds)
+  showLoading?: boolean; // Full-screen loading overlay
   initialLayers?: MapLayerType[];
-  /** Country ID to auto-select and fly to on mount (for deep linking) */
   initialCountryId?: string;
-  /** Controlled country selection from parent component */
   selectedCountryId?: string | null;
-  /** Initial map center [lng, lat] for coordinate deep-linking (e.g. ?lat=X&lng=Y) */
   initialCenter?: [number, number];
-  /** Initial zoom level for coordinate deep-linking (e.g. ?zoom=Z) */
   initialZoom?: number;
   onCountrySelect?: (country: SelectedCountry | null) => void;
   forceFlatProjection?: boolean;
@@ -91,7 +77,6 @@ export function MapContainer({
   onToggleLayer,
   hideEditButtons = false,
 }: MapContainerProps) {
-  const router = useRouter();
   const isAdmin = useIsAdmin();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
@@ -100,123 +85,7 @@ export function MapContainer({
   // Real-time sync: invalidate map caches when any geo mutation succeeds
   useMapLiveSync();
 
-  const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
-  const [_hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
-  const [selectedFeature, setSelectedFeature] = useState<SelectedFeature | null>(null);
-  const [isMeasuring, setIsMeasuring] = useState(false);
-  const [mapEngineReady, setMapEngineReady] = useState(false);
-  const handleMapReady = useCallback(() => setMapEngineReady(true), []);
-  const [webglError, setWebglError] = useState<string | null>(null);
-  const [mapLoadTimeout, setMapLoadTimeout] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleWebGLErrorEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      setWebglError(customEvent.detail?.error || "WebGL Error detected");
-    };
-
-    const handleContextLostEvent = () => {
-      setWebglError("WebGL context lost. Hardware acceleration might be disabled or overloaded.");
-    };
-
-    window.addEventListener("webgl-error" as any, handleWebGLErrorEvent);
-    window.addEventListener("webgl-context-lost" as any, handleContextLostEvent);
-
-    return () => {
-      window.removeEventListener("webgl-error" as any, handleWebGLErrorEvent);
-      window.removeEventListener("webgl-context-lost" as any, handleContextLostEvent);
-    };
-  }, []);
-
-  const [geographyFilter, setGeographyFilter] = useState<{
-    type: "continent" | "region";
-    value: string;
-  } | null>(null);
-  const [projectionMode, setProjectionMode] = useState<ProjectionMode>("dynamic");
-  const [isEditing, setIsEditing] = useState(false);
-  const [isWorldEditing, setIsWorldEditing] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-  const [storyPinModalId, setStoryPinModalId] = useState<string | null>(null);
-  const [editingCountryId, setEditingCountryId] = useState<string | null>(null);
-  const [currentZoom, setCurrentZoom] = useState<number | undefined>(undefined);
-
-  // Get user's country for the editor shortcut
-  const { data: userProfile, isLoading: isProfileLoading } = api.users.getProfile.useQuery(
-    undefined,
-    {
-      staleTime: 5 * 60_000,
-      retry: false,
-    }
-  );
-  const userCountryId = userProfile?.countryId ?? null;
-
-  const {
-    mapLayers,
-    toggleLayer,
-    visibleLayers,
-    isLoading,
-    error,
-    overlayFeatures: batchedOverlayFeatures,
-    capitalsGeoJson: batchedCapitalsGeoJson,
-  } = useMapDataBatched(initialLayers, currentZoom);
-
-  const activeMapLayers = useMemo(() => {
-    if (!controlledVisibleLayers) return mapLayers;
-    return mapLayers.map((layer) => ({
-      ...layer,
-      visible: controlledVisibleLayers.has(layer.type),
-    }));
-  }, [mapLayers, controlledVisibleLayers]);
-
-  // Overlay features come from batched query + story pins/labels
-  const { data: storyPinsGeoJson, isLoading: isStoryPinsLoading } =
-    api.geoFeatures.getAllStoryPins.useQuery(undefined, {
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
-    });
-  const { data: mapLabelsGeoJson, isLoading: isMapLabelsLoading } =
-    api.geoFeatures.getAllMapLabels.useQuery(undefined, {
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
-    });
-
-  // Top-25 countries by composite importance (population + GDP + GDP/capita)
-  const { data: topCountryNames, isLoading: isTopCountriesLoading } =
-    api.countries.getTopCountriesByImportance.useQuery(
-      { limit: 25 },
-      { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-    );
-
-  // Deep-link: auto-select and fly to a country on mount
-  const { data: initialGeo, isLoading: isInitialGeoLoading } =
-    api.geoCore.getCountryGeometry.useQuery(
-      { countryId: initialCountryId! },
-      { enabled: !!initialCountryId, staleTime: 30 * 60_000 }
-    );
-
-  const isPreloading =
-    isLoading ||
-    isProfileLoading ||
-    isStoryPinsLoading ||
-    isMapLabelsLoading ||
-    isTopCountriesLoading ||
-    (!!initialCountryId && isInitialGeoLoading);
-
-  // Moved after isPreloading is declared to avoid TS2448 (used before declaration)
-  useEffect(() => {
-    if (isPreloading || mapEngineReady) return;
-
-    const timer = setTimeout(() => {
-      if (!mapEngineReady) {
-        setMapLoadTimeout(true);
-      }
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, [isPreloading, mapEngineReady]);
-
+  // Pin tool state
   const {
     isPinToolActive,
     togglePinTool,
@@ -227,378 +96,140 @@ export function MapContainer({
     dropPin,
     clearPin,
   } = useMapPinInfo();
-  const overlayFeatures = useMemo(() => {
-    if (!batchedOverlayFeatures) return undefined;
-    return {
-      ...batchedOverlayFeatures,
-      storyPins: storyPinsGeoJson ?? undefined,
-      mapLabels: mapLabelsGeoJson ?? undefined,
-    };
-  }, [batchedOverlayFeatures, storyPinsGeoJson, mapLabelsGeoJson]);
 
-  // Default visibility is derived from the overlay registry's `defaultVisible`
-  // flags (feature overlays on, fill/analytics off) — see ~/lib/overlay-registry.
-  const [overlayVisibility, setOverlayVisibility] = useState<OverlayVisibility>(() =>
-    buildDefaultVisibility()
+  // Fetch user profile to get countryId first
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    undefined,
+    {
+      staleTime: 5 * 60_000,
+      retry: false,
+    }
   );
+  const userCountryId = userProfile?.countryId ?? null;
 
-  // Analytics overlay data — only fetched when the corresponding toggle is ON.
-  // React Query dedupes the two gdpPerCapita queries (wealth + economicTier).
-  const { data: wealthData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "gdpPerCapita", groupBy: "country" },
-    { enabled: overlayVisibility.wealth, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-  const { data: populationData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "population", groupBy: "country" },
-    { enabled: overlayVisibility.population, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-  const { data: crisisData } = api.geoCore.getCrisisRiskMap.useQuery(
-    {},
-    { enabled: overlayVisibility.crises, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-  const { data: diplomacyData } = api.geoCore.getGeopoliticalOverlay.useQuery(undefined, {
-    enabled: overlayVisibility.diplomacy,
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
+  // 1. Hook: Manage State (selections, controls, UI panels)
+  const {
+    selectedCountry,
+    setSelectedCountry,
+    selectedFeature,
+    setSelectedFeature,
+    isMeasuring,
+    setIsMeasuring,
+    mapEngineReady,
+    setMapEngineReady,
+    webglError,
+    mapLoadTimeout,
+    setMapLoadTimeout,
+    geographyFilter,
+    setGeographyFilter,
+    projectionMode,
+    setProjectionMode,
+    isEditing,
+    isWorldEditing,
+    setIsWorldEditing,
+    selectedRouteId,
+    setSelectedRouteId,
+    storyPinModalId,
+    setStoryPinModalId,
+    editingCountryId,
+    currentZoom,
+    setCurrentZoom,
+    overlayVisibility,
+    labelsVisible,
+    toggleLabels,
+    toggleOverlay,
+    handleFeatureClick,
+    handleCountryClick,
+    handleCountryHover,
+    handleMapClick,
+    handleClosePanel,
+    handleEditMap,
+    handleExitEditor,
+    handleOpenMyEditor,
+    handleOpenWorldEditor,
+    handleEscapePress,
+    handleSearchResult,
+    handleNeighborClick,
+  } = useMapState({
+    userCountryId, // passed from fetched profile
+    isAdmin,
+    onCountrySelect,
+    mapRef,
+    measureToolRef,
+    mapLayers: [], // will be bound from queries
+    layerDataMap: {}, // will be bound from queries
+    isPinToolActive,
+    pinPosition,
+    dropPin,
+    clearPin,
   });
-  const { data: transportData } = api.transport.getAllRoutesGeoJSON.useQuery(
-    {},
-    { enabled: overlayVisibility.transport, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-  // NEW registry overlays (reuse the choropleth renderer)
-  const { data: economicTierData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "gdpPerCapita", groupBy: "country" },
-    { enabled: overlayVisibility.economicTier, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-  const { data: vitalityData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "vitality", groupBy: "country" },
-    { enabled: overlayVisibility.vitality, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
 
-  // overlayData is keyed by registry id; IxWorldMap's render loop maps each
-  // entry to its overlay component via the registry's `renderProps` adapter.
-  const overlayData = useMemo(
-    () => ({
-      wealth: wealthData ?? undefined,
-      population: populationData ?? undefined,
-      crises: crisisData ?? undefined,
-      diplomacy: diplomacyData
-        ? {
-            relations: diplomacyData.relations,
-            conflicts: diplomacyData.conflicts,
-          }
-        : undefined,
-      transport: transportData ?? undefined,
-      economicTier: economicTierData ?? undefined,
-      vitality: vitalityData ?? undefined,
-    }),
-    [
-      wealthData,
-      populationData,
-      crisisData,
-      diplomacyData,
-      transportData,
-      economicTierData,
-      vitalityData,
-    ]
-  );
+  // 2. Hook: Manage Queries & Prefetching
+  const {
+    userCountryId: _queriedUserCountryId,
+    mapLayers,
+    toggleLayer,
+    visibleLayers,
+    overlayFeatures,
+    capitalsGeoJson,
+    topCountrySet,
+    isPreloading,
+    overlayData,
+    error,
+  } = useMapDataQueries({
+    initialLayers,
+    currentZoom,
+    initialCountryId,
+    selectedCountryId,
+    overlayVisibility,
+    mapEngineReady,
+    setMapLoadTimeout,
+    mapRef,
+    setSelectedCountry,
+    onCountrySelect,
+    selectedCountry,
+  });
 
-  const [labelsVisible, setLabelsVisible] = useState(true);
-  const toggleLabels = useCallback(() => setLabelsVisible((v) => !v), []);
-
-  // Toggle an overlay. Category-based mutual exclusivity for "fill" overlays
-  // (they all recolor the same political layer) is enforced by the registry.
-  const toggleOverlay = useCallback((key: keyof OverlayVisibility) => {
-    setOverlayVisibility((prev) => applyOverlayToggle(prev, key as string));
-  }, []);
-
-  // Build a layer lookup for the pin tool's client-side query
+  // Bind aggregated layer properties needed by state handlers
   const layerDataMap = useMemo(() => {
-    const map: Record<string, FeatureCollection | undefined> = {};
+    const map: Record<string, any> = {};
     for (const ml of mapLayers) {
       map[ml.type] = ml.data;
     }
     return map;
   }, [mapLayers]);
 
-  // Capitals come from batched query
-  const capitalsGeoJson = batchedCapitalsGeoJson;
+  // Inject computed parameters back into state refs/configs
+  const activeMapLayers = useMemo(() => {
+    if (!controlledVisibleLayers) return mapLayers;
+    return mapLayers.map((layer) => ({
+      ...layer,
+      visible: controlledVisibleLayers.has(layer.type),
+    }));
+  }, [mapLayers, controlledVisibleLayers]);
 
-  const topCountrySet = useMemo(() => new Set(topCountryNames ?? []), [topCountryNames]);
-  const deepLinkFiredRef = useRef(false);
-
-  useEffect(() => {
-    if (!initialCountryId || !initialGeo || deepLinkFiredRef.current) return;
-    if (!mapRef.current) return;
-
-    deepLinkFiredRef.current = true;
-    const country: SelectedCountry = {
-      featureId: initialGeo.featureId,
-      displayName: initialGeo.displayName,
-      fillColor: "#e8e5da",
-      centroidLng: initialGeo.centroid?.lng ?? 0,
-      centroidLat: initialGeo.centroid?.lat ?? 0,
-      countryId: initialGeo.country?.id ?? null,
-    };
-    setSelectedCountry(country);
-    onCountrySelect?.(country);
-
-    if (initialGeo.bbox) {
-      const b = initialGeo.bbox;
-      mapRef.current.flyTo((b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2, 4);
-    } else if (initialGeo.centroid) {
-      mapRef.current.flyTo(initialGeo.centroid.lng, initialGeo.centroid.lat, 4);
-    }
-  }, [initialCountryId, initialGeo, onCountrySelect]);
-
-  // Controlled selectedCountryId support
-  const { data: selectedGeo } = api.geoCore.getCountryGeometry.useQuery(
-    { countryId: selectedCountryId! },
-    { enabled: !!selectedCountryId, staleTime: 30 * 60_000 }
-  );
-
-  useEffect(() => {
-    if (selectedCountryId === null) {
-      // Only clear selection if currently selected country has an active countryId.
-      // If selected country is an unlinked/blank feature (countryId is null),
-      // keep it selected to allow linking/editing properties.
-      if (selectedCountry?.countryId) {
-        setSelectedCountry(null);
-        onCountrySelect?.(null);
-      }
-      return;
-    }
-
-    if (!selectedCountryId || !selectedGeo || !mapRef.current) return;
-
-    // Skip if it matches current selection to avoid feedback loop
-    if (selectedCountry?.countryId === selectedCountryId) return;
-
-    const country: SelectedCountry = {
-      featureId: selectedGeo.featureId,
-      displayName: selectedGeo.displayName,
-      fillColor: "#e8e5da",
-      centroidLng: selectedGeo.centroid?.lng ?? 0,
-      centroidLat: selectedGeo.centroid?.lat ?? 0,
-      countryId: selectedGeo.country?.id ?? null,
-    };
-    setSelectedCountry(country);
-    onCountrySelect?.(country);
-
-    if (selectedGeo.bbox) {
-      const b = selectedGeo.bbox;
-      mapRef.current.flyTo((b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2, 4);
-    } else if (selectedGeo.centroid) {
-      mapRef.current.flyTo(selectedGeo.centroid.lng, selectedGeo.centroid.lat, 4);
-    }
-  }, [selectedCountryId, selectedGeo, onCountrySelect, selectedCountry]);
-
-  const measuringRef = useRef(false);
-  measuringRef.current = isMeasuring;
-  const pinToolRef = useRef(false);
-  pinToolRef.current = isPinToolActive;
-
-  const handleFeatureClick = useCallback((feature: SelectedFeature | null) => {
-    setSelectedFeature(feature);
-    if (feature) {
-      // Clear country selection when a feature is selected
-      setSelectedCountry(null);
-      // Fly to feature location
-      mapRef.current?.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
-    }
-  }, []);
-
-  const handleCountryClick = useCallback(
-    (country: SelectedCountry | null) => {
-      // Suppress country selection while measure tool is active
-      if (measuringRef.current) return;
-
-      // Pin tool mode: suppress country selection (handleMapClick handles pin)
-      if (pinToolRef.current) return;
-
-      setSelectedFeature(null); // Clear feature selection when clicking country
-      setSelectedCountry(country);
-      setGeographyFilter(null); // Clear geography filter on new country selection
-      onCountrySelect?.(country);
-
-      // Fly to country — smart zoom: stay flat when already in Mercator projection
-      if (country && mapRef.current) {
-        const currentZoom = mapRef.current.getMap()?.getZoom() ?? 1.8;
-        // If already in flat projection (zoom >= 4), stay at current zoom
-        // Only zoom to 4 from globe mode
-        const targetZoom = currentZoom >= 4 ? Math.max(currentZoom, 4) : 4;
-        mapRef.current.flyTo(country.centroidLng, country.centroidLat, targetZoom);
-      }
-    },
-    [onCountrySelect]
-  );
-
-  const utils = api.useUtils();
-
-  const handleCountryHover = useCallback(
-    (country: HoveredCountry | null) => {
-      setHoveredCountry(country);
-      if (!country) return;
-      // Prefetch all panel data on hover (fallback if bulk warm hasn't finished yet)
-      if (country.displayName) {
-        const wikiOpts = { staleTime: 24 * 60 * 60_000 };
-        void utils.countries.getWikiRichIntro.prefetch(
-          { countryName: country.displayName },
-          wikiOpts
-        );
-        void utils.countries.getWikiSectionPreviews.prefetch(
-          { countryName: country.displayName },
-          wikiOpts
-        );
-        void utils.countries.getWikiPageImages.prefetch(
-          { countryName: country.displayName },
-          wikiOpts
-        );
-      }
-      if (country.countryId) {
-        const opts = { staleTime: 10 * 60_000 };
-        void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
-        void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
-        void utils.geoSovereignty.getCountrySovereignty.prefetch(
-          { countryId: country.countryId },
-          opts
-        );
-      }
-    },
-    [utils]
-  );
-
-  const handleMapClick = useCallback(
+  // Setup callbacks/variables that link mapLayers / userCountryId
+  const handleMapClickWithLayers = useCallback(
     (lng: number, lat: number) => {
-      if (pinToolRef.current) {
-        dropPin(lng, lat, layerDataMap);
-      }
+      handleMapClick(lng, lat);
     },
-    [dropPin, layerDataMap]
+    [handleMapClick]
   );
 
-  const handleClosePanel = useCallback(() => {
-    setSelectedCountry(null);
-    onCountrySelect?.(null);
-  }, [onCountrySelect]);
+  const handleNeighborClickWithLayers = useCallback(
+    (neighbor: any) => {
+      handleNeighborClick(neighbor);
+    },
+    [handleNeighborClick]
+  );
 
-  const handleEditMap = useCallback(() => {
-    if (selectedCountry?.countryId) {
-      setEditingCountryId(selectedCountry.countryId);
-      setIsEditing(true);
-    }
-  }, [selectedCountry]);
-
-  const handleExitEditor = useCallback(() => {
-    setIsEditing(false);
-    setEditingCountryId(null);
-  }, []);
-
-  const handleOpenMyEditor = useCallback(() => {
-    console.log("[MapContainer] handleOpenMyEditor triggered", { userCountryId });
+  const handleOpenMyEditorWithUser = useCallback(() => {
     if (userCountryId) {
-      setEditingCountryId(userCountryId);
-      setIsEditing(true);
+      handleOpenMyEditor();
     } else {
-      console.warn("[MapContainer] Cannot open editor: userCountryId is missing");
       alert("You must have a country to edit the map. Go to /mycountry to create or claim one.");
     }
-  }, [userCountryId]);
-
-  const handleOpenWorldEditor = useCallback(() => {
-    setIsWorldEditing(true);
-  }, []);
-
-  /** Escape key: close panels in priority order */
-  const handleEscapePress = useCallback(() => {
-    if (isPinToolActive && pinPosition) {
-      clearPin();
-    } else if (selectedFeature) {
-      setSelectedFeature(null);
-    } else if (selectedCountry) {
-      setSelectedCountry(null);
-      onCountrySelect?.(null);
-    }
-  }, [isPinToolActive, pinPosition, clearPin, selectedFeature, selectedCountry, onCountrySelect]);
-
-  /** Search result → fly to + optionally select as country */
-  const handleSearchResult = useCallback(
-    (result: {
-      type: string;
-      id: string;
-      name: string;
-      countryId: string | null;
-      centroidLng: number;
-      centroidLat: number;
-    }) => {
-      const zoom = result.type === "country" ? 4 : result.type === "subdivision" ? 6 : 8;
-      mapRef.current?.flyTo(result.centroidLng, result.centroidLat, zoom);
-
-      if (result.type === "country") {
-        const country: SelectedCountry = {
-          featureId: result.id,
-          displayName: result.name,
-          fillColor: "#e8e5da",
-          centroidLng: result.centroidLng,
-          centroidLat: result.centroidLat,
-          countryId: result.countryId,
-        };
-        setSelectedCountry(country);
-        onCountrySelect?.(country);
-      }
-    },
-    [onCountrySelect]
-  );
-
-  /** Neighbor chip click → fly to + select */
-  const handleNeighborClick = useCallback(
-    (neighbor: {
-      featureId: string;
-      countryId: string | null;
-      displayName: string;
-      centroidLng?: number;
-      centroidLat?: number;
-    }) => {
-      let lng = neighbor.centroidLng ?? 0;
-      let lat = neighbor.centroidLat ?? 0;
-
-      // Fallback: look up centroid from loaded political layer features
-      if (lng === 0 && lat === 0) {
-        const politicalLayer = mapLayers.find((l) => l.type === "political");
-        if (politicalLayer?.data) {
-          const match = politicalLayer.data.features.find(
-            (f) =>
-              f.properties?._id === neighbor.featureId ||
-              f.properties?._displayName === neighbor.displayName
-          );
-          if (match?.properties) {
-            lng = match.properties._centroidLng ?? 0;
-            lat = match.properties._centroidLat ?? 0;
-          }
-        }
-      }
-
-      const country: SelectedCountry = {
-        featureId: neighbor.featureId,
-        displayName: neighbor.displayName,
-        fillColor: "#e8e5da",
-        centroidLng: lng,
-        centroidLat: lat,
-        countryId: neighbor.countryId,
-      };
-      setSelectedCountry(country);
-      setGeographyFilter(null); // Clear geography filter on neighbor navigation
-      onCountrySelect?.(country);
-
-      // Fly to country — smart zoom: stay flat when already in Mercator
-      if (mapRef.current && (lng !== 0 || lat !== 0)) {
-        const currentZoom = mapRef.current.getMap()?.getZoom() ?? 1.8;
-        const targetZoom = currentZoom >= 4 ? Math.max(currentZoom, 4) : 4;
-        mapRef.current.flyTo(lng, lat, targetZoom);
-      }
-    },
-    [onCountrySelect, mapLayers]
-  );
+  }, [userCountryId, handleOpenMyEditor]);
 
   if (error) {
     return (
@@ -625,9 +256,9 @@ export function MapContainer({
         overlayVisibility={overlayVisibility}
         onCountryClick={handleCountryClick}
         onCountryHover={handleCountryHover}
-        onMapClick={handleMapClick}
+        onMapClick={handleMapClickWithLayers}
         onFeatureClick={handleFeatureClick}
-        onReady={handleMapReady}
+        onReady={() => setMapEngineReady(true)}
         selectedCountryId={selectedCountry?.featureId}
         isMeasuring={isMeasuring}
         geographyFilter={geographyFilter}
@@ -656,13 +287,13 @@ export function MapContainer({
           onTogglePin={togglePinTool}
           toolsVisible={toolsVisible}
           canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
-          onEditMap={handleOpenMyEditor}
+          onEditMap={handleOpenMyEditorWithUser}
           showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
           onOpenWorldEditor={handleOpenWorldEditor}
         />
       )}
 
-      {/* MeasureTool (headless — button is in MapControls, this handles map logic + readout) */}
+      {/* MeasureTool */}
       {toolsVisible && (
         <MeasureTool
           ref={measureToolRef}
@@ -672,7 +303,7 @@ export function MapContainer({
         />
       )}
 
-      {/* Dynamic Island — unified auth, geo search, and settings */}
+      {/* Dynamic Island */}
       {toolsVisible && (
         <MapDynamicIsland
           projectionMode={forceFlatProjection ? "mercator" : projectionMode}
@@ -681,10 +312,10 @@ export function MapContainer({
         />
       )}
 
-      {/* Analytics legend (shows when a fill/line overlay is active) */}
+      {/* Analytics legend */}
       <AnalyticsLegend overlayVisibility={overlayVisibility} />
 
-      {/* Keyboard navigation (always active) */}
+      {/* Keyboard navigation */}
       <MapKeyboardControls
         mapRef={mapRef}
         onEscapePress={handleEscapePress}
@@ -709,13 +340,13 @@ export function MapContainer({
           key={selectedCountry.featureId}
           country={selectedCountry}
           onClose={handleClosePanel}
-          onNeighborClick={handleNeighborClick}
+          onNeighborClick={handleNeighborClickWithLayers}
           onGeographyFilter={setGeographyFilter}
           onEditMap={handleEditMap}
         />
       )}
 
-      {/* Feature info panel (city/POI/capital/storyPin) */}
+      {/* Feature info panel */}
       {showPopup && selectedFeature && !isPinToolActive && !isEditing && (
         <FeatureInfoPanel
           feature={selectedFeature}
@@ -727,7 +358,7 @@ export function MapContainer({
         />
       )}
 
-      {/* Story pin modal — immersive reading experience */}
+      {/* Story pin modal */}
       {storyPinModalId && (
         <StoryPinModal
           pinId={storyPinModalId}
@@ -739,7 +370,7 @@ export function MapContainer({
         />
       )}
 
-      {/* Route info panel — shown when a transport route is clicked */}
+      {/* Route info panel */}
       {selectedRouteId && !isEditing && (
         <RouteInfoPanel
           routeId={selectedRouteId}
@@ -748,10 +379,10 @@ export function MapContainer({
         />
       )}
 
-      {/* Full-screen loading overlay — shows until map data + engine are ready */}
+      {/* Full-screen loading overlay */}
       {showLoading && <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />}
 
-      {/* First-visit welcome modal — shows after loading screen dismisses */}
+      {/* First-visit welcome modal */}
       {showControls && <MapWelcomeModal isMapReady={!isPreloading && mapEngineReady} />}
 
       {/* Map editor overlay */}
@@ -798,29 +429,16 @@ export function MapContainer({
               </h3>
               <p className="text-sm text-white/60">
                 {webglError
-                  ? webglError
-                  : "The map engine took too long to initialize. Hardware acceleration might be disabled, or your graphics card could be overloaded."}
+                  ? "WebGL is either disabled, crashed, or not supported by your browser. Please check your hardware acceleration settings."
+                  : "The map engine is taking longer than expected to load. This might be due to slow network speeds or database recovery mode."}
               </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <button
-                onClick={() => window.location.reload()}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-              >
-                Reload Page
-              </button>
-              {mapLoadTimeout && !webglError && (
-                <button
-                  onClick={() => {
-                    setMapLoadTimeout(false);
-                    setMapEngineReady(true);
-                  }}
-                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-                >
-                  Force Bypass
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-blue-500 active:scale-[0.98]"
+            >
+              Reload Page
+            </button>
           </div>
         </div>
       )}

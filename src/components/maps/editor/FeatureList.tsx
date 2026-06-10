@@ -18,6 +18,7 @@ import {
   ChevronDown,
   BookMarked,
   Type,
+  Route,
 } from "lucide-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
@@ -43,6 +44,7 @@ const TYPE_ICONS = {
   poi: Landmark,
   storyPin: BookMarked,
   mapLabel: Type,
+  route: Route,
 } as const;
 
 const TYPE_COLORS = {
@@ -51,9 +53,10 @@ const TYPE_COLORS = {
   poi: "text-amber-500",
   storyPin: "text-amber-500",
   mapLabel: "text-slate-500",
+  route: "text-indigo-500",
 } as const;
 
-type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel";
+type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route";
 
 export const FeatureList = React.memo(function FeatureList({
   features,
@@ -67,7 +70,7 @@ export const FeatureList = React.memo(function FeatureList({
   collapseAll,
 }: FeatureListProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<FeatureType>>(
-    () => new Set<FeatureType>(["city", "subdivision", "poi", "storyPin", "mapLabel"])
+    () => new Set<FeatureType>(["city", "subdivision", "poi", "storyPin", "mapLabel", "route"])
   );
 
   // Track which groups have been fully expanded (for 50+ item groups)
@@ -148,6 +151,7 @@ export const FeatureList = React.memo(function FeatureList({
   const pois = features.filter((f) => f.type === "poi");
   const storyPins = features.filter((f) => f.type === "storyPin");
   const mapLabels = features.filter((f) => f.type === "mapLabel");
+  const routes = features.filter((f) => f.type === "route");
 
   const groups: Array<{ label: string; items: EditorFeature[]; type: FeatureType }> = [
     { label: "Cities", items: cities, type: "city" },
@@ -155,6 +159,7 @@ export const FeatureList = React.memo(function FeatureList({
     { label: "Points of Interest", items: pois, type: "poi" },
     { label: "Story Pins", items: storyPins, type: "storyPin" },
     { label: "Map Labels", items: mapLabels, type: "mapLabel" },
+    { label: "Routes", items: routes, type: "route" },
   ].filter((g) => g.items.length > 0);
 
   return (

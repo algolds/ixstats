@@ -3,8 +3,8 @@
 
 /**
  * CoordinatesMapEmbed - Native coordinate-focused MapLibre GL map widget.
- * 
- * Automatically initializes and renders the map when it enters the viewport 
+ *
+ * Automatically initializes and renders the map when it enters the viewport
  * using an IntersectionObserver. Displays a loading overlay during initialization.
  * Eliminates click-to-load and prevents WebGL bottleneck issues.
  */
@@ -30,7 +30,7 @@ export function CoordinatesMapEmbed({
   const elementRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  
+
   const [isInViewport, setIsInViewport] = useState(false);
   const [mapReady, setMapReady] = useState(false);
 
@@ -48,8 +48,10 @@ export function CoordinatesMapEmbed({
     return opts;
   }, [options]);
 
-  const heightVal = parsedOptions.height 
-    ? (isNaN(Number(parsedOptions.height)) ? parsedOptions.height : `${parsedOptions.height}px`) 
+  const heightVal = parsedOptions.height
+    ? isNaN(Number(parsedOptions.height))
+      ? parsedOptions.height
+      : `${parsedOptions.height}px`
     : "300px";
   const interactiveVal = parsedOptions.interactive !== "no";
   const titleVal = parsedOptions.title || "";
@@ -146,7 +148,12 @@ export function CoordinatesMapEmbed({
           type: "symbol",
           source: "source-world-political",
           layout: {
-            "text-field": ["coalesce", ["get", "_displayName"], ["get", "name"], ""] as unknown as string,
+            "text-field": [
+              "coalesce",
+              ["get", "_displayName"],
+              ["get", "name"],
+              "",
+            ] as unknown as string,
             "text-size": 10,
             "text-allow-overlap": false,
             "text-optional": true,
@@ -163,14 +170,13 @@ export function CoordinatesMapEmbed({
       }
 
       // 2. Add Red marker/pin at [lng, lat]
-      const marker = new maplibregl.Marker({ color: "#ef4444" })
-        .setLngLat([lng, lat])
-        .addTo(map);
+      const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
 
       // 3. Add popup if title is available
       if (titleVal) {
-        const popup = new maplibregl.Popup({ offset: 25 })
-          .setHTML(`<div style="color: #000; font-family: sans-serif; font-size: 12px; font-weight: bold; padding: 2px;">${titleVal}</div>`);
+        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
+          `<div style="color: #000; font-family: sans-serif; font-size: 12px; font-weight: bold; padding: 2px;">${titleVal}</div>`
+        );
         marker.setPopup(popup);
       }
 
@@ -206,26 +212,26 @@ export function CoordinatesMapEmbed({
   return (
     <div
       ref={elementRef}
-      className="wikios-ixworld-embed glass-hierarchy-child relative rounded-xl border border-white/10 overflow-hidden bg-[#0a1628]/40 backdrop-blur-md"
+      className="wikios-ixworld-embed glass-hierarchy-child relative overflow-hidden rounded-xl border border-white/10 bg-[#0a1628]/40 backdrop-blur-md"
       style={{ height: heightVal }}
     >
-      {isInViewport && (
-        <div ref={containerRef} className="absolute inset-0 w-full h-full" />
-      )}
-      
+      {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
+
       {!mapReady && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a1628]/60 backdrop-blur-sm z-10">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-400 mb-2" />
-          <span className="text-xs text-zinc-400 font-medium">Loading map...</span>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0a1628]/60 backdrop-blur-sm">
+          <Loader2 className="mb-2 h-6 w-6 animate-spin text-blue-400" />
+          <span className="text-xs font-medium text-zinc-400">Loading map...</span>
         </div>
       )}
-      
+
       {/* Floating control bar or details overlay */}
       {mapReady && (
-        <div className="absolute bottom-3 left-3 bg-black/75 border border-white/10 px-2.5 py-1 rounded-lg text-[10px] text-zinc-300 pointer-events-none select-none z-10 flex items-center gap-1.5 backdrop-blur-md">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-[10px] text-zinc-300 backdrop-blur-md select-none">
           <MapPin size={10} className="text-blue-400" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
-          <span className="font-mono text-[9px] text-zinc-500">({lat.toFixed(3)}, {lng.toFixed(3)})</span>
+          <span className="font-mono text-[9px] text-zinc-500">
+            ({lat.toFixed(3)}, {lng.toFixed(3)})
+          </span>
         </div>
       )}
     </div>

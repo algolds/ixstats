@@ -24,6 +24,8 @@ import {
   Trash2,
   Pencil,
   Check,
+  Coins,
+  Route,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 
@@ -32,6 +34,8 @@ interface RouteInfoPanelProps {
   onClose: () => void;
   /** Whether the current user can edit this route */
   canEdit?: boolean;
+  /** Called when user clicks 'Edit Path' to enter vertex editing */
+  onEditPath?: (routeId: string) => void;
 }
 
 const TYPE_META: Record<string, { icon: typeof Train; label: string; color: string }> = {
@@ -41,6 +45,7 @@ const TYPE_META: Record<string, { icon: typeof Train; label: string; color: stri
   shipping_lane: { icon: Ship, label: "Shipping Lane", color: "#3b82f6" },
   canal: { icon: Droplets, label: "Canal", color: "#06b6d4" },
   air_corridor: { icon: Plane, label: "Air Route", color: "#a855f7" },
+  ferry: { icon: Ship, label: "Ferry", color: "#14b8a6" },
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -50,7 +55,7 @@ const STATUS_COLORS: Record<string, string> = {
   abandoned: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
 
-export function RouteInfoPanel({ routeId, onClose, canEdit }: RouteInfoPanelProps) {
+export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteInfoPanelProps) {
   const utils = api.useUtils();
   const { data: route, isLoading } = api.transport.getRouteById.useQuery(
     { id: routeId },
@@ -247,6 +252,30 @@ export function RouteInfoPanel({ routeId, onClose, canEdit }: RouteInfoPanelProp
         )}
       </div>
 
+      {/* Cost breakdown */}
+      {(props.costBillion || props.maintenanceCost) && (
+        <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
+          {props.costBillion && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Coins className="h-3 w-3" /> Build Cost
+              </span>
+              <span className="font-medium tabular-nums">
+                {Number(props.costBillion).toFixed(2)}B
+              </span>
+            </div>
+          )}
+          {props.maintenanceCost && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Annual Maint.</span>
+              <span className="font-medium tabular-nums">
+                {Number(props.maintenanceCost).toFixed(3)}B/yr
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Stops */}
       {route.stopsResolved && route.stopsResolved.length > 0 && (
         <div className="border-border border-t px-4 py-3">
@@ -303,6 +332,14 @@ export function RouteInfoPanel({ routeId, onClose, canEdit }: RouteInfoPanelProp
               >
                 <Pencil className="h-3 w-3" /> Edit
               </button>
+              {onEditPath && (
+                <button
+                  onClick={() => onEditPath(routeId)}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs"
+                >
+                  <Route className="h-3 w-3" /> Edit Path
+                </button>
+              )}
               <button
                 onClick={handleDelete}
                 disabled={deleteRoute.isPending}

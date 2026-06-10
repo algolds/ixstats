@@ -49,8 +49,11 @@ const CoordinatesMapEmbed = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="wikios-ixworld-loading min-h-[200px] flex items-center justify-center bg-white/5 rounded-xl border border-white/10">
-        <div className="wikios-loading-spinner animate-spin mr-2" style={{ width: 20, height: 20 }} />
+      <div className="wikios-ixworld-loading flex min-h-[200px] items-center justify-center rounded-xl border border-white/10 bg-white/5">
+        <div
+          className="wikios-loading-spinner mr-2 animate-spin"
+          style={{ width: 20, height: 20 }}
+        />
         <span className="text-xs text-zinc-400">Loading map...</span>
       </div>
     ),
@@ -573,7 +576,10 @@ export function ArticleRenderer({
 
   // 4. Transform HTML string to inject placeholders
   const processedHtml = useMemo(() => injectPlaceholderElements(contentHtml), [contentHtml]);
-  const processedInfoboxHtml = useMemo(() => infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null, [infoboxHtml]);
+  const processedInfoboxHtml = useMemo(
+    () => (infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null),
+    [infoboxHtml]
+  );
 
   // 5. Track targets in DOM to render Portals into
   interface PortalTarget {
@@ -846,7 +852,9 @@ export function ArticleRenderer({
       <div className="wikios-article-with-toc">
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
-            {processedInfoboxHtml && <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />}
+            {processedInfoboxHtml && (
+              <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />
+            )}
             <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
 
             {/* Render portals into injected placeholder nodes */}

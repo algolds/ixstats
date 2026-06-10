@@ -34,9 +34,8 @@ export function NewVersionNotice() {
       <div className="flex items-center gap-2.5">
         <Sparkles className="h-4 w-4 shrink-0 text-blue-400" />
         <p className="text-foreground text-xs font-medium">
-          IxStats has been updated to <span className="text-blue-400">v{APP_VERSION}</span>
-          {" "}
-          <span className="text-muted-foreground text-[10px] font-mono">({BUILD_VERSION})</span>.
+          IxStats has been updated to <span className="text-blue-400">v{APP_VERSION}</span>{" "}
+          <span className="text-muted-foreground font-mono text-[10px]">({BUILD_VERSION})</span>.
         </p>
       </div>
       <button

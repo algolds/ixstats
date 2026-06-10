@@ -1,17 +1,34 @@
 // @ts-nocheck
 "use client";
 
-import React, { useState } from "react";
-import { Loader2, CheckCircle2, Sparkles, Trash2, Pencil } from "lucide-react";
+import React, { useState, useMemo, useCallback } from "react";
+import {
+  Loader2,
+  CheckCircle2,
+  Sparkles,
+  Trash2,
+  Pencil,
+  Search,
+  SlidersHorizontal,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Gauge,
+  Mountain,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 
 const ROUTE_TYPES = [
   { value: "rail", label: "Rail", color: "#374151" },
   { value: "highway", label: "Highway", color: "#f97316" },
   { value: "road", label: "Road", color: "#92400e" },
-  { value: "shipping_lane", label: "Shipping Lane", color: "#3b82f6" },
+  { value: "shipping_lane", label: "Shipping", color: "#3b82f6" },
   { value: "canal", label: "Canal", color: "#06b6d4" },
+  { value: "air_corridor", label: "Air", color: "#a855f7" },
+  { value: "ferry", label: "Ferry", color: "#14b8a6" },
 ] as const;
+
+type SortKey = "name" | "length" | "type" | "status";
 
 interface TransportPropertyFormProps {
   countryId?: string;
@@ -22,6 +39,8 @@ interface TransportPropertyFormProps {
   clearRouteWaypoints?: () => void;
   selectedRouteId?: string | null;
   onSelectRouteId?: (id: string | null) => void;
+  /** Called when user clicks a route to edit its path */
+  onEditRoute?: (routeId: string) => void;
 }
 
 export const TransportPropertyForm = React.memo(function TransportPropertyForm({
@@ -33,15 +52,29 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   clearRouteWaypoints,
   selectedRouteId,
   onSelectRouteId,
+  onEditRoute,
 }: TransportPropertyFormProps) {
+  // ── Generate tab state ──
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["rail", "highway"]);
   const [clearExisting, setClearExisting] = useState(false);
-  const [tab, setTab] = useState<"routes" | "generate">("routes");
 
+  // ── Tab state: routes / draw / generate ──
+  const [tab, setTab] = useState<"routes" | "draw" | "generate">(
+    routeWaypoints.length > 0 ? "draw" : "routes"
+  );
+
+  // ── Draw tab state ──
   const [routeName, setRouteName] = useState("");
   const [manualRouteType, setManualRouteType] = useState<string>("road");
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
+
+  // ── Routes tab state ──
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("type");
+  const [filterTypes, setFilterTypes] = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState(false);
+  const [expandedRouteId, setExpandedRouteId] = useState<string | null>(null);
 
   const utils = api.useUtils();
 
@@ -81,6 +114,13 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
     { enabled: !!countryId }
   );
 
+  // Switch to draw tab when waypoints appear
+  React.useEffect(() => {
+    if (routeWaypoints.length > 0 && tab !== "draw") {
+      setTab("draw");
+    }
+  }, [routeWaypoints.length]);
+
   if (!countryId) {
     return (
       <div className="space-y-3">
@@ -94,213 +134,343 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   const routes = routeData?.features ?? [];
 
+  // ── Filter + sort routes ──
+  const filteredRoutes = useMemo(() => {
+    let result = [...routes];
+
+    // Text search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((r) => {
+        const props = r.properties as Record<string, unknown>;
+        const name = ((props.name as string) ?? "").toLowerCase();
+        const type = ((props.routeType as string) ?? "").toLowerCase();
+        return name.includes(q) || type.includes(q);
+      });
+    }
+
+    // Type filter
+    if (filterTypes.size > 0) {
+      result = result.filter((r) => {
+        const props = r.properties as Record<string, unknown>;
+        return filterTypes.has(props.routeType as string);
+      });
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      const pa = a.properties as Record<string, unknown>;
+      const pb = b.properties as Record<string, unknown>;
+      switch (sortBy) {
+        case "name":
+          return ((pa.name as string) ?? "").localeCompare((pb.name as string) ?? "");
+        case "length":
+          return ((pb.lengthKm as number) ?? 0) - ((pa.lengthKm as number) ?? 0);
+        case "type":
+          return ((pa.routeType as string) ?? "").localeCompare((pb.routeType as string) ?? "");
+        case "status":
+          return ((pa.status as string) ?? "").localeCompare((pb.status as string) ?? "");
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [routes, searchQuery, filterTypes, sortBy]);
+
+  const toggleFilterType = useCallback((type: string) => {
+    setFilterTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="space-y-3">
       <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         Transport Network
       </h3>
 
-      {routeWaypoints.length > 0 ? (
-        <div className="border-primary/20 bg-primary/5 space-y-3 rounded-lg border p-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-primary text-xs font-semibold">Drawing Manual Route</h4>
-            <span className="text-muted-foreground bg-background border-border rounded border px-1.5 py-0.5 text-[10px]">
-              {routeWaypoints.length} points
-            </span>
+      {/* Stats summary */}
+      {stats && stats.totalRoutes > 0 && (
+        <div className="flex gap-3 text-xs">
+          <div className="text-center">
+            <div className="text-foreground font-semibold tabular-nums">{stats.totalRoutes}</div>
+            <div className="text-muted-foreground text-[10px]">Routes</div>
+          </div>
+          <div className="text-center">
+            <div className="text-foreground font-semibold tabular-nums">
+              {stats.totalKm.toLocaleString()}
+            </div>
+            <div className="text-muted-foreground text-[10px]">km</div>
+          </div>
+          <div className="text-center">
+            <div className="text-foreground font-semibold tabular-nums">{stats.totalHubs}</div>
+            <div className="text-muted-foreground text-[10px]">Hubs</div>
+          </div>
+          {stats.totalMaintenanceCost > 0 && (
+            <div className="text-center">
+              <div className="text-foreground font-semibold tabular-nums">
+                {stats.totalMaintenanceCost.toFixed(2)}B
+              </div>
+              <div className="text-muted-foreground text-[10px]">Maint/yr</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3-tab switcher */}
+      <div className="bg-muted flex gap-0.5 rounded-lg p-0.5">
+        {(
+          [
+            { key: "routes", label: `Routes (${routes.length})` },
+            { key: "draw", label: "Draw" },
+            { key: "generate", label: "Generate" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+              tab === t.key
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          ROUTES TAB — Filterable, sortable route list
+         ═══════════════════════════════════════════════════════════════ */}
+      {tab === "routes" && (
+        <div className="space-y-2">
+          {/* Search + filter toggle */}
+          <div className="flex gap-1.5">
+            <div className="border-border bg-background relative flex-1 rounded-md border">
+              <Search className="text-muted-foreground absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search routes..."
+                className="w-full bg-transparent py-1 pr-2 pl-7 text-xs focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`border-border rounded-md border p-1.5 transition-colors ${
+                showFilters || filterTypes.size > 0
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "text-muted-foreground hover:bg-accent"
+              }`}
+              title="Filter by type"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-muted-foreground block text-[11px] font-medium">
-              Route Name
-            </label>
-            <input
-              type="text"
-              value={routeName}
-              onChange={(e) => setRouteName(e.target.value)}
-              placeholder="e.g. Route 66, Trans-Valley..."
-              className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 text-xs focus:outline-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-muted-foreground block text-[11px] font-medium">
-              Route Type
-            </label>
-            <div className="grid grid-cols-2 gap-1.5">
+          {/* Filter chips */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-1">
               {ROUTE_TYPES.map((rt) => {
-                const isSelected = manualRouteType === rt.value;
+                const isActive = filterTypes.has(rt.value);
                 return (
                   <button
                     key={rt.value}
-                    type="button"
-                    onClick={() => setManualRouteType(rt.value)}
-                    className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      isSelected
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-background text-muted-foreground hover:bg-accent"
+                    onClick={() => toggleFilterType(rt.value)}
+                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary/15 text-primary border-primary/30 border"
+                        : "bg-muted text-muted-foreground hover:text-foreground border border-transparent"
                     }`}
                   >
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: rt.color }} />
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: rt.color }}
+                    />
                     {rt.label}
                   </button>
                 );
               })}
             </div>
-          </div>
-
-          {manualError && (
-            <div className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-600">
-              {manualError}
-            </div>
           )}
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={undoLastWaypoint}
-              className="border-border bg-background text-foreground hover:bg-accent flex-1 rounded border py-1 text-xs"
-            >
-              Undo Point
-            </button>
-            <button
-              type="button"
-              onClick={clearRouteWaypoints}
-              className="border-border bg-background hover:bg-red-55 flex-1 rounded border py-1 text-xs text-red-600"
-            >
-              Clear
-            </button>
+          {/* Sort selector */}
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <span className="text-muted-foreground">Sort:</span>
+            {(["type", "name", "length", "status"] as SortKey[]).map((key) => (
+              <button
+                key={key}
+                onClick={() => setSortBy(key)}
+                className={`rounded px-1.5 py-0.5 capitalize transition-colors ${
+                  sortBy === key
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {key}
+              </button>
+            ))}
           </div>
 
-          <button
-            type="button"
-            disabled={routeWaypoints.length < 2 || isSavingManual}
-            onClick={async () => {
-              if (routeWaypoints.length < 2 || !finishRoute) return;
-              setIsSavingManual(true);
-              setManualError(null);
-              try {
-                await finishRoute(manualRouteType, routeName.trim() || undefined);
-                setRouteName("");
-              } catch (e: any) {
-                setManualError(e.message || "Failed to save route");
-              } finally {
-                setIsSavingManual(false);
-              }
-            }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium disabled:opacity-50"
-          >
-            {isSavingManual ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            )}
-            {isSavingManual
-              ? "Saving Route..."
-              : routeWaypoints.length < 2
-                ? "Draw on Map (Min 2 points)"
-                : "Save Route"}
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Stats summary */}
-          {stats && stats.totalRoutes > 0 && (
-            <div className="flex gap-3 text-xs">
-              <div className="text-center">
-                <div className="text-foreground font-semibold tabular-nums">
-                  {stats.totalRoutes}
-                </div>
-                <div className="text-muted-foreground text-[10px]">Routes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-foreground font-semibold tabular-nums">
-                  {stats.totalKm.toLocaleString()}
-                </div>
-                <div className="text-muted-foreground text-[10px]">km</div>
-              </div>
-              <div className="text-center">
-                <div className="text-foreground font-semibold tabular-nums">{stats.totalHubs}</div>
-                <div className="text-muted-foreground text-[10px]">Hubs</div>
-              </div>
-            </div>
-          )}
+          {/* Route list */}
+          {filteredRoutes.length === 0 ? (
+            <p className="text-muted-foreground py-4 text-center text-xs">
+              {routes.length === 0
+                ? "No routes yet. Draw one or use Generate."
+                : "No routes match your filters."}
+            </p>
+          ) : (
+            <div className="max-h-72 space-y-0.5 overflow-y-auto">
+              {filteredRoutes.map((route) => {
+                const props = route.properties as Record<string, unknown>;
+                const routeType = ROUTE_TYPES.find((r) => r.value === props.routeType);
+                const status = (props.status as string) ?? "operational";
+                const isSelected = props.id === selectedRouteId;
+                const isExpanded = props.id === expandedRouteId;
 
-          {/* Tab switcher */}
-          <div className="bg-muted flex gap-1 rounded-lg p-0.5">
-            <button
-              onClick={() => setTab("routes")}
-              className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                tab === "routes"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Routes ({routes.length})
-            </button>
-            <button
-              onClick={() => setTab("generate")}
-              className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                tab === "generate"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Generate
-            </button>
-          </div>
-
-          {/* Routes tab */}
-          {tab === "routes" && (
-            <div className="space-y-1">
-              {routes.length === 0 ? (
-                <p className="text-muted-foreground py-4 text-center text-xs">
-                  No routes yet. Use the Generate tab to create routes.
-                </p>
-              ) : (
-                <div className="max-h-60 space-y-0.5 overflow-y-auto">
-                  {routes.map((route) => {
-                    const props = route.properties as Record<string, unknown>;
-                    const routeType = ROUTE_TYPES.find((r) => r.value === props.routeType);
-                    const status = (props.status as string) ?? "operational";
-                    const isSelected = props.id === selectedRouteId;
-
-                    return (
-                      <div
-                        key={props.id as string}
-                        onClick={() => {
-                          if (onSelectRouteId) {
-                            onSelectRouteId(isSelected ? null : (props.id as string));
-                          }
-                        }}
-                        className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
-                          isSelected
-                            ? "bg-primary/10 border-primary border-l-2 pl-1.5"
-                            : "hover:bg-accent"
+                return (
+                  <div key={props.id as string}>
+                    <div
+                      onClick={() => {
+                        if (onSelectRouteId) {
+                          onSelectRouteId(isSelected ? null : (props.id as string));
+                        }
+                      }}
+                      className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
+                        isSelected
+                          ? "bg-primary/10 border-primary border-l-2 pl-1.5"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: routeType?.color ?? "#888" }}
+                      />
+                      <span className="text-foreground flex-1 truncate">
+                        {(props.name as string) ?? `${routeType?.label ?? "Route"}`}
+                      </span>
+                      <span className="text-muted-foreground shrink-0 text-[10px] tabular-nums">
+                        {props.lengthKm ? `${Number(props.lengthKm).toLocaleString()}km` : ""}
+                      </span>
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          status === "operational"
+                            ? "bg-emerald-500"
+                            : status === "planned"
+                              ? "bg-slate-400"
+                              : status === "under_construction"
+                                ? "bg-amber-500"
+                                : "bg-red-500"
                         }`}
+                        title={status.replace("_", " ")}
+                      />
+                      {/* Expand toggle */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedRouteId(isExpanded ? null : (props.id as string));
+                        }}
+                        className="text-muted-foreground shrink-0 rounded p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800"
                       >
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: routeType?.color ?? "#888" }}
-                        />
-                        <span className="text-foreground flex-1 truncate">
-                          {(props.name as string) ?? `${routeType?.label ?? "Route"}`}
-                        </span>
-                        <span className="text-muted-foreground shrink-0 text-[10px] tabular-nums">
-                          {props.lengthKm ? `${Number(props.lengthKm).toLocaleString()}km` : ""}
-                        </span>
-                        <span
-                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                            status === "operational"
-                              ? "bg-emerald-500"
-                              : status === "planned"
-                                ? "bg-slate-400"
-                                : status === "under_construction"
-                                  ? "bg-amber-500"
-                                  : "bg-red-500"
-                          }`}
-                          title={status.replace("_", " ")}
-                        />
-                        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        {isExpanded ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                      </button>
+                      {/* Action buttons */}
+                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        {onEditRoute && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditRoute(props.id as string);
+                            }}
+                            className="text-muted-foreground rounded p-1 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500/10"
+                            title="Edit route path"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Delete this route?")) {
+                              deleteRoute.mutate({
+                                id: props.id as string,
+                                countryId,
+                              });
+                            }
+                          }}
+                          disabled={deleteRoute.isPending}
+                          className="text-muted-foreground rounded p-1 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/10"
+                          title="Delete route"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded detail */}
+                    {isExpanded && (
+                      <div className="border-border ml-4 space-y-1 border-l py-1.5 pl-3 text-[11px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <Gauge className="h-3 w-3" /> Length
+                          </span>
+                          <span className="font-medium tabular-nums">
+                            {props.lengthKm ? `${Number(props.lengthKm).toLocaleString()} km` : "—"}
+                          </span>
+                        </div>
+                        {props.terrainDifficulty != null && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Mountain className="h-3 w-3" /> Terrain
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <div className="bg-muted h-1 w-12 overflow-hidden rounded-full">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.round(Number(props.terrainDifficulty) * 100)}%`,
+                                    backgroundColor:
+                                      Number(props.terrainDifficulty) > 0.7
+                                        ? "#ef4444"
+                                        : Number(props.terrainDifficulty) > 0.4
+                                          ? "#f59e0b"
+                                          : "#22c55e",
+                                  }}
+                                />
+                              </div>
+                              <span className="tabular-nums">
+                                {Math.round(Number(props.terrainDifficulty) * 100)}%
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {props.costBillion && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Cost</span>
+                            <span className="font-medium tabular-nums">
+                              {Number(props.costBillion).toFixed(2)}B
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Status</span>
                           <button
                             onClick={() => {
                               const newStatus =
@@ -314,119 +484,268 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                               updateRoute.mutate({
                                 id: props.id as string,
                                 countryId,
-                                status: newStatus as
-                                  | "planned"
-                                  | "under_construction"
-                                  | "operational"
-                                  | "abandoned",
+                                status: newStatus as any,
                               });
                             }}
-                            className="text-muted-foreground rounded p-1 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500/10"
-                            title="Cycle status"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Delete this route?`)) {
-                                deleteRoute.mutate({ id: props.id as string, countryId });
-                              }
+                            className="rounded-full px-2 py-0.5 text-[10px] font-medium capitalize hover:opacity-80"
+                            style={{
+                              backgroundColor:
+                                status === "operational"
+                                  ? "#dcfce7"
+                                  : status === "planned"
+                                    ? "#f1f5f9"
+                                    : status === "under_construction"
+                                      ? "#fef3c7"
+                                      : "#fee2e2",
+                              color:
+                                status === "operational"
+                                  ? "#166534"
+                                  : status === "planned"
+                                    ? "#475569"
+                                    : status === "under_construction"
+                                      ? "#92400e"
+                                      : "#991b1b",
                             }}
-                            disabled={deleteRoute.isPending}
-                            className="text-muted-foreground rounded p-1 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/10"
-                            title="Delete route"
+                            title="Click to cycle status"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            {status.replace("_", " ")}
                           </button>
                         </div>
                       </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          DRAW TAB — Manual route drawing controls
+         ═══════════════════════════════════════════════════════════════ */}
+      {tab === "draw" && (
+        <div className="space-y-3">
+          {routeWaypoints.length > 0 ? (
+            <div className="border-primary/20 bg-primary/5 space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-primary text-xs font-semibold">Drawing Route</h4>
+                <span className="text-muted-foreground bg-background border-border rounded border px-1.5 py-0.5 text-[10px]">
+                  {routeWaypoints.length} points
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-muted-foreground block text-[11px] font-medium">
+                  Route Name
+                </label>
+                <input
+                  type="text"
+                  value={routeName}
+                  onChange={(e) => setRouteName(e.target.value)}
+                  placeholder="e.g. Route 66, Trans-Valley..."
+                  className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 text-xs focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-muted-foreground block text-[11px] font-medium">
+                  Route Type
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {ROUTE_TYPES.map((rt) => {
+                    const isSelected = manualRouteType === rt.value;
+                    return (
+                      <button
+                        key={rt.value}
+                        type="button"
+                        onClick={() => setManualRouteType(rt.value)}
+                        className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background text-muted-foreground hover:bg-accent"
+                        }`}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: rt.color }}
+                        />
+                        {rt.label}
+                      </button>
                     );
                   })}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Generate tab */}
-          {tab === "generate" && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-1.5">
-                {ROUTE_TYPES.map((rt) => {
-                  const isSelected = selectedTypes.includes(rt.value);
-                  return (
-                    <button
-                      key={rt.value}
-                      onClick={() =>
-                        setSelectedTypes((prev) =>
-                          isSelected ? prev.filter((t) => t !== rt.value) : [...prev, rt.value]
-                        )
-                      }
-                      className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                        isSelected
-                          ? "border-primary/50 bg-primary/10 text-primary"
-                          : "border-border bg-background text-muted-foreground hover:bg-accent"
-                      }`}
-                    >
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: rt.color }}
-                      />
-                      {rt.label}
-                    </button>
-                  );
-                })}
               </div>
 
-              <label className="text-foreground/80 flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={clearExisting}
-                  onChange={(e) => setClearExisting(e.target.checked)}
-                  className="border-border text-primary focus:ring-primary rounded"
-                />
-                Clear existing routes first
-              </label>
-
-              {generateRoutes.isSuccess && generateRoutes.data && (
-                <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Generated {generateRoutes.data.routesCreated} routes (
-                  {generateRoutes.data.totalLengthKm} km)
+              {manualError && (
+                <div className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-600">
+                  {manualError}
                 </div>
               )}
 
-              {generateRoutes.error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
-                  {generateRoutes.error.message}
-                </div>
-              )}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={undoLastWaypoint}
+                  className="border-border bg-background text-foreground hover:bg-accent flex-1 rounded border py-1 text-xs"
+                >
+                  Undo Point
+                </button>
+                <button
+                  type="button"
+                  onClick={clearRouteWaypoints}
+                  className="border-border bg-background hover:bg-red-55 flex-1 rounded border py-1 text-xs text-red-600"
+                >
+                  Clear
+                </button>
+              </div>
 
               <button
+                type="button"
+                disabled={routeWaypoints.length < 2 || isSavingManual}
                 onClick={async () => {
-                  if (!countryId || selectedTypes.length === 0) return;
+                  if (routeWaypoints.length < 2 || !finishRoute) return;
+                  setIsSavingManual(true);
+                  setManualError(null);
                   try {
-                    await generateRoutes.mutateAsync({
-                      countryId,
-                      routeTypes: selectedTypes,
-                      clearExisting,
-                    });
-                  } catch {
-                    /* shown via state */
+                    await finishRoute(manualRouteType, routeName.trim() || undefined);
+                    setRouteName("");
+                  } catch (e: any) {
+                    setManualError(e.message || "Failed to save route");
+                  } finally {
+                    setIsSavingManual(false);
                   }
                 }}
-                disabled={selectedTypes.length === 0 || generateRoutes.isPending}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium disabled:opacity-50"
               >
-                {generateRoutes.isPending ? (
+                {isSavingManual ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <CheckCircle2 className="h-3.5 w-3.5" />
                 )}
-                {generateRoutes.isPending ? "Generating..." : "Generate Routes"}
+                {isSavingManual
+                  ? "Saving Route..."
+                  : routeWaypoints.length < 2
+                    ? "Click Map to Place Points"
+                    : "Save Route"}
               </button>
             </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/30 dark:bg-amber-900/10 dark:text-amber-400">
+                Click on the map to start placing route waypoints. Routes snap to nearby cities and
+                hubs automatically.
+              </div>
+              <div className="space-y-2">
+                <label className="text-muted-foreground block text-[11px] font-medium">
+                  Route Type (pre-select)
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {ROUTE_TYPES.map((rt) => {
+                    const isSelected = manualRouteType === rt.value;
+                    return (
+                      <button
+                        key={rt.value}
+                        type="button"
+                        onClick={() => setManualRouteType(rt.value)}
+                        className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background text-muted-foreground hover:bg-accent"
+                        }`}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: rt.color }}
+                        />
+                        {rt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           )}
-        </>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          GENERATE TAB — Procedural route generation
+         ═══════════════════════════════════════════════════════════════ */}
+      {tab === "generate" && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-1.5">
+            {ROUTE_TYPES.map((rt) => {
+              const isSelected = selectedTypes.includes(rt.value);
+              return (
+                <button
+                  key={rt.value}
+                  onClick={() =>
+                    setSelectedTypes((prev) =>
+                      isSelected ? prev.filter((t) => t !== rt.value) : [...prev, rt.value]
+                    )
+                  }
+                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    isSelected
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: rt.color }} />
+                  {rt.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <label className="text-foreground/80 flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={clearExisting}
+              onChange={(e) => setClearExisting(e.target.checked)}
+              className="border-border text-primary focus:ring-primary rounded"
+            />
+            Clear existing routes first
+          </label>
+
+          {generateRoutes.isSuccess && generateRoutes.data && (
+            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Generated {generateRoutes.data.routesCreated} routes (
+              {generateRoutes.data.totalLengthKm} km)
+            </div>
+          )}
+
+          {generateRoutes.error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+              {generateRoutes.error.message}
+            </div>
+          )}
+
+          <button
+            onClick={async () => {
+              if (!countryId || selectedTypes.length === 0) return;
+              try {
+                await generateRoutes.mutateAsync({
+                  countryId,
+                  routeTypes: selectedTypes,
+                  clearExisting,
+                });
+              } catch {
+                /* shown via state */
+              }
+            }}
+            disabled={selectedTypes.length === 0 || generateRoutes.isPending}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          >
+            {generateRoutes.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            {generateRoutes.isPending ? "Generating..." : "Generate Routes"}
+          </button>
+        </div>
       )}
 
       <button

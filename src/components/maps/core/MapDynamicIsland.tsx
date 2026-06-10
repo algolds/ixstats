@@ -8,51 +8,24 @@
  * - IX logo → home/maps
  * - IxTime display
  * - Auth greeting / sign-in prompt
- * - Search icon → liquid expansion to geo search (countries, cities, POIs)
+ * - Search icon → geo search
  * - Settings popover → theme + projection only
  * - Click-outside → smooth retraction
  *
  * All with polished Apple-style liquid glass animations.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  Search,
-  X,
-  Settings,
-  Globe,
-  MapPin,
-  Hexagon,
-  Landmark,
-  Loader2,
-  Sun,
-  Moon,
-  Monitor,
-  User,
-  LogIn,
-  Crown,
-  LayoutDashboard,
-  Clock,
-  Calendar,
-  Bell,
-  MessageCircle,
-} from "lucide-react";
-import { useUser, SignInButton } from "~/context/auth-context";
-import { useTheme, type Theme } from "~/context/theme-context";
-import { useIxTime } from "~/contexts/IxTimeContext";
-import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { useNotificationStore } from "~/stores/notificationStore";
-import { useDebounce } from "~/hooks/useDebounce";
-import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
+import { Search, X, Globe, Loader2, MessageCircle, Bell } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
-import { api } from "~/trpc/react";
-import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { getNationUrl } from "~/lib/slug-utils";
-import { flagService } from "~/lib/flag-service";
-import { useRouter } from "next/navigation";
 import type { ProjectionMode } from "~/lib/map-config";
 import { cn } from "~/lib/utils";
+
+// Extracted state hook, components, and helper utilities
+import { useDynamicIslandState } from "./hooks/useDynamicIslandState";
+import { AuthSection } from "./components/AuthSection";
+import { MapSettingsPopover } from "./components/MapSettingsPopover";
+import { TYPE_META, SPRING, SPRING_SOFT, FlagIcon } from "./utils/dynamic-island-helpers";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,65 +47,6 @@ interface MapDynamicIslandProps {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const getGreeting = (ixTime: number): string => {
-  const date = new Date(ixTime);
-  const hour = date.getUTCHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  if (hour >= 17 && hour < 21) return "Good evening";
-  return "Good night";
-};
-
-const getTimeDisplay = (ixTime: number): string => {
-  const date = new Date(ixTime);
-  const hours = date.getUTCHours();
-  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  const displayHours = hours % 12 || 12;
-  return `${displayHours}:${minutes} ${ampm}`;
-};
-
-const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = {
-  country: { icon: Globe, label: "Countries" },
-  city: { icon: MapPin, label: "Cities" },
-  subdivision: { icon: Hexagon, label: "Regions" },
-  poi: { icon: Landmark, label: "Points of Interest" },
-};
-
-/** Tiny inline flag that resolves async via the unified flag service. */
-function FlagIcon({ name }: { name: string }) {
-  const [url, setUrl] = useState<string | null>(() => flagService.getCachedFlagUrl(name));
-  useEffect(() => {
-    if (url) return;
-    let mounted = true;
-    flagService.getFlagUrl(name).then((u) => {
-      if (mounted) setUrl(u);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [name, url]);
-  if (!url) return null;
-  return (
-    <img
-      src={url}
-      alt=""
-      className="h-3.5 w-5 shrink-0 rounded-[2px] border border-white/10 object-cover"
-    />
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Spring configs for liquid glass feel
-// ---------------------------------------------------------------------------
-
-const SPRING = { type: "spring" as const, stiffness: 400, damping: 30, mass: 0.8 };
-const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 28, mass: 1 };
-
-// ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
@@ -141,152 +55,38 @@ export function MapDynamicIsland({
   onProjectionChange,
   onSearchResult,
 }: MapDynamicIslandProps) {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [selectedIdx, setSelectedIdx] = useState(-1);
-  const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
-  const [isFlashing, setIsFlashing] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const {
+    searchOpen,
+    query,
+    setQuery,
+    selectedIdx,
+    setSelectedIdx,
+    isFlashing,
+    containerRef,
+    inputRef,
+    user,
+    isLoaded,
+    theme,
+    effectiveTheme,
+    setTheme,
+    router,
+    greeting,
+    countryName,
+    messageUnreadCount,
+    unreadNotifications,
+    totalUnread,
+    searchLoading,
+    grouped,
+    flatResults,
+    showResults,
+    hasResults,
+    openSearch,
+    closeSearch,
+    handleSelect,
+    handleKeyDown,
+  } = useDynamicIslandState({ onSearchResult });
 
-  const { user, isLoaded } = useUser();
-  const { ixTimeTimestamp } = useIxTime();
-  const { theme, effectiveTheme, setTheme } = useTheme();
-  const router = useRouter();
-
-  const greeting = useMemo(() => getGreeting(ixTimeTimestamp), [ixTimeTimestamp]);
-  const timeDisplay = useMemo(() => getTimeDisplay(ixTimeTimestamp), [ixTimeTimestamp]);
-
-  // Profile data for greeting
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
-    enabled: !!user?.id,
-    retry: 1, // Retry once on error
-  });
-  const countryName = userProfile?.country?.name ?? "Country";
-
-  // Notification stats
-  const { stats: notificationStats } = useNotificationStore();
-  const unreadNotifications = notificationStats?.unread ?? 0;
-
-  // Messages unread count
-  const { totalUnread: messageUnreadCount = 0, refetch: refetchMessages } = useMessageUnreadCount();
-
-  // Unified unread count for the main pill (optional, currently using separate badges)
-  const totalUnread = unreadNotifications + messageUnreadCount;
-
-  // WebSocket for live notifications
-  const wsOptions = useMemo(
-    () => ({
-      accountId: user?.id ?? "",
-      autoReconnect: true,
-      onMessageUpdate: () => {
-        void refetchMessages();
-        setIsFlashing(true);
-        setTimeout(() => setIsFlashing(false), 3000);
-      },
-    }),
-    [user?.id, refetchMessages]
-  );
-
-  useThinkPagesWebSocket(wsOptions);
-
-  // ---------------------------------------------------------------------------
-  // Geo Search
-  // ---------------------------------------------------------------------------
-
-  const debouncedQuery = useDebounce(query.trim(), 250);
-
-  const { data: results, isLoading: searchLoading } = api.geoCore.searchFeatures.useQuery(
-    { query: debouncedQuery, limit: 20 },
-    { enabled: debouncedQuery.length >= 2, staleTime: 30_000 }
-  );
-
-  const grouped = useMemo(() => {
-    if (!results || results.length === 0) return [];
-    const groups: Record<string, MapSearchResult[]> = {};
-    for (const r of results) {
-      (groups[r.type] ??= []).push(r);
-    }
-    return Object.entries(groups);
-  }, [results]);
-
-  const flatResults = results ?? [];
-  const showResults = searchOpen && debouncedQuery.length >= 2;
-  const hasResults = grouped.length > 0;
-
-  // ---------------------------------------------------------------------------
-  // Handlers
-  // ---------------------------------------------------------------------------
-
-  const openSearch = useCallback(() => {
-    setSearchOpen(true);
-    // Wait for input to mount
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => inputRef.current?.focus());
-    });
-  }, []);
-
-  const closeSearch = useCallback(() => {
-    setSearchOpen(false);
-    setQuery("");
-    setSelectedIdx(-1);
-  }, []);
-
-  const handleSelect = useCallback(
-    (result: MapSearchResult) => {
-      onSearchResult(result);
-      closeSearch();
-    },
-    [onSearchResult, closeSearch]
-  );
-
-  // Click outside → close
-  useEffect(() => {
-    if (!searchOpen) return;
-    const handler = (e: PointerEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        closeSearch();
-      }
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [searchOpen, closeSearch]);
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeSearch();
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIdx((i) => Math.min(i + 1, flatResults.length - 1));
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIdx((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter" && selectedIdx >= 0 && flatResults[selectedIdx]) {
-        e.preventDefault();
-        handleSelect(flatResults[selectedIdx]);
-      }
-    },
-    [flatResults, selectedIdx, handleSelect, closeSearch]
-  );
-
-  // Cmd+K shortcut to toggle search
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        if (searchOpen) closeSearch();
-        else openSearch();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [searchOpen, openSearch, closeSearch]);
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  const debouncedQueryLength = query.trim().length;
 
   return (
     <div
@@ -388,7 +188,7 @@ export function MapDynamicIsland({
                     placeholder="Search countries, cities, places…"
                     className="text-foreground placeholder:text-muted-foreground w-64 bg-transparent text-sm outline-none sm:w-80"
                   />
-                  {searchLoading && debouncedQuery.length >= 2 && (
+                  {searchLoading && debouncedQueryLength >= 2 && (
                     <Loader2 className="text-muted-foreground h-3.5 w-3.5 shrink-0 animate-spin" />
                   )}
                   <button
@@ -409,67 +209,6 @@ export function MapDynamicIsland({
                   transition={{ ...SPRING_SOFT, opacity: { duration: 0.2 } }}
                   className="flex items-center gap-1 px-3 py-2"
                 >
-                  {/* IX Logo */}
-                  <button
-                    onClick={() => router.push("/maps")}
-                    className="group relative flex h-7 w-7 items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
-                  >
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400/10 via-indigo-500/20 to-purple-400/10 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
-                    <img
-                      src={withBasePath("/images/ix-logo.svg")}
-                      alt="IxLogo"
-                      className="relative z-10 h-5 w-5 opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert"
-                    />
-                  </button>
-
-                  {/* Time / Date Toggle */}
-                  <button
-                    onClick={() => {
-                      setTimeDisplayMode((curr) =>
-                        curr === "time" ? "date" : curr === "date" ? "both" : "time"
-                      );
-                    }}
-                    className="hover:bg-accent/50 flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors"
-                  >
-                    {timeDisplayMode === "time" && (
-                      <>
-                        <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                        <span className="text-foreground/80 text-[11px] font-semibold tabular-nums">
-                          {timeDisplay}
-                        </span>
-                      </>
-                    )}
-                    {timeDisplayMode === "date" && (
-                      <>
-                        <Calendar className="h-3 w-3 text-blue-500 opacity-70" />
-                        <span className="text-foreground/80 text-[11px] font-semibold tabular-nums">
-                          {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </>
-                    )}
-                    {timeDisplayMode === "both" && (
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                        <span className="text-foreground/80 text-[11px] font-semibold tabular-nums">
-                          {timeDisplay}
-                        </span>
-                        <span className="text-muted-foreground/50 text-[10px]">·</span>
-                        <span className="text-foreground/70 text-[10px] font-semibold tabular-nums">
-                          {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Separator */}
-                  <span className="bg-border mx-0.5 h-3 w-px shrink-0" />
 
                   {/* Auth greeting / sign-in */}
                   <AuthSection
@@ -550,11 +289,8 @@ export function MapDynamicIsland({
               )}
             </AnimatePresence>
           </div>
-          {/* /content z-10 */}
         </motion.div>
-        {/* /glass pill */}
       </div>
-      {/* /outer relative */}
 
       {/* ── Search Results Dropdown ── */}
       <AnimatePresence>
@@ -573,9 +309,9 @@ export function MapDynamicIsland({
               </div>
             )}
 
-            {!searchLoading && !hasResults && results !== undefined && (
+            {!searchLoading && !hasResults && flatResults.length === 0 && (
               <div className="text-muted-foreground px-4 py-6 text-center text-sm">
-                No results for &ldquo;{debouncedQuery}&rdquo;
+                No results for &ldquo;{query.trim()}&rdquo;
               </div>
             )}
 
@@ -595,19 +331,21 @@ export function MapDynamicIsland({
                       <button
                         key={`${result.type}-${result.id}`}
                         onClick={() => handleSelect(result)}
-                        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors ${
+                        className={cn(
+                          "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors",
                           isHighlighted
                             ? "bg-accent text-accent-foreground"
                             : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
-                        }`}
+                        )}
                       >
                         {result.type === "country" ? (
                           <FlagIcon name={result.name} />
                         ) : (
                           <Icon
-                            className={`h-3.5 w-3.5 shrink-0 ${
+                            className={cn(
+                              "h-3.5 w-3.5 shrink-0",
                               isHighlighted ? "text-blue-500" : "text-muted-foreground"
-                            }`}
+                            )}
                           />
                         )}
                         <span className="truncate font-medium">{result.name}</span>
@@ -621,204 +359,5 @@ export function MapDynamicIsland({
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Auth Section — inline in the DI pill
-// ---------------------------------------------------------------------------
-
-function AuthSection({
-  user,
-  isLoaded,
-  greeting,
-  countryName,
-  router,
-}: {
-  user: any;
-  isLoaded: boolean;
-  greeting: string;
-  countryName?: string;
-  router: ReturnType<typeof useRouter>;
-}) {
-  if (!isLoaded) {
-    return <span className="text-muted-foreground text-[11px]">…</span>;
-  }
-
-  if (!user) {
-    return (
-      <SignInButton mode="modal">
-        <button className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
-          <LogIn className="h-3 w-3" />
-          <span className="hidden sm:inline">Sign in</span>
-        </button>
-      </SignInButton>
-    );
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
-        {user.imageUrl ? (
-          <img
-            src={user.imageUrl}
-            alt=""
-            className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20"
-          />
-        ) : (
-          <User className="h-3 w-3" />
-        )}
-        <span className="hidden whitespace-nowrap sm:inline">
-          {greeting}
-          {user.firstName ? `, ${user.firstName}` : ""}
-        </span>
-      </PopoverTrigger>
-      <PopoverContent
-        side="bottom"
-        align="center"
-        className="glass-none border-border bg-popover mt-2 w-64 rounded-2xl border p-0 shadow-2xl"
-        sideOffset={8}
-      >
-        {/* Header */}
-        <div className="border-border flex items-center gap-3 border-b px-4 py-3">
-          {user.imageUrl ? (
-            <img
-              src={user.imageUrl}
-              alt=""
-              className="ring-border h-8 w-8 rounded-full object-cover ring-2"
-            />
-          ) : (
-            <div className="bg-accent flex h-8 w-8 items-center justify-center rounded-full">
-              <User className="text-muted-foreground h-4 w-4" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="text-foreground truncate text-sm font-semibold">
-              {user.firstName || user.emailAddresses?.[0]?.emailAddress || "User"}
-            </div>
-            {countryName && (
-              <div className="text-muted-foreground truncate text-[11px]">{countryName}</div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick actions */}
-        <div className="space-y-0.5 p-1.5">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
-          >
-            <LayoutDashboard className="h-3.5 w-3.5" />
-            Dashboard
-          </button>
-
-          {countryName && (
-            <button
-              onClick={() => router.push(getNationUrl(countryName))}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
-            >
-              <Crown className="h-3.5 w-3.5" />
-              MyCountry
-            </button>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Settings Popover — theme + projection only
-// ---------------------------------------------------------------------------
-
-function MapSettingsPopover({
-  projectionMode,
-  onProjectionChange,
-  theme,
-  effectiveTheme,
-  setTheme,
-  router,
-}: {
-  projectionMode: ProjectionMode;
-  onProjectionChange: (mode: ProjectionMode) => void;
-  theme: Theme;
-  effectiveTheme: string;
-  setTheme: (t: Theme) => void;
-  router: ReturnType<typeof useRouter>;
-}) {
-  return (
-    <Popover>
-      <PopoverTrigger
-        className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 cursor-pointer rounded-full p-1 transition-colors"
-        title="Settings"
-      >
-        <Settings className="h-3.5 w-3.5" />
-      </PopoverTrigger>
-      <PopoverContent
-        side="bottom"
-        align="end"
-        className="glass-none border-border bg-popover mt-2 w-56 rounded-2xl border p-3 shadow-2xl"
-        sideOffset={8}
-      >
-        {/* Theme */}
-        <div className="space-y-2">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
-            Theme
-          </div>
-          <div className="bg-accent/50 flex rounded-xl p-0.5">
-            {(["light", "dark", "system"] as const).map((t) => {
-              const Icon = t === "light" ? Sun : t === "dark" ? Moon : Monitor;
-              return (
-                <button
-                  key={t}
-                  onClick={() => setTheme(t)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
-                    theme === t
-                      ? "bg-background text-foreground ring-border shadow-sm ring-1"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  }`}
-                >
-                  <Icon className="h-3 w-3" />
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Projection */}
-        <div className="mt-3 space-y-2">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
-            Projection
-          </div>
-          <div className="bg-accent/50 flex rounded-xl p-0.5">
-            {(["globe", "mercator", "dynamic"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => onProjectionChange(mode)}
-                className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
-                  projectionMode === mode
-                    ? "bg-background text-foreground ring-border shadow-sm ring-1"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                }`}
-              >
-                {mode === "dynamic" ? "Auto" : mode.charAt(0).toUpperCase() + mode.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* User Settings */}
-        <div className="border-border mt-3 border-t pt-2">
-          <button
-            onClick={() => router.push("/settings")}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors"
-          >
-            <User className="h-3.5 w-3.5" />
-            User Settings
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }

@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Cross-Origin-Resource-Policy": "cross-origin",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -27,6 +41,7 @@ export async function GET(
         status: response.status,
         headers: {
           "Content-Type": response.headers.get("Content-Type") || "text/plain",
+          ...corsHeaders,
         },
       });
     }
@@ -39,10 +54,11 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400", // Cache images/files for 1 day
+        ...corsHeaders,
       },
     });
   } catch (error) {
     console.error("[IxWiki Proxy] Catch-all error:", error);
-    return new NextResponse("Proxy Error", { status: 500 });
+    return new NextResponse("Proxy Error", { status: 500, headers: corsHeaders });
   }
 }

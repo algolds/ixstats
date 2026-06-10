@@ -10,7 +10,7 @@
  * storyline timeline, and related pins.
  */
 
-import { useEffect, useCallback, useState, memo } from "react";
+import { memo } from "react";
 import {
   X,
   Calendar,
@@ -19,18 +19,22 @@ import {
   MapPin,
   ChevronRight,
   ChevronLeft,
-  Maximize2,
   Eye,
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";
 
-const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
-import { api } from "~/trpc/react";
 import { STORY_PIN_COLORS } from "~/lib/story-pin-icons";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Extracted Subcomponents, Hooks, and Helpers
+import { useStoryPinModalState } from "~/components/maps/core/hooks/useStoryPinModalState";
+import { StoryPinLightbox } from "~/components/maps/core/components/StoryPinLightbox";
+import { StorylineTimeline } from "~/components/maps/core/components/StorylineTimeline";
+import { RelatedPinCard } from "~/components/maps/core/components/RelatedPinCard";
+import { CATEGORY_ICONS, IMPORTANCE_LABELS } from "~/components/maps/core/utils/story-pin-helpers";
+
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
 interface StoryPinModalProps {
   pinId: string;
@@ -39,227 +43,20 @@ interface StoryPinModalProps {
   onNavigateToPin?: (pinId: string) => void;
 }
 
-// ─── Category icons (emoji fallback for modal header) ────────────────────────
-
-const CATEGORY_ICONS: Record<string, string> = {
-  battle: "\u2694\uFE0F",
-  founding: "\uD83C\uDFF0",
-  treaty: "\uD83D\uDCDC",
-  cultural: "\uD83C\uDFAD",
-  religious: "\u2721\uFE0F",
-  trade: "\uD83E\uDE99",
-  naval: "\u2693",
-  settlement: "\uD83C\uDFD8\uFE0F",
-  government: "\uD83C\uDFDB\uFE0F",
-  biography: "\uD83D\uDC64",
-  linguistic: "\uD83D\uDCAC",
-  upheaval: "\u26A1",
-  natural: "\uD83C\uDF3F",
-  exploration: "\uD83E\uDDED",
-};
-
-const IMPORTANCE_LABELS = ["", "Major Event", "Legendary"];
-
-// ─── Lightbox ────────────────────────────────────────────────────────────────
-
-function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-      >
-        <X className="h-5 w-5" />
-      </button>
-
-      <img
-        src={src}
-        alt={alt}
-        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  );
-}
-
-// ─── Storyline Timeline ──────────────────────────────────────────────────────
-
-function StorylineTimeline({
-  pins,
-  currentPinId,
-  storylineTitle,
-  storylineColor,
-  onNavigate,
-}: {
-  pins: Array<{
-    id: string;
-    title: string;
-    ixTimeYear: number | null;
-    eraLabel: string | null;
-    category: string;
-  }>;
-  currentPinId: string;
-  storylineTitle: string;
-  storylineColor: string | null;
-  onNavigate?: (pinId: string) => void;
-}) {
-  const color = storylineColor ?? "#6366f1";
-  const currentIdx = pins.findIndex((p) => p.id === currentPinId);
-
-  return (
-    <div className="border-border/50 bg-card/50 rounded-xl border p-4">
-      <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-        {storylineTitle}
-      </h4>
-      <div className="relative space-y-0">
-        {pins.map((pin, i) => {
-          const isCurrent = pin.id === currentPinId;
-          return (
-            <div key={pin.id} className="relative flex items-start gap-3 pb-4 last:pb-0">
-              {/* Vertical line */}
-              {i < pins.length - 1 && (
-                <div
-                  className="absolute top-4 left-[7px] h-full w-0.5"
-                  style={{ backgroundColor: isCurrent || i < currentIdx ? color : `${color}33` }}
-                />
-              )}
-              {/* Dot */}
-              <div
-                className={`relative z-10 mt-0.5 shrink-0 rounded-full border-2 ${isCurrent ? "h-4 w-4" : "h-3 w-3"}`}
-                style={{
-                  borderColor: color,
-                  backgroundColor: isCurrent || i <= currentIdx ? color : "transparent",
-                }}
-              />
-              {/* Content */}
-              <button
-                onClick={() => !isCurrent && onNavigate?.(pin.id)}
-                disabled={isCurrent}
-                className={`min-w-0 text-left transition-colors ${
-                  isCurrent ? "cursor-default" : "hover:text-foreground cursor-pointer"
-                }`}
-              >
-                <p
-                  className={`truncate text-xs leading-tight ${isCurrent ? "text-foreground font-semibold" : "text-muted-foreground"}`}
-                >
-                  {pin.title}
-                </p>
-                {pin.ixTimeYear != null && (
-                  <p className="text-muted-foreground/70 text-[10px]">
-                    Year {pin.ixTimeYear}
-                    {pin.eraLabel ? ` \u00B7 ${pin.eraLabel}` : ""}
-                  </p>
-                )}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-      {pins.length > 1 && (
-        <p className="text-muted-foreground/60 mt-2 text-[10px]">
-          Event {currentIdx + 1} of {pins.length}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Related Pin Card ────────────────────────────────────────────────────────
-
-function RelatedPinCard({
-  pin,
-  onNavigate,
-}: {
-  pin: {
-    id: string;
-    title: string;
-    category: string;
-    ixTimeYear: number | null;
-    thumbnailUrl: string | null;
-  };
-  onNavigate?: (pinId: string) => void;
-}) {
-  const color = STORY_PIN_COLORS[pin.category] ?? "#6b7280";
-  return (
-    <button
-      onClick={() => onNavigate?.(pin.id)}
-      className="border-border/30 bg-card/30 hover:bg-card/60 flex items-center gap-2.5 rounded-lg border p-2 text-left transition-colors"
-    >
-      <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm"
-        style={{ backgroundColor: `${color}20`, color }}
-      >
-        {CATEGORY_ICONS[pin.category] ?? "\uD83D\uDCCC"}
-      </div>
-      <div className="min-w-0">
-        <p className="text-foreground truncate text-xs font-medium">{pin.title}</p>
-        {pin.ixTimeYear != null && (
-          <p className="text-muted-foreground text-[10px]">Year {pin.ixTimeYear}</p>
-        )}
-      </div>
-    </button>
-  );
-}
-
-// ─── Main Modal ──────────────────────────────────────────────────────────────
-
 export const StoryPinModal = memo(function StoryPinModal({
   pinId,
   onClose,
   onFlyTo,
   onNavigateToPin,
 }: StoryPinModalProps) {
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const state = useStoryPinModalState({
+    pinId,
+    onClose,
+    onFlyTo,
+    onNavigateToPin,
+  });
 
-  // Fetch full pin data with wiki enrichment
-  const { data, isLoading } = api.geoFeatures.getStoryPinFull.useQuery(
-    { pinId },
-    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
-
-  const handleFlyTo = useCallback(() => {
-    if (!data?.pin?.coordinates) return;
-    const coords = data.pin.coordinates as [number, number];
-    onFlyTo?.(coords[0], coords[1]);
-    onClose();
-  }, [data, onFlyTo, onClose]);
-
-  const handleNavigatePin = useCallback(
-    (targetPinId: string) => {
-      onNavigateToPin?.(targetPinId);
-    },
-    [onNavigateToPin]
-  );
-
-  if (isLoading) {
+  if (state.isLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div className="bg-card w-full max-w-3xl rounded-2xl p-8 shadow-2xl">
@@ -282,9 +79,9 @@ export const StoryPinModal = memo(function StoryPinModal({
     );
   }
 
-  if (!data?.pin) return null;
+  if (!state.data?.pin) return null;
 
-  const { pin, wikiEnrichment, relatedPins } = data;
+  const { pin, wikiEnrichment, relatedPins } = state.data;
   const category = pin.category;
   const color = STORY_PIN_COLORS[category] ?? "#6b7280";
   const photos = (pin.photos as string[] | null) ?? [];
@@ -296,11 +93,11 @@ export const StoryPinModal = memo(function StoryPinModal({
 
   return (
     <>
-      {lightboxSrc && (
-        <ImageLightbox
-          src={lightboxSrc}
+      {state.lightboxSrc && (
+        <StoryPinLightbox
+          src={state.lightboxSrc}
           alt="Story pin image"
-          onClose={() => setLightboxSrc(null)}
+          onClose={() => state.setLightboxSrc(null)}
         />
       )}
 
@@ -367,7 +164,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                       >
                         <Calendar className="h-3 w-3" />
                         {pin.ixTimeYear != null && `Year ${pin.ixTimeYear}`}
-                        {pin.ixTimeYear != null && pin.eraLabel && " \u00B7 "}
+                        {pin.ixTimeYear != null && pin.eraLabel && " · "}
                         {pin.eraLabel}
                       </span>
                     )}
@@ -378,7 +175,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                       className="text-muted-foreground mt-1 text-[10px]"
                       style={{ color: storyline.color ?? color }}
                     >
-                      {storyline.title} \u00B7 Event {currentStorylineIdx + 1} of{" "}
+                      {storyline.title} · Event {currentStorylineIdx + 1} of{" "}
                       {storyline.pins.length}
                     </p>
                   )}
@@ -460,7 +257,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                       {photos.map((url, i) => (
                         <button
                           key={`photo-${i}`}
-                          onClick={() => setLightboxSrc(url)}
+                          onClick={() => state.setLightboxSrc(url)}
                           className="border-border/30 shrink-0 overflow-hidden rounded-lg border transition-transform hover:scale-105"
                         >
                           <img
@@ -474,7 +271,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                       {wikiEnrichment?.images?.slice(0, 8).map((img, i) => (
                         <button
                           key={`wiki-${i}`}
-                          onClick={() => setLightboxSrc(img.url)}
+                          onClick={() => state.setLightboxSrc(img.url)}
                           className="border-border/30 shrink-0 overflow-hidden rounded-lg border transition-transform hover:scale-105"
                         >
                           <img
@@ -498,7 +295,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                     currentPinId={pin.id}
                     storylineTitle={storyline.title}
                     storylineColor={storyline.color}
-                    onNavigate={handleNavigatePin}
+                    onNavigate={state.handleNavigatePin}
                   />
                 )}
 
@@ -510,7 +307,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                     </h4>
                     <div className="space-y-1.5">
                       {relatedPins.slice(0, 5).map((rp) => (
-                        <RelatedPinCard key={rp.id} pin={rp} onNavigate={handleNavigatePin} />
+                        <RelatedPinCard key={rp.id} pin={rp} onNavigate={state.handleNavigatePin} />
                       ))}
                     </div>
                   </div>
@@ -553,7 +350,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                 </Link>
               )}
               <button
-                onClick={handleFlyTo}
+                onClick={state.handleFlyTo}
                 className="bg-muted text-foreground hover:bg-muted/80 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
               >
                 <MapPin className="h-3 w-3" />
@@ -562,7 +359,7 @@ export const StoryPinModal = memo(function StoryPinModal({
               {/* Storyline prev/next */}
               {hasStoryline && currentStorylineIdx > 0 && (
                 <button
-                  onClick={() => handleNavigatePin(storyline.pins[currentStorylineIdx - 1].id)}
+                  onClick={() => state.handleNavigatePin(storyline.pins[currentStorylineIdx - 1].id)}
                   className="bg-muted text-foreground hover:bg-muted/80 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 >
                   <ChevronLeft className="h-3 w-3" />
@@ -571,7 +368,7 @@ export const StoryPinModal = memo(function StoryPinModal({
               )}
               {hasStoryline && currentStorylineIdx < storyline.pins.length - 1 && (
                 <button
-                  onClick={() => handleNavigatePin(storyline.pins[currentStorylineIdx + 1].id)}
+                  onClick={() => state.handleNavigatePin(storyline.pins[currentStorylineIdx + 1].id)}
                   className="bg-muted text-foreground hover:bg-muted/80 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 >
                   Next

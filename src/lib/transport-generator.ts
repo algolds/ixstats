@@ -12,7 +12,14 @@
  * Pure functions — no database access. Takes pre-fetched data as input.
  */
 
-export type RouteType = "rail" | "highway" | "road" | "shipping_lane" | "canal";
+export type RouteType =
+  | "rail"
+  | "highway"
+  | "road"
+  | "shipping_lane"
+  | "canal"
+  | "air_corridor"
+  | "ferry";
 
 export interface CityNode {
   id: string;
@@ -21,6 +28,7 @@ export interface CityNode {
   population: number;
   isCapital: boolean;
   isCoastal?: boolean;
+  hasAirport?: boolean;
 }
 
 export interface TerrainCell {
@@ -91,6 +99,20 @@ const ROUTE_CONFIGS: Record<
     baseSpeed: 30,
   },
   canal: { maxElevation: 500, maxGrade: 0.1, waterCost: 1, elevationCostFactor: 10, baseSpeed: 15 },
+  air_corridor: {
+    maxElevation: Infinity,
+    maxGrade: 0,
+    waterCost: 0,
+    elevationCostFactor: 0,
+    baseSpeed: 850, // cruising speed
+  },
+  ferry: {
+    maxElevation: 0,
+    maxGrade: 0,
+    waterCost: 0.3,
+    elevationCostFactor: 0,
+    baseSpeed: 40,
+  },
 };
 
 /**
@@ -381,7 +403,130 @@ export function generateTransportNetwork(
     }
   }
 
+  // Ferry routes between nearby coastal cities (< 200km, distinct from shipping lanes)
+  if (routeTypes.includes("ferry")) {
+    const coastalCities = sorted.filter((c) => c.isCoastal);
+    const ferryThresholdKm = 200;
+    const addedPairs = new Set<string>();
+    for (let i = 0; i < coastalCities.length; i++) {
+      for (let j = i + 1; j < coastalCities.length; j++) {
+        const from = coastalCities[i]!;
+        const to = coastalCities[j]!;
+        const dist = haversineKm(from.coordinates, to.coordinates);
+        if (dist > ferryThresholdKm) continue;
+        const pairKey = [from.id, to.id].sort().join("|");
+        if (addedPairs.has(pairKey)) continue;
+        addedPairs.add(pairKey);
+
+        routes.push({
+          routeType: "ferry",
+          name: `${from.name}–${to.name} Ferry`,
+          geometry: { type: "LineString", coordinates: generateDirectRoute(from, to, 12) },
+          stops: [
+            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
+            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
+          ],
+          terrainDifficulty: 0.05,
+          lengthKm: Math.round(dist),
+          isInternational: false,
+          properties: { speed_kmh: 40, vessel_type: "passenger" },
+        });
+      }
+    }
+  }
+
+  // Air corridors between major cities with airports (great-circle arcs)
+  if (routeTypes.includes("air_corridor")) {
+    const airportCities = sorted.filter((c) => c.hasAirport);
+    // If no airports flagged, fall back to top cities by population
+    const candidates =
+      airportCities.length >= 2
+        ? airportCities
+        : sorted.filter((c) => c.population > 500_000).slice(0, 10);
+
+    if (candidates.length >= 2) {
+      // Connect each airport city to the capital and to other major airport cities
+      const capital = candidates.find((c) => c.isCapital);
+      const addedAirPairs = new Set<string>();
+
+      for (let i = 0; i < candidates.length; i++) {
+        for (let j = i + 1; j < candidates.length; j++) {
+          const from = candidates[i]!;
+          const to = candidates[j]!;
+          const pairKey = [from.id, to.id].sort().join("|");
+          if (addedAirPairs.has(pairKey)) continue;
+
+          // Only connect if at least one is the capital, or both are large
+          const isCapitalRoute = from.isCapital || to.isCapital;
+          const bothLarge = from.population > 1_000_000 && to.population > 1_000_000;
+          if (!isCapitalRoute && !bothLarge) continue;
+
+          addedAirPairs.add(pairKey);
+          const dist = haversineKm(from.coordinates, to.coordinates);
+          const arcCoords = generateGreatCircleArc(from.coordinates, to.coordinates, 40);
+
+          routes.push({
+            routeType: "air_corridor",
+            name: `${from.name}–${to.name} Air Route`,
+            geometry: { type: "LineString", coordinates: arcCoords },
+            stops: [
+              { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
+              { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
+            ],
+            terrainDifficulty: 0,
+            lengthKm: Math.round(dist),
+            isInternational: false,
+            properties: { speed_kmh: 850, flight_level: 350 },
+          });
+        }
+      }
+    }
+  }
+
   return routes;
+}
+
+/**
+ * Generate a great-circle arc between two points using spherical interpolation.
+ * Produces a true geodesic path (curved on Mercator projection) — essential for
+ * realistic air corridors and long-distance routes.
+ */
+function generateGreatCircleArc(
+  from: [number, number],
+  to: [number, number],
+  numPoints: number = 40
+): [number, number][] {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+
+  const lat1 = toRad(from[1]);
+  const lng1 = toRad(from[0]);
+  const lat2 = toRad(to[1]);
+  const lng2 = toRad(to[0]);
+
+  // Central angle via Haversine
+  const dLat = lat2 - lat1;
+  const dLng = lng2 - lng1;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  const d = 2 * Math.asin(Math.sqrt(a));
+
+  // Degenerate case: same point
+  if (d < 1e-10) return [from, to];
+
+  const coords: [number, number][] = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const f = i / numPoints;
+    const A = Math.sin((1 - f) * d) / Math.sin(d);
+    const B = Math.sin(f * d) / Math.sin(d);
+    const x = A * Math.cos(lat1) * Math.cos(lng1) + B * Math.cos(lat2) * Math.cos(lng2);
+    const y = A * Math.cos(lat1) * Math.sin(lng1) + B * Math.cos(lat2) * Math.sin(lng2);
+    const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+    const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
+    const lng = Math.atan2(y, x);
+    coords.push([toDeg(lng), toDeg(lat)]);
+  }
+
+  return coords;
 }
 
 /**

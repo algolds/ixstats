@@ -19,7 +19,7 @@ interface LayerPanelProps {
   onToggleVisibility: (layerId: string) => void;
   onToggleLock: (layerId: string) => void;
   onOpacityChange?: (layerId: string, opacity: number) => void;
-  featureCounts: Record<string, number>;
+  featureCounts?: Record<string, number>;
 }
 
 export const LayerPanel = React.memo(function LayerPanel({
@@ -27,7 +27,7 @@ export const LayerPanel = React.memo(function LayerPanel({
   onToggleVisibility,
   onToggleLock,
   onOpacityChange,
-  featureCounts,
+  featureCounts = {},
 }: LayerPanelProps) {
   const [expandedLayer, setExpandedLayer] = useState<string | null>(null);
 
@@ -39,7 +39,7 @@ export const LayerPanel = React.memo(function LayerPanel({
       <div className="flex flex-col">
         {layers.map((layer) => {
           const Icon = layer.icon;
-          const count = featureCounts[layer.id];
+          const count = featureCounts?.[layer.id];
           const isExpanded = expandedLayer === layer.id;
           const showOpacity = layer.id === "regions";
 

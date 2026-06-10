@@ -24,99 +24,21 @@ import {
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import type {
-  Polygon,
-  MultiPolygon,
-  Position,
-  Feature,
-  FeatureCollection,
-  Geometry,
-} from "geojson";
-import type { GeoJSONSource } from "maplibre-gl";
-
-// Helper to get a typed GeoJSON source from the map
-function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSource | undefined {
-  if (!map) return;
-  try {
-    return map.getSource(id) as GeoJSONSource;
-  } catch {
-    return undefined;
-  }
-}
-
-// Helper to safely extract coordinates from a feature's geometry
-function getFeatureCoords(geometry: Geometry): Position | undefined {
-  if (geometry.type === "Point") return geometry.coordinates;
-  if (geometry.type === "MultiPoint") return geometry.coordinates[0];
-  return undefined;
-}
-
-function calculateOverlapGeoJson(drawnGeom: any, allFeatures: any[], currentFeatureId?: string) {
-  if (!drawnGeom || !drawnGeom.coordinates || drawnGeom.coordinates.length === 0) {
-    return EMPTY_FC;
-  }
-
-  const overlapFeatures: any[] = [];
-  try {
-    const turfDrawn =
-      drawnGeom.type === "Feature"
-        ? drawnGeom
-        : {
-            type: "Feature",
-            geometry: drawnGeom,
-            properties: {},
-          };
-
-    const otherSubdivisions = allFeatures.filter(
-      (f) =>
-        f.type === "subdivision" &&
-        f.id !== currentFeatureId &&
-        f.geometry &&
-        (f.geometry as any).coordinates &&
-        (f.geometry as any).coordinates.length > 0
-    );
-
-    for (const sub of otherSubdivisions) {
-      const subGeom = sub.geometry;
-      const turfSub = {
-        type: "Feature",
-        geometry: subGeom,
-        properties: {},
-      };
-
-      const intersection = intersect(featureCollection([turfDrawn, turfSub]));
-      if (intersection && intersection.geometry) {
-        overlapFeatures.push(intersection);
-      }
-    }
-  } catch (err) {
-    console.warn("[calculateOverlapGeoJson] Error calculating turf overlap:", err);
-  }
-
-  return {
-    type: "FeatureCollection" as const,
-    features: overlapFeatures,
-  };
-}
-import {
-  getVertices,
-  getAllRings,
-  moveVertex,
-  addVertex,
-  removeVertex,
-  clampToGeometry,
-  simplifyGeometry,
-  snapToBorderEdge,
-  snapToNeighborBorders,
-  sanitizeRegionShape,
-} from "~/lib/border-editor";
-import type { VertexRef } from "~/lib/border-editor";
-import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/province-importer/alignment";
-import { clipGeometryToBorder } from "~/lib/province-importer/topology";
-import { MAP_DEFAULTS, OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS } from "~/lib/map-config";
+import { MAP_DEFAULTS, OCEAN_COLOR } from "~/lib/map-config";
 import { getMapGlyphsUrl } from "~/lib/base-path";
 
-import { intersect, featureCollection, polygon } from "@turf/turf";
+// Hooks & Sub-components
+import { useMapLayers } from "./hooks/useMapLayers";
+import { useSubdivisionDraw } from "./hooks/useSubdivisionDraw";
+import { useSubdivisionVertexEdit } from "./hooks/useSubdivisionVertexEdit";
+import { useRouteEdit } from "./hooks/useRouteEdit";
+
+import { DrawingToolbar } from "./toolbars/DrawingToolbar";
+import { VertexEditingToolbar } from "./toolbars/VertexEditingToolbar";
+import { RouteEditingToolbar } from "./toolbars/RouteEditingToolbar";
+import { MapHintPill } from "./toolbars/MapHintPill";
+
+import { getFeatureCoords } from "./utils/map-helpers";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -162,65 +84,12 @@ interface EditorMapProps {
   routeWaypoints?: [number, number][];
   /** Layer visibility state — controls which feature types are rendered */
   layerVisibility?: Record<string, boolean>;
-}
-
-const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
-
-const SNAP_GUIDE_SOURCE = "editor-snap-guide";
-const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
-const SNAP_GUIDE_POINT_LAYER = "editor-snap-guide-point";
-
-/** Show/hide a snap guide line between drag origin and snap target */
-function updateSnapGuide(map: MapLibreMap, from: Position | null, to: Position | null) {
-  const fc: GeoJSON.FeatureCollection = {
-    type: "FeatureCollection",
-    features:
-      from && to
-        ? [
-            {
-              type: "Feature",
-              geometry: { type: "LineString", coordinates: [from, to] },
-              properties: {},
-            },
-            {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: to },
-              properties: {},
-            },
-          ]
-        : [],
-  };
-
-  const source = map.getSource(SNAP_GUIDE_SOURCE);
-  if (source && "setData" in source) {
-    (source as GeoJSONSource).setData(fc);
-  } else {
-    map.addSource(SNAP_GUIDE_SOURCE, { type: "geojson", data: fc });
-    map.addLayer({
-      id: SNAP_GUIDE_LAYER,
-      type: "line",
-      source: SNAP_GUIDE_SOURCE,
-      paint: {
-        "line-color": "#06b6d4",
-        "line-width": 1.5,
-        "line-dasharray": [3, 3],
-        "line-opacity": 0.8,
-      },
-    });
-    map.addLayer({
-      id: SNAP_GUIDE_POINT_LAYER,
-      type: "circle",
-      source: SNAP_GUIDE_SOURCE,
-      filter: ["==", "$type", "Point"],
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#06b6d4",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-        "circle-opacity": 0.9,
-      },
-    });
-  }
+  /** Route editing details */
+  editingRouteId?: string | null;
+  editingRouteVertices?: [number, number][];
+  onRouteVerticesUpdate?: (vertices: [number, number][]) => void;
+  onRouteEditCommit?: () => void;
+  onRouteEditCancel?: () => void;
 }
 
 const EditorMap = memo(
@@ -244,34 +113,26 @@ const EditorMap = memo(
       paintColors,
       routeWaypoints,
       layerVisibility,
+      editingRouteId,
+      editingRouteVertices,
+      onRouteVerticesUpdate,
+      onRouteEditCommit,
+      onRouteEditCancel,
     },
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const drawVerticesRef = useRef<[number, number][]>([]);
-    const [drawVertices, setDrawVertices] = useState<[number, number][]>([]);
+
     const modeRef = useRef(mode);
     modeRef.current = mode;
     const featuresRef = useRef(features);
     featuresRef.current = features;
     const onFeatureSelectRef = useRef(onFeatureSelect);
     onFeatureSelectRef.current = onFeatureSelect;
-    const onGeometryUpdateRef = useRef(onGeometryUpdate);
-    onGeometryUpdateRef.current = onGeometryUpdate;
-    const countryGeometryRef = useRef(countryGeometry);
-    countryGeometryRef.current = countryGeometry;
-
-    // Vertex editing internal state
-    const [isVertexEditing, setIsVertexEditing] = useState(false);
-    const vertexEditRef = useRef<{
-      featureId: string;
-      currentGeometry: Polygon | MultiPolygon;
-    } | null>(null);
-    const draggingRef = useRef<VertexRef | null>(null);
-    const hoveredVertexRef = useRef<VertexRef | null>(null);
-    const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
+    const onMapClickRef = useRef(onMapClick);
+    onMapClickRef.current = onMapClick;
 
     useImperativeHandle(ref, () => ({
       flyTo: (lng: number, lat: number, zoom = 6) => {
@@ -280,200 +141,65 @@ const EditorMap = memo(
       getMap: () => mapRef.current,
     }));
 
-    // ── Vertex edit visualization helpers ──
+    // Track zoom for grid spacing updates
+    const [gridZoomBucket, setGridZoomBucket] = useState(0);
 
-    const updateVertexEditVis = useCallback(() => {
-      const map = mapRef.current;
-      const state = vertexEditRef.current;
-      if (!map || !state) return;
+    // ── 1. Hook: Manage Map Layers & Grids ──
+    useMapLayers({
+      map: mapRef.current,
+      isLoaded,
+      countryGeometry,
+      countryBbox,
+      countryColor,
+      features,
+      layerVisibility,
+      pendingCoordinates,
+      worldMapLayers,
+      showGrid,
+      gridZoomBucket,
+      paintColors,
+      routeWaypoints,
+    });
 
-      const geo = state.currentGeometry;
+    // ── 2. Hook: Manage Subdivision Drawing ──
+    const { drawVertices, undoLastVertex, clearDraw, saveDraw, canSaveDraw } = useSubdivisionDraw({
+      map: mapRef.current,
+      isLoaded,
+      mode,
+      features,
+      countryGeometry,
+      onDrawComplete,
+    });
 
-      // Polygon fill + stroke
-      const polyFc = {
-        type: "FeatureCollection" as const,
-        features: [
-          {
-            type: "Feature" as const,
-            geometry: geo,
-            properties: {},
-          },
-        ],
-      };
-      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
+    // ── 3. Hook: Manage Subdivision Vertex Editing ──
+    const {
+      isVertexEditing,
+      handleSimplifyAndSave,
+      handleSave,
+      finishVertexEdit,
+      cancelVertexEdit,
+    } = useSubdivisionVertexEdit({
+      map: mapRef.current,
+      isLoaded,
+      mode,
+      selectedFeature,
+      features,
+      countryGeometry,
+      onGeometryUpdate,
+    });
 
-      // Vertices
-      const verts = getVertices(geo);
-      const vertFc = {
-        type: "FeatureCollection" as const,
-        features: verts.map((v) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: v.coord },
-          properties: { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex },
-        })),
-      };
-      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
-
-      // Midpoints (for adding new vertices)
-      const rings = getAllRings(geo);
-      const midFeatures: any[] = [];
-      for (let ri = 0; ri < rings.length; ri++) {
-        const ring = rings[ri]!;
-        const len = ring.length;
-        for (let i = 0; i < len - 1; i++) {
-          const a = ring[i]!;
-          const b = ring[i + 1]!;
-          midFeatures.push({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
-            },
-            properties: { ringIndex: ri, startIndex: i },
-          });
-        }
-      }
-      getGeoJSONSource(map, "editor-vedit-midpoints")?.setData({
-        type: "FeatureCollection",
-        features: midFeatures,
-      });
-
-      // Update overlap highlights
-      const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
-    }, []);
-
-    const clearVertexEditVis = useCallback(() => {
-      const map = mapRef.current;
-      if (!map) return;
-      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(EMPTY_FC);
-      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(EMPTY_FC);
-      getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(EMPTY_FC);
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-    }, []);
-
-    const finishVertexEdit = useCallback(() => {
-      const state = vertexEditRef.current;
-      if (state && onGeometryUpdateRef.current) {
-        let finalGeo = state.currentGeometry;
-        // Final conformance clip — ensure geometry fits within country border
-        const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-        if (border) {
-          const { geometry } = clipGeometryToBorder(finalGeo, border);
-          finalGeo = geometry as Polygon | MultiPolygon;
-        }
-        onGeometryUpdateRef.current(state.featureId, finalGeo);
-      }
-      vertexEditRef.current = null;
-      setIsVertexEditing(false);
-      clearVertexEditVis();
-      // Reset subdivision filters
-      const map = mapRef.current;
-      if (map) {
-        for (const lid of [
-          "editor-subdivisions-fill",
-          "editor-subdivisions-stroke",
-          "editor-subdivisions-labels",
-          "editor-subdivisions-hover",
-        ]) {
-          if (map.getLayer(lid)) map.setFilter(lid, null);
-        }
-      }
-    }, [clearVertexEditVis]);
-
-    const handleSimplifyAndSave = useCallback(() => {
-      const state = vertexEditRef.current;
-      const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-      if (!state || !border) return;
-
-      // Step 0: Douglas-Peucker simplification to reduce vertex noise
-      let geo = simplifyGeometry(state.currentGeometry, 0.002);
-
-      // Step 1: Sanitize shape — remove spikes, self-intersections, degenerate vertices
-      const { geometry: sanitized } = sanitizeRegionShape(geo, border);
-      geo = sanitized;
-
-      // Step 2: Clip geometry to country border (handles islands, overflow)
-      const { geometry: clipped } = clipGeometryToBorder(geo, border);
-      geo = clipped as Polygon | MultiPolygon;
-
-      // Step 3: Snap to neighboring region borders to fill gaps
-      const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
-      for (const feat of featuresRef.current) {
-        if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-          neighborGeometries.push({
-            id: feat.id,
-            geometry: feat.geometry as Polygon | MultiPolygon,
-          });
-        }
-      }
-      if (neighborGeometries.length > 0) {
-        geo = snapToNeighborBorders(geo, neighborGeometries, border, 0.02);
-      }
-
-      // Step 4: Snap remaining vertices to country border ring
-      const nearestRing = findNearestBorderRing(geo, border);
-      const borderEdges: Array<[Position, Position]> = [];
-      for (let i = 0; i < nearestRing.length - 1; i++) {
-        borderEdges.push([nearestRing[i]!, nearestRing[i + 1]!]);
-      }
-
-      const snapped = snapGeometryToBorder(geo, borderEdges, nearestRing, 2.0);
-      state.currentGeometry = snapped as Polygon | MultiPolygon;
-      updateVertexEditVis();
-
-      // Auto-save the simplified geometry
-      if (onGeometryUpdateRef.current) {
-        onGeometryUpdateRef.current(state.featureId, state.currentGeometry);
-      }
-    }, [updateVertexEditVis]);
-
-    const handleSave = useCallback(() => {
-      const state = vertexEditRef.current;
-      if (!state || !onGeometryUpdateRef.current) return;
-      let finalGeo = state.currentGeometry;
-      const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-      if (border) {
-        // Conformance clip before save
-        const { geometry } = clipGeometryToBorder(finalGeo, border);
-        finalGeo = geometry as Polygon | MultiPolygon;
-
-        // Snap to neighbor borders to close gaps
-        const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
-        for (const feat of featuresRef.current) {
-          if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-            neighborGeometries.push({
-              id: feat.id,
-              geometry: feat.geometry as Polygon | MultiPolygon,
-            });
-          }
-        }
-        if (neighborGeometries.length > 0) {
-          finalGeo = snapToNeighborBorders(finalGeo, neighborGeometries, border, 0.015);
-        }
-
-        state.currentGeometry = finalGeo as Polygon | MultiPolygon;
-        updateVertexEditVis();
-      }
-      onGeometryUpdateRef.current(state.featureId, finalGeo);
-    }, [updateVertexEditVis]);
-
-    const cancelVertexEdit = useCallback(() => {
-      vertexEditRef.current = null;
-      setIsVertexEditing(false);
-      clearVertexEditVis();
-      const map = mapRef.current;
-      if (map) {
-        for (const lid of [
-          "editor-subdivisions-fill",
-          "editor-subdivisions-stroke",
-          "editor-subdivisions-labels",
-          "editor-subdivisions-hover",
-        ]) {
-          if (map.getLayer(lid)) map.setFilter(lid, null);
-        }
-      }
-    }, [clearVertexEditVis]);
+    // ── 4. Hook: Manage Route Path Editing & Snapping ──
+    useRouteEdit({
+      map: mapRef.current,
+      isLoaded,
+      mode,
+      routeWaypoints,
+      editingRouteId,
+      editingRouteVertices,
+      onRouteVerticesUpdate,
+      onRouteEditCommit,
+      onRouteEditCancel,
+    });
 
     // ── Initialize map ──
     useEffect(() => {
@@ -514,7 +240,6 @@ const EditorMap = memo(
           attributionControl: false,
         });
 
-        // Zoom/compass control — single instance, compact position
         map.addControl(
           new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
           "top-right"
@@ -558,212 +283,18 @@ const EditorMap = memo(
       }
     }, [isLoaded, countryBbox, countryCentroid]);
 
-    // Render world map context layers (altitudes, rivers, lakes) as background
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded || !worldMapLayers || worldMapLayers.length === 0) return;
-
-      const sorted = [...worldMapLayers].sort(
-        (a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
-      );
-
-      for (const layer of sorted) {
-        // Skip political in editor — country border stroke is sufficient
-        if (layer.type === "political") continue;
-
-        const sourceId = `editor-ctx-${layer.type}`;
-        const fillLayerId = `editor-ctx-fill-${layer.type}`;
-        const strokeLayerId = `editor-ctx-stroke-${layer.type}`;
-        const config = LAYER_CONFIGS[layer.type];
-        if (!config) continue;
-
-        try {
-          // Add or update source — same pattern as IxWorldMap
-          const existingSource = map.getSource(sourceId);
-          if (existingSource) {
-            (existingSource as GeoJSONSource).setData(layer.data as FeatureCollection);
-          } else {
-            map.addSource(sourceId, {
-              type: "geojson",
-              data: layer.data as FeatureCollection,
-              generateId: true,
-            });
-
-            // Line-type layers (rivers)
-            if (config.type === "line") {
-              map.addLayer({
-                id: fillLayerId,
-                type: "line",
-                source: sourceId,
-                paint: {
-                  "line-color": config.strokeColor ?? "#7cb5d2",
-                  "line-width": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    0,
-                    config.strokeWidth ?? 1,
-                    6,
-                    (config.strokeWidth ?? 1) * 3,
-                  ] as [string, ...unknown[]],
-                  "line-opacity": layer.visible ? 0.7 : 0,
-                },
-                layout: { "line-cap": "round", "line-join": "round" },
-              });
-            }
-
-            // Fill-type layers (background, altitudes, lakes)
-            if (config.type === "fill") {
-              const fillPaint: Record<string, unknown> = {
-                "fill-opacity": layer.visible ? config.fillOpacity : 0,
-              };
-              if (config.fillColor === "from-property") {
-                fillPaint["fill-color"] = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
-              } else {
-                fillPaint["fill-color"] = config.fillColor;
-              }
-
-              map.addLayer({
-                id: fillLayerId,
-                type: "fill",
-                source: sourceId,
-                paint: fillPaint as Record<string, unknown>,
-              });
-
-              if (config.strokeColor) {
-                map.addLayer({
-                  id: strokeLayerId,
-                  type: "line",
-                  source: sourceId,
-                  paint: {
-                    "line-color": config.strokeColor,
-                    "line-width": config.strokeWidth ?? 1,
-                    "line-opacity": layer.visible ? 0.8 : 0,
-                  },
-                });
-              }
-            }
-          }
-
-          // Update visibility via paint opacity — same as IxWorldMap
-          if (config.type === "line") {
-            if (map.getLayer(fillLayerId)) {
-              map.setPaintProperty(fillLayerId, "line-opacity", layer.visible ? 0.7 : 0);
-            }
-          } else if (config.type === "fill") {
-            if (map.getLayer(fillLayerId)) {
-              map.setPaintProperty(
-                fillLayerId,
-                "fill-opacity",
-                layer.visible ? config.fillOpacity : 0
-              );
-            }
-            if (map.getLayer(strokeLayerId)) {
-              map.setPaintProperty(strokeLayerId, "line-opacity", layer.visible ? 0.8 : 0);
-            }
-          }
-        } catch (err) {
-          console.warn(`[EditorMap] context layer ${layer.type} error:`, err);
-        }
-      }
-    }, [isLoaded, worldMapLayers]);
-
-    // Render country boundary
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded || !countryGeometry) return;
-
-      const sourceId = "editor-country-boundary";
-      const fillId = "editor-country-fill";
-      const strokeId = "editor-country-stroke";
-
-      const geojson = {
-        type: "FeatureCollection" as const,
-        features: [
-          {
-            type: "Feature" as const,
-            geometry: countryGeometry,
-            properties: {},
-          },
-        ],
-      };
-
-      if (map.getSource(sourceId)) {
-        getGeoJSONSource(map, sourceId)?.setData(geojson);
-      } else {
-        map.addSource(sourceId, { type: "geojson", data: geojson });
-        // Subtle brightening fill — makes the country stand out from the darkened non-player areas
-        // while keeping altitude/topo fully visible underneath
-        map.addLayer({
-          id: fillId,
-          type: "fill",
-          source: sourceId,
-          paint: {
-            "fill-color": "#ffffff",
-            "fill-opacity": 0.12,
-          },
-        });
-        map.addLayer({
-          id: strokeId,
-          type: "line",
-          source: sourceId,
-          paint: {
-            "line-color": "#10b981",
-            "line-width": 2,
-            "line-dasharray": [2, 2],
-          },
-        });
-
-        // Non-player territory mask — grey overlay outside country border
-        const maskSourceId = "editor-nonplayer-mask";
-        const maskFillId = "editor-nonplayer-mask-fill";
-        if (!map.getSource(maskSourceId)) {
-          // Create world polygon with country cut out as a hole
-          const geo = countryGeometry as Polygon | MultiPolygon;
-          const worldOuter: Position[] = [
-            [-180, -90],
-            [180, -90],
-            [180, 90],
-            [-180, 90],
-            [-180, -90],
-          ];
-          const holes: Position[][] =
-            geo.type === "Polygon"
-              ? [geo.coordinates[0] as Position[]]
-              : (geo.coordinates as Position[][][]).map((poly) => poly[0] as Position[]);
-
-          map.addSource(maskSourceId, {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              geometry: { type: "Polygon", coordinates: [worldOuter, ...holes] },
-              properties: {},
-            },
-          });
-          map.addLayer({
-            id: maskFillId,
-            type: "fill",
-            source: maskSourceId,
-            paint: {
-              "fill-color": "#0f172a",
-              "fill-opacity": 0.4,
-            },
-          });
-        }
-      }
-    }, [isLoaded, countryGeometry, countryColor]);
-
-    // Track zoom for grid spacing updates
-    const [gridZoomBucket, setGridZoomBucket] = useState(0);
+    // Zoom end listeners for grid bucket updates and reporting
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
+
       const updateBucket = () => {
         const z = map.getZoom();
         setGridZoomBucket(z < 4 ? 0 : z < 6 ? 1 : z < 8 ? 2 : 3);
       };
       updateBucket();
       map.on("zoomend", updateBucket);
+
       if (onZoomChange) {
         const reportZoom = () => onZoomChange(map.getZoom());
         map.on("zoomend", reportZoom);
@@ -777,726 +308,24 @@ const EditorMap = memo(
       };
     }, [isLoaded, onZoomChange]);
 
-    // Coordinate grid overlay — focused on country bbox, rebuilds on zoom bucket change
+    // Map Cursor Mode styling
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
-      const gridSourceId = "editor-grid";
-      const gridLayerId = "editor-grid-lines";
-      const gridLabelId = "editor-grid-labels";
-
-      if (!showGrid) {
-        if (map.getLayer(gridLayerId)) map.setLayoutProperty(gridLayerId, "visibility", "none");
-        if (map.getLayer(gridLabelId)) map.setLayoutProperty(gridLabelId, "visibility", "none");
-        return;
-      }
-
-      // Use country bbox to focus the grid, with margin
-      const bbox = countryBbox;
-      const margin = 5;
-      const minLng = bbox ? Math.floor((bbox.minLng - margin) / 5) * 5 : -180;
-      const maxLng = bbox ? Math.ceil((bbox.maxLng + margin) / 5) * 5 : 180;
-      const minLat = bbox ? Math.max(-85, Math.floor((bbox.minLat - margin) / 5) * 5) : -85;
-      const maxLat = bbox ? Math.min(85, Math.ceil((bbox.maxLat + margin) / 5) * 5) : 85;
-
-      const spacing = [10, 5, 1, 0.5][gridZoomBucket] ?? 5;
-
-      const lines: GeoJSON.Feature[] = [];
-      for (let lng = minLng; lng <= maxLng; lng += spacing) {
-        lines.push({
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [
-              [lng, minLat],
-              [lng, maxLat],
-            ],
-          },
-          properties: { label: `${Math.abs(lng)}°${lng >= 0 ? "E" : "W"}` },
-        });
-      }
-      for (let lat = minLat; lat <= maxLat; lat += spacing) {
-        lines.push({
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [
-              [minLng, lat],
-              [maxLng, lat],
-            ],
-          },
-          properties: { label: `${Math.abs(lat)}°${lat >= 0 ? "N" : "S"}` },
-        });
-      }
-
-      const gridFc: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: lines };
-
-      if (map.getSource(gridSourceId)) {
-        getGeoJSONSource(map, gridSourceId)?.setData(gridFc);
-        if (map.getLayer(gridLayerId)) map.setLayoutProperty(gridLayerId, "visibility", "visible");
-        if (map.getLayer(gridLabelId)) map.setLayoutProperty(gridLabelId, "visibility", "visible");
-      } else {
-        map.addSource(gridSourceId, { type: "geojson", data: gridFc });
-        map.addLayer({
-          id: gridLayerId,
-          type: "line",
-          source: gridSourceId,
-          paint: {
-            "line-color": "#64748b",
-            "line-width": 0.8,
-            "line-opacity": 0.4,
-            "line-dasharray": [4, 4],
-          },
-        });
-        // Grid labels at line endpoints
-        map.addLayer({
-          id: gridLabelId,
-          type: "symbol",
-          source: gridSourceId,
-          layout: {
-            "symbol-placement": "line",
-            "text-field": ["get", "label"],
-            "text-size": 9,
-            "text-allow-overlap": false,
-            "text-ignore-placement": false,
-            "text-max-angle": 90,
-            "text-offset": [0, -0.6],
-            "text-font": [...MAP_SYMBOL_FONTS.regular],
-          },
-          paint: {
-            "text-color": "#64748b",
-            "text-opacity": 0.5,
-            "text-halo-color": "#0f172a",
-            "text-halo-width": 1,
-          },
-        });
-      }
-    }, [isLoaded, showGrid, gridZoomBucket, countryBbox]);
-
-    // Render existing features (cities, subdivisions, POIs)
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      // Filter features by layer visibility
-      const lv = layerVisibility ?? {};
-      const visibleFeatures = features.filter((f) => {
-        if (f.type === "city" && lv.cities === false) return false;
-        if (f.type === "poi" && lv.pois === false) return false;
-        if (f.type === "storyPin" && lv.stories === false) return false;
-        if (f.type === "mapLabel" && lv.labels === false) return false;
-        if (f.type === "subdivision" && lv.regions === false) return false;
-        return true;
-      });
-
-      // Cities + POIs as points
-      const pointFeatures = visibleFeatures
-        .filter((f) => f.coordinates)
-        .map((f) => ({
-          type: "Feature" as const,
-          geometry: {
-            type: "Point" as const,
-            coordinates: f.coordinates!,
-          },
-          properties: {
-            id: f.id,
-            name: f.name,
-            featureType: f.type,
-            isCapital: f.properties.isNationalCapital ?? false,
-          },
-        }));
-
-      const pointsGeoJson = { type: "FeatureCollection" as const, features: pointFeatures };
-
-      if (map.getSource("editor-points")) {
-        getGeoJSONSource(map, "editor-points")?.setData(pointsGeoJson);
-      } else {
-        map.addSource("editor-points", { type: "geojson", data: pointsGeoJson });
-        map.addLayer({
-          id: "editor-points-capital",
-          type: "circle",
-          source: "editor-points",
-          filter: ["==", ["get", "isCapital"], true],
-          paint: {
-            "circle-radius": 7,
-            "circle-color": "#f59e0b",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 2,
-          },
-        });
-        map.addLayer({
-          id: "editor-points-city",
-          type: "circle",
-          source: "editor-points",
-          filter: [
-            "all",
-            ["==", ["get", "featureType"], "city"],
-            ["!=", ["get", "isCapital"], true],
-          ],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#3b82f6",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1.5,
-          },
-        });
-        map.addLayer({
-          id: "editor-points-poi",
-          type: "circle",
-          source: "editor-points",
-          filter: ["==", ["get", "featureType"], "poi"],
-          paint: {
-            "circle-radius": 4,
-            "circle-color": "#f59e0b",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1,
-          },
-        });
-        map.addLayer({
-          id: "editor-points-story-pin",
-          type: "circle",
-          source: "editor-points",
-          filter: ["==", ["get", "featureType"], "storyPin"],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#a855f7",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1.5,
-          },
-        });
-        map.addLayer({
-          id: "editor-points-map-label",
-          type: "circle",
-          source: "editor-points",
-          filter: ["==", ["get", "featureType"], "mapLabel"],
-          paint: {
-            "circle-radius": 4,
-            "circle-color": "#94a3b8",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1,
-            "circle-opacity": 0.6,
-          },
-        });
-        map.addLayer({
-          id: "editor-points-labels",
-          type: "symbol",
-          source: "editor-points",
-          layout: {
-            "text-field": ["get", "name"],
-            "text-size": 11,
-            "text-offset": [0, 1.2],
-            "text-anchor": "top",
-            "text-allow-overlap": false,
-            "text-font": [...MAP_SYMBOL_FONTS.regular],
-          },
-          paint: {
-            "text-color": "#374151",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.5,
-          },
-        });
-      }
-
-      // Subdivisions as polygons
-      const polyFeatures = visibleFeatures
-        .filter((f) => f.geometry)
-        .map((f) => ({
-          type: "Feature" as const,
-          geometry: f.geometry as Geometry,
-          properties: { id: f.id, name: f.name, color: f.properties.color },
-        }));
-
-      const polysGeoJson = { type: "FeatureCollection" as const, features: polyFeatures };
-
-      if (map.getSource("editor-subdivisions")) {
-        getGeoJSONSource(map, "editor-subdivisions")?.setData(polysGeoJson);
-      } else {
-        map.addSource("editor-subdivisions", { type: "geojson", data: polysGeoJson });
-        map.addLayer({
-          id: "editor-subdivisions-fill",
-          type: "fill",
-          source: "editor-subdivisions",
-          paint: {
-            "fill-color": "transparent",
-            "fill-opacity": 0,
-          },
-        });
-        map.addLayer({
-          id: "editor-subdivisions-stroke",
-          type: "line",
-          source: "editor-subdivisions",
-          paint: {
-            "line-color": "#7c3aed",
-            "line-width": 1.5,
-            "line-dasharray": [3, 2],
-          },
-        });
-        map.addLayer({
-          id: "editor-subdivisions-labels",
-          type: "symbol",
-          source: "editor-subdivisions",
-          layout: {
-            "text-field": ["get", "name"],
-            "text-size": 11,
-            "text-allow-overlap": false,
-            "text-ignore-placement": false,
-            "text-optional": true,
-            "symbol-sort-key": 1,
-            "text-font": [...MAP_SYMBOL_FONTS.regular],
-          },
-          paint: {
-            "text-color": "#6d28d9",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.5,
-          },
-        });
-
-        // Hover highlight layer for subdivisions
-        map.addLayer({
-          id: "editor-subdivisions-hover",
-          type: "line",
-          source: "editor-subdivisions",
-          paint: {
-            "line-color": "#2563eb",
-            "line-width": 3,
-          },
-          filter: ["==", ["get", "id"], ""],
-        });
-      }
-    }, [isLoaded, features, layerVisibility]);
-
-    // Render pending marker
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      const geojson = pendingCoordinates
-        ? {
-            type: "FeatureCollection" as const,
-            features: [
-              {
-                type: "Feature" as const,
-                geometry: { type: "Point" as const, coordinates: pendingCoordinates },
-                properties: {},
-              },
-            ],
-          }
-        : EMPTY_FC;
-
-      if (map.getSource("editor-pending-point")) {
-        getGeoJSONSource(map, "editor-pending-point")?.setData(geojson);
-      } else {
-        map.addSource("editor-pending-point", { type: "geojson", data: geojson });
-        map.addLayer({
-          id: "editor-pending-point-layer",
-          type: "circle",
-          source: "editor-pending-point",
-          paint: {
-            "circle-radius": 8,
-            "circle-color": "#10b981",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 2,
-            "circle-opacity": 0.8,
-          },
-        });
-      }
-    }, [isLoaded, pendingCoordinates]);
-
-    // ── Render in-progress route waypoints ──
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      const lineGeoJson: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features:
-          routeWaypoints && routeWaypoints.length >= 2
-            ? [
-                {
-                  type: "Feature",
-                  geometry: {
-                    type: "LineString",
-                    coordinates: routeWaypoints,
-                  },
-                  properties: {},
-                },
-              ]
-            : [],
-      };
-
-      const pointGeoJson: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: routeWaypoints
-          ? routeWaypoints.map((wp) => ({
-              type: "Feature" as const,
-              geometry: { type: "Point" as const, coordinates: wp },
-              properties: {},
-            }))
-          : [],
-      };
-
-      if (map.getSource("editor-route-line")) {
-        getGeoJSONSource(map, "editor-route-line")?.setData(lineGeoJson);
-      } else {
-        map.addSource("editor-route-line", { type: "geojson", data: lineGeoJson });
-        map.addLayer({
-          id: "editor-route-line-layer",
-          type: "line",
-          source: "editor-route-line",
-          paint: {
-            "line-color": "#6366f1",
-            "line-width": 3,
-            "line-opacity": 0.9,
-          },
-        });
-      }
-
-      if (map.getSource("editor-route-points")) {
-        getGeoJSONSource(map, "editor-route-points")?.setData(pointGeoJson);
-      } else {
-        map.addSource("editor-route-points", { type: "geojson", data: pointGeoJson });
-        map.addLayer({
-          id: "editor-route-points-layer",
-          type: "circle",
-          source: "editor-route-points",
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#ffffff",
-            "circle-stroke-color": "#6366f1",
-            "circle-stroke-width": 2,
-          },
-        });
-      }
-    }, [isLoaded, routeWaypoints]);
-
-    // Draw mode for subdivisions — simple click-to-draw polygon
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      if (!map.getSource("editor-draw-polygon")) {
-        map.addSource("editor-draw-polygon", {
-          type: "geojson",
-          data: EMPTY_FC,
-        });
-        map.addLayer({
-          id: "editor-draw-polygon-fill",
-          type: "fill",
-          source: "editor-draw-polygon",
-          paint: { "fill-color": "#10b981", "fill-opacity": 0.2 },
-        });
-        map.addLayer({
-          id: "editor-draw-polygon-stroke",
-          type: "line",
-          source: "editor-draw-polygon",
-          paint: { "line-color": "#10b981", "line-width": 2 },
-        });
-        map.addSource("editor-draw-vertices", {
-          type: "geojson",
-          data: EMPTY_FC,
-        });
-        map.addLayer({
-          id: "editor-draw-vertices-layer",
-          type: "circle",
-          source: "editor-draw-vertices",
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#10b981",
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 2,
-          },
-        });
-
-        map.addSource("editor-overlap-highlight", {
-          type: "geojson",
-          data: EMPTY_FC,
-        });
-        map.addLayer({
-          id: "editor-overlap-highlight-fill",
-          type: "fill",
-          source: "editor-overlap-highlight",
-          paint: { "fill-color": "#ef4444", "fill-opacity": 0.4 },
-        });
-        map.addLayer({
-          id: "editor-overlap-highlight-stroke",
-          type: "line",
-          source: "editor-overlap-highlight",
-          paint: { "line-color": "#ef4444", "line-width": 2.5 },
-        });
-      }
-
-      // ── Vertex editing sources/layers ──
-      if (!map.getSource("editor-vedit-polygon")) {
-        map.addSource("editor-vedit-polygon", { type: "geojson", data: EMPTY_FC });
-        map.addLayer({
-          id: "editor-vedit-polygon-fill",
-          type: "fill",
-          source: "editor-vedit-polygon",
-          paint: { "fill-color": "#10b981", "fill-opacity": 0.15 },
-        });
-        map.addLayer({
-          id: "editor-vedit-polygon-stroke",
-          type: "line",
-          source: "editor-vedit-polygon",
-          paint: { "line-color": "#10b981", "line-width": 2.5 },
-        });
-
-        map.addSource("editor-vedit-midpoints", { type: "geojson", data: EMPTY_FC });
-        map.addLayer({
-          id: "editor-vedit-midpoints-layer",
-          type: "circle",
-          source: "editor-vedit-midpoints",
-          paint: {
-            "circle-radius": 4,
-            "circle-color": "#10b981",
-            "circle-opacity": 0.5,
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1,
-          },
-        });
-
-        map.addSource("editor-vedit-vertices", { type: "geojson", data: EMPTY_FC });
-        // Use larger vertex circles on touch devices for easier finger targeting
-        const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-        map.addLayer({
-          id: "editor-vedit-vertices-layer",
-          type: "circle",
-          source: "editor-vedit-vertices",
-          paint: {
-            "circle-radius": isTouchDevice ? 10 : 6,
-            "circle-color": "#ffffff",
-            "circle-stroke-color": "#10b981",
-            "circle-stroke-width": isTouchDevice ? 3 : 2.5,
-          },
-        });
-      }
-    }, [isLoaded]);
-
-    // Update draw polygon visualization
-    const updateDrawVisualization = useCallback(() => {
-      const map = mapRef.current;
-      if (!map) return;
-
-      const vertices = drawVerticesRef.current;
-
-      const verticesGeoJson = {
-        type: "FeatureCollection" as const,
-        features: vertices.map((v) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: v },
-          properties: {},
-        })),
-      };
-      getGeoJSONSource(map, "editor-draw-vertices")?.setData(verticesGeoJson);
-
-      if (vertices.length >= 3) {
-        const polyGeoJson = {
-          type: "FeatureCollection" as const,
-          features: [
-            {
-              type: "Feature" as const,
-              geometry: {
-                type: "Polygon" as const,
-                coordinates: [[...vertices, vertices[0]]],
-              },
-              properties: {},
-            },
-          ],
-        };
-        getGeoJSONSource(map, "editor-draw-polygon")?.setData(polyGeoJson);
-        const drawnGeom = {
-          type: "Polygon" as const,
-          coordinates: [[...vertices, vertices[0]]],
-        };
-        const overlapGeoJson = calculateOverlapGeoJson(drawnGeom, featuresRef.current);
-        getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
-      } else if (vertices.length >= 2) {
-        const lineGeoJson = {
-          type: "FeatureCollection" as const,
-          features: [
-            {
-              type: "Feature" as const,
-              geometry: {
-                type: "LineString" as const,
-                coordinates: vertices,
-              },
-              properties: {},
-            },
-          ],
-        };
-        getGeoJSONSource(map, "editor-draw-polygon")?.setData(lineGeoJson);
-        getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-      } else {
-        getGeoJSONSource(map, "editor-draw-polygon")?.setData(EMPTY_FC);
-        getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-      }
-    }, []);
-
-    // Handle map clicks
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      const onClick = (e: any) => {
-        // Skip if a route was clicked
-        if (e.routeClicked || e.defaultPrevented) return;
-
-        // Skip if vertex editing is active
-        if (vertexEditRef.current) return;
-
-        const currentMode = modeRef.current;
-
-        if (
-          currentMode === "add-city" ||
-          currentMode === "add-poi" ||
-          currentMode === "add-story-pin" ||
-          currentMode === "add-label" ||
-          currentMode === "add-route"
-        ) {
-          onMapClick(e.lngLat.lng, e.lngLat.lat);
-        } else if (currentMode === "add-subdivision") {
-          let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-          const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-          if (border) {
-            clickPoint = snapToBorderEdge(clickPoint, border, 0.015);
-          }
-          for (const feat of featuresRef.current) {
-            if (
-              feat.type === "subdivision" &&
-              feat.geometry &&
-              (feat.geometry as any).coordinates &&
-              (feat.geometry as any).coordinates.length > 0
-            ) {
-              const snapped = snapToBorderEdge(
-                clickPoint,
-                feat.geometry as Polygon | MultiPolygon,
-                0.01
-              );
-              if (snapped !== clickPoint) {
-                clickPoint = snapped;
-              }
-            }
-          }
-          drawVerticesRef.current.push(clickPoint);
-          updateDrawVisualization();
-          setDrawVertices([...drawVerticesRef.current]);
-        }
-      };
-
-      const onDblClick = (e: any) => {
-        if (vertexEditRef.current) return;
-        const currentMode = modeRef.current;
-        if (currentMode === "add-subdivision" && drawVerticesRef.current.length >= 3) {
-          e.preventDefault();
-          const vertices = drawVerticesRef.current;
-          let geometry: Polygon | MultiPolygon = {
-            type: "Polygon" as const,
-            coordinates: [[...vertices, vertices[0]]],
-          };
-
-          // Clip drawn polygon to country border
-          const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-          if (border) {
-            const { geometry: clipped } = clipGeometryToBorder(geometry, border);
-            geometry = clipped as Polygon | MultiPolygon;
-          }
-
-          onDrawComplete(geometry);
-          drawVerticesRef.current = [];
-          updateDrawVisualization();
-          setDrawVertices([]);
-        }
-      };
-
-      map.on("click", onClick);
-      map.on("dblclick", onDblClick);
-
-      return () => {
-        map.off("click", onClick);
-        map.off("dblclick", onDblClick);
-      };
-    }, [isLoaded, onMapClick, onDrawComplete, updateDrawVisualization]);
-
-    // Keyboard: undo last draw vertex (Backspace/Delete/Ctrl+Z during polygon draw)
-    useEffect(() => {
-      const handler = (e: KeyboardEvent) => {
-        if (modeRef.current !== "add-subdivision") return;
-        if (vertexEditRef.current) return;
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-
-        const isUndo =
-          e.key === "Backspace" ||
-          e.key === "Delete" ||
-          (e.key === "z" && (e.ctrlKey || e.metaKey));
-
-        if (isUndo && drawVerticesRef.current.length > 0) {
-          e.preventDefault();
-          drawVerticesRef.current.pop();
-          updateDrawVisualization();
-          setDrawVertices([...drawVerticesRef.current]);
-        }
-      };
-      window.addEventListener("keydown", handler);
-      return () => window.removeEventListener("keydown", handler);
-    }, [updateDrawVisualization]);
-
-    // Keyboard: Delete/Backspace removes hovered vertex during vertex editing
-    useEffect(() => {
-      const handler = (e: KeyboardEvent) => {
-        if (!vertexEditRef.current) return;
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-
-        if (e.key === "Delete" || e.key === "Backspace") {
-          e.preventDefault();
-          // Try hoveredVertexRef first, then query features at last mouse position
-          let target = hoveredVertexRef.current;
-          if (!target && lastMousePointRef.current && mapRef.current) {
-            const pt = lastMousePointRef.current;
-            const bbox: [[number, number], [number, number]] = [
-              [pt.x - 12, pt.y - 12],
-              [pt.x + 12, pt.y + 12],
-            ];
-            const hits = mapRef.current.queryRenderedFeatures(bbox, {
-              layers: ["editor-vedit-vertices-layer"],
-            });
-            if (hits.length > 0) {
-              const f = hits[0]!;
-              target = {
-                ringIndex: f.properties!.ringIndex as number,
-                vertexIndex: f.properties!.vertexIndex as number,
-                coord: getFeatureCoords(f.geometry) as Position,
-              };
-            }
-          }
-          if (!target) return;
-          const result = removeVertex(vertexEditRef.current.currentGeometry, target);
-          if (result) {
-            vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-            hoveredVertexRef.current = null;
-            updateVertexEditVis();
-          }
-        }
-      };
-      window.addEventListener("keydown", handler);
-      return () => window.removeEventListener("keydown", handler);
-    }, [updateVertexEditVis]);
-
-    // Update cursor based on mode
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      if (mode === "view" || mode === "import-provinces" || mode === "edit-subdivision") {
+      if (
+        mode === "view" ||
+        mode === "import-provinces" ||
+        mode === "edit-subdivision" ||
+        mode === "edit-route"
+      ) {
         map.getCanvas().style.cursor = "";
       } else {
         map.getCanvas().style.cursor = "crosshair";
       }
     }, [mode, isLoaded]);
 
-    // Hover highlight and click-to-select on features in view mode
+    // Selection hover/clicks in view/paint modes
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
@@ -1511,8 +340,7 @@ const EditorMap = memo(
       ];
 
       const onMouseMove = (e: any) => {
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
-          return;
+        if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
 
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
@@ -1530,8 +358,7 @@ const EditorMap = memo(
       };
 
       const onMouseLeave = () => {
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
-          return;
+        if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
         map.getCanvas().style.cursor = "";
         if (map.getLayer("editor-subdivisions-hover")) {
           map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
@@ -1540,8 +367,7 @@ const EditorMap = memo(
 
       const onClickFeature = (e: any) => {
         if (e.routeClicked || e.defaultPrevented) return;
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || vertexEditRef.current)
-          return;
+        if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
           const hitId = hits[0]!.properties?.id as string | undefined;
@@ -1564,7 +390,51 @@ const EditorMap = memo(
         map.off("mouseleave", "editor-subdivisions-fill", onMouseLeave);
         map.off("click", onClickFeature);
       };
-    }, [isLoaded]);
+    }, [isLoaded, isVertexEditing]);
+
+    // Handle map clicks for insertion (city, POI, story pin, labels, routes)
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+
+      const onClick = (e: any) => {
+        if (e.routeClicked || e.defaultPrevented) return;
+        if (isVertexEditing) return;
+
+        const currentMode = modeRef.current;
+
+        if (
+          currentMode === "add-city" ||
+          currentMode === "add-poi" ||
+          currentMode === "add-story-pin" ||
+          currentMode === "add-label"
+        ) {
+          onMapClickRef.current(e.lngLat.lng, e.lngLat.lat);
+        } else if (currentMode === "add-route") {
+          let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+          const snapLayers = ["editor-points-capital", "editor-points-city", "editor-points-poi"];
+          const bbox: [[number, number], [number, number]] = [
+            [e.point.x - 15, e.point.y - 15],
+            [e.point.x + 15, e.point.y + 15],
+          ];
+          const hits = map.queryRenderedFeatures(bbox, { layers: snapLayers });
+          if (hits.length > 0) {
+            const coords = getFeatureCoords(hits[0]!.geometry);
+            if (coords) {
+              clickPoint = [coords[0], coords[1]];
+            }
+          }
+          onMapClickRef.current(clickPoint[0], clickPoint[1]);
+        }
+      };
+
+      map.on("click", onClick);
+
+      return () => {
+        map.off("click", onClick);
+      };
+    }, [isLoaded, isVertexEditing]);
 
     // Highlight selected feature
     useEffect(() => {
@@ -1579,418 +449,6 @@ const EditorMap = memo(
         }
       }
     }, [isLoaded, selectedFeature]);
-
-    // ── Paint mode: update subdivision fill colors ──
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded || !map.getLayer("editor-subdivisions-fill")) return;
-
-      if (paintColors && Object.keys(paintColors).length > 0) {
-        // Build a match expression: ["match", ["get", "id"], id1, color1, id2, color2, ..., fallback]
-        const matchExpr: any[] = ["match", ["get", "id"]];
-        for (const [id, color] of Object.entries(paintColors)) {
-          matchExpr.push(id, color);
-        }
-        matchExpr.push("transparent"); // fallback
-        map.setPaintProperty("editor-subdivisions-fill", "fill-color", matchExpr);
-        map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.5);
-      } else {
-        // Reset to transparent when paint mode is off
-        map.setPaintProperty("editor-subdivisions-fill", "fill-color", "transparent");
-        map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0);
-      }
-    }, [isLoaded, paintColors]);
-
-    // ── Enter/exit vertex editing when mode === "edit-subdivision" ──
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      if (mode === "edit-subdivision" && selectedFeature?.geometry) {
-        let geo = JSON.parse(JSON.stringify(selectedFeature.geometry)) as Polygon | MultiPolygon;
-
-        // Auto-conform: clip + snap if geometry extends beyond border
-        const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-        if (border) {
-          const { geometry: clipped, wasClipped } = clipGeometryToBorder(geo, border);
-          if (wasClipped) {
-            geo = clipped as Polygon | MultiPolygon;
-          }
-          // Always snap vertices near border for clean alignment
-          const nearestRing = findNearestBorderRing(geo, border);
-          const edges: Array<[Position, Position]> = [];
-          for (let i = 0; i < nearestRing.length - 1; i++) {
-            edges.push([nearestRing[i]!, nearestRing[i + 1]!]);
-          }
-          geo = snapGeometryToBorder(geo, edges, nearestRing, 2.0) as Polygon | MultiPolygon;
-        }
-
-        vertexEditRef.current = {
-          featureId: selectedFeature.id,
-          currentGeometry: geo,
-        };
-        setIsVertexEditing(true);
-        updateVertexEditVis();
-
-        // Hide the editing feature from the normal layer
-        for (const lid of [
-          "editor-subdivisions-fill",
-          "editor-subdivisions-stroke",
-          "editor-subdivisions-labels",
-          "editor-subdivisions-hover",
-        ]) {
-          if (map.getLayer(lid)) map.setFilter(lid, ["!=", ["get", "id"], selectedFeature.id]);
-        }
-      } else if (vertexEditRef.current) {
-        // Exiting vertex edit mode without explicit finish — cancel
-        cancelVertexEdit();
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mode, selectedFeature, isLoaded]);
-
-    // ── Vertex drag interaction ──
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      const onVertexMouseDown = (e: any) => {
-        if (!vertexEditRef.current) return;
-        e.preventDefault();
-        const f = e.features?.[0];
-        if (!f) return;
-
-        const ri = f.properties.ringIndex as number;
-        const vi = f.properties.vertexIndex as number;
-        const coord = getFeatureCoords(f.geometry) as Position;
-        draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
-        map.dragPan.disable();
-        map.getCanvas().style.cursor = "grabbing";
-      };
-
-      const onMidpointClick = (e: any) => {
-        if (!vertexEditRef.current) return;
-        e.preventDefault();
-        const f = e.features?.[0];
-        if (!f) return;
-
-        const ri = f.properties.ringIndex as number;
-        const si = f.properties.startIndex as number;
-        const midCoord = getFeatureCoords(f.geometry) as Position;
-
-        const rings = getAllRings(vertexEditRef.current.currentGeometry);
-        const ring = rings[ri];
-        if (!ring) return;
-        const ei = (si + 1) % ring.length;
-
-        const newGeo = addVertex(
-          vertexEditRef.current.currentGeometry,
-          { ringIndex: ri, startIndex: si, endIndex: ei, midpoint: midCoord },
-          midCoord
-        );
-        vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-        updateVertexEditVis();
-      };
-
-      const onMouseMove = (e: any) => {
-        // Always track mouse position for keyboard vertex deletion
-        lastMousePointRef.current = { x: e.point.x, y: e.point.y };
-
-        if (!draggingRef.current || !vertexEditRef.current) return;
-        const lngLat = e.lngLat;
-        let target: Position = [lngLat.lng, lngLat.lat];
-
-        // Clamp vertex within country border
-        const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-        if (border) {
-          target = clampToGeometry(target, border);
-          // Magnetic snap to country border edge
-          target = snapToBorderEdge(target, border, 0.015);
-        }
-
-        // Magnetic snap to other subdivision borders (higher tolerance for gap prevention)
-        const editingId = vertexEditRef.current.featureId;
-        for (const feat of featuresRef.current) {
-          if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-          const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, 0.02);
-          if (snapped !== target) {
-            target = snapped;
-            break;
-          }
-        }
-
-        // Show snap guide line from original position to snap target
-        const origTarget: Position = [lngLat.lng, lngLat.lat];
-        const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
-        updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
-
-        const newGeo = moveVertex(
-          vertexEditRef.current.currentGeometry,
-          draggingRef.current,
-          target
-        );
-        vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-        updateVertexEditVis();
-      };
-
-      const onMouseUp = () => {
-        if (!draggingRef.current) return;
-        draggingRef.current = null;
-        map.dragPan.enable();
-        map.getCanvas().style.cursor = "";
-        // Clear snap guide
-        updateSnapGuide(map, null, null);
-      };
-
-      const onContextMenu = (e: any) => {
-        if (!vertexEditRef.current) return;
-        // Check if right-click is on or near a vertex (generous bbox for hit detection)
-        const bbox: [any, any] = [
-          [e.point.x - 10, e.point.y - 10],
-          [e.point.x + 10, e.point.y + 10],
-        ];
-        const hits = map.queryRenderedFeatures(bbox, { layers: ["editor-vedit-vertices-layer"] });
-        if (hits.length === 0) return;
-
-        e.preventDefault();
-        if (e.originalEvent) e.originalEvent.preventDefault();
-        const f = hits[0]!;
-        const ri = f.properties!.ringIndex as number;
-        const vi = f.properties!.vertexIndex as number;
-        const coord = getFeatureCoords(f.geometry) as Position;
-
-        const result = removeVertex(vertexEditRef.current.currentGeometry, {
-          ringIndex: ri,
-          vertexIndex: vi,
-          coord,
-        });
-        if (result) {
-          vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-          hoveredVertexRef.current = null;
-          updateVertexEditVis();
-        }
-      };
-
-      const onVertexEnter = (e: any) => {
-        if (vertexEditRef.current && !draggingRef.current) {
-          map.getCanvas().style.cursor = "grab";
-          const f = e.features?.[0];
-          if (f) {
-            hoveredVertexRef.current = {
-              ringIndex: f.properties.ringIndex as number,
-              vertexIndex: f.properties.vertexIndex as number,
-              coord: getFeatureCoords(f.geometry) as Position,
-            };
-          }
-        }
-      };
-
-      const onVertexLeave = () => {
-        if (vertexEditRef.current && !draggingRef.current) {
-          map.getCanvas().style.cursor = "";
-          hoveredVertexRef.current = null;
-        }
-      };
-
-      const onMidpointEnter = () => {
-        if (vertexEditRef.current) {
-          map.getCanvas().style.cursor = "copy";
-        }
-      };
-
-      const onMidpointLeave = () => {
-        if (vertexEditRef.current && !draggingRef.current) {
-          map.getCanvas().style.cursor = "";
-        }
-      };
-
-      // Canvas-level right-click handler (more reliable than MapLibre contextmenu)
-      const canvas = map.getCanvas();
-      const onCanvasContextMenu = (ev: MouseEvent) => {
-        if (!vertexEditRef.current) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = ev.clientX - rect.left;
-        const y = ev.clientY - rect.top;
-        const bbox: [[number, number], [number, number]] = [
-          [x - 12, y - 12],
-          [x + 12, y + 12],
-        ];
-        const hits = map.queryRenderedFeatures(bbox, { layers: ["editor-vedit-vertices-layer"] });
-        if (hits.length === 0) return;
-
-        ev.preventDefault();
-        ev.stopPropagation();
-        const f = hits[0]!;
-        const ri = f.properties!.ringIndex as number;
-        const vi = f.properties!.vertexIndex as number;
-        const coord = getFeatureCoords(f.geometry) as Position;
-
-        const result = removeVertex(vertexEditRef.current.currentGeometry, {
-          ringIndex: ri,
-          vertexIndex: vi,
-          coord,
-        });
-        if (result) {
-          vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-          hoveredVertexRef.current = null;
-          updateVertexEditVis();
-        }
-      };
-
-      // ── Touch support for vertex editing ──
-      // Long-press on a vertex to delete it (replaces right-click on mobile)
-      let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-      let touchStartPoint: { x: number; y: number } | null = null;
-
-      const onTouchStart = (e: TouchEvent) => {
-        if (!vertexEditRef.current) return;
-        const touch = e.touches[0];
-        if (!touch) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        touchStartPoint = { x, y };
-
-        // Check if touching a vertex (larger bbox for fat fingers)
-        const bbox: [[number, number], [number, number]] = [
-          [x - 20, y - 20],
-          [x + 20, y + 20],
-        ];
-        const hits = map.queryRenderedFeatures(bbox, {
-          layers: ["editor-vedit-vertices-layer"],
-        });
-
-        if (hits.length > 0) {
-          // Start drag immediately + set up long-press for deletion
-          const f = hits[0]!;
-          const ri = f.properties!.ringIndex as number;
-          const vi = f.properties!.vertexIndex as number;
-          const coord = getFeatureCoords(f.geometry) as Position;
-          draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
-          map.dragPan.disable();
-
-          longPressTimer = setTimeout(() => {
-            // Long-press (500ms) → delete vertex
-            if (!vertexEditRef.current) return;
-            draggingRef.current = null;
-            map.dragPan.enable();
-            const result = removeVertex(vertexEditRef.current.currentGeometry, {
-              ringIndex: ri,
-              vertexIndex: vi,
-              coord,
-            });
-            if (result) {
-              vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-              hoveredVertexRef.current = null;
-              updateVertexEditVis();
-            }
-          }, 500);
-        }
-      };
-
-      const onTouchMove = (e: TouchEvent) => {
-        if (!draggingRef.current || !vertexEditRef.current) return;
-        const touch = e.touches[0];
-        if (!touch) return;
-
-        // Cancel long-press if finger moved (drag, not hold)
-        if (longPressTimer && touchStartPoint) {
-          const rect = canvas.getBoundingClientRect();
-          const dx = touch.clientX - rect.left - touchStartPoint.x;
-          const dy = touch.clientY - rect.top - touchStartPoint.y;
-          if (Math.sqrt(dx * dx + dy * dy) > 8) {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
-          }
-        }
-
-        // Convert touch to map coordinates and move vertex
-        const lngLat = map.unproject([
-          touch.clientX - canvas.getBoundingClientRect().left,
-          touch.clientY - canvas.getBoundingClientRect().top,
-        ]);
-        let target: Position = [lngLat.lng, lngLat.lat];
-
-        const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-        if (border) {
-          target = clampToGeometry(target, border);
-          target = snapToBorderEdge(target, border, 0.015);
-        }
-
-        const editingId = vertexEditRef.current.featureId;
-        for (const feat of featuresRef.current) {
-          if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-          const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, 0.01);
-          if (snapped !== target) {
-            target = snapped;
-            break;
-          }
-        }
-
-        const newGeo = moveVertex(
-          vertexEditRef.current.currentGeometry,
-          draggingRef.current,
-          target
-        );
-        vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-        updateVertexEditVis();
-        e.preventDefault();
-      };
-
-      const onTouchEnd = () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-        touchStartPoint = null;
-        if (draggingRef.current) {
-          draggingRef.current = null;
-          map.dragPan.enable();
-        }
-      };
-
-      // Bind mouse events
-      map.on("mousedown", "editor-vedit-vertices-layer", onVertexMouseDown);
-      map.on("click", "editor-vedit-midpoints-layer", onMidpointClick);
-      map.on("mousemove", onMouseMove);
-      map.on("mouseup", onMouseUp);
-      map.on("contextmenu", onContextMenu);
-      canvas.addEventListener("contextmenu", onCanvasContextMenu);
-      map.on("mouseenter", "editor-vedit-vertices-layer", onVertexEnter);
-      map.on("mouseleave", "editor-vedit-vertices-layer", onVertexLeave);
-      map.on("mouseenter", "editor-vedit-midpoints-layer", onMidpointEnter);
-      map.on("mouseleave", "editor-vedit-midpoints-layer", onMidpointLeave);
-
-      // Bind touch events
-      canvas.addEventListener("touchstart", onTouchStart, { passive: false });
-      canvas.addEventListener("touchmove", onTouchMove, { passive: false });
-      canvas.addEventListener("touchend", onTouchEnd);
-
-      return () => {
-        if (longPressTimer) clearTimeout(longPressTimer);
-        map.off("mousedown", "editor-vedit-vertices-layer", onVertexMouseDown);
-        map.off("click", "editor-vedit-midpoints-layer", onMidpointClick);
-        map.off("mousemove", onMouseMove);
-        map.off("mouseup", onMouseUp);
-        map.off("contextmenu", onContextMenu);
-        canvas.removeEventListener("contextmenu", onCanvasContextMenu);
-        map.off("mouseenter", "editor-vedit-vertices-layer", onVertexEnter);
-        map.off("mouseleave", "editor-vedit-vertices-layer", onVertexLeave);
-        map.off("mouseenter", "editor-vedit-midpoints-layer", onMidpointEnter);
-        map.off("mouseleave", "editor-vedit-midpoints-layer", onMidpointLeave);
-        canvas.removeEventListener("touchstart", onTouchStart);
-        canvas.removeEventListener("touchmove", onTouchMove);
-        canvas.removeEventListener("touchend", onTouchEnd);
-      };
-    }, [isLoaded, updateVertexEditVis]);
-
-    // Clear draw state when mode changes away from subdivision
-    useEffect(() => {
-      if (mode !== "add-subdivision") {
-        drawVerticesRef.current = [];
-        updateDrawVisualization();
-        setDrawVertices([]);
-      }
-    }, [mode, updateDrawVisualization]);
 
     return (
       <div className="relative h-full w-full" style={{ minHeight: 400 }}>
@@ -2007,131 +465,37 @@ const EditorMap = memo(
           </div>
         )}
 
-        {/* Floating polygon drawing toolbar */}
-        {mode === "add-subdivision" && drawVertices.length > 0 && (
-          <div className="border-border bg-card/90 absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-200">
-            <span className="text-foreground mr-2 text-xs font-semibold select-none">
-              Drawing Subdivision:{" "}
-              <span className="text-primary font-bold tabular-nums">{drawVertices.length}</span>{" "}
-              {drawVertices.length === 1 ? "vertex" : "vertices"}
-            </span>
-            <div className="bg-border h-4 w-px" />
-            <button
-              onClick={() => {
-                if (drawVerticesRef.current.length > 0) {
-                  drawVerticesRef.current.pop();
-                  updateDrawVisualization();
-                  setDrawVertices([...drawVerticesRef.current]);
-                }
-              }}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-2 py-1 text-xs font-medium transition-colors"
-            >
-              Delete Last
-            </button>
-            <button
-              onClick={() => {
-                drawVerticesRef.current = [];
-                updateDrawVisualization();
-                setDrawVertices([]);
-              }}
-              className="text-destructive hover:bg-destructive/10 rounded-md px-2 py-1 text-xs font-medium transition-colors"
-            >
-              Clear
-            </button>
-            <button
-              onClick={() => {
-                if (drawVerticesRef.current.length >= 3) {
-                  const vertices = drawVerticesRef.current;
-                  let geometry: Polygon | MultiPolygon = {
-                    type: "Polygon" as const,
-                    coordinates: [[...vertices, vertices[0]]],
-                  };
-                  const border = countryGeometryRef.current as Polygon | MultiPolygon | null;
-                  if (border) {
-                    const { geometry: clipped } = clipGeometryToBorder(geometry, border);
-                    geometry = clipped as Polygon | MultiPolygon;
-                  }
-                  onDrawComplete(geometry);
-                  drawVerticesRef.current = [];
-                  updateDrawVisualization();
-                  setDrawVertices([]);
-                }
-              }}
-              disabled={drawVertices.length < 3}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                drawVertices.length >= 3
-                  ? "bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }`}
-            >
-              Save Shape
-            </button>
-          </div>
-        )}
+        {/* Floating subdivision drawing toolbar */}
+        <DrawingToolbar
+          drawVertices={drawVertices}
+          undoLastVertex={undoLastVertex}
+          clearDraw={clearDraw}
+          saveDraw={saveDraw}
+          canSaveDraw={canSaveDraw}
+        />
 
-        {/* Vertex editing controls */}
-        {isVertexEditing && (
-          <div className="bg-card/95 ring-border absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full p-1 shadow-lg ring-1 backdrop-blur-sm">
-            <span className="text-muted-foreground hidden px-2 text-[11px] sm:inline">
-              Drag vertices · Midpoints to add · Right-click to remove
-            </span>
-            <div className="bg-border hidden h-4 w-px sm:block" />
-            <button
-              onClick={handleSimplifyAndSave}
-              className="flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
-              title="Simplify vertices, snap to country border, and save"
-            >
-              <svg
-                className="h-3 w-3"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 20L8 4" />
-                <path d="M20 20L16 4" />
-                <path d="M6 12h12" />
-              </svg>
-              <span className="hidden sm:inline">Simplify</span>
-            </button>
-            <button
-              onClick={handleSave}
-              className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-              title="Save current geometry"
-            >
-              Save
-            </button>
-            <button
-              onClick={finishVertexEdit}
-              className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
-            >
-              Done
-            </button>
-            <button
-              onClick={cancelVertexEdit}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-xs font-medium"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+        {/* Subdivision vertex editing controls */}
+        <VertexEditingToolbar
+          isVertexEditing={isVertexEditing}
+          handleSimplifyAndSave={handleSimplifyAndSave}
+          handleSave={handleSave}
+          finishVertexEdit={finishVertexEdit}
+          cancelVertexEdit={cancelVertexEdit}
+        />
 
-        {/* Mode hint pill */}
-        {!isVertexEditing &&
-          mode !== "view" &&
-          mode !== "import-provinces" &&
-          mode !== "edit-subdivision" && (
-            <div className="bg-card/95 text-muted-foreground ring-border absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[11px] shadow-md ring-1 backdrop-blur-sm">
-              {mode === "add-city" && "Click map to place city"}
-              {mode === "add-subdivision" &&
-                (drawVerticesRef.current.length >= 3
-                  ? "Double-click to finish polygon"
-                  : "Click to add polygon vertices")}
-              {mode === "add-poi" && "Click map to place POI"}
-            </div>
-          )}
+        {/* Route path editing controls */}
+        <RouteEditingToolbar
+          mode={mode}
+          onRouteEditCommit={onRouteEditCommit}
+          onRouteEditCancel={onRouteEditCancel}
+        />
+
+        {/* Floating mode hint pill */}
+        <MapHintPill
+          isVertexEditing={isVertexEditing}
+          mode={mode}
+          drawVerticesCount={drawVertices.length}
+        />
       </div>
     );
   })

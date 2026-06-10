@@ -17,10 +17,7 @@ export function fixEditorImageUrls(html: string): string {
     .replace(/src="\/images\//g, `src="${IXWIKI_ORIGIN}/images/`)
     .replace(/src="\/data\//g, `src="${IXWIKI_ORIGIN}/data/`)
     .replace(/src="\/load\.php/g, `src="${IXWIKI_ORIGIN}/load.php`)
-    .replace(
-      /src="\/wiki\/Special:FilePath\//g,
-      `src="${IXWIKI_ORIGIN}/wiki/Special:FilePath/`
-    );
+    .replace(/src="\/wiki\/Special:FilePath\//g, `src="${IXWIKI_ORIGIN}/wiki/Special:FilePath/`);
 
   // 2. srcset attributes (responsive images)
   result = result.replace(/srcset="([^"]*)"/g, (_match, srcset: string) => {
@@ -41,10 +38,7 @@ export function fixEditorImageUrls(html: string): string {
 
   // 5. Add referrerpolicy="no-referrer" to prevent Cloudflare hotlink blocking
   //    Without this, browsers send Referer: http://localhost:3000 triggering 403
-  result = result.replace(
-    /<img(?![^>]*referrerpolicy=)/g,
-    '<img referrerpolicy="no-referrer"'
-  );
+  result = result.replace(/<img(?![^>]*referrerpolicy=)/g, '<img referrerpolicy="no-referrer"');
 
   return result;
 }

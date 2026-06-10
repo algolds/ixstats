@@ -92,7 +92,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
   if (mode === "paint") {
     return <PaintPropertyForm countryId={countryId} onCancel={onCancel} />;
   }
-  if (mode === "add-route") {
+  if (mode === "add-route" || mode === "edit-route") {
     return (
       <TransportPropertyForm
         countryId={countryId}
