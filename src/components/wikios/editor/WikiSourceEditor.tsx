@@ -69,7 +69,6 @@ import {
   Undo2,
   Redo2,
   Save,
-  X,
   FileText,
   Image,
   Table,

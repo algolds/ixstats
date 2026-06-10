@@ -31,6 +31,7 @@ import {
   Map as MapIcon,
 } from "lucide-react";
 import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
+import { NewVersionNotice } from "./NewVersionNotice";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import * as LucideIcons from "lucide-react";
@@ -719,6 +720,7 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
 
   return (
     <DashboardSidebarLayout
+      alerts={<NewVersionNotice />}
       heroSection={
         !heroCollapsed ? (
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
