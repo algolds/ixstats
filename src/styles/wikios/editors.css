@@ -1200,7 +1200,10 @@ html.wikios-writer-mode .navigation-bar,
 html.wikios-writer-mode .dashboard-sidebar-rail,
 html.wikios-writer-mode .dashboard-header,
 html.wikios-writer-mode .wikios-icon-rail,
-html.wikios-writer-mode .wikios-main-footer {
+html.wikios-writer-mode .wikios-main-footer,
+html.wikios-writer-mode .builder-notch-bar,
+html.wikios-writer-mode [data-slot="discord-badge"],
+html.wikios-writer-mode .global-link-tooltip {
   display: none !important;
 }
 
@@ -1209,7 +1212,7 @@ html.wikios-writer-mode [data-slot="dynamic-island-container"],
 html.wikios-writer-mode .dynamic-island-container,
 html.wikios-writer-mode [id="command-palette"] {
   display: block !important;
-  z-index: 100002 !important;
+  z-index: 100063 !important;
   pointer-events: auto !important;
 }
 
@@ -1217,7 +1220,7 @@ html.wikios-writer-mode [id="command-palette"] {
 .wikios-writer-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 100060;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(28px) saturate(0.6);
   -webkit-backdrop-filter: blur(28px) saturate(0.6);
@@ -1245,7 +1248,7 @@ html.wikios-writer-mode [id="command-palette"] {
   position: fixed;
   top: 16px;
   right: 16px;
-  z-index: 100003;
+  z-index: 100064;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1276,7 +1279,7 @@ html.wikios-writer-mode .wikios-ve-container {
   width: 90vw !important;
   max-width: 1100px !important;
   height: 90vh !important;
-  z-index: 100000 !important;
+  z-index: 100061 !important;
   border-radius: 16px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow:
